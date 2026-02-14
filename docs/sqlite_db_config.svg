@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 473">
+  <defs>
+    <style>
+      .title { font: bold 16px sans-serif; fill: #1a1a2e; }
+      .subtitle { font: 11px sans-serif; fill: #4a4a6a; }
+      .section { font: bold 12px sans-serif; }
+      .label { font: bold 11px sans-serif; }
+      .method { font: bold 9px monospace; fill: #455a64; }
+      .desc { font: 9px sans-serif; fill: #555; }
+      .date { font: 8px sans-serif; fill: #999; }
+    </style>
+  </defs>
+
+  <rect width="940" height="473" fill="#fafafa"/>
+
+  <text x="470" y="16" text-anchor="middle" class="title">SQLite db_config Connection Settings</text>
+  <text x="470" y="30" text-anchor="middle" class="subtitle">Per-connection runtime settings. These do NOT persist — set them each time you open a connection.</text>
+
+  <!-- ALL OPERATIONS -->
+  <rect x="5" y="38" width="930" height="415" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="15" y="54" class="section" fill="#0d47a1">ALL SQL OPERATIONS</text>
+
+  <!-- Top row -->
+  <rect x="12" y="62" width="300" height="105" rx="6" fill="#bbdefb" stroke="#1976d2" stroke-width="1.5"/>
+  <text x="20" y="77" class="label" fill="#0d47a1">DDL Statements (always allowed)</text>
+  <foreignObject x="20" y="80" width="284" height="83">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;"><b>DDL = Data Definition Language:</b> Commands that modify the database schema itself, not the data.</p>
+      <p style="margin: 0 0 4px 0; color: #555;">Examples: <span style="font-family: monospace; color: #1565c0;">CREATE TABLE</span>, <span style="font-family: monospace; color: #1565c0;">ALTER TABLE</span>, <span style="font-family: monospace; color: #1565c0;">DROP INDEX</span>, <span style="font-family: monospace; color: #1565c0;">CREATE VIEW</span></p>
+      <p style="margin: 0; color: #666; font-style: italic;">db_config cannot block DDL. Use <span style="font-family: monospace;">conn.on_authorize()</span> callback to intercept and reject specific DDL commands.</p>
+    </div>
+  </foreignObject>
+
+  <rect x="320" y="62" width="300" height="105" rx="6" fill="#ffebee" stroke="#c62828" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="328" y="77" class="label" fill="#b71c1c">DEFENSIVE MODE (default: off)</text>
+  <text x="328" y="89" class="method">set_defensive(true)</text>
+  <foreignObject x="328" y="92" width="284" height="71">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 3px 0; color: #555;">Blocks dangerous low-level operations that bypass normal SQL and could corrupt the database:</p>
+      <p style="margin: 0; color: #c62828; font-size: 8px;">• <b>PRAGMA writable_schema</b>: direct edits to sqlite_master table<br/>• <b>Shadow table writes</b>: internal tables for FTS5/R-Tree<br/>• <b>Unsafe deserialize</b>: loading raw database images into memory</p>
+    </div>
+  </foreignObject>
+
+  <rect x="628" y="62" width="300" height="105" rx="6" fill="#eceff1" stroke="#607d8b" stroke-width="1.5"/>
+  <text x="636" y="77" class="label" fill="#455a64">LOAD EXTENSION (default: off)</text>
+  <text x="636" y="89" class="method">set_load_extension_enabled()</text>
+  <foreignObject x="636" y="92" width="284" height="71">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 3px 0; color: #555;">SQLite can load C extensions (.so/.dll) at runtime via <span style="font-family: monospace; color: #1565c0;">SELECT load_extension('path')</span>.</p>
+      <p style="margin: 0 0 3px 0; color: #555;">This is a <b>runtime flag only</b>. SQLite must also be compiled <b>without</b> <span style="font-family: monospace; font-size: 8px;">SQLITE_OMIT_LOAD_EXTENSION</span> for this to work.</p>
+      <p style="margin: 0; color: #c62828; font-size: 8px;">Security risk: extensions run native code. Keep off unless you need it.</p>
+    </div>
+  </foreignObject>
+
+  <!-- SCHEMA OBJECTS -->
+  <rect x="12" y="175" width="916" height="270" rx="8" fill="#fff8e1" stroke="#ff8f00" stroke-width="2"/>
+  <text x="20" y="191" class="section" fill="#e65100">SCHEMA OBJECTS</text>
+  <text x="150" y="191" class="desc">"Schema objects" are SQL code stored inside the database file itself. They execute automatically — you don't call them directly.</text>
+
+  <!-- Row 1 -->
+  <rect x="20" y="199" width="295" height="115" rx="6" fill="#ffe0b2" stroke="#f57c00" stroke-width="1"/>
+  <text x="28" y="214" class="label" fill="#e65100">VIEWS (default: on)</text>
+  <text x="28" y="226" class="method">set_views_enabled()</text>
+  <foreignObject x="28" y="229" width="279" height="81">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;"><b>Views</b> are saved SELECT queries. When you query a view, SQLite runs the underlying SELECT.</p>
+      <p style="margin: 0 0 4px 0; color: #555;">Example: <span style="font-family: monospace; font-size: 8px; color: #1565c0;">CREATE VIEW active_users AS SELECT * FROM users WHERE active=1</span></p>
+      <p style="margin: 0;"><span style="color: #1565c0;">true:</span> views work normally · <span style="color: #c62828;">false:</span> any query touching a view returns an error</p>
+    </div>
+  </foreignObject>
+
+  <rect x="323" y="199" width="295" height="115" rx="6" fill="#f3e5f5" stroke="#8e24aa" stroke-width="1"/>
+  <text x="331" y="214" class="label" fill="#6a1b9a">TRIGGERS (default: on)</text>
+  <text x="331" y="226" class="method">set_triggers_enabled()</text>
+  <foreignObject x="331" y="229" width="279" height="81">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;"><b>Triggers</b> are SQL code that runs automatically when data changes (INSERT, UPDATE, DELETE).</p>
+      <p style="margin: 0 0 4px 0; color: #555;">Common uses: audit logs, maintaining denormalized data, enforcing business rules, cascading updates.</p>
+      <p style="margin: 0;"><span style="color: #1565c0;">true:</span> triggers fire on data changes · <span style="color: #c62828;">false:</span> triggers are silently skipped</p>
+    </div>
+  </foreignObject>
+
+  <rect x="626" y="199" width="295" height="115" rx="6" fill="#e0f2f1" stroke="#00897b" stroke-width="1"/>
+  <text x="634" y="214" class="label" fill="#00695c">CHECK / DEFAULT / GENERATED</text>
+  <foreignObject x="634" y="220" width="279" height="90">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 3px 0; color: #555;"><b>CHECK:</b> validation expressions, e.g. <span style="font-family: monospace; font-size: 8px; color: #1565c0;">CHECK(age &gt;= 0 AND age &lt; 150)</span></p>
+      <p style="margin: 0 0 3px 0; color: #555;"><b>DEFAULT:</b> value used when INSERT omits a column, e.g. <span style="font-family: monospace; font-size: 8px; color: #1565c0;">DEFAULT CURRENT_TIMESTAMP</span></p>
+      <p style="margin: 0 0 4px 0; color: #555;"><b>GENERATED:</b> computed columns, e.g. <span style="font-family: monospace; font-size: 8px; color: #1565c0;">full_name AS (first || ' ' || last)</span></p>
+      <p style="margin: 0; font-style: italic; color: #666; font-size: 8px;">These cannot be disabled. To skip CHECK: <span style="font-family: monospace;">PRAGMA ignore_check_constraints=ON</span></p>
+    </div>
+  </foreignObject>
+
+  <!-- Row 2 -->
+  <rect x="20" y="322" width="295" height="115" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="1"/>
+  <text x="28" y="337" class="label" fill="#1565c0">FOREIGN KEYS (default: OFF!)</text>
+  <text x="28" y="349" class="method">set_foreign_keys_enabled()</text>
+  <foreignObject x="28" y="352" width="279" height="81">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;"><b>Foreign keys</b> enforce referential integrity: child rows must reference existing parent rows.</p>
+      <p style="margin: 0 0 4px 0; color: #c62828;"><b>⚠ SQLite disables foreign keys by default!</b> This surprises many developers. You must enable them explicitly on each connection.</p>
+      <p style="margin: 0;"><span style="color: #1565c0;">true:</span> orphaned references cause ERROR · <span style="color: #666;">false:</span> orphans silently allowed</p>
+    </div>
+  </foreignObject>
+
+  <rect x="323" y="322" width="295" height="115" rx="6" fill="#efebe9" stroke="#8d6e63" stroke-width="1"/>
+  <text x="331" y="337" class="label" fill="#5d4037">DOUBLE-QUOTED STRINGS (default: on)</text>
+  <text x="331" y="349" class="method">set_double_quoted_string_dml() / _ddl()</text>
+  <foreignObject x="331" y="352" width="279" height="81">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;"><b>Standard SQL:</b> double quotes = identifier (column/table name), single quotes = string literal.</p>
+      <p style="margin: 0 0 4px 0; color: #555;"><b>SQLite legacy quirk:</b> <span style="font-family: monospace; color: #1565c0;">"hello"</span> is treated as string <span style="font-family: monospace;">'hello'</span> if no column named "hello" exists.</p>
+      <p style="margin: 0;"><span style="color: #1565c0;">true:</span> legacy behavior · <span style="color: #c62828;">false:</span> strict SQL (recommended for new code)</p>
+    </div>
+  </foreignObject>
+
+  <rect x="626" y="322" width="295" height="115" rx="6" fill="#fffde7" stroke="#fbc02d" stroke-width="1"/>
+  <text x="634" y="337" class="label" fill="#f57f17">TRUSTED SCHEMA (default: on)</text>
+  <text x="634" y="349" class="method">set_trusted_schema()</text>
+  <foreignObject x="634" y="352" width="279" height="81">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;">Controls which <b>custom SQL functions</b> (registered via Diesel) can be called from schema objects like views and triggers.</p>
+      <p style="margin: 0 0 4px 0; color: #555;"><span style="color: #1565c0;">true:</span> most functions allowed (trust the database schema)</p>
+      <p style="margin: 0 0 4px 0; color: #c62828;"><span style="color: #c62828;">false:</span> only functions marked INNOCUOUS (for untrusted .db files)</p>
+      <p style="margin: 0; font-style: italic; color: #666; font-size: 8px;">See sqlite_function_flags.svg for details on function flags.</p>
+    </div>
+  </foreignObject>
+
+  <!-- Legend and date -->
+  <text x="5" y="465" class="desc">Dashed border = orthogonal security restriction. All db_config settings are per-connection and must be set after opening the connection.</text>
+  <text x="935" y="465" text-anchor="end" class="date">2026-02-14</text>
+</svg>
