@@ -1067,11 +1067,9 @@ mod tests {
     #[diesel_test_helper::test]
     fn last_insert_rowid_returns_rowid_after_insert() {
         let conn = &mut connection();
-        crate::sql_query(
-            "CREATE TABLE li_test (id INTEGER PRIMARY KEY, val TEXT NOT NULL)",
-        )
-        .execute(conn)
-        .unwrap();
+        crate::sql_query("CREATE TABLE li_test (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
 
         crate::sql_query("INSERT INTO li_test (val) VALUES ('a')")
             .execute(conn)
@@ -1110,11 +1108,9 @@ mod tests {
     #[diesel_test_helper::test]
     fn last_insert_rowid_with_explicit_rowid() {
         let conn = &mut connection();
-        crate::sql_query(
-            "CREATE TABLE li_test3 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)",
-        )
-        .execute(conn)
-        .unwrap();
+        crate::sql_query("CREATE TABLE li_test3 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
 
         crate::sql_query("INSERT INTO li_test3 (id, val) VALUES (42, 'a')")
             .execute(conn)
@@ -1125,11 +1121,9 @@ mod tests {
     #[diesel_test_helper::test]
     fn last_insert_rowid_unchanged_after_delete_and_update() {
         let conn = &mut connection();
-        crate::sql_query(
-            "CREATE TABLE li_test4 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)",
-        )
-        .execute(conn)
-        .unwrap();
+        crate::sql_query("CREATE TABLE li_test4 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
 
         crate::sql_query("INSERT INTO li_test4 (val) VALUES ('a')")
             .execute(conn)
