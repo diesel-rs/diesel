@@ -101,5 +101,4 @@ pub(crate) mod lower_utils {
         > as ValidGrouping<__DieselInternal>>::IsAggregate;
     }
 
-
 }
