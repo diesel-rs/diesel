@@ -384,7 +384,7 @@ impl SqliteConnection {
     ///
     /// # Caveats
     /// - Inserts into `WITHOUT ROWID` tables are not recorded
-    /// - Failed INSERTs (constraint violations) do not change the value
+    /// - Failed `INSERT` (constraint violations) do not change the value
     /// - `INSERT OR REPLACE` always updates the value
     /// - Within triggers, returns the rowid of the trigger's INSERT;
     ///   reverts after the trigger completes
