@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::consts::build_insert_users_params;
 use crate::consts::mysql::{
     build_insert_users_query, CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID, TRIVIAL_QUERY,
@@ -52,9 +54,9 @@ async fn insert_users_for_setup(
     hair_color_init: impl Fn(usize) -> Option<&'static str>,
 ) {
     let query = build_insert_users_query(size);
-    let params: Vec<zero_mysql::Value> = build_insert_users_params(size, hair_color_init)
+    let params: Vec<Option<String>> = build_insert_users_params(size, hair_color_init)
         .into_iter()
-        .flat_map(|(name, hair_color)| [name.into(), hair_color.into()])
+        .flat_map(|(name, hair_color)| [Some(name), hair_color.map(String::from)])
         .collect();
     let mut stmt = conn.prepare(&query).await.unwrap();
     conn.exec_drop(&mut stmt, params).await.unwrap();
@@ -176,10 +178,10 @@ pub fn bench_insert(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            let params: Vec<zero_mysql::Value> =
+            let params: Vec<Option<String>> =
                 build_insert_users_params(size, |_| Some("hair_color"))
                     .into_iter()
-                    .flat_map(|(name, hair_color)| [name.into(), hair_color.into()])
+                    .flat_map(|(name, hair_color)| [Some(name), hair_color.map(String::from)])
                     .collect();
             conn.exec_drop(&mut stmt, params).await.unwrap();
         })
