@@ -204,17 +204,17 @@ pub fn run_database_command(
         DatabaseCommand::Setup {
             no_default_migration,
         } => {
-            let migrations_dir =
+            let migration_dir =
                 crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
-            setup_database(database_url.clone(), &migrations_dir, no_default_migration)?;
+            setup_database(database_url.clone(), &migration_dir, no_default_migration)?;
             crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
         }
         DatabaseCommand::Reset {
             no_default_migration,
         } => {
-            let migrations_dir =
+            let migration_dir =
                 crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
-            reset_database(database_url.clone(), &migrations_dir, no_default_migration)?;
+            reset_database(database_url.clone(), &migration_dir, no_default_migration)?;
             crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
         }
         DatabaseCommand::Drop => crate::database::drop_database_command(database_url)?,
