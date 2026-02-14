@@ -97,7 +97,10 @@ fn inner_main() -> Result<(), crate::errors::Error> {
         }
         DieselCliCommand::Completions { shell } => self::cli::generate_completions_command(&shell),
         DieselCliCommand::PrintSchema(args) => {
-            self::print_schema::run_infer_schema(&matches, args, config_file, database_url)?
+            let matches = matches
+                .subcommand_matches("print-schema")
+                .unwrap_or(&matches);
+            self::print_schema::run_infer_schema(matches, args, config_file, database_url)?
         }
     }
 

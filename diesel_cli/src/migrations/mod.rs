@@ -163,20 +163,23 @@ pub enum MigrationCommand {
             id = "ONLY_TABLES",
             short = 'o',
             long = "only-tables",
-            action = ArgAction::SetFalse,
-            value_parser = clap::value_parser!(bool)
+            action = ArgAction::Append,
+            num_args = 0,
+            default_missing_value = "true",
+            value_parser = clap::value_parser!(bool),
         )]
-        only_tables: bool,
+        only_tables: Vec<bool>,
 
         /// Exclude tables from table-name that matches regex.
         #[arg(
             id = "EXCEPT_TABLES",
             short = 'e',
-            long = "except-tables",
-            action = ArgAction::SetFalse,
-            value_parser = clap::value_parser!(bool)
+            action = ArgAction::Append,
+            num_args = 0,
+            default_missing_value = "true",
+            value_parser = clap::value_parser!(bool),
         )]
-        except_tables: bool,
+        except_tables: Vec<bool>,
 
         /// Select schema key from diesel.toml, use 'default' for print_schema without key.
         #[arg(
@@ -264,34 +267,38 @@ pub(super) fn run_migration_command(
         } => {
             let migrations_folder = migrations_dir(migration_dir, config_file.clone())?;
             let mut lock = RwLock::new(migration_folder_lock(migrations_folder.clone())?);
-            // This blocks until we can get the lock
-            // Will throw an error if we receive a termination signal
             let _ = lock.write().map_err(|err| {
                 crate::errors::Error::FailedToAcquireMigrationFolderLock(
                     migrations_folder.clone(),
                     err.to_string(),
                 )
             })?;
-            let schema_key = schema_key.first().cloned().unwrap_or("default".to_string());
-            let mut config = Config::read(config_file)?;
-            let mut print_schema = config
-                .print_schema
-                .all_configs
-                .get_mut(&schema_key)
-                .ok_or(crate::errors::Error::NoSchemaKeyFound(schema_key.clone()))?
-                .clone();
+            let (up_sql, down_sql) = if let Some(schema_rs_arg) = schema_rs {
+                let schema_key = schema_key
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "default".to_string());
 
-            let diff_schema = match schema_rs {
-                Some(diff_schema) if diff_schema == "NOT_SET" => print_schema.file.clone(),
-                Some(diff_schema) => Some(PathBuf::from(diff_schema)),
-                None => None,
-            };
+                let config = Config::read(config_file.clone())?;
+                let mut print_schema = config
+                    .print_schema
+                    .all_configs
+                    .get(&schema_key)
+                    .ok_or(crate::errors::Error::NoSchemaKeyFound(schema_key.clone()))?
+                    .clone();
 
-            if sqlite_integer_primary_key_is_bigint {
-                print_schema.sqlite_integer_primary_key_is_bigint = Some(true);
-            }
+                if sqlite_integer_primary_key_is_bigint {
+                    print_schema.sqlite_integer_primary_key_is_bigint = Some(true);
+                }
 
-            let (up_sql, down_sql) = if let Some(diff_schema) = diff_schema {
+                let diff_schema = if schema_rs_arg == "NOT_SET" {
+                    print_schema
+                        .file
+                        .clone()
+                        .ok_or(crate::errors::Error::NoSchemaKeyFound(schema_key))?
+                } else {
+                    PathBuf::from(schema_rs_arg)
+                };
                 self::diff_schema::generate_sql_based_on_diff_schema(
                     print_schema,
                     database_url,

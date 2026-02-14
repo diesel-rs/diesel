@@ -30,8 +30,8 @@ pub fn generate_sql_based_on_diff_schema(
     database_url: Option<String>,
     schema_file_path: &Path,
     table_name: Vec<String>,
-    only_tables: bool,
-    except_tables: bool,
+    only_tables: Vec<bool>,
+    except_tables: Vec<bool>,
 ) -> Result<(String, String), crate::errors::Error> {
     config.set_filter(table_name, only_tables, except_tables)?;
 

@@ -27,20 +27,44 @@ pub struct PrintSchemaArgs {
     pub include_views: bool,
 
     /// UNSTABLE: Infer nullability for view fields
-    #[arg(id = "EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS", long = "experimental-infer-nullable-for-views", action = ArgAction::SetFalse)]
+    #[arg(id = "EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS", long = "experimental-infer-nullable-for-views", action = ArgAction::SetTrue)]
     pub experimental_infer_nullable_for_views: bool,
 
     /// Only include tables from table-name that matches regexp.
-    #[arg(id = "ONLY_TABLES", long = "only-tables", short = '0', action = ArgAction::SetFalse,  value_parser = clap::value_parser!(bool))]
-    pub only_tables: bool,
+    #[arg(
+        id = "ONLY_TABLES", 
+        long = "only-tables", 
+        short = 'o',
+        action = ArgAction::Append,
+        num_args = 0,
+        default_missing_value = "true",
+        value_parser = clap::value_parser!(bool),
+    )]
+    pub only_tables: Vec<bool>,
 
     /// Exclude tables from table-name that matches regex.
-    #[arg(id = "EXCEPT_TABLES", long = "except-tables", short = 'e', action = ArgAction::SetFalse,  value_parser = clap::value_parser!(bool))]
-    pub except_tables: bool,
+    #[arg(
+        id = "EXCEPT_TABLES", 
+        long = "except-tables", 
+        short = 'e',
+        action = ArgAction::Append,
+        num_args = 0,
+        default_missing_value = "true",
+        value_parser = clap::value_parser!(bool),
+    )]
+    pub except_tables: Vec<bool>,
 
     /// Render documentation comments for tables and columns.
-    #[arg(id = "WITH_DOCS", long = "with-docs", action = ArgAction::SetFalse, value_parser = clap::value_parser!(bool))]
-    pub with_docs: bool,
+    #[arg(
+        id = "WITH_DOCS", 
+        long = "with-docs",
+        action = ArgAction::Append,
+        num_args = 0,
+        default_value = "false",
+        default_missing_value = "true",
+        value_parser = clap::value_parser!(bool),
+    )]
+    pub with_docs: Vec<bool>,
 
     /// Render documentation comments for tables and columns.
     #[arg(id = "WITH_DOCS_CONFIG", long = "with-docs-config", action = ArgAction::Append, value_enum, num_args = 1)]
@@ -69,7 +93,7 @@ pub struct PrintSchemaArgs {
     pub import_types: Vec<String>,
 
     /// Generate SQL type definitions for types not provided by diesel
-    #[arg(id = "NO_GENERATE_CUSTOM_TYPE_DEFINITIONS", long = "no-generate-missing-sql-type-definitions", action = ArgAction::SetFalse, value_parser = clap::value_parser!(bool))]
+    #[arg(id = "NO_GENERATE_CUSTOM_TYPE_DEFINITIONS", long = "no-generate-missing-sql-type-definitions", action = ArgAction::SetTrue)]
     pub no_generate_missing_sql_type_definitions: bool,
 
     /// A list of regexes to filter the custom types definitions generated
@@ -137,8 +161,8 @@ pub fn run_infer_schema(
         .set_filter(
             matches,
             args.table_name.clone(),
-            args.only_tables,
-            args.except_tables,
+            args.only_tables.clone(),
+            args.except_tables.clone(),
         )?
         .update_config(matches, args)?
         .print_schema;
@@ -151,6 +175,7 @@ pub fn run_infer_schema(
 
 /// How to sort columns when querying the table schema.
 #[derive(Debug, Default, Deserialize, Serialize, Clone, Copy, clap::ValueEnum)]
+#[clap(rename_all = "snake_case")]
 pub enum ColumnSorting {
     /// Order by ordinal position
     #[serde(rename = "ordinal_position")]
@@ -171,6 +196,7 @@ pub enum DocConfig {
 
 /// How to group tables in `allow_tables_to_appear_in_same_query!()`.
 #[derive(Debug, Default, Deserialize, Serialize, Clone, Copy, clap::ValueEnum)]
+#[clap(rename_all = "snake_case")]
 pub enum AllowTablesToAppearInSameQueryConfig {
     /// Group by foreign key relations
     #[serde(rename = "fk_related_tables")]
@@ -342,12 +368,24 @@ pub fn output_schema(
                         .map(|c| {
                             Some(&c.ty)
                                 .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
-                                // Skip types that are that match the regexes in the configuration
+                                // Skip generating custom SQL type definitions if the type matches any
+                                // regex specified in `except_custom_type_definitions`.
+                                // Matching is performed against:
+                                //   - the Rust type name (`ty.rust_name`),
+                                //   - the raw SQL type name (`ty.sql_name`),
+                                //   - and the schema-qualified SQL name (`schema.sql_name`), if present.
                                 .filter(|ty| {
-                                    !config
-                                        .except_custom_type_definitions
-                                        .iter()
-                                        .any(|rx| rx.is_match(ty.rust_name.as_str()))
+                                    let schema_qualified = ty
+                                        .schema
+                                        .as_deref()
+                                        .map(|s| format!("{s}.{}", ty.sql_name));
+                                    !config.except_custom_type_definitions.iter().any(|rx| {
+                                        rx.is_match(ty.rust_name.as_str())
+                                            || rx.is_match(ty.sql_name.as_str())
+                                            || schema_qualified
+                                                .as_deref()
+                                                .is_some_and(|fq| rx.is_match(fq))
+                                    })
                                 })
                                 .map(|ty| match backend {
                                     #[cfg(feature = "postgres")]
