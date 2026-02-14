@@ -9,7 +9,7 @@ use clap::{ArgAction, Parser, Subcommand};
 use clap_complete::{Shell, generate};
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version = cli_long_version(), about, long_about = None)]
 pub struct Cli {
     /// Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified.
     #[arg(long = "database-url", global = true)]
@@ -70,4 +70,25 @@ pub fn generate_completions_command(shell: &Shell) {
     let mut cmd = Cli::command();
     let name = cmd.get_name().to_string();
     generate(*shell, &mut cmd, name, &mut stdout());
+}
+
+fn cli_long_version() -> String {
+    format!(
+        "\n Version: {}\n Supported Backends: {}",
+        clap::crate_version!(),
+        supported_backends()
+    )
+}
+
+fn supported_backends() -> String {
+    let features = &[
+        #[cfg(feature = "postgres")]
+        "postgres",
+        #[cfg(feature = "mysql")]
+        "mysql",
+        #[cfg(feature = "sqlite")]
+        "sqlite",
+    ];
+
+    features.join(" ")
 }
