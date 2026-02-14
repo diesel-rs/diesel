@@ -354,11 +354,11 @@ mod tests {
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
     #[allow(clippy::cast_sign_loss)]
     fn parallel_iter_with_error() {
-        use crate::SqliteConnection;
         use crate::connection::Connection;
         use crate::connection::LoadConnection;
         use crate::connection::SimpleConnection;
         use crate::expression_methods::ExpressionMethods;
+        use crate::SqliteConnection;
         use std::sync::{Arc, Barrier};
         use std::time::Duration;
 
@@ -382,11 +382,15 @@ mod tests {
         let barrier2 = barrier.clone();
 
         // we unblock the main thread from the sleep function
-        sleep_utils::register_impl(&mut conn2, move |a: i32| {
-            barrier.wait();
-            std::thread::sleep(Duration::from_secs(a as u64));
-            a
-        })
+        sleep_utils::register_impl(
+            &mut conn2,
+            crate::sqlite::SqliteFunctionBehavior::empty(),
+            move |a: i32| {
+                barrier.wait();
+                std::thread::sleep(Duration::from_secs(a as u64));
+                a
+            },
+        )
         .unwrap();
 
         // spawn a background thread that locks the database file
