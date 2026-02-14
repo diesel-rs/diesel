@@ -1,4 +1,5 @@
 use diesel::backend::Backend;
+#[cfg(feature = "postgres")]
 use diesel::connection::SimpleConnection;
 use diesel::migration::{
     Migration, MigrationConnection, MigrationSource, MigrationVersion, Result,
