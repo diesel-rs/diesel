@@ -533,12 +533,9 @@ impl SqliteConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register(
-            &self.raw_connection,
-            fn_name,
-            behavior,
-            move |_, args| f(args),
-        )
+        functions::register(&self.raw_connection, fn_name, behavior, move |_, args| {
+            f(args)
+        })
     }
 
     #[doc(hidden)]
@@ -1541,10 +1538,14 @@ mod tests {
     fn register_nondeterministic_function() {
         let connection = &mut connection();
         let mut y = 0;
-        add_counter_utils::register_impl(connection, SqliteFunctionBehavior::empty(), move |x: i32| {
-            y += 1;
-            x + y
-        })
+        add_counter_utils::register_impl(
+            connection,
+            SqliteFunctionBehavior::empty(),
+            move |x: i32| {
+                y += 1;
+                x + y
+            },
+        )
         .unwrap();
 
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
