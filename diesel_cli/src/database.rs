@@ -14,12 +14,6 @@ use std::path::Path;
 
 #[derive(Debug, Args)]
 pub struct DatabaseArgs {
-    /// The location of your migration directory. By default this
-    /// will look for a directory called `migrations` in the
-    /// current directory and its parents.
-    #[arg(id = "MIGRATION_DIRECTORY", long = "migration-dir", value_parser = clap::value_parser!(std::path::PathBuf), global = true)]
-    pub migration_dir: Option<std::path::PathBuf>,
-
     #[command(subcommand)]
     pub command: DatabaseCommand,
 }
@@ -187,14 +181,14 @@ impl InferConnection {
 #[tracing::instrument]
 pub fn run_setup_command(
     database_url: Option<String>,
-    migrations_dir: Option<std::path::PathBuf>,
+    migration_dir: Option<std::path::PathBuf>,
     config_file: Option<std::path::PathBuf>,
     no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
-    let migrations_dir = crate::create_migrations_dir(migrations_dir, config_file.clone())?;
-    crate::create_config_file(config_file, &migrations_dir)?;
+    let migration_dir = crate::create_migrations_dir(migration_dir, config_file.clone())?;
+    crate::create_config_file(config_file, &migration_dir)?;
 
-    setup_database(database_url, &migrations_dir, no_default_migration)?;
+    setup_database(database_url, &migration_dir, no_default_migration)?;
     Ok(())
 }
 
@@ -204,13 +198,14 @@ pub fn run_database_command(
     config_file: Option<std::path::PathBuf>,
     database_url: Option<String>,
     locked_schema: bool,
+    migration_dir: Option<std::path::PathBuf>,
 ) -> Result<(), crate::errors::Error> {
     match args.command {
         DatabaseCommand::Setup {
             no_default_migration,
         } => {
             let migrations_dir =
-                crate::migrations::migrations_dir(args.migration_dir, config_file.clone())?;
+                crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
             setup_database(database_url.clone(), &migrations_dir, no_default_migration)?;
             crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
         }
@@ -218,7 +213,7 @@ pub fn run_database_command(
             no_default_migration,
         } => {
             let migrations_dir =
-                crate::migrations::migrations_dir(args.migration_dir, config_file.clone())?;
+                crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
             reset_database(database_url.clone(), &migrations_dir, no_default_migration)?;
             crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
         }

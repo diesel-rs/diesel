@@ -20,12 +20,6 @@ mod diff_schema;
 
 #[derive(Debug, Args)]
 pub struct MigrationArgs {
-    /// The location of your migration directory. By default this
-    /// will look for a directory called `migrations` in the
-    /// current directory and its parents.
-    #[arg(id = "MIGRATION_DIRECTORY", long = "migration-dir", value_parser = clap::value_parser!(std::path::PathBuf), global = true)]
-    migration_dir: Option<std::path::PathBuf>,
-
     #[command(subcommand)]
     command: MigrationCommand,
 }
@@ -47,14 +41,14 @@ pub enum MigrationCommand {
         all: bool,
 
         /// Reverts the last `n` migration files.
+        ///
+        /// When this option is specified the last `n` migration files will be reverted. By default revert the last one.
         #[arg(
             id = "REVERT_NUMBER",
             long = "number",
             short = 'n',
-            long_help = "When this option is specified the last `n` migration files will be reverted. By default revert the last one.",
             default_value = "1",
-            conflicts_with = "REVERT_ALL",
-            value_parser = clap::value_parser!(u64)
+            conflicts_with = "REVERT_ALL"
         )]
         number: u64,
     },
@@ -63,17 +57,23 @@ pub enum MigrationCommand {
     /// for testing that a migration can in fact be reverted.
     Redo {
         /// Reverts and re-runs all migrations.
+        ///
+        /// When this option is specified all migrations
+        /// will be reverted and re-runs. Useful for testing
+        /// that your migrations can be reverted and applied.
         #[arg(
             id = "REDO_ALL",
             long = "all",
             short = 'a',
-            long_help = "When this option is specified all migrations will be reverted and re-runs. Useful for testing that your migrations can be reverted and applied.",
             action = ArgAction::SetTrue,
             conflicts_with = "REDO_NUMBER"
         )]
         all: bool,
 
         /// Redo the last `n` migration files.
+        ///
+        /// When this option is specified the last `n` migration files
+        /// will be reverted and re-runs. By default redo the last migration.
         #[arg(
             id = "REDO_NUMBER",
             long = "number",
@@ -103,11 +103,14 @@ pub enum MigrationCommand {
         )]
         migration_name: String,
 
-        /// The version number to use when generating the migration. Defaults to the current timestamp, which should suffice for most use cases.
+        /// The version number to use when generating the migration.
+        /// Defaults to the current timestamp, which should suffice
+        /// for most use cases.
         #[arg(id = "MIGRATION_VERSION", long = "version", num_args = 1)]
         version: Option<String>,
 
-        /// Don't generate a down.sql file. You won't be able to run migration `revert` or `redo`.
+        /// Don't generate a down.sql file.
+        /// You won't be able to run migration `revert` or `redo`.
         #[arg(id = "MIGRATION_NO_DOWN_FILE", short = 'u', long = "no-down", action = ArgAction::SetTrue)]
         no_down: bool,
 
@@ -121,12 +124,14 @@ pub enum MigrationCommand {
         )]
         format: MigrationFormat,
 
-        /// Populate the generated migrations based on the current difference between
-        /// your `schema.rs` file and the specified database.
-        ///
-        /// The generated migrations are not expected to be perfect. Be sure to check
-        /// whether they meet your expectations. Adjust the generated output if that's
-        /// not the case.
+        /// Populate the generated migrations
+        /// based on the current difference between
+        /// your `schema.rs` file and the specified
+        /// database.
+        /// The generated migrations are not expected to
+        /// be perfect. Be sure to check whether they meet
+        /// your expectations. Adjust the generated output
+        /// if that's not the case.
         #[arg(
             id = "SCHEMA_RS",
             long = "diff-schema",
@@ -138,7 +143,6 @@ pub enum MigrationCommand {
 
         /// For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`,
         /// when the table isn't declared with `WITHOUT ROWID`.
-        ///
         /// See https://www.sqlite.org/lang_createtable.html#rowid for more information.
         /// Only used with the `--diff-schema` argument.
         #[arg(
@@ -196,10 +200,10 @@ pub enum MigrationCommand {
 pub(super) fn run_migration_command(
     args: MigrationArgs,
     database_url: Option<String>,
-    config_file: Option<std::path::PathBuf>,
+    config_file: Option<PathBuf>,
     locked_schema: bool,
+    migration_dir: Option<PathBuf>,
 ) -> Result<(), crate::errors::Error> {
-    let migration_dir = args.migration_dir;
     match args.command {
         MigrationCommand::Run => {
             let (mut conn, dir) =

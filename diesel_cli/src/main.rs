@@ -75,6 +75,7 @@ fn inner_main() -> Result<(), crate::errors::Error> {
     let database_url = cli.database_url;
     let config_file = cli.config_file;
     let locked_schema = cli.locked_schema;
+    let migration_dir = cli.migration_dir;
 
     match cli.command {
         DieselCliCommand::Migration(migration_args) => self::migrations::run_migration_command(
@@ -82,9 +83,9 @@ fn inner_main() -> Result<(), crate::errors::Error> {
             database_url,
             config_file,
             locked_schema,
+            migration_dir,
         )?,
         DieselCliCommand::Setup {
-            migration_dir,
             no_default_migration,
         } => self::database::run_setup_command(
             database_url,
@@ -92,9 +93,13 @@ fn inner_main() -> Result<(), crate::errors::Error> {
             config_file,
             no_default_migration,
         )?,
-        DieselCliCommand::Database(args) => {
-            self::database::run_database_command(args, config_file, database_url, locked_schema)?
-        }
+        DieselCliCommand::Database(args) => self::database::run_database_command(
+            args,
+            config_file,
+            database_url,
+            locked_schema,
+            migration_dir,
+        )?,
         DieselCliCommand::Completions { shell } => self::cli::generate_completions_command(&shell),
         DieselCliCommand::PrintSchema(args) => {
             let matches = matches

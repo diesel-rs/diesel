@@ -11,7 +11,6 @@ use std::{process, str};
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
-/// Print table definitions for database schema.
 #[derive(Debug, Args)]
 pub struct PrintSchemaArgs {
     /// The name of the schema.
@@ -85,11 +84,11 @@ pub struct PrintSchemaArgs {
     pub column_sorting: Vec<ColumnSorting>,
 
     /// A unified diff file to be applied to the final schema.
-    #[arg(id = "PATCH_FILE", long = "patch-file", action = ArgAction::Append, value_parser = clap::value_parser!(std::path::PathBuf), num_args = 1)]
+    #[arg(id = "PATCH_FILE", long = "patch-file", action = ArgAction::Append, num_args = 1)]
     pub patch_file: Vec<std::path::PathBuf>,
 
     /// A list of types to import for every table, separated by commas.
-    #[arg(id = "IMPORT_TYPES", long = "import-types", action = ArgAction::Append, value_parser , num_args = 1, number_of_values = 1)]
+    #[arg(id = "IMPORT_TYPES", long = "import-types", action = ArgAction::Append, num_args = 1, number_of_values = 1)]
     pub import_types: Vec<String>,
 
     /// Generate SQL type definitions for types not provided by diesel
@@ -116,20 +115,20 @@ pub struct PrintSchemaArgs {
 
     /// A regex to distinguish domain names to generate custom types for instead of relying on underlying type.
     #[arg(
-            id = "PG_DOMAINS_AS_CUSTOM_TYPES",
-            long = "pg-domains-as-custom-types",
-            num_args = 1..,
-            action = clap::ArgAction::Append
-        )]
+        id = "PG_DOMAINS_AS_CUSTOM_TYPES",
+        long = "pg-domains-as-custom-types",
+        num_args = 1..,
+        action = clap::ArgAction::Append
+    )]
     pub pg_domains_as_custom_types: Vec<String>,
 
     /// Select schema key from diesel.toml, use 'default' for print_schema without key.
     #[arg(
-            id = "SCHEMA_KEY",
-            long = "schema-key",
-            action = clap::ArgAction::Append,
-            default_values_t = vec!["default".to_string()]
-        )]
+        id = "SCHEMA_KEY",
+        long = "schema-key",
+        action = clap::ArgAction::Append,
+        default_values_t = vec!["default".to_string()]
+    )]
     pub schema_key: Vec<String>,
 
     /// For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`,
