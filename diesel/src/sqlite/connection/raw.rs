@@ -94,6 +94,10 @@ impl RawConnection {
         Ok(r.try_into()?)
     }
 
+    pub(super) fn last_insert_rowid(&self) -> i64 {
+        unsafe { ffi::sqlite3_last_insert_rowid(self.internal_connection.as_ptr()) }
+    }
+
     pub(super) fn register_sql_function<F, Ret, RetSqlType>(
         &self,
         fn_name: &str,
