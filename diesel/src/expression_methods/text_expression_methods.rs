@@ -1,8 +1,9 @@
 use self::private::TextOrNullableText;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
-use crate::expression::operators::{Concat, Like, NotLike};
+use crate::expression::operators::{Collate, Concat, Like, NotLike};
 use crate::expression::{AsExpression, Expression};
+
 use crate::sql_types::SqlType;
 
 /// Methods present on text expressions
@@ -60,6 +61,45 @@ pub trait TextExpressionMethods: Expression + Sized {
         T: AsExpression<Self::SqlType>,
     {
         Grouped(Concat::new(self, other.as_expression()))
+    }
+
+    /// Returns a SQL `COLLATE` expression.
+    ///
+    /// This method can be used to control the collation of a column or expression.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     #[cfg(not(feature = "sqlite"))]
+    /// #     return Ok(());
+    /// #
+    /// #     #[cfg(feature = "sqlite")]
+    /// #     {
+    ///     use diesel::collation::NoCase;
+    ///
+    ///     let names = users
+    ///         .select(name)
+    ///         .filter(name.collate(NoCase).eq("sean"))
+    ///         .load::<String>(connection)?;
+    ///     assert_eq!(vec!["Sean"], names);
+    /// #     }
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn collate<C>(self, collation: C) -> dsl::Collate<Self, C>
+    where
+        C: crate::collation::Collation,
+    {
+        Grouped(Collate::new(self, collation))
     }
 
     /// Returns a SQL `LIKE` expression

@@ -89,7 +89,7 @@ LL | |     posts {
              `posts::table` implements `JoinTo<comments::table>`
              `posts::table` implements `JoinTo<query_source::joins::Join<Left, Right, Kind>>`
    = note: required for `query_source::joins::Join<posts::table, comments::table, Inner>` to implement `JoinTo<users::table>`
-   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<...>>, ...>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<...>, ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

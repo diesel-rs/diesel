@@ -12,7 +12,7 @@ warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::
 LL |     use diesel::dsl::{any, exists};
    |                       ^^^
 
-error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:32:25
      |
   LL |         .load::<(i32,)>(&mut conn);
@@ -20,20 +20,20 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+note: required for `comments::columns::id` to implement `AppearsOnTable<Join<table, table, Inner>>`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
-     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<table, table, Inner>>>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<Join<table, table, Inner>>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<..., ..., ...>>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
      = note: 4 redundant requirements hidden
-     = note: required for `WhereClause<Grouped<In<id, Subselect<..., ...>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
+     = note: required for `WhereClause<Grouped<In<id, Subselect<..., ...>>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -45,7 +45,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:39:25
      |
   LL |         .load::<(i32,)>(&mut conn);
@@ -53,20 +53,20 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+note: required for `comments::columns::id` to implement `AppearsOnTable<Join<table, table, Inner>>`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
-     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<table, table, Inner>>>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<Join<table, table, Inner>>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<..., ..., ...>>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
      = note: 5 redundant requirements hidden
-     = note: required for `WhereClause<Grouped<Eq<id, Any<Subselect<..., ...>>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
+     = note: required for `WhereClause<Grouped<Eq<id, Any<...>>>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -78,7 +78,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:44:25
      |
   LL |         .load::<(i32,)>(&mut conn);
@@ -86,20 +86,20 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+note: required for `comments::columns::id` to implement `AppearsOnTable<Join<table, table, Inner>>`
     --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 2 redundant requirements hidden
-     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
-     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<table, table, Inner>>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+     = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<Join<table, table, Inner>>`
+     = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `ValidWhereClause<FromClause<Join<..., ..., ...>>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
      = note: 3 redundant requirements hidden
-     = note: required for `WhereClause<Exists<SelectStatement<FromClause<table>, ..., ..., ...>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `Query`
-     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<...>, ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
+     = note: required for `WhereClause<Exists<...>>` to implement `ValidWhereClause<FromClause<table>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

@@ -111,7 +111,7 @@ mod serde_impls {
     extern crate serde;
 
     use self::serde::de::Visitor;
-    use self::serde::{de, Deserialize, Deserializer};
+    use self::serde::{Deserialize, Deserializer, de};
     use super::TableName;
     use std::fmt;
 

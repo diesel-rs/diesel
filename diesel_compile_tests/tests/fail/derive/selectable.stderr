@@ -5,19 +5,19 @@ error: references are not supported in `Queryable` types
 LL |     name: &'a str,
    |           ^
 
-error[E0412]: cannot find type `non_existing` in module `users`
+error[E0425]: cannot find type `non_existing` in module `users`
   --> tests/fail/derive/selectable.rs:26:5
    |
 LL |     non_existing: String,
    |     ^^^^^^^^^^^^ not found in `users`
 
-error[E0412]: cannot find type `non_existing` in module `users`
+error[E0425]: cannot find type `non_existing` in module `users`
   --> tests/fail/derive/selectable.rs:32:41
    |
 LL |         select_expression_type = users::non_existing
    |                                         ^^^^^^^^^^^^ not found in `users`
 
-error[E0412]: cannot find type `non_existing` in module `users`
+error[E0425]: cannot find type `non_existing` in module `users`
   --> tests/fail/derive/selectable.rs:39:53
    |
 LL |         select_expression_type = (users::id, users::non_existing)

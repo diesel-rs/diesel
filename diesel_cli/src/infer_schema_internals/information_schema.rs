@@ -290,13 +290,15 @@ mod tests {
         for (_, TableName { schema, .. }) in &table_names {
             assert_eq!(None, *schema);
         }
-        assert!(table_names
-            .into_iter()
-            .map(|(_, table)| table)
-            .collect::<Vec<_>>()
-            .contains(&TableName::from_name(
-                "load_table_names_loads_from_public_schema_if_none_given",
-            ),));
+        assert!(
+            table_names
+                .into_iter()
+                .map(|(_, table)| table)
+                .collect::<Vec<_>>()
+                .contains(&TableName::from_name(
+                    "load_table_names_loads_from_public_schema_if_none_given",
+                ),)
+        );
     }
 
     #[test]

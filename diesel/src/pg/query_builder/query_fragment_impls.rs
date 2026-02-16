@@ -1,7 +1,7 @@
 use crate::expression::array_comparison::{In, InExpression, Many, NotIn};
+use crate::pg::Pg;
 use crate::pg::backend::PgStyleArrayComparison;
 use crate::pg::types::sql_types::Array;
-use crate::pg::Pg;
 use crate::query_builder::locking_clause::{
     ForKeyShare, ForNoKeyUpdate, ForShare, ForUpdate, NoModifier, NoWait, SkipLocked,
 };

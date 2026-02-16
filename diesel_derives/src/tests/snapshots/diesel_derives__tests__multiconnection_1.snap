@@ -697,10 +697,10 @@ mod multi_connection_impl {
                 &'b self,
                 mut pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
             ) -> diesel::QueryResult<()> {
-                if let Some(ref limit) = self.limit {
+                if let Some(limit) = &self.limit {
                     limit.walk_ast(pass.reborrow())?;
                 }
-                if let Some(ref offset) = self.offset {
+                if let Some(offset) = &self.offset {
                     offset.walk_ast(pass.reborrow())?;
                 }
                 Ok(())
@@ -1146,13 +1146,13 @@ mod multi_connection_impl {
                         >>::metadata(metadata_lookup);
                         match (self, metadata) {
                             (
-                                Self::Pg(ref mut bc),
+                                Self::Pg(bc),
                                 super::backend::MultiTypeMetadata { Pg: Some(metadata), .. },
                             ) => {
                                 bc.push_null_value(metadata)?;
                             }
                             (
-                                Self::Sqlite(ref mut bc),
+                                Self::Sqlite(bc),
                                 super::backend::MultiTypeMetadata {
                                     Sqlite: Some(metadata),
                                     ..
@@ -1168,7 +1168,7 @@ mod multi_connection_impl {
                     }
                 };
                 match self {
-                    Self::Pg(ref mut bc) => {
+                    Self::Pg(bc) => {
                         let out = out
                             .inner
                             .expect(
@@ -1190,7 +1190,7 @@ mod multi_connection_impl {
                                 ),
                         )?
                     }
-                    Self::Sqlite(ref mut bc) => {
+                    Self::Sqlite(bc) => {
                         let out = out
                             .inner
                             .expect(
@@ -1221,13 +1221,13 @@ mod multi_connection_impl {
             ) -> diesel::QueryResult<()> {
                 match (self, metadata) {
                     (
-                        Self::Pg(ref mut bc),
+                        Self::Pg(bc),
                         super::backend::MultiTypeMetadata { Pg: Some(metadata), .. },
                     ) => {
                         bc.push_null_value(metadata)?;
                     }
                     (
-                        Self::Sqlite(ref mut bc),
+                        Self::Sqlite(bc),
                         super::backend::MultiTypeMetadata { Sqlite: Some(metadata), .. },
                     ) => {
                         bc.push_null_value(metadata)?;

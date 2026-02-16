@@ -18,7 +18,9 @@ pub enum Error {
     TableFilterRegexInvalid(#[from] regex::Error),
     #[error("Unable to find diesel.toml or Cargo.toml in {0:?} or any parent directories.")]
     ProjectRootNotFound(PathBuf),
-    #[error("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")]
+    #[error(
+        "The --database-url argument must be passed, or the DATABASE_URL environment variable must be set."
+    )]
     DatabaseUrlMissing,
     #[error("Encountered an IO error: {0} for `{n}`", n=print_optional_path(.1))]
     IoError(#[source] std::io::Error, Option<PathBuf>),

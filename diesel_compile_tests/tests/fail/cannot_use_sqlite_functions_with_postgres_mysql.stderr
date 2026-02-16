@@ -8,13 +8,17 @@ error[E0277]: `json<Text, name>` is no valid SQL fragment for the `Pg` backend
      |
      = note: this usually means that the `Pg` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is not implemented for `json<Text, name>`
-             but trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is not implemented for `json<Text, name>`
+      but trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/sqlite/expression/functions.rs
+     |
+  LL | #[declare_sql_function(generate_return_type_helpers = true)]
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      = help: for that trait implementation, expected `Sqlite`, found `Pg`
      = note: required for `SelectClause<json<Text, name>>` to implement `QueryFragment<Pg>`
      = note: 2 redundant requirements hidden
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<json<Text, name>>>` to implement `QueryFragment<Pg>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<json<Text, name>>>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Pg>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -24,7 +28,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
   
-     
+          = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: `json<Text, name>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/cannot_use_sqlite_functions_with_postgres_mysql.rs:22:27
      |
@@ -35,13 +40,17 @@ error[E0277]: `json<Text, name>` is no valid SQL fragment for the `Mysql` backen
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-     = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `json<Text, name>`
-             but trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `json<Text, name>`
+      but trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/sqlite/expression/functions.rs
+     |
+  LL | #[declare_sql_function(generate_return_type_helpers = true)]
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      = help: for that trait implementation, expected `Sqlite`, found `Mysql`
      = note: required for `SelectClause<json<Text, name>>` to implement `QueryFragment<Mysql>`
      = note: 2 redundant requirements hidden
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<json<Text, name>>>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, SelectClause<json<Text, name>>>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -51,4 +60,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
   
-     For more information about this error, try `rustc --explain E0277`.
+          = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

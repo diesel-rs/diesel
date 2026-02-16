@@ -27,7 +27,7 @@ impl FromSql<sql_types::PgLsn, Pg> for PgLsn {
         if bytes.len() > 8 {
             return emit_size_error(
                 "Received more than 8 bytes while decoding a pg_lsn. \
-                    Was an expression of a different type expression accidentally marked as pg_lsn?"
+                    Was an expression of a different type expression accidentally marked as pg_lsn?",
             );
         }
         let val = bytes

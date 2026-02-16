@@ -993,7 +993,7 @@ impl<'de> Deserialize<'de> for DocConfig {
                         return Err(serde::de::Error::unknown_variant(
                             v,
                             DocConfig::VARIANTS_STR,
-                        ))
+                        ));
                     }
                 })
             }
@@ -1016,7 +1016,7 @@ impl str::FromStr for DocConfig {
                 return Err("Unknown variant for doc config, expected one of: \
                     `database-comments-fallback-to-auto-generated-doc-comment`, \
                     `only-database-comments`, \
-                    `no-doc-comments`")
+                    `no-doc-comments`");
             }
         })
     }
@@ -1036,7 +1036,7 @@ impl str::FromStr for AllowTablesToAppearInSameQueryConfig {
                     mode, expected one of: \
                     `fk_related_tables`, \
                     `all_tables`",
-                )
+                );
             }
         })
     }

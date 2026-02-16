@@ -1,7 +1,7 @@
 extern crate proc_macro2;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ItemFn};
+use syn::{ItemFn, parse_macro_input};
 
 /// Since sqlite wasm support has been added, #[wasm_bindgen_test] needs
 /// to be used in the wasm environment. This macro is designed to solve platform test differences.

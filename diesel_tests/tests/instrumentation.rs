@@ -1,12 +1,12 @@
-use crate::schema::users;
 use crate::schema::TestConnection;
+use crate::schema::users;
+use diesel::Connection;
+use diesel::QueryResult;
 use diesel::connection::DefaultLoadingMode;
 use diesel::connection::InstrumentationEvent;
 use diesel::connection::LoadConnection;
 use diesel::connection::SimpleConnection;
 use diesel::query_builder::AsQuery;
-use diesel::Connection;
-use diesel::QueryResult;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -109,8 +109,8 @@ fn check_events_are_emitted_for_load() {
 }
 
 #[diesel_test_helper::test]
-fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_for_uncached_queries(
-) {
+fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_for_uncached_queries()
+ {
     let (events_to_check, mut conn) = setup_test_case();
     conn.execute_returning_count(&diesel::sql_query("select 1"))
         .unwrap();
@@ -274,8 +274,8 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_r
 #[cfg(feature = "postgres")]
 #[diesel_test_helper::test]
 fn check_events_are_emitted_for_copy_to() {
-    use diesel::pg::CopyFormat;
     use diesel::ExecuteCopyFromDsl;
+    use diesel::pg::CopyFormat;
 
     let (events_to_check, mut conn) = setup_test_case();
 
@@ -297,8 +297,8 @@ fn check_events_are_emitted_for_copy_to() {
 #[cfg(feature = "postgres")]
 #[diesel_test_helper::test]
 fn check_events_are_emitted_for_copy_to_with_error() {
-    use diesel::pg::CopyFormat;
     use diesel::ExecuteCopyFromDsl;
+    use diesel::pg::CopyFormat;
 
     let (events_to_check, mut conn) = setup_test_case();
 

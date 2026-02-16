@@ -1,3 +1,4 @@
+use crate::Expression;
 use crate::dsl;
 #[cfg(feature = "postgres_backend")]
 use crate::expression::SelectableExpression;
@@ -6,7 +7,6 @@ use crate::expression::ValidGrouping;
 use crate::query_builder::FromClause;
 use crate::query_builder::{AsQuery, SelectStatement};
 use crate::query_source::QueryRelation;
-use crate::Expression;
 
 /// The `distinct` method
 ///

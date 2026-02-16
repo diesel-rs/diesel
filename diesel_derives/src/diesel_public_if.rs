@@ -1,6 +1,6 @@
 use quote::quote;
 use syn::Token;
-use syn::{punctuated::Punctuated, DeriveInput};
+use syn::{DeriveInput, punctuated::Punctuated};
 
 pub(crate) fn expand(cfg: CfgInput, item: EntryWithVisibility) -> proc_macro2::TokenStream {
     item.hide_for_cfg(cfg.cfg, cfg.field_list)

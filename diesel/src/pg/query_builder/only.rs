@@ -96,7 +96,6 @@ where
 impl<S> Table for Only<S>
 where
     S: Table + Clone + AsQuery,
-
     <S as Table>::PrimaryKey: SelectableExpression<Only<S>>,
     <S as Table>::AllColumns: SelectableExpression<Only<S>>,
     <S as QuerySource>::DefaultSelection: ValidGrouping<()> + SelectableExpression<Only<S>>,

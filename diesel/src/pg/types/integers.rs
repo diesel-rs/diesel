@@ -90,7 +90,7 @@ impl FromSql<sql_types::BigInt, Pg> for i64 {
         if bytes.len() > 8 {
             return emit_size_error(
                 "Received more than 8 bytes while decoding an i64. \
-                    Was an expression of a different type expression accidentally marked as BigInt?"
+                    Was an expression of a different type expression accidentally marked as BigInt?",
             );
         }
         bytes

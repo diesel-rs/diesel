@@ -1,7 +1,7 @@
 use clap::ArgMatches;
+use diesel::QueryResult;
 use diesel::backend::Backend;
 use diesel::query_builder::QueryBuilder;
-use diesel::QueryResult;
 use diesel_table_macro_syntax::{ColumnDef, TableDecl, ViewDecl};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -11,8 +11,8 @@ use syn::visit::Visit;
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
-    filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
-    SupportedQueryRelationStructures, TableData, TableName,
+    ColumnDefinition, ColumnType, ForeignKeyConstraint, SupportedQueryRelationStructures,
+    TableData, TableName, filter_table_names, load_table_names,
 };
 use crate::print_schema::{ColumnSorting, DocConfig};
 

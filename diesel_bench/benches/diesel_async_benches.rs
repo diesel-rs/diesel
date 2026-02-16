@@ -1,3 +1,4 @@
+use super::consts;
 use super::Bencher;
 use diesel::insert_into;
 use diesel::prelude::{
@@ -127,26 +128,9 @@ async fn connection() -> TestConnection {
     let mut conn = diesel_async::AsyncMysqlConnection::establish(&connection_url)
         .await
         .unwrap();
-    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0;")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE comments")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE posts")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE users")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 1;")
-        .execute(&mut conn)
-        .await
-        .unwrap();
+    for query in consts::mysql::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).await.unwrap();
+    }
     conn
 }
 
@@ -159,18 +143,9 @@ async fn connection() -> TestConnection {
     let mut conn = diesel_async::AsyncPgConnection::establish(&connection_url)
         .await
         .unwrap();
-    diesel::sql_query("TRUNCATE TABLE comments CASCADE")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE posts CASCADE")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE users CASCADE")
-        .execute(&mut conn)
-        .await
-        .unwrap();
+    for query in consts::postgres::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).await.unwrap();
+    }
     conn
 }
 

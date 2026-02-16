@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 diesel = { version = "2.3.0", path = "../../../diesel", features = ["mysql", "chrono"] }
 mysqlclient-sys = { workspace = true, features = ["bundled"] }
+openssl-sys = { workspace = true, features = ["vendored"] }
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.68"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }

@@ -29,7 +29,7 @@ fn main() {
     let _ = users::table.inner_join(posts::table.on(users::id.eq(posts::id)));
     // Invalid, references column that isn't being queried
     let _ = users::table.inner_join(posts::table.on(users::id.eq(comments::id)));
-    //~^ ERROR: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
+    //~^ ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
     // Invalid, type is not boolean
     let _ = users::table.inner_join(posts::table.on(users::id));
     //~^ ERROR: `diesel::sql_types::Integer` is neither `diesel::sql_types::Bool` nor `diesel::sql_types::Nullable<Bool>`

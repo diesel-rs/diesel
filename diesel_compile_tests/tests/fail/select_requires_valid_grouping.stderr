@@ -20,7 +20,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -36,7 +36,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -64,7 +64,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
-   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -80,7 +80,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -97,8 +97,8 @@ note: required for `posts::columns::id` to implement `ValidGrouping<(users::colu
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), id)>`
+    = note: required for `((id, name, hair_color), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), id)>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -129,7 +129,7 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
     |         ^^
     = note: 2 redundant requirements hidden
     = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), (id, title, user_id), id)>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), ..., ...)>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -162,6 +162,6 @@ note: required for `comments::columns::id` to implement `ValidGrouping<(users::c
     |         ^^
     = note: 2 redundant requirements hidden
     = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), (id, title, user_id), id)>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), ..., ...)>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

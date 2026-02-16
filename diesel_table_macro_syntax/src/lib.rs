@@ -1,8 +1,8 @@
-use syn::parse_quote;
-use syn::spanned::Spanned;
 use syn::Ident;
 use syn::ItemUse;
 use syn::MetaNameValue;
+use syn::parse_quote;
+use syn::spanned::Spanned;
 
 pub struct ViewDecl {
     pub use_statements: Vec<syn::ItemUse>,

@@ -1,3 +1,4 @@
+use crate::Column;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
@@ -56,4 +57,13 @@ where
 impl<T> SelectableExpression<NoFromClause> for AssumeNotNull<T> where
     Self: AppearsOnTable<NoFromClause>
 {
+}
+
+impl<T> Column for AssumeNotNull<T>
+where
+    T: Column<SqlType: IntoNotNullable<NotNullable: TypedExpressionType>>,
+{
+    type Table = T::Table;
+
+    const NAME: &'static str = T::NAME;
 }

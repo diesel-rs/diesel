@@ -1,8 +1,8 @@
 use chrono::Utc;
 use clap::ArgMatches;
+use diesel::Connection;
 use diesel::backend::Backend;
 use diesel::migration::{Migration, MigrationSource};
-use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationError, MigrationHarness};
 use fd_lock::RwLock;
 use std::any::Any;
@@ -152,7 +152,7 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
                 Some(x) => {
                     return Err(crate::errors::Error::UnsupportedFeature(format!(
                         "Unrecognized migration format `{x}`"
-                    )))
+                    )));
                 }
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
             }
@@ -230,10 +230,10 @@ fn create_migration_dir<'a>(
         .read_dir()
         .map_err(|err| crate::errors::Error::IoError(err, Some(migrations_dir.clone())))?
         .filter_map(|e| {
-            if let Ok(e) = e {
-                if e.path().is_dir() {
-                    return Some(e.path().file_name()?.into());
-                }
+            if let Ok(e) = e
+                && e.path().is_dir()
+            {
+                return Some(e.path().file_name()?.into());
             }
             None
         })

@@ -4,7 +4,7 @@ macro_rules! simple_clause {
         $no_clause:ident,
         $(#[$clause_meta: meta])*
         $clause:ident,
-        $sql:expr
+        $sql:expr_2021
     ) => {
         simple_clause!(
             $(#[$no_clause_meta])*
@@ -21,7 +21,7 @@ macro_rules! simple_clause {
         $no_clause:ident,
         $(#[$clause_meta: meta])*
         $clause:ident,
-        $sql:expr,
+        $sql:expr_2021,
         backend_bounds = $($backend_bounds:ident),*
     ) => {
         use crate::backend::{Backend, DieselReserveSpecialization};

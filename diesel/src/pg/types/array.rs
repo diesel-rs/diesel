@@ -1,5 +1,5 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::fmt;
+use core::fmt;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql};
@@ -58,8 +58,8 @@ where
     }
 }
 
-use crate::expression::bound::Bound;
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {

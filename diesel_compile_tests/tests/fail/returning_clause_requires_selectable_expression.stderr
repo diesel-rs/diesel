@@ -18,8 +18,8 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
               `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
     |
@@ -28,7 +28,8 @@ LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, Returnin
 LL |     where
 LL |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
-    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `non_users::columns::noname` from `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
@@ -50,9 +51,9 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
               `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-    = note: required for `InsertStatement<table, ValuesClause<(...,), ...>, ..., ...>` to implement `Query`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |
@@ -84,9 +85,9 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
               `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-    = note: required for `UpdateStatement<table, NoWhereClause, Assign<..., ...>, ...>` to implement `Query`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |

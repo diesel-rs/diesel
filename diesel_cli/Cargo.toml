@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.3.5"
+version = "2.3.6"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -9,7 +9,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel", "migrations", "cli"]
 autotests = false
-edition = "2021"
+edition.workspace = true
 rust-version.workspace = true
 
 include = [
@@ -81,11 +81,11 @@ insta = "1.21"
 [features]
 default = ["postgres", "sqlite", "mysql"]
 postgres = ["diesel/postgres", "uses_information_schema"]
-sqlite = ["diesel/sqlite"]
+sqlite = ["diesel/sqlite", "diesel/std"]
 mysql = ["diesel/mysql", "uses_information_schema"]
 sqlite-bundled = ["sqlite", "dep:libsqlite3-sys", "libsqlite3-sys/bundled"]
 postgres-bundled = ["postgres", "dep:pq-sys", "pq-sys/bundled", "dep:openssl-sys"]
-mysql-bundled = ["mysql", "dep:mysqlclient-sys", "mysqlclient-sys/bundled"]
+mysql-bundled = ["mysql", "dep:mysqlclient-sys", "mysqlclient-sys/bundled", "dep:openssl-sys"]
 uses_information_schema = []
 
 [[test]]

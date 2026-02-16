@@ -10,9 +10,9 @@ pub use crate::query_builder::nodes::{
     Identifier, InfixNode, StaticQueryFragment, StaticQueryFragmentInstance,
 };
 #[doc(hidden)]
-pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
-#[doc(hidden)]
 pub use crate::query_builder::select_statement::SelectStatement;
+#[doc(hidden)]
+pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
 #[doc(hidden)]
 pub use crate::query_source::aliasing::{
     AliasAliasAppearsInFromClause, AliasAliasAppearsInFromClauseSameTable,

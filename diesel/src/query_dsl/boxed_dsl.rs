@@ -1,3 +1,4 @@
+use crate::Expression;
 use crate::dsl;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
@@ -5,7 +6,6 @@ use crate::query_builder::AsQuery;
 use crate::query_builder::FromClause;
 use crate::query_builder::SelectStatement;
 use crate::query_source::QueryRelation;
-use crate::Expression;
 
 /// The `into_boxed` method
 ///

@@ -20,15 +20,15 @@ fn main() {
 
     let query = delete(users.filter(name.eq("Bill"))).returning(id);
     query.returning(name);
-    //~^ ERROR: no method named `returning` found for struct `DeleteStatement<table, WhereClause<Grouped<Eq<name, ...>>>, ...>` in the current scope
+    //~^ ERROR: no method named `returning` found for struct `DeleteStatement<table, WhereClause<...>, ...>` in the current scope
 
     let query = insert_into(users)
         .values(&NewUser("Hello".into()))
         .returning(id);
     query.returning(name);
-    //~^ ERROR: no method named `returning` found for struct `InsertStatement<table, ValuesClause<(...,), ...>, ..., ...>` in the current scope
+    //~^ ERROR: no method named `returning` found for struct `InsertStatement<table, ..., ..., ...>` in the current scope
 
     let query = update(users).set(name.eq("Bill")).returning(id);
     query.returning(name);
-    //~^ ERROR: no method named `returning` found for struct `UpdateStatement<table, NoWhereClause, Assign<..., ...>, ...>` in the current scope
+    //~^ ERROR: no method named `returning` found for struct `UpdateStatement<table, NoWhereClause, ..., ...>` in the current scope
 }

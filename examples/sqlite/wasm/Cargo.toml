@@ -13,8 +13,8 @@ wasm-bindgen = "0.2.99"
 wasm-bindgen-futures = "0.4.49"
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
-sqlite-wasm-vfs = "0.1.1"
-sqlite-wasm-rs = "0.5.1"
+sqlite-wasm-vfs = "0.2.0"
+sqlite-wasm-rs = "0.5.2"
 
 [lib]
 crate-type = ["cdylib"]

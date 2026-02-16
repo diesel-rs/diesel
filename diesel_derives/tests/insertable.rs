@@ -568,3 +568,21 @@ fn serialize_as_with_option() {
     let expected = vec![(1, "Sean".to_string(), Some("Black".to_string()))];
     assert_eq!(Ok(expected), saved);
 }
+
+// this is a compile test to verify that we don't
+// emit bounds that cannot be evaluated by rustc
+//
+// That's to workaround https://github.com/rust-lang/rust/issues/21974
+table! {
+    lists (list, identifier) {
+        list -> Text,
+        identifier -> Text,
+    }
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = lists)]
+pub struct List<'a> {
+    list: &'a str,
+    identifier: &'static str,
+}

@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use syn::spanned::Spanned;
 use syn::{Expr, Field as SynField, Ident, Index, Result, Type};
 
-use crate::attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
+use crate::attrs::{AttributeSpanWrapper, FieldAttr, SqlIdentifier, parse_attributes};
 
 pub struct Field {
     pub ty: Type,

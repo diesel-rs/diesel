@@ -53,14 +53,14 @@ fn main() {
 
     // cannot box a query with default select clause + a group by clause
     users::table.group_by(users::name).into_boxed();
-    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` for backend `_`
+    //~^ ERROR: cannot box `SelectStatement<..., ..., ..., ..., ..., ..., ...>` for backend `_`
 
     users::table
         .group_by(users::name)
         .select(users::id)
         //~^ ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
         .into_boxed();
-    //~^ ERROR: cannot box `SelectStatement<FromClause<table>, ..., ..., ..., ..., ..., ...>` for backend `_`
+    //~^ ERROR: cannot box `SelectStatement<..., ..., ..., ..., ..., ..., ...>` for backend `_`
 
     users::table
         .group_by(users::name)
@@ -76,7 +76,7 @@ fn main() {
         .into_boxed()
         .inner_join(posts::table)
         //~^ ERROR: mismatched types
-        //~| ERROR: the trait bound `BoxedSelectStatement<'_, Text, FromClause<...>, _, ...>: QueryRelation` is not satisfied
+        //~| ERROR: the trait bound `BoxedSelectStatement<'_, ..., ..., _, ...>: QueryRelation` is not satisfied
         .load::<String>(&mut conn);
 
     let mut a = users::table.into_boxed();
@@ -90,8 +90,8 @@ fn main() {
         //~^ ERROR: type annotations needed
         .into_boxed()
         .group_by(users::id)
-        //~^ ERROR: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: GroupByDsl<_>` is not satisfied
-        //~| ERROR: the trait bound `BoxedSelectStatement<'_, (Integer, Text), ..., _>: QueryRelation` is not satisfied
+        //~^ ERROR: the trait bound `BoxedSelectStatement<'_, ..., ..., _>: GroupByDsl<_>` is not satisfied
+        //~| ERROR: the trait bound `BoxedSelectStatement<'_, ..., ..., _>: QueryRelation` is not satisfied
         //~| ERROR: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` is not satisfied
         .select(users::name)
         .load::<String>(&mut conn);

@@ -1,6 +1,6 @@
 use clap::{
-    builder::{EnumValueParser, PossibleValuesParser},
     Arg, ArgAction, Command,
+    builder::{EnumValueParser, PossibleValuesParser},
 };
 use clap_complete::Shell;
 

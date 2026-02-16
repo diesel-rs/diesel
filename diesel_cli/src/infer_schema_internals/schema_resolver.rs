@@ -1,6 +1,6 @@
 use super::{
-    load_table_data, load_table_names, load_view_data, ColumnDefinition, QueryRelationData,
-    SupportedQueryRelationStructures, TableName,
+    ColumnDefinition, QueryRelationData, SupportedQueryRelationStructures, TableName,
+    load_table_data, load_table_names, load_view_data,
 };
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
