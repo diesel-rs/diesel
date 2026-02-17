@@ -16,7 +16,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                     ty: &f.unnamed.first().unwrap().ty,
                     name: &v.ident,
                 },
-                _ => panic!("Only enums with on field per variant are supported"),
+                _ => panic!("Only enums with one field per variant are supported"),
             })
             .collect::<Vec<_>>();
         let backend = generate_backend(&connection_types);
