@@ -912,8 +912,10 @@ mod tests {
         assert_eq!(values, vec![11, 12, 13]);
     }
 
+    // catch_unwind is not available in WASM (panic = "abort")
     #[diesel_test_helper::test]
     #[allow(unsafe_code)]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn with_raw_connection_recovers_after_panic() {
         let connection = &mut connection();
 
@@ -940,8 +942,10 @@ mod tests {
         assert_eq!(count, 1, "Connection should work after panic in callback");
     }
 
+    // Filesystem access is not available in WASM
     #[diesel_test_helper::test]
     #[allow(unsafe_code)]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn with_raw_connection_can_read_file_database_filename() {
         let dir = std::env::temp_dir().join("diesel_test_filename.db");
         let db_path = dir.to_str().unwrap();
