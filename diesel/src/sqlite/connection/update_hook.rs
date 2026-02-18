@@ -250,18 +250,6 @@ impl ChangeHookDispatcher {
     }
 }
 
-/// Maps an FFI operation code to our internal bitmask bit.
-#[cfg(test)]
-fn ffi_op_to_bit(op_code: i32) -> u8 {
-    #[allow(non_upper_case_globals)]
-    match op_code {
-        ffi::SQLITE_INSERT => SqliteChangeOps::INSERT.0,
-        ffi::SQLITE_UPDATE => SqliteChangeOps::UPDATE.0,
-        ffi::SQLITE_DELETE => SqliteChangeOps::DELETE.0,
-        _ => SqliteChangeOps::UNKNOWN.0,
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -273,8 +261,7 @@ mod tests {
     /// Test-only helper: check mask vs raw FFI op code.
     impl SqliteChangeOps {
         fn matches(self, op_code: i32) -> bool {
-            let bit = ffi_op_to_bit(op_code);
-            (self.0 & bit) != 0
+            self.matches_op(SqliteChangeOp::from_ffi(op_code))
         }
     }
 
