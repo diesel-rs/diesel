@@ -72,6 +72,21 @@ pub(super) struct RawConnection {
 }
 
 impl RawConnection {
+    fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
+        RawConnection {
+            internal_connection: conn,
+            change_hooks: RefCell::new(ChangeHookDispatcher::new()),
+            update_hook_registered: Cell::new(false),
+            commit_hook: None,
+            rollback_hook: None,
+            wal_hook: None,
+            progress_hook: None,
+            busy_handler: None,
+            authorizer_hook: None,
+            trace_hook: None,
+        }
+    }
+
     pub(super) fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
 
@@ -88,18 +103,7 @@ impl RawConnection {
         match connection_status {
             ffi::SQLITE_OK => {
                 let conn_pointer = unsafe { NonNull::new_unchecked(conn_pointer) };
-                Ok(RawConnection {
-                    internal_connection: conn_pointer,
-                    change_hooks: RefCell::new(ChangeHookDispatcher::new()),
-                    update_hook_registered: Cell::new(false),
-                    commit_hook: None,
-                    rollback_hook: None,
-                    wal_hook: None,
-                    progress_hook: None,
-                    busy_handler: None,
-                    authorizer_hook: None,
-                    trace_hook: None,
-                })
+                Ok(RawConnection::from_ptr(conn_pointer))
             }
             err_code => {
                 let message = super::error_message(err_code);
@@ -340,8 +344,8 @@ impl RawConnection {
     where
         F: FnMut() -> bool + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_commit_hook(
                 self.internal_connection.as_ptr(),
@@ -367,8 +371,8 @@ impl RawConnection {
     where
         F: FnMut() + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_rollback_hook(
                 self.internal_connection.as_ptr(),
@@ -395,8 +399,8 @@ impl RawConnection {
     where
         F: FnMut(&str, i32) + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_wal_hook(
                 self.internal_connection.as_ptr(),
@@ -424,8 +428,8 @@ impl RawConnection {
     where
         F: FnMut() -> bool + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_progress_handler(
                 self.internal_connection.as_ptr(),
@@ -458,8 +462,8 @@ impl RawConnection {
     where
         F: FnMut(i32) -> bool + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_busy_handler(
                 self.internal_connection.as_ptr(),
@@ -497,8 +501,8 @@ impl RawConnection {
     where
         F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_set_authorizer(
                 self.internal_connection.as_ptr(),
@@ -525,8 +529,8 @@ impl RawConnection {
     where
         F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
     {
-        let boxed: Box<F> = Box::new(hook);
-        let ptr = &*boxed as *const F as *mut libc::c_void;
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
         unsafe {
             ffi::sqlite3_trace_v2(
                 self.internal_connection.as_ptr(),
@@ -587,7 +591,13 @@ unsafe extern "C" fn update_hook_trampoline(
             rowid,
         };
 
-        hooks.borrow_mut().dispatch(event);
+        // Use try_borrow_mut to handle reentrancy gracefully: if a hook
+        // callback triggers another SQL statement that fires the update hook,
+        // the RefCell would already be borrowed, so we silently skip dispatch
+        // rather than panicking inside an extern "C" function.
+        if let Ok(mut guard) = hooks.try_borrow_mut() {
+            guard.dispatch(event);
+        }
     }));
 
     if result.is_err() {
@@ -884,25 +894,16 @@ impl Drop for RawConnection {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
 
+        // Unregister all hooks before closing so the Box'd closures are
+        // dropped before sqlite3_close runs.
         self.unregister_raw_update_hook();
-
-        // Unregister all hooks before closing so the Box'd closures are not
-        // dangling during sqlite3_close.
-        unsafe {
-            ffi::sqlite3_commit_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
-            ffi::sqlite3_rollback_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
-            ffi::sqlite3_wal_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
-            ffi::sqlite3_progress_handler(
-                self.internal_connection.as_ptr(),
-                0,
-                None,
-                ptr::null_mut(),
-            );
-            ffi::sqlite3_busy_handler(self.internal_connection.as_ptr(), None, ptr::null_mut());
-            ffi::sqlite3_set_authorizer(self.internal_connection.as_ptr(), None, ptr::null_mut());
-            ffi::sqlite3_trace_v2(self.internal_connection.as_ptr(), 0, None, ptr::null_mut());
-        }
-        // The Option<Box<dyn Any>> fields drop automatically after this.
+        self.remove_commit_hook();
+        self.remove_rollback_hook();
+        self.remove_wal_hook();
+        self.remove_progress_handler();
+        self.remove_busy_handler();
+        self.remove_authorizer();
+        self.remove_trace();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -971,18 +972,7 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     let conn = match unsafe { NonNull::new(ffi::sqlite3_context_db_handle(ctx)) } {
         // We use `ManuallyDrop` here because we do not want to run the
         // Drop impl of `RawConnection` as this would close the connection
-        Some(conn) => mem::ManuallyDrop::new(RawConnection {
-            internal_connection: conn,
-            change_hooks: RefCell::new(ChangeHookDispatcher::new()),
-            update_hook_registered: Cell::new(false),
-            commit_hook: None,
-            rollback_hook: None,
-            wal_hook: None,
-            progress_hook: None,
-            busy_handler: None,
-            authorizer_hook: None,
-            trace_hook: None,
-        }),
+        Some(conn) => mem::ManuallyDrop::new(RawConnection::from_ptr(conn)),
         None => {
             unsafe { context_error_str(ctx, NULL_CONN_ERR) };
             return;

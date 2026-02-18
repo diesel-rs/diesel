@@ -70,7 +70,7 @@ impl BitOr for SqliteTraceFlags {
 ///
 /// The callback receives one of these events based on the mask
 /// registered with [`on_trace`](crate::sqlite::SqliteConnection::on_trace).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum SqliteTraceEvent<'a> {
     /// A prepared statement is beginning to execute.
