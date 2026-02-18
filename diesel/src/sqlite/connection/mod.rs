@@ -4,6 +4,22 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+// Option codes for `sqlite3_db_config()` that control whether the ATTACH
+// statement is allowed to create new database files (ATTACH_CREATE) or open
+// them in write mode (ATTACH_WRITE).  They are passed to
+// `set_db_config_bool` / `get_db_config_bool` in the public
+// `set_attach_create_enabled` and `set_attach_write_enabled` methods.
+//
+// These constants were introduced in SQLite 3.49.0 and are only present in
+// `libsqlite3-sys` >= 0.35.0.  Diesel supports `libsqlite3-sys` >= 0.17.2,
+// so the constants may be absent at compile time.  We define them here so
+// that diesel compiles against any supported `libsqlite3-sys` version; if
+// the linked SQLite library is too old to recognise the option, the
+// `sqlite3_db_config()` call will return an error at runtime, which the
+// calling code already handles.
+const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
+const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
+
 mod bind_collector;
 mod functions;
 mod owned_row;
@@ -809,7 +825,7 @@ impl SqliteConnection {
     ///
     /// # Availability
     ///
-    /// Requires SQLite 3.46.0 (2024-05) or later. Returns an error if the
+    /// Requires SQLite 3.49.0 (2025-02) or later. Returns an error if the
     /// linked SQLite version does not support this option.
     ///
     /// # Security Recommendation
@@ -832,7 +848,7 @@ impl SqliteConnection {
     /// ```
     pub fn set_attach_create_enabled(&mut self, enabled: bool) -> QueryResult<()> {
         self.raw_connection
-            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, enabled)
+            .set_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, enabled)
     }
 
     /// Check if ATTACH can create new database files.
@@ -840,7 +856,7 @@ impl SqliteConnection {
     /// See [`set_attach_create_enabled`][Self::set_attach_create_enabled] for details.
     pub fn is_attach_create_enabled(&self) -> QueryResult<bool> {
         self.raw_connection
-            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE)
+            .get_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE)
     }
 
     /// Enable or disable ATTACH from opening databases in write mode.
@@ -849,7 +865,7 @@ impl SqliteConnection {
     ///
     /// # Availability
     ///
-    /// Requires SQLite 3.46.0 (2024-05) or later. Returns an error if the
+    /// Requires SQLite 3.49.0 (2025-02) or later. Returns an error if the
     /// linked SQLite version does not support this option.
     ///
     /// # Security Recommendation
@@ -871,7 +887,7 @@ impl SqliteConnection {
     /// ```
     pub fn set_attach_write_enabled(&mut self, enabled: bool) -> QueryResult<()> {
         self.raw_connection
-            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, enabled)
+            .set_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, enabled)
     }
 
     /// Check if ATTACH can open databases in write mode.
@@ -879,7 +895,7 @@ impl SqliteConnection {
     /// See [`set_attach_write_enabled`][Self::set_attach_write_enabled] for details.
     pub fn is_attach_write_enabled(&self) -> QueryResult<bool> {
         self.raw_connection
-            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE)
+            .get_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE)
     }
 
     /// Enable or disable trigger execution.
