@@ -243,10 +243,8 @@ impl RawConnection {
     }
 
     /// Set a boolean db_config option.
-    ///
-    /// Returns the previous value.
-    pub(super) fn set_db_config_bool(&self, op: i32, value: bool) -> QueryResult<bool> {
-        let mut old_value: libc::c_int = 0;
+    pub(super) fn set_db_config_bool(&self, op: i32, value: bool) -> QueryResult<()> {
+        let mut result_value: libc::c_int = 0;
         let new_value: libc::c_int = if value { 1 } else { 0 };
 
         let result = unsafe {
@@ -254,12 +252,11 @@ impl RawConnection {
                 self.internal_connection.as_ptr(),
                 op,
                 new_value,
-                &mut old_value as *mut libc::c_int,
+                &mut result_value as *mut libc::c_int,
             )
         };
 
-        ensure_sqlite_ok(result, self.internal_connection.as_ptr())?;
-        Ok(old_value != 0)
+        ensure_sqlite_ok(result, self.internal_connection.as_ptr())
     }
 
     /// Get a boolean db_config option.
