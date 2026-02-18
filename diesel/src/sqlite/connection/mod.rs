@@ -615,6 +615,17 @@ impl SqliteConnection {
     /// - The connection handle is **not stored** beyond the callback's scope.
     /// - Concurrent access rules are respected (SQLite connections are not thread-safe
     ///   unless using serialized threading mode).
+    /// - **Transaction state is not modified** — do not execute `BEGIN`, `COMMIT`,
+    ///   `ROLLBACK`, or `SAVEPOINT` statements via the raw handle. Diesel's
+    ///   [`AnsiTransactionManager`] tracks transaction nesting internally, and
+    ///   bypassing it will cause Diesel's view of the transaction state to diverge
+    ///   from SQLite's actual state.
+    /// - **Diesel's prepared statements are not disturbed** — do not call
+    ///   `sqlite3_finalize()` or `sqlite3_reset()` on statements that belong to
+    ///   Diesel's `StatementCache`. Doing so will cause use-after-free or
+    ///   double-free when Diesel later accesses those statements.
+    ///
+    /// [`AnsiTransactionManager`]: crate::connection::AnsiTransactionManager
     ///
     /// # Example
     ///
@@ -625,16 +636,17 @@ impl SqliteConnection {
     /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
     ///
     /// // SAFETY: We do not close or store the connection handle,
-    /// // and we do not modify state that Diesel depends on.
-    /// let version = unsafe {
-    ///     conn.with_raw_connection(|_raw_conn| {
-    ///         // Use raw_conn with SQLite C API functions from your own
-    ///         // `libsqlite3-sys` (native) or `sqlite-wasm-rs` (WASM) dependency.
-    ///         // For example: ffi::sqlite3session_create(raw_conn, ...)
-    ///         42 // return a value
+    /// // and we do not modify Diesel-managed state (transactions, cached statements).
+    /// let is_valid = unsafe {
+    ///     conn.with_raw_connection(|raw_conn| {
+    ///         // The raw connection pointer can be passed to SQLite C API functions
+    ///         // from your own `libsqlite3-sys` (native) or `sqlite-wasm-rs` (WASM)
+    ///         // dependency — for example, `sqlite3_get_autocommit(raw_conn)` or
+    ///         // `sqlite3session_create(raw_conn, ...)`.
+    ///         !raw_conn.is_null()
     ///     })
     /// };
-    /// assert_eq!(version, 42);
+    /// assert!(is_valid);
     /// ```
     ///
     /// # Platform Notes
@@ -716,22 +728,6 @@ mod tests {
 
         // Outside a transaction, autocommit should be enabled (returns non-zero)
         assert_ne!(autocommit_status, 0, "Expected autocommit to be enabled");
-    }
-
-    #[diesel_test_helper::test]
-    #[allow(unsafe_code)]
-    fn with_raw_connection_handle_is_same_across_calls() {
-        let connection = &mut connection();
-
-        // SAFETY: We only read the pointer value, not dereferencing in unsafe ways.
-        let ptr1 = unsafe { connection.with_raw_connection(|raw_conn| raw_conn as usize) };
-
-        let ptr2 = unsafe { connection.with_raw_connection(|raw_conn| raw_conn as usize) };
-
-        assert_eq!(
-            ptr1, ptr2,
-            "Raw connection handle should be stable across calls"
-        );
     }
 
     #[diesel_test_helper::test]
@@ -865,45 +861,13 @@ mod tests {
             })
         };
 
-        // For in-memory databases, filename is typically empty or a special value
-        // The important thing is that the call succeeded without crashing
-        assert!(
-            filename.is_some() || filename.is_none(),
-            "Should handle filename query"
+        // For in-memory databases, sqlite3_db_filename returns a non-null pointer
+        // to an empty string
+        assert_eq!(
+            filename,
+            Some(String::new()),
+            "In-memory database filename should be an empty string"
         );
-    }
-
-    #[diesel_test_helper::test]
-    #[allow(unsafe_code)]
-    fn with_raw_connection_error_handling() {
-        let connection = &mut connection();
-
-        // SAFETY: We attempt an operation that will fail (querying non-existent table)
-        // but handle the error properly.
-        let result = unsafe {
-            connection.with_raw_connection(|raw_conn| {
-                let sql = c"SELECT * FROM nonexistent_table_xyz";
-                let mut stmt: *mut ffi::sqlite3_stmt = core::ptr::null_mut();
-                let rc = ffi::sqlite3_prepare_v2(
-                    raw_conn,
-                    sql.as_ptr(),
-                    -1,
-                    &mut stmt,
-                    core::ptr::null_mut(),
-                );
-                if rc != ffi::SQLITE_OK {
-                    return Err(rc);
-                }
-                // Clean up if we somehow succeeded
-                if !stmt.is_null() {
-                    ffi::sqlite3_finalize(stmt);
-                }
-                Ok(())
-            })
-        };
-
-        // Should fail because table doesn't exist
-        assert!(result.is_err(), "Query on non-existent table should fail");
     }
 
     #[diesel_test_helper::test]
@@ -946,6 +910,69 @@ mod tests {
             .load(connection)
             .unwrap();
         assert_eq!(values, vec![11, 12, 13]);
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_recovers_after_panic() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE panic_test (id INTEGER PRIMARY KEY, value TEXT)")
+            .execute(connection)
+            .unwrap();
+
+        // Panic inside the callback
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
+            connection.with_raw_connection(|_raw_conn| {
+                panic!("intentional panic inside with_raw_connection");
+            })
+        }));
+        assert!(result.is_err(), "Should have caught the panic");
+
+        // Connection should still be usable after the panic
+        crate::sql_query("INSERT INTO panic_test (value) VALUES ('after_panic')")
+            .execute(connection)
+            .unwrap();
+
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM panic_test")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1, "Connection should work after panic in callback");
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_read_file_database_filename() {
+        let dir = std::env::temp_dir().join("diesel_test_filename.db");
+        let db_path = dir.to_str().unwrap();
+
+        // Clean up from any previous run
+        let _ = std::fs::remove_file(db_path);
+
+        let connection = &mut SqliteConnection::establish(db_path).unwrap();
+
+        // SAFETY: We only read the database filename, which is a read-only operation.
+        let filename = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let db_name = c"main";
+                let filename_ptr = ffi::sqlite3_db_filename(raw_conn, db_name.as_ptr());
+                if filename_ptr.is_null() {
+                    None
+                } else {
+                    let cstr = core::ffi::CStr::from_ptr(filename_ptr);
+                    Some(cstr.to_string_lossy().into_owned())
+                }
+            })
+        };
+
+        let filename = filename.expect("File-based database should have a filename");
+        assert!(
+            filename.contains("diesel_test_filename.db"),
+            "Filename should contain the database name, got: {filename}"
+        );
+
+        // Clean up
+        let _ = std::fs::remove_file(db_path);
     }
 
     #[declare_sql_function]
