@@ -482,13 +482,11 @@ impl RawConnection {
     ///
     /// SQLite will sleep and retry until `ms` milliseconds have elapsed.
     /// Setting this clears any custom busy handler.
-    pub(super) fn set_busy_timeout(&self, ms: i32) {
+    pub(super) fn set_busy_timeout(&mut self, ms: i32) {
         unsafe {
             ffi::sqlite3_busy_timeout(self.internal_connection.as_ptr(), ms);
         }
-        // Note: We don't clear busy_handler here because SQLite handles that
-        // internally. The old handler (if any) becomes inactive but the Box
-        // will be dropped on the next set_busy_handler or connection close.
+        self.busy_handler = None;
     }
 
     /// Sets an authorizer callback. Only one can be active at a time.
@@ -742,7 +740,10 @@ unsafe extern "C" fn authorizer_trampoline<F>(
 where
     F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision,
 {
-    // Helper to convert a nullable C string to Option<&str>
+    // Helper to convert a nullable C string to Option<&str>.
+    // SAFETY: 'static is used because this local function cannot name the
+    // callback's stack lifetime. The returned references are immediately
+    // placed into AuthorizerContext<'a> which cannot escape this invocation.
     fn c_str_to_option(ptr: *const libc::c_char) -> Option<&'static str> {
         if ptr.is_null() {
             None
@@ -1568,7 +1569,7 @@ mod tests {
 
     #[test]
     fn busy_timeout_can_be_set() {
-        let conn = test_connection();
+        let mut conn = test_connection();
         // Just verify it doesn't panic
         conn.set_busy_timeout(5000);
         conn.exec("SELECT 1").unwrap();

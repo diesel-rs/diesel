@@ -70,24 +70,26 @@ impl BitAnd for SqliteChangeOps {
 
 impl core::fmt::Debug for SqliteChangeOps {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut parts = Vec::new();
-        if self.contains(Self::INSERT) {
-            parts.push("INSERT");
+        write!(f, "SqliteChangeOps(")?;
+        let mut first = true;
+        for (flag, name) in [
+            (Self::INSERT, "INSERT"),
+            (Self::UPDATE, "UPDATE"),
+            (Self::DELETE, "DELETE"),
+            (Self::UNKNOWN, "UNKNOWN"),
+        ] {
+            if self.contains(flag) {
+                if !first {
+                    write!(f, " | ")?;
+                }
+                write!(f, "{name}")?;
+                first = false;
+            }
         }
-        if self.contains(Self::UPDATE) {
-            parts.push("UPDATE");
+        if first {
+            write!(f, "0")?;
         }
-        if self.contains(Self::DELETE) {
-            parts.push("DELETE");
-        }
-        if self.contains(Self::UNKNOWN) {
-            parts.push("UNKNOWN");
-        }
-        if parts.is_empty() {
-            write!(f, "SqliteChangeOps(0)")
-        } else {
-            write!(f, "SqliteChangeOps({})", parts.join(" | "))
-        }
+        write!(f, ")")
     }
 }
 
@@ -210,7 +212,7 @@ impl ChangeHookDispatcher {
         callback: Box<dyn FnMut(SqliteChangeEvent<'_>) + Send>,
     ) -> ChangeHookId {
         let id = self.next_id;
-        self.next_id += 1;
+        self.next_id = self.next_id.wrapping_add(1);
         self.entries.push(HookEntry {
             id,
             table_name,
