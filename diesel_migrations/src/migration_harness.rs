@@ -1,6 +1,4 @@
 use diesel::backend::Backend;
-#[cfg(feature = "postgres")]
-use diesel::connection::SimpleConnection;
 use diesel::migration::{
     Migration, MigrationConnection, MigrationSource, MigrationVersion, Result,
 };
@@ -14,27 +12,6 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::errors::MigrationError;
-
-/// Attempt to save the current PostgreSQL search_path into a custom GUC variable.
-/// Uses `set_config` which persists the value as a side effect even though
-/// `batch_execute` discards the SELECT result.
-/// Returns true if the save succeeded (i.e., we're on a PostgreSQL connection).
-#[cfg(feature = "postgres")]
-fn try_save_search_path<C: SimpleConnection>(conn: &mut C) -> bool {
-    conn.batch_execute(
-        "SELECT set_config('diesel.saved_search_path', current_setting('search_path'), false)",
-    )
-    .is_ok()
-}
-
-/// Restore the PostgreSQL search_path from the previously saved custom GUC variable.
-#[cfg(feature = "postgres")]
-fn restore_search_path<C: SimpleConnection>(conn: &mut C) -> Result<()> {
-    conn.batch_execute(
-        "SELECT set_config('search_path', current_setting('diesel.saved_search_path'), false)",
-    )?;
-    Ok(())
-}
 
 diesel::table! {
     __diesel_schema_migrations (version) {
@@ -187,14 +164,12 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        #[cfg(feature = "postgres")]
-        let should_restore_search_path = try_save_search_path(self);
+        let saved_search_path = self.save_search_path()?;
 
         let apply_migration = |conn: &mut C| -> Result<()> {
             migration.run(conn)?;
-            #[cfg(feature = "postgres")]
-            if should_restore_search_path {
-                restore_search_path(conn)?;
+            if let Some(ref path) = saved_search_path {
+                conn.restore_search_path(path)?;
             }
             diesel::insert_into(__diesel_schema_migrations::table)
                 .values(
@@ -210,9 +185,8 @@ where
             apply_migration(self)?;
         }
 
-        #[cfg(feature = "postgres")]
-        if should_restore_search_path {
-            restore_search_path(self)?;
+        if let Some(ref path) = saved_search_path {
+            self.restore_search_path(path)?;
         }
 
         Ok(migration.name().version().as_owned())
@@ -222,14 +196,12 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        #[cfg(feature = "postgres")]
-        let should_restore_search_path = try_save_search_path(self);
+        let saved_search_path = self.save_search_path()?;
 
         let revert_migration = |conn: &mut C| -> Result<()> {
             migration.revert(conn)?;
-            #[cfg(feature = "postgres")]
-            if should_restore_search_path {
-                restore_search_path(conn)?;
+            if let Some(ref path) = saved_search_path {
+                conn.restore_search_path(path)?;
             }
             diesel::delete(
                 __diesel_schema_migrations::table.find(migration.name().version().as_owned()),
@@ -244,9 +216,8 @@ where
             revert_migration(self)?;
         }
 
-        #[cfg(feature = "postgres")]
-        if should_restore_search_path {
-            restore_search_path(self)?;
+        if let Some(ref path) = saved_search_path {
+            self.restore_search_path(path)?;
         }
 
         Ok(migration.name().version().as_owned())

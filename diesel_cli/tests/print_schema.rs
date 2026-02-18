@@ -508,6 +508,42 @@ fn print_schema_view_infer_nullable_mixed_schema() {
     )
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_after_search_path_change() {
+    let p = project("print_schema_after_search_path_change")
+        .folder("migrations")
+        .build();
+    let _db = database(&p.database_url());
+
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_set_search_path",
+        "CREATE SCHEMA IF NOT EXISTS custom_schema; SET search_path TO custom_schema;",
+        Some("SET search_path TO public; DROP SCHEMA IF EXISTS custom_schema CASCADE;"),
+        None,
+    );
+
+    p.create_migration(
+        "12346_create_users",
+        "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL);",
+        Some("DROP TABLE users;"),
+        None,
+    );
+
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Migration failed: {:?}", result);
+
+    let result = p.command("print-schema").run();
+    assert!(result.is_success(), "print-schema failed: {:?}", result);
+    assert!(
+        result.stdout().contains("users"),
+        "Expected 'users' table in print-schema output, got: {}",
+        result.stdout()
+    );
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
