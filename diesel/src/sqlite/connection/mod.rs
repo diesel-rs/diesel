@@ -1068,7 +1068,7 @@ impl SqliteConnection {
             .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL)
     }
 
-fn register_diesel_sql_functions(&self) -> QueryResult<()> {
+    fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
         // This function has side effects (creates triggers), so it should not
@@ -1737,8 +1737,7 @@ mod tests {
         conn.set_trusted_schema(false).unwrap();
 
         // Querying the view should succeed because the function is INNOCUOUS
-        let result =
-            crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
+        let result = crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
         assert!(result.is_ok());
     }
 }
