@@ -706,11 +706,7 @@ impl SqliteConnection {
     where
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
-        self.raw_connection.register_raw_update_hook();
-        self.raw_connection
-            .change_hooks
-            .borrow_mut()
-            .add(None, ops, Box::new(hook))
+        self.register_change_hook(None, ops, Box::new(hook))
     }
 
     /// Registers a callback invoked when a row is inserted into table `T`.
@@ -766,12 +762,7 @@ impl SqliteConnection {
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
         let table_name = T::STATIC_COMPONENT.0;
-        self.raw_connection.register_raw_update_hook();
-        self.raw_connection.change_hooks.borrow_mut().add(
-            Some(table_name),
-            SqliteChangeOps::INSERT,
-            Box::new(hook),
-        )
+        self.register_change_hook(Some(table_name), SqliteChangeOps::INSERT, Box::new(hook))
     }
 
     /// Registers a callback invoked when a row is updated in table `T`.
@@ -819,12 +810,7 @@ impl SqliteConnection {
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
         let table_name = T::STATIC_COMPONENT.0;
-        self.raw_connection.register_raw_update_hook();
-        self.raw_connection.change_hooks.borrow_mut().add(
-            Some(table_name),
-            SqliteChangeOps::UPDATE,
-            Box::new(hook),
-        )
+        self.register_change_hook(Some(table_name), SqliteChangeOps::UPDATE, Box::new(hook))
     }
 
     /// Registers a callback invoked when a row is deleted from table `T`.
@@ -869,12 +855,7 @@ impl SqliteConnection {
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
         let table_name = T::STATIC_COMPONENT.0;
-        self.raw_connection.register_raw_update_hook();
-        self.raw_connection.change_hooks.borrow_mut().add(
-            Some(table_name),
-            SqliteChangeOps::DELETE,
-            Box::new(hook),
-        )
+        self.register_change_hook(Some(table_name), SqliteChangeOps::DELETE, Box::new(hook))
     }
 
     /// Removes a previously registered change hook by its [`ChangeHookId`].
@@ -920,8 +901,11 @@ impl SqliteConnection {
     /// assert_eq!(*count.lock().unwrap(), 1);
     /// ```
     pub fn remove_change_hook(&mut self, id: ChangeHookId) -> bool {
-        let removed = self.raw_connection.change_hooks.borrow_mut().remove(id);
-        if self.raw_connection.change_hooks.borrow().is_empty() {
+        let mut hooks = self.raw_connection.change_hooks.borrow_mut();
+        let removed = hooks.remove(id);
+        let is_empty = hooks.is_empty();
+        drop(hooks);
+        if is_empty {
             self.raw_connection.unregister_raw_update_hook();
         }
         removed
@@ -979,11 +963,11 @@ impl SqliteConnection {
         T: StaticQueryFragment<Component = Identifier<'static>>,
     {
         let table_name = T::STATIC_COMPONENT.0;
-        self.raw_connection
-            .change_hooks
-            .borrow_mut()
-            .clear_for_table(table_name);
-        if self.raw_connection.change_hooks.borrow().is_empty() {
+        let mut hooks = self.raw_connection.change_hooks.borrow_mut();
+        hooks.clear_for_table(table_name);
+        let is_empty = hooks.is_empty();
+        drop(hooks);
+        if is_empty {
             self.raw_connection.unregister_raw_update_hook();
         }
     }
@@ -1027,6 +1011,19 @@ impl SqliteConnection {
     pub fn clear_all_change_hooks(&mut self) {
         self.raw_connection.change_hooks.borrow_mut().clear_all();
         self.raw_connection.unregister_raw_update_hook();
+    }
+
+    fn register_change_hook(
+        &mut self,
+        table_name: Option<&'static str>,
+        ops: SqliteChangeOps,
+        hook: Box<dyn FnMut(SqliteChangeEvent<'_>) + Send>,
+    ) -> ChangeHookId {
+        self.raw_connection.register_raw_update_hook();
+        self.raw_connection
+            .change_hooks
+            .borrow_mut()
+            .add(table_name, ops, hook)
     }
 
     /// Loads a single row from table `T` by its SQLite `rowid`.
@@ -1630,6 +1627,7 @@ impl SqliteConnection {
     /// This replaces any existing trace callback. If you need both `on_read` and
     /// custom tracing, use [`on_trace`](Self::on_trace) directly and check the
     /// `readonly` field on [`SqliteTraceEvent::Statement`].
+    #[doc(alias = "on_trace")]
     pub fn on_read<F>(&mut self, mut hook: F)
     where
         F: FnMut(&str) + Send + 'static,
