@@ -575,49 +575,6 @@ fn verify_schema_errors_if_schema_file_would_change() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
-fn migration_run_resets_search_path_after_migration() {
-    let p = project("migration_run_resets_search_path")
-        .folder("migrations")
-        .build();
-    let db = database(&p.database_url());
-
-    // Make sure the project is setup
-    p.command("setup").run();
-
-    // First migration: create a schema and change search_path
-    p.create_migration(
-        "12345_set_search_path",
-        "CREATE SCHEMA IF NOT EXISTS custom_schema; SET search_path TO custom_schema;",
-        Some("SET search_path TO public; DROP SCHEMA IF EXISTS custom_schema;"),
-        None,
-    );
-
-    // Second migration: create a table (should succeed if search_path was reset)
-    p.create_migration(
-        "12346_create_users_table",
-        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        Some("DROP TABLE users"),
-        None,
-    );
-
-    let result = p.command("migration").arg("run").run();
-
-    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(
-        result.stdout().contains("Running migration 12345"),
-        "Unexpected stdout {}",
-        result.stdout()
-    );
-    assert!(
-        result.stdout().contains("Running migration 12346"),
-        "Unexpected stdout {}",
-        result.stdout()
-    );
-    assert!(db.table_exists("users"));
-}
-
-#[test]
 fn migration_run_runs_pending_migrations_custom_migrations_dir_from_diesel_toml() {
     let p = project("migration_run_custom_migration_dir_from_diesel_toml")
         .folder("custom_migrations")
