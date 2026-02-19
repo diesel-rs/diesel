@@ -31,7 +31,7 @@ pub enum SqliteLimit {
     /// clauses.
     ///
     /// Default: 2,000
-    Column,
+    ColumnCount,
 
     /// Maximum depth of the parse tree for any expression.
     ///
@@ -99,7 +99,7 @@ impl SqliteLimit {
         match self {
             SqliteLimit::Length => ffi::SQLITE_LIMIT_LENGTH,
             SqliteLimit::SqlLength => ffi::SQLITE_LIMIT_SQL_LENGTH,
-            SqliteLimit::Column => ffi::SQLITE_LIMIT_COLUMN,
+            SqliteLimit::ColumnCount => ffi::SQLITE_LIMIT_COLUMN,
             SqliteLimit::ExprDepth => ffi::SQLITE_LIMIT_EXPR_DEPTH,
             SqliteLimit::CompoundSelect => ffi::SQLITE_LIMIT_COMPOUND_SELECT,
             SqliteLimit::VdbeOp => ffi::SQLITE_LIMIT_VDBE_OP,
