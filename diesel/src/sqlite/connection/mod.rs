@@ -743,7 +743,7 @@ impl SqliteConnection {
     /// // Get all the various limits
     /// let length = conn.get_limit(SqliteLimit::Length);
     /// let sql_length = conn.get_limit(SqliteLimit::SqlLength);
-    /// let column = conn.get_limit(SqliteLimit::Column);
+    /// let column = conn.get_limit(SqliteLimit::ColumnCount);
     /// let expr_depth = conn.get_limit(SqliteLimit::ExprDepth);
     /// let compound_select = conn.get_limit(SqliteLimit::CompoundSelect);
     /// let vdbe_op = conn.get_limit(SqliteLimit::VdbeOp);
@@ -855,7 +855,7 @@ impl SqliteConnection {
     pub fn set_recommended_security_limits(&mut self) {
         self.set_limit(SqliteLimit::Length, 1_000_000);
         self.set_limit(SqliteLimit::SqlLength, 100_000);
-        self.set_limit(SqliteLimit::Column, 100);
+        self.set_limit(SqliteLimit::ColumnCount, 100);
         self.set_limit(SqliteLimit::ExprDepth, 10);
         self.set_limit(SqliteLimit::CompoundSelect, 3);
         self.set_limit(SqliteLimit::VdbeOp, 25_000);
