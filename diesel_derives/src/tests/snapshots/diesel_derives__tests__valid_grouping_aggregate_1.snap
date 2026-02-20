@@ -1,0 +1,13 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(ValidGrouping)]\n#[diesel(aggregate)]\nstruct CountStar;\n"
+---
+const _: () = {
+    use diesel;
+    impl<__GroupByClause> diesel::expression::ValidGrouping<__GroupByClause>
+    for CountStar {
+        type IsAggregate = diesel::expression::is_aggregate::Yes;
+    }
+};

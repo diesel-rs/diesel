@@ -15,3 +15,18 @@ pub(crate) fn valid_grouping_1() {
         "valid_grouping_1",
     );
 }
+
+#[test]
+pub(crate) fn valid_grouping_aggregate_1() {
+    let input = quote::quote! {
+        #[diesel(aggregate)]
+        struct CountStar;
+    };
+
+    expand_with(
+        &crate::derive_valid_grouping_inner as &dyn Fn(_) -> _,
+        input,
+        derive(syn::parse_quote!(#[derive(ValidGrouping)])),
+        "valid_grouping_aggregate_1",
+    );
+}

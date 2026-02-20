@@ -1,0 +1,69 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Insertable)]\n#[diesel(treat_none_as_default_value = false)]\nstruct User {\n    id: i32,\n    name: Option<String>,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::insertable::Insertable<users::table> for User
+    where
+        i32: diesel::expression::AsExpression<
+            <users::r#id as diesel::Expression>::SqlType,
+        >,
+        Option<
+            String,
+        >: diesel::expression::AsExpression<
+            <users::r#name as diesel::Expression>::SqlType,
+        >,
+    {
+        type Values = <(
+            diesel::dsl::Eq<users::r#id, i32>,
+            diesel::dsl::Eq<users::r#name, Option<String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values;
+        fn values(
+            self,
+        ) -> <(
+            diesel::dsl::Eq<users::r#id, i32>,
+            diesel::dsl::Eq<users::r#name, Option<String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values {
+            diesel::insertable::Insertable::<
+                users::table,
+            >::values((
+                diesel::ExpressionMethods::eq(users::r#id, self.id),
+                diesel::ExpressionMethods::eq(users::r#name, self.name),
+            ))
+        }
+    }
+    impl<'insert> diesel::insertable::Insertable<users::table> for &'insert User
+    where
+        &'insert i32: diesel::expression::AsExpression<
+            <users::r#id as diesel::Expression>::SqlType,
+        >,
+        &'insert Option<
+            String,
+        >: diesel::expression::AsExpression<
+            <users::r#name as diesel::Expression>::SqlType,
+        >,
+    {
+        type Values = <(
+            diesel::dsl::Eq<users::r#id, &'insert i32>,
+            diesel::dsl::Eq<users::r#name, &'insert Option<String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values;
+        fn values(
+            self,
+        ) -> <(
+            diesel::dsl::Eq<users::r#id, &'insert i32>,
+            diesel::dsl::Eq<users::r#name, &'insert Option<String>>,
+        ) as diesel::insertable::Insertable<users::table>>::Values {
+            diesel::insertable::Insertable::<
+                users::table,
+            >::values((
+                diesel::ExpressionMethods::eq(users::r#id, &self.id),
+                diesel::ExpressionMethods::eq(users::r#name, &self.name),
+            ))
+        }
+    }
+    impl diesel::internal::derives::insertable::UndecoratedInsertRecord<users::table>
+    for User {}
+};

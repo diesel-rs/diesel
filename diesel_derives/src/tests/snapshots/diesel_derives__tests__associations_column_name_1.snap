@@ -1,0 +1,9 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Associations)]\n#[diesel(belongs_to(User))]\nstruct Post {\n    id: i32,\n    title: String,\n    #[diesel(column_name = author_id)]\n    user_id: i32,\n}\n"
+---
+::core::compile_error! {
+    "no field with column name `user_id`"
+}

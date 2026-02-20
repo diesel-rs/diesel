@@ -178,11 +178,33 @@ fn main() {
         ),
         (
             "as_expression",
-            vec![Example::new("diesel_derives__tests__as_expression_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__as_expression_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_expression_not_sized_1.snap",
+                    "With `#[diesel(not_sized)]`",
+                ),
+            ],
         ),
         (
             "associations",
-            vec![Example::new("diesel_derives__tests__associations_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__associations_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__associations_table_name_1.snap",
+                    "With `#[diesel(table_name = crate::schema::posts)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__associations_column_name_1.snap",
+                    "With `#[diesel(column_name = author_id)]`",
+                ),
+            ],
         ),
         (
             "auto_type",
@@ -190,11 +212,48 @@ fn main() {
         ),
         (
             "declare_sql_function",
-            vec![Example::new(if has_sqlite {
-                "diesel_derives__tests__declare_sql_function_1 (sqlite).snap"
-            } else {
-                "diesel_derives__tests__declare_sql_function_1.snap"
-            })],
+            vec![
+                Example::with_heading(
+                    if has_sqlite {
+                        "diesel_derives__tests__declare_sql_function_1 (sqlite).snap"
+                    } else {
+                        "diesel_derives__tests__declare_sql_function_1.snap"
+                    },
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    if has_sqlite {
+                        "diesel_derives__tests__declare_sql_function_aggregate_1 (sqlite).snap"
+                    } else {
+                        "diesel_derives__tests__declare_sql_function_aggregate_1.snap"
+                    },
+                    "With `#[aggregate]`",
+                ),
+                Example::with_heading(
+                    if has_sqlite {
+                        "diesel_derives__tests__declare_sql_function_sql_name_1 (sqlite).snap"
+                    } else {
+                        "diesel_derives__tests__declare_sql_function_sql_name_1.snap"
+                    },
+                    "With `#[sql_name = \"MY_LOWER\"]`",
+                ),
+                Example::with_heading(
+                    if has_sqlite {
+                        "diesel_derives__tests__declare_sql_function_window_1 (sqlite).snap"
+                    } else {
+                        "diesel_derives__tests__declare_sql_function_window_1.snap"
+                    },
+                    "With `#[window]`",
+                ),
+                Example::with_heading(
+                    if has_sqlite {
+                        "diesel_derives__tests__declare_sql_function_variadic_1 (sqlite).snap"
+                    } else {
+                        "diesel_derives__tests__declare_sql_function_variadic_1.snap"
+                    },
+                    "With `#[variadic(argument_count)]`",
+                ),
+            ],
         ),
         (
             "define_sql_function",
@@ -231,7 +290,40 @@ fn main() {
         ),
         (
             "insertable",
-            vec![Example::new("diesel_derives__tests__insertable_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_table_name_1.snap",
+                    "With `#[diesel(table_name = crate::schema::admin_users)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_treat_none_as_default_value_1.snap",
+                    "With `#[diesel(treat_none_as_default_value = false)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_column_name_1.snap",
+                    "With `#[diesel(column_name = username)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_embed_1.snap",
+                    "With `#[diesel(embed)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_serialize_as_1.snap",
+                    "With `#[diesel(serialize_as = String)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_treat_none_as_default_value_field_1.snap",
+                    "With `#[diesel(treat_none_as_default_value = true)]` on field",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_skip_insertion_1.snap",
+                    "With `#[diesel(skip_insertion)]`",
+                ),
+            ],
         ),
         (
             "multiconnection",
@@ -241,13 +333,49 @@ fn main() {
         ),
         (
             "queryable",
-            vec![Example::new("diesel_derives__tests__queryable_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_deserialize_as_1.snap",
+                    "With `#[diesel(deserialize_as = String)]`",
+                ),
+            ],
         ),
         (
             "queryable_by_name",
-            vec![Example::new(
-                "diesel_derives__tests__queryable_by_name_1.snap",
-            )],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_table_name_1.snap",
+                    "With `#[diesel(table_name = crate::schema::users)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_check_for_backend_1.snap",
+                    "With `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_column_name_1.snap",
+                    "With `#[diesel(column_name = username)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_sql_type_1.snap",
+                    "With `#[diesel(sql_type = diesel::sql_types::Text)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_deserialize_as_1.snap",
+                    "With `#[diesel(deserialize_as = String)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_embed_1.snap",
+                    "With `#[diesel(embed)]`",
+                ),
+            ],
         ),
         (
             "query_id",
@@ -255,7 +383,28 @@ fn main() {
         ),
         (
             "selectable",
-            vec![Example::new("diesel_derives__tests__selectable_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__selectable_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__selectable_check_for_backend_1.snap",
+                    "With `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__selectable_column_name_1.snap",
+                    "With `#[diesel(column_name = username)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__selectable_embed_1.snap",
+                    "With `#[diesel(embed)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__selectable_select_expression_1.snap",
+                    "With `#[diesel(select_expression = ...)]` and `#[diesel(select_expression_type = ...)]`",
+                ),
+            ],
         ),
         (
             "table",
@@ -267,7 +416,16 @@ fn main() {
         ),
         (
             "valid_grouping",
-            vec![Example::new("diesel_derives__tests__valid_grouping_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__valid_grouping_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__valid_grouping_aggregate_1.snap",
+                    "With `#[diesel(aggregate)]`",
+                ),
+            ],
         ),
         ("sql_type", vec![]),
         ("has_query", vec![]),
@@ -292,23 +450,134 @@ fn main() {
         ));
     }
 
-    if has_sqlite {
-        mapping[mapping.len() - 1].1.push(Example::with_heading(
-            "diesel_derives__tests__has_query_1 (sqlite).snap",
-            "SQLite",
-        ));
-    }
-    if has_postgres {
-        mapping[mapping.len() - 1].1.push(Example::with_heading(
-            "diesel_derives__tests__has_query_1 (postgres).snap",
-            "PostgreSQL",
-        ));
-    }
-    if has_mysql {
-        mapping[mapping.len() - 1].1.push(Example::with_heading(
-            "diesel_derives__tests__has_query_1 (mysql).snap",
-            "MySQL",
-        ));
+    {
+        let has_query = &mut mapping[mapping.len() - 1].1;
+        if has_sqlite {
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_1 (sqlite).snap",
+                "Without attributes (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_base_query_1 (sqlite).snap",
+                "With `#[diesel(base_query = ...)]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_base_query_type_1 (sqlite).snap",
+                "With `#[diesel(base_query_type = ...)]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_table_name_1 (sqlite).snap",
+                "With `#[diesel(table_name = ...)]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_check_for_backend_1 (sqlite).snap",
+                "With `#[diesel(check_for_backend(...))]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_check_for_backend_disable_1 (sqlite).snap",
+                "With `#[diesel(check_for_backend(disable = true))]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_column_name_1 (sqlite).snap",
+                "With `#[diesel(column_name = ...)]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_embed_1 (sqlite).snap",
+                "With `#[diesel(embed)]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_select_expression_1 (sqlite).snap",
+                "With `#[diesel(select_expression = ...)]` (SQLite)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_deserialize_as_1 (sqlite).snap",
+                "With `#[diesel(deserialize_as = ...)]` (SQLite)",
+            ));
+        }
+        if has_postgres {
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_1 (postgres).snap",
+                "Without attributes (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_base_query_1 (postgres).snap",
+                "With `#[diesel(base_query = ...)]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_base_query_type_1 (postgres).snap",
+                "With `#[diesel(base_query_type = ...)]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_table_name_1 (postgres).snap",
+                "With `#[diesel(table_name = ...)]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_check_for_backend_1 (postgres).snap",
+                "With `#[diesel(check_for_backend(...))]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_check_for_backend_disable_1 (postgres).snap",
+                "With `#[diesel(check_for_backend(disable = true))]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_column_name_1 (postgres).snap",
+                "With `#[diesel(column_name = ...)]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_embed_1 (postgres).snap",
+                "With `#[diesel(embed)]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_select_expression_1 (postgres).snap",
+                "With `#[diesel(select_expression = ...)]` (PostgreSQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_deserialize_as_1 (postgres).snap",
+                "With `#[diesel(deserialize_as = ...)]` (PostgreSQL)",
+            ));
+        }
+        if has_mysql {
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_1 (mysql).snap",
+                "Without attributes (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_base_query_1 (mysql).snap",
+                "With `#[diesel(base_query = ...)]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_base_query_type_1 (mysql).snap",
+                "With `#[diesel(base_query_type = ...)]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_table_name_1 (mysql).snap",
+                "With `#[diesel(table_name = ...)]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_check_for_backend_1 (mysql).snap",
+                "With `#[diesel(check_for_backend(...))]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_check_for_backend_disable_1 (mysql).snap",
+                "With `#[diesel(check_for_backend(disable = true))]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_column_name_1 (mysql).snap",
+                "With `#[diesel(column_name = ...)]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_embed_1 (mysql).snap",
+                "With `#[diesel(embed)]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_select_expression_1 (mysql).snap",
+                "With `#[diesel(select_expression = ...)]` (MySQL)",
+            ));
+            has_query.push(Example::with_heading(
+                "diesel_derives__tests__has_query_deserialize_as_1 (mysql).snap",
+                "With `#[diesel(deserialize_as = ...)]` (MySQL)",
+            ));
+        }
     }
 
     for (derive, examples) in mapping {

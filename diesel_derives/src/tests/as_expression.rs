@@ -18,3 +18,18 @@ pub(crate) fn as_expression_1() {
         "as_expression_1",
     );
 }
+
+#[test]
+pub(crate) fn as_expression_not_sized_1() {
+    let input = quote::quote! {
+        #[diesel(sql_type = diesel::sql_types::Text)]
+        #[diesel(not_sized)]
+        struct MyStr(str);
+    };
+    expand_with(
+        &crate::derive_as_expression_inner as &dyn Fn(_) -> _,
+        input,
+        derive(syn::parse_quote!(#[derive(AsExpression)])),
+        "as_expression_not_sized_1",
+    );
+}
