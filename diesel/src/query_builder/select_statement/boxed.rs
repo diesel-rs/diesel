@@ -453,8 +453,6 @@ where
 
 impl<ST, QS, DB, GB> QueryDsl for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
 
-impl<ST, QS, DB, Conn, GB> RunQueryDsl<Conn> for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
-
 impl<ST, QS, DB, GB> RunQueryDslSupport for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
 
 impl<ST, QS, DB, T, GB> Insertable<T> for BoxedSelectStatement<'_, ST, QS, DB, GB>

@@ -245,8 +245,6 @@ where
     type SqlType = Ret::SqlType;
 }
 
-impl<T: QuerySource, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}
-
 impl<T: QuerySource, U, V, Ret> RunQueryDslSupport for UpdateStatement<T, U, V, Ret> {}
 
 impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {

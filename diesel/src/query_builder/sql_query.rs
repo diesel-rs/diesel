@@ -180,8 +180,6 @@ impl<Inner> Query for SqlQuery<Inner> {
     type SqlType = Untyped;
 }
 
-impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
-
 impl<Inner> RunQueryDslSupport for SqlQuery<Inner> {}
 
 #[derive(Debug, Clone, Copy)]
@@ -302,8 +300,6 @@ impl<Q, Value, ST> Query for UncheckedBind<Q, Value, ST> {
     type SqlType = Untyped;
 }
 
-impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}
-
 impl<Query, Value, ST> RunQueryDslSupport for UncheckedBind<Query, Value, ST> {}
 
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
@@ -395,8 +391,6 @@ where
 {
     type SqlType = Untyped;
 }
-
-impl<Conn: Connection, Query> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Query> {}
 
 impl<DB: Backend, Query> RunQueryDslSupport for BoxedSqlQuery<'_, DB, Query> {}
 

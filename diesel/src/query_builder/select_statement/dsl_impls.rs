@@ -575,11 +575,6 @@ where
 
 impl<F, S, D, W, O, LOf, G, H, LC> QueryDsl for SelectStatement<F, S, D, W, O, LOf, G, H, LC> {}
 
-impl<F, S, D, W, O, LOf, G, H, LC, Conn> RunQueryDsl<Conn>
-    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
-{
-}
-
 impl<F, S, D, W, O, LOf, G, H, LC> RunQueryDslSupport
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 {

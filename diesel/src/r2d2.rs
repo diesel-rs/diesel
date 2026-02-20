@@ -454,8 +454,6 @@ impl Query for CheckConnectionQuery {
     type SqlType = crate::sql_types::Integer;
 }
 
-impl<C> RunQueryDsl<C> for CheckConnectionQuery {}
-
 impl RunQueryDslSupport for CheckConnectionQuery {}
 
 /// A connection customizer designed for use in tests. Implements

@@ -5,7 +5,7 @@ use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
-use crate::query_dsl::{RunQueryDsl, RunQueryDslSupport};
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_source::{QuerySource, Table};
 
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -287,8 +287,6 @@ where
 {
     type SqlType = Ret::SqlType;
 }
-
-impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> where T: QuerySource {}
 
 impl<T, U, Ret> RunQueryDslSupport for DeleteStatement<T, U, Ret> where T: QuerySource {}
 

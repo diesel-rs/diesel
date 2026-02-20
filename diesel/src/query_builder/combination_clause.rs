@@ -23,7 +23,7 @@ use crate::query_dsl::methods::*;
 use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderDsl};
 use crate::query_dsl::RunQueryDslSupport;
 use crate::sql_types::BigInt;
-use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
+use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, Table};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -97,11 +97,6 @@ impl<Combinator, Rule, Source, Rhs, O, LOf, QS> ValidSubselect<QS>
 where
     Source: ValidSubselect<QS>,
     Rhs: ValidSubselect<QS>,
-{
-}
-
-impl<Combinator, Rule, Source, Rhs, O, LOf, Conn> RunQueryDsl<Conn>
-    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 {
 }
 

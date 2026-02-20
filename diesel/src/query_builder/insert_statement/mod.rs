@@ -271,8 +271,6 @@ where
     type SqlType = Ret::SqlType;
 }
 
-impl<T: QuerySource, U, Op, Ret, Conn> RunQueryDsl<Conn> for InsertStatement<T, U, Op, Ret> {}
-
 impl<T: QuerySource, U, Op, Ret> RunQueryDslSupport for InsertStatement<T, U, Op, Ret> {}
 
 impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
