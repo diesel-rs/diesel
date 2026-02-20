@@ -1836,6 +1836,12 @@ pub trait RunQueryDsl<Conn>: Sized {
     }
 }
 
+/// Marker trait for notating what types should implement RunQueryDsl
+/// Primarially used to simplify diesel_async implementing the async version of RunQueryDsl
+pub trait RunQueryDslSupport {}
+
+impl<T> RunQueryDslSupport for T where T: Table {}
+
 // Note: We could have a blanket `AsQuery` impl here, which would apply to
 // everything we want it to. However, when a query is invalid, we specifically
 // want the error to happen on the where clause of the method instead of trait
@@ -1843,9 +1849,3 @@ pub trait RunQueryDsl<Conn>: Sized {
 // ExecuteDsl is not satisfied` instead of a specific error telling them what
 // part of their query is wrong.
 impl<T, Conn> RunQueryDsl<Conn> for T where T: Table {}
-
-/// Marker trait for notating what types should implement RunQueryDsl
-/// Primarially used to simplify diesel_async implementing the async version of RunQueryDsl
-pub trait SupportRunQueryDsl {}
-
-impl<T> SupportRunQueryDsl for T where T: Table {}

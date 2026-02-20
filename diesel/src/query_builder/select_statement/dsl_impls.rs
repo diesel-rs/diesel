@@ -580,7 +580,7 @@ impl<F, S, D, W, O, LOf, G, H, LC, Conn> RunQueryDsl<Conn>
 {
 }
 
-impl<F, S, D, W, O, LOf, G, H, LC> SupportRunQueryDsl
+impl<F, S, D, W, O, LOf, G, H, LC> RunQueryDslSupport
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 {
 }

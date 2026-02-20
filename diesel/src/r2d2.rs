@@ -189,7 +189,7 @@ use crate::connection::{
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
 use crate::query_builder::{Query, QueryFragment, QueryId};
-use crate::query_dsl::SupportRunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -456,7 +456,7 @@ impl Query for CheckConnectionQuery {
 
 impl<C> RunQueryDsl<C> for CheckConnectionQuery {}
 
-impl SupportRunQueryDsl for CheckConnectionQuery {}
+impl RunQueryDslSupport for CheckConnectionQuery {}
 
 /// A connection customizer designed for use in tests. Implements
 /// [CustomizeConnection] in a way that ensures transactions
