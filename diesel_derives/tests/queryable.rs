@@ -142,3 +142,25 @@ fn check_can_also_use_an_associated_function_with_try_into() {
         r#type: String,
     }
 }
+
+#[test]
+fn deserialize_as_with_tuple_type() {
+    use diesel::sql_types::Text;
+
+    #[derive(Debug, PartialEq, Queryable)]
+    struct MyStruct {
+        id: i32,
+        #[diesel(deserialize_as = (i32, String))]
+        val: (i32, String),
+    }
+
+    let conn = &mut connection();
+    let data = select(sql::<(Integer, (Integer, Text))>("1, 2, 'test'")).get_result(conn);
+    assert_eq!(
+        Ok(MyStruct {
+            id: 1,
+            val: (2, "test".to_string()),
+        }),
+        data,
+    );
+}

@@ -11,13 +11,13 @@ error: expected `=`
 LL |     #[diesel(serialize_as(Foo))]
    |                          ^
 
-error: expected identifier
+error: expected type
   --> tests/fail/derive/bad_serialize_as.rs:33:29
    |
 LL |     #[diesel(serialize_as = "foo")]
    |                             ^^^^^
 
-error: expected identifier
+error: expected type
   --> tests/fail/derive/bad_serialize_as.rs:42:29
    |
 LL |     #[diesel(serialize_as = 1omg)]

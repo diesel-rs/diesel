@@ -31,7 +31,7 @@ struct User2 {
 struct User3 {
     id: i32,
     #[diesel(serialize_as = "foo")]
-    //~^ ERROR: expected identifier
+    //~^ ERROR: expected type
     name: String,
 }
 
@@ -40,7 +40,7 @@ struct User3 {
 struct User4 {
     id: i32,
     #[diesel(serialize_as = 1omg)]
-    //~^ ERROR: expected identifier
+    //~^ ERROR: expected type
     name: String,
 }
 
