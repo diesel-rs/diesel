@@ -69,9 +69,9 @@ pub fn parse_eq_type(input: ParseStream, help: &str) -> Result<Type> {
     }
 
     input.parse::<Eq>()?;
-    input.parse::<Type>().map_err(|e| {
-        syn::Error::new(e.span(), "expected type")
-    })
+    input
+        .parse::<Type>()
+        .map_err(|e| syn::Error::new(e.span(), "expected type"))
 }
 
 pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
