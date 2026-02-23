@@ -58,3 +58,21 @@ error: `deserialize_as` does not support reference types
    |
 LL |     #[diesel(deserialize_as = (&'static str, i32))]
    |                                ^^^^^^^^^^^^
+
+error: `deserialize_as` does not support pointer types
+  --> tests/fail/derive/bad_deserialize_as.rs:87:31
+   |
+LL |     #[diesel(deserialize_as = *const u8)]
+   |                               ^^^^^^^^^
+
+error: `deserialize_as` does not support function pointer types
+  --> tests/fail/derive/bad_deserialize_as.rs:95:31
+   |
+LL |     #[diesel(deserialize_as = fn() -> i32)]
+   |                               ^^^^^^^^^^^
+
+error: macro invocation is not supported in `deserialize_as`
+   --> tests/fail/derive/bad_deserialize_as.rs:103:31
+    |
+LL |     #[diesel(deserialize_as = concat_idents!(Foo, Bar))]
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^

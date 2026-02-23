@@ -214,14 +214,7 @@ fn check_serde_as_supported_type(ty: &Type, attr_name: &str) -> Result<()> {
             check_serde_as_supported_type(elem, attr_name)
         }
         Type::Tuple(syn::TypeTuple { elems, .. }) => {
-            if let Some(err) = elems
-                .iter()
-                .find_map(|ty| check_serde_as_supported_type(ty, attr_name).err())
-            {
-                Err(err)
-            } else {
-                Ok(())
-            }
+            elems.iter().try_for_each(|ty| check_serde_as_supported_type(ty, attr_name))
         }
         Type::Ptr(_) => Err(syn::Error::new_spanned(
             ty,
@@ -250,7 +243,7 @@ fn check_serde_as_supported_type(ty: &Type, attr_name: &str) -> Result<()> {
         )),
         Type::Macro(_) => Err(syn::Error::new_spanned(
             ty,
-            format!("`{attr_name}` does not support macro types"),
+            format!("macro invocation is not supported in `{attr_name}`"),
         )),
         Type::ImplTrait(_) => Err(syn::Error::new_spanned(
             ty,

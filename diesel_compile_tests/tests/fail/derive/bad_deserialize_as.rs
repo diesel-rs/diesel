@@ -81,4 +81,28 @@ struct User10 {
     name: String,
 }
 
+#[derive(Queryable)]
+struct User11 {
+    id: i32,
+    #[diesel(deserialize_as = *const u8)]
+    //~^ ERROR: `deserialize_as` does not support pointer types
+    name: String,
+}
+
+#[derive(Queryable)]
+struct User12 {
+    id: i32,
+    #[diesel(deserialize_as = fn() -> i32)]
+    //~^ ERROR: `deserialize_as` does not support function pointer types
+    name: String,
+}
+
+#[derive(Queryable)]
+struct User13 {
+    id: i32,
+    #[diesel(deserialize_as = concat_idents!(Foo, Bar))]
+    //~^ ERROR: macro invocation is not supported in `deserialize_as`
+    name: String,
+}
+
 fn main() {}
