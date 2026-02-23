@@ -213,9 +213,9 @@ fn check_serde_as_supported_type(ty: &Type, attr_name: &str) -> Result<()> {
         Type::Paren(syn::TypeParen { elem, .. }) | Type::Group(syn::TypeGroup { elem, .. }) => {
             check_serde_as_supported_type(elem, attr_name)
         }
-        Type::Tuple(syn::TypeTuple { elems, .. }) => {
-            elems.iter().try_for_each(|ty| check_serde_as_supported_type(ty, attr_name))
-        }
+        Type::Tuple(syn::TypeTuple { elems, .. }) => elems
+            .iter()
+            .try_for_each(|ty| check_serde_as_supported_type(ty, attr_name)),
         Type::Ptr(_) => Err(syn::Error::new_spanned(
             ty,
             format!("`{attr_name}` does not support pointer types"),
