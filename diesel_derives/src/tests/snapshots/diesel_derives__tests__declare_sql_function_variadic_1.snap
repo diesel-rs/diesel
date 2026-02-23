@@ -1,0 +1,436 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[diesel::declare_sql_function]\nextern \"SQL\" {\n    #[variadic(1)]\n    fn json_array<V: SqlType + SingleValue>(value: V) -> Json;\n}\n"
+---
+///
+/// # Variadic functions
+///
+/// This function is variadic in SQL, so there's a family of functions
+/// on a diesel side:
+///
+///`json_array_0`, `json_array_1`, ... `json_array_n`
+///
+/// Here, the postfix number indicates repetitions of variadic arguments.
+/// To use this function, the appropriate version with the correct
+/// argument count must be selected.
+///
+/// ## Controlling the generation of variadic function variants
+///
+/// By default, only variants with 0, 1, and 2 repetitions of variadic
+/// arguments are generated. To generate more variants, set the
+/// `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the desired
+/// number of variants.
+///
+/// For a greater convenience this environment variable can also be set
+/// in a `.cargo/config.toml` file as described in the
+/// [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
+#[doc(alias = "json_array")]
+#[allow(non_camel_case_types)]
+pub fn json_array_0() -> json_array_0 {
+    json_array_0_utils::json_array_0 {
+    }
+}
+#[allow(non_camel_case_types, non_snake_case)]
+///The return type of [`json_array_0()`](fn@json_array_0)
+pub type json_array_0 = json_array_0_utils::json_array_0;
+#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+pub(crate) mod json_array_0_utils {
+    use diesel::{self, QueryResult};
+    use diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    use diesel::query_builder::{QueryFragment, AstPass};
+    use diesel::sql_types::*;
+    use diesel::internal::sql_functions::*;
+    use super::*;
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    pub struct json_array_0 {}
+    ///The return type of [`json_array_0()`](fn@json_array_0)
+    pub type HelperType = json_array_0;
+    impl Expression for json_array_0 {
+        type SqlType = Json;
+    }
+    impl<__DieselInternal> SelectableExpression<__DieselInternal> for json_array_0
+    where
+        Self: AppearsOnTable<__DieselInternal>,
+    {}
+    impl<__DieselInternal> AppearsOnTable<__DieselInternal> for json_array_0
+    where
+        Self: Expression,
+    {}
+    impl<__DieselInternal> FunctionFragment<__DieselInternal> for json_array_0
+    where
+        __DieselInternal: diesel::backend::Backend,
+    {
+        const FUNCTION_NAME: &'static str = "json_array";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            Ok(())
+        }
+    }
+    impl<__DieselInternal> QueryFragment<__DieselInternal> for json_array_0
+    where
+        __DieselInternal: diesel::backend::Backend,
+    {
+        fn walk_ast<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql("(");
+            self.walk_arguments(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+    #[derive(ValidGrouping)]
+    pub struct __Derived();
+    impl<__DieselInternal> ValidGrouping<__DieselInternal> for json_array_0
+    where
+        __Derived: ValidGrouping<__DieselInternal>,
+    {
+        type IsAggregate = <__Derived as ValidGrouping<__DieselInternal>>::IsAggregate;
+    }
+}
+///
+/// # Variadic functions
+///
+/// This function is variadic in SQL, so there's a family of functions
+/// on a diesel side:
+///
+///`json_array_0`, `json_array_1`, ... `json_array_n`
+///
+/// Here, the postfix number indicates repetitions of variadic arguments.
+/// To use this function, the appropriate version with the correct
+/// argument count must be selected.
+///
+/// ## Controlling the generation of variadic function variants
+///
+/// By default, only variants with 0, 1, and 2 repetitions of variadic
+/// arguments are generated. To generate more variants, set the
+/// `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the desired
+/// number of variants.
+///
+/// For a greater convenience this environment variable can also be set
+/// in a `.cargo/config.toml` file as described in the
+/// [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
+#[doc(alias = "json_array")]
+#[allow(non_camel_case_types)]
+pub fn json_array_1<V1: SqlType + SingleValue, value_1>(
+    value_1: value_1,
+) -> json_array_1<V1, value_1>
+where
+    value_1: diesel::expression::AsExpression<V1>,
+{
+    json_array_1_utils::json_array_1 {
+        value_1: value_1.as_expression(),
+        V1: ::core::marker::PhantomData,
+    }
+}
+#[allow(non_camel_case_types, non_snake_case)]
+///The return type of [`json_array_1()`](fn@json_array_1)
+pub type json_array_1<V1, value_1> = json_array_1_utils::json_array_1<
+    V1,
+    <value_1 as diesel::expression::AsExpression<V1>>::Expression,
+>;
+#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+pub(crate) mod json_array_1_utils {
+    use diesel::{self, QueryResult};
+    use diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    use diesel::query_builder::{QueryFragment, AstPass};
+    use diesel::sql_types::*;
+    use diesel::internal::sql_functions::*;
+    use super::*;
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    #[derive(diesel::sql_types::DieselNumericOps)]
+    pub struct json_array_1<V1, value_1> {
+        pub(super) value_1: value_1,
+        pub(super) V1: ::core::marker::PhantomData<V1>,
+    }
+    ///The return type of [`json_array_1()`](fn@json_array_1)
+    pub type HelperType<V1, value_1> = json_array_1<
+        V1,
+        <value_1 as AsExpression<V1>>::Expression,
+    >;
+    impl<V1: SqlType + SingleValue, value_1> Expression for json_array_1<V1, value_1>
+    where
+        (value_1): Expression,
+    {
+        type SqlType = Json;
+    }
+    impl<
+        V1: SqlType + SingleValue,
+        value_1,
+        __DieselInternal,
+    > SelectableExpression<__DieselInternal> for json_array_1<V1, value_1>
+    where
+        value_1: SelectableExpression<__DieselInternal>,
+        Self: AppearsOnTable<__DieselInternal>,
+    {}
+    impl<
+        V1: SqlType + SingleValue,
+        value_1,
+        __DieselInternal,
+    > AppearsOnTable<__DieselInternal> for json_array_1<V1, value_1>
+    where
+        value_1: AppearsOnTable<__DieselInternal>,
+        Self: Expression,
+    {}
+    impl<
+        V1: SqlType + SingleValue,
+        value_1,
+        __DieselInternal,
+    > FunctionFragment<__DieselInternal> for json_array_1<V1, value_1>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        value_1: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = "json_array";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            if !self.value_1.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.value_1.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            Ok(())
+        }
+    }
+    impl<
+        V1: SqlType + SingleValue,
+        value_1,
+        __DieselInternal,
+    > QueryFragment<__DieselInternal> for json_array_1<V1, value_1>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        value_1: QueryFragment<__DieselInternal>,
+    {
+        fn walk_ast<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql("(");
+            self.walk_arguments(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+    #[derive(ValidGrouping)]
+    pub struct __Derived<value_1>(value_1);
+    impl<
+        V1: SqlType + SingleValue,
+        value_1,
+        __DieselInternal,
+    > ValidGrouping<__DieselInternal> for json_array_1<V1, value_1>
+    where
+        __Derived<value_1>: ValidGrouping<__DieselInternal>,
+    {
+        type IsAggregate = <__Derived<
+            value_1,
+        > as ValidGrouping<__DieselInternal>>::IsAggregate;
+    }
+}
+///
+/// # Variadic functions
+///
+/// This function is variadic in SQL, so there's a family of functions
+/// on a diesel side:
+///
+///`json_array_0`, `json_array_1`, ... `json_array_n`
+///
+/// Here, the postfix number indicates repetitions of variadic arguments.
+/// To use this function, the appropriate version with the correct
+/// argument count must be selected.
+///
+/// ## Controlling the generation of variadic function variants
+///
+/// By default, only variants with 0, 1, and 2 repetitions of variadic
+/// arguments are generated. To generate more variants, set the
+/// `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the desired
+/// number of variants.
+///
+/// For a greater convenience this environment variable can also be set
+/// in a `.cargo/config.toml` file as described in the
+/// [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
+#[doc(alias = "json_array")]
+#[allow(non_camel_case_types)]
+pub fn json_array_2<
+    V1: SqlType + SingleValue,
+    V2: SqlType + SingleValue,
+    value_1,
+    value_2,
+>(value_1: value_1, value_2: value_2) -> json_array_2<V1, V2, value_1, value_2>
+where
+    value_1: diesel::expression::AsExpression<V1>,
+    value_2: diesel::expression::AsExpression<V2>,
+{
+    json_array_2_utils::json_array_2 {
+        value_1: value_1.as_expression(),
+        value_2: value_2.as_expression(),
+        V1: ::core::marker::PhantomData,
+        V2: ::core::marker::PhantomData,
+    }
+}
+#[allow(non_camel_case_types, non_snake_case)]
+///The return type of [`json_array_2()`](fn@json_array_2)
+pub type json_array_2<V1, V2, value_1, value_2> = json_array_2_utils::json_array_2<
+    V1,
+    V2,
+    <value_1 as diesel::expression::AsExpression<V1>>::Expression,
+    <value_2 as diesel::expression::AsExpression<V2>>::Expression,
+>;
+#[doc(hidden)]
+#[allow(non_camel_case_types, non_snake_case, unused_imports)]
+pub(crate) mod json_array_2_utils {
+    use diesel::{self, QueryResult};
+    use diesel::expression::{
+        AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
+    };
+    use diesel::query_builder::{QueryFragment, AstPass};
+    use diesel::sql_types::*;
+    use diesel::internal::sql_functions::*;
+    use super::*;
+    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+    #[derive(diesel::sql_types::DieselNumericOps)]
+    pub struct json_array_2<V1, V2, value_1, value_2> {
+        pub(super) value_1: value_1,
+        pub(super) value_2: value_2,
+        pub(super) V1: ::core::marker::PhantomData<V1>,
+        pub(super) V2: ::core::marker::PhantomData<V2>,
+    }
+    ///The return type of [`json_array_2()`](fn@json_array_2)
+    pub type HelperType<V1, V2, value_1, value_2> = json_array_2<
+        V1,
+        V2,
+        <value_1 as AsExpression<V1>>::Expression,
+        <value_2 as AsExpression<V2>>::Expression,
+    >;
+    impl<
+        V1: SqlType + SingleValue,
+        V2: SqlType + SingleValue,
+        value_1,
+        value_2,
+    > Expression for json_array_2<V1, V2, value_1, value_2>
+    where
+        (value_1, value_2): Expression,
+    {
+        type SqlType = Json;
+    }
+    impl<
+        V1: SqlType + SingleValue,
+        V2: SqlType + SingleValue,
+        value_1,
+        value_2,
+        __DieselInternal,
+    > SelectableExpression<__DieselInternal> for json_array_2<V1, V2, value_1, value_2>
+    where
+        value_1: SelectableExpression<__DieselInternal>,
+        value_2: SelectableExpression<__DieselInternal>,
+        Self: AppearsOnTable<__DieselInternal>,
+    {}
+    impl<
+        V1: SqlType + SingleValue,
+        V2: SqlType + SingleValue,
+        value_1,
+        value_2,
+        __DieselInternal,
+    > AppearsOnTable<__DieselInternal> for json_array_2<V1, V2, value_1, value_2>
+    where
+        value_1: AppearsOnTable<__DieselInternal>,
+        value_2: AppearsOnTable<__DieselInternal>,
+        Self: Expression,
+    {}
+    impl<
+        V1: SqlType + SingleValue,
+        V2: SqlType + SingleValue,
+        value_1,
+        value_2,
+        __DieselInternal,
+    > FunctionFragment<__DieselInternal> for json_array_2<V1, V2, value_1, value_2>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        value_1: QueryFragment<__DieselInternal>,
+        value_2: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = "json_array";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            if !self.value_1.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.value_1.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            if !self.value_2.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.value_2.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            Ok(())
+        }
+    }
+    impl<
+        V1: SqlType + SingleValue,
+        V2: SqlType + SingleValue,
+        value_1,
+        value_2,
+        __DieselInternal,
+    > QueryFragment<__DieselInternal> for json_array_2<V1, V2, value_1, value_2>
+    where
+        __DieselInternal: diesel::backend::Backend,
+        value_1: QueryFragment<__DieselInternal>,
+        value_2: QueryFragment<__DieselInternal>,
+    {
+        fn walk_ast<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql("(");
+            self.walk_arguments(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+    #[derive(ValidGrouping)]
+    pub struct __Derived<value_1, value_2>(value_1, value_2);
+    impl<
+        V1: SqlType + SingleValue,
+        V2: SqlType + SingleValue,
+        value_1,
+        value_2,
+        __DieselInternal,
+    > ValidGrouping<__DieselInternal> for json_array_2<V1, V2, value_1, value_2>
+    where
+        __Derived<value_1, value_2>: ValidGrouping<__DieselInternal>,
+    {
+        type IsAggregate = <__Derived<
+            value_1,
+            value_2,
+        > as ValidGrouping<__DieselInternal>>::IsAggregate;
+    }
+}

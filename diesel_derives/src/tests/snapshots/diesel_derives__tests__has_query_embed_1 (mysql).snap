@@ -1,0 +1,80 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(HasQuery)]\nstruct User {\n    id: i32,\n    name: String,\n    #[diesel(embed)]\n    address: Address,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__DB: diesel::backend::Backend> diesel::HasQuery<__DB> for User {
+        type BaseQuery = <users::table as diesel::query_builder::AsQuery>::Query;
+        fn base_query() -> Self::BaseQuery {
+            diesel::query_builder::AsQuery::as_query(users::table)
+        }
+    }
+};
+const _: () = {
+    use diesel;
+    use diesel::expression::Selectable;
+    impl<__DB: diesel::backend::Backend> Selectable<__DB> for User
+    where
+        Address: Selectable<__DB>,
+    {
+        type SelectExpression = (
+            users::r#id,
+            users::r#name,
+            <Address as Selectable<__DB>>::SelectExpression,
+        );
+        fn construct_selection() -> Self::SelectExpression {
+            (
+                users::r#id,
+                users::r#name,
+                <Address as Selectable<__DB>>::construct_selection(),
+            )
+        }
+    }
+    fn _check_field_compatibility()
+    where
+        i32: diesel::deserialize::FromSqlRow<
+            diesel::dsl::SqlTypeOf<users::r#id>,
+            diesel::mysql::Mysql,
+        >,
+        String: diesel::deserialize::FromSqlRow<
+            diesel::dsl::SqlTypeOf<users::r#name>,
+            diesel::mysql::Mysql,
+        >,
+        Address: diesel::deserialize::FromSqlRow<
+            diesel::dsl::SqlTypeOf<
+                <Address as Selectable<diesel::mysql::Mysql>>::SelectExpression,
+            >,
+            diesel::mysql::Mysql,
+        >,
+    {}
+};
+const _: () = {
+    use diesel;
+    use diesel::row::{Row as _, Field as _};
+    impl<
+        __DB: diesel::backend::Backend,
+        __ST0,
+        __ST1,
+        __ST2,
+    > diesel::deserialize::Queryable<(__ST0, __ST1, __ST2), __DB> for User
+    where
+        (
+            i32,
+            String,
+            Address,
+        ): diesel::deserialize::FromStaticSqlRow<(__ST0, __ST1, __ST2), __DB>,
+    {
+        type Row = (i32, String, Address);
+        fn build(row: (i32, String, Address)) -> diesel::deserialize::Result<Self> {
+            use std::convert::TryInto;
+            diesel::deserialize::Result::Ok(Self {
+                id: row.0.try_into()?,
+                name: row.1.try_into()?,
+                address: row.2.try_into()?,
+            })
+        }
+    }
+};

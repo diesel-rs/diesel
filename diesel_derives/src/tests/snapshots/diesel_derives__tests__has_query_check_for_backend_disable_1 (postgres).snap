@@ -1,0 +1,9 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(HasQuery)]\n#[diesel(check_for_backend(disable = true))]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+::core::compile_error! {
+    "expected `,`"
+}
