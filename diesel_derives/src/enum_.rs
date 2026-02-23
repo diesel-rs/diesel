@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{
     spanned::Spanned, Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics,
     Variant, WhereClause,
@@ -9,6 +9,7 @@ use syn::{
 
 use crate::{
     attrs::{parse_attributes, AttributeSpanWrapper, EnumAttr},
+    model::Model,
     util::wrap_in_dummy_mod,
 };
 
@@ -78,36 +79,44 @@ fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<
 fn impl_from_sql(
     enum_name: &Ident,
     (impl_generics, ty_generics, where_clause): &(ImplGenerics, TypeGenerics, Option<&WhereClause>),
+    from_sql_types: &[TokenStream],
     backend: &TokenStream,
     value_type: &TokenStream,
 ) -> TokenStream {
     quote! {
-        impl #impl_generics ::diesel::deserialize::FromSql<::diesel::sql_types::Text, #backend> for #enum_name #ty_generics #where_clause {
-            fn from_sql(value: #value_type) -> ::diesel::deserialize::Result<Self> {
-                Ok(Self::from_bytes(value.as_bytes()).unwrap())
+        *(
+            impl #impl_generics ::diesel::deserialize::FromSql<#*from_sql_types, #backend> for #enum_name #ty_generics #where_clause {
+                fn from_sql(value: #value_type) -> ::diesel::deserialize::Result<Self> {
+                    Ok(Self::from_bytes(value.as_bytes()).unwrap())
+                }
             }
-        }
+        )
+
     }
 }
 
 fn impl_to_sql(
     enum_name: &Ident,
     (impl_generics, ty_generics, where_clause): &(ImplGenerics, TypeGenerics, Option<&WhereClause>),
+    to_sql_types: &[TokenStream],
     backend: &TokenStream,
 ) -> TokenStream {
     quote! {
-        impl #impl_generics ::diesel::serialize::ToSql<::diesel::sql_types::Text, #backend> for #enum_name #ty_generics #where_clause {
-            fn to_sql<'b>(&'b self, out: &mut ::diesel::serialize::Output<'b, '_, #backend>) -> ::diesel::serialize::Result {
-                use ::std::io::Write;
+        *(
+            impl #impl_generics ::diesel::serialize::ToSql<#*to_sql_types, #backend> for #enum_name #ty_generics #where_clause {
+                fn to_sql<'b>(&'b self, out: &mut ::diesel::serialize::Output<'b, '_, #backend>) -> ::diesel::serialize::Result {
+                    use ::std::io::Write;
 
-                out.write_all(self.as_bytes())?;
-                Ok(::diesel::serialize::IsNull::No)
+                    out.write_all(self.as_bytes())?;
+                    Ok(::diesel::serialize::IsNull::No)
+                }
             }
-        }
+        )
     }
 }
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
     let enum_variants = match &item.data {
         Data::Enum(e) => &e.variants,
         _ => {
@@ -147,6 +156,11 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let generics = item.generics.split_for_impl();
 
     let mut impls = Vec::new();
+    let sql_types: Vec<TokenStream> = model
+        .sql_types
+        .iter()
+        .map(syn::Type::to_token_stream)
+        .collect();
     for attr in parse_attributes(&item.attrs)? {
         let backends = parse_backends(&attr)?;
 
@@ -156,8 +170,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 "only the Postgres and Mysql backends are supported",
             ))?;
 
-            impls.push(impl_from_sql(&item.ident, &generics, backend, value_type));
-            impls.push(impl_to_sql(&item.ident, &generics, backend));
+            impls.push(impl_from_sql(
+                &item.ident,
+                &generics,
+                &sql_types,
+                backend,
+                value_type,
+            ));
+            impls.push(impl_to_sql(&item.ident, &generics, &sql_types, backend));
         }
     }
 
