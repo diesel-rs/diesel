@@ -273,6 +273,45 @@ impl RawConnection {
             ))
         }
     }
+
+    pub(super) fn blob_open<'conn>(
+        &'conn self,
+        table_name: &str,
+        column_name: &str,
+        pkey: i64,
+    ) -> Result<super::sqlite_blob::SqliteBlob<'conn>, Error> {
+        let column_name = alloc::ffi::CString::new(column_name)?;
+        let table_name = alloc::ffi::CString::new(table_name)?;
+
+        let mut blob: *mut ffi::sqlite3_blob = core::ptr::null_mut();
+
+        let ret = unsafe {
+            ffi::sqlite3_blob_open(
+                self.internal_connection.as_ptr(),
+                c"main".as_ptr(),
+                table_name.as_c_str().as_ptr(),
+                column_name.as_c_str().as_ptr(),
+                pkey,
+                0,
+                &mut blob,
+            )
+        };
+
+        Self::process_sql_function_result(ret)?;
+
+        let blob = unsafe { core::ptr::NonNull::new_unchecked(blob) };
+
+        let blob_size = unsafe { ffi::sqlite3_blob_bytes(blob.as_ptr()) };
+
+        let blob_size = usize::try_from(blob_size).unwrap(); // TODO: What to do?
+
+        Ok(super::sqlite_blob::SqliteBlob {
+            blob,
+            read_index: 0,
+            blob_size,
+            _pd: core::marker::PhantomData,
+        })
+    }
 }
 
 impl Drop for RawConnection {

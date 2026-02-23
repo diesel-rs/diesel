@@ -10,6 +10,7 @@ mod owned_row;
 mod raw;
 mod row;
 mod serialized_database;
+mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
@@ -412,6 +413,26 @@ impl SqliteConnection {
     /// ```
     pub fn last_insert_rowid(&self) -> Option<NonZeroI64> {
         NonZeroI64::new(self.raw_connection.last_insert_rowid())
+    }
+
+    pub fn get_blob<'conn, 'query, U>(
+        &'conn self,
+        primary_key: i64,
+    ) -> Result<sqlite_blob::SqliteBlob<'conn>, Error>
+    where
+        'query: 'conn,
+        U: crate::Column,
+        U::Table: nodes::StaticQueryFragment<
+                Component = diesel::internal::table_macro::Identifier<'static>,
+            >,
+    {
+        use crate::query_builder::nodes::StaticQueryFragment;
+
+        let column_name = U::NAME;
+        let table_name = U::Table::STATIC_COMPONENT;
+
+        self.raw_connection
+            .blob_open(table_name.0, column_name, primary_key)
     }
 
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
@@ -1496,5 +1517,162 @@ mod tests {
             .execute(conn)
             .unwrap();
         assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+    }
+
+    #[diesel_test_helper::test]
+    fn read_bytes_from_blob() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+                data2 -> Blob,
+            }
+        }
+
+        use std::io::Read;
+
+        let conn = &mut connection();
+
+        let _ =
+            crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB, data2 BLOB)")
+                .execute(conn);
+
+        let _ = crate::sql_query(
+            "INSERT INTO blobs (data, data2) VALUES ('abc', 'def'), ('123', '456')",
+        )
+        .execute(conn);
+
+        let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+        let mut buf = vec![];
+        data.read_to_end(&mut buf).unwrap();
+
+        assert_eq!(buf, b"abc");
+
+        let mut data2 = conn.get_blob::<blobs::data2>(1).unwrap();
+        let mut buf = vec![];
+        data2.read_to_end(&mut buf).unwrap();
+
+        assert_eq!(buf, b"def");
+    }
+
+    #[diesel_test_helper::test]
+    fn read_seek_bytes() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::Read;
+        use std::io::Seek;
+        use std::io::SeekFrom;
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abcdefghi')").execute(conn);
+
+        let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek one forward
+        assert_eq!(data.seek(SeekFrom::Current(1)).unwrap(), 2);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"c");
+
+        // Seek back to start
+        assert_eq!(data.seek(SeekFrom::Start(0)).unwrap(), 0);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek before start
+        assert_eq!(data.seek(SeekFrom::Current(-10)).unwrap(), 0);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek after end
+        data.seek(SeekFrom::Current(100)).unwrap();
+
+        // Now we don't get any bytes back
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn use_conn_after_blob_drop() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
+
+        let data = conn.get_blob::<blobs::data>(1).unwrap();
+        drop(data);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('def')").execute(conn);
+    }
+
+    #[diesel_test_helper::test]
+    fn blob_transaction() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::Read;
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
+
+        {
+            let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+            let mut buf = vec![];
+            data.read_to_end(&mut buf).unwrap();
+            assert_eq!(buf, b"abc");
+        }
+
+        let res = conn.exclusive_transaction(|conn| {
+            crate::sql_query("UPDATE blobs SET data = 'def' WHERE id = 1").execute(conn)?;
+
+            let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+            let mut buf = vec![];
+            data.read_to_end(&mut buf).unwrap();
+            assert_eq!(buf, b"def");
+
+            Result::<(), _>::Err(Error::RollbackTransaction)
+        });
+
+        assert_eq!(res.unwrap_err(), Error::RollbackTransaction);
+
+        let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+        let mut buf = vec![];
+        data.read_to_end(&mut buf).unwrap();
+        assert_eq!(buf, b"abc");
     }
 }
