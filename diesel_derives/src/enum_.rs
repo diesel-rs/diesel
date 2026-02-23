@@ -196,8 +196,13 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         }
     };
 
+    let as_expression_impl = super::as_expression::derive(item.clone())?;
+    let from_sql_row_impl = super::from_sql_row::derive(item)?;
+
     Ok(wrap_in_dummy_mod(quote! {
         #impl_from_and_to_bytes
         #(#impls)*
+        #as_expression_impl
+        #from_sql_row_impl
     }))
 }
