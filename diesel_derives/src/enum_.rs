@@ -84,14 +84,11 @@ fn impl_from_sql(
     value_type: &TokenStream,
 ) -> TokenStream {
     quote! {
-        *(
-            impl #impl_generics ::diesel::deserialize::FromSql<#*from_sql_types, #backend> for #enum_name #ty_generics #where_clause {
-                fn from_sql(value: #value_type) -> ::diesel::deserialize::Result<Self> {
-                    Ok(Self::from_bytes(value.as_bytes()).unwrap())
-                }
+        impl #impl_generics ::diesel::deserialize::FromSql<#(#from_sql_types)*, #backend> for #enum_name #ty_generics #where_clause {
+            fn from_sql(value: #value_type) -> ::diesel::deserialize::Result<Self> {
+                Ok(Self::from_bytes(value.as_bytes()).unwrap())
             }
-        )
-
+        }
     }
 }
 
@@ -102,16 +99,14 @@ fn impl_to_sql(
     backend: &TokenStream,
 ) -> TokenStream {
     quote! {
-        *(
-            impl #impl_generics ::diesel::serialize::ToSql<#*to_sql_types, #backend> for #enum_name #ty_generics #where_clause {
-                fn to_sql<'b>(&'b self, out: &mut ::diesel::serialize::Output<'b, '_, #backend>) -> ::diesel::serialize::Result {
-                    use ::std::io::Write;
+        impl #impl_generics ::diesel::serialize::ToSql<#(#to_sql_types)*, #backend> for #enum_name #ty_generics #where_clause {
+            fn to_sql<'b>(&'b self, out: &mut ::diesel::serialize::Output<'b, '_, #backend>) -> ::diesel::serialize::Result {
+                use ::std::io::Write;
 
-                    out.write_all(self.as_bytes())?;
-                    Ok(::diesel::serialize::IsNull::No)
-                }
+                out.write_all(self.as_bytes())?;
+                Ok(::diesel::serialize::IsNull::No)
             }
-        )
+        }
     }
 }
 
