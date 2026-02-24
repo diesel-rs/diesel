@@ -134,8 +134,18 @@ impl TestArgs {
         if !self.no_integration_tests {
             // run the normal tests via nextest
             let mut command = Command::new("cargo");
+            // wasm tests are slow with cargo nextest
+            // as this spawns a new node.js runtime for each test
+            // which then needs to translate the wasm to bytecode which takes a bit time.
+            // ordinary cargo test only spawns one node.js instance and therefore needs
+            // to translate the wasm only once
+            if self.wasm {
+                command.args(["test", "--tests", "--benches", "--examples"]);
+            } else {
+                command.args(["nextest", "run"]);
+            }
             command
-                .args(["nextest", "run", "--workspace", "--no-default-features"])
+                .args(["--workspace", "--no-default-features"])
                 .current_dir(&metadata.workspace_root)
                 .args(exclude)
                 .arg("-F")
