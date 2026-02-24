@@ -60,7 +60,7 @@ sqlite-wasm-rs = { version = ">=0.4.0, <0.6.0", optional = true, default-feature
 # Something is dependent on it, we use feature to override it.
 getrandom = { version = "0.4", features = ["wasm_js"] }
 getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
-wasm-bindgen-test = "0.3.49"
+wasm-bindgen-test = "=0.3.58"
 
 [dev-dependencies]
 cfg-if = "1"
