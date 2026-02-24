@@ -17,6 +17,9 @@ pub use self::connection::SerializedDatabase;
 pub use self::connection::SqliteBindValue;
 pub use self::connection::SqliteConnection;
 pub use self::connection::SqliteValue;
+pub use self::connection::{AuthorizerAction, AuthorizerContext, AuthorizerDecision};
+pub use self::connection::{ChangeHookId, SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps};
+pub use self::connection::{SqliteTraceEvent, SqliteTraceFlags};
 pub use self::query_builder::SqliteQueryBuilder;
 
 /// Trait for the implementation of a SQLite aggregate function

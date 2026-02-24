@@ -4,6 +4,7 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+mod authorizer;
 mod bind_collector;
 mod functions;
 mod owned_row;
@@ -13,11 +14,16 @@ mod serialized_database;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+mod trace;
+mod update_hook;
 
+pub use self::authorizer::{AuthorizerAction, AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
+pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
+pub use self::update_hook::{ChangeHookId, SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps};
 
 use self::raw::RawConnection;
 use self::statement_iterator::*;
@@ -28,11 +34,13 @@ use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
+use crate::query_builder::nodes::{Identifier, StaticQueryFragment};
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
+use alloc::boxed::Box;
 use alloc::string::String;
 use core::ffi as libc;
 
@@ -519,6 +527,1026 @@ impl SqliteConnection {
     {
         self.raw_connection
             .register_collation_function(collation_name, collation)
+    }
+
+    /// Registers a callback invoked for any row change (insert, update, or
+    /// delete) on any table, filtered by the given [`SqliteChangeOps`] mask.
+    ///
+    /// This is the untyped variant — the table name is provided as a string
+    /// in [`SqliteChangeEvent::table_name`], suitable for logging all changes
+    /// regardless of table.
+    ///
+    /// The callback fires **synchronously during `sqlite3_step()`**, i.e.
+    /// while the triggering statement is executing. The connection is **not**
+    /// available inside the callback.
+    ///
+    /// Multiple hooks can be registered on the same connection (and even
+    /// the same table); they fire in registration order.
+    ///
+    /// Returns a [`ChangeHookId`] that can be used to remove the hook later
+    /// via [`remove_change_hook`](Self::remove_change_hook). You can also
+    /// remove all hooks for a specific table with
+    /// [`clear_change_hooks_for`](Self::clear_change_hooks_for), or remove
+    /// every hook at once with
+    /// [`clear_all_change_hooks`](Self::clear_all_change_hooks).
+    ///
+    /// # Limitations
+    ///
+    /// These limitations come from the underlying
+    /// [`sqlite3_update_hook`](https://www.sqlite.org/c3ref/update_hook.html)
+    /// API:
+    ///
+    /// - Only fires for [rowid tables](https://www.sqlite.org/rowidtable.html).
+    ///   [`WITHOUT ROWID`](https://www.sqlite.org/withoutrowid.html) tables do
+    ///   not trigger this callback.
+    /// - Not invoked for changes to internal system tables (e.g.
+    ///   `sqlite_sequence`).
+    /// - Not invoked for implicit deletes caused by
+    ///   [`ON CONFLICT REPLACE`](https://www.sqlite.org/lang_conflict.html).
+    /// - Not invoked for deletes using the
+    ///   [truncate optimization](https://www.sqlite.org/lang_delete.html#truncateopt).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, SqliteChangeOps, SqliteChangeOp};
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// #[derive(Insertable)]
+    /// #[diesel(table_name = users)]
+    /// struct NewUser<'a> {
+    ///     name: &'a str,
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let log = Arc::new(Mutex::new(Vec::new()));
+    /// let log2 = log.clone();
+    ///
+    /// conn.on_change(SqliteChangeOps::ALL, move |event| {
+    ///     log2.lock().unwrap().push((
+    ///         event.op,
+    ///         event.table_name.to_owned(),
+    ///         event.rowid,
+    ///     ));
+    /// });
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(&NewUser { name: "Alice" })
+    ///     .execute(conn)
+    ///     .unwrap();
+    ///
+    /// let entries = log.lock().unwrap();
+    /// assert_eq!(entries.len(), 1);
+    /// assert_eq!(entries[0].0, SqliteChangeOp::Insert);
+    /// assert_eq!(entries[0].1, "users");
+    /// ```
+    pub fn on_change<F>(&mut self, ops: SqliteChangeOps, hook: F) -> ChangeHookId
+    where
+        F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
+    {
+        self.register_change_hook(None, ops, Box::new(hook))
+    }
+
+    /// Registers a callback invoked when a row is inserted into table `T`.
+    ///
+    /// The generic parameter `T` is a [`table!`]-generated table type (e.g.
+    /// `users::table`). The table name is extracted at registration time via
+    /// [`StaticQueryFragment`].
+    ///
+    /// The callback fires synchronously during `sqlite3_step()`.
+    /// The connection is **not** available inside the callback.
+    ///
+    /// Multiple hooks can be registered on the same table; they fire in
+    /// registration order. The returned [`ChangeHookId`] can be passed to
+    /// [`remove_change_hook`](Self::remove_change_hook) to remove just this
+    /// hook, or use [`clear_change_hooks_for`](Self::clear_change_hooks_for)
+    /// / [`clear_all_change_hooks`](Self::clear_all_change_hooks) to remove
+    /// hooks in bulk.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let ids = Arc::new(Mutex::new(Vec::new()));
+    /// let ids2 = ids.clone();
+    ///
+    /// conn.on_insert::<users::table, _>(move |event| {
+    ///     ids2.lock().unwrap().push(event.rowid);
+    /// });
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn)
+    ///     .unwrap();
+    ///
+    /// assert_eq!(*ids.lock().unwrap(), vec![1i64]);
+    /// ```
+    pub fn on_insert<T, F>(&mut self, hook: F) -> ChangeHookId
+    where
+        T: StaticQueryFragment<Component = Identifier<'static>>,
+        F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
+    {
+        let table_name = T::STATIC_COMPONENT.0;
+        self.register_change_hook(Some(table_name), SqliteChangeOps::INSERT, Box::new(hook))
+    }
+
+    /// Registers a callback invoked when a row is updated in table `T`.
+    /// See [`on_insert`](Self::on_insert) for details on multiplicity,
+    /// dispatch timing, and removal.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let count = Arc::new(Mutex::new(0u32));
+    /// let count2 = count.clone();
+    ///
+    /// conn.on_update::<users::table, _>(move |_event| {
+    ///     *count2.lock().unwrap() += 1;
+    /// });
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn).unwrap();
+    /// // Insert does not trigger the update hook.
+    /// assert_eq!(*count.lock().unwrap(), 0);
+    ///
+    /// diesel::update(users::table.filter(users::id.eq(1)))
+    ///     .set(users::name.eq("Bob"))
+    ///     .execute(conn).unwrap();
+    /// assert_eq!(*count.lock().unwrap(), 1);
+    /// ```
+    pub fn on_update<T, F>(&mut self, hook: F) -> ChangeHookId
+    where
+        T: StaticQueryFragment<Component = Identifier<'static>>,
+        F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
+    {
+        let table_name = T::STATIC_COMPONENT.0;
+        self.register_change_hook(Some(table_name), SqliteChangeOps::UPDATE, Box::new(hook))
+    }
+
+    /// Registers a callback invoked when a row is deleted from table `T`.
+    /// See [`on_insert`](Self::on_insert) for details on multiplicity,
+    /// dispatch timing, and removal.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let deleted = Arc::new(Mutex::new(Vec::new()));
+    /// let deleted2 = deleted.clone();
+    ///
+    /// conn.on_delete::<users::table, _>(move |event| {
+    ///     deleted2.lock().unwrap().push(event.rowid);
+    /// });
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn).unwrap();
+    /// diesel::delete(users::table.filter(users::id.eq(1)))
+    ///     .execute(conn).unwrap();
+    ///
+    /// assert_eq!(*deleted.lock().unwrap(), vec![1i64]);
+    /// ```
+    pub fn on_delete<T, F>(&mut self, hook: F) -> ChangeHookId
+    where
+        T: StaticQueryFragment<Component = Identifier<'static>>,
+        F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
+    {
+        let table_name = T::STATIC_COMPONENT.0;
+        self.register_change_hook(Some(table_name), SqliteChangeOps::DELETE, Box::new(hook))
+    }
+
+    /// Removes a previously registered change hook by its [`ChangeHookId`].
+    ///
+    /// Returns `true` if a hook with that ID was found and removed, `false`
+    /// if no hook matched (e.g. it was already removed).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let count = Arc::new(Mutex::new(0u32));
+    /// let count2 = count.clone();
+    ///
+    /// let id = conn.on_insert::<users::table, _>(move |_| {
+    ///     *count2.lock().unwrap() += 1;
+    /// });
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn).unwrap();
+    /// assert_eq!(*count.lock().unwrap(), 1);
+    ///
+    /// assert!(conn.remove_change_hook(id));
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Bob"))
+    ///     .execute(conn).unwrap();
+    /// // Still 1 — the hook was removed.
+    /// assert_eq!(*count.lock().unwrap(), 1);
+    /// ```
+    pub fn remove_change_hook(&mut self, id: ChangeHookId) -> bool {
+        let mut hooks = self.raw_connection.change_hooks.borrow_mut();
+        let removed = hooks.remove(id);
+        let is_empty = hooks.is_empty();
+        drop(hooks);
+        if is_empty {
+            self.raw_connection.unregister_raw_update_hook();
+        }
+        removed
+    }
+
+    /// Removes all change hooks registered for table `T`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// diesel::table! {
+    ///     posts (id) {
+    ///         id -> Integer,
+    ///         title -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// # conn.batch_execute("CREATE TABLE posts (id INTEGER PRIMARY KEY, title TEXT NOT NULL)").unwrap();
+    /// let user_count = Arc::new(Mutex::new(0u32));
+    /// let post_count = Arc::new(Mutex::new(0u32));
+    /// let uc = user_count.clone();
+    /// let pc = post_count.clone();
+    ///
+    /// conn.on_insert::<users::table, _>(move |_| { *uc.lock().unwrap() += 1; });
+    /// conn.on_insert::<posts::table, _>(move |_| { *pc.lock().unwrap() += 1; });
+    ///
+    /// conn.clear_change_hooks_for::<users::table>();
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn).unwrap();
+    /// diesel::insert_into(posts::table)
+    ///     .values(posts::title.eq("Hello"))
+    ///     .execute(conn).unwrap();
+    ///
+    /// assert_eq!(*user_count.lock().unwrap(), 0); // cleared
+    /// assert_eq!(*post_count.lock().unwrap(), 1); // still active
+    /// ```
+    pub fn clear_change_hooks_for<T>(&mut self)
+    where
+        T: StaticQueryFragment<Component = Identifier<'static>>,
+    {
+        let table_name = T::STATIC_COMPONENT.0;
+        let mut hooks = self.raw_connection.change_hooks.borrow_mut();
+        hooks.clear_for_table(table_name);
+        let is_empty = hooks.is_empty();
+        drop(hooks);
+        if is_empty {
+            self.raw_connection.unregister_raw_update_hook();
+        }
+    }
+
+    /// Removes all registered change hooks and unregisters the underlying
+    /// [`sqlite3_update_hook`](https://www.sqlite.org/c3ref/update_hook.html).
+    ///
+    /// After calling this, no change-related callbacks will fire until new
+    /// hooks are registered.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let count = Arc::new(Mutex::new(0u32));
+    /// let count2 = count.clone();
+    ///
+    /// conn.on_insert::<users::table, _>(move |_| { *count2.lock().unwrap() += 1; });
+    ///
+    /// conn.clear_all_change_hooks();
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn).unwrap();
+    ///
+    /// assert_eq!(*count.lock().unwrap(), 0);
+    /// ```
+    pub fn clear_all_change_hooks(&mut self) {
+        self.raw_connection.change_hooks.borrow_mut().clear_all();
+        self.raw_connection.unregister_raw_update_hook();
+    }
+
+    fn register_change_hook(
+        &mut self,
+        table_name: Option<&'static str>,
+        ops: SqliteChangeOps,
+        hook: Box<dyn FnMut(SqliteChangeEvent<'_>) + Send>,
+    ) -> ChangeHookId {
+        self.raw_connection.register_raw_update_hook();
+        self.raw_connection
+            .change_hooks
+            .borrow_mut()
+            .add(table_name, ops, hook)
+    }
+
+    /// Loads a single row from table `T` by its SQLite `rowid`.
+    ///
+    /// This is useful for retrieving the full row data after receiving a
+    /// [`SqliteChangeEvent`] from a change hook, since the event only
+    /// contains the `rowid` of the affected row.
+    ///
+    /// If the row cannot be found (e.g. it was deleted by a trigger), this
+    /// returns [`Err(NotFound)`](crate::result::Error::NotFound).
+    ///
+    /// This is NOT a shortcut for loading by primary key.
+    /// It always queries by `rowid`, which may not be the same column
+    /// as the primary key, or may not even exist for [`WITHOUT ROWID`](https://www.sqlite.org/withoutrowid.html) tables.
+    /// The caller must ensure that the provided `rowid` is correct
+    /// for the intended query.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// #[derive(Queryable)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn)
+    ///     .unwrap();
+    ///
+    /// let user: User = conn.find_by_rowid::<users::table, _>(1).unwrap();
+    /// assert_eq!(user.name, "Alice");
+    /// ```
+    pub fn find_by_rowid<T, M>(&mut self, rowid: i64) -> QueryResult<M>
+    where
+        T: crate::Table
+            + crate::associations::HasTable<Table = T>
+            + crate::query_dsl::methods::FilterDsl<
+                crate::expression::UncheckedBind<
+                    crate::expression::SqlLiteral<crate::sql_types::Bool>,
+                    crate::expression::bound::Bound<crate::sql_types::BigInt, i64>,
+                >,
+            >,
+        crate::dsl::Filter<
+            T,
+            crate::expression::UncheckedBind<
+                crate::expression::SqlLiteral<crate::sql_types::Bool>,
+                crate::expression::bound::Bound<crate::sql_types::BigInt, i64>,
+            >,
+        >: crate::query_dsl::RunQueryDsl<SqliteConnection> + crate::query_dsl::methods::LimitDsl,
+        crate::dsl::Limit<
+            crate::dsl::Filter<
+                T,
+                crate::expression::UncheckedBind<
+                    crate::expression::SqlLiteral<crate::sql_types::Bool>,
+                    crate::expression::bound::Bound<crate::sql_types::BigInt, i64>,
+                >,
+            >,
+        >: crate::query_dsl::LoadQuery<'static, SqliteConnection, M>,
+    {
+        use crate::query_dsl::RunQueryDsl;
+        T::table()
+            .filter(
+                crate::dsl::sql::<crate::sql_types::Bool>("rowid = ")
+                    .bind::<crate::sql_types::BigInt, _>(rowid),
+            )
+            .first::<M>(self)
+    }
+
+    /// Registers a callback invoked when a transaction is about to be
+    /// committed.
+    ///
+    /// The callback returns a `bool`:
+    /// - `false` — the commit proceeds normally.
+    /// - `true` — the commit is converted into a rollback.
+    ///
+    /// Only one commit hook can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// The callback must not use the database connection. Panics in the
+    /// callback abort the process.
+    ///
+    /// See: [`sqlite3_commit_hook`](https://www.sqlite.org/c3ref/commit_hook.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let commits = Arc::new(Mutex::new(0u32));
+    /// let commits2 = commits.clone();
+    ///
+    /// conn.on_commit(move || {
+    ///     *commits2.lock().unwrap() += 1;
+    ///     false // allow the commit to proceed
+    /// });
+    ///
+    /// conn.immediate_transaction(|conn| {
+    ///     diesel::insert_into(users::table)
+    ///         .values(users::name.eq("Alice"))
+    ///         .execute(conn)?;
+    ///     Ok::<_, diesel::result::Error>(())
+    /// }).unwrap();
+    ///
+    /// assert_eq!(*commits.lock().unwrap(), 1);
+    /// ```
+    pub fn on_commit<F>(&mut self, hook: F)
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        self.raw_connection.set_commit_hook(hook);
+    }
+
+    /// Removes the commit hook. Subsequent commits will not invoke any
+    /// callback.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let count = Arc::new(Mutex::new(0u32));
+    /// let count2 = count.clone();
+    /// conn.on_commit(move || { *count2.lock().unwrap() += 1; false });
+    ///
+    /// conn.remove_commit_hook();
+    ///
+    /// conn.immediate_transaction(|conn| {
+    ///     diesel::insert_into(users::table)
+    ///         .values(users::name.eq("Alice"))
+    ///         .execute(conn)?;
+    ///     Ok::<_, diesel::result::Error>(())
+    /// }).unwrap();
+    ///
+    /// assert_eq!(*count.lock().unwrap(), 0);
+    /// ```
+    pub fn remove_commit_hook(&mut self) {
+        self.raw_connection.remove_commit_hook();
+    }
+
+    /// Registers a callback invoked after a transaction is rolled back.
+    ///
+    /// This is **not** invoked for the implicit rollback that occurs when
+    /// the connection is closed. It **is** invoked when a commit hook
+    /// forces a rollback by returning `true`.
+    ///
+    /// Only one rollback hook can be active at a time per connection.
+    ///
+    /// The callback must not use the database connection. Panics in the
+    /// callback abort the process.
+    ///
+    /// See: [`sqlite3_rollback_hook`](https://www.sqlite.org/c3ref/commit_hook.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::connection::SimpleConnection;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// let rollbacks = Arc::new(Mutex::new(0u32));
+    /// let rb2 = rollbacks.clone();
+    ///
+    /// conn.on_rollback(move || {
+    ///     *rb2.lock().unwrap() += 1;
+    /// });
+    ///
+    /// // Force a rollback by returning an error.
+    /// let _ = conn.immediate_transaction(|_conn| {
+    ///     Err::<(), _>(diesel::result::Error::RollbackTransaction)
+    /// });
+    ///
+    /// assert_eq!(*rollbacks.lock().unwrap(), 1);
+    /// ```
+    pub fn on_rollback<F>(&mut self, hook: F)
+    where
+        F: FnMut() + Send + 'static,
+    {
+        self.raw_connection.set_rollback_hook(hook);
+    }
+
+    /// Removes the rollback hook.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::connection::SimpleConnection;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// let count = Arc::new(Mutex::new(0u32));
+    /// let count2 = count.clone();
+    /// conn.on_rollback(move || { *count2.lock().unwrap() += 1; });
+    ///
+    /// conn.remove_rollback_hook();
+    ///
+    /// let _ = conn.immediate_transaction(|_conn| {
+    ///     Err::<(), _>(diesel::result::Error::RollbackTransaction)
+    /// });
+    ///
+    /// assert_eq!(*count.lock().unwrap(), 0);
+    /// ```
+    pub fn remove_rollback_hook(&mut self) {
+        self.raw_connection.remove_rollback_hook();
+    }
+
+    /// Registers a callback invoked after a commit completes in
+    /// [WAL mode](https://www.sqlite.org/wal.html).
+    ///
+    /// The callback receives:
+    /// - `db_name` — the database name (`"main"`, `"temp"`, or an `ATTACH` alias).
+    /// - `n_pages` — the number of pages currently in the WAL file.
+    ///
+    /// Useful for triggering custom checkpoint logic via
+    /// [`PRAGMA wal_checkpoint`](https://www.sqlite.org/pragma.html#pragma_wal_checkpoint).
+    ///
+    /// Only one WAL hook can be active at a time per connection.
+    ///
+    /// **Warning:** [`PRAGMA wal_autocheckpoint`](https://www.sqlite.org/pragma.html#pragma_wal_autocheckpoint)
+    /// and `sqlite3_wal_autocheckpoint()` internally call `sqlite3_wal_hook()`
+    /// and will **overwrite** this hook.
+    ///
+    /// See: [`sqlite3_wal_hook`](https://www.sqlite.org/c3ref/wal_hook.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use diesel::prelude::*;
+    /// # use diesel::connection::SimpleConnection;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
+    /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
+    /// conn.on_wal(|db_name, n_pages| {
+    ///     println!("WAL for {db_name}: {n_pages} pages");
+    /// });
+    /// ```
+    pub fn on_wal<F>(&mut self, hook: F)
+    where
+        F: FnMut(&str, i32) + Send + 'static,
+    {
+        self.raw_connection.set_wal_hook(hook);
+    }
+
+    /// Removes the WAL hook.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use diesel::prelude::*;
+    /// # use diesel::connection::SimpleConnection;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
+    /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
+    /// conn.on_wal(|_db, _pages| { /* ... */ });
+    /// conn.remove_wal_hook();
+    /// ```
+    pub fn remove_wal_hook(&mut self) {
+        self.raw_connection.remove_wal_hook();
+    }
+
+    /// Registers a progress handler for long-running query interruption.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback is invoked periodically during long-running SQL queries.
+    /// `n` is the approximate number of VM instructions between callbacks.
+    /// **Suggested minimum**: 1000 (at N=1, overhead is ~1.5μs per callback).
+    ///
+    /// Return `true` to interrupt the query (causes `SQLITE_INTERRUPT`),
+    /// or `false` to continue.
+    ///
+    /// Only one progress handler can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// **Callback restriction**: The callback must not use the database
+    /// connection. Since SQLite 3.41.0, the handler may also fire during
+    /// `sqlite3_prepare()` for complex queries.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_progress_handler`](https://sqlite.org/c3ref/progress_handler.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    /// use std::sync::Arc;
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// let cancelled = Arc::new(AtomicBool::new(false));
+    /// let cancelled_clone = cancelled.clone();
+    ///
+    /// conn.on_progress(1000, move || {
+    ///     cancelled_clone.load(Ordering::Relaxed)
+    /// });
+    ///
+    /// // Later: remove the handler
+    /// conn.remove_progress_handler();
+    /// ```
+    pub fn on_progress<F>(&mut self, n: i32, hook: F)
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        self.raw_connection.set_progress_handler(n, hook);
+    }
+
+    /// Removes the progress handler.
+    ///
+    /// See [`on_progress`](Self::on_progress) for usage example.
+    pub fn remove_progress_handler(&mut self) {
+        self.raw_connection.remove_progress_handler();
+    }
+
+    /// Registers a custom busy handler for lock contention.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback receives the retry count (starting from 0) and returns
+    /// `true` to retry, `false` to abort (returns `SQLITE_BUSY` to caller).
+    ///
+    /// **Warning**: Setting this clears any `busy_timeout` previously set.
+    /// Conversely, calling `set_busy_timeout` clears this handler.
+    ///
+    /// Only one busy handler can be active at a time per connection.
+    ///
+    /// **Callback restriction**: The callback must not use the database
+    /// connection. If the callback modifies the database, behavior is
+    /// undefined. SQLite may return `SQLITE_BUSY` instead of calling the
+    /// handler to prevent deadlocks.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_busy_handler`](https://sqlite.org/c3ref/busy_handler.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// use std::thread;
+    /// use std::time::Duration;
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_busy(|retry_count| {
+    ///     if retry_count < 5 {
+    ///         thread::sleep(Duration::from_millis(100));
+    ///         true // retry
+    ///     } else {
+    ///         false // give up
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the handler
+    /// conn.remove_busy_handler();
+    /// ```
+    pub fn on_busy<F>(&mut self, hook: F)
+    where
+        F: FnMut(i32) -> bool + Send + 'static,
+    {
+        self.raw_connection.set_busy_handler(hook);
+    }
+
+    /// Removes the custom busy handler.
+    ///
+    /// See [`on_busy`](Self::on_busy) for usage example.
+    pub fn remove_busy_handler(&mut self) {
+        self.raw_connection.remove_busy_handler();
+    }
+
+    /// Sets a simple timeout-based busy handler.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// When a table is locked, SQLite will sleep and retry until `ms`
+    /// milliseconds have elapsed. Pass 0 to disable (return `SQLITE_BUSY`
+    /// immediately).
+    ///
+    /// **Note**: Setting this clears any custom [`on_busy`](Self::on_busy)
+    /// handler. Conversely, calling `on_busy` clears this timeout.
+    ///
+    /// For most use cases, this is simpler than a custom busy handler.
+    ///
+    /// See: [`sqlite3_busy_timeout`](https://sqlite.org/c3ref/busy_timeout.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// // Wait up to 5 seconds for locked tables
+    /// conn.set_busy_timeout(5000);
+    /// ```
+    pub fn set_busy_timeout(&mut self, ms: i32) {
+        self.raw_connection.set_busy_timeout(ms);
+    }
+
+    /// Registers an authorizer callback for SQL compilation access control.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback is invoked during `sqlite3_prepare()` (statement
+    /// compilation) to control access to database objects. It receives
+    /// an [`AuthorizerContext`] describing the operation and returns an
+    /// [`AuthorizerDecision`].
+    ///
+    /// **Security Note**: The authorizer is only called during statement
+    /// compilation, NOT during execution. It cannot prevent all attack
+    /// vectors (e.g., CVE-2015-3659 showed bypasses via fts3_tokenizer).
+    /// Use it as defense-in-depth, not as a sole security mechanism.
+    ///
+    /// **Schema changes**: The authorizer may be re-invoked during
+    /// `sqlite3_step()` if schema changes trigger statement recompilation.
+    ///
+    /// **Callback restriction**: The callback must not modify the database
+    /// connection.
+    ///
+    /// Only one authorizer can be active at a time per connection.
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_set_authorizer`](https://sqlite.org/c3ref/set_authorizer.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// use diesel::sqlite::{
+    ///     SqliteConnection, AuthorizerContext, AuthorizerDecision, AuthorizerAction,
+    /// };
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_authorize(|ctx| {
+    ///     match ctx.action {
+    ///         AuthorizerAction::Delete => AuthorizerDecision::Deny,
+    ///         AuthorizerAction::DropTable | AuthorizerAction::DropIndex => {
+    ///             AuthorizerDecision::Deny
+    ///         }
+    ///         _ => AuthorizerDecision::Allow,
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the authorizer
+    /// conn.remove_authorizer();
+    /// ```
+    pub fn on_authorize<F>(&mut self, hook: F)
+    where
+        F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
+    {
+        self.raw_connection.set_authorizer(hook);
+    }
+
+    /// Removes the authorizer callback.
+    ///
+    /// See [`on_authorize`](Self::on_authorize) for usage example.
+    pub fn remove_authorizer(&mut self) {
+        self.raw_connection.remove_authorizer();
+    }
+
+    /// Registers a trace callback for SQL execution monitoring.
+    /// Added in SQLite 3.14.0 (2016-08-08).
+    ///
+    /// The callback receives events based on the provided [`SqliteTraceFlags`]
+    /// mask. Available event types:
+    ///
+    /// - `STMT` — Statement start (receives SQL text)
+    /// - `PROFILE` — Statement complete (receives SQL text and elapsed time)
+    /// - `ROW` — Each row returned (no data, very frequent!)
+    /// - `CLOSE` — Connection close
+    ///
+    /// **Performance Warning**: `SQLITE_TRACE_ROW` fires for EVERY row
+    /// returned by a query. For large result sets, this can significantly
+    /// impact performance. Prefer `STMT` and `PROFILE` for most logging
+    /// use cases.
+    ///
+    /// Only one trace callback can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_trace_v2`](https://sqlite.org/c3ref/trace_v2.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, SqliteTraceFlags, SqliteTraceEvent};
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_trace(SqliteTraceFlags::STMT | SqliteTraceFlags::PROFILE, |event| {
+    ///     match event {
+    ///         SqliteTraceEvent::Statement { sql, readonly } => {
+    ///             println!("Executing ({}): {}", if readonly { "read" } else { "write" }, sql);
+    ///         }
+    ///         SqliteTraceEvent::Profile { sql, duration_ns, .. } => {
+    ///             println!("{} took {} ns", sql, duration_ns);
+    ///         }
+    ///         _ => {}
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the trace callback
+    /// conn.remove_trace();
+    /// ```
+    pub fn on_trace<F>(&mut self, mask: SqliteTraceFlags, hook: F)
+    where
+        F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
+    {
+        self.raw_connection.set_trace(mask, hook);
+    }
+
+    /// Removes the trace callback.
+    ///
+    /// See [`on_trace`](Self::on_trace) for usage example.
+    pub fn remove_trace(&mut self) {
+        self.raw_connection.remove_trace();
+    }
+
+    /// Registers a callback for read-only statement execution (SELECT, read-only PRAGMA, etc.).
+    ///
+    /// This is a convenience wrapper around [`on_trace`](Self::on_trace) that filters for
+    /// read-only statements only. Fires once per statement, not per row.
+    ///
+    /// # How it works
+    ///
+    /// Uses [`sqlite3_stmt_readonly`](https://sqlite.org/c3ref/stmt_readonly.html) to determine
+    /// if a statement is read-only, which is more reliable than string matching.
+    ///
+    /// # What counts as read-only
+    ///
+    /// - `SELECT` statements (including `WITH ... SELECT`)
+    /// - Read-only `PRAGMA` statements (e.g., `PRAGMA table_info(t)`)
+    ///
+    /// # What does NOT count as read-only
+    ///
+    /// - `INSERT`, `UPDATE`, `DELETE` statements
+    /// - `CREATE`, `DROP`, `ALTER` statements
+    /// - `WITH ... INSERT/UPDATE/DELETE ... RETURNING` (the outer statement modifies data)
+    /// - Write `PRAGMA` statements (e.g., `PRAGMA foreign_keys = ON`)
+    ///
+    /// # Edge cases (not detected)
+    ///
+    /// - User-defined functions that modify the database via a separate connection
+    ///   are **not** detected; the statement itself is still considered read-only
+    /// - Virtual tables with write side effects are **not** detected
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use diesel::prelude::*;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// conn.on_read(|sql| {
+    ///     println!("Read query executed: {}", sql);
+    /// });
+    /// ```
+    ///
+    /// # Note
+    ///
+    /// This replaces any existing trace callback. If you need both `on_read` and
+    /// custom tracing, use [`on_trace`](Self::on_trace) directly and check the
+    /// `readonly` field on [`SqliteTraceEvent::Statement`].
+    #[doc(alias = "on_trace")]
+    pub fn on_read<F>(&mut self, mut hook: F)
+    where
+        F: FnMut(&str) + Send + 'static,
+    {
+        self.on_trace(SqliteTraceFlags::STMT, move |event| {
+            if let SqliteTraceEvent::Statement { sql, readonly } = event
+                && readonly
+            {
+                hook(sql);
+            }
+        });
     }
 
     /// Serialize the current SQLite database into a byte buffer.
@@ -1015,5 +2043,1069 @@ mod tests {
         check_empty_query_error(crate::sql_query("   ").execute(connection));
         check_empty_query_error(crate::sql_query("\n\t").execute(connection));
         check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
+    }
+
+    // ===================================================================
+    // Change-hook integration tests
+    // ===================================================================
+
+    table! {
+        hook_users {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    table! {
+        hook_posts {
+            id -> Integer,
+            title -> Text,
+        }
+    }
+
+    fn setup_hook_tables(conn: &mut SqliteConnection) {
+        crate::sql_query(
+            "CREATE TABLE hook_users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+        crate::sql_query(
+            "CREATE TABLE hook_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn on_insert_fires_for_insert() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired2 = fired.clone();
+
+        conn.on_insert::<hook_users::table, _>(move |event| {
+            fired2.lock().unwrap().push((event.op, event.rowid));
+        });
+
+        // INSERT a row — the hook fires immediately during sqlite3_step().
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('Alice')")
+            .execute(conn)
+            .unwrap();
+
+        let events = fired.lock().unwrap().clone();
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].0, SqliteChangeOp::Insert);
+        assert_eq!(events[0].1, 1); // rowid
+    }
+
+    #[diesel_test_helper::test]
+    fn on_delete_fires_only_for_delete() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired2 = fired.clone();
+
+        conn.on_delete::<hook_users::table, _>(move |event| {
+            fired2.lock().unwrap().push(event.op);
+        });
+
+        // INSERT + UPDATE + DELETE
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('Alice')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("UPDATE hook_users SET name = 'Bob' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("DELETE FROM hook_users WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+
+        let events = fired.lock().unwrap().clone();
+        // Only the DELETE should have matched.
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0], SqliteChangeOp::Delete);
+    }
+
+    #[diesel_test_helper::test]
+    fn multiple_hooks_fire_in_order() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let o1 = order.clone();
+        let o2 = order.clone();
+
+        conn.on_insert::<hook_users::table, _>(move |_| {
+            o1.lock().unwrap().push(1);
+        });
+        conn.on_insert::<hook_users::table, _>(move |_| {
+            o2.lock().unwrap().push(2);
+        });
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('X')")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(*order.lock().unwrap(), vec![1, 2]);
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_hook_prevents_dispatch() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let fired = Arc::new(Mutex::new(0u32));
+        let f2 = fired.clone();
+
+        let id = conn.on_insert::<hook_users::table, _>(move |_| {
+            *f2.lock().unwrap() += 1;
+        });
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('A')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(*fired.lock().unwrap(), 1);
+
+        // Remove the hook.
+        assert!(conn.remove_change_hook(id));
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('B')")
+            .execute(conn)
+            .unwrap();
+        // Should still be 1 — hook was removed.
+        assert_eq!(*fired.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn events_fire_immediately_during_statement() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        // Insert a row without a hook first.
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('Z')")
+            .execute(conn)
+            .unwrap();
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        conn.on_update::<hook_users::table, _>(move |event| {
+            f2.lock().unwrap().push(event.rowid);
+        });
+
+        // UPDATE triggers the C hook immediately during sqlite3_step().
+        crate::sql_query("UPDATE hook_users SET name = 'W' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(*fired.lock().unwrap(), vec![1i64]);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_update_fires_for_update_only() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_update::<hook_users::table, _>(move |event| {
+            assert_eq!(event.op, SqliteChangeOp::Update);
+            *c2.lock().unwrap() += 1;
+        });
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('A')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("UPDATE hook_users SET name = 'B' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("DELETE FROM hook_users WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_change_catches_all_ops() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let e2 = events.clone();
+
+        conn.on_change(SqliteChangeOps::ALL, move |event| {
+            e2.lock()
+                .unwrap()
+                .push((event.op, event.table_name.to_owned()));
+        });
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('A')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO hook_posts (title) VALUES ('P')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("UPDATE hook_users SET name = 'B' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("DELETE FROM hook_posts WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+
+        let evts = events.lock().unwrap().clone();
+        assert_eq!(evts.len(), 4);
+        assert_eq!(evts[0], (SqliteChangeOp::Insert, "hook_users".to_owned()));
+        assert_eq!(evts[1], (SqliteChangeOp::Insert, "hook_posts".to_owned()));
+        assert_eq!(evts[2], (SqliteChangeOp::Update, "hook_users".to_owned()));
+        assert_eq!(evts[3], (SqliteChangeOp::Delete, "hook_posts".to_owned()));
+    }
+
+    #[diesel_test_helper::test]
+    fn on_change_with_partial_mask() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_change(
+            SqliteChangeOps::INSERT | SqliteChangeOps::DELETE,
+            move |_| {
+                *c2.lock().unwrap() += 1;
+            },
+        );
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('A')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("UPDATE hook_users SET name = 'B' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("DELETE FROM hook_users WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+
+        // INSERT + DELETE = 2, not UPDATE
+        assert_eq!(*count.lock().unwrap(), 2);
+    }
+
+    #[diesel_test_helper::test]
+    fn clear_hooks_for_table_only_removes_that_table() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let user_count = Arc::new(Mutex::new(0u32));
+        let post_count = Arc::new(Mutex::new(0u32));
+        let uc = user_count.clone();
+        let pc = post_count.clone();
+
+        conn.on_insert::<hook_users::table, _>(move |_| {
+            *uc.lock().unwrap() += 1;
+        });
+        conn.on_insert::<hook_posts::table, _>(move |_| {
+            *pc.lock().unwrap() += 1;
+        });
+
+        conn.clear_change_hooks_for::<hook_users::table>();
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('X')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO hook_posts (title) VALUES ('Y')")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(*user_count.lock().unwrap(), 0); // cleared
+        assert_eq!(*post_count.lock().unwrap(), 1); // still active
+    }
+
+    #[diesel_test_helper::test]
+    fn clear_all_removes_everything() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+        let c3 = count.clone();
+
+        conn.on_insert::<hook_users::table, _>(move |_| {
+            *c2.lock().unwrap() += 1;
+        });
+        conn.on_insert::<hook_posts::table, _>(move |_| {
+            *c3.lock().unwrap() += 1;
+        });
+
+        conn.clear_all_change_hooks();
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('X')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO hook_posts (title) VALUES ('Y')")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn hooks_fire_across_transactions() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let f2 = fired.clone();
+
+        // Register hook BEFORE the transaction.
+        conn.on_insert::<hook_users::table, _>(move |event| {
+            f2.lock().unwrap().push(event.rowid);
+        });
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO hook_users (name) VALUES ('TxUser')")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(fired.lock().unwrap().len(), 1);
+    }
+
+    #[derive(Debug, Clone, PartialEq, crate::Queryable)]
+    struct HookUser {
+        id: i32,
+        name: String,
+    }
+
+    #[diesel_test_helper::test]
+    fn find_by_rowid_loads_row() {
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('Alice')")
+            .execute(conn)
+            .unwrap();
+
+        let user: HookUser = conn.find_by_rowid::<hook_users::table, _>(1).unwrap();
+        assert_eq!(user.name, "Alice");
+    }
+
+    #[diesel_test_helper::test]
+    fn find_by_rowid_returns_not_found_for_missing_row() {
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let result = conn.find_by_rowid::<hook_users::table, HookUser>(999);
+        assert!(matches!(result, Err(crate::result::Error::NotFound)));
+    }
+
+    table! {
+        products {
+            id -> Text,
+            name -> Text,
+            price -> Integer,
+        }
+    }
+
+    #[derive(Debug, crate::Queryable)]
+    struct Product {
+        id: String,
+        name: String,
+        price: i32,
+    }
+
+    #[diesel_test_helper::test]
+    fn find_by_rowid_with_text_pk_after_hook() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query(
+            "CREATE TABLE products (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, price INTEGER NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+
+        let inserted = Arc::new(Mutex::new(Vec::<i64>::new()));
+        let inserted_hook = inserted.clone();
+
+        conn.on_insert::<products::table, _>(move |event| {
+            inserted_hook.lock().unwrap().push(event.rowid);
+        });
+
+        crate::sql_query("INSERT INTO products (id, name, price) VALUES ('sku-42', 'Widget', 999)")
+            .execute(conn)
+            .unwrap();
+
+        let rowids = inserted.lock().unwrap();
+        let rowid = rowids[0];
+
+        let product: Product = conn.find_by_rowid::<products::table, _>(rowid).unwrap();
+
+        assert_eq!(product.id, "sku-42");
+        assert_eq!(product.name, "Widget");
+        assert_eq!(product.price, 999);
+    }
+
+    // ===================================================================
+    // Negative tests: cases where the update hook must NOT fire
+    //
+    // These are documented SQLite limitations of sqlite3_update_hook():
+    // https://www.sqlite.org/c3ref/update_hook.html
+    // ===================================================================
+
+    /// The update hook is not invoked for WITHOUT ROWID tables.
+    /// See: https://www.sqlite.org/c3ref/update_hook.html
+    #[diesel_test_helper::test]
+    fn update_hook_silent_for_without_rowid_tables() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE kv (key TEXT PRIMARY KEY, val TEXT NOT NULL) WITHOUT ROWID")
+            .execute(conn)
+            .unwrap();
+
+        let events: Arc<Mutex<Vec<SqliteChangeOp>>> = Arc::new(Mutex::new(Vec::new()));
+        let e2 = events.clone();
+
+        conn.on_change(SqliteChangeOps::ALL, move |ev| {
+            if ev.table_name == "kv" {
+                e2.lock().unwrap().push(ev.op);
+            }
+        });
+
+        crate::sql_query("INSERT INTO kv (key, val) VALUES ('a', '1')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("UPDATE kv SET val = '2' WHERE key = 'a'")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("DELETE FROM kv WHERE key = 'a'")
+            .execute(conn)
+            .unwrap();
+
+        assert!(
+            events.lock().unwrap().is_empty(),
+            "update hook must not fire for WITHOUT ROWID tables"
+        );
+    }
+
+    /// When a UNIQUE constraint conflict is resolved via ON CONFLICT REPLACE,
+    /// the implicit deletion of the conflicting row does NOT fire the update
+    /// hook. Only the INSERT for the new row fires.
+    /// See: https://www.sqlite.org/c3ref/update_hook.html
+    #[diesel_test_helper::test]
+    fn update_hook_silent_for_on_conflict_replace_deletion() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE uq (id INTEGER PRIMARY KEY, val TEXT NOT NULL UNIQUE)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO uq (id, val) VALUES (1, 'original')")
+            .execute(conn)
+            .unwrap();
+
+        let events: Arc<Mutex<Vec<(SqliteChangeOp, i64)>>> = Arc::new(Mutex::new(Vec::new()));
+        let e2 = events.clone();
+
+        conn.on_change(SqliteChangeOps::ALL, move |ev| {
+            if ev.table_name == "uq" {
+                e2.lock().unwrap().push((ev.op, ev.rowid));
+            }
+        });
+
+        // INSERT OR REPLACE with a conflicting val: the old row (id=1) is
+        // silently deleted by SQLite and the new row (id=2) is inserted.
+        // The hook fires only for the INSERT of the new row.
+        crate::sql_query("INSERT OR REPLACE INTO uq (id, val) VALUES (2, 'original')")
+            .execute(conn)
+            .unwrap();
+
+        let recorded = events.lock().unwrap();
+        assert_eq!(
+            recorded.len(),
+            1,
+            "expected only 1 event (INSERT), got: {:?}",
+            *recorded
+        );
+        assert_eq!(recorded[0].0, SqliteChangeOp::Insert);
+        assert_eq!(recorded[0].1, 2, "new row should have rowid 2");
+    }
+
+    /// DELETE FROM without a WHERE clause triggers the truncate optimization,
+    /// which bypasses the update hook entirely: no per-row DELETE events fire.
+    /// See: https://www.sqlite.org/lang_delete.html#truncateopt
+    #[diesel_test_helper::test]
+    fn update_hook_silent_for_truncate_optimization() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        // The truncate optimization applies when:
+        //   1. No WHERE clause
+        //   2. No RETURNING clause
+        //   3. No triggers on the table
+        crate::sql_query("CREATE TABLE bulk (id INTEGER PRIMARY KEY, data TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO bulk (data) VALUES ('a'), ('b'), ('c')")
+            .execute(conn)
+            .unwrap();
+
+        let events: Arc<Mutex<Vec<SqliteChangeOp>>> = Arc::new(Mutex::new(Vec::new()));
+        let e2 = events.clone();
+
+        conn.on_change(SqliteChangeOps::ALL, move |ev| {
+            if ev.table_name == "bulk" {
+                e2.lock().unwrap().push(ev.op);
+            }
+        });
+
+        // DELETE without WHERE — truncate optimization kicks in.
+        crate::sql_query("DELETE FROM bulk").execute(conn).unwrap();
+
+        assert!(
+            events.lock().unwrap().is_empty(),
+            "truncate optimization should bypass the update hook"
+        );
+    }
+
+    /// When a table has triggers, the truncate optimization is disabled, so
+    /// DELETE without WHERE fires per-row DELETE events as normal.
+    #[diesel_test_helper::test]
+    fn update_hook_fires_for_delete_all_when_triggers_disable_truncate() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE triggered (id INTEGER PRIMARY KEY, data TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+        // A no-op trigger is enough to disable the truncate optimization.
+        crate::sql_query(
+            "CREATE TRIGGER trg_triggered BEFORE DELETE ON triggered \
+             BEGIN SELECT 1; END",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::sql_query("INSERT INTO triggered (data) VALUES ('x'), ('y'), ('z')")
+            .execute(conn)
+            .unwrap();
+
+        let deletes: Arc<Mutex<Vec<i64>>> = Arc::new(Mutex::new(Vec::new()));
+        let d2 = deletes.clone();
+
+        conn.on_change(SqliteChangeOps::DELETE, move |ev| {
+            if ev.table_name == "triggered" {
+                d2.lock().unwrap().push(ev.rowid);
+            }
+        });
+
+        // DELETE without WHERE, but triggers exist ⇒ no truncate optimization.
+        crate::sql_query("DELETE FROM triggered")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(
+            deletes.lock().unwrap().len(),
+            3,
+            "with triggers present, DELETE without WHERE fires per-row hooks"
+        );
+    }
+
+    /// Modifications to internal system tables like sqlite_sequence
+    /// (used by AUTOINCREMENT) do not trigger the update hook.
+    /// See: https://www.sqlite.org/c3ref/update_hook.html
+    #[diesel_test_helper::test]
+    fn update_hook_silent_for_internal_sqlite_sequence() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        // AUTOINCREMENT causes SQLite to maintain sqlite_sequence.
+        crate::sql_query(
+            "CREATE TABLE seq_test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+
+        let tables: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let t2 = tables.clone();
+
+        conn.on_change(SqliteChangeOps::ALL, move |ev| {
+            t2.lock().unwrap().push(ev.table_name.to_owned());
+        });
+
+        crate::sql_query("INSERT INTO seq_test (name) VALUES ('row1')")
+            .execute(conn)
+            .unwrap();
+
+        let recorded = tables.lock().unwrap();
+        // Only the user table should appear; sqlite_sequence must be absent.
+        assert!(
+            recorded.iter().all(|t| t == "seq_test"),
+            "expected only 'seq_test' events, got: {:?}",
+            *recorded
+        );
+        assert!(
+            !recorded.iter().any(|t| t == "sqlite_sequence"),
+            "sqlite_sequence modifications must not trigger the update hook"
+        );
+    }
+
+    /// INSERT OR REPLACE on the primary key itself: when a row with the same
+    /// PK already exists, the old row is silently deleted and the new row is
+    /// inserted. The hook reports only the INSERT, not the implicit DELETE.
+    #[diesel_test_helper::test]
+    fn update_hook_silent_for_replace_into_on_pk_conflict() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE rep (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO rep (id, val) VALUES (1, 'old')")
+            .execute(conn)
+            .unwrap();
+
+        let events: Arc<Mutex<Vec<(SqliteChangeOp, i64)>>> = Arc::new(Mutex::new(Vec::new()));
+        let e2 = events.clone();
+
+        conn.on_change(SqliteChangeOps::ALL, move |ev| {
+            if ev.table_name == "rep" {
+                e2.lock().unwrap().push((ev.op, ev.rowid));
+            }
+        });
+
+        // REPLACE INTO with a conflicting PK.
+        crate::sql_query("REPLACE INTO rep (id, val) VALUES (1, 'new')")
+            .execute(conn)
+            .unwrap();
+
+        let recorded = events.lock().unwrap();
+        // Only one INSERT event, no DELETE for the old row.
+        assert_eq!(
+            recorded.len(),
+            1,
+            "expected 1 event for REPLACE INTO, got: {:?}",
+            *recorded
+        );
+        assert_eq!(recorded[0].0, SqliteChangeOp::Insert);
+        assert_eq!(recorded[0].1, 1);
+    }
+
+    // ===================================================================
+    // Commit / rollback hook tests
+    // ===================================================================
+
+    #[derive(crate::QueryableByName)]
+    struct CountResult {
+        #[diesel(sql_type = crate::sql_types::BigInt)]
+        c: i64,
+    }
+
+    #[diesel_test_helper::test]
+    fn on_commit_fires_on_commit() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_commit(move || {
+            *c2.lock().unwrap() += 1;
+            false // allow commit
+        });
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("CREATE TABLE t1 (id INTEGER PRIMARY KEY)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_commit_returning_true_forces_rollback() {
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_commit (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        conn.on_commit(|| true /* convert commit to rollback */);
+
+        // The transaction will attempt to commit, but the hook will convert
+        // it to a rollback. diesel's AnsiTransactionManager will see the
+        // failure from the COMMIT statement (sqlite returns an error when
+        // the commit hook returns non-zero and the commit is aborted).
+        let result = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_commit (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        });
+
+        // The transaction should have been rolled back.
+        assert!(result.is_err());
+
+        // Remove the hook so subsequent queries don't fail.
+        conn.remove_commit_hook();
+
+        // Verify the row was not persisted.
+        let cnt: i64 = crate::sql_query("SELECT COUNT(*) as c FROM t_commit")
+            .get_result::<CountResult>(conn)
+            .unwrap()
+            .c;
+        assert_eq!(cnt, 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_rollback_fires_on_explicit_rollback() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_rb (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_rollback(move || {
+            *c2.lock().unwrap() += 1;
+        });
+
+        // Force a rollback by returning Err from the transaction closure.
+        let _ = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_rb (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Err::<(), _>(crate::result::Error::RollbackTransaction)
+        });
+
+        assert_eq!(*count.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_rollback_fires_when_commit_hook_forces_rollback() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_rb2 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let rb_count = Arc::new(Mutex::new(0u32));
+        let rb2 = rb_count.clone();
+
+        conn.on_commit(|| true /* force rollback */);
+        conn.on_rollback(move || {
+            *rb2.lock().unwrap() += 1;
+        });
+
+        let _ = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_rb2 (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        });
+
+        // Rollback hook should have fired.
+        assert_eq!(*rb_count.lock().unwrap(), 1);
+
+        conn.remove_commit_hook();
+        conn.remove_rollback_hook();
+    }
+
+    #[diesel_test_helper::test]
+    fn on_rollback_does_not_fire_on_connection_close() {
+        use std::sync::{Arc, Mutex};
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        {
+            let conn = &mut connection();
+            conn.on_rollback(move || {
+                *c2.lock().unwrap() += 1;
+            });
+            // conn is dropped here — implicit close, not a rollback.
+        }
+
+        assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn replacing_commit_hook_drops_old() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        let old_count = Arc::new(Mutex::new(0u32));
+        let new_count = Arc::new(Mutex::new(0u32));
+        let oc = old_count.clone();
+        let nc = new_count.clone();
+
+        conn.on_commit(move || {
+            *oc.lock().unwrap() += 1;
+            false
+        });
+
+        // Replace with a new hook.
+        conn.on_commit(move || {
+            *nc.lock().unwrap() += 1;
+            false
+        });
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("CREATE TABLE t_replace (id INTEGER PRIMARY KEY)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(*old_count.lock().unwrap(), 0);
+        assert_eq!(*new_count.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_commit_hook_disables_callback() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_commit(move || {
+            *c2.lock().unwrap() += 1;
+            false
+        });
+
+        conn.remove_commit_hook();
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("CREATE TABLE t_rem (id INTEGER PRIMARY KEY)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_rollback_hook_disables_callback() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_rem_rb (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_rollback(move || {
+            *c2.lock().unwrap() += 1;
+        });
+
+        conn.remove_rollback_hook();
+
+        let _ = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_rem_rb (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Err::<(), _>(crate::result::Error::RollbackTransaction)
+        });
+
+        assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    // ---------------------------------------------------------------
+    // WAL hook tests
+    //
+    // Gated out on WASM because these tests need a file-backed database
+    // (WAL mode does not work with `:memory:`), and `tempfile::tempdir()`
+    // panics on WASM due to the lack of a filesystem.
+    //
+    // The WAL *API* itself (`on_wal`, `remove_wal_hook`) is available on
+    // all platforms, including WASM. In principle WAL could work on WASM
+    // with the `sahpool` VFS (OPFS-backed), but that VFS is only usable
+    // inside a Dedicated Worker context. The default `memory` VFS has no
+    // persistent storage, and `relaxed-idb` (IndexedDB) does not provide
+    // the file-level I/O (WAL/SHM sidecar files) that WAL mode requires.
+    // Additionally, `sqlite-wasm-rs` compiles SQLite with
+    // `-DSQLITE_THREADSAFE=0` and none of its VFS backends support
+    // multiple connections, further limiting WAL's utility on WASM.
+    //
+    // Testing WAL on specific WASM VFS backends is better suited for
+    // downstream integration tests.
+    // ---------------------------------------------------------------
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    /// Helper: create a file-backed connection (WAL requires a real file).
+    fn wal_connection() -> (SqliteConnection, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        let conn = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+        (conn, dir)
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn on_wal_fires_in_wal_mode() {
+        use std::sync::{Arc, Mutex};
+        let (conn, _dir) = &mut wal_connection();
+
+        // Enable WAL mode.
+        crate::sql_query("PRAGMA journal_mode=WAL")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("CREATE TABLE t_wal (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let calls: Arc<Mutex<Vec<(String, i32)>>> = Arc::new(Mutex::new(Vec::new()));
+        let c2 = calls.clone();
+
+        conn.on_wal(move |db_name, n_pages| {
+            c2.lock().unwrap().push((db_name.to_owned(), n_pages));
+        });
+
+        crate::sql_query("INSERT INTO t_wal (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        let recorded = calls.lock().unwrap();
+        assert!(
+            !recorded.is_empty(),
+            "WAL hook should have fired at least once"
+        );
+        assert_eq!(recorded.last().unwrap().0, "main");
+        assert!(recorded.last().unwrap().1 > 0, "n_pages should be positive");
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn replacing_wal_hook_drops_old() {
+        use std::sync::{Arc, Mutex};
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("PRAGMA journal_mode=WAL")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("CREATE TABLE t_wal2 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let old_count = Arc::new(Mutex::new(0u32));
+        let new_count = Arc::new(Mutex::new(0u32));
+
+        let c_old = old_count.clone();
+        conn.on_wal(move |_, _| {
+            *c_old.lock().unwrap() += 1;
+        });
+
+        // Replace with a new hook.
+        let c_new = new_count.clone();
+        conn.on_wal(move |_, _| {
+            *c_new.lock().unwrap() += 1;
+        });
+
+        crate::sql_query("INSERT INTO t_wal2 (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        // Old hook should NOT have fired after replacement.
+        let old_before = *old_count.lock().unwrap();
+        crate::sql_query("INSERT INTO t_wal2 (id) VALUES (2)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            *old_count.lock().unwrap(),
+            old_before,
+            "old WAL hook should not fire after replacement"
+        );
+        assert!(*new_count.lock().unwrap() > 0, "new WAL hook should fire");
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn remove_wal_hook_disables_callback() {
+        use std::sync::{Arc, Mutex};
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("PRAGMA journal_mode=WAL")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("CREATE TABLE t_wal3 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_wal(move |_, _| {
+            *c2.lock().unwrap() += 1;
+        });
+
+        conn.remove_wal_hook();
+
+        crate::sql_query("INSERT INTO t_wal3 (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 0);
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_hook_does_not_fire_in_default_journal_mode() {
+        use std::sync::{Arc, Mutex};
+        let (conn, _dir) = &mut wal_connection();
+
+        // Default journal mode for file-based databases is "delete" (not WAL).
+        crate::sql_query("CREATE TABLE t_wal4 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_wal(move |_, _| {
+            *c2.lock().unwrap() += 1;
+        });
+
+        crate::sql_query("INSERT INTO t_wal4 (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(
+            *count.lock().unwrap(),
+            0,
+            "WAL hook should not fire when not in WAL mode"
+        );
     }
 }
