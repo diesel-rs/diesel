@@ -1,14 +1,14 @@
 use std::collections::{HashMap, HashSet};
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
-    spanned::Spanned, Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics,
-    Variant, WhereClause,
+    Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics, Variant, WhereClause,
+    spanned::Spanned,
 };
 
 use crate::{
-    attrs::{parse_attributes, AttributeSpanWrapper, EnumAttr},
+    attrs::{AttributeSpanWrapper, EnumAttr, parse_attributes},
     model::Model,
     util::wrap_in_dummy_mod,
 };
@@ -58,20 +58,19 @@ fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<
     // We only support Postgres and MySQL
     let mut parsed_backends = HashSet::with_capacity(2);
 
-    match &enum_attr.item {
-        EnumAttr::Backend(_, backends) => {
-            for backend in backends {
-                let Some(backend) = backend.path.segments.last() else {
-                    return Err(syn::Error::new(
-                        proc_macro2::Span::mixed_site(),
-                        "this derive requires at least one database backend to be specified",
-                    ));
-                };
+    let EnumAttr::Backend(_, backends) = &enum_attr.item else {
+        return Ok(parsed_backends);
+    };
 
-                parsed_backends.insert(backend.ident.to_string());
-            }
-        }
-        _ => (),
+    for backend in backends {
+        let Some(backend) = backend.path.segments.last() else {
+            return Err(syn::Error::new(
+                proc_macro2::Span::mixed_site(),
+                "this derive requires at least one database backend to be specified",
+            ));
+        };
+
+        parsed_backends.insert(backend.ident.to_string());
     }
 
     Ok(parsed_backends)
