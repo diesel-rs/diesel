@@ -71,6 +71,7 @@ fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<
                 parsed_backends.insert(backend.ident.to_string());
             }
         }
+        _ => (),
     }
 
     Ok(parsed_backends)

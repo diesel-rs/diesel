@@ -354,6 +354,7 @@ pub enum EnumAttr {
         Ident,
         syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>,
     ),
+    SqlType(Ident),
 }
 
 impl Parse for EnumAttr {
@@ -362,11 +363,12 @@ impl Parse for EnumAttr {
         let name_str = name.to_string();
 
         match &*name_str {
-            "backend" => {
+            "check_for_backend" => {
                 let value = parse_paren_list(input, CHECK_FOR_BACKEND_NOTE, syn::Token![,])?;
                 Ok(EnumAttr::Backend(name, value))
             }
-            _ => Err(unknown_attribute(&name, &["backend"])),
+            "sql_type" => Ok(EnumAttr::SqlType(name)),
+            _ => Err(unknown_attribute(&name, &["check_for_backend", "sql_type"])),
         }
     }
 }
@@ -375,6 +377,7 @@ impl MySpanned for EnumAttr {
     fn span(&self) -> Span {
         match self {
             Self::Backend(ident, _) => ident.span(),
+            Self::SqlType(ident) => ident.span(),
         }
     }
 }
