@@ -50,7 +50,7 @@ cfg_if! {
                 id SERIAL PRIMARY KEY, \
                 name VARCHAR NOT NULL, \
                 hair_color VARCHAR DEFAULT 'Green',
-                type VARCHAR DEFAULT 'regular')");
+                type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
             sql_query("CREATE TYPE color as enum (\
