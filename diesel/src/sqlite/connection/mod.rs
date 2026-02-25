@@ -408,7 +408,7 @@ impl SqliteConnection {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn last_insert_rowid(&self) -> Option<i64> {
+    pub fn last_insert_rowid(&self) -> Option<NonZeroI64> {
         match self.raw_connection.last_insert_rowid() {
             0 => None,
             rowid => Some(rowid),
