@@ -111,7 +111,7 @@ fn impl_to_sql(
 }
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
-    let model = Model::from_item(&item, false, false)?;
+    let model = Model::from_item(&item, true, true)?;
     let enum_variants = match &item.data {
         Data::Enum(e) => &e.variants,
         _ => {

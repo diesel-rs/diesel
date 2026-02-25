@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use diesel_derives::Enum;
 
 #[derive(Debug, Enum, PartialEq)]
-#[diesel(backend(diesel::pg::Pg))]
+#[diesel(sql_type=sql_types::Color, backend = diesel::pg::Pg)]
 enum Color {
     Blue,
     Red,

@@ -2530,7 +2530,7 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 }
 /// Implements `FromSql` and `ToSql` for enum types
 ///
-/// This derive enables an enum (with unit-variants only) to be serialized to the database as a byte-string and deserialized from the same representation from the database. It requires one or more backends to be supplied so as to implement the required traits.
+/// This derive enables an enum (with unit-variants only) to be serialized to the database as a byte-string and deserialized from the same representation from the database. It requires one or more backends to be supplied so as to implement the required traits, as well as an SQL type.
 ///
 /// # Attributes
 ///
