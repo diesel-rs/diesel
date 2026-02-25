@@ -1,9 +1,6 @@
 on:
-  schedule:
-    - cron: "23 03 * * *"
   push:
-    branches:
-      - try_to_fix_metrics_job
+  pull_request:
 name: Metrics
 permissions:
   contents: "read"
@@ -78,51 +75,3 @@ jobs:
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
         run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rand_chacha rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio serde diesel-async diesel-async/mysql wtx wtx/mysql zero-mysql"
-      - name: Push metrics
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-          sudo apt-get -y install git
-
-          mkdir ~/.ssh -p
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          echo "${{ secrets.METRIC_ACCESS_KEY }}" >> ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          df -h
-          rm diesel_bench/target/release -rf
-          # delete unwanted files from criterion
-          find diesel_bench/target/criterion/ -iname '*.json' -delete
-          find diesel_bench/target/criterion/ -type d -name "base" -exec rm -rv {} \; || true
-          find diesel_bench/target/criterion/ -type d -empty -delete
-          # free some space on the runner
-          df -h
-          sudo rm -rf /usr/share/dotnet
-          df -h
-          sudo rm -rf /opt/ghc
-          df -h
-          sudo rm -rf "/usr/local/share/boost"
-          df -h
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          df -h
-          pwd
-          git clone --depth 1 git@github.com:diesel-rs/metrics.git
-          df -h
-
-          cd metrics
-          export FOLDER_NAME=$(date +%Y%m%d-%H%M%S)
-          mkdir -p metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
-          mv ../diesel_bench/target/criterion/* metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
-
-          git add metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
-          git -c user.name=Bot -c user.email=dummy@example.com commit --message "📈"
-
-          git push origin master
-      - name: cleanup
-        if: always()
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        run: |
-          rm -rf diesel_bench/target/criterion
-          ssh-add -D
-          rm -Rf ~/.ssh
