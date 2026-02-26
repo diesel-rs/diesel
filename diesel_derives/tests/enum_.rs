@@ -1,12 +1,11 @@
-use crate::schema;
-use diesel_derives::Enum;
 use crate::helpers::connection;
+use crate::schema;
 use diesel::prelude::*;
+use diesel_derives::Enum;
 
-#[derive(Debug, Enum, PartialEq)]
-#[cfg_attr(feature = "postgres", diesel(check_for_backend(diesel::pg::Pg)))]
-#[cfg_attr(feature = "mysql", diesel(check_for_backend(diesel::mysql::Mysql)))]
-#[diesel(sql_type = schema::sql_types::Color)]
+#[derive(Debug, Clone, Copy, Enum, PartialEq)]
+#[cfg_attr(feature = "postgres", diesel(check_for_backend(diesel::pg::Pg), sql_type = schema::sql_types::Color))]
+#[cfg_attr(feature = "mysql", diesel(check_for_backend(diesel::mysql::Mysql), sql_type = schema::sql_types::CarsPaintColorEnum))]
 enum Color {
     Blue,
     Red,
@@ -27,17 +26,17 @@ fn from_bytes() {
 
 #[test]
 fn insert_and_select() {
-    #[derive(Debug, PartialEq, Insertable, HasQuery)]
+    #[derive(Debug, Clone, Copy, PartialEq, Insertable, HasQuery)]
     #[diesel(table_name = schema::cars)]
     struct Car {
         id: i32,
-        paint_color: Color
+        paint_color: Color,
     }
 
     let conn = &mut connection();
     let new_car = Car {
         id: 0,
-        paint_color: Color::Blue
+        paint_color: Color::Blue,
     };
     diesel::insert_into(schema::cars::table)
         .values(new_car)

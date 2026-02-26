@@ -85,6 +85,9 @@ cfg_if! {
                 type VARCHAR(255) DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
+            sql_query("CREATE TEMPORARY TABLE cars (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                paint_color ENUM('Blue', 'Red') NOT NULL)").execute(&mut conn).unwrap();
             conn.begin_test_transaction().unwrap();
             conn
         }
