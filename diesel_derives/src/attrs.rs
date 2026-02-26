@@ -349,34 +349,6 @@ impl MySpanned for StructAttr {
     }
 }
 
-pub enum EnumAttr {
-    Backend(Ident, CheckForBackend),
-    Other(StructAttr),
-}
-
-impl Parse for EnumAttr {
-    fn parse(input: ParseStream) -> Result<Self> {
-        let name: Ident = input.parse()?;
-        let name_str = name.to_string();
-
-        match &*name_str {
-            "check_for_backend" => parse_paren_list(input, CHECK_FOR_BACKEND_NOTE, syn::Token![,])
-                .map(CheckForBackend::Backends)
-                .map(|backends| EnumAttr::Backend(name, backends)),
-            _ => StructAttr::parse(input).map(Self::Other),
-        }
-    }
-}
-
-impl MySpanned for EnumAttr {
-    fn span(&self) -> Span {
-        match self {
-            Self::Backend(ident, _) => ident.span(),
-            Self::Other(i) => i.span(),
-        }
-    }
-}
-
 pub fn parse_attributes<T>(attrs: &[Attribute]) -> Result<Vec<AttributeSpanWrapper<T>>>
 where
     T: Parse + ParseDeprecated + MySpanned,

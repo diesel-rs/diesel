@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
@@ -8,7 +8,6 @@ use syn::{
 };
 
 use crate::{
-    attrs::{AttributeSpanWrapper, EnumAttr, parse_attributes},
     model::{CheckForBackend, Model},
     util::wrap_in_dummy_mod,
 };
@@ -54,29 +53,6 @@ fn as_bytes_method_body(enum_variant: &Variant) -> Result<TokenStream> {
     Ok(quote! {Self::#variant_name => #variant_as_byte_string})
 }
 
-fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<String>> {
-    // We only support Postgres and MySQL
-    let mut parsed_backends = HashSet::with_capacity(2);
-
-    let EnumAttr::Backend(_, CheckForBackend::Backends(backends)) = &enum_attr.item else {
-        return Ok(parsed_backends);
-    };
-
-
-    for backend in backends.iter() {
-        let Some(backend) = backend.path.segments.last() else {
-            return Err(syn::Error::new(
-                proc_macro2::Span::mixed_site(),
-                "this derive requires at least one database backend to be specified",
-            ));
-        };
-
-        parsed_backends.insert(backend.ident.to_string());
-    }
-
-    Ok(parsed_backends)
-}
-
 fn impl_from_sql(
     enum_name: &Ident,
     (impl_generics, ty_generics, where_clause): &(ImplGenerics, TypeGenerics, Option<&WhereClause>),
@@ -113,6 +89,20 @@ fn impl_to_sql(
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, true)?;
+
+    let Some(CheckForBackend::Backends(backends)) = model.check_for_backend else {
+        return Err(syn::Error::new(
+            proc_macro2::Span::mixed_site(),
+            "attribute check_for_backend is required",
+        ));
+    };
+    let [_] = model.sql_types.as_slice() else {
+        return Err(syn::Error::new(
+            proc_macro2::Span::mixed_site(),
+            "exactly one sql_type must be supplied",
+        ));
+    };
+
     let enum_variants = match &item.data {
         Data::Enum(e) => &e.variants,
         _ => {
@@ -157,24 +147,21 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         .iter()
         .map(syn::Type::to_token_stream)
         .collect();
-    for attr in parse_attributes(&item.attrs)? {
-        let backends = parse_backends(&attr)?;
+    for b in backends {
+        let backend = b.path.segments.last().unwrap().ident.to_string();
+        let (backend, value_type) = backend_map.get(&backend.as_str()).ok_or(syn::Error::new(
+            proc_macro2::Span::mixed_site(),
+            "only the Postgres and Mysql backends are supported",
+        ))?;
 
-        for b in backends {
-            let (backend, value_type) = backend_map.get(b.as_str()).ok_or(syn::Error::new(
-                proc_macro2::Span::mixed_site(),
-                "only the Postgres and Mysql backends are supported",
-            ))?;
-
-            impls.push(impl_from_sql(
-                &item.ident,
-                &generics,
-                &sql_types,
-                backend,
-                value_type,
-            ));
-            impls.push(impl_to_sql(&item.ident, &generics, &sql_types, backend));
-        }
+        impls.push(impl_from_sql(
+            &item.ident,
+            &generics,
+            &sql_types,
+            backend,
+            value_type,
+        ));
+        impls.push(impl_to_sql(&item.ident, &generics, &sql_types, backend));
     }
 
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
