@@ -35,7 +35,7 @@ fn insert_and_select() {
 
     let conn = &mut connection();
     let new_car = Car {
-        id: 0,
+        id: 1,
         paint_color: Color::Blue,
     };
     diesel::insert_into(schema::cars::table)
