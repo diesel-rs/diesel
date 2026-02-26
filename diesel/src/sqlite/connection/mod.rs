@@ -35,6 +35,7 @@ use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::Sqlite;
 use alloc::string::String;
 use core::ffi as libc;
+use core::num::NonZeroI64;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
 /// connection URLs are:
@@ -372,6 +373,45 @@ impl SqliteConnection {
         E: From<Error>,
     {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
+    }
+
+    /// Returns the rowid of the most recent successful INSERT on this connection.
+    ///
+    /// Returns `None` if no successful INSERT into a rowid table has been performed
+    /// on this connection, and `Some(rowid)` otherwise.
+    ///
+    /// See [the SQLite documentation](https://www.sqlite.org/c3ref/last_insert_rowid.html)
+    /// for details.
+    ///
+    /// # Caveats
+    /// - Inserts into `WITHOUT ROWID` tables are not recorded
+    /// - Failed `INSERT` (constraint violations) do not change the value
+    /// - `INSERT OR REPLACE` always updates the value
+    /// - Within triggers, returns the rowid of the trigger's INSERT;
+    ///   reverts after the trigger completes
+    ///
+    /// # Example
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use core::num::NonZeroI64;
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")?;
+    /// conn.batch_execute("INSERT INTO users (name) VALUES ('Sean')")?;
+    /// let rowid = conn.last_insert_rowid();
+    /// assert_eq!(rowid, NonZeroI64::new(1));
+    /// conn.batch_execute("INSERT INTO users (name) VALUES ('Tess')")?;
+    /// let rowid = conn.last_insert_rowid();
+    /// assert_eq!(rowid, NonZeroI64::new(2));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn last_insert_rowid(&self) -> Option<NonZeroI64> {
+        NonZeroI64::new(self.raw_connection.last_insert_rowid())
     }
 
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
@@ -1015,5 +1055,89 @@ mod tests {
         check_empty_query_error(crate::sql_query("   ").execute(connection));
         check_empty_query_error(crate::sql_query("\n\t").execute(connection));
         check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_returns_none_on_fresh_connection() {
+        let conn = &mut connection();
+        assert_eq!(conn.last_insert_rowid(), None);
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_returns_rowid_after_insert() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO li_test (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+
+        crate::sql_query("INSERT INTO li_test (val) VALUES ('b')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(2));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_unchanged_after_failed_insert() {
+        let conn = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE li_test2 (id INTEGER PRIMARY KEY, val TEXT NOT NULL UNIQUE)",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::sql_query("INSERT INTO li_test2 (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        let rowid = conn.last_insert_rowid();
+        assert_eq!(rowid, NonZeroI64::new(1));
+
+        // This should fail due to UNIQUE constraint
+        let result = crate::sql_query("INSERT INTO li_test2 (val) VALUES ('a')").execute(conn);
+        assert!(result.is_err());
+
+        // rowid should be unchanged
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_with_explicit_rowid() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test3 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO li_test3 (id, val) VALUES (42, 'a')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(42));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_unchanged_after_delete_and_update() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test4 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO li_test4 (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        let rowid = conn.last_insert_rowid();
+        assert_eq!(rowid, NonZeroI64::new(1));
+
+        crate::sql_query("UPDATE li_test4 SET val = 'b' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+
+        crate::sql_query("DELETE FROM li_test4 WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
     }
 }
