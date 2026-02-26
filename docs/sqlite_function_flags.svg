@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450">
+  <defs>
+    <style>
+      .title { font: bold 16px sans-serif; fill: #1a1a2e; }
+      .subtitle { font: 11px sans-serif; fill: #4a4a6a; }
+      .section { font: bold 12px sans-serif; }
+      .label { font: bold 11px sans-serif; }
+      .method { font: bold 9px monospace; fill: #455a64; }
+      .flag { font: bold 10px monospace; }
+      .desc { font: 9px sans-serif; fill: #555; }
+      .date { font: 8px sans-serif; fill: #999; }
+    </style>
+  </defs>
+
+  <rect width="900" height="450" fill="#fafafa"/>
+
+  <text x="450" y="16" text-anchor="middle" class="title">SQLite Function Behavior Flags</text>
+  <text x="450" y="30" text-anchor="middle" class="subtitle">When you register a custom SQL function in Diesel, these flags control WHERE that function can be called from.</text>
+
+  <!-- DIRECT SQL -->
+  <rect x="5" y="38" width="890" height="392" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="15" y="54" class="section" fill="#0d47a1">DIRECT SQL QUERIES</text>
+  <text x="175" y="54" class="desc">SQL you execute directly from your application code. All functions work here, regardless of flags.</text>
+
+  <!-- DIRECTONLY box -->
+  <rect x="12" y="62" width="430" height="88" rx="6" fill="#bbdefb" stroke="#1976d2" stroke-width="1.5"/>
+  <text x="20" y="77" class="flag" fill="#0d47a1">DIRECTONLY</text>
+  <foreignObject x="20" y="80" width="414" height="66">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; text-align: justify; line-height: 1.3;">
+      <p style="margin: 0 0 4px 0; color: #555;">Mark functions with <b>DIRECTONLY</b> when they have <b>side effects</b> or expose <b>sensitive application state</b>. These functions can ONLY be called from your application code — never from views, triggers, or other schema objects.</p>
+      <p style="margin: 0; color: #555;">Examples: logging functions, audit trails, network calls, file I/O, functions that read application config.</p>
+    </div>
+  </foreignObject>
+
+  <!-- Flag reference -->
+  <rect x="450" y="62" width="438" height="88" rx="6" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="456" y="77" class="label" fill="#333">Flag Reference (SqliteFunctionBehavior)</text>
+  <foreignObject x="454" y="80" width="430" height="66">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.3;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><td style="font: bold 9px monospace; color: #0d47a1; width: 85px; vertical-align: top;">DIRECTONLY</td><td style="color: #555;">Function can ONLY run from your app code, never from schema objects</td></tr>
+        <tr><td style="font: bold 9px monospace; color: #e65100; vertical-align: top;">DETERMINISTIC</td><td style="color: #555;">Same inputs always produce same output. Lets SQLite cache results and optimize.</td></tr>
+        <tr><td style="font: bold 9px monospace; color: #1b5e20; vertical-align: top;">INNOCUOUS</td><td style="color: #555;">Safe to call from untrusted schemas. No side effects, no secrets. Required for hardened mode.</td></tr>
+        <tr><td style="font: bold 9px monospace; color: #616161; vertical-align: top;">SUBTYPE</td><td style="color: #555;">Function inspects JSON subtypes via sqlite3_value_subtype(). Rarely needed.</td></tr>
+      </table>
+    </div>
+  </foreignObject>
+
+  <!-- SCHEMA OBJECTS -->
+  <rect x="12" y="158" width="876" height="264" rx="8" fill="#fff8e1" stroke="#ff8f00" stroke-width="2"/>
+  <text x="20" y="174" class="section" fill="#e65100">SCHEMA OBJECTS</text>
+  <text x="150" y="174" class="desc">Code stored in the database file: Views, Triggers, CHECK constraints, DEFAULT expressions, Generated columns. When someone opens your .db file, this code runs automatically.</text>
+
+  <!-- TRUSTED MODE -->
+  <rect x="20" y="182" width="424" height="232" rx="6" fill="#fff9c4" stroke="#f9a825" stroke-width="1.5"/>
+  <text x="28" y="198" class="label" fill="#f57f17">TRUSTED MODE (default)</text>
+  <text x="28" y="210" class="method">set_trusted_schema(true)</text>
+  <foreignObject x="28" y="214" width="408" height="194">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.35;">
+      <p style="margin: 0 0 6px 0; color: #555;"><b>Use when:</b> You created this database yourself, or you trust whoever gave it to you. The schema (views, triggers, etc.) won't try to exploit your custom functions.</p>
+
+      <p style="margin: 0 0 2px 0; color: #2e7d32;"><b>Functions allowed in schema objects:</b></p>
+      <p style="margin: 0 0 6px 0; color: #2e7d32;">
+        ✓ <b>DETERMINISTIC</b> — pure functions like upper(), abs()<br/>
+        ✓ <b>(no flags)</b> — non-deterministic like random(), uuid()<br/>
+        ✓ <b>INNOCUOUS</b> — explicitly safe functions
+      </p>
+
+      <p style="margin: 0 0 6px 0; color: #c62828;">✗ <b>DIRECTONLY</b> — always blocked in schema objects, even in trusted mode</p>
+
+      <p style="margin: 0 0 4px 0; font-family: monospace; font-size: 8px; color: #1565c0;">-- This view can call your custom upper_case() function:<br/>CREATE VIEW v AS SELECT upper_case(name) FROM users;</p>
+
+      <p style="margin: 0; font-style: italic; color: #666;">Tip: If you plan to harden later, add INNOCUOUS flag to your functions now.</p>
+    </div>
+  </foreignObject>
+
+  <!-- HARDENED MODE -->
+  <rect x="452" y="182" width="428" height="232" rx="6" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="460" y="198" class="label" fill="#1b5e20">HARDENED MODE</text>
+  <text x="460" y="210" class="method">set_trusted_schema(false)</text>
+  <foreignObject x="460" y="214" width="412" height="194">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font: 9px sans-serif; color: #333; line-height: 1.35;">
+      <p style="margin: 0 0 6px 0; color: #555;"><b>Use when:</b> Opening a .db file you didn't create. A malicious database could contain views/triggers designed to call your functions in harmful ways — e.g., a trigger that calls your logging function to leak data.</p>
+
+      <p style="margin: 0 0 2px 0; color: #2e7d32;"><b>Functions allowed in schema objects:</b></p>
+      <p style="margin: 0 0 6px 0; color: #2e7d32;">
+        ✓ <b>INNOCUOUS</b> — explicitly marked as safe<br/>
+        ✓ <b>INNOCUOUS + DETERMINISTIC</b> — safe and cacheable
+      </p>
+
+      <p style="margin: 0 0 6px 0; color: #c62828;">
+        ✗ <b>DETERMINISTIC alone</b> — not enough, needs INNOCUOUS<br/>
+        ✗ <b>(no flags)</b> — blocked<br/>
+        ✗ <b>DIRECTONLY</b> — always blocked
+      </p>
+
+      <p style="margin: 0 0 4px 0; font-family: monospace; font-size: 8px; color: #c62828;">-- If this view calls a non-INNOCUOUS function:<br/>SELECT * FROM malicious_view; -- ERROR!</p>
+
+      <p style="margin: 0; font-style: italic; color: #666;">INNOCUOUS = "this function is harmless even if called by untrusted code"</p>
+    </div>
+  </foreignObject>
+
+  <!-- Legend and date -->
+  <text x="5" y="442" class="desc">Inner boxes = more restricted execution contexts. INNOCUOUS is the key flag for security. For most pure functions, use DETERMINISTIC | INNOCUOUS.</text>
+  <text x="895" y="442" text-anchor="end" class="date">2026-02-14</text>
+</svg>

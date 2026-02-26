@@ -4,6 +4,22 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+// Option codes for `sqlite3_db_config()` that control whether the ATTACH
+// statement is allowed to create new database files (ATTACH_CREATE) or open
+// them in write mode (ATTACH_WRITE).  They are passed to
+// `set_db_config_bool` / `get_db_config_bool` in the public
+// `set_attach_create_enabled` and `set_attach_write_enabled` methods.
+//
+// These constants were introduced in SQLite 3.49.0 and are only present in
+// `libsqlite3-sys` >= 0.35.0.  Diesel supports `libsqlite3-sys` >= 0.17.2,
+// so the constants may be absent at compile time.  We define them here so
+// that diesel compiles against any supported `libsqlite3-sys` version; if
+// the linked SQLite library is too old to recognise the option, the
+// `sqlite3_db_config()` call will return an error at runtime, which the
+// calling code already handles.
+const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
+const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
+
 mod bind_collector;
 mod functions;
 mod owned_row;
@@ -32,7 +48,7 @@ use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
-use crate::sqlite::Sqlite;
+use crate::sqlite::{Sqlite, SqliteFunctionBehavior};
 use alloc::string::String;
 use core::ffi as libc;
 
@@ -432,7 +448,7 @@ impl SqliteConnection {
     pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
         &mut self,
         fn_name: &str,
-        deterministic: bool,
+        behavior: SqliteFunctionBehavior,
         mut f: F,
     ) -> QueryResult<()>
     where
@@ -441,19 +457,16 @@ impl SqliteConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register(
-            &self.raw_connection,
-            fn_name,
-            deterministic,
-            move |_, args| f(args),
-        )
+        functions::register(&self.raw_connection, fn_name, behavior, move |_, args| {
+            f(args)
+        })
     }
 
     #[doc(hidden)]
     pub fn register_noarg_sql_function<RetSqlType, Ret, F>(
-        &self,
+        &mut self,
         fn_name: &str,
-        deterministic: bool,
+        behavior: SqliteFunctionBehavior,
         f: F,
     ) -> QueryResult<()>
     where
@@ -461,13 +474,14 @@ impl SqliteConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register_noargs(&self.raw_connection, fn_name, deterministic, f)
+        functions::register_noargs(&self.raw_connection, fn_name, behavior, f)
     }
 
     #[doc(hidden)]
     pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
         &mut self,
         fn_name: &str,
+        behavior: SqliteFunctionBehavior,
     ) -> QueryResult<()>
     where
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
@@ -475,7 +489,7 @@ impl SqliteConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
+        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name, behavior)
     }
 
     /// Register a collation function.
@@ -573,13 +587,513 @@ impl SqliteConnection {
         self.raw_connection.deserialize(data)
     }
 
+    /// Enable or disable SQLite defensive mode.
+    ///
+    /// When enabled, defensive mode prevents:
+    /// - Direct writes to shadow tables (used by FTS5, R-Tree, etc.)
+    /// - Dangerous PRAGMA commands like `writable_schema`
+    /// - `sqlite3_deserialize()` from opening unsafe database images
+    /// - Other potentially dangerous operations
+    ///
+    /// # Security Hardening Recipe
+    ///
+    /// For recommended security hardening of SQLite connections:
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_defensive(true).unwrap();
+    /// conn.set_trusted_schema(false).unwrap();
+    /// conn.set_load_extension_enabled(false).unwrap();
+    /// # }
+    /// ```
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.26.0 (2018-12) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Enable defensive mode for any connection that may process untrusted data.
+    /// This is the single most important security flag for hardening SQLite.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Enable defensive mode for security hardening
+    /// conn.set_defensive(true).unwrap();
+    /// assert!(conn.is_defensive().unwrap());
+    /// # }
+    /// ```
+    pub fn set_defensive(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_DEFENSIVE, enabled)
+    }
+
+    /// Check if defensive mode is enabled.
+    ///
+    /// See [`set_defensive`][Self::set_defensive] for details.
+    pub fn is_defensive(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_DEFENSIVE)
+    }
+
+    /// Enable or disable trusted schema mode.
+    ///
+    /// When disabled (untrusted), SQL functions called from schema objects
+    /// (views, triggers, CHECK constraints, DEFAULT expressions, generated
+    /// columns, expression indexes) are restricted to only those marked
+    /// with [`SqliteFunctionBehavior::INNOCUOUS`][crate::sqlite::SqliteFunctionBehavior::INNOCUOUS].
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.31.0 (2020-01) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Disable trusted schema when opening database files from untrusted sources.
+    /// When disabled, ensure your custom SQL functions are registered with
+    /// appropriate behavior flags (see [`SqliteFunctionBehavior`][crate::sqlite::SqliteFunctionBehavior]).
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable trusted schema for security hardening
+    /// conn.set_trusted_schema(false).unwrap();
+    /// assert!(!conn.is_trusted_schema().unwrap());
+    /// # }
+    /// ```
+    pub fn set_trusted_schema(&mut self, trusted: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_TRUSTED_SCHEMA, trusted)
+    }
+
+    /// Check if trusted schema mode is enabled.
+    ///
+    /// See [`set_trusted_schema`][Self::set_trusted_schema] for details.
+    pub fn is_trusted_schema(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_TRUSTED_SCHEMA)
+    }
+
+    /// Enable or disable the `load_extension()` SQL function.
+    ///
+    /// This controls whether the [`load_extension()`](https://www.sqlite.org/lang_corefunc.html#load_extension)
+    /// **SQL function** can be called. It does **not** affect the
+    /// `sqlite3_load_extension()` C API (which Diesel does not expose).
+    /// The C API is controlled separately by `sqlite3_enable_load_extension()`.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.13.0 (2016-05) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// If SQLite was compiled with `SQLITE_OMIT_LOAD_EXTENSION`, the
+    /// `load_extension()` SQL function does not exist and this setting
+    /// has no effect.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Disable extension loading unless specifically needed.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable extension loading for security
+    /// conn.set_load_extension_enabled(false).unwrap();
+    /// assert!(!conn.is_load_extension_enabled().unwrap());
+    /// # }
+    /// ```
+    pub fn set_load_extension_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, enabled)
+    }
+
+    /// Check if `load_extension()` SQL function is enabled.
+    ///
+    /// See [`set_load_extension_enabled`][Self::set_load_extension_enabled] for details.
+    pub fn is_load_extension_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION)
+    }
+
+    /// Enable or disable the `fts3_tokenizer()` SQL function.
+    ///
+    /// When enabled, the [`fts3_tokenizer()`](https://www.sqlite.org/fts3.html#f3tknzr)
+    /// function allows overloading the default FTS3/FTS4 tokenizer, which
+    /// can be exploited if an attacker can execute arbitrary SQL.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.12.0 (2016-03) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Disable this unless you specifically need custom FTS3 tokenizers.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable FTS3 tokenizer overloading for security
+    /// conn.set_fts3_tokenizer_enabled(false).unwrap();
+    /// assert!(!conn.is_fts3_tokenizer_enabled().unwrap());
+    /// # }
+    /// ```
+    pub fn set_fts3_tokenizer_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, enabled)
+    }
+
+    /// Check if the `fts3_tokenizer()` SQL function is enabled.
+    ///
+    /// See [`set_fts3_tokenizer_enabled`][Self::set_fts3_tokenizer_enabled] for details.
+    pub fn is_fts3_tokenizer_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER)
+    }
+
+    /// Enable or disable direct writes to `sqlite_master`.
+    ///
+    /// When enabled, allows direct modification of the `sqlite_master`
+    /// table, which can corrupt the database if misused.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.28.0 (2019-04) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Keep this disabled unless you specifically need to repair or modify
+    /// the database schema directly. Enabling defensive mode
+    /// ([`set_defensive`][Self::set_defensive]) will also prevent this.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Ensure writable schema is disabled for safety
+    /// conn.set_writable_schema(false).unwrap();
+    /// assert!(!conn.is_writable_schema().unwrap());
+    /// # }
+    /// ```
+    pub fn set_writable_schema(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_WRITABLE_SCHEMA, enabled)
+    }
+
+    /// Check if direct writes to `sqlite_master` are enabled.
+    ///
+    /// See [`set_writable_schema`][Self::set_writable_schema] for details.
+    pub fn is_writable_schema(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_WRITABLE_SCHEMA)
+    }
+
+    /// Enable or disable ATTACH from creating new database files.
+    ///
+    /// When disabled, [`ATTACH`](https://www.sqlite.org/lang_attach.html)
+    /// can only open existing database files; it cannot create new ones.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.49.0 (2025-02) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Disable this in environments where database file creation should
+    /// be restricted.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable ATTACH file creation for security
+    /// conn.set_attach_create_enabled(false).unwrap();
+    /// assert!(!conn.is_attach_create_enabled().unwrap());
+    /// # }
+    /// ```
+    pub fn set_attach_create_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, enabled)
+    }
+
+    /// Check if ATTACH can create new database files.
+    ///
+    /// See [`set_attach_create_enabled`][Self::set_attach_create_enabled] for details.
+    pub fn is_attach_create_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE)
+    }
+
+    /// Enable or disable ATTACH from opening databases in write mode.
+    ///
+    /// When disabled, all attached databases are opened as read-only.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.49.0 (2025-02) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Security Recommendation
+    ///
+    /// Disable this to restrict write access to attached databases.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable ATTACH write access for security
+    /// conn.set_attach_write_enabled(false).unwrap();
+    /// assert!(!conn.is_attach_write_enabled().unwrap());
+    /// # }
+    /// ```
+    pub fn set_attach_write_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, enabled)
+    }
+
+    /// Check if ATTACH can open databases in write mode.
+    ///
+    /// See [`set_attach_write_enabled`][Self::set_attach_write_enabled] for details.
+    pub fn is_attach_write_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE)
+    }
+
+    /// Enable or disable trigger execution.
+    ///
+    /// When disabled, triggers will not fire for any DML operations.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.8.7 (2014-10) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable triggers temporarily
+    /// conn.set_triggers_enabled(false).unwrap();
+    /// assert!(!conn.are_triggers_enabled().unwrap());
+    ///
+    /// // Re-enable triggers
+    /// conn.set_triggers_enabled(true).unwrap();
+    /// # }
+    /// ```
+    pub fn set_triggers_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_TRIGGER, enabled)
+    }
+
+    /// Check if trigger execution is enabled.
+    ///
+    /// See [`set_triggers_enabled`][Self::set_triggers_enabled] for details.
+    pub fn are_triggers_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_TRIGGER)
+    }
+
+    /// Enable or disable view expansion.
+    ///
+    /// When disabled, queries against views will fail.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.30.0 (2019-10) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable views temporarily
+    /// conn.set_views_enabled(false).unwrap();
+    /// assert!(!conn.are_views_enabled().unwrap());
+    /// # }
+    /// ```
+    pub fn set_views_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_VIEW, enabled)
+    }
+
+    /// Check if view expansion is enabled.
+    ///
+    /// See [`set_views_enabled`][Self::set_views_enabled] for details.
+    pub fn are_views_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_VIEW)
+    }
+
+    /// Enable or disable foreign key constraint enforcement.
+    ///
+    /// This is equivalent to `PRAGMA foreign_keys = ON/OFF`.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.8.7 (2014-10) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Enable foreign key enforcement
+    /// conn.set_foreign_keys_enabled(true).unwrap();
+    /// assert!(conn.are_foreign_keys_enabled().unwrap());
+    /// # }
+    /// ```
+    pub fn set_foreign_keys_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FKEY, enabled)
+    }
+
+    /// Check if foreign key constraints are enabled.
+    ///
+    /// See [`set_foreign_keys_enabled`][Self::set_foreign_keys_enabled] for details.
+    pub fn are_foreign_keys_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FKEY)
+    }
+
+    /// Enable or disable double-quoted strings in DML statements.
+    ///
+    /// When enabled, double-quoted strings are interpreted as string literals
+    /// rather than identifiers. This is a legacy behavior that can cause issues.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.29.0 (2019-07) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Recommendation
+    ///
+    /// Disable this for stricter SQL compliance.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable double-quoted strings in DML for stricter SQL
+    /// conn.set_double_quoted_string_dml(false).unwrap();
+    /// # }
+    /// ```
+    pub fn set_double_quoted_string_dml(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DML, enabled)
+    }
+
+    /// Check if double-quoted strings in DML are enabled.
+    ///
+    /// See [`set_double_quoted_string_dml`][Self::set_double_quoted_string_dml] for details.
+    pub fn is_double_quoted_string_dml_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DML)
+    }
+
+    /// Enable or disable double-quoted strings in DDL statements.
+    ///
+    /// When enabled, double-quoted strings are interpreted as string literals
+    /// rather than identifiers. This is a legacy behavior that can cause issues.
+    ///
+    /// # Availability
+    ///
+    /// Requires SQLite 3.29.0 (2019-07) or later. Returns an error if the
+    /// linked SQLite version does not support this option.
+    ///
+    /// # Recommendation
+    ///
+    /// Disable this for stricter SQL compliance.
+    ///
+    /// See [SQLite documentation](https://sqlite.org/c3ref/db_config.html) for more details.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // Disable double-quoted strings in DDL for stricter SQL
+    /// conn.set_double_quoted_string_ddl(false).unwrap();
+    /// # }
+    /// ```
+    pub fn set_double_quoted_string_ddl(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL, enabled)
+    }
+
+    /// Check if double-quoted strings in DDL are enabled.
+    ///
+    /// See [`set_double_quoted_string_ddl`][Self::set_double_quoted_string_ddl] for details.
+    pub fn is_double_quoted_string_ddl_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
+        // This function has side effects (creates triggers), so it should not
+        // be deterministic. We use DIRECTONLY to prevent it from being called
+        // from malicious schema objects in untrusted databases.
         functions::register::<Text, Integer, _, _, _>(
             &self.raw_connection,
             "diesel_manage_updated_at",
-            false,
+            SqliteFunctionBehavior::DIRECTONLY,
             |conn, table_name: String| {
                 conn.exec(&alloc::format!(
                     include_str!("diesel_manage_updated_at.sql"),
@@ -617,6 +1131,7 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::{Integer, Text};
+    use crate::sqlite::SqliteFunctionBehavior;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -673,18 +1188,22 @@ mod tests {
     #[diesel_test_helper::test]
     fn register_custom_function() {
         let connection = &mut connection();
-        fun_case_utils::register_impl(connection, |x: String| {
-            x.chars()
-                .enumerate()
-                .map(|(i, c)| {
-                    if i % 2 == 0 {
-                        c.to_lowercase().to_string()
-                    } else {
-                        c.to_uppercase().to_string()
-                    }
-                })
-                .collect::<String>()
-        })
+        fun_case_utils::register_impl(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+            |x: String| {
+                x.chars()
+                    .enumerate()
+                    .map(|(i, c)| {
+                        if i % 2 == 0 {
+                            c.to_lowercase().to_string()
+                        } else {
+                            c.to_uppercase().to_string()
+                        }
+                    })
+                    .collect::<String>()
+            },
+        )
         .unwrap();
 
         let mapped_string = crate::select(fun_case("foobar"))
@@ -696,7 +1215,12 @@ mod tests {
     #[diesel_test_helper::test]
     fn register_multiarg_function() {
         let connection = &mut connection();
-        my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
+        my_add_utils::register_impl(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+            |x: i32, y: i32| x + y,
+        )
+        .unwrap();
 
         let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
@@ -705,7 +1229,8 @@ mod tests {
     #[diesel_test_helper::test]
     fn register_noarg_function() {
         let connection = &mut connection();
-        answer_utils::register_impl(connection, || 42).unwrap();
+        answer_utils::register_impl(connection, SqliteFunctionBehavior::DETERMINISTIC, || 42)
+            .unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -714,7 +1239,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut connection();
-        answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
+        answer_utils::register_impl(connection, SqliteFunctionBehavior::empty(), || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -724,10 +1249,14 @@ mod tests {
     fn register_nondeterministic_function() {
         let connection = &mut connection();
         let mut y = 0;
-        add_counter_utils::register_nondeterministic_impl(connection, move |x: i32| {
-            y += 1;
-            x + y
-        })
+        add_counter_utils::register_impl(
+            connection,
+            SqliteFunctionBehavior::empty(),
+            move |x: i32| {
+                y += 1;
+                x + y
+            },
+        )
         .unwrap();
 
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
@@ -773,7 +1302,8 @@ mod tests {
             .execute(connection)
             .unwrap();
 
-        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection, SqliteFunctionBehavior::DETERMINISTIC)
+            .unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -792,7 +1322,8 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection, SqliteFunctionBehavior::DETERMINISTIC)
+            .unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -859,7 +1390,11 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
+        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+        )
+        .unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
             .get_result::<Option<i32>>(connection)
@@ -1015,5 +1550,210 @@ mod tests {
         check_empty_query_error(crate::sql_query("   ").execute(connection));
         check_empty_query_error(crate::sql_query("\n\t").execute(connection));
         check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
+    }
+
+    // ---- db_config tests ----
+
+    #[diesel_test_helper::test]
+    fn db_config_defensive_roundtrip() {
+        let conn = &mut connection();
+        conn.set_defensive(true).unwrap();
+        assert!(conn.is_defensive().unwrap());
+        conn.set_defensive(false).unwrap();
+        assert!(!conn.is_defensive().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_trusted_schema_roundtrip() {
+        let conn = &mut connection();
+        conn.set_trusted_schema(false).unwrap();
+        assert!(!conn.is_trusted_schema().unwrap());
+        conn.set_trusted_schema(true).unwrap();
+        assert!(conn.is_trusted_schema().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_load_extension_roundtrip() {
+        let conn = &mut connection();
+        conn.set_load_extension_enabled(false).unwrap();
+        assert!(!conn.is_load_extension_enabled().unwrap());
+        conn.set_load_extension_enabled(true).unwrap();
+        assert!(conn.is_load_extension_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_triggers_roundtrip() {
+        let conn = &mut connection();
+        conn.set_triggers_enabled(false).unwrap();
+        assert!(!conn.are_triggers_enabled().unwrap());
+        conn.set_triggers_enabled(true).unwrap();
+        assert!(conn.are_triggers_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_views_roundtrip() {
+        let conn = &mut connection();
+        conn.set_views_enabled(false).unwrap();
+        assert!(!conn.are_views_enabled().unwrap());
+        conn.set_views_enabled(true).unwrap();
+        assert!(conn.are_views_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_foreign_keys_roundtrip() {
+        let conn = &mut connection();
+        conn.set_foreign_keys_enabled(true).unwrap();
+        assert!(conn.are_foreign_keys_enabled().unwrap());
+        conn.set_foreign_keys_enabled(false).unwrap();
+        assert!(!conn.are_foreign_keys_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_dqs_dml_roundtrip() {
+        let conn = &mut connection();
+        conn.set_double_quoted_string_dml(false).unwrap();
+        assert!(!conn.is_double_quoted_string_dml_enabled().unwrap());
+        conn.set_double_quoted_string_dml(true).unwrap();
+        assert!(conn.is_double_quoted_string_dml_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_dqs_ddl_roundtrip() {
+        let conn = &mut connection();
+        conn.set_double_quoted_string_ddl(false).unwrap();
+        assert!(!conn.is_double_quoted_string_ddl_enabled().unwrap());
+        conn.set_double_quoted_string_ddl(true).unwrap();
+        assert!(conn.is_double_quoted_string_ddl_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_fts3_tokenizer_roundtrip() {
+        let conn = &mut connection();
+        conn.set_fts3_tokenizer_enabled(false).unwrap();
+        assert!(!conn.is_fts3_tokenizer_enabled().unwrap());
+        conn.set_fts3_tokenizer_enabled(true).unwrap();
+        assert!(conn.is_fts3_tokenizer_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_writable_schema_roundtrip() {
+        let conn = &mut connection();
+        conn.set_writable_schema(false).unwrap();
+        assert!(!conn.is_writable_schema().unwrap());
+        conn.set_writable_schema(true).unwrap();
+        assert!(conn.is_writable_schema().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_attach_create_roundtrip() {
+        let conn = &mut connection();
+        // ATTACH_CREATE requires SQLite 3.46.0+; skip if unsupported
+        if conn.set_attach_create_enabled(false).is_err() {
+            return;
+        }
+        assert!(!conn.is_attach_create_enabled().unwrap());
+        conn.set_attach_create_enabled(true).unwrap();
+        assert!(conn.is_attach_create_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_attach_write_roundtrip() {
+        let conn = &mut connection();
+        // ATTACH_WRITE requires SQLite 3.46.0+; skip if unsupported
+        if conn.set_attach_write_enabled(false).is_err() {
+            return;
+        }
+        assert!(!conn.is_attach_write_enabled().unwrap());
+        conn.set_attach_write_enabled(true).unwrap();
+        assert!(conn.is_attach_write_enabled().unwrap());
+    }
+
+    // ---- behavioral db_config tests ----
+
+    #[diesel_test_helper::test]
+    fn defensive_mode_blocks_writable_schema() {
+        let conn = &mut connection();
+        conn.set_defensive(true).unwrap();
+        // In defensive mode, writable_schema should remain off even if we try to set it
+        let _ = crate::sql_query("PRAGMA writable_schema = ON").execute(conn);
+        assert!(!conn.is_writable_schema().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn foreign_keys_enabled_enforces_constraints() {
+        let conn = &mut connection();
+        conn.set_foreign_keys_enabled(true).unwrap();
+
+        crate::sql_query("CREATE TABLE parent (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE child (id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES parent(id))",
+        )
+        .execute(conn)
+        .unwrap();
+
+        // Insert a child row with no matching parent — should fail with FK enabled
+        let result =
+            crate::sql_query("INSERT INTO child (id, parent_id) VALUES (1, 999)").execute(conn);
+        assert!(result.is_err());
+    }
+
+    // ---- DIRECTONLY / INNOCUOUS function behavior tests ----
+
+    #[declare_sql_function]
+    extern "SQL" {
+        fn directonly_fn() -> Integer;
+        fn innocuous_fn() -> Integer;
+    }
+
+    #[diesel_test_helper::test]
+    fn directonly_function_blocked_from_view() {
+        let conn = &mut connection();
+
+        // Register a DIRECTONLY function
+        directonly_fn_utils::register_impl(conn, SqliteFunctionBehavior::DIRECTONLY, || 42)
+            .unwrap();
+
+        // Direct call works
+        let result = crate::select(directonly_fn()).get_result::<i32>(conn);
+        assert_eq!(Ok(42), result);
+
+        // Create a view that calls the function
+        crate::sql_query("CREATE VIEW test_view AS SELECT directonly_fn() AS val")
+            .execute(conn)
+            .unwrap();
+
+        // Disable trusted schema so DIRECTONLY is enforced from schema objects
+        conn.set_trusted_schema(false).unwrap();
+
+        // Querying the view should fail because the function is DIRECTONLY
+        let result = crate::sql_query("SELECT val FROM test_view").execute(conn);
+        assert!(result.is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn innocuous_function_allowed_from_view_with_untrusted_schema() {
+        let conn = &mut connection();
+
+        // Register an INNOCUOUS function
+        innocuous_fn_utils::register_impl(
+            conn,
+            SqliteFunctionBehavior::DETERMINISTIC | SqliteFunctionBehavior::INNOCUOUS,
+            || 99,
+        )
+        .unwrap();
+
+        // Create a view that calls the function
+        crate::sql_query("CREATE VIEW innocuous_view AS SELECT innocuous_fn() AS val")
+            .execute(conn)
+            .unwrap();
+
+        // Disable trusted schema
+        conn.set_trusted_schema(false).unwrap();
+
+        // Querying the view should succeed because the function is INNOCUOUS
+        let result = crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
+        assert!(result.is_ok());
     }
 }

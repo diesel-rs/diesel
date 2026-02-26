@@ -7,6 +7,7 @@
 pub(crate) mod backend;
 mod connection;
 pub mod expression;
+mod function_behavior;
 
 pub mod query_builder;
 
@@ -17,6 +18,8 @@ pub use self::connection::SerializedDatabase;
 pub use self::connection::SqliteBindValue;
 pub use self::connection::SqliteConnection;
 pub use self::connection::SqliteValue;
+#[cfg(feature = "__sqlite-shared")]
+pub use self::function_behavior::SqliteFunctionBehavior;
 pub use self::query_builder::SqliteQueryBuilder;
 
 /// Trait for the implementation of a SQLite aggregate function

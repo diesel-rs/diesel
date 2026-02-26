@@ -2175,13 +2175,25 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// On most backends, the implementation of the function is defined in a
 /// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
-/// Rust instead. You must call `register_impl` or
-/// `register_nondeterministic_impl` (in the generated function's `_internals`
-/// module) with every connection before you can use the function.
+/// Rust instead. You must call `register_impl` (in the generated function's
+/// `_utils` module) with every connection before you can use the function.
+///
+/// The `register_impl` function takes a [`SqliteFunctionBehavior`] parameter
+/// that controls how SQLite treats the function:
+///
+/// - `SqliteFunctionBehavior::DETERMINISTIC`: The function always returns the
+///   same result given the same inputs. Allows SQLite to optimize queries.
+/// - `SqliteFunctionBehavior::INNOCUOUS`: The function is safe to call from
+///   schema objects (views, triggers, etc.) when `set_trusted_schema(false)`.
+/// - `SqliteFunctionBehavior::DIRECTONLY`: The function cannot be called from
+///   schema objects. Use for functions with side effects.
+/// - `SqliteFunctionBehavior::empty()`: Non-deterministic function.
 ///
 /// These functions will only be generated if the `sqlite` feature is enabled,
 /// and the function is not generic.
 /// SQLite doesn't support generic functions and variadic functions.
+///
+/// [`SqliteFunctionBehavior`]: ../diesel/sqlite/struct.SqliteFunctionBehavior.html
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -2198,6 +2210,8 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # }
 /// #
 /// use diesel::sql_types::{Double, Integer};
+/// # #[cfg(feature = "sqlite")]
+/// use diesel::sqlite::SqliteFunctionBehavior;
 ///
 /// #[declare_sql_function]
 /// extern "SQL" {
@@ -2208,7 +2222,11 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul_utils::register_impl(connection, |x: i32, y: i32, z: f64| (x + y) as f64 * z)?;
+/// add_mul_utils::register_impl(
+///     connection,
+///     SqliteFunctionBehavior::DETERMINISTIC,
+///     |x: i32, y: i32, z: f64| (x + y) as f64 * z,
+/// )?;
 ///
 /// let result = select(add_mul(1, 2, 1.5)).get_result::<f64>(connection)?;
 /// assert_eq!(4.5, result);
@@ -2247,7 +2265,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # }
 /// use diesel::sql_types::Integer;
 /// # #[cfg(feature = "sqlite")]
-/// use diesel::sqlite::SqliteAggregateFunction;
+/// use diesel::sqlite::{SqliteAggregateFunction, SqliteFunctionBehavior};
 ///
 /// #[declare_sql_function]
 /// extern "SQL" {
@@ -2288,7 +2306,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     my_sum_utils::register_impl::<MySum, _>(connection)?;
+///     my_sum_utils::register_impl::<MySum, _>(connection, SqliteFunctionBehavior::DETERMINISTIC)?;
 ///
 ///     let total_score = players.select(my_sum(score))
 ///         .get_result::<i32>(connection)?;
@@ -2317,7 +2335,7 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// # }
 /// use diesel::sql_types::{Float, Nullable};
 /// # #[cfg(feature = "sqlite")]
-/// use diesel::sqlite::SqliteAggregateFunction;
+/// use diesel::sqlite::{SqliteAggregateFunction, SqliteFunctionBehavior};
 ///
 /// #[declare_sql_function]
 /// extern "SQL" {
@@ -2370,7 +2388,10 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     range_max_utils::register_impl::<RangeMax<f32>, _, _>(connection)?;
+///     range_max_utils::register_impl::<RangeMax<f32>, _, _>(
+///         connection,
+///         SqliteFunctionBehavior::DETERMINISTIC,
+///     )?;
 ///
 ///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
 ///         .get_result::<Option<f32>>(connection)?;

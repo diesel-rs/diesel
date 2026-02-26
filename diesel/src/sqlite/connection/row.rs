@@ -382,11 +382,15 @@ mod tests {
         let barrier2 = barrier.clone();
 
         // we unblock the main thread from the sleep function
-        sleep_utils::register_impl(&mut conn2, move |a: i32| {
-            barrier.wait();
-            std::thread::sleep(Duration::from_secs(a as u64));
-            a
-        })
+        sleep_utils::register_impl(
+            &mut conn2,
+            crate::sqlite::SqliteFunctionBehavior::empty(),
+            move |a: i32| {
+                barrier.wait();
+                std::thread::sleep(Duration::from_secs(a as u64));
+                a
+            },
+        )
         .unwrap();
 
         // spawn a background thread that locks the database file

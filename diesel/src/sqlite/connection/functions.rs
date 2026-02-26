@@ -13,6 +13,7 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
+use crate::sqlite::SqliteFunctionBehavior;
 use crate::sqlite::SqliteValue;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
@@ -28,7 +29,7 @@ use core::ops::DerefMut;
 pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
     fn_name: &str,
-    deterministic: bool,
+    behavior: SqliteFunctionBehavior,
     mut f: F,
 ) -> QueryResult<()>
 where
@@ -45,7 +46,7 @@ where
         ));
     }
 
-    conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
+    conn.register_sql_function(fn_name, fields_needed, behavior, move |conn, args| {
         let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
         Ok(f(conn, args))
@@ -56,7 +57,7 @@ where
 pub(super) fn register_noargs<RetSqlType, Ret, F>(
     conn: &RawConnection,
     fn_name: &str,
-    deterministic: bool,
+    behavior: SqliteFunctionBehavior,
     mut f: F,
 ) -> QueryResult<()>
 where
@@ -64,13 +65,14 @@ where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    conn.register_sql_function(fn_name, 0, deterministic, move |_, _| Ok(f()))?;
+    conn.register_sql_function(fn_name, 0, behavior, move |_, _| Ok(f()))?;
     Ok(())
 }
 
 pub(super) fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     conn: &RawConnection,
     fn_name: &str,
+    behavior: SqliteFunctionBehavior,
 ) -> QueryResult<()>
 where
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
@@ -89,6 +91,7 @@ where
     conn.register_aggregate_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(
         fn_name,
         fields_needed,
+        behavior,
     )?;
 
     Ok(())
