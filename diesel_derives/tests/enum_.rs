@@ -6,7 +6,7 @@ use diesel::prelude::*;
 #[derive(Debug, Enum, PartialEq)]
 #[cfg_attr(feature = "postgres", diesel(check_for_backend(diesel::pg::Pg)))]
 #[cfg_attr(feature = "mysql", diesel(check_for_backend(diesel::mysql::Mysql)))]
-#[diesel(sql_type = schema::Color)]
+#[diesel(sql_type = schema::sql_types::Color)]
 enum Color {
     Blue,
     Red,
@@ -27,7 +27,7 @@ fn from_bytes() {
 
 #[test]
 fn insert_and_select() {
-    #[derive(Insertable, HasQuery)]
+    #[derive(Debug, PartialEq, Insertable, HasQuery)]
     #[diesel(table_name = schema::cars)]
     struct Car {
         id: i32,
