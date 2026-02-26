@@ -18,7 +18,7 @@ pub trait ParseDeprecated: Sized {
 #[cfg(any(feature = "without-deprecated", not(feature = "with-deprecated")))]
 mod not_deprecated {
     use super::{ParseDeprecated, ParseStream, Result};
-    use crate::attrs::{FieldAttr, StructAttr};
+    use crate::attrs::{EnumAttr, FieldAttr, StructAttr};
 
     impl ParseDeprecated for StructAttr {
         fn parse_deprecated(_input: ParseStream) -> Result<Option<Self>> {
@@ -27,6 +27,12 @@ mod not_deprecated {
     }
 
     impl ParseDeprecated for FieldAttr {
+        fn parse_deprecated(_input: ParseStream) -> Result<Option<Self>> {
+            unimplemented!()
+        }
+    }
+
+    impl ParseDeprecated for EnumAttr {
         fn parse_deprecated(_input: ParseStream) -> Result<Option<Self>> {
             unimplemented!()
         }

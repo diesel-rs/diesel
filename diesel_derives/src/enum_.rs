@@ -1,15 +1,15 @@
 use std::collections::{HashMap, HashSet};
 
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
+use quote::{quote, ToTokens};
 use syn::{
-    Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics, Variant, WhereClause,
-    spanned::Spanned,
+    spanned::Spanned, Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics,
+    Variant, WhereClause,
 };
 
 use crate::{
     attrs::{AttributeSpanWrapper, EnumAttr, parse_attributes},
-    model::Model,
+    model::{CheckForBackend, Model},
     util::wrap_in_dummy_mod,
 };
 
@@ -58,11 +58,12 @@ fn parse_backends(enum_attr: &AttributeSpanWrapper<EnumAttr>) -> Result<HashSet<
     // We only support Postgres and MySQL
     let mut parsed_backends = HashSet::with_capacity(2);
 
-    let EnumAttr::Backend(_, backends) = &enum_attr.item else {
+    let EnumAttr::Backend(_, CheckForBackend::Backends(backends)) = &enum_attr.item else {
         return Ok(parsed_backends);
     };
 
-    for backend in backends {
+
+    for backend in backends.iter() {
         let Some(backend) = backend.path.segments.last() else {
             return Err(syn::Error::new(
                 proc_macro2::Span::mixed_site(),
@@ -181,14 +182,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let enum_name = &item.ident;
     let impl_from_and_to_bytes = quote! {
         impl #impl_generics #enum_name #ty_generics #where_clause {
-            fn from_bytes(bytes: &[u8]) -> Option<Self> {
+            pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
                 match bytes {
                     #(#from_bytes_arms),*,
                     _ => None
                 }
             }
 
-            fn as_bytes(&self) -> &[u8] {
+            pub fn as_bytes(&self) -> &[u8] {
                 match self {
                     #(#as_bytes_arms),*
                 }

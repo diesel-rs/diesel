@@ -1,11 +1,9 @@
-use crate::helpers::*;
-use crate::schema::*;
-use diesel::prelude::*;
+use crate::schema::sql_types::Color;
 use diesel_derives::Enum;
 
 #[derive(Debug, Enum, PartialEq)]
-#[diesel(check_for_backend(diesel::pg::Pg), sql_type = sql_types::Color)]
-enum Color {
+#[diesel(check_for_backend(diesel::pg::Pg), sql_type = Color)]
+enum ColorEnum {
     Blue,
     Red,
 }
@@ -13,12 +11,12 @@ enum Color {
 #[test]
 fn as_bytes() {
     let expected = b"Blue";
-    let actual = Color::Blue.as_bytes();
+    let actual = ColorEnum::Blue.as_bytes();
 
     assert_eq!(expected, actual);
 }
 
 #[test]
 fn from_bytes() {
-    assert_eq!(Color::from_bytes(b"Red").unwrap(), Color::Red);
+    assert_eq!(ColorEnum::from_bytes(b"Red").unwrap(), ColorEnum::Red);
 }
