@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
-    spanned::Spanned, Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics,
-    Variant, WhereClause,
+    Data, DeriveInput, Ident, ImplGenerics, LitByteStr, Result, TypeGenerics, Variant, WhereClause,
+    spanned::Spanned,
 };
 
 use crate::{
