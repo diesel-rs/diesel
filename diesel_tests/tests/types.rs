@@ -1861,7 +1861,7 @@ fn citext_fields() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
-fn deserialize_wrong_dimension_pg_array_into_ndarray_gives_error() {
+fn deserialize_1d_array_to_ndarray() {
     use diesel::data_types::NdArray;
     use diesel::sql_types::{Array, Bool};
 
@@ -1880,13 +1880,10 @@ fn deserialize_wrong_dimension_pg_array_into_ndarray_gives_error() {
         .unwrap();
 
     let res = diesel::dsl::sql::<Array<Bool>>("SELECT bool_array FROM test_table")
-        .get_result::<NdArray<bool>>(conn);
-    assert!(res.is_err());
-    assert_eq!(
-        res.unwrap_err().to_string(),
-        "Error deserializing field 'bool_array': \
-         trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead"
-    );
+        .get_result::<NdArray<bool>>(conn)
+        .unwrap();
+    assert_eq!(res.dims, vec![2]);
+    assert_eq!(res.data, vec![true, false]);
 }
 
 #[diesel_test_helper::test]

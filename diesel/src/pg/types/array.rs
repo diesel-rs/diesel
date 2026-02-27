@@ -15,7 +15,15 @@ use crate::sql_types::{Array, HasSqlType, Nullable};
 /// representation with the dimension information encoded in the header. This struct represents a
 /// multi-dimensional array with elements of type `T` as opposed to Vec<T> which can be used for 1d-arrays.
 pub struct NdArray<T> {
+    /// A list that describes how many values for each dimension are returned
     pub dims: Vec<usize>,
+    /// The actual data flattened to a single array
+    ///
+    /// This array contains values ordered by the left most dimension
+    /// which means there will be dim[0] values for the first element of the second dimension
+    /// followed by dim[0] values for the second element of the second dimensions
+    /// and so up to dim[1] times. Afterwards that number of values is repeated for dim[2],
+    /// and so for all dimensions in the dimension field above
     pub data: Vec<T>,
 }
 
@@ -87,26 +95,21 @@ where
             });
         }
 
-        if num_dimensions == 1 {
-            return Err("trying to deserialize one-dimensional postgres array into NdArray<T>, use Vec<T> instead".into());
-        }
-
         let num_dims: usize = num_dimensions
             .try_into()
             .map_err(|_| "number of dimensions must be positive")?;
 
-        let mut dims = Vec::with_capacity(num_dims);
-        let mut num_elements: i32;
+        let dims = (0..num_dims)
+            .map(|_| {
+                let num_elements = bytes.read_i32::<NetworkEndian>()?;
+                let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
 
-        for _ in 0..num_dims {
-            num_elements = bytes.read_i32::<NetworkEndian>()?;
-            let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
-
-            let dim: usize = num_elements
-                .try_into()
-                .map_err(|_| "array dimension length must be positive")?;
-            dims.push(dim);
-        }
+                let dim: usize = num_elements
+                    .try_into()
+                    .map_err(|_| "array dimension length must be positive")?;
+                Ok(dim)
+            })
+            .collect::<deserialize::Result<Vec<_>>>()?;
 
         let data = (0..dims.iter().product::<usize>())
             .map(|_| -> deserialize::Result<T> {
