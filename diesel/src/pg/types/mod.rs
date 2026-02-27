@@ -1,6 +1,7 @@
 //! PostgreSQL specific types
 
-mod array;
+#[doc(hidden)]
+pub(in crate::pg) mod array;
 #[doc(hidden)]
 pub(in crate::pg) mod date_and_time;
 #[doc(hidden)]
