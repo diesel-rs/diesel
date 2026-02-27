@@ -39,7 +39,7 @@ wtx = { default-features = false, features = [
     "std",
     "tokio",
 ], optional = true, version = "0.41" }
-zero-mysql = { optional = true, version = "=0.4.1", features = [
+zero-mysql = { optional = true, version = "=0.5.0", features = [
     "tokio",
     "derive",
 ] }

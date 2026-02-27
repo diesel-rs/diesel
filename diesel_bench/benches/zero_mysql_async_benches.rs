@@ -8,18 +8,18 @@ use crate::Bencher;
 use std::collections::HashMap;
 use std::fmt::Write;
 use tokio::runtime::Runtime;
-use zero_mysql::r#macro::FromRawRow;
+use zero_mysql::r#macro::FromRow;
 use zero_mysql::tokio::Conn;
 use zero_mysql::Opts;
 
-#[derive(FromRawRow)]
+#[derive(FromRow)]
 pub struct User {
     pub id: i32,
     pub name: String,
     pub hair_color: Option<String>,
 }
 
-#[derive(FromRawRow)]
+#[derive(FromRow)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -27,7 +27,7 @@ pub struct Post {
     pub body: Option<String>,
 }
 
-#[derive(FromRawRow)]
+#[derive(FromRow)]
 pub struct Comment {
     pub id: i32,
     pub post_id: i32,
