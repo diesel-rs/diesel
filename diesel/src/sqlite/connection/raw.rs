@@ -6,6 +6,7 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use super::functions::{build_sql_function_args, process_sql_function_result};
+use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
 use super::{Sqlite, SqliteAggregateFunction};
@@ -241,6 +242,17 @@ impl RawConnection {
             );
 
             ensure_sqlite_ok(result, self.internal_connection.as_ptr())
+        }
+    }
+
+    pub(super) fn set_limit(&self, limit: SqliteLimit, value: i32) -> i32 {
+        unsafe { ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), value) }
+    }
+
+    pub(super) fn get_limit(&self, limit: SqliteLimit) -> i32 {
+        unsafe {
+            // Passing -1 queries the current value without changing it
+            ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), -1)
         }
     }
 
