@@ -70,6 +70,11 @@ pub type AutoExtensionEntryPoint = unsafe extern "C" fn(
 /// # Example
 ///
 /// ```rust
+/// #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+/// extern crate libsqlite3_sys as ffi;
+/// #[cfg(all(target_family = "wasm", target_os = "unknown"))]
+/// extern crate sqlite_wasm_rs as ffi;
+///
 /// use diesel::prelude::*;
 /// use diesel::sqlite::{register_auto_extension, reset_auto_extension, SqliteConnection};
 ///
@@ -77,9 +82,9 @@ pub type AutoExtensionEntryPoint = unsafe extern "C" fn(
 /// // linked into your binary (e.g., Spatialite, sqlite-vec) or written
 /// // using `sqlite-loadable-rs`.
 /// unsafe extern "C" fn my_ext_init(
-///     _db: *mut libsqlite3_sys::sqlite3,
+///     _db: *mut ffi::sqlite3,
 ///     _pz_err_msg: *mut *mut core::ffi::c_char,
-///     _p_api: *const libsqlite3_sys::sqlite3_api_routines,
+///     _p_api: *const ffi::sqlite3_api_routines,
 /// ) -> core::ffi::c_int {
 ///     0 // SQLITE_OK
 /// }
