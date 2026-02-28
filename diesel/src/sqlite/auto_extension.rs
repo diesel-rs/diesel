@@ -176,7 +176,6 @@ pub fn reset_auto_extension() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::connection::Connection;
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::Integer;
