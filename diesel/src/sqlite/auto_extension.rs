@@ -245,7 +245,10 @@ mod tests {
 
         // -- 2. cancel + new connection does NOT have the function --
         let removed = cancel_auto_extension(test_ext_init);
-        assert!(removed, "cancel should return true for registered extension");
+        assert!(
+            removed,
+            "cancel should return true for registered extension"
+        );
 
         let mut conn = open_memory_connection();
         let result = crate::sql_query("SELECT test_auto_ext_42()").execute(&mut conn);
