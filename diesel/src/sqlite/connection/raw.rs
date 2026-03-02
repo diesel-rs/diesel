@@ -64,6 +64,12 @@ impl RawConnection {
             }
             err_code => {
                 let message = super::error_message(err_code);
+                // sqlite3_open_v2() may allocate a database connection handle
+                // even on failure. To avoid a resource leak, it must be released
+                // with sqlite3_close(). Passing a null pointer to sqlite3_close()
+                // is a harmless no-op, so no null check is needed.
+                // See: https://www.sqlite.org/c3ref/open.html
+                unsafe { ffi::sqlite3_close(conn_pointer) };
                 Err(ConnectionError::BadConnection(message.into()))
             }
         }
