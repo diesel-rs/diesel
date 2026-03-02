@@ -1,7 +1,6 @@
 use super::find_project_root;
 use crate::infer_schema_internals::TableName;
 use crate::print_schema::{self, ColumnSorting, DocConfig, PrintSchemaArgs};
-use clap::ArgMatches;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_regex::Serde as RegexWrapper;
@@ -21,19 +20,10 @@ pub struct Config {
 }
 
 fn get_values_with_indices<'a, T: Clone + Send + Sync + 'static>(
-    matches: &'a ArgMatches,
-    id: &str,
-) -> Result<Option<BTreeMap<usize, &'a T>>, crate::errors::Error> {
-    match matches.indices_of(id) {
-        Some(indices) => match matches.try_get_many::<T>(id) {
-            Ok(Some(values)) => Ok(Some(indices.zip(values).collect())),
-            Ok(None) => {
-                unreachable!("`ids` only reports what is present")
-            }
-            Err(e) => Err(e.into()),
-        },
-        None => Ok(None),
-    }
+    indices: Option<&[usize]>,
+    values: &'a [T],
+) -> Option<BTreeMap<usize, &'a T>> {
+    Some(indices?.iter().copied().zip(values).collect())
 }
 
 impl Config {
@@ -69,19 +59,26 @@ impl Config {
 
     pub fn set_filter(
         mut self,
-        matches: &ArgMatches,
-        table_names: Vec<String>,
-        only_tables: Vec<bool>,
-        except_tables: Vec<bool>,
+        print_schema: &PrintSchemaArgs,
     ) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
-            let selected_schema_keys =
-                get_values_with_indices::<String>(matches, "SCHEMA_KEY")?.unwrap_or_default();
-            let table_names_with_indices =
-                get_values_with_indices::<String>(matches, "TABLE_NAME")?;
-            let only_tables_with_indices = get_values_with_indices::<bool>(matches, "ONLY_TABLES")?;
-            let except_tables_with_indices =
-                get_values_with_indices::<bool>(matches, "EXCEPT_TABLES")?;
+            let selected_schema_keys = get_values_with_indices(
+                print_schema.schema_key_indices.as_deref(),
+                &print_schema.inner.schema_key,
+            )
+            .unwrap_or_default();
+            let table_names_with_indices = get_values_with_indices(
+                print_schema.table_indices.as_deref(),
+                &print_schema.inner.table_name,
+            );
+            let only_tables_with_indices = get_values_with_indices(
+                print_schema.only_table_indices.as_deref(),
+                &print_schema.inner.only_tables,
+            );
+            let except_tables_with_indices = get_values_with_indices(
+                print_schema.except_table_indices.as_deref(),
+                &print_schema.inner.except_tables,
+            );
 
             for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
                 selected_schema_keys
@@ -141,44 +138,68 @@ impl Config {
                 .all_configs
                 .entry("default".to_string())
                 .or_default()
-                .set_filter(table_names, only_tables, except_tables)?;
+                .set_filter(
+                    &print_schema.inner.table_name,
+                    &print_schema.inner.only_tables,
+                    &print_schema.inner.except_tables,
+                )?;
         }
         Ok(self)
     }
 
-    pub fn update_config(
-        mut self,
-        matches: &ArgMatches,
-        args: PrintSchemaArgs,
-    ) -> Result<Self, crate::errors::Error> {
+    pub fn update_config(mut self, args: PrintSchemaArgs) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             if let Some(selected_schema_keys) =
-                get_values_with_indices::<String>(matches, "SCHEMA_KEY")?
+                get_values_with_indices(args.schema_key_indices.as_deref(), &args.inner.schema_key)
             {
-                let schema_with_indices = get_values_with_indices::<String>(matches, "SCHEMA")?;
-                let with_docs_with_indices = get_values_with_indices::<bool>(matches, "WITH_DOCS")?;
-                let with_docs_config_with_indices =
-                    get_values_with_indices::<String>(matches, "WITH_DOCS_CONFIG")?;
+                let schema_with_indices =
+                    get_values_with_indices(args.schema_indices.as_deref(), &args.inner.schema);
+                let with_docs_with_indices = get_values_with_indices(
+                    args.with_docs_indices.as_deref(),
+                    &args.inner.with_docs,
+                );
+                let with_docs_config_with_indices = get_values_with_indices(
+                    args.with_docs_config_indices.as_deref(),
+                    &args.inner.with_docs_config,
+                );
                 let allow_tables_to_appear_in_same_query_config_with_indices =
-                    get_values_with_indices::<String>(
-                        matches,
-                        "ALLOW_TABLES_TO_APPEAR_IN_SAME_QUERY_CONFIG",
-                    )?;
-                let patch_file_with_indices =
-                    get_values_with_indices::<PathBuf>(matches, "PATCH_FILE")?;
-                let column_sorting_with_indices =
-                    get_values_with_indices::<String>(matches, "COLUMN_SORTING")?;
-                let import_types_with_indices =
-                    get_values_with_indices::<String>(matches, "IMPORT_TYPES")?;
-                let custom_type_derives_with_indices =
-                    get_values_with_indices::<String>(matches, "CUSTOM_TYPE_DERIVES")?;
-                let sqlite_integer_primary_key_is_bigint_with_indices =
-                    get_values_with_indices::<bool>(
-                        matches,
-                        "SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT",
-                    )?;
-                let except_custom_type_definitions_with_indices =
-                    get_values_with_indices::<String>(matches, "EXCEPT_CUSTOM_TYPE_DEFINITIONS")?;
+                    get_values_with_indices(
+                        args.allow_tables_appear_in_same_query_indices.as_deref(),
+                        &args.inner.allow_tables_to_appear_in_same_query_config,
+                    );
+                let patch_file_with_indices = get_values_with_indices(
+                    args.patch_file_indices.as_deref(),
+                    &args.inner.patch_file,
+                );
+                let column_sorting_with_indices = get_values_with_indices(
+                    args.column_sorting_indices.as_deref(),
+                    &args.inner.column_sorting,
+                );
+                let import_types_with_indices = get_values_with_indices(
+                    args.import_types_indices.as_deref(),
+                    &args.inner.import_types,
+                );
+                let custom_type_derives_with_indices = get_values_with_indices(
+                    args.custom_type_derives_indices.as_deref(),
+                    &args.inner.custom_type_derives,
+                );
+                let sqlite_integer_primary_key_is_bigint_with_indices = get_values_with_indices(
+                    args.sqlite_integer_primary_key_is_bigint_indices.as_deref(),
+                    &args.inner.sqlite_integer_primary_key_is_bigint,
+                );
+                let except_custom_type_definitions_with_indices = get_values_with_indices(
+                    args.except_custom_type_definitions_indices.as_deref(),
+                    &args.inner.except_custom_type_definitions,
+                );
+                let include_views_with_indices = get_values_with_indices(
+                    args.include_views_indices.as_deref(),
+                    &args.inner.include_views,
+                );
+                let experimental_infer_nullable_for_views_with_indices = get_values_with_indices(
+                    args.experimental_infer_nullable_for_views_indices
+                        .as_deref(),
+                    &args.inner.experimental_infer_nullable_for_views,
+                );
 
                 for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
                     selected_schema_keys
@@ -214,53 +235,42 @@ impl Config {
                         print_schema.with_docs =
                             DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
                     }
-                    // todo: that's not correct yet
-                    print_schema.include_views |= args.include_views;
-                    print_schema.experimental_infer_nullable_for_views |=
-                        args.experimental_infer_nullable_for_views;
+                    if let Some(include_views) = include_views_with_indices
+                        .as_ref()
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1))
+                    {
+                        print_schema.include_views = **include_views;
+                    }
+                    if let Some(experimental_infer_nullable_for_views) =
+                        experimental_infer_nullable_for_views_with_indices
+                            .as_ref()
+                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1))
+                    {
+                        print_schema.experimental_infer_nullable_for_views =
+                            **experimental_infer_nullable_for_views;
+                    }
 
                     if let Some(doc_config) = with_docs_config_with_indices
                         .as_ref()
-                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1))
                     {
-                        print_schema.with_docs = doc_config.parse().map_err(|_| {
-                            crate::errors::Error::UnsupportedFeature(format!(
-                                "Invalid documentation config mode: {doc_config}"
-                            ))
-                        })?;
+                        print_schema.with_docs = **doc_config;
                     }
 
                     if let Some(allow_tables_to_appear_in_same_query_config) =
                         allow_tables_to_appear_in_same_query_config_with_indices
                             .as_ref()
-                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
+                            .and_then(|v| v.range(boundary).nth(0).map(|v| v.1))
                     {
                         print_schema.allow_tables_to_appear_in_same_query_config =
-                            allow_tables_to_appear_in_same_query_config
-                                .parse()
-                                .map_err(|_| {
-                                    crate::errors::Error::UnsupportedFeature(format!(
-                                        "Invalid `allow_tables_to_appear_in_same_query!` config \
-                                        mode: {allow_tables_to_appear_in_same_query_config}"
-                                    ))
-                                })?;
+                            **allow_tables_to_appear_in_same_query_config;
                     }
 
                     if let Some(sorting) = column_sorting_with_indices
                         .as_ref()
-                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.as_str()))
+                        .and_then(|v| v.range(boundary).nth(0).map(|v| v.1))
                     {
-                        match sorting {
-                            "ordinal_position" => {
-                                print_schema.column_sorting = ColumnSorting::OrdinalPosition
-                            }
-                            "name" => print_schema.column_sorting = ColumnSorting::Name,
-                            _ => {
-                                return Err(crate::errors::Error::UnsupportedFeature(format!(
-                                    "Invalid column sorting mode: {sorting}"
-                                )));
-                            }
-                        }
+                        print_schema.column_sorting = **sorting;
                     }
 
                     if let Some(patch_file) = patch_file_with_indices
@@ -278,7 +288,7 @@ impl Config {
                         print_schema.import_types = Some(import_types);
                     }
 
-                    if args.no_generate_missing_sql_type_definitions {
+                    if args.inner.no_generate_missing_sql_type_definitions {
                         print_schema.generate_missing_sql_type_definitions = Some(false)
                     }
 
@@ -318,12 +328,19 @@ impl Config {
                 Entry::Vacant(entry) => entry.insert(PrintSchema::default()),
                 Entry::Occupied(entry) => entry.into_mut(),
             };
+            let args = args.inner;
             if let Some(schema_name) = args.schema.first() {
                 config.schema = Some(schema_name.to_owned())
             }
-            config.include_views |= args.include_views;
-            config.experimental_infer_nullable_for_views |=
-                args.experimental_infer_nullable_for_views;
+            if let Some(include_views) = args.include_views.first() {
+                config.include_views = *include_views;
+            }
+            if let Some(experimental_infer_nullable_for_views) =
+                args.experimental_infer_nullable_for_views.first()
+            {
+                config.experimental_infer_nullable_for_views =
+                    *experimental_infer_nullable_for_views;
+            }
             if args.with_docs.last().cloned().unwrap_or(false) {
                 config.with_docs = DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
             }
@@ -518,9 +535,9 @@ impl PrintSchema {
 
     pub fn set_filter(
         &mut self,
-        table_names: Vec<String>,
-        only_tables: Vec<bool>,
-        except_tables: Vec<bool>,
+        table_names: &[String],
+        only_tables: &[bool],
+        except_tables: &[bool],
     ) -> Result<(), crate::errors::Error> {
         let table_names = table_names
             .iter()

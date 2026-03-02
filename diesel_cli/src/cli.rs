@@ -6,7 +6,7 @@ use crate::migrations::MigrationArgs;
 use crate::print_schema::PrintSchemaArgs;
 use clap::CommandFactory;
 use clap::{ArgAction, Parser, Subcommand};
-use clap_complete::{Shell, generate};
+use clap_complete::{generate, Shell};
 
 #[derive(Parser, Debug)]
 #[command(version = cli_long_version(), about, long_about = None, after_help = "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.")]
@@ -42,6 +42,10 @@ pub struct Cli {
 }
 
 #[derive(Subcommand, Debug)]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "We don't really care for this case"
+)]
 pub enum DieselCliCommand {
     /// A group of commands for generating, running, and reverting migrations.
     Migration(MigrationArgs),

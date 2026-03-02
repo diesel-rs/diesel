@@ -1,6 +1,6 @@
-use diesel::QueryResult;
 use diesel::backend::Backend;
 use diesel::query_builder::QueryBuilder;
+use diesel::QueryResult;
 use diesel_table_macro_syntax::{ColumnDef, TableDecl, ViewDecl};
 use std::borrow::Cow;
 use std::collections::HashMap;
@@ -10,8 +10,8 @@ use syn::visit::Visit;
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
-    ColumnDefinition, ColumnType, ForeignKeyConstraint, SupportedQueryRelationStructures,
-    TableData, TableName, filter_table_names, load_table_names,
+    filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
+    SupportedQueryRelationStructures, TableData, TableName,
 };
 use crate::print_schema::{ColumnSorting, DocConfig};
 
@@ -33,7 +33,7 @@ pub fn generate_sql_based_on_diff_schema(
     only_tables: Vec<bool>,
     except_tables: Vec<bool>,
 ) -> Result<(String, String), crate::errors::Error> {
-    config.set_filter(table_name, only_tables, except_tables)?;
+    config.set_filter(&table_name, &only_tables, &except_tables)?;
 
     let project_root = crate::find_project_root()?;
 
@@ -655,7 +655,7 @@ where
 {
     query_builder.push_sql("CREATE TYPE ");
     let record_type_name = format!("{}_RECORD", column_name.to_uppercase());
-    if dbg!(record_type_name.len()) > 64 {
+    if record_type_name.len() > 64 {
         return Err(diesel::result::Error::QueryBuilderError(
             format!(
                 "Failed to construct a suitable name \

@@ -24,7 +24,7 @@ mod print_schema;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 mod query_helper;
 
-use clap::{CommandFactory, FromArgMatches};
+use clap::Parser;
 
 use database::InferConnection;
 use diesel::Connection;
@@ -67,10 +67,7 @@ fn inner_main() -> Result<(), crate::errors::Error> {
         }
     })?;
 
-    let cli = Cli::command();
-    let matches = cli.get_matches();
-    let cli =
-        Cli::from_arg_matches(&matches).expect("Failed to construct CLI arguments from ArgMatches");
+    let cli = Cli::parse();
 
     let database_url = cli.database_url;
     let config_file = cli.config_file;
@@ -102,10 +99,7 @@ fn inner_main() -> Result<(), crate::errors::Error> {
         )?,
         DieselCliCommand::Completions { shell } => self::cli::generate_completions_command(&shell),
         DieselCliCommand::PrintSchema(args) => {
-            let matches = matches
-                .subcommand_matches("print-schema")
-                .unwrap_or(&matches);
-            self::print_schema::run_infer_schema(matches, args, config_file, database_url)?
+            self::print_schema::run_infer_schema(args, config_file, database_url)?
         }
     }
 
