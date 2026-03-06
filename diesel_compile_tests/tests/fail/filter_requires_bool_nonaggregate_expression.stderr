@@ -11,9 +11,9 @@ help: the following other types implement trait `BoolOrNullableBool`
    --> DIESEL/diesel/diesel/src/sql_types/mod.rs
     |
 LL | impl BoolOrNullableBool for Bool {}
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Bool`
 LL | impl BoolOrNullableBool for Nullable<Bool> {}
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<diesel::sql_types::Bool>`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<columns::name>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `FilterDsl<columns::name>`
