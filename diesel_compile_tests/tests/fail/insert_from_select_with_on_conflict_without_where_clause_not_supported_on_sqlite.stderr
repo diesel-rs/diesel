@@ -10,6 +10,12 @@ error[E0277]: `OnConflictSelectWrapper<SelectStatement<..., ...>>` is no valid S
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+     |
+ LL | / impl<S> QueryFragment<crate::mysql::Mysql> for OnConflictSelectWrapper<S>
+ LL | | where
+ LL | |     S: QueryFragment<crate::mysql::Mysql>,
+     | |__________________________________________^ `OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
      |
     ::: DIESEL/diesel/diesel/src/sqlite/query_builder/query_fragment_impls.rs
      |
@@ -34,12 +40,6 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
  LL | | where
  LL | |     S: QueryFragment<crate::pg::Pg>,
      | |____________________________________^ `OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
-     |
- LL | / impl<S> QueryFragment<crate::mysql::Mysql> for OnConflictSelectWrapper<S>
- LL | | where
- LL | |     S: QueryFragment<crate::mysql::Mysql>,
-     | |__________________________________________^ `OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
      = note: required for `InsertFromSelect<..., ...>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Sqlite>`

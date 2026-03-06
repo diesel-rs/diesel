@@ -5,16 +5,7 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
     |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
     |
 help: the following other types implement trait `SelectQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
-    |
- LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
- LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
- LL | | where
- LL | |     Source: SelectQuery,
- LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
     |
 LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB, GB>
 LL | | where
@@ -28,7 +19,16 @@ LL | | where
 LL | |     S: SelectClauseExpression<F>,
 LL | |     O: ValidOrderingForDistinct<D>,
     | |___________________________________^ `SelectStatement<F, S, D, W, O, LOf, G, H, LC>`
-    = note: required for `diesel::expression::subselect::Subselect<bool, Bool>` to implement `diesel::Expression`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+    |
+ LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
+ LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+ LL | | where
+ LL | |     Source: SelectQuery,
+ LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
+    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
+    = note: required for `Subselect<bool, Bool>` to implement `diesel::Expression`
     = note: 1 redundant requirement hidden
     = note: required for `Exists<bool>` to implement `diesel::Expression`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<bool>>`
@@ -46,16 +46,7 @@ help: the trait `SelectQuery` is not implemented for `users::columns::id`
   LL |         id -> Integer,
     |         ^^
 help: the following other types implement trait `SelectQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
-    |
- LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
- LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
- LL | | where
- LL | |     Source: SelectQuery,
- LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
     |
 LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB, GB>
 LL | | where
@@ -69,7 +60,16 @@ LL | | where
 LL | |     S: SelectClauseExpression<F>,
 LL | |     O: ValidOrderingForDistinct<D>,
     | |___________________________________^ `SelectStatement<F, S, D, W, O, LOf, G, H, LC>`
-    = note: required for `diesel::expression::subselect::Subselect<users::columns::id, Bool>` to implement `diesel::Expression`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+    |
+ LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
+ LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+ LL | | where
+ LL | |     Source: SelectQuery,
+ LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
+    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
+    = note: required for `Subselect<id, Bool>` to implement `diesel::Expression`
     = note: 1 redundant requirement hidden
     = note: required for `Exists<users::columns::id>` to implement `diesel::Expression`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<users::columns::id>>`

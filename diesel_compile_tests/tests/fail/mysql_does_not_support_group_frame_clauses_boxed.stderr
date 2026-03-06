@@ -15,6 +15,17 @@ error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
 help: the following other types implement trait `QueryFragment<DB, SP>`
    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
     |
+ LL | /         impl<DB> QueryFragment<DB> for $name
+ LL | |         where
+ LL | |             DB: crate::backend::Backend,
+ LL | |             Self: QueryFragment<DB, DB::$option>,
+    | |_________________________________________________^ `ExcludeGroup` implements `QueryFragment<DB>`
+...
+ LL | /         impl<DB> QueryFragment<DB, $bound> for $name
+ LL | |         where
+ LL | |             DB: crate::backend::Backend<$option = $bound>,
+    | |__________________________________________________________^ `ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
+...
 LL | / simple_frame_expr_with_bound!(
 LL | |     /// Exclude the current peer group from the window frame
 LL | |     ///
@@ -22,10 +33,7 @@ LL | |     /// A peer group is a set of rows with an equivalent `ORDER BY`
 ...   |
 LL | |     "EXCLUDE GROUP "
 LL | | );
-    | | ^
-    | | |
-    | |_`ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
-    |   `ExcludeGroup` implements `QueryFragment<DB>`
+    | |_- in this macro invocation
     = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
     = note: 4 redundant requirements hidden
     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
