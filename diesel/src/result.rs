@@ -99,7 +99,7 @@ pub enum Error {
     BrokenTransactionManager,
 
     /// Internal integer conversion failed
-    IntegerConversion(std::num::TryFromIntError),
+    IntegerConversion(core::num::TryFromIntError),
 
     /// Closing a handle failed
     ClosingHandle(&'static str),
