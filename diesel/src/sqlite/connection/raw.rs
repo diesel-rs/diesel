@@ -276,10 +276,12 @@ impl RawConnection {
 
     pub(super) fn blob_open<'conn>(
         &'conn self,
+        database_name: &str,
         table_name: &str,
         column_name: &str,
         pkey: i64,
     ) -> Result<super::sqlite_blob::SqliteBlob<'conn>, Error> {
+        let database_name = alloc::ffi::CString::new(database_name)?;
         let column_name = alloc::ffi::CString::new(column_name)?;
         let table_name = alloc::ffi::CString::new(table_name)?;
 
@@ -293,7 +295,7 @@ impl RawConnection {
         let ret = unsafe {
             ffi::sqlite3_blob_open(
                 self.internal_connection.as_ptr(),
-                c"main".as_ptr(),
+                database_name.as_c_str().as_ptr(),
                 table_name.as_c_str().as_ptr(),
                 column_name.as_c_str().as_ptr(),
                 pkey,

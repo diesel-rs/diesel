@@ -422,17 +422,17 @@ impl SqliteConnection {
     where
         'query: 'conn,
         U: crate::Column,
-        U::Table: nodes::StaticQueryFragment<
-                Component = diesel::internal::table_macro::Identifier<'static>,
-            >,
+        U::Table: nodes::StaticQueryFragment,
+        <U::Table as nodes::StaticQueryFragment>::Component: HasDatabaseAndTableName,
     {
         use crate::query_builder::nodes::StaticQueryFragment;
 
+        let database_name = U::Table::STATIC_COMPONENT.database_name().unwrap_or("main");
         let column_name = U::NAME;
-        let table_name = U::Table::STATIC_COMPONENT;
+        let table_name = U::Table::STATIC_COMPONENT.table_name();
 
         self.raw_connection
-            .blob_open(table_name.0, column_name, primary_key)
+            .blob_open(database_name, table_name, column_name, primary_key)
     }
 
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
@@ -764,6 +764,34 @@ impl SqliteConnection {
 
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
+}
+
+#[doc(hidden)]
+pub trait HasDatabaseAndTableName {
+    fn database_name(&self) -> Option<&'static str>;
+    fn table_name(&self) -> &'static str;
+}
+
+impl HasDatabaseAndTableName for nodes::Identifier<'static> {
+    fn database_name(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn table_name(&self) -> &'static str {
+        self.0
+    }
+}
+
+impl<M> HasDatabaseAndTableName
+    for nodes::InfixNode<nodes::Identifier<'static>, nodes::Identifier<'static>, M>
+{
+    fn database_name(&self) -> Option<&'static str> {
+        Some(self.lhs.0)
+    }
+
+    fn table_name(&self) -> &'static str {
+        self.rhs.0
+    }
 }
 
 #[cfg(test)]
