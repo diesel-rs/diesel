@@ -1,7 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_several_keys_with_compound_key"
-snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 

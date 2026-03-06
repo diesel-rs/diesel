@@ -1,14 +1,14 @@
-error: expected integer literal, the correct format is `#[variadic(3)]`
+error: expect `last_arguments`, the correct format is `#[variadic(last_arguments = 3)]` or `#[variadic(last_arguments = 3, skip_zero_argument_variant = true)]`
  --> tests/fail/derive/bad_variadic.rs:9:16
   |
 LL |     #[variadic(not_a_literal_number)]
   |                ^^^^^^^^^^^^^^^^^^^^
 
 error: invalid variadic argument count: not enough function arguments
-  --> tests/fail/derive/bad_variadic.rs:17:16
+  --> tests/fail/derive/bad_variadic.rs:17:33
    |
-LL |     #[variadic(3)]
-   |                ^
+LL |     #[variadic(last_arguments = 3)]
+   |                                 ^
 
 error: cannot find attribute `variadic` in this scope
  --> tests/fail/derive/bad_variadic.rs:9:7

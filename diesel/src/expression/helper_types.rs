@@ -6,8 +6,11 @@ use super::grouped::Grouped;
 use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
 use crate::expression;
+#[cfg(any(feature = "postgres_backend", feature = "__sqlite-shared"))]
+use crate::expression_methods::JsonIndex;
 use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
+use alloc::string::String;
 
 /// The SQL type of an expression
 pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;
@@ -197,11 +200,36 @@ pub type Div<L, R> = <L as ::core::ops::Div<R>>::Output;
 pub use super::functions::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "postgres_backend")]
+#[cfg(all(feature = "postgres_backend", not(feature = "__sqlite-shared")))]
 #[allow(unreachable_pub)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "postgres_backend", feature = "__sqlite-shared"))]
+#[allow(unreachable_pub)]
+pub use crate::pg::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(all(feature = "__sqlite-shared", not(feature = "postgres_backend")))]
 #[allow(unreachable_pub)]
 pub use crate::sqlite::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(all(feature = "__sqlite-shared", feature = "postgres_backend"))]
+#[allow(unreachable_pub)]
+pub use crate::sqlite::expression::helper_types::*;
+
+/// The return type of [`lhs.retrieve_as_text(rhs)`](crate::expression_methods::AnyJsonExpressionMethods::retrieve_as_text)
+#[cfg(any(feature = "postgres_backend", feature = "__sqlite-shared"))]
+pub type RetrieveAsText<Lhs, Rhs> = Grouped<
+    crate::expression::operators::RetrieveAsTextJson<
+        Lhs,
+        AsExprOf<
+            <Rhs as JsonIndex>::Expression,
+            <<Rhs as JsonIndex>::Expression as Expression>::SqlType,
+        >,
+    >,
+>;
+
+/// The return type of [`lhs.collate(collation)`](crate::expression_methods::TextExpressionMethods::collate)
+pub type Collate<Lhs, Col> = Grouped<super::operators::Collate<Lhs, Col>>;

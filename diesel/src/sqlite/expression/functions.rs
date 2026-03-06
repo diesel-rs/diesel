@@ -2,17 +2,17 @@
 #[cfg(doc)]
 use crate::expression::functions::aggregate_expressions::AggregateExpressionMethods;
 use crate::expression::functions::declare_sql_function;
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sql_types::*;
 use crate::sqlite::expression::expression_methods::BinaryOrNullableBinary;
 use crate::sqlite::expression::expression_methods::JsonOrNullableJson;
-use crate::sqlite::expression::expression_methods::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::sqlite::expression::expression_methods::MaybeNullableValue;
 use crate::sqlite::expression::expression_methods::NotBlob;
 use crate::sqlite::expression::expression_methods::TextOrNullableText;
 use crate::sqlite::expression::expression_methods::TextOrNullableTextOrBinaryOrNullableBinary;
 use crate::sqlite::expression::functions::helper::CombinedNullableValue;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 #[declare_sql_function(generate_return_type_helpers = true)]
 #[backends(crate::sqlite::Sqlite)]
 extern "SQL" {
@@ -155,7 +155,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_array_length<
         J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Integer>,
     >(
@@ -233,7 +233,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_array_length"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_array_length_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
         path: Text,
@@ -326,7 +326,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_error_position<
         X: TextOrNullableTextOrBinaryOrNullableBinary + MaybeNullableValue<Integer>,
     >(
@@ -660,8 +660,89 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_valid"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_valid<J: JsonOrNullableJson + MaybeNullableValue<Bool>>(j: J) -> J::Out;
+
+    /// The json_valid(X,Y) function returns 1 if the argument X is well-formed JSON, or returns 0 if X is not well-formed.
+    /// The Y parameter is an integer bitmask that defines what is meant by "well-formed".
+    ///
+    /// The following bits of Y are currently defined:
+    /// - 0x01 → The input is text that strictly complies with canonical RFC-8259 JSON, without any extensions.
+    /// - 0x02 → The input is text that is JSON with JSON5 extensions.
+    /// - 0x04 → The input is a BLOB that superficially appears to be JSONB.
+    /// - 0x08 → The input is a BLOB that strictly conforms to the internal JSONB format.
+    ///
+    /// By combining bits, the following useful values of Y can be derived:
+    /// - 1 → X is RFC-8259 JSON text
+    /// - 2 → X is JSON5 text
+    /// - 4 → X is probably JSONB
+    /// - 5 → X is RFC-8259 JSON text or JSONB
+    /// - 6 → X is JSON5 text or JSONB (recommended for most use cases)
+    /// - 8 → X is strictly conforming JSONB
+    /// - 9 → X is RFC-8259 or strictly conforming JSONB
+    /// - 10 → X is JSON5 or strictly conforming JSONB
+    ///
+    /// The Y parameter must be between 1 and 15 (inclusive), or an error is raised.
+    ///
+    /// If either X or Y inputs are NULL, then the function returns NULL.
+    ///
+    /// This function requires at least SQLite 3.46 or newer
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::{sql, json_valid_with_flags};
+    /// #     use diesel::sqlite::JsonValidFlag;
+    /// #     use serde_json::{json, Value};
+    /// #     use diesel::sql_types::{Text, Json, Jsonb, Nullable};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 46, 0);
+    ///
+    /// // Standard RFC-8259 JSON
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35}"#, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
+    ///
+    /// // JSON5 not valid as RFC-8259
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
+    ///
+    /// // JSON5 valid with JSON5 flag
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{x:35}"#, JsonValidFlag::Json5OrJsonb))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(true, result);
+    ///
+    /// // Invalid JSON
+    /// let result = diesel::select(json_valid_with_flags::<Text, _, _>(r#"{"x":35"#, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<bool>(connection)?;
+    /// assert_eq!(false, result);
+    ///
+    /// // NULL input returns NULL
+    /// let result = diesel::select(json_valid_with_flags::<Nullable<Text>, _, _>(None::<&str>, JsonValidFlag::Rfc8259Json))
+    ///     .get_result::<Option<bool>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[sql_name = "json_valid"]
+    #[cfg(feature = "__sqlite-shared")]
+    fn json_valid_with_flags<
+        X: TextOrNullableTextOrBinaryOrNullableBinary + SingleValue + MaybeNullableValue<Bool>,
+    >(
+        x: X,
+        flags: crate::sqlite::types::JsonValidFlags,
+    ) -> X::Out;
 
     /// The json_type(X) function returns the "type" of the outermost element of X.
     /// The "type" returned by json_type() is one of the following SQL text values:
@@ -706,7 +787,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_type"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_type<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Text>>(
         j: J,
     ) -> J::Out;
@@ -775,7 +856,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_type"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_type_with_path<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         j: J,
         path: Text,
@@ -833,7 +914,7 @@ extern "SQL" {
     /// # }
     /// ```
     #[sql_name = "json_quote"]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_quote<J: SqlType + SingleValue>(j: J) -> Json;
 
     /// The `json_group_array(X)` function is an aggregate SQL function that returns a JSON array comprised of
@@ -911,7 +992,7 @@ extern "SQL" {
     /// # See also
     /// - [`jsonb_group_array`](jsonb_group_array()) will return data in JSONB format instead of JSON.
     /// - [`json_group_object`](json_group_object()) will return JSON object instead of array.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn json_group_array<E: SqlType + SingleValue>(elements: E) -> Json;
 
@@ -991,9 +1072,116 @@ extern "SQL" {
     /// # See also
     /// - [`json_group_array`](json_group_array()) will return data in JSON format instead of JSONB.
     /// - [`jsonb_group_object`](jsonb_group_object()) will return JSONB object instead of array.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn jsonb_group_array<E: SqlType + SingleValue>(elements: E) -> Jsonb;
+
+    /// The `json_object()` SQL function accepts zero or more pairs of arguments and returns a
+    /// well-formed JSON object composed from those pairs. The first argument of each pair is the
+    /// label (key) and the second argument is the value. If any argument to `json_object()` is a
+    /// BLOB then an error is thrown.
+    ///
+    /// An argument with SQL type TEXT is normally converted into a quoted JSON string even if the
+    /// input text is well-formed JSON. However, if the argument is the direct result from another
+    /// JSON function, then it is treated as JSON and all of its JSON type information and
+    /// substructure is preserved. This allows calls to `json_object()` and `json_array()` to be
+    /// nested. The [`json()`] function can also be used to force strings to be recognized as JSON.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Text, Integer};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let result = diesel::select(json_object_0()).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({}), result);
+    ///
+    /// let result = diesel::select(json_object_1::<Text, Integer, _, _>("a", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 2}), result);
+    ///
+    /// let result = diesel::select(
+    ///     json_object_2::<Text, Integer, Text, Text, _, _, _, _>("a", 2, "c", "{e:5}")
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 2, "c": "{e:5}"}), result);
+    ///
+    /// let result = diesel::select(
+    ///     json_object_2::<Text, Integer, Text, Json, _, _, _, _>("a", 2, "c", json_object_1::<Text, Integer, _, _>("e", 5))
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 2, "c": {"e": 5}}), result);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn json_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(key: K, value: V)
+    -> Json;
+
+    /// The `jsonb_object()` SQL function works just like the [`json_object()`](json_object_1())
+    /// function except that the generated object is returned in SQLite's private binary JSONB
+    /// format rather than in the standard RFC 8259 text format.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Text, Integer};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let result = diesel::select(jsonb_object_0()).get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({}), result);
+    ///
+    /// let result = diesel::select(jsonb_object_1::<Text, Integer, _, _>("a", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 2}), result);
+    ///
+    /// let result = diesel::select(
+    ///     jsonb_object_2::<Text, Integer, Text, Text, _, _, _, _>("a", 2, "c", "{e:5}")
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 2, "c": "{e:5}"}), result);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn jsonb_object<K: NotBlob<IsNull = is_nullable::NotNull>, V: NotBlob>(
+        key: K,
+        value: V,
+    ) -> Jsonb;
 
     /// The json_group_object(NAME,VALUE) function returns a JSON object comprised of all NAME/VALUE pairs in
     /// the aggregation.
@@ -1078,7 +1266,7 @@ extern "SQL" {
     /// # See also
     /// - [`jsonb_group_object`](jsonb_group_object()) will return data in JSONB format instead of JSON.
     /// - [`json_group_array`](json_group_array()) will return JSON array instead of object.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn json_group_object<
         N: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
@@ -1171,7 +1359,7 @@ extern "SQL" {
     /// # See also
     /// - [`json_group_object`](jsonb_group_array()) will return data in JSON format instead of JSONB.
     /// - [`jsonb_group_array`](jsonb_group_array()) will return JSONB array instead of object.
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
     fn jsonb_group_object<
         N: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
@@ -1225,7 +1413,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn json_array<V: NotBlob>(value: V) -> Json;
 
@@ -1277,7 +1465,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn jsonb_array<V: NotBlob>(value: V) -> Jsonb;
 
@@ -1346,7 +1534,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn json_remove<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         json: J,
@@ -1420,7 +1608,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     #[variadic(1)]
     fn jsonb_remove<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
         json: J,
@@ -1500,7 +1688,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn json_patch<
         T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
         P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Json>,
@@ -1550,7 +1738,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// ```
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     fn jsonb_patch<
         T: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue,
         P: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue + CombinedNullableValue<T, Jsonb>,

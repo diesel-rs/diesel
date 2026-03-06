@@ -9,7 +9,7 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 
 /// A type encoding a position in the PostgreSQL *Write Ahead Log* (WAL).
 /// In Postgres, it is represented as an unsigned 64 bit integer.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, AsExpression, FromSqlRow)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash, AsExpression, FromSqlRow)]
 #[diesel(sql_type = sql_types::PgLsn)]
 pub struct PgLsn(pub u64);
 
@@ -27,7 +27,7 @@ impl FromSql<sql_types::PgLsn, Pg> for PgLsn {
         if bytes.len() > 8 {
             return emit_size_error(
                 "Received more than 8 bytes while decoding a pg_lsn. \
-                    Was an expression of a different type expression accidentally marked as pg_lsn?"
+                    Was an expression of a different type expression accidentally marked as pg_lsn?",
             );
         }
         let val = bytes

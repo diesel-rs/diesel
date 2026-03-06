@@ -1,8 +1,11 @@
+use crate::QueryResult;
 use crate::query_builder::{BindCollector, MoveableBindCollector};
 use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
-use crate::QueryResult;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
@@ -110,8 +113,8 @@ pub(crate) enum InternalSqliteBindValue<'a> {
     Null,
 }
 
-impl std::fmt::Display for InternalSqliteBindValue<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for InternalSqliteBindValue<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let n = match self {
             InternalSqliteBindValue::BorrowedString(_) | InternalSqliteBindValue::String(_) => {
                 "Text"
@@ -132,8 +135,8 @@ impl InternalSqliteBindValue<'_> {
     pub(in crate::sqlite) fn result_of(
         self,
         ctx: &mut ffi::sqlite3_context,
-    ) -> Result<(), std::num::TryFromIntError> {
-        use std::os::raw as libc;
+    ) -> Result<(), core::num::TryFromIntError> {
+        use core::ffi as libc;
         // This unsafe block assumes the following invariants:
         //
         // - `ctx` points to valid memory
@@ -218,7 +221,7 @@ enum OwnedSqliteBindValue {
     Null,
 }
 
-impl<'a> std::convert::From<&InternalSqliteBindValue<'a>> for OwnedSqliteBindValue {
+impl<'a> core::convert::From<&InternalSqliteBindValue<'a>> for OwnedSqliteBindValue {
     fn from(value: &InternalSqliteBindValue<'a>) -> Self {
         match value {
             InternalSqliteBindValue::String(s) => Self::String(s.clone()),
@@ -237,7 +240,7 @@ impl<'a> std::convert::From<&InternalSqliteBindValue<'a>> for OwnedSqliteBindVal
     }
 }
 
-impl std::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'_> {
+impl core::convert::From<&OwnedSqliteBindValue> for InternalSqliteBindValue<'_> {
     fn from(value: &OwnedSqliteBindValue) -> Self {
         match value {
             OwnedSqliteBindValue::String(s) => Self::String(s.clone()),
@@ -282,13 +285,13 @@ impl MoveableBindCollector<Sqlite> for SqliteBindCollector<'_> {
 
     fn push_debug_binds<'a, 'b>(
         bind_data: &Self::BindData,
-        f: &'a mut Vec<Box<dyn std::fmt::Debug + 'b>>,
+        f: &'a mut Vec<Box<dyn core::fmt::Debug + 'b>>,
     ) {
         f.extend(
             bind_data
                 .binds
                 .iter()
-                .map(|(b, _)| Box::new(b.clone()) as Box<dyn std::fmt::Debug>),
+                .map(|(b, _)| Box::new(b.clone()) as Box<dyn core::fmt::Debug>),
         );
     }
 }

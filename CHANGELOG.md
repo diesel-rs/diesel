@@ -12,6 +12,15 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+
+* Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
+
+### Changed
+
+* The minimal supported Rust version is now 1.88.0
+* Add support for no-std environments using the SQLite backend
+
 ## [2.3.7] 2026-03-13
 
 * Add support for libsqlite3-sys 0.36

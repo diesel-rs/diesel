@@ -1,8 +1,10 @@
+use alloc::boxed::Box;
+use core::fmt::{Debug, Display};
+use core::num::NonZeroU32;
+use core::ops::{Deref, DerefMut};
 use downcast_rs::Downcast;
-use std::fmt::{Debug, Display};
-use std::num::NonZeroU32;
-use std::ops::{Deref, DerefMut};
 
+#[cfg(feature = "std")]
 static GLOBAL_INSTRUMENTATION: std::sync::RwLock<fn() -> Option<Box<dyn Instrumentation>>> =
     std::sync::RwLock::new(|| None);
 
@@ -34,7 +36,7 @@ impl<'query> StrQueryHelper<'query> {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
@@ -44,13 +46,13 @@ impl<'query> StrQueryHelper<'query> {
 }
 
 impl Debug for StrQueryHelper<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         Debug::fmt(self.s, f)
     }
 }
 
 impl Display for StrQueryHelper<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         Display::fmt(&self.s, f)
     }
 }
@@ -254,10 +256,13 @@ downcast_rs::impl_downcast!(Instrumentation);
 /// This function is mostly useful for crates implementing
 /// their own connection types
 pub fn get_default_instrumentation() -> Option<Box<dyn Instrumentation>> {
+    #[cfg(feature = "std")]
     match GLOBAL_INSTRUMENTATION.read() {
         Ok(f) => (*f)(),
         Err(_) => None,
     }
+    #[cfg(not(feature = "std"))]
+    None
 }
 
 /// Set a custom constructor for the default [`Instrumentation`]
@@ -277,6 +282,7 @@ pub fn get_default_instrumentation() -> Option<Box<dyn Instrumentation>> {
 ///
 /// set_default_instrumentation(simple_logger);
 /// ```
+#[cfg(feature = "std")]
 pub fn set_default_instrumentation(
     default: fn() -> Option<Box<dyn Instrumentation>>,
 ) -> crate::QueryResult<()> {
@@ -358,7 +364,7 @@ impl DynInstrumentation {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
@@ -375,7 +381,7 @@ impl DynInstrumentation {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
@@ -392,7 +398,7 @@ impl DynInstrumentation {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]

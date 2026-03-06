@@ -267,23 +267,17 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
     |
   LL | / table! {
   LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> Text,
-  LL | |     }
-  LL | | }
-    | |_^
+    | |_________^
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
-    = help: the following other types implement trait `TableNotEqual<T>`:
-              `Only<pg::metadata_lookup::pg_namespace::table>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Only<pg::metadata_lookup::pg_type::table>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `Tablesample<pg::metadata_lookup::pg_namespace::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Tablesample<pg::metadata_lookup::pg_type::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Tablesample<table, TSM>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>`
-            and N others
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
    --> tests/fail/derive/has_query.rs:12:9
@@ -300,8 +294,7 @@ note: required by a bound in `diesel::HasQuery`
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
     |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
- 
-        = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: SelectDsl<...>` is not satisfied
    --> tests/fail/derive/has_query.rs:57:10
@@ -368,23 +361,17 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
     |
   LL | / table! {
   LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> Text,
-  LL | |     }
-  LL | | }
-    | |_^
+    | |_________^
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
-    = help: the following other types implement trait `TableNotEqual<T>`:
-              `Only<pg::metadata_lookup::pg_namespace::table>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Only<pg::metadata_lookup::pg_type::table>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `Tablesample<pg::metadata_lookup::pg_namespace::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `Tablesample<pg::metadata_lookup::pg_type::table, TSM>` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<Tablesample<table, TSM>>`
-              `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-              `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>`
-            and N others
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
    --> tests/fail/derive/has_query.rs:12:9
@@ -401,8 +388,7 @@ note: required by a bound in `diesel::HasQuery`
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
     |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
- 
-        = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+    = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
    --> tests/fail/derive/has_query.rs:67:10

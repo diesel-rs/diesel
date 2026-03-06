@@ -15,6 +15,12 @@ pub(crate) mod operators;
 
 mod date_and_time;
 
+mod return_type_helpers {
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::functions::return_type_helpers_reexported::*;
+}
+
 /// PostgreSQL specific expression DSL methods.
 ///
 /// This module will be glob imported by
@@ -27,7 +33,7 @@ pub mod dsl {
     pub use super::array_comparison::{all, any};
 
     #[doc(inline)]
-    pub use super::array::{array, IntoArrayExpression};
+    pub use super::array::{IntoArrayExpression, array};
 
     #[doc(inline)]
     pub use super::extensions::*;

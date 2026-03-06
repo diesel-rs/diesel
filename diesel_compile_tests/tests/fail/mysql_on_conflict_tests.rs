@@ -90,7 +90,7 @@ fn main() {
         //~^ ERROR: the trait bound `ConflictTarget<(name, ...)>: OnConflictTarget<...>` is not satisfied
         .do_nothing()
         .execute(&mut connection);
-    //~^ ERROR: `ConflictTarget<(name, DuplicatedKeys)>` is no valid SQL fragment for the `Pg` backend
+    //~^ ERROR: `ConflictTarget<(columns::name, DuplicatedKeys)>` is no valid SQL fragment for the `Pg` backend
 
     insert_into(users)
         .values((id.eq(42), name.eq("John")))
@@ -98,5 +98,5 @@ fn main() {
         //~^ ERROR: the trait bound `ConflictTarget<(..., ...)>: OnConflictTarget<...>` is not satisfied
         .do_nothing()
         .execute(&mut connection);
-    //~^ ERROR: `ConflictTarget<(DuplicatedKeys, name)>` is no valid SQL fragment for the `Pg` backend
+    //~^ ERROR: `ConflictTarget<(DuplicatedKeys, columns::name)>` is no valid SQL fragment for the `Pg` backend
 }

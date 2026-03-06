@@ -1,8 +1,11 @@
 //! Errors, type aliases, and functions related to working with `Result`.
 
-use std::error::Error as StdError;
-use std::ffi::NulError;
-use std::fmt::{self, Display};
+use alloc::boxed::Box;
+use alloc::ffi::NulError;
+use alloc::string::String;
+use alloc::string::ToString;
+use core::error::Error as StdError;
+use core::fmt::{self, Display};
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
@@ -226,6 +229,36 @@ impl DatabaseErrorInformation for String {
     }
 }
 
+impl DatabaseErrorInformation for core::convert::Infallible {
+    fn message(&self) -> &str {
+        match *self {}
+    }
+
+    fn details(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn hint(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn table_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn column_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn constraint_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn statement_position(&self) -> Option<i32> {
+        match *self {}
+    }
+}
+
 /// Errors which can occur during [`Connection::establish`]
 ///
 /// [`Connection::establish`]: crate::connection::Connection::establish
@@ -424,6 +457,13 @@ fn error_impls_send() {
     let x: &dyn Send = &err;
 }
 
+#[cfg(test)]
+#[allow(warnings)]
+fn infallible_impls_database_error_information() {
+    let err: core::convert::Infallible = unimplemented!();
+    let x: &dyn DatabaseErrorInformation = &err;
+}
+
 /// An unexpected `NULL` was encountered during deserialization
 #[derive(Debug, Clone, Copy)]
 pub struct UnexpectedNullError;
@@ -492,7 +532,7 @@ pub struct DeserializeFieldError {
 
 impl DeserializeFieldError {
     #[cold]
-    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn std::error::Error + Send + Sync>) -> Self
+    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn core::error::Error + Send + Sync>) -> Self
     where
         DB: crate::backend::Backend,
         F: crate::row::Field<'a, DB>,

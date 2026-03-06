@@ -293,7 +293,7 @@ extern "SQL" {
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
     fn lag<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(value: T)
-        -> T::Nullable;
+    -> T::Nullable;
 
     /// Value of argument from row lagging current row within partition
     ///

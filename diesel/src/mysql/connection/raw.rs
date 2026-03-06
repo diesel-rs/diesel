@@ -1,8 +1,8 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::ffi as libc;
+use core::ffi::CStr;
+use core::ptr::{self, NonNull};
 use mysqlclient_sys as ffi;
-use std::ffi::CStr;
-use std::os::raw as libc;
-use std::ptr::{self, NonNull};
 use std::sync::Once;
 
 use super::statement_cache::PrepareForCache;
@@ -211,7 +211,7 @@ impl RawConnection {
             mysqlclient_sys::mysql_options(
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_MODE,
-                n.as_ptr() as *const std::ffi::c_void,
+                n.as_ptr() as *const core::ffi::c_void,
             )
         };
     }
@@ -221,7 +221,7 @@ impl RawConnection {
             mysqlclient_sys::mysql_options(
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CA,
-                ssl_ca.as_ptr() as *const std::ffi::c_void,
+                ssl_ca.as_ptr() as *const core::ffi::c_void,
             )
         };
     }
@@ -231,7 +231,7 @@ impl RawConnection {
             mysqlclient_sys::mysql_options(
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CERT,
-                ssl_cert.as_ptr() as *const std::ffi::c_void,
+                ssl_cert.as_ptr() as *const core::ffi::c_void,
             )
         };
     }
@@ -241,7 +241,7 @@ impl RawConnection {
             mysqlclient_sys::mysql_options(
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_KEY,
-                ssl_key.as_ptr() as *const std::ffi::c_void,
+                ssl_key.as_ptr() as *const core::ffi::c_void,
             )
         };
     }

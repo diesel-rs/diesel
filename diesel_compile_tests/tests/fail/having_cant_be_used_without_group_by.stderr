@@ -42,8 +42,8 @@ LL |         .having(users::id.gt(1))
              CaseWhen<..., ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             Collate<T, C>
              Exists<T>
-             In<T, U>
            and N others
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), ..., _>` to implement `HavingDsl<_>`
 

@@ -5,9 +5,12 @@ use crate::prelude::*;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{AstPass, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
-use crate::query_dsl::{methods::ExecuteDsl, LoadQuery};
+use crate::query_dsl::{LoadQuery, methods::ExecuteDsl};
 use crate::sqlite::Sqlite;
-use std::fmt::{self, Debug, Display};
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use core::fmt::{self, Debug, Display};
 
 pub trait DebugQueryHelper<ContainsDefaultableValue> {
     fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -28,7 +31,7 @@ where
     for<'b> InsertStatement<T, &'b ValuesClause<V, T>, Op, Ret>: QueryFragment<Sqlite>,
 {
     fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut statements = vec![String::from("BEGIN")];
+        let mut statements = alloc::vec![String::from("BEGIN")];
         for record in self.query.records.values.iter() {
             let stmt = InsertStatement::new(
                 self.query.target,
@@ -376,7 +379,7 @@ where
     InsertStatement<T, ValuesClause<V, T>, Op>: LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
-    type RowIter<'conn> = std::vec::IntoIter<QueryResult<U>>;
+    type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
         let (Yes, query) = self;
@@ -433,7 +436,7 @@ where
         LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
-    type RowIter<'conn> = std::vec::IntoIter<QueryResult<U>>;
+    type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
         let (Yes, query) = self;

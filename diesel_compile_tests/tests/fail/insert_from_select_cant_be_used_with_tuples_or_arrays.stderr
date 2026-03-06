@@ -9,11 +9,7 @@ help: the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> Text,
-...  |
-LL | | }
-   | |_^
+   | |_________^
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
              `(T, T1)` implements `UndecoratedInsertRecord<Tab>`

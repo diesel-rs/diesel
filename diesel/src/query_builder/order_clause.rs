@@ -1,3 +1,5 @@
+use alloc::boxed::Box;
+
 simple_clause!(
     /// DSL node that represents that no order clause is set
     NoOrderClause,

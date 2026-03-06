@@ -8,12 +8,12 @@ pub struct DefaultSelectClause<QS: AsQuerySource> {
     default_selection: <QS::QuerySource as QuerySource>::DefaultSelection,
 }
 
-impl<QS> std::fmt::Debug for DefaultSelectClause<QS>
+impl<QS> core::fmt::Debug for DefaultSelectClause<QS>
 where
     QS: AsQuerySource,
-    <QS::QuerySource as QuerySource>::DefaultSelection: std::fmt::Debug,
+    <QS::QuerySource as QuerySource>::DefaultSelection: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("DefaultSelectClause")
             .field("default_selection", &self.default_selection)
             .finish()

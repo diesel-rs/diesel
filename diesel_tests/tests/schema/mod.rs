@@ -1,4 +1,4 @@
-use diesel::*;
+use diesel::{associations::HasTable, *};
 
 #[cfg(feature = "postgres")]
 mod custom_schemas;
@@ -115,6 +115,14 @@ pub use self::backend_specifics::*;
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
+}
+
+impl HasTable for NewUser {
+    type Table = users::table;
+
+    fn table() -> Self::Table {
+        users::table
+    }
 }
 
 impl NewUser {

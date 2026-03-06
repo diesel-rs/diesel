@@ -1,4 +1,4 @@
-use crate::sql_types::{self, is_nullable, SqlType};
+use crate::sql_types::{self, SqlType, is_nullable};
 
 /// Marker trait for types which can be used with `MAX` and `MIN`
 #[diagnostic::on_unimplemented(

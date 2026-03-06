@@ -11,11 +11,7 @@ help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
     |
   LL | / table! {
   LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> VarChar,
-  LL | |     }
- LL | | }
-    | |_^
+    | |_________^
     = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
     = help: the following other types implement trait `JoinTo<T>`:
               `users::table` implements `JoinTo<Alias<S>>`
@@ -49,11 +45,7 @@ help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
     |
   LL | / table! {
   LL | |     users {
-  LL | |         id -> Integer,
-  LL | |         name -> VarChar,
-  LL | |     }
- LL | | }
-    | |_^
+    | |_________^
     = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
     = help: the following other types implement trait `JoinTo<T>`:
               `users::table` implements `JoinTo<Alias<S>>`
@@ -85,11 +77,7 @@ help: the trait `JoinTo<users::table>` is not implemented for `posts::table`
    |
 LL | / table! {
 LL | |     posts {
-LL | |         id -> Integer,
-LL | |         title -> VarChar,
-LL | |     }
-LL | | }
-   | |_^
+   | |_________^
    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: the following other types implement trait `JoinTo<T>`:
              `posts::table` implements `JoinTo<Alias<S>>`

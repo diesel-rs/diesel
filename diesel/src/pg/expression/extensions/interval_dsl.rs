@@ -1,4 +1,4 @@
-use std::ops::Mul;
+use core::ops::Mul;
 
 use crate::data_types::PgInterval;
 
