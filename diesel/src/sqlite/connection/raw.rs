@@ -285,6 +285,11 @@ impl RawConnection {
 
         let mut blob: *mut ffi::sqlite3_blob = core::ptr::null_mut();
 
+        // SAFETY: From the SQLite docs:
+        //
+        // > For the main database file, the database name is "main"
+        //
+        // The other variables are properly initialized
         let ret = unsafe {
             ffi::sqlite3_blob_open(
                 self.internal_connection.as_ptr(),
@@ -299,11 +304,21 @@ impl RawConnection {
 
         Self::process_sql_function_result(ret)?;
 
+        // Sanity check
+        if blob.is_null() {}
+
+        // SAFETY: `sqlite3_blob_open` initializes the `blob` variable IF the return value:
+        //
+        // > On success, SQLITE_OK is returned and the new BLOB handle is stored in *ppBlob.
+        // > Otherwise an error code is returned and, unless the error code is SQLITE_MISUSE,
+        // > *ppBlob is set to NULL.
+        //
+        // And we checked the `ret` value above
         let blob = unsafe { core::ptr::NonNull::new_unchecked(blob) };
 
+        // SAFETY: According to the SQLite docs, this can only fail if an invalid pointer is passed
         let blob_size = unsafe { ffi::sqlite3_blob_bytes(blob.as_ptr()) };
-
-        let blob_size = usize::try_from(blob_size).unwrap(); // TODO: What to do?
+        let blob_size = usize::try_from(blob_size).map_err(Error::IntegerConversion)?;
 
         Ok(super::sqlite_blob::SqliteBlob {
             blob,

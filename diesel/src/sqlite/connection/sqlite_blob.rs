@@ -15,16 +15,7 @@ impl Drop for SqliteBlob<'_> {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
 
-        // SAFETY: From the sqlite3_blob_close documentation:
-        //
-        //     If an error occurs while committing the transaction, an error code is returned and
-        //     the transaction rolled back.
-        //
-        // As we are in read-only mode here, this is not an issue
-        let close_result = unsafe { ffi::sqlite3_blob_close(self.blob.as_ptr()) };
-
-        if close_result != ffi::SQLITE_OK {
-            let error_message = super::error_message(close_result);
+        if let Err(error_message) = self.close() {
             if panicking() {
                 #[cfg(feature = "std")]
                 eprintln!("Error closing SQLite blob: {error_message}");
@@ -43,6 +34,31 @@ impl SqliteBlob<'_> {
     pub fn len(&self) -> usize {
         self.blob_size
     }
+
+    /// Close the handle
+    ///
+    /// Even if an error is returned, the handle is still closed (from the sqlite documentation):
+    ///
+    /// > The BLOB handle is closed unconditionally. Even if this routine returns an error code,
+    /// > the handle is still closed.
+    ///
+    /// Using the handle after calling this function is an error if not otherwise stated.
+    pub fn close(&mut self) -> Result<(), crate::result::Error> {
+        // SAFETY: From the sqlite3_blob_close documentation:
+        //
+        //     If an error occurs while committing the transaction, an error code is returned and
+        //     the transaction rolled back.
+        //
+        // As we are in read-only mode here, this is not an issue
+        let close_result = unsafe { ffi::sqlite3_blob_close(self.blob.as_ptr()) };
+
+        if close_result != ffi::SQLITE_OK {
+            let error_message = super::error_message(close_result);
+            return Err(crate::result::Error::ClosingHandle(error_message));
+        }
+
+        Ok(())
+    }
 }
 
 fn to_io_error(error: core::num::TryFromIntError) -> std::io::Error {
@@ -56,12 +72,14 @@ impl std::io::Read for SqliteBlob<'_> {
 
         // From the sqlite docs:
         //
-        //  If offset iOffset is less than N bytes from the end of the BLOB, SQLITE_ERROR is returned and no data is read.
+        // > If offset iOffset is less than N bytes from the end of the BLOB, SQLITE_ERROR is returned and no data is read.
         //
         // Thus we need to make sure to not provide a buffer that is too big for the remaining data
         // from the blob.
-        let read_length: i32 =
-            (i32::try_from(self.blob_size).map_err(to_io_error)? - offset).min(buflen);
+        let read_length: i32 = (i32::try_from(self.blob_size)
+            .map_err(to_io_error)?
+            .saturating_sub(offset))
+        .min(buflen);
 
         let ret = unsafe {
             ffi::sqlite3_blob_read(

@@ -97,6 +97,12 @@ pub enum Error {
 
     /// Transaction manager broken, likely due to a broken connection. No other operations are possible.
     BrokenTransactionManager,
+
+    /// Internal integer conversion failed
+    IntegerConversion(std::num::TryFromIntError),
+
+    /// Closing a handle failed
+    ClosingHandle(&'static str),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -400,6 +406,12 @@ impl Display for Error {
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
             }
+            Error::IntegerConversion(ref e) => {
+                write!(f, "Internal integer conversion error: {e}")
+            }
+            Error::ClosingHandle(message) => {
+                write!(f, "Error closing SQLite blob: {message}")
+            }
         }
     }
 }
@@ -411,6 +423,7 @@ impl StdError for Error {
             Error::QueryBuilderError(ref e) => Some(&**e),
             Error::DeserializationError(ref e) => Some(&**e),
             Error::SerializationError(ref e) => Some(&**e),
+            Error::IntegerConversion(ref e) => Some(e),
             _ => None,
         }
     }
