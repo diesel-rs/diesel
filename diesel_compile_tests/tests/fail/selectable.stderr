@@ -1033,7 +1033,7 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
                Inet
                Interval
                Json
-               JsonValidFlags
+               Jsonb
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String), _>`
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
@@ -1095,7 +1095,7 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
                Inet
                Interval
                Json
-               JsonValidFlags
+               Jsonb
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String), _>`
      = note: required for `BoxedSelectStatement<'_, SelectBy<..., _>, ..., _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
@@ -1191,7 +1191,7 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
                Inet
                Interval
                Json
-               JsonValidFlags
+               Jsonb
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String, i32), _>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32, std::string::String, i32)>`
