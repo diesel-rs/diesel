@@ -11,6 +11,17 @@ error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
+  LL | /         impl<DB> QueryFragment<DB> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend,
+  LL | |             Self: QueryFragment<DB, DB::$option>,
+     | |_________________________________________________^ `ExcludeGroup` implements `QueryFragment<DB>`
+...
+  LL | /         impl<DB> QueryFragment<DB, $bound> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend<$option = $bound>,
+     | |__________________________________________________________^ `ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
+...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude the current peer group from the window frame
  LL | |     ///
@@ -18,10 +29,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 ...    |
  LL | |     "EXCLUDE GROUP "
  LL | | );
-     | | ^
-     | | |
-     | |_`ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
-     |   `ExcludeGroup` implements `QueryFragment<DB>`
+     | |_- in this macro invocation
      = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
@@ -51,6 +59,17 @@ error[E0277]: `ExcludeCurrentRow` is no valid SQL fragment for the `Mysql` backe
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
+  LL | /         impl<DB> QueryFragment<DB> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend,
+  LL | |             Self: QueryFragment<DB, DB::$option>,
+     | |_________________________________________________^ `ExcludeCurrentRow` implements `QueryFragment<DB>`
+...
+  LL | /         impl<DB> QueryFragment<DB, $bound> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend<$option = $bound>,
+     | |__________________________________________________________^ `ExcludeCurrentRow` implements `QueryFragment<DB, FrameExclusionSupport>`
+...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude the current row from the window frame
  LL | |     ExcludeCurrentRow,
@@ -58,10 +77,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
  LL | |     sql_dialect::window_frame_exclusion_support::FrameExclusionSupport,
  LL | |     "EXCLUDE CURRENT ROW "
  LL | | );
-     | | ^
-     | | |
-     | |_`ExcludeCurrentRow` implements `QueryFragment<DB, FrameExclusionSupport>`
-     |   `ExcludeCurrentRow` implements `QueryFragment<DB>`
+     | |_- in this macro invocation
      = note: required for `ExcludeCurrentRow` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
@@ -90,6 +106,17 @@ error[E0277]: `ExcludeTies` is no valid SQL fragment for the `Mysql` backend
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
+  LL | /         impl<DB> QueryFragment<DB> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend,
+  LL | |             Self: QueryFragment<DB, DB::$option>,
+     | |_________________________________________________^ `ExcludeTies` implements `QueryFragment<DB>`
+...
+  LL | /         impl<DB> QueryFragment<DB, $bound> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend<$option = $bound>,
+     | |__________________________________________________________^ `ExcludeTies` implements `QueryFragment<DB, FrameExclusionSupport>`
+...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude any peers, but not the current row from the window frame
  LL | |     ///
@@ -97,10 +124,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 ...    |
  LL | |     "EXCLUDE TIES "
  LL | | );
-     | | ^
-     | | |
-     | |_`ExcludeTies` implements `QueryFragment<DB, FrameExclusionSupport>`
-     |   `ExcludeTies` implements `QueryFragment<DB>`
+     | |_- in this macro invocation
      = note: required for `ExcludeTies` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
@@ -130,6 +154,17 @@ error[E0277]: `ExcludeNoOthers` is no valid SQL fragment for the `Mysql` backend
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
+  LL | /         impl<DB> QueryFragment<DB> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend,
+  LL | |             Self: QueryFragment<DB, DB::$option>,
+     | |_________________________________________________^ `ExcludeNoOthers` implements `QueryFragment<DB>`
+...
+  LL | /         impl<DB> QueryFragment<DB, $bound> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend<$option = $bound>,
+     | |__________________________________________________________^ `ExcludeNoOthers` implements `QueryFragment<DB, FrameExclusionSupport>`
+...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude no rows from the frame windows
  LL | |     ///
@@ -137,10 +172,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 ...    |
  LL | |     "EXCLUDE NO OTHERS "
  LL | | );
-     | | ^
-     | | |
-     | |_`ExcludeNoOthers` implements `QueryFragment<DB, FrameExclusionSupport>`
-     |   `ExcludeNoOthers` implements `QueryFragment<DB>`
+     | |_- in this macro invocation
      = note: required for `ExcludeNoOthers` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
