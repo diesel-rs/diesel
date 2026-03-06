@@ -306,9 +306,6 @@ impl RawConnection {
 
         Self::process_sql_function_result(ret)?;
 
-        // Sanity check
-        if blob.is_null() {}
-
         // SAFETY: `sqlite3_blob_open` initializes the `blob` variable IF the return value:
         //
         // > On success, SQLITE_OK is returned and the new BLOB handle is stored in *ppBlob.
