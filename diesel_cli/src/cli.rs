@@ -6,10 +6,16 @@ use crate::migrations::MigrationArgs;
 use crate::print_schema::PrintSchemaArgs;
 use clap::CommandFactory;
 use clap::{ArgAction, Parser, Subcommand};
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 
 #[derive(Parser, Debug)]
-#[command(version = cli_long_version(), about, long_about = None, after_help = "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.")]
+#[command(
+    name = "diesel",
+    version = cli_long_version(),
+    about,
+    long_about = None,
+    after_help = "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand."
+)]
 pub struct Cli {
     /// Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified.
     #[arg(long = "database-url", global = true)]

@@ -6,7 +6,7 @@ use clap::{ArgAction, ArgMatches, Args, FromArgMatches};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::{self, Display, Formatter, Write};
-use std::io::{stdout, Write as IoWrite};
+use std::io::{Write as IoWrite, stdout};
 use std::{process, str};
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
@@ -33,10 +33,10 @@ pub struct PrintSchemaArgs {
 }
 
 impl PrintSchemaArgs {
-    const SCHEMA_KEY: &'static str = "SCHEMA_KEY";
-    const TABLE_NAME: &'static str = "TABLE_NAME";
-    const ONLY_TABLES: &'static str = "ONLY_TABLES";
-    const EXCEPT_TABLE: &'static str = "EXCEPT_TABLE";
+    pub const SCHEMA_KEY: &'static str = "SCHEMA_KEY";
+    pub const TABLE_NAME: &'static str = "TABLE_NAME";
+    pub const ONLY_TABLES: &'static str = "ONLY_TABLES";
+    pub const EXCEPT_TABLES: &'static str = "EXCEPT_TABLE";
     const SCHEMA: &'static str = "SCHEMA";
     const WITH_DOCS: &'static str = "WITH_DOCS";
     const WITH_DOCS_CONFIG: &'static str = "WITH_DOCS_CONFIG";
@@ -46,7 +46,7 @@ impl PrintSchemaArgs {
     const COLUMN_SORTING: &'static str = "COLUMN_SORTING";
     const IMPORT_TYPES: &'static str = "IMPORT_TYPES";
     const CUSTOM_TYPE_DERIVES: &'static str = "CUSTOM_TYPE_DERIVES";
-    const SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT: &'static str =
+    pub const SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT: &'static str =
         "SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT";
     const EXCEPT_CUSTOM_TYPE_DEFINITIONS: &'static str = "EXCEPT_CUSTOM_TYPE_DEFINITIONS";
     const INCLUDE_VIEWS: &'static str = "INCLUDE_VIEWS";
@@ -78,7 +78,7 @@ impl PrintSchemaArgs {
             (schema_key_indices, Self::SCHEMA_KEY),
             (table_indices, Self::TABLE_NAME),
             (only_table_indices, Self::ONLY_TABLES),
-            (except_table_indices, Self::EXCEPT_TABLE),
+            (except_table_indices, Self::EXCEPT_TABLES),
             (with_docs_indices, Self::WITH_DOCS),
             (with_docs_config_indices, Self::WITH_DOCS_CONFIG),
             (
@@ -199,7 +199,7 @@ pub struct InnerPrintSchemaArgs {
 
     /// Exclude tables from table-name that matches regex.
     #[arg(
-        id = PrintSchemaArgs::EXCEPT_TABLE,
+        id = PrintSchemaArgs::EXCEPT_TABLES,
         long = "except-tables",
         short = 'e',
         action = ArgAction::Append,

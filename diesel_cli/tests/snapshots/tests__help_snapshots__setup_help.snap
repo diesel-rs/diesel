@@ -2,25 +2,27 @@
 source: diesel_cli/tests/help_snapshots.rs
 expression: res.stdout()
 ---
-Creates the migrations directory, creates the database specified in your DATABASE_URL, and runs existing migrations.
+Creates the migrations directory, creates the database specified in your DATABASE_URL, and runs existing migrations
 
 Usage: diesel setup [OPTIONS]
 
 Options:
       --database-url <DATABASE_URL>
-          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified.
-
-      --migration-dir <MIGRATION_DIRECTORY>
-          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents.
-
-      --config-file <CONFIG_FILE>
-          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file.
+          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified
 
       --no-default-migration
-          Don't generate the default migration.
+          Don't generate the default migration
+
+      --config-file <CONFIG_FILE>
+          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file
 
       --locked-schema
+          Require that the schema file is up to date.
+          
           When `print_schema.file` is specified in your config file, this flag will cause Diesel CLI to error if any command would result in changes to that file. It is recommended that you use this flag when running migrations in CI or production.
+
+      --migration-dir <MIGRATION_DIRECTORY>
+          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents
 
   -h, --help
           Print help (see a summary with '-h')

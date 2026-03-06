@@ -2,22 +2,21 @@
 source: diesel_cli/tests/help_snapshots.rs
 expression: res.stdout()
 ---
-Reverts and re-runs the latest migration. Useful for testing that a migration can in fact be reverted.
+Reverts and re-runs the latest migration. Useful for testing that a migration can in fact be reverted
 
 Usage: diesel migration redo [OPTIONS]
 
 Options:
   -a, --all
+          Reverts and re-runs all migrations.
+          
           When this option is specified all migrations will be reverted and re-runs. Useful for testing that your migrations can be reverted and applied.
 
       --database-url <DATABASE_URL>
-          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified.
-
-      --migration-dir <MIGRATION_DIRECTORY>
-          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents.
+          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified
 
       --config-file <CONFIG_FILE>
-          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file.
+          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file
 
   -n, --number <REDO_NUMBER>
           When this option is specified the last `n` migration files will be reverted and re-runs. By default redo the last migration.
@@ -25,7 +24,12 @@ Options:
           [default: 1]
 
       --locked-schema
+          Require that the schema file is up to date.
+          
           When `print_schema.file` is specified in your config file, this flag will cause Diesel CLI to error if any command would result in changes to that file. It is recommended that you use this flag when running migrations in CI or production.
+
+      --migration-dir <MIGRATION_DIRECTORY>
+          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents
 
   -h, --help
           Print help (see a summary with '-h')

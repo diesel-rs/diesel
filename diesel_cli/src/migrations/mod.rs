@@ -1,3 +1,4 @@
+use crate::print_schema::PrintSchemaArgs;
 use chrono::Utc;
 use clap::{ArgAction, Args, Subcommand, ValueEnum};
 use diesel::Connection;
@@ -94,29 +95,22 @@ pub enum MigrationCommand {
     /// Generate a new migration with the given name, and the current timestamp as the version.
     Generate {
         /// The name of the migration to create.
-        #[arg(
-            id = "MIGRATION_NAME",
-            required = true,
-            index = 1,
-            required = true,
-            num_args = 1
-        )]
+        #[arg(required = true, index = 1, required = true, num_args = 1)]
         migration_name: String,
 
         /// The version number to use when generating the migration.
         /// Defaults to the current timestamp, which should suffice
         /// for most use cases.
-        #[arg(id = "MIGRATION_VERSION", long = "version", num_args = 1)]
+        #[arg(long = "version", num_args = 1)]
         version: Option<String>,
 
         /// Don't generate a down.sql file.
         /// You won't be able to run migration `revert` or `redo`.
-        #[arg(id = "MIGRATION_NO_DOWN_FILE", short = 'u', long = "no-down", action = ArgAction::SetTrue)]
+        #[arg(short = 'u', long = "no-down", action = ArgAction::SetTrue)]
         no_down: bool,
 
         /// The format of the migration to be generated.
         #[arg(
-            id = "MIGRATION_FORMAT",
             long = "format",
             value_enum,
             default_value_t = MigrationFormat::Sql,
@@ -146,7 +140,7 @@ pub enum MigrationCommand {
         /// See https://www.sqlite.org/lang_createtable.html#rowid for more information.
         /// Only used with the `--diff-schema` argument.
         #[arg(
-            id = "SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT",
+            id = PrintSchemaArgs::SQLITE_INTEGER_PRIMARY_KEY_IS_BIGINT,
             long = "sqlite-integer-primary-key-is-bigint",
             requires = "SCHEMA_RS",
             action = ArgAction::SetTrue
@@ -155,7 +149,7 @@ pub enum MigrationCommand {
 
         /// Table names to filter.
         #[arg(
-            id = "TABLE_NAME",
+            id = PrintSchemaArgs::TABLE_NAME,
             index = 2,
             num_args = 1..,
             action = ArgAction::Append
@@ -164,7 +158,7 @@ pub enum MigrationCommand {
 
         /// Only include tables from table-name that matches regexp.
         #[arg(
-            id = "ONLY_TABLES",
+            id = PrintSchemaArgs::ONLY_TABLES,
             short = 'o',
             long = "only-tables",
             action = ArgAction::Append,
@@ -176,8 +170,9 @@ pub enum MigrationCommand {
 
         /// Exclude tables from table-name that matches regex.
         #[arg(
-            id = "EXCEPT_TABLES",
+            id = PrintSchemaArgs::EXCEPT_TABLES,
             short = 'e',
+            long = "except-tables",
             action = ArgAction::Append,
             num_args = 0,
             default_missing_value = "true",
@@ -187,7 +182,7 @@ pub enum MigrationCommand {
 
         /// Select schema key from diesel.toml, use 'default' for print_schema without key.
         #[arg(
-            id = "SCHEMA_KEY",
+            id = PrintSchemaArgs::SCHEMA_KEY,
             long = "schema-key",
             action = clap::ArgAction::Append,
             default_values_t = vec!["default".to_string()]

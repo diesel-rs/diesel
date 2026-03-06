@@ -2,60 +2,60 @@
 source: diesel_cli/tests/help_snapshots.rs
 expression: res.stdout()
 ---
-Generate a new migration with the given name, and the current timestamp as the version.
+Generate a new migration with the given name, and the current timestamp as the version
 
-Usage: diesel migration generate [OPTIONS] <MIGRATION_NAME> [table-name]...
+Usage: diesel migration generate [OPTIONS] <MIGRATION_NAME> [TABLE_NAME]...
 
 Arguments:
   <MIGRATION_NAME>
-          The name of the migration to create.
+          The name of the migration to create
 
-  [table-name]...
-          Table names to filter.
+  [TABLE_NAME]...
+          Table names to filter
 
 Options:
       --database-url <DATABASE_URL>
-          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified.
+          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified
 
-      --migration-dir <MIGRATION_DIRECTORY>
-          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents.
-
-      --version <MIGRATION_VERSION>
-          The version number to use when generating the migration. Defaults to the current timestamp, which should suffice for most use cases.
+      --version <VERSION>
+          The version number to use when generating the migration. Defaults to the current timestamp, which should suffice for most use cases
 
       --config-file <CONFIG_FILE>
-          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file.
+          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file
 
   -u, --no-down
-          Don't generate a down.sql file. You won't be able to run migration `revert` or `redo`.
+          Don't generate a down.sql file. You won't be able to run migration `revert` or `redo`
 
-      --format <MIGRATION_FORMAT>
-          The format of the migration to be generated.
+      --format <FORMAT>
+          The format of the migration to be generated
           
           [default: sql]
           [possible values: sql]
 
       --locked-schema
+          Require that the schema file is up to date.
+          
           When `print_schema.file` is specified in your config file, this flag will cause Diesel CLI to error if any command would result in changes to that file. It is recommended that you use this flag when running migrations in CI or production.
 
       --diff-schema[=<SCHEMA_RS>]
-          Populate the generated migrations based on the current difference between your `schema.rs` file and the specified database. 
-          
-          The generated migrations are not expected to be perfect. Be sure to check whether they meet your expectations. Adjust the generated output if that's not the case.
+          Populate the generated migrations based on the current difference between your `schema.rs` file and the specified database. The generated migrations are not expected to be perfect. Be sure to check whether they meet your expectations. Adjust the generated output if that's not the case
+
+      --migration-dir <MIGRATION_DIRECTORY>
+          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents
 
       --sqlite-integer-primary-key-is-bigint
-          For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, when the table isn't declared with `WITHOUT ROWID`.
-          See https://www.sqlite.org/lang_createtable.html#rowid for more information.
-          Only used with the `--diff-schema` argument.
+          For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, when the table isn't declared with `WITHOUT ROWID`. See https://www.sqlite.org/lang_createtable.html#rowid for more information. Only used with the `--diff-schema` argument
 
   -o, --only-tables
-          Only include tables from table-name that matches regexp.
+          Only include tables from table-name that matches regexp
 
   -e, --except-tables
-          Exclude tables from table-name that matches regex.
+          Exclude tables from table-name that matches regex
 
-      --schema-key <schema-key>
-          select schema key from diesel.toml, use 'default' for print_schema without key.
+      --schema-key <SCHEMA_KEY>
+          Select schema key from diesel.toml, use 'default' for print_schema without key
+          
+          [default: default]
 
   -h, --help
           Print help (see a summary with '-h')
