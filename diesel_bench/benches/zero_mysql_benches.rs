@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::consts::build_insert_users_params;
 use crate::consts::mysql::{
     build_insert_users_query, CLEANUP_QUERIES, MEDIUM_COMPLEX_QUERY_BY_ID, TRIVIAL_QUERY,
@@ -5,18 +7,18 @@ use crate::consts::mysql::{
 use crate::Bencher;
 use std::collections::HashMap;
 use std::fmt::Write;
-use zero_mysql::r#macro::FromRawRow;
+use zero_mysql::r#macro::FromRow;
 use zero_mysql::sync::Conn;
 use zero_mysql::Opts;
 
-#[derive(FromRawRow)]
+#[derive(FromRow)]
 pub struct User {
     pub id: i32,
     pub name: String,
     pub hair_color: Option<String>,
 }
 
-#[derive(FromRawRow)]
+#[derive(FromRow)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -24,7 +26,7 @@ pub struct Post {
     pub body: Option<String>,
 }
 
-#[derive(FromRawRow)]
+#[derive(FromRow)]
 pub struct Comment {
     pub id: i32,
     pub post_id: i32,
@@ -51,9 +53,9 @@ fn insert_users_for_setup(
     hair_color_init: impl Fn(usize) -> Option<&'static str>,
 ) {
     let query = build_insert_users_query(size);
-    let params: Vec<zero_mysql::Value> = build_insert_users_params(size, hair_color_init)
+    let params: Vec<Option<String>> = build_insert_users_params(size, hair_color_init)
         .into_iter()
-        .flat_map(|(name, hair_color)| [name.into(), hair_color.into()])
+        .flat_map(|(name, hair_color)| [Some(name), hair_color.map(String::from)])
         .collect();
     let mut stmt = conn.prepare(&query).unwrap();
     conn.exec_drop(&mut stmt, params).unwrap();
@@ -149,10 +151,10 @@ pub fn bench_insert(b: &mut Bencher, size: usize) {
     let mut stmt = conn.prepare(&query).unwrap();
 
     b.iter(|| {
-        let params: Vec<zero_mysql::Value> =
+        let params: Vec<Option<String>> =
             build_insert_users_params(size, |_| Some("hair_color"))
                 .into_iter()
-                .flat_map(|(name, hair_color)| [name.into(), hair_color.into()])
+                .flat_map(|(name, hair_color)| [Some(name), hair_color.map(String::from)])
                 .collect();
         conn.exec_drop(&mut stmt, params).unwrap();
     })

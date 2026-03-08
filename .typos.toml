@@ -28,6 +28,9 @@ extend-ignore-re = [
     "tpe",
 ]
 
+[default.extend-identifiers]
+NdArray = "NdArray"
+
 [type.md]
 extend-ignore-re = [
     # Occurs in the changelog

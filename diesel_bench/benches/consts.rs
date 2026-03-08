@@ -45,6 +45,32 @@ pub mod mysql {
     }
 }
 
+#[cfg(feature = "sqlite")]
+pub mod sqlite {
+    use super::*;
+
+    pub const TRIVIAL_QUERY: &str = "SELECT id, name, hair_color FROM users";
+
+    pub const MEDIUM_COMPLEX_QUERY_BY_ID: &str = "\
+        SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
+        FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?";
+
+    pub const MEDIUM_COMPLEX_QUERY_BY_NAME: &str = "\
+        SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
+        FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?";
+
+    pub fn build_insert_users_query(size: usize) -> String {
+        let mut query = String::from(INSERT_USERS_PREFIX);
+        for x in 0..size {
+            if x > 0 {
+                query.push(',');
+            }
+            query.push_str("(?,?)");
+        }
+        query
+    }
+}
+
 #[cfg(feature = "postgres")]
 pub mod postgres {
     use super::*;

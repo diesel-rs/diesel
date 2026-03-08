@@ -360,12 +360,12 @@ jobs:
 
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
-          tool: nextest,wasm-bindgen@0.2.108
+          tool: wasm-bindgen@0.2.108
 
       - name: Test unit and integration tests
         env:
           DATABASE_URL: ":memory:"
-        run: cargo xtask run-tests --wasm sqlite --no-example-schema-check -- --no-fail-fast  --release
+        run: cargo xtask run-tests --wasm sqlite --no-example-schema-check -- --no-fail-fast
 
       - name: Test the wasm example
         env:

@@ -11,6 +11,17 @@ error[E0277]: `Groups` is no valid SQL fragment for the `Mysql` backend
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
+  LL | /         impl<DB> QueryFragment<DB> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend,
+  LL | |             Self: QueryFragment<DB, DB::$option>,
+     | |_________________________________________________^ `Groups` implements `QueryFragment<DB>`
+...
+  LL | /         impl<DB> QueryFragment<DB, $bound> for $name
+  LL | |         where
+  LL | |             DB: crate::backend::Backend<$option = $bound>,
+     | |__________________________________________________________^ `Groups` implements `QueryFragment<DB, IsoGroupWindowFrameUnit>`
+...
   LL | / simple_frame_expr_with_bound!(
   LL | |     /// Groups frame mode
   LL | |     ///
@@ -18,10 +29,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 ...    |
  LL | |     " GROUPS "
  LL | | );
-     | | ^
-     | | |
-     | |_`Groups` implements `QueryFragment<DB, IsoGroupWindowFrameUnit>`
-     |   `Groups` implements `QueryFragment<DB>`
+     | |_- in this macro invocation
      = note: required for `Groups` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`

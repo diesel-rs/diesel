@@ -5,7 +5,13 @@ LL |         title -> Text,
    |         ----- similarly named struct `title` defined here
 ...
 LL |     titel: String,
-   |     ^^^^^ help: a struct with a similar name exists: `title`
+   |     ^^^^^
+   |
+help: a struct with a similar name exists
+   |
+55 -     titel: String,
+55 +     title: String,
+   |
 
 error[E0425]: cannot find value `titel` in module `posts`
   --> tests/fail/selectable.rs:55:5
@@ -14,18 +20,26 @@ LL |         title -> Text,
    |         ----- similarly named unit struct `title` defined here
 ...
 LL |     titel: String,
-   |     ^^^^^ help: a unit struct with a similar name exists: `title`
+   |     ^^^^^
+   |
+help: a unit struct with a similar name exists
+   |
+55 -     titel: String,
+55 +     title: String,
+   |
 
 error[E0433]: failed to resolve: use of unresolved module or unlinked crate `post`
   --> tests/fail/selectable.rs:60:23
    |
 LL | #[diesel(table_name = post)]
-   |                       ^^^^
-   |                       |
-   |                       use of unresolved module or unlinked crate `post`
-   |                       help: a struct with a similar name exists: `Post`
+   |                       ^^^^ use of unresolved module or unlinked crate `post`
    |
    = help: you might be missing a crate named `post`
+help: a struct with a similar name exists
+   |
+60 - #[diesel(table_name = post)]
+60 + #[diesel(table_name = Post)]
+   |
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/selectable.rs:165:10
@@ -1012,14 +1026,14 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      |          required by a bound introduced by this call
      |
      = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               Bool
                CChar
                Cidr
                Citext
                Datetime
                Inet
                Interval
+               Json
+               JsonValidFlags
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String), _>`
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
@@ -1074,14 +1088,14 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      |          required by a bound introduced by this call
      |
      = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               Bool
                CChar
                Cidr
                Citext
                Datetime
                Inet
                Interval
+               Json
+               JsonValidFlags
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `load_dsl::private::CompatibleType<(i32, std::string::String), _>`
      = note: required for `BoxedSelectStatement<'_, SelectBy<..., _>, ..., _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
@@ -1170,14 +1184,14 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      |          required by a bound introduced by this call
      |
      = help: the following other types implement trait `SingleValue`:
-               Array<ST>
-               Bool
                CChar
                Cidr
                Citext
                Datetime
                Inet
                Interval
+               Json
+               JsonValidFlags
              and N others
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String, i32), _>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32, std::string::String, i32)>`

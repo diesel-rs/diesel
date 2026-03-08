@@ -72,15 +72,17 @@ impl Field {
                     })
                 }
                 FieldAttr::SerializeAs(_, value) => {
+                    check_serde_as_supported_type(&value, "serialize_as")?;
                     serialize_as = Some(AttributeSpanWrapper {
-                        item: Type::Path(value),
+                        item: value,
                         attribute_span,
                         ident_span,
                     })
                 }
                 FieldAttr::DeserializeAs(_, value) => {
+                    check_serde_as_supported_type(&value, "deserialize_as")?;
                     deserialize_as = Some(AttributeSpanWrapper {
-                        item: Type::Path(value),
+                        item: value,
                         attribute_span,
                         ident_span,
                     })
@@ -201,5 +203,55 @@ impl quote::ToTokens for FieldName {
             FieldName::Named(ref x) => x.to_tokens(tokens),
             FieldName::Unnamed(ref x) => x.to_tokens(tokens),
         }
+    }
+}
+
+fn check_serde_as_supported_type(ty: &Type, attr_name: &str) -> Result<()> {
+    match ty {
+        Type::Path(_) => Ok(()),
+        Type::Array(syn::TypeArray { elem, .. }) => check_serde_as_supported_type(elem, attr_name),
+        Type::Paren(syn::TypeParen { elem, .. }) | Type::Group(syn::TypeGroup { elem, .. }) => {
+            check_serde_as_supported_type(elem, attr_name)
+        }
+        Type::Tuple(syn::TypeTuple { elems, .. }) => elems
+            .iter()
+            .try_for_each(|ty| check_serde_as_supported_type(ty, attr_name)),
+        Type::Ptr(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support pointer types"),
+        )),
+        Type::BareFn(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support function pointer types"),
+        )),
+        Type::Infer(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support inference types"),
+        )),
+
+        Type::Reference(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support reference types"),
+        )),
+        Type::Slice(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support unsized slice types, use an array instead"),
+        )),
+        Type::TraitObject(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support trait objects"),
+        )),
+        Type::Macro(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("macro invocation is not supported in `{attr_name}`"),
+        )),
+        Type::ImplTrait(_) => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support impl trait types"),
+        )),
+        _ => Err(syn::Error::new_spanned(
+            ty,
+            format!("`{attr_name}` does not support this type"),
+        )),
     }
 }

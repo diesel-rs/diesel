@@ -172,7 +172,7 @@ async fn insert_users(
         #[cfg(feature = "mysql")]
         { consts::mysql::build_insert_users_query(size) }
         #[cfg(feature = "sqlite")]
-        { consts::mysql::build_insert_users_query(size) }
+        { consts::sqlite::build_insert_users_query(size) }
     };
 
     let params = consts::build_insert_users_params(size, hair_color_init);
