@@ -61,10 +61,14 @@ pub use self::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 #[doc(inline)]
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 #[doc(inline)]
-pub use self::update_statement::batch_update::{
-    BatchUpdateExpr, BatchUpdateTarget, BatchUpdateTargetAssign,
-};
+#[allow(unused)]
+pub(crate) use self::update_statement::batch_update::BatchUpdate;
+#[doc(inline)]
+pub use self::update_statement::batch_update::{BatchColumn, BatchColumnAssign, BatchValue};
 #[doc(inline)]
 pub use self::update_statement::changeset::AsChangeset;
 #[doc(inline)]

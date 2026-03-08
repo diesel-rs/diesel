@@ -250,70 +250,67 @@ macro_rules! tuple_impls {
                 }
             }
 
-            #[allow(unused_assignments)]
-            impl<$($T,)+ Tab, __DB> BatchUpdateTarget<__DB, Tab> for ($($T,)+)
+            impl<$($T,)+ Tab, __DB> BatchColumn<Tab, __DB> for ($($T,)+)
             where
+                $($T: BatchColumn<Tab, __DB>,)+
                 Tab: Table,
                 __DB: Backend,
-                $($T: BatchUpdateTarget<__DB, Tab>,)+
             {
-                fn column_target<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
-                    let mut needs_comma = false;
+                type Table = Tab;
+
+                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
                     $(
-                        let noop_element = self.$idx.is_noop(out.backend())?;
-                        if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
-                            }
-                            self.$idx.column_target(out.reborrow())?;
-                            needs_comma = true;
+                        if $idx != 0 {
+                            out.push_sql(", ");
                         }
+                        self.$idx.walk_ast(out.reborrow())?;
                     )+
                     Ok(())
                 }
             }
 
-            #[allow(unused_assignments)]
-            impl<$($T,)+ Tab, __DB> BatchUpdateTargetAssign<__DB, Tab> for ($($T,)+)
+            impl<$($T,)+ Tab, __DB> BatchColumnAssign<Tab, __DB> for ($($T,)+)
             where
+                $($T: BatchColumnAssign<Tab, __DB>,)+
                 Tab: Table,
                 __DB: Backend,
-                $($T: BatchUpdateTargetAssign<__DB, Tab>,)+
             {
-                fn column_target_assign<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>, alias: &str) -> QueryResult<()> {
-                    let mut needs_comma = false;
+                type Table = Tab;
+
+                fn walk_ast<'b>(
+                    &'b self,
+                    mut out: AstPass<'_, 'b, __DB>,
+                    sep: &'_ str,
+                    ambiguous: bool,
+                    alias: &'_ str,
+                ) -> QueryResult<()> {
                     $(
-                        let noop_element = self.$idx.is_noop(out.backend())?;
-                        if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
-                            }
-                            self.$idx.column_target_assign(out.reborrow(), alias)?;
-                            needs_comma = true;
+                        if $idx != 0 {
+                            out.push_sql(sep);
                         }
+                        self.$idx.walk_ast(out.reborrow(), sep, ambiguous, alias)?;
                     )+
                     Ok(())
                 }
             }
 
-            #[allow(unused_assignments)]
-            impl<$($T,)+ Tab, __DB> BatchUpdateExpr<__DB, Tab> for ($($T,)+)
+            impl<$($T,)+ $($ST,)+ Tab, __DB> BatchValue<($($ST,)+), Tab, __DB> for ($($T,)+)
             where
+                $($T: BatchValue<$ST, Tab, __DB>,)+
+                $($ST: SqlType + TypedExpressionType,)+
                 Tab: Table,
                 __DB: Backend,
-                $($T: BatchUpdateExpr<__DB, Tab>,)+
+                $(__DB: HasSqlType<$ST>,)+
             {
-                fn column_expr<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
-                    let mut needs_comma = false;
+                type Table = Tab;
+                type SqlType = ($($ST,)+);
+
+                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
                     $(
-                        let noop_element = self.$idx.is_noop(out.backend())?;
-                        if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
-                            }
-                            self.$idx.column_expr(out.reborrow())?;
-                            needs_comma = true;
+                        if $idx != 0 {
+                            out.push_sql(", ");
                         }
+                        self.$idx.walk_ast(out.reborrow())?;
                     )+
                     Ok(())
                 }

@@ -1,12 +1,15 @@
 use super::batch_update::*;
+use crate::associations::HasTable;
 use crate::backend::DieselReserveSpecialization;
+use crate::expression::bound::Bound;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
-use crate::expression::AppearsOnTable;
+use crate::expression::{AppearsOnTable, TypedExpressionType};
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
-use crate::Table;
-use std::marker::PhantomData;
+use crate::serialize::{Output, ToSql};
+use crate::sql_types::{HasSqlType, SqlType};
+use crate::{Expression, Identifiable, Table};
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).
@@ -282,268 +285,125 @@ where
 
 // Copied from diesel/diesel/src/insertable.rs
 
-impl<'a, T> AsChangeset for &'a [T]
+impl<C, T, Tab, DB> BatchColumn<Tab, DB> for Assign<ColumnWrapperForUpdate<C>, T>
 where
-    T: AsChangeset,
-    // TODO: [UndecoratedUpdateRecord] could be used to enforce setting a where_clause maybe.
-    // &'a T: AsChangeset + UndecoratedUpdateRecord<T::Target>,
-    &'a T: AsChangeset,
+    C: Column + BatchColumn<Tab, DB>,
+    DB: Backend,
 {
-    type Target = T::Target;
-    type Changeset = BatchChangeSet<<&'a T as AsChangeset>::Changeset, T::Target>;
+    type Table = Tab;
 
-    fn as_changeset(self) -> Self::Changeset {
-        let values = self
-            .iter()
-            .map(AsChangeset::as_changeset)
-            .collect::<Vec<_>>();
-        BatchChangeSet {
-            values: values,
-            _marker: PhantomData,
-        }
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.target.0.walk_ast(out.reborrow())
     }
 }
 
-impl<'a, T> AsChangeset for &'a Vec<T>
+impl<C, T, Tab, DB> BatchColumnAssign<Tab, DB> for Assign<ColumnWrapperForUpdate<C>, T>
 where
-    T: AsChangeset,
-    &'a [T]: AsChangeset,
+    C: Column + BatchColumnAssign<Tab, DB>,
+    DB: Backend,
 {
-    type Target = T::Target;
-    type Changeset = <&'a [T] as AsChangeset>::Changeset;
+    type Table = Tab;
+
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: AstPass<'_, 'b, DB>,
+        sep: &'_ str,
+        ambiguous: bool,
+        alias: &'_ str,
+    ) -> QueryResult<()> {
+        self.target
+            .0
+            .walk_ast(out.reborrow(), sep, ambiguous, alias)
+    }
+}
+
+impl<C, T, ST, Tab, DB> BatchValue<ST, Tab, DB> for Assign<C, Bound<ST, T>>
+where
+    Bound<ST, T>: QueryFragment<DB>,
+    DB: Backend + HasSqlType<ST>,
+{
+    type Table = Tab;
+    type SqlType = ST;
+
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&self.expr, out.reborrow())
+    }
+}
+
+impl<C, T, ST> Expression for Assign<C, Bound<ST, T>>
+where
+    ST: SqlType + TypedExpressionType,
+{
+    type SqlType = ST;
+}
+
+impl<C, T, ST, DB> ToSql<ST, DB> for Assign<ColumnWrapperForUpdate<C>, Bound<ST, T>>
+where
+    C: alloc::fmt::Debug,
+    T: ToSql<ST, DB>,
+    ST: alloc::fmt::Debug + SqlType + TypedExpressionType,
+    DB: Backend + HasSqlType<ST>,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> crate::serialize::Result {
+        self.expr.item.to_sql(out)
+    }
+}
+
+// Identifiable takes ownership if not implemented on a reference.
+// Following implementations:
+// - impl<U> AsChangeset for Vec<U>
+// - impl<U, const N: usize> AsChangeset for [U; N]
+// - impl<U, const N: usize> AsChangeset for Box<[U; N]>
+//
+// result in compile error:
+// the parameter type `U` may not live long enough
+// ...so that the reference type `&'a U` does not outlive the data it points at
+impl<'a, U, I, C, PK> AsChangeset for &'a [U]
+where
+    U: AsChangeset + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
+{
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target, (), false>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .into_iter()
+            .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value)))
+            .collect::<Vec<_>>();
+        BatchUpdate::new(values, U::table().primary_key())
+    }
+}
+
+impl<'a, U> AsChangeset for &'a Vec<U>
+where
+    U: AsChangeset,
+    &'a [U]: AsChangeset,
+{
+    type Target = U::Target;
+    type Changeset = <&'a [U] as AsChangeset>::Changeset;
 
     fn as_changeset(self) -> Self::Changeset {
         (&**self).as_changeset()
     }
 }
 
-impl<T> AsChangeset for Vec<T>
+impl<'a, U, I, C, PK, const N: usize> AsChangeset for &'a [U; N]
 where
-    T: AsChangeset + UndecoratedUpdateRecord<T::Target>,
+    U: AsChangeset + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
 {
-    type Target = T::Target;
-
-    type Changeset = BatchUpdate<Vec<T::Changeset>, T::Target, (), false>;
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target, (), false>;
 
     fn as_changeset(self) -> Self::Changeset {
-        let values = self
-            .into_iter()
-            .map(AsChangeset::as_changeset)
-            .collect::<Vec<_>>();
-
-        BatchUpdate::new(values)
-    }
-}
-
-impl<T, const N: usize> AsChangeset for [T; N]
-where
-    T: AsChangeset,
-{
-    type Target = T::Target;
-    type Changeset = BatchUpdate<Vec<T::Changeset>, T::Target, [T::Changeset; N], true>;
-
-    fn as_changeset(self) -> Self::Changeset {
-        let values = self
-            .into_iter()
-            .map(AsChangeset::as_changeset)
-            .collect::<Vec<_>>();
-        BatchUpdate::new(values)
-    }
-}
-
-impl<'a, T, const N: usize> AsChangeset for &'a [T; N]
-where
-    T: AsChangeset,
-    &'a T: AsChangeset,
-{
-    // We can reuse the query id for [T; N] here as this
-    // compiles down to the same query
-    type Target = T::Target;
-    type Changeset =
-        BatchUpdate<Vec<<&'a T as AsChangeset>::Changeset>, T::Target, [T::Changeset; N], true>;
-
-    fn as_changeset(self) -> Self::Changeset {
-        let values = self.iter().map(AsChangeset::as_changeset).collect();
-        BatchUpdate::new(values)
-    }
-}
-
-impl<T, const N: usize> AsChangeset for Box<[T; N]>
-where
-    T: AsChangeset,
-{
-    // We can reuse the query id for [T; N] here as this
-    // compiles down to the same query
-    type Target = T::Target;
-    type Changeset = BatchUpdate<Vec<T::Changeset>, T::Target, [T::Changeset; N], true>;
-
-    fn as_changeset(self) -> Self::Changeset {
-        let v = Vec::from(self as Box<[T]>);
-        let values = v
-            .into_iter()
-            .map(AsChangeset::as_changeset)
-            .collect::<Vec<_>>();
-        BatchUpdate::new(values)
-    }
-}
-
-/// Marker trait to indicate that no additional operations have been added
-/// to a record for update.
-///
-/// This is used to prevent things like
-/// `.on_conflict_do_nothing().on_conflict_do_nothing()`
-/// from compiling.
-#[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
-)]
-pub trait UndecoratedUpdateRecord<Table> {}
-
-impl<Col, U, DB> BatchUpdateTarget<DB, Col::Table> for Assign<ColumnWrapperForUpdate<Col>, U>
-where
-    DB: Backend,
-    Col: Column,
-    ColumnWrapperForUpdate<Col>: QueryFragment<DB>,
-    Self: QueryFragment<DB>,
-{
-    fn column_target<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        QueryFragment::walk_ast(&self.target, out.reborrow())
-    }
-}
-
-impl<Col, U, DB> BatchUpdateTargetAssign<DB, Col::Table> for Assign<ColumnWrapperForUpdate<Col>, U>
-where
-    DB: Backend,
-    Col: Column,
-    ColumnWrapperForUpdate<Col>: QueryFragment<DB>,
-    Self: QueryFragment<DB>,
-{
-    fn column_target_assign<'b>(
-        &'b self,
-        mut out: AstPass<'_, 'b, DB>,
-        alias: &str,
-    ) -> QueryResult<()> {
-        let _ = BatchUpdateTarget::column_target(self, out.reborrow());
-        out.push_sql(" = ");
-        out.push_sql(alias);
-        out.push_sql(".");
-        BatchUpdateTarget::column_target(self, out.reborrow())
-    }
-}
-
-impl<Col, U, DB> BatchUpdateExpr<DB, Col::Table> for Assign<ColumnWrapperForUpdate<Col>, U>
-where
-    DB: Backend,
-    Col: Column,
-    U: QueryFragment<DB>,
-    Self: QueryFragment<DB>,
-{
-    fn column_expr<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        QueryFragment::walk_ast(&self.expr, out.reborrow())
-    }
-}
-
-#[derive(Debug)]
-pub struct BatchChangeSet<T, Tab> {
-    pub(crate) values: Vec<T>,
-    _marker: PhantomData<Tab>,
-}
-
-impl<T, Tab, DB> QueryFragment<DB> for BatchChangeSet<T, Tab>
-where
-    DB: Backend,
-    Tab: Table,
-    T: BatchUpdateTargetAssign<DB, Tab> + BatchUpdateExpr<DB, Tab> + Clone,
-{
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if let None = self.values.first() {
-            // TODO: more meaningful return maybe?
-            return Ok(());
-        }
-
-        // TODO: Create proper struct for alias that implements QueryFragment.
-        // Maybe there is already something?
-        const ALIAS: &str = "\"tmp\"";
-
-        // --- Create this statement with the following steps:
-        // UPDATE my_table AS tab SET
-        //     column_a = tmp.column_a,
-        //     column_c = tmp.column_c
-        // FROM ( VALUES
-        //     ('aa', 1, 11),
-        //     ('bb', 2, 22)
-        // ) AS tmp(column_a, column_b, column_c)
-        // WHERE tab.column_b = tmp.column_b;
-
-        // --- Assign columns to temporary columns
-        //     column_a = tmp.column_a,
-        //     column_c = tmp.column_c
-        if let Some(first) = self.values.first() {
-            first.column_target_assign(out.reborrow(), ALIAS)?;
-        }
-
-        // --- List of values
-        // FROM ( VALUES
-        //     ('aa', 1, 11),
-        //     ('bb', 2, 22)
-        // )
-        out.push_sql(" FROM ( VALUES");
-        let mut values = self.values.iter();
-        if let Some(value) = values.next() {
-            out.push_sql(" (");
-            value.column_expr(out.reborrow())?;
-            out.push_sql(")");
-        }
-        for value in values {
-            out.push_sql(", (");
-            value.column_expr(out.reborrow())?;
-            out.push_sql(")");
-        }
-        out.push_sql(" )");
-
-        // --- Set alias and its columns
-        //     AS tmp(column_a, column_b, column_c)
-        if let Some(last) = self.values.last() {
-            out.push_sql(" AS ");
-            out.push_sql(ALIAS);
-            out.push_sql("(");
-            last.column_target(out.reborrow())?;
-            out.push_sql(")");
-        }
-
-        // id = primary key -> therefore not available in update batch! See Note below.
-        const UPDATE_CONDITION_COLUMN: &str = "\"name\"";
-        // --- TODO: Handle proper UpdateStatement::where_clause
-        // --- Implemented here for testing purpose!
-        // WHERE tab.column_b = tmp.column_b;
-        out.push_sql(" WHERE \"users\".");
-        out.push_sql(UPDATE_CONDITION_COLUMN);
-        out.push_sql(" = ");
-        out.push_sql(ALIAS);
-        out.push_sql(".");
-        out.push_sql(UPDATE_CONDITION_COLUMN);
-
-        /*
-        NOTE: derive(AsChangeset) prevents from updating the primary key.
-        Therefore the primary key cannot be provided in the update batch
-        and then referenced in the WHERE clause.
-        Both User_A and User_B will create the alias:
-            AS tmp(name, hair_color, type)
-
-        struct User_A {
-            name: String,
-            hair_color: String,
-            r#type: String,
-        }
-
-        struct User_B {
-            id: u32,
-            name: String,
-            hair_color: String,
-            r#type: String,
-        }
-        */
-
-        Ok(())
+        let mut values = Vec::with_capacity(N);
+        values.extend(
+            self.into_iter()
+                .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value))),
+        );
+        BatchUpdate::new(values, U::table().primary_key())
     }
 }

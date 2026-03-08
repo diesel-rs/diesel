@@ -1004,8 +1004,11 @@ fn optional_embedded_struct() {
 
 #[test]
 fn named_struct_batch() {
-    #[derive(Debug, Clone, AsChangeset)]
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    #[diesel(primary_key(id))]
+    #[diesel(table_name = users)]
     struct User {
+        id: i32,
         name: String,
         hair_color: String,
         r#type: String,
@@ -1014,30 +1017,41 @@ fn named_struct_batch() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
     let sean = User {
+        id: 1,
         name: String::from("Sean"),
-        hair_color: String::from("blue"),
-        r#type: String::from("super"),
+        hair_color: String::from("blue1"),
+        r#type: String::from("super1"),
     };
     let tess = User {
+        id: 2,
         name: String::from("Tess"),
-        hair_color: String::from("black"),
-        r#type: String::from("regular"),
+        hair_color: String::from("black1"),
+        r#type: String::from("regular1"),
     };
-
-    let mut users: Vec<User> = Vec::new();
-    users.push(sean.clone());
-    users.push(tess.clone());
 
     // Control: See if query of assign remains unchanged.
     let update_sean = update(users::table.find(1)).set(&sean);
     let debug_sean = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_sean);
     println!("debug_sean\n-------------{:?}", debug_sean);
 
-    // TODO: batch update.
-    // important not to set filter. Not supported yet.
+    // TODO: Split arr and vec into own test functions when done.
+
+    // Check compilation and query for &[]
+    let users = [sean.clone(), tess.clone()];
     let update_users = update(users::table).set(&users);
-    let debug_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
-    println!("debug_users\n-------------{:?}\n-------------", debug_users);
+    let debug_arr_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+    println!("debug_arr_users\n-------------{:?} ", debug_arr_users);
+
+    // Check compilation and query for &Vec
+    let users: Vec<User> = Vec::from(&users);
+    let update_users = update(users::table).set(&users);
+    let debug_vec_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+    println!("debug_vec_users\n-------------{:?}", debug_vec_users);
+
+    println!("\n-------------");
+
+    // Expected to create the same query
+    assert_eq!(debug_arr_users.to_string(), debug_vec_users.to_string());
 
     // Should update both Jim and Tess
     update_users.execute(connection).unwrap();
@@ -1046,14 +1060,97 @@ fn named_struct_batch() {
         (
             1,
             String::from("Sean"),
-            Some(String::from("blue")),
-            Some(String::from("super")),
+            Some(String::from("blue1")),
+            Some(String::from("super1")),
         ),
         (
             2,
             String::from("Tess"),
-            Some(String::from("black")),
-            Some(String::from("regular")),
+            Some(String::from("black1")),
+            Some(String::from("regular1")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
+fn named_struct_batch_grouped_pkey() {
+    table! {
+        #[sql_name = "users"]
+        users2 (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+            r#type -> Nullable<Text>,
+        }
+    }
+
+    // Switched order of fields. Expect primary
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    #[diesel(primary_key(id, name))] // missing this will default to (id) as pKey.
+    #[diesel(table_name = users2)]
+    struct User {
+        hair_color: String,
+        id: i32,
+        r#type: String,
+        name: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let sean = User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue2"),
+        r#type: String::from("super2"),
+    };
+    let tess = User {
+        id: 2,
+        name: String::from("Tess"),
+        hair_color: String::from("black2"),
+        r#type: String::from("regular2"),
+    };
+
+    // Control: See if query of assign remains unchanged.
+    let update_sean = update(users2::table.find((1, String::from("Sean")))).set(&sean);
+    let debug_sean = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_sean);
+    println!("debug_sean\n-------------{:?}", debug_sean);
+
+    // TODO: Split arr and vec into own test functions when done.
+
+    // Check compilation and query for &[]
+    let users = [sean.clone(), tess.clone()];
+    let update_users = update(users2::table).set(&users);
+    let debug_arr_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+    println!("debug_arr_users\n-------------{:?} ", debug_arr_users);
+
+    // Check compilation and query for &Vec
+    let users: Vec<User> = Vec::from(&users);
+    let update_users = update(users2::table).set(&users);
+    let debug_vec_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+    println!("debug_vec_users\n-------------{:?}", debug_vec_users);
+
+    println!("\n-------------");
+
+    // Expected to create the same query
+    assert_eq!(debug_arr_users.to_string(), debug_vec_users.to_string());
+
+    // Should update both Jim and Tess
+    update_users.execute(connection).unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Sean"),
+            Some(String::from("blue2")),
+            Some(String::from("super2")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("black2")),
+            Some(String::from("regular2")),
         ),
     ];
     let actual = users::table.order(users::id).load(connection);

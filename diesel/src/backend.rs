@@ -511,6 +511,12 @@ pub(crate) mod sql_dialect {
         #[derive(Debug, Copy, Clone)]
         pub struct PostgresLikeBatchUpdateSupport;
 
+        /// Indicates that this backend supports mysql style
+        /// batch update statements to update multiple rows using one
+        /// update statement
+        #[derive(Debug, Copy, Clone)]
+        pub struct MySqlLikeBatchUpdateSupport;
+
         impl SupportsBatchUpdate for PostgresLikeBatchUpdateSupport {}
     }
 
