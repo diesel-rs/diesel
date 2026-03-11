@@ -235,7 +235,7 @@ where
 
     fn as_changeset(self) -> Self::Changeset {
         let values = self
-            .into_iter()
+            .iter()
             .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value)))
             .collect::<Vec<_>>();
         BatchUpdate::new(values, U::table().primary_key())
@@ -275,7 +275,7 @@ where
     fn as_changeset(self) -> Self::Changeset {
         let mut values = Vec::with_capacity(N);
         values.extend(
-            self.into_iter()
+            self.iter()
                 .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value))),
         );
         BatchUpdate::new(values, U::table().primary_key())

@@ -320,12 +320,12 @@ mod private {
 /// will use [SetClause::Delegated].
 ///
 /// - [SetClause::Immediate]
-/// will add `SET` right after the [UpdateStatement::from_clause] `QueryFragment`. \
-/// `Update users SET ... ;`
+///   will add `SET` right after the [UpdateStatement::from_clause] `QueryFragment`. \
+///   `Update users SET ... ;`
 /// - [SetClause::Delegated]
-/// hands over the control of adding `SET` to [UpdateStatement::values] `QueryFragment`. \
-/// `Update users ... SET ... ; ` will then be permitted.
-/// Batch update for mysql requires this behavior.
+///   hands over the control of adding `SET` to [UpdateStatement::values] `QueryFragment`. \
+///   `Update users ... SET ... ; ` will then be permitted.  \
+///   Batch update for mysql requires this behavior.
 #[derive(Clone, Copy, Debug)]
 pub enum SetClause {
     Immediate,

@@ -1002,6 +1002,7 @@ fn optional_embedded_struct() {
     assert_eq!(Ok(expected), actual);
 }
 
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 #[test]
 fn named_struct_batch() {
     #[derive(Debug, Clone, AsChangeset, Identifiable)]
@@ -1074,6 +1075,7 @@ fn named_struct_batch() {
     assert_eq!(Ok(expected), actual);
 }
 
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 #[test]
 fn named_struct_batch_grouped_pkey() {
     table! {

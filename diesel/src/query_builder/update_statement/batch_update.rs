@@ -6,7 +6,7 @@ use crate::result::Error::QueryBuilderError;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, SqlType};
 use crate::{Column, Expression, QueryResult, Table, query_builder::*};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// Represents the column list for use in an batch update statement.
 ///
@@ -49,10 +49,10 @@ where
 /// (Note: Identifier quotations omitted!)
 ///
 /// * `BatchColumnAssign::walk_ast(&columns, out, ", ", false, "tmp")` \
-/// = `"users.hair_color = tmp.hair_color, users.type = tmp.type"`
+///   = `"users.hair_color = tmp.hair_color, users.type = tmp.type"`
 ///
 /// * `BatchColumnAssign::walk_ast(&columns, out, " AND ", true, "tmp")` \
-/// = `"hair_color = tmp.hair_color AND type = tmp.type"`
+///   = `"hair_color = tmp.hair_color AND type = tmp.type"`
 pub trait BatchColumnAssign<Tab, DB: Backend> {
     /// The table these columns belong to
     type Table;
@@ -110,7 +110,7 @@ pub trait BatchValue<ST, Tab, DB: Backend> {
     fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 }
 
-impl<'a, T, ST, Tab, DB> BatchValue<ST, Tab, DB> for &'a T
+impl<T, ST, Tab, DB> BatchValue<ST, Tab, DB> for &T
 where
     T: ToSql<ST, DB>,
     ST: SqlType + TypedExpressionType,
@@ -222,7 +222,7 @@ where
         // WHERE
         //      tab.column_b = tmp.column_b;
 
-        let first = self.values.first().unwrap();
+        let first = self.values.first().expect("missing batch update values");
 
         // --- Assign target columns from temporary columns
         //
@@ -349,6 +349,8 @@ where
         // Implementation for Option 2, that works, when commenting out the line
         // `out.push_sql(" SET ");` from UpdateStatement::walk_ast(...).
 
+        let first = self.values.first().expect("missing batch update values");
+
         // --- List of values
         //
         // JOIN ( VALUES
@@ -373,8 +375,6 @@ where
             out.push_sql(")");
         }
         out.push_sql(" )");
-
-        let first = self.values.first().unwrap();
 
         // --- Set alias and its columns
         //
