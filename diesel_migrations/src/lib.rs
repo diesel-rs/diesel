@@ -32,15 +32,23 @@
 //! Migrations can either be run with the CLI or embedded into the compiled application
 //! and executed with code, for example right after establishing a database connection.
 //! For more information, consult the [`embed_migrations!`] macro.
+//!
+//! You can also define migrations in your rust code by using the [`RustMigrationSource`].
+//! The [`CombinedMigrationSource`] allows you to combine migrations from different sources
+//! to execute them together
 
+mod combined_migrations;
 mod embedded_migrations;
 mod errors;
 mod file_based_migrations;
 mod migration_harness;
+mod rust_migrations;
 
-pub use crate::embedded_migrations::EmbeddedMigrations;
-pub use crate::file_based_migrations::FileBasedMigrations;
-pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
+pub use self::embedded_migrations::EmbeddedMigrations;
+pub use self::file_based_migrations::FileBasedMigrations;
+pub use self::migration_harness::{HarnessWithOutput, MigrationHarness};
+pub use self::rust_migrations::{RustMigration, RustMigrationSource, TypedMigration};
+pub use combined_migrations::CombinedMigrationSource;
 pub use migrations_macros::embed_migrations;
 
 #[doc(hidden)]

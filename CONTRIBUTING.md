@@ -152,6 +152,17 @@ To run rustfmt tests locally:
 You can also use rustfmt to make corrections or highlight issues in your editor.
 Check out [their README](https://github.com/rust-lang/rustfmt) for details.
 
+### Usage of LLMs and AI agents
+
+The Diesel project doesn't completely disallow to usage of LLMs and AI agents for contributions. There are still a number of restrictions and rules you as a PR author are asked to follow.
+
+Most importantly you as the author of the PR are responsible for carefully reviewing the generated code to make sure that:
+
+* It is correct to your best knowledge
+* It does not contain any copyrighted code that is incompatible with the license used by Diesel
+
+Furthermore you are asked to disclose the usage of any such tools in your PR description. 
+
 ### Common Abbreviations
 
 `ST`: Sql Type. Basically always has the `NativeSqlType` constraint

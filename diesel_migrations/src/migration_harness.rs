@@ -118,7 +118,6 @@ pub trait MigrationHarness<DB: Backend> {
             .into_iter()
             .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
-
         for applied_version in applied_versions {
             migrations.remove(&applied_version);
         }
