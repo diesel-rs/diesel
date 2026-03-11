@@ -1,5 +1,3 @@
-// Note: Kinda the same as in insert_statement/batch_insert.rs
-
 use crate::backend::{Backend, SqlDialect, sql_dialect};
 use crate::expression::TypedExpressionType;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
@@ -46,15 +44,15 @@ where
 /// - `ambiguous`: If the targeted column should contain leading table as identifier.
 /// - `alias`: Alias name for the temporary table with identical column name.
 ///
-/// ```
-/// BatchColumnAssign::walk_ast(&columns, out.reborrow(), ", ", false, "tmp")
-/// ```
-/// results in: `"users.hair_color = tmp.hair_color, users.type = tmp.type"`
-///  
-/// ```
-/// BatchColumnAssign::walk_ast(&columns, out.reborrow(), " AND ", true, "tmp")
-/// ```
-/// results in: ```"hair_color = tmp.hair_color AND type = tmp.type"```
+///
+/// #### Expected SQL fragments:
+/// (Note: Identifier quotations omitted!)
+///
+/// * `BatchColumnAssign::walk_ast(&columns, out, ", ", false, "tmp")` \
+/// = `"users.hair_color = tmp.hair_color, users.type = tmp.type"`
+///
+/// * `BatchColumnAssign::walk_ast(&columns, out, " AND ", true, "tmp")` \
+/// = `"hair_color = tmp.hair_color AND type = tmp.type"`
 pub trait BatchColumnAssign<Tab, DB: Backend> {
     /// The table these columns belong to
     type Table;
@@ -139,22 +137,6 @@ where
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
 )]
-// #[derive(Debug)]
-// pub struct BatchUpdate<V, Tab, QId, const STABLE_QUERY_ID: bool> {
-//     /// List of values that should be updated
-//     pub values: V,
-//     _marker: PhantomData<(Tab, QId)>,
-// }
-
-// impl<V, Tab, QId, const STABLE_QUERY_ID: bool> BatchUpdate<V, Tab, QId, STABLE_QUERY_ID> {
-//     /// Docs
-//     pub fn new(values: V) -> Self {
-//         Self {
-//             values,
-//             _marker: PhantomData,
-//         }
-//     }
-// }
 #[derive(Debug)]
 pub struct BatchUpdate<I, C, PK, Tab, QId, const STABLE_QUERY_ID: bool> {
     // values.0 -> I: Identifier from Identifiable::Id
@@ -224,6 +206,8 @@ where
         if self.values.is_empty() {
             return Err(QueryBuilderError(Box::new(EmptyChangeset)));
         }
+
+        out.push_sql(" SET ");
 
         // --- Create this statement with the following steps:
         //
@@ -318,13 +302,13 @@ where
     Tab: Table<PrimaryKey = PK>,
     DB: Backend + HasSqlType<IST> + HasSqlType<CST>,
 {
-    fn walk_ast<'b>(&'b self, mut _out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         // TODO:
         // UpdateStatement::walk_ast(...) already added " SET " to the sql.
         // MySql does not allow a temporary table definition or a join right
         // after the keyword 'SET' and its assignments.
         // Return Error by default due to missing support.
-        return Err(QueryBuilderError(Box::new(EmptyChangeset)));
+        // return Err(QueryBuilderError(Box::new(EmptyChangeset)));
 
         // TODO:
         // The following two alternatives would work if we could postpone
@@ -358,7 +342,6 @@ where
         //      tab.column_a = tmp.column_a,
         //      tab.column_c = tmp.column_c;
 
-        /*
         if self.values.is_empty() {
             return Err(QueryBuilderError(Box::new(EmptyChangeset)));
         }
@@ -376,7 +359,7 @@ where
         out.push_sql(" JOIN ( VALUES ");
         let mut values = self.values.iter();
         if let Some(value) = values.next() {
-            out.push_sql(" ROW(");
+            out.push_sql("ROW(");
             BatchValue::walk_ast(&value.0, out.reborrow())?;
             out.push_sql(", ");
             BatchValue::walk_ast(&value.1, out.reborrow())?;
@@ -424,13 +407,32 @@ where
         BatchColumnAssign::walk_ast(&first.1, out.reborrow(), ", ", false, Self::ALIAS)?;
 
         Ok(())
-
-        */
     }
 }
 
-// TODO:
-// Check out if there is a syntax supported for batch update for sqlite.
-// impl<IST, CST, I, C, PK, Tab, DB, QId, const STABLE_QUERY_ID: bool>
-//     QueryFragment<DB, sql_dialect::batch_update_support::SqliteLikeBatchUpdateSupport>
-//     for BatchUpdate<I, C, PK, Tab, QId, STABLE_QUERY_ID>
+/// TODO:
+/// Check out if there is a supported batch update syntax for sqlite.
+impl<IST, CST, I, C, PK, Tab, DB, QId, const STABLE_QUERY_ID: bool>
+    QueryFragment<DB, sql_dialect::batch_update_support::DoesNotSupportBatchUpdate>
+    for BatchUpdate<I, C, PK, Tab, QId, STABLE_QUERY_ID>
+where
+    DB: Backend
+        + SqlDialect<
+            BatchUpdateSupport = sql_dialect::batch_update_support::DoesNotSupportBatchUpdate,
+        >,
+    IST: SqlType + TypedExpressionType, // SqlType of I
+    CST: SqlType + TypedExpressionType, // SqlType of  C
+    I: BatchValue<IST, Tab, DB>,
+    C: Expression<SqlType = CST>
+        + BatchColumn<Tab, DB>
+        + BatchColumnAssign<Tab, DB>
+        + BatchValue<CST, Tab, DB>,
+    PK: Expression<SqlType = IST> + BatchColumnAssign<Tab, DB> + BatchColumn<Tab, DB>,
+    Tab: Table<PrimaryKey = PK>,
+    DB: Backend + HasSqlType<IST> + HasSqlType<CST>,
+{
+    fn walk_ast<'b>(&'b self, mut _out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        Err(QueryBuilderError(Box::new(EmptyChangeset)))
+        // Ok(())
+    }
+}
