@@ -182,6 +182,7 @@ mod multi_connection_impl {
         pub struct MultiReturningClause;
         pub struct MultiInsertWithDefaultKeyword;
         pub struct MultiBatchInsertSupport;
+        pub struct MultiBatchUpdateSupport;
         pub struct MultiDefaultValueClauseForInsert;
         pub struct MultiEmptyFromClauseSyntax;
         pub struct MultiExistsSyntax;
@@ -198,6 +199,7 @@ mod multi_connection_impl {
             type OnConflictClause = diesel::internal::derives::multiconnection::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
             type InsertWithDefaultKeyword = MultiInsertWithDefaultKeyword;
             type BatchInsertSupport = MultiBatchInsertSupport;
+            type BatchUpdateSupport = MultiBatchUpdateSupport;
             type DefaultValueClauseForInsert = MultiDefaultValueClauseForInsert;
             type EmptyFromClauseSyntax = MultiEmptyFromClauseSyntax;
             type ExistsSyntax = MultiExistsSyntax;
@@ -567,6 +569,40 @@ mod multi_connection_impl {
         >
         for diesel::internal::derives::multiconnection::BatchInsert<
             V,
+            Tab,
+            QId,
+            HAS_STATIC_QUERY_ID,
+        >
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
+            I,
+            C,
+            PK,
+            Tab,
+            QId,
+            const HAS_STATIC_QUERY_ID: bool,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiBatchUpdateSupport,
+        >
+        for diesel::internal::derives::multiconnection::BatchUpdate<
+            I,
+            C,
+            PK,
             Tab,
             QId,
             HAS_STATIC_QUERY_ID,

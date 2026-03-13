@@ -1,10 +1,15 @@
-use crate::Table;
+use super::{SetClause, batch_update::*};
+use crate::associations::HasTable;
 use crate::backend::DieselReserveSpecialization;
-use crate::expression::AppearsOnTable;
+use crate::expression::bound::Bound;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
+use crate::expression::{AppearsOnTable, TypedExpressionType};
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
+use crate::serialize::{Output, ToSql};
+use crate::sql_types::{HasSqlType, SqlType};
+use crate::{Expression, Identifiable, Table};
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).
@@ -22,6 +27,11 @@ pub trait AsChangeset {
     // we won't change it to just appease clippy
     #[allow(clippy::wrong_self_convention)]
     fn as_changeset(self) -> Self::Changeset;
+
+    /// Return the associated Update type. Defaults to Single row Updates.
+    fn set_clause() -> SetClause {
+        SetClause::Immediate
+    }
 }
 
 // This is a false positive, we reexport it later
@@ -138,5 +148,140 @@ where
 
     fn into_target(self) -> Self::QueryAstNode {
         ColumnWrapperForUpdate(self)
+    }
+}
+
+impl<C, T, Tab, DB> BatchColumn<Tab, DB> for Assign<ColumnWrapperForUpdate<C>, T>
+where
+    C: Column + BatchColumn<Tab, DB>,
+    DB: Backend,
+{
+    type Table = Tab;
+
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.target.0.walk_ast(out.reborrow())
+    }
+}
+
+impl<C, T, Tab, DB> BatchColumnAssign<Tab, DB> for Assign<ColumnWrapperForUpdate<C>, T>
+where
+    C: Column + BatchColumnAssign<Tab, DB>,
+    DB: Backend,
+{
+    type Table = Tab;
+
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: AstPass<'_, 'b, DB>,
+        sep: &'_ str,
+        ambiguous: bool,
+        alias: &'_ str,
+    ) -> QueryResult<()> {
+        self.target
+            .0
+            .walk_ast(out.reborrow(), sep, ambiguous, alias)
+    }
+}
+
+impl<C, T, ST, Tab, DB> BatchValue<ST, Tab, DB> for Assign<C, Bound<ST, T>>
+where
+    Bound<ST, T>: QueryFragment<DB>,
+    DB: Backend + HasSqlType<ST>,
+{
+    type Table = Tab;
+    type SqlType = ST;
+
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&self.expr, out.reborrow())
+    }
+}
+
+impl<C, T, ST> Expression for Assign<C, Bound<ST, T>>
+where
+    ST: SqlType + TypedExpressionType,
+{
+    type SqlType = ST;
+}
+
+impl<C, T, ST, DB> ToSql<ST, DB> for Assign<ColumnWrapperForUpdate<C>, Bound<ST, T>>
+where
+    C: alloc::fmt::Debug,
+    T: ToSql<ST, DB>,
+    ST: alloc::fmt::Debug + SqlType + TypedExpressionType,
+    DB: Backend + HasSqlType<ST>,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> crate::serialize::Result {
+        self.expr.item.to_sql(out)
+    }
+}
+
+// Identifiable takes ownership if not implemented on a reference.
+// Following implementations:
+// - impl<U> AsChangeset for Vec<U>
+// - impl<U, const N: usize> AsChangeset for [U; N]
+// - impl<U, const N: usize> AsChangeset for Box<[U; N]>
+//
+// result in compile error:
+// the parameter type `U` may not live long enough
+// ...so that the reference type `&'a U` does not outlive the data it points at
+impl<'a, U, I, C, PK> AsChangeset for &'a [U]
+where
+    U: AsChangeset + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
+{
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target, (), false>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .iter()
+            .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value)))
+            .collect::<Vec<_>>();
+        BatchUpdate::new(values, U::table().primary_key())
+    }
+
+    fn set_clause() -> SetClause {
+        SetClause::Delegated
+    }
+}
+
+impl<'a, U> AsChangeset for &'a Vec<U>
+where
+    U: AsChangeset,
+    &'a [U]: AsChangeset,
+{
+    type Target = U::Target;
+    type Changeset = <&'a [U] as AsChangeset>::Changeset;
+
+    fn as_changeset(self) -> Self::Changeset {
+        (&**self).as_changeset()
+    }
+
+    fn set_clause() -> SetClause {
+        SetClause::Delegated
+    }
+}
+
+impl<'a, U, I, C, PK, const N: usize> AsChangeset for &'a [U; N]
+where
+    U: AsChangeset + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
+{
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target, (), false>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let mut values = Vec::with_capacity(N);
+        values.extend(
+            self.iter()
+                .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value))),
+        );
+        BatchUpdate::new(values, U::table().primary_key())
+    }
+
+    fn set_clause() -> SetClause {
+        SetClause::Delegated
     }
 }
