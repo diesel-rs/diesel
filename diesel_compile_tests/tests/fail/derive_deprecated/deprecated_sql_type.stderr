@@ -60,15 +60,15 @@ error: expected identifier
 LL |     #[sql_type = "1"]
    |                  ^^^
 
-error[E0412]: cannot find type `foo` in this scope
+error[E0425]: cannot find type `foo` in this scope
  --> tests/fail/derive_deprecated/deprecated_sql_type.rs:6:14
   |
 LL | #[sql_type = "foo"]
   |              ^^^^^ not found in this scope
 
-error[E0412]: cannot find type `foo` in this scope
+error[E0425]: cannot find type `foo` in this scope
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:32:18
    |
 LL |     #[sql_type = "foo"]
    |                  ^^^^^ not found in this scope
-For more information about this error, try `rustc --explain E0412`.
+For more information about this error, try `rustc --explain E0425`.

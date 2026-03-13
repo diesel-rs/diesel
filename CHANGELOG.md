@@ -12,7 +12,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.3.6] 2025-01-23
+## [2.3.7] 2026-03-13
+
+* Add support for libsqlite3-sys 0.36
+* Fix a potential resource leak if establishing a SqliteConnection fails.
+
+## [2.3.6] 2026-01-23
 
 * Added support for mysqlclient-sys 0.5.0
 * Fix generating valid schema if a column is named `table`
@@ -2317,3 +2322,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.4]: https://github.com/diesel-rs/diesel/compare/v2.3.3...v2.3.4
 [2.3.5]: https://github.com/diesel-rs/diesel/compare/v2.3.4...v2.3.5
 [2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6
+[2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7

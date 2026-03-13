@@ -17,12 +17,12 @@ error[E0277]: cannot select `f64` from `NoFromClause`
               `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
               `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
             and N others
-    = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
+    = note: required for `(Bound<Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
     = note: 1 redundant requirement hidden
     = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `SelectableExpression<NoFromClause>`
-    = note: required for `SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `AsQuery`
+    = note: required for `SelectClause<ArrayLiteral<(..., f64), ...>>` to implement `SelectClauseExpression<NoFromClause>`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
    --> DIESEL/diesel/diesel/src/query_builder/functions.rs
     |
@@ -54,8 +54,8 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
     = note: required for `(f64,)` to implement `ValidGrouping<()>`
     = note: 2 redundant requirements hidden
     = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `ValidGrouping<()>`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `AsQuery`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
    --> DIESEL/diesel/diesel/src/query_builder/functions.rs
     |
@@ -85,12 +85,12 @@ error[E0277]: cannot select `f64` from `NoFromClause`
                `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
                `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
              and N others
-     = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
+     = note: required for `(Bound<Integer, i32>, f64)` to implement `SelectableExpression<NoFromClause>`
      = note: 1 redundant requirement hidden
      = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `SelectableExpression<NoFromClause>`
-     = note: required for `SelectClause<ArrayLiteral<(Bound<Integer, i32>, f64), Integer>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+     = note: required for `SelectClause<ArrayLiteral<(..., f64), ...>>` to implement `SelectClauseExpression<NoFromClause>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -122,8 +122,8 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
      = note: required for `(f64,)` to implement `ValidGrouping<()>`
      = note: 2 redundant requirements hidden
      = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `ValidGrouping<()>`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -152,10 +152,10 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
                (T, T1, T2, T3, T4, T5)
                (T, T1, T2, T3, T4, T5, T6)
              and N others
-     = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `QueryId`
+     = note: required for `(Bound<Integer, i32>, f64)` to implement `QueryId`
      = note: 3 redundant requirements hidden
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `QueryId`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `QueryId`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -186,10 +186,10 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
                `(T, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
                `(T, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
              and N others
-     = note: required for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)` to implement `QueryFragment<Pg>`
+     = note: required for `(Bound<Integer, i32>, f64)` to implement `QueryFragment<Pg>`
      = note: 4 redundant requirements hidden
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `QueryFragment<Pg>`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<i32>>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `QueryFragment<Pg>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<i32>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -242,12 +242,12 @@ error[E0277]: cannot select `{integer}` from `NoFromClause`
               `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
               `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
             and N others
-    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `SelectableExpression<NoFromClause>`
+    = note: required for `({integer}, Bound<Double, f64>)` to implement `SelectableExpression<NoFromClause>`
     = note: 1 redundant requirement hidden
-    = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `SelectableExpression<NoFromClause>`
-    = note: required for `SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `AsQuery`
+    = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), ...>` to implement `SelectableExpression<NoFromClause>`
+    = note: required for `SelectClause<ArrayLiteral<({integer}, ...), ...>>` to implement `SelectClauseExpression<NoFromClause>`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
    --> DIESEL/diesel/diesel/src/query_builder/functions.rs
     |
@@ -276,11 +276,11 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
               `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
               `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
             and N others
-    = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
+    = note: required for `({integer}, Bound<Double, f64>)` to implement `ValidGrouping<()>`
     = note: 1 redundant requirement hidden
-    = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `ValidGrouping<()>`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-    = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `AsQuery`
+    = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), ...>` to implement `ValidGrouping<()>`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+    = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `AsQuery`
 note: required by a bound in `diesel::select`
    --> DIESEL/diesel/diesel/src/query_builder/functions.rs
     |
@@ -310,12 +310,12 @@ error[E0277]: cannot select `{integer}` from `NoFromClause`
                `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
                `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
              and N others
-     = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `SelectableExpression<NoFromClause>`
+     = note: required for `({integer}, Bound<Double, f64>)` to implement `SelectableExpression<NoFromClause>`
      = note: 1 redundant requirement hidden
-     = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `SelectableExpression<NoFromClause>`
-     = note: required for `SelectClause<ArrayLiteral<({integer}, Bound<Double, f64>), Double>>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+     = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), ...>` to implement `SelectableExpression<NoFromClause>`
+     = note: required for `SelectClause<ArrayLiteral<({integer}, ...), ...>>` to implement `SelectClauseExpression<NoFromClause>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -344,11 +344,11 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
                `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
                `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
              and N others
-     = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `ValidGrouping<()>`
+     = note: required for `({integer}, Bound<Double, f64>)` to implement `ValidGrouping<()>`
      = note: 1 redundant requirement hidden
-     = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), Double>` to implement `ValidGrouping<()>`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `Query`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+     = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), ...>` to implement `ValidGrouping<()>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `Query`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -377,10 +377,10 @@ error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
                (T, T1, T2, T3, T4, T5)
                (T, T1, T2, T3, T4, T5, T6)
              and N others
-     = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `QueryId`
+     = note: required for `({integer}, Bound<Double, f64>)` to implement `QueryId`
      = note: 3 redundant requirements hidden
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `QueryId`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `QueryId`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -411,10 +411,10 @@ error[E0277]: `{integer}` is no valid SQL fragment for the `Pg` backend
                `(T, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
                `(T, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
              and N others
-     = note: required for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)` to implement `QueryFragment<Pg>`
+     = note: required for `({integer}, Bound<Double, f64>)` to implement `QueryFragment<Pg>`
      = note: 4 redundant requirements hidden
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `QueryFragment<Pg>`
-     = note: required for `SelectStatement<NoFromClause, SelectClause<ArrayLiteral<..., ...>>>` to implement `LoadQuery<'_, _, Vec<f64>>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `QueryFragment<Pg>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Vec<f64>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -451,6 +451,7 @@ LL | where
 LL |     T: IntoArrayExpression<ST>,
    |        ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `array`
 
+   
 error[E0277]: cannot convert `(i32, f64)` into an expression of type `Array<diesel::sql_types::Integer>`
   --> tests/fail/array_expressions_must_be_same_type.rs:15:12
    |
@@ -469,6 +470,7 @@ LL |     select(array((1, 3f64)))
              (T, T1, T2, T3, T4, T5, T6, T7, T8)
            and N others
 
+   
 error[E0277]: cannot convert `({integer}, f64)` into an expression of type `Array<diesel::sql_types::Double>`
   --> tests/fail/array_expressions_must_be_same_type.rs:26:12
    |
@@ -486,4 +488,5 @@ LL |     select(array((1, 3f64)))
              (T, T1, T2, T3, T4, T5, T6, T7)
              (T, T1, T2, T3, T4, T5, T6, T7, T8)
            and N others
-For more information about this error, try `rustc --explain E0277`.
+
+   For more information about this error, try `rustc --explain E0277`.

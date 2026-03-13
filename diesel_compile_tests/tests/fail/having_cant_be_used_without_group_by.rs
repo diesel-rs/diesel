@@ -27,7 +27,7 @@ fn main() {
         //~^ ERROR: type annotations needed
         .select(users::name)
         .having(users::id.gt(1))
-        //~^ ERROR: the trait bound `SelectStatement<FromClause<table>, SelectClause<name>>: HavingDsl<_>` is not satisfied
+        //~^ ERROR: the trait bound `SelectStatement<..., ...>: HavingDsl<_>` is not satisfied
         .load(&mut conn);
 
     users::table

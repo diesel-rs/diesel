@@ -1,8 +1,8 @@
-error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>>`, but its trait bounds were not satisfied
+error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, ...>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:13:32
    |
 LL |       foo::table.select(foo::id).only();
-   |                                  ^^^^ method cannot be called due to unsatisfied trait bounds
+   |                                  ^^^^ method cannot be called on `SelectStatement<FromClause<table>, ...>` due to unsatisfied trait bounds
    |
   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
    |
@@ -23,11 +23,11 @@ LL | | )]
            which is required by `&mut SelectStatement<FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: diesel::dsl::OnlyDsl`
 
    
-error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>`, but its trait bounds were not satisfied
+error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, ..., ..., ...>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:15:54
    |
 LL |       foo::table.select(foo::id).filter(foo::id.eq(1)).only();
-   |                                                        ^^^^ method cannot be called due to unsatisfied trait bounds
+   |                                                        ^^^^ method cannot be called on `SelectStatement<FromClause<table>, ..., ..., ...>` due to unsatisfied trait bounds
    |
   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
    |
@@ -81,8 +81,14 @@ error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteCon
      |                       |
      |                       required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/query_builder/only.rs
+     |
+  LL | / impl<S> QueryFragment<Pg> for Only<S>
+  LL | | where
+  LL | |     S: QueryFragment<Pg>,
+     | |_________________________^
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Sqlite>`
      = note: 2 redundant requirements hidden
@@ -105,8 +111,14 @@ error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConn
      |                       |
      |                       required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
-             but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `Only<foo::table>`
+      but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/query_builder/only.rs
+     |
+  LL | / impl<S> QueryFragment<Pg> for Only<S>
+  LL | | where
+  LL | |     S: QueryFragment<Pg>,
+     | |_________________________^
      = help: for that trait implementation, expected `Pg`, found `Mysql`
      = note: required for `FromClause<Only<foo::table>>` to implement `QueryFragment<Mysql>`
      = note: 2 redundant requirements hidden

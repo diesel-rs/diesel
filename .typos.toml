@@ -1,6 +1,7 @@
 [files]
 extend-exclude = [
     ".git/",
+    "diesel_compile_tests/**/*.stderr",
 ]
 ignore-hidden = false
 
