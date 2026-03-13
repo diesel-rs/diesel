@@ -329,7 +329,7 @@ where
 )]
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -349,7 +349,7 @@ pub(crate) struct DynInstrumentation {
 
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -363,7 +363,7 @@ impl core::ops::Deref for DynInstrumentation {
 
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -377,7 +377,7 @@ impl DerefMut for DynInstrumentation {
 
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -438,7 +438,7 @@ impl DynInstrumentation {
 
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -452,7 +452,7 @@ impl<I: Instrumentation> From<I> for DynInstrumentation {
 }
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -460,7 +460,7 @@ struct NoInstrumentation;
 
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
@@ -471,7 +471,7 @@ impl Instrumentation for NoInstrumentation {
 /// Unwrap unnecessary boxing levels
 #[cfg(any(
     feature = "postgres",
-    feature = "sqlite",
+    feature = "__sqlite-shared",
     feature = "mysql",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
