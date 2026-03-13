@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["days_in_month","days_in_month_leap","days_in_year","is_leap_year","weeks_in_year"],"mod":["range_validated"]};

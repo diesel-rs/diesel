@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["embed_migrations"],"struct":["CombinedMigrationSource","EmbeddedMigrations","FileBasedMigrations","HarnessWithOutput","RustMigration","RustMigrationSource"],"trait":["MigrationHarness","TypedMigration"]};
