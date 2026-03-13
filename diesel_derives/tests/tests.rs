@@ -10,6 +10,8 @@ mod as_changeset;
 mod as_expression;
 mod associations;
 mod auto_type;
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+mod enum_;
 mod identifiable;
 mod insertable;
 mod multiconnection;
