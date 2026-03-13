@@ -1,4 +1,3 @@
-use core::marker::PhantomData;
 use std::io::BufRead;
 
 use super::CommonOptions;
@@ -13,11 +12,13 @@ use crate::deserialize::FromSqlRow;
 use crate::pg::Pg;
 #[cfg(feature = "postgres")]
 use crate::pg::value::TypeOidLookup;
+use crate::query_builder::ColumnList;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::QueryId;
 use crate::row::Row;
 #[cfg(feature = "postgres")]
 use crate::row::{self, Field, PartialRow, RowIndex, RowSealed};
+use crate::sql_types::SqlType;
 
 #[derive(Default, Debug)]
 pub struct CopyToOptions {
@@ -57,7 +58,7 @@ impl QueryFragment<Pg> for CopyToOptions {
 #[derive(Debug)]
 pub struct CopyToCommand<S> {
     options: CopyToOptions,
-    p: PhantomData<S>,
+    target: S,
 }
 
 impl<S> QueryId for CopyToCommand<S>
@@ -79,9 +80,40 @@ where
     ) -> crate::QueryResult<()> {
         pass.unsafe_to_cache_prepared();
         pass.push_sql("COPY ");
-        S::walk_target(pass.reborrow())?;
+        self.target.walk_target(pass.reborrow())?;
         pass.push_sql(" TO STDOUT");
         self.options.walk_ast(pass.reborrow())?;
+        Ok(())
+    }
+}
+
+/// Composes a table (for the table name) with a column selection.
+///
+/// This is used internally by `CopyToQuery::load` to produce
+/// `COPY table(col1, col2, ...) TO STDOUT` where the columns come
+/// from a `Selectable` rather than from the table's full column list.
+struct SelectionTarget<T, C> {
+    table: T,
+    columns: C,
+}
+
+impl<T, C> CopyTarget for SelectionTarget<T, C>
+where
+    T: CopyTarget + QueryFragment<Pg>,
+    C: CopyTarget<Table = T::Table> + ColumnList,
+    C::SqlType: SqlType,
+{
+    type Table = T::Table;
+    type SqlType = C::SqlType;
+
+    fn walk_target<'b>(
+        &'b self,
+        mut pass: crate::query_builder::AstPass<'_, 'b, Pg>,
+    ) -> crate::QueryResult<()> {
+        self.table.walk_ast(pass.reborrow())?;
+        pass.push_sql("(");
+        ColumnList::walk_ast(&self.columns, pass.reborrow())?;
+        pass.push_sql(")");
         Ok(())
     }
 }
@@ -295,13 +327,17 @@ where
     pub fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
     where
         U: FromSqlRow<<U::SelectExpression as Expression>::SqlType, Pg> + Selectable<Pg>,
-        U::SelectExpression: AppearsOnTable<T::Table> + CopyTarget<Table = T::Table>,
+        U::SelectExpression: AppearsOnTable<T::Table> + CopyTarget<Table = T::Table> + ColumnList,
+        T: QueryFragment<Pg>,
         C: ExecuteCopyToConnection,
     {
         let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
 
         let command = CopyToCommand {
-            p: PhantomData::<U::SelectExpression>,
+            target: SelectionTarget {
+                table: self.target,
+                columns: U::construct_selection(),
+            },
             options: CopyToOptions {
                 header: None,
                 common: CommonOptions {
@@ -410,7 +446,7 @@ where
     {
         let q = O::setup_options(self);
         let command = CopyToCommand {
-            p: PhantomData::<T>,
+            target: q.target,
             options: q.options,
         };
         ExecuteCopyToConnection::execute(conn, command)
