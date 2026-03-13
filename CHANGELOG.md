@@ -11,6 +11,9 @@ an up to date version of the specific dependency. We check this by using the uns
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
 ## Unreleased
+### Added
+* Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
+* Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
 
 ### Added
 

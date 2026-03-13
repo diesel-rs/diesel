@@ -37,7 +37,7 @@ chrono = { version = "0.4.20", default-features = false, features = [
     "clock",
     "std",
 ] }
-clap = { version = "4.4.14", features = ["cargo", "string"] }
+clap = { version = "4.5.56", features = ["cargo", "string", "derive"] }
 clap_complete = "4"
 dotenvy = "0.15"
 dunce = "1.0.5"

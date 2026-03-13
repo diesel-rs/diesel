@@ -75,6 +75,7 @@ pub(crate) mod dsl {
     pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres_backend")]
+    #[allow(ambiguous_glob_reexports)]
     pub use crate::pg::expression::dsl::*;
 
     #[cfg(feature = "__sqlite-shared")]

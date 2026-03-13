@@ -41,6 +41,7 @@ mod internal_details;
 mod joins;
 mod limit_offset;
 mod macros;
+mod migrations;
 #[cfg(feature = "postgres")]
 mod only;
 #[cfg(not(feature = "sqlite"))]
