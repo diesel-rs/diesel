@@ -54,6 +54,7 @@ pub(super) struct ConnectionOptions {
     ssl_ca: Option<CString>,
     ssl_cert: Option<CString>,
     ssl_key: Option<CString>,
+    local_infile: Option<bool>,
 }
 
 impl ConnectionOptions {
@@ -114,6 +115,17 @@ impl ConnectionOptions {
             _ => None,
         };
 
+        let local_infile = match query_pairs.get("local_infile") {
+            Some(v) => match v.parse() {
+                Ok(v) => Some(v),
+                Err(_) => {
+                    let msg = "unknown local_infile";
+                    return Err(ConnectionError::InvalidConnectionUrl(msg.into()));
+                }
+            },
+            None => None,
+        };
+
         let host = match url.host() {
             Some(Host::Ipv6(host)) => Some(CString::new(host.to_string())?),
             Some(host) if host.to_string() == "localhost" && unix_socket.is_some() => None,
@@ -146,6 +158,7 @@ impl ConnectionOptions {
             ssl_ca,
             ssl_cert,
             ssl_key,
+            local_infile,
         })
     }
 
@@ -191,6 +204,10 @@ impl ConnectionOptions {
 
     pub(super) fn ssl_mode(&self) -> Option<mysql_ssl_mode> {
         self.ssl_mode
+    }
+
+    pub(super) fn local_infile(&self) -> Option<bool> {
+        self.local_infile
     }
 }
 
@@ -425,5 +442,14 @@ mod tests {
             ssl_mode("mysql://localhost?ssl_mode=verify_identity"),
             Some(mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
         );
+    }
+
+    #[diesel_test_helper::test]
+    fn local_infile() {
+        let url = |url| ConnectionOptions::parse(url).map(|v| v.local_infile());
+        assert_eq!(url("mysql://localhost"), Ok(None));
+        assert_eq!(url("mysql://localhost?local_infile=true"), Ok(Some(true)));
+        assert_eq!(url("mysql://localhost?local_infile=false"), Ok(Some(false)));
+        url("mysql://localhost?local_infile=1").unwrap_err();
     }
 }
