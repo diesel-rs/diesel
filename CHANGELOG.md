@@ -22,8 +22,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
-* Add support for libsqlite3-sys 0.36
 * Add support for no-std environments using the SQLite backend
+
+## [2.3.7] 2026-03-13
+
+* Add support for libsqlite3-sys 0.36
+* Fix a potential resource leak if establishing a SqliteConnection fails.
 
 ## [2.3.6] 2026-01-23
 
@@ -2330,3 +2334,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.4]: https://github.com/diesel-rs/diesel/compare/v2.3.3...v2.3.4
 [2.3.5]: https://github.com/diesel-rs/diesel/compare/v2.3.4...v2.3.5
 [2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6
+[2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7
