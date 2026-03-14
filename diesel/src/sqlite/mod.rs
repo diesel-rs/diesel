@@ -4,6 +4,7 @@
 //! However, if you are writing code specifically to extend Diesel on
 //! SQLite, you may need to work with this module directly.
 
+mod auto_extension;
 pub(crate) mod backend;
 mod connection;
 pub mod expression;
@@ -12,6 +13,10 @@ pub mod query_builder;
 
 mod types;
 
+pub use self::auto_extension::AutoExtensionEntryPoint;
+pub use self::auto_extension::cancel_auto_extension;
+pub use self::auto_extension::register_auto_extension;
+pub use self::auto_extension::reset_auto_extension;
 pub use self::backend::{Sqlite, SqliteType};
 pub use self::connection::SerializedDatabase;
 pub use self::connection::SqliteBindValue;
