@@ -1,6 +1,8 @@
 use crate::schema::*;
 use diesel::sql_types::VarChar;
 use diesel::*;
+use std::rc::Rc;
+use std::sync::Arc;
 
 macro_rules! assert_sets_eq {
     ($set1:expr, $set2:expr) => {
@@ -37,6 +39,64 @@ fn filter_by_int_equality() {
     assert_eq!(
         Err(NotFound),
         users.filter(id.eq(unused_id)).first::<User>(connection)
+    );
+}
+
+#[diesel_test_helper::test]
+fn filter_rc_by_int_equality() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean_id = find_user_by_name("Sean", connection).id;
+    let tess_id = find_user_by_name("Tess", connection).id;
+    let unused_id = sean_id + tess_id;
+
+    let sean = UserRcString {
+        id: sean_id,
+        name: Rc::new("Sean".to_string()),
+        hair_color: None,
+    };
+    let tess = UserRcString {
+        id: tess_id,
+        name: Rc::new("Tess".to_string()),
+        hair_color: None,
+    };
+    assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(connection));
+    assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(connection));
+    assert_eq!(
+        Err(NotFound),
+        users
+            .filter(id.eq(unused_id))
+            .first::<UserRcString>(connection)
+    );
+}
+
+#[diesel_test_helper::test]
+fn filter_arc_by_int_equality() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean_id = find_user_by_name("Sean", connection).id;
+    let tess_id = find_user_by_name("Tess", connection).id;
+    let unused_id = sean_id + tess_id;
+
+    let sean = UserArcString {
+        id: sean_id,
+        name: Arc::new("Sean".to_string()),
+        hair_color: None,
+    };
+    let tess = UserArcString {
+        id: tess_id,
+        name: Arc::new("Tess".to_string()),
+        hair_color: None,
+    };
+    assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(connection));
+    assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(connection));
+    assert_eq!(
+        Err(NotFound),
+        users
+            .filter(id.eq(unused_id))
+            .first::<UserArcString>(connection)
     );
 }
 
