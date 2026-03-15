@@ -163,8 +163,13 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
+        let saved_search_path = self.save_search_path()?;
+
         let apply_migration = |conn: &mut C| -> Result<()> {
             migration.run(conn)?;
+            if let Some(ref path) = saved_search_path {
+                conn.restore_search_path(path)?;
+            }
             diesel::insert_into(__diesel_schema_migrations::table)
                 .values(
                     __diesel_schema_migrations::version.eq(migration.name().version().as_owned()),
@@ -178,6 +183,11 @@ where
         } else {
             apply_migration(self)?;
         }
+
+        if let Some(ref path) = saved_search_path {
+            self.restore_search_path(path)?;
+        }
+
         Ok(migration.name().version().as_owned())
     }
 
@@ -185,8 +195,13 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
+        let saved_search_path = self.save_search_path()?;
+
         let revert_migration = |conn: &mut C| -> Result<()> {
             migration.revert(conn)?;
+            if let Some(ref path) = saved_search_path {
+                conn.restore_search_path(path)?;
+            }
             diesel::delete(
                 __diesel_schema_migrations::table.find(migration.name().version().as_owned()),
             )
@@ -199,6 +214,11 @@ where
         } else {
             revert_migration(self)?;
         }
+
+        if let Some(ref path) = saved_search_path {
+            self.restore_search_path(path)?;
+        }
+
         Ok(migration.name().version().as_owned())
     }
 
