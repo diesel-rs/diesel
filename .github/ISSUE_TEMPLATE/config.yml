@@ -9,3 +9,6 @@ contact_links:
   - name: Feature Requests
     url: https://github.com/diesel-rs/diesel/discussions/categories/ideas
     about: If you want to suggest a new feature please create a new topic in our discussions forum
+  - name: Report a security vulnerability
+    url: https://github.com/diesel-rs/diesel/security/advisories/new
+    about: Please review our security policy for more details
