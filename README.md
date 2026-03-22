@@ -2,10 +2,10 @@
 
 # A safe, extensible ORM and Query Builder for Rust
 
-[![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
+[![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amain)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
-API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs/master/diesel/index.html)
+API Documentation: [latest release](https://docs.rs/diesel) – [main branch](https://docs.diesel.rs/main/diesel/index.html)
 
 [Homepage](https://diesel.rs)
 
@@ -15,9 +15,9 @@ Rust's type system to create a low overhead query builder that "feels like
 Rust."
 
 Supported databases:
-1. [PostgreSQL](https://docs.diesel.rs/master/diesel/pg/index.html)
-2. [MySQL](https://docs.diesel.rs/master/diesel/mysql/index.html)
-3. [SQLite](https://docs.diesel.rs/master/diesel/sqlite/index.html)
+1. [PostgreSQL](https://docs.diesel.rs/main/diesel/pg/index.html)
+2. [MySQL](https://docs.diesel.rs/main/diesel/mysql/index.html)
+3. [SQLite](https://docs.diesel.rs/main/diesel/sqlite/index.html)
 
 You can configure the database backend in `Cargo.toml`:
 
@@ -243,7 +243,7 @@ sql_query(include_str!("complex_users_by_organization.sql"))
 ## Code of conduct
 
 Anyone who interacts with Diesel in any space, including but not limited to
-this GitHub repository, must follow our [code of conduct](https://github.com/diesel-rs/diesel/blob/master/code_of_conduct.md).
+this GitHub repository, must follow our [code of conduct](https://github.com/diesel-rs/diesel/blob/main/code_of_conduct.md).
 
 ## License
 
@@ -256,7 +256,7 @@ Licensed under either of these:
 
 ### Contributing
 
-Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/master/CONTRIBUTING.md)
+Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/main/CONTRIBUTING.md)
 for useful information about setting up Diesel locally, coding style and common abbreviations.
 
 Unless you explicitly state otherwise, any contribution you intentionally submit

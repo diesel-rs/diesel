@@ -22,7 +22,6 @@ multiple-versions = "deny"
 skip-tree = [
     "windows-targets",
     "windows-sys",
-    "wasi",
     "rand",
 ]
 
