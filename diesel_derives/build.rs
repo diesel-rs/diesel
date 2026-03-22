@@ -241,7 +241,16 @@ fn main() {
         ),
         (
             "queryable",
-            vec![Example::new("diesel_derives__tests__queryable_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_deserialize_as_1.snap",
+                    "With `#[diesel(deserialize_as = String)]`",
+                ),
+            ],
         ),
         (
             "queryable_by_name",
