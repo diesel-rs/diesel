@@ -43,7 +43,7 @@ dotenvy = "0.15"
 dunce = "1.0.5"
 heck = "0.5.0"
 serde = { version = "1.0.193", features = ["derive", "std"] }
-toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
+toml = { version = "1.0.0", default-features = false, features = ["parse", "serde"] }
 url = "2.2.2"
 libsqlite3-sys = { workspace = true, optional = true }
 pq-sys = { workspace = true, optional = true }
