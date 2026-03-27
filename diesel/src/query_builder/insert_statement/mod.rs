@@ -12,14 +12,14 @@ pub(crate) use self::private::Insert;
 pub(crate) use self::private::{InsertOrIgnore, Replace};
 
 use super::returning_clause::*;
-use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
+use crate::backend::{sql_dialect, DieselReserveSpecialization, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
-use crate::{QuerySource, insertable::*};
+use crate::{insertable::*, QuerySource};
 use core::marker::PhantomData;
 
 pub(crate) use self::private::InsertAutoTypeHelper;
@@ -115,6 +115,11 @@ where
     /// limitations of the Rust language. If you receive an error about
     /// "overflow evaluating requirement" as a result of calling this method,
     /// you may need an `&` in front of the argument to this method.
+    ///
+    /// `#[derive(Insertable)]` usually generates implementations for both owned
+    /// and borrowed records, but `#[diesel(serialize_as)]` consumes the field
+    /// value via `.into()`. In that case, only the owned form implements
+    /// `Insertable`, so call `.values(record)` instead of `.values(&record)`.
     ///
     /// [`insert_into`]: crate::insert_into()
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
@@ -478,10 +483,10 @@ where
 
 mod private {
     use super::InsertStatement;
-    use crate::QueryResult;
-    use crate::QuerySource;
     use crate::backend::{Backend, DieselReserveSpecialization};
     use crate::query_builder::{AstPass, QueryFragment, QueryId};
+    use crate::QueryResult;
+    use crate::QuerySource;
 
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Insert;
