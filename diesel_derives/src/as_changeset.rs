@@ -44,6 +44,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let mut direct_field_assign = Vec::with_capacity(fields_for_update.len());
     let mut ref_field_ty = Vec::with_capacity(fields_for_update.len());
     let mut ref_field_assign = Vec::with_capacity(fields_for_update.len());
+    let mut embed_field_tys = Vec::new();
 
     for field in fields_for_update {
         // skip this field while generating the update
@@ -100,6 +101,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 direct_field_assign.push(field_changeset_expr_embed(field, None));
                 ref_field_ty.push(field_changeset_ty_embed(field, Some(quote!(&'update))));
                 ref_field_assign.push(field_changeset_expr_embed(field, Some(quote!(&))));
+                embed_field_tys.push(field.ty.clone());
             }
             (None, false) => {
                 direct_field_ty.push(field_changeset_ty(
@@ -146,11 +148,17 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let changeset_borrowed = if generate_borrowed_changeset {
         let mut impl_generics = item.generics.clone();
         impl_generics.params.push(parse_quote!('update));
-        let (impl_generics, _, _) = impl_generics.split_for_impl();
+        for embed_ty in &embed_field_tys {
+            impl_generics
+                .make_where_clause()
+                .predicates
+                .push(parse_quote!(&'update #embed_ty: diesel::query_builder::AsChangeset));
+        }
+        let (impl_generics, _, where_clause_borrowed) = impl_generics.split_for_impl();
 
         quote! {
             impl #impl_generics diesel::query_builder::AsChangeset for &'update #struct_name #ty_generics
-            #where_clause
+            #where_clause_borrowed
             {
                 type Target = #table_name::table;
                 type Changeset = <(#(#ref_field_ty,)*) as diesel::query_builder::AsChangeset>::Changeset;
