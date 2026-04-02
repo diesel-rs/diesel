@@ -97,10 +97,7 @@ fn order_by_group_by_column_with_aggregate_select() {
     res.sort();
     assert_eq!(
         res,
-        vec![
-            ("Sean".to_string(), Some(1)),
-            ("Tess".to_string(), Some(2)),
-        ]
+        vec![("Sean".to_string(), Some(1)), ("Tess".to_string(), Some(2)),]
     );
 }
 
