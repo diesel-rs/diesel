@@ -21,6 +21,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Fixed
 
 * Raise a compile-time error when mixing aggregate and non-aggregate expressions in an `ORDER BY` clause without a `GROUP BY` clause
+* Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
 
 ### Changed
 

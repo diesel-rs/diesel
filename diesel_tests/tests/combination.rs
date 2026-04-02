@@ -102,7 +102,7 @@ fn except() {
         NewUser::new("Jim", None),
     ];
     insert_into(users).values(&data).execute(conn).unwrap();
-    let data = users.load::<User>(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
     let sean = &data[0];
     let tess = &data[1];
     let _jim = &data[2];
