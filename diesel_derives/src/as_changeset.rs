@@ -152,7 +152,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             impl_generics
                 .make_where_clause()
                 .predicates
-                .push(parse_quote!(&'update #embed_ty: diesel::query_builder::AsChangeset));
+                .push(parse_quote!(&'update #embed_ty: diesel::query_builder::AsChangeset<Target = #table_name::table>));
         }
         let (impl_generics, _, where_clause_borrowed) = impl_generics.split_for_impl();
 

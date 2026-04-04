@@ -1,6 +1,5 @@
 ---
 source: diesel_derives/src/tests/mod.rs
-assertion_line: 108
 expression: out
 info:
   input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n    #[diesel(embed)]\n    post: Post,\n}\n"
@@ -24,7 +23,7 @@ const _: () = {
     }
     impl<'update> diesel::query_builder::AsChangeset for &'update User
     where
-        &'update Post: diesel::query_builder::AsChangeset,
+        &'update Post: diesel::query_builder::AsChangeset<Target = users::table>,
     {
         type Target = users::table;
         type Changeset = <(

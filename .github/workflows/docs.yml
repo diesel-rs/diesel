@@ -1,0 +1,42 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo doc --no-deps --all-features --workspace
+      - name: Create redirect to first crate
+        run: |
+          FIRST=$(find target/doc -maxdepth 2 -name index.html \
+            | sed 's|target/doc/\([^/]*\)/index.html|\1|' \
+            | grep -v '^target' \
+            | sort | head -1)
+          echo "<meta http-equiv=\"refresh\" content=\"0; url=${FIRST}/index.html\">" > target/doc/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
