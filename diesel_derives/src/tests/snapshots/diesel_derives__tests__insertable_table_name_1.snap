@@ -1,0 +1,89 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Insertable)]\n#[diesel(table_name = crate::schema::users)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::insertable::Insertable<crate::schema::users::table> for User
+    where
+        i32: diesel::expression::AsExpression<
+            <crate::schema::users::r#id as diesel::Expression>::SqlType,
+        >,
+        String: diesel::expression::AsExpression<
+            <crate::schema::users::r#name as diesel::Expression>::SqlType,
+        >,
+    {
+        type Values = <(
+            std::option::Option<diesel::dsl::Eq<crate::schema::users::r#id, i32>>,
+            std::option::Option<diesel::dsl::Eq<crate::schema::users::r#name, String>>,
+        ) as diesel::insertable::Insertable<crate::schema::users::table>>::Values;
+        fn values(
+            self,
+        ) -> <(
+            std::option::Option<diesel::dsl::Eq<crate::schema::users::r#id, i32>>,
+            std::option::Option<diesel::dsl::Eq<crate::schema::users::r#name, String>>,
+        ) as diesel::insertable::Insertable<crate::schema::users::table>>::Values {
+            diesel::insertable::Insertable::<
+                crate::schema::users::table,
+            >::values((
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(crate::schema::users::r#id, self.id),
+                ),
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(
+                        crate::schema::users::r#name,
+                        self.name,
+                    ),
+                ),
+            ))
+        }
+    }
+    impl<'insert> diesel::insertable::Insertable<crate::schema::users::table>
+    for &'insert User
+    where
+        &'insert i32: diesel::expression::AsExpression<
+            <crate::schema::users::r#id as diesel::Expression>::SqlType,
+        >,
+        &'insert String: diesel::expression::AsExpression<
+            <crate::schema::users::r#name as diesel::Expression>::SqlType,
+        >,
+    {
+        type Values = <(
+            std::option::Option<
+                diesel::dsl::Eq<crate::schema::users::r#id, &'insert i32>,
+            >,
+            std::option::Option<
+                diesel::dsl::Eq<crate::schema::users::r#name, &'insert String>,
+            >,
+        ) as diesel::insertable::Insertable<crate::schema::users::table>>::Values;
+        fn values(
+            self,
+        ) -> <(
+            std::option::Option<
+                diesel::dsl::Eq<crate::schema::users::r#id, &'insert i32>,
+            >,
+            std::option::Option<
+                diesel::dsl::Eq<crate::schema::users::r#name, &'insert String>,
+            >,
+        ) as diesel::insertable::Insertable<crate::schema::users::table>>::Values {
+            diesel::insertable::Insertable::<
+                crate::schema::users::table,
+            >::values((
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(crate::schema::users::r#id, &self.id),
+                ),
+                std::option::Option::Some(
+                    diesel::ExpressionMethods::eq(
+                        crate::schema::users::r#name,
+                        &self.name,
+                    ),
+                ),
+            ))
+        }
+    }
+    impl diesel::internal::derives::insertable::UndecoratedInsertRecord<
+        crate::schema::users::table,
+    > for User {}
+};
