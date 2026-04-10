@@ -350,6 +350,9 @@ You may chain [`.values()`] or [`.default_values()`]
 to add the values for that `INSERT` statement.
 In addition to tuples,
 [`.values()`] also accepts a reference to an `Insertable` struct for inserting a single record.
+When your struct uses `#[diesel(serialize_as = ...)]`, Diesel needs to consume the field value,
+so only the owned form implements `Insertable` and you must call `.values(new_user)` instead of
+`.values(&new_user)`.
 
 You may also pass [`.values()`] a `&Vec<T>` or a `&[T]` to insert multiple records at once.
 On backends that support the `DEFAULT` keyword,
