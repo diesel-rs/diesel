@@ -3,7 +3,7 @@ use diesel::*;
 
 #[diesel_test_helper::test]
 fn insert_records() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
@@ -14,7 +14,7 @@ fn insert_records() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -33,7 +33,7 @@ fn insert_records() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_vec() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = vec![
         NewUser::new("Sean", Some("Black")),
@@ -44,7 +44,7 @@ fn insert_records_as_vec() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -63,7 +63,7 @@ fn insert_records_as_vec() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_static_array() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = [
         NewUser::new("Sean", Some("Black")),
@@ -74,7 +74,7 @@ fn insert_records_as_static_array() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -93,7 +93,7 @@ fn insert_records_as_static_array() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_static_array_ref() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = &[
         NewUser::new("Sean", Some("Black")),
@@ -104,7 +104,7 @@ fn insert_records_as_static_array_ref() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -123,7 +123,7 @@ fn insert_records_as_static_array_ref() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_boxed_static_array() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = Box::new([
         NewUser::new("Sean", Some("Black")),
@@ -134,7 +134,7 @@ fn insert_records_as_boxed_static_array() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -505,7 +505,7 @@ struct BorrowedUser<'a> {
 
 #[diesel_test_helper::test]
 fn insert_borrowed_content() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users: &[_] = &[BorrowedUser { name: "Sean" }, BorrowedUser { name: "Tess" }];
     insert_into(users)
@@ -513,7 +513,7 @@ fn insert_borrowed_content() {
         .execute(connection)
         .unwrap();
 
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
     let expected_users = vec![
         User::new(actual_users[0].id, "Sean"),
         User::new(actual_users[1].id, "Tess"),
@@ -929,6 +929,7 @@ fn upsert_with_composite_primary_key_do_nothing() {
         .unwrap();
     let users = users::table
         .select(users::name)
+        .order(users::id)
         .load::<String>(conn)
         .unwrap();
 
