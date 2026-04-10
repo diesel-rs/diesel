@@ -182,7 +182,20 @@ fn main() {
         ),
         (
             "associations",
-            vec![Example::new("diesel_derives__tests__associations_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__associations_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__associations_table_name_1.snap",
+                    "With `#[diesel(table_name = crate::schema::posts)]`",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__associations_column_name_1.snap",
+                    "With `#[diesel(column_name = user_id)]`",
+                ),
+            ],
         ),
         (
             "auto_type",
