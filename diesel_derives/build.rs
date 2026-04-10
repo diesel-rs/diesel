@@ -244,7 +244,16 @@ fn main() {
         ),
         (
             "insertable",
-            vec![Example::new("diesel_derives__tests__insertable_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_table_name_1.snap",
+                    "With `#[diesel(table_name = crate::schema::users)]`",
+                ),
+            ],
         ),
         (
             "multiconnection",
