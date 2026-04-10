@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(Associations)]\n#[diesel(belongs_to(User))]\n#[diesel(table_name = crate::schema::posts)]\nstruct Post {\n    id: i32,\n    title: String,\n    user_id: i32,\n}\n"
+  input: "#[derive(Associations)]\n#[diesel(belongs_to(User))]\n#[diesel(table_name = crate::schema::secret_posts)]\nstruct Post {\n    id: i32,\n    title: String,\n    user_id: i32,\n}\n"
 ---
 const _: () = {
     use diesel;
@@ -13,12 +13,12 @@ const _: () = {
         for<'__a> &'__a User: diesel::associations::Identifiable<Id = &'__a __FK>,
     {
         type ForeignKey = __FK;
-        type ForeignKeyColumn = crate::schema::posts::user_id;
+        type ForeignKeyColumn = crate::schema::secret_posts::user_id;
         fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
             std::convert::Into::into(&self.user_id)
         }
         fn foreign_key_column() -> Self::ForeignKeyColumn {
-            crate::schema::posts::user_id
+            crate::schema::secret_posts::user_id
         }
     }
     impl<__FK> diesel::associations::BelongsTo<&'_ User> for Post
@@ -28,12 +28,12 @@ const _: () = {
         for<'__a> &'__a User: diesel::associations::Identifiable<Id = &'__a __FK>,
     {
         type ForeignKey = __FK;
-        type ForeignKeyColumn = crate::schema::posts::user_id;
+        type ForeignKeyColumn = crate::schema::secret_posts::user_id;
         fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
             std::convert::Into::into(&self.user_id)
         }
         fn foreign_key_column() -> Self::ForeignKeyColumn {
-            crate::schema::posts::user_id
+            crate::schema::secret_posts::user_id
         }
     }
 };

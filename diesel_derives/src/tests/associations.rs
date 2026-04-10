@@ -25,7 +25,7 @@ pub(crate) fn associations_1() {
 pub(crate) fn associations_table_name_1() {
     let input = quote::quote! {
         #[diesel(belongs_to(User))]
-        #[diesel(table_name = crate::schema::posts)]
+        #[diesel(table_name = crate::schema::secret_posts)]
         struct Post {
             id: i32,
             title: String,
