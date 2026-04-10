@@ -22,6 +22,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * Raise a compile-time error when mixing aggregate and non-aggregate expressions in an `ORDER BY` clause without a `GROUP BY` clause
 
+### Fixed
+
+* Fixed `#[derive(AsChangeset)]` producing a compile error (E0277) when a `#[diesel(embed)]` field's type does not implement `AsChangeset` by reference (e.g. because it uses `#[diesel(serialize_as)]`)
+
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0

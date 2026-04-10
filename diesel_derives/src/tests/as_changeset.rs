@@ -156,3 +156,21 @@ pub(crate) fn as_changeset_treat_skip_update_1() {
         "as_changeset_treat_skip_update_1",
     );
 }
+
+#[test]
+pub(crate) fn as_changeset_embed_with_where_clause_1() {
+    let input = quote::quote! {
+        struct User {
+            id: i32,
+            bar: String,
+            #[diesel(embed)]
+            embed: Embed
+        }
+    };
+    expand_with(
+        &crate::derive_as_changeset_inner as &dyn Fn(_) -> _,
+        input,
+        derive(syn::parse_quote!(#[derive(AsChangeset)])),
+        "as_changeset_embed_with_where_clause_1",
+    );
+}

@@ -2,40 +2,40 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n    #[diesel(embed)]\n    post: Post,\n}\n"
+  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    bar: String,\n    #[diesel(embed)]\n    embed: Embed,\n}\n"
 ---
 const _: () = {
     use diesel;
     impl diesel::query_builder::AsChangeset for User {
         type Target = users::table;
         type Changeset = <(
-            diesel::dsl::Eq<users::r#name, String>,
-            Post,
+            diesel::dsl::Eq<users::r#bar, String>,
+            Embed,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
         ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
             diesel::query_builder::AsChangeset::as_changeset((
-                diesel::ExpressionMethods::eq(users::r#name, self.name),
-                self.post,
+                diesel::ExpressionMethods::eq(users::r#bar, self.bar),
+                self.embed,
             ))
         }
     }
     impl<'update> diesel::query_builder::AsChangeset for &'update User
     where
-        &'update Post: diesel::query_builder::AsChangeset<Target = users::table>,
+        &'update Embed: diesel::query_builder::AsChangeset<Target = users::table>,
     {
         type Target = users::table;
         type Changeset = <(
-            diesel::dsl::Eq<users::r#name, &'update String>,
-            &'update Post,
+            diesel::dsl::Eq<users::r#bar, &'update String>,
+            &'update Embed,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
         ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
             diesel::query_builder::AsChangeset::as_changeset((
-                diesel::ExpressionMethods::eq(users::r#name, &self.name),
-                &self.post,
+                diesel::ExpressionMethods::eq(users::r#bar, &self.bar),
+                &self.embed,
             ))
         }
     }
