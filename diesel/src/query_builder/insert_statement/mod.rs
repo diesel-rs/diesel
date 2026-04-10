@@ -12,14 +12,14 @@ pub(crate) use self::private::Insert;
 pub(crate) use self::private::{InsertOrIgnore, Replace};
 
 use super::returning_clause::*;
-use crate::backend::{sql_dialect, DieselReserveSpecialization, SqlDialect};
+use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
-use crate::{insertable::*, QuerySource};
+use crate::{QuerySource, insertable::*};
 use core::marker::PhantomData;
 
 pub(crate) use self::private::InsertAutoTypeHelper;
@@ -483,10 +483,10 @@ where
 
 mod private {
     use super::InsertStatement;
-    use crate::backend::{Backend, DieselReserveSpecialization};
-    use crate::query_builder::{AstPass, QueryFragment, QueryId};
     use crate::QueryResult;
     use crate::QuerySource;
+    use crate::backend::{Backend, DieselReserveSpecialization};
+    use crate::query_builder::{AstPass, QueryFragment, QueryId};
 
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Insert;
