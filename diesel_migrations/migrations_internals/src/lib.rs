@@ -93,6 +93,14 @@ pub fn migrations_directories(
                         || entry.file_name().to_string_lossy().starts_with('.')
                     {
                         None
+                    } else if entry.metadata()?.is_dir() {
+                        let inner_dir_entry_count = entry.path().read_dir()?.count();
+
+                        if inner_dir_entry_count == 0 {
+                            None
+                        } else {
+                            Some(entry)
+                        }
                     } else {
                         Some(entry)
                     },
