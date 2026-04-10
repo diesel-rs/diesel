@@ -2,8 +2,22 @@
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 extern crate libsqlite3_sys as ffi;
 
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use sqlite_wasm_rs as ffi;
+
+/// A read only SQLite Blob
+///
+/// This interface allows to incrementally read a blob from a SQLite database.
+/// Notably this type implements [`std::io::Read`] and [`std::io::Seek`] to integrate
+/// with standard Rust IO mechanisms.
+///
+/// You can use [`SqliteConnection::get_read_only_blob`](super::SqliteConnection::get_read_only_blob)
+/// to get a new instance of this type
+///
+/// See the [SQLite documentation](https://sqlite.org/c3ref/blob_open.html) for more details
 #[expect(missing_debug_implementations)]
-pub struct SqliteBlob<'conn> {
+#[cfg_attr(not(feature = "std"), expect(dead_code))]
+pub struct SqliteReadOnlyBlob<'conn> {
     pub(crate) blob: core::ptr::NonNull<ffi::sqlite3_blob>,
     pub(crate) read_index: usize,
 
@@ -11,7 +25,7 @@ pub struct SqliteBlob<'conn> {
     pub(crate) _pd: core::marker::PhantomData<&'conn mut ffi::sqlite3_blob>,
 }
 
-impl Drop for SqliteBlob<'_> {
+impl Drop for SqliteReadOnlyBlob<'_> {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
 
@@ -26,11 +40,13 @@ impl Drop for SqliteBlob<'_> {
     }
 }
 
-impl SqliteBlob<'_> {
+impl SqliteReadOnlyBlob<'_> {
+    /// Is the blob storage empty
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
+    /// The size of the underlying blob in bytes
     pub fn len(&self) -> usize {
         self.blob_size
     }
@@ -63,11 +79,14 @@ impl SqliteBlob<'_> {
     }
 }
 
+#[cfg(feature = "std")]
 fn to_io_error(error: core::num::TryFromIntError) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, Box::new(error))
 }
 
-impl std::io::Read for SqliteBlob<'_> {
+// SEE https://github.com/rust-lang/rust/issues/48331
+#[cfg(feature = "std")]
+impl std::io::Read for SqliteReadOnlyBlob<'_> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let buflen: i32 = buf.len().try_into().map_err(to_io_error)?;
         let offset: i32 = self.read_index.try_into().map_err(to_io_error)?;
@@ -104,7 +123,8 @@ impl std::io::Read for SqliteBlob<'_> {
     }
 }
 
-impl std::io::Seek for SqliteBlob<'_> {
+#[cfg(feature = "std")]
+impl std::io::Seek for SqliteReadOnlyBlob<'_> {
     fn seek(&mut self, pos: std::io::SeekFrom) -> std::io::Result<u64> {
         match pos {
             std::io::SeekFrom::Start(n) => {

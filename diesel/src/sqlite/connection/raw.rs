@@ -279,26 +279,22 @@ impl RawConnection {
         database_name: &str,
         table_name: &str,
         column_name: &str,
-        pkey: i64,
-    ) -> Result<super::sqlite_blob::SqliteBlob<'conn>, Error> {
+        row_id: i64,
+    ) -> Result<super::sqlite_blob::SqliteReadOnlyBlob<'conn>, Error> {
         let database_name = alloc::ffi::CString::new(database_name)?;
         let column_name = alloc::ffi::CString::new(column_name)?;
         let table_name = alloc::ffi::CString::new(table_name)?;
 
         let mut blob: *mut ffi::sqlite3_blob = core::ptr::null_mut();
 
-        // SAFETY: From the SQLite docs:
-        //
-        // > For the main database file, the database name is "main"
-        //
-        // The other variables are properly initialized
+        // SAFETY: All variables are properly initialized
         let ret = unsafe {
             ffi::sqlite3_blob_open(
                 self.internal_connection.as_ptr(),
                 database_name.as_c_str().as_ptr(),
                 table_name.as_c_str().as_ptr(),
                 column_name.as_c_str().as_ptr(),
-                pkey,
+                row_id,
                 0,
                 &mut blob,
             )
@@ -319,7 +315,7 @@ impl RawConnection {
         let blob_size = unsafe { ffi::sqlite3_blob_bytes(blob.as_ptr()) };
         let blob_size = usize::try_from(blob_size).map_err(Error::IntegerConversion)?;
 
-        Ok(super::sqlite_blob::SqliteBlob {
+        Ok(super::sqlite_blob::SqliteReadOnlyBlob {
             blob,
             read_index: 0,
             blob_size,

@@ -10,7 +10,7 @@ mod owned_row;
 mod raw;
 mod row;
 mod serialized_database;
-mod sqlite_blob;
+pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
@@ -430,23 +430,24 @@ impl SqliteConnection {
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
-    /// # fn run_test() -> QueryResult<()> {
+    /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
     /// use std::io::Read;
     /// use diesel::connection::SimpleConnection;
     /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
     /// conn.batch_execute("CREATE TABLE myblobs (id INTEGER PRIMARY KEY, mydata BLOB)")?;
     /// conn.batch_execute("INSERT INTO myblobs (mydata) VALUES ('abc')")?;
-    /// let mut data = conn.get_blob::<myblobs::mydata>(1).unwrap();
+    /// let mut data = conn.get_read_only_blob(myblobs::mydata, 1)?;
     /// let mut buf = vec![];
-    /// data.read_to_end(&mut buf).unwrap();
+    /// data.read_to_end(&mut buf)?;
     /// assert_eq!(buf, b"abc");
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_blob<'conn, 'query, U>(
+    pub fn get_read_only_blob<'conn, 'query, U>(
         &'conn self,
-        primary_key: i64,
-    ) -> Result<sqlite_blob::SqliteBlob<'conn>, Error>
+        blob_column: U,
+        row_id: i64,
+    ) -> Result<sqlite_blob::SqliteReadOnlyBlob<'conn>, Error>
     where
         'query: 'conn,
         U: crate::Column,
@@ -454,13 +455,15 @@ impl SqliteConnection {
         <U::Table as nodes::StaticQueryFragment>::Component: HasDatabaseAndTableName,
     {
         use crate::query_builder::nodes::StaticQueryFragment;
+        // this mostly exists for a more natural way to call this function
+        let _ = blob_column;
 
         let database_name = U::Table::STATIC_COMPONENT.database_name().unwrap_or("main");
         let column_name = U::NAME;
         let table_name = U::Table::STATIC_COMPONENT.table_name();
 
         self.raw_connection
-            .blob_open(database_name, table_name, column_name, primary_key)
+            .blob_open(database_name, table_name, column_name, row_id)
     }
 
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
@@ -1605,13 +1608,13 @@ mod tests {
         )
         .execute(conn);
 
-        let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
         let mut buf = vec![];
         data.read_to_end(&mut buf).unwrap();
 
         assert_eq!(buf, b"abc");
 
-        let mut data2 = conn.get_blob::<blobs::data2>(1).unwrap();
+        let mut data2 = conn.get_read_only_blob(blobs::data2, 1).unwrap();
         let mut buf = vec![];
         data2.read_to_end(&mut buf).unwrap();
 
@@ -1638,7 +1641,7 @@ mod tests {
 
         let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abcdefghi')").execute(conn);
 
-        let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
 
         let mut buf = [0; 1];
         assert_eq!(data.read(&mut buf).unwrap(), 1);
@@ -1689,7 +1692,7 @@ mod tests {
 
         let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
 
-        let data = conn.get_blob::<blobs::data>(1).unwrap();
+        let data = conn.get_read_only_blob(blobs::data, 1).unwrap();
         drop(data);
 
         let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('def')").execute(conn);
@@ -1714,7 +1717,7 @@ mod tests {
         let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
 
         {
-            let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+            let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
             let mut buf = vec![];
             data.read_to_end(&mut buf).unwrap();
             assert_eq!(buf, b"abc");
@@ -1723,7 +1726,7 @@ mod tests {
         let res = conn.exclusive_transaction(|conn| {
             crate::sql_query("UPDATE blobs SET data = 'def' WHERE id = 1").execute(conn)?;
 
-            let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+            let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
             let mut buf = vec![];
             data.read_to_end(&mut buf).unwrap();
             assert_eq!(buf, b"def");
@@ -1733,7 +1736,7 @@ mod tests {
 
         assert_eq!(res.unwrap_err(), Error::RollbackTransaction);
 
-        let mut data = conn.get_blob::<blobs::data>(1).unwrap();
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
         let mut buf = vec![];
         data.read_to_end(&mut buf).unwrap();
         assert_eq!(buf, b"abc");
