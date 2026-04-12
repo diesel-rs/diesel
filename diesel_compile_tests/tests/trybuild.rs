@@ -40,6 +40,8 @@ fn main() -> ui_test::color_eyre::Result<()> {
         "\\/rustc\\/[a-z0-9]*\\/library",
         "/rustc/0000000000000000000000000000000000000000/library",
     );
+    // replace rust standard library paths
+    config.filter("[a-z0-9_\\-\\.\\/]*rust/library", "/rustc/library");
     // that's not perfect as it might
     // as it breaks layout it some cases
     config.filter("[0-9]+ \\|", "LL |");

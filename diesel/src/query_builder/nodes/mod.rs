@@ -53,8 +53,8 @@ impl<DB: Backend> MiddleFragment<DB> for &str {
 #[derive(Debug, Copy, Clone)]
 #[doc(hidden)] // used by the table macro
 pub struct InfixNode<T, U, M> {
-    lhs: T,
-    rhs: U,
+    pub(crate) lhs: T,
+    pub(crate) rhs: U,
     middle: M,
 }
 

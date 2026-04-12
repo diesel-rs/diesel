@@ -152,6 +152,28 @@ To run rustfmt tests locally:
 You can also use rustfmt to make corrections or highlight issues in your editor.
 Check out [their README](https://github.com/rust-lang/rustfmt) for details.
 
+### Usage of LLM's/AI agents
+
+The Diesel project does not strictly forbid the usage of LLM's and AI agents for submitting pull requests. 
+There are still a number of restrictions and rules you as a PR author are asked to follow:
+
+* You need to make sure that the code you are trying to submit can be licences under the relevant open source License used by Diesel. It cannot contain any code that is incompatible with the licenses used by Diesel.
+* You need to fully understand and review any generated code before submitting a PR. The expectation from the reviewer team is 
+  to discuss these changes with you as a person.
+* You need to ensure that the submitted code satisfies the general requirements of submitting PR's to Diesel. That especially includes the following points:
+    + The Code passes all tests and style checks
+    + The change is as minimal as possible. Huge changes will be just dismissed
+    + You verified that the change actually fixes/implements what it is supposed to fix/implement
+    + The change contains a sufficient amount of documentation to help others following the code
+* The usage of LLM's/AI need to be disclosed (See the linked NlNet resource on how to do that in a meaningful way)
+* We ask you to write pull request descriptions and discussion comments on your own. 
+  We are able to ask an AI agent on our own if we feel that might be helpful.
+* For issues marked as "mentoring available" or "good first issue" consider that these issues are for onboarding new contributors 
+  to the code base. Consider if fully solving such an issue only by using LLM's/AI is helping you to gain experience.
+
+For a more in depth description we would like to point to NlNet's policies about [using generative AI](https://nlnet.nl/foundation/policies/generativeAI/) in projects they are funding. This document outlines many of the points 
+above in with more details and explanations. 
+
 ### Common Abbreviations
 
 `ST`: Sql Type. Basically always has the `NativeSqlType` constraint

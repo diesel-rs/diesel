@@ -32,7 +32,6 @@ diesel_test_helper = { path = "../diesel_test_helper" }
 # Something is dependent on it, so we use feature to override it.
 getrandom = { version = "0.4", features = ["wasm_js"] }
 getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
-getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
 wasm-bindgen-test = "0.3.49"
 sqlite-wasm-rs = "0.5.1"
 

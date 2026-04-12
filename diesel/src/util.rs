@@ -41,6 +41,11 @@ pub(crate) mod std_compat {
 #[cfg(feature = "std")]
 pub(crate) mod std_compat {
     pub(crate) use std::collections::HashMap;
+    #[cfg(any(
+        feature = "__sqlite-shared",
+        feature = "mysql_backend",
+        feature = "postgres_backend"
+    ))]
     pub(crate) use std::collections::hash_map::Entry;
     #[cfg(feature = "__sqlite-shared")]
     pub(crate) use std::panic::catch_unwind;

@@ -12,4 +12,4 @@ keywords = ["diesel", "internal"]
 
 [dependencies]
 serde = {version = "1.0.0", features = ["derive"]}
-toml = { version = "0.9", default-features = false, features = ["parse", "serde"] }
+toml = { version = "1.0.0", default-features = false, features = ["parse", "serde"] }

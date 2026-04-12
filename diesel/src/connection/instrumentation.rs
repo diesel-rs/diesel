@@ -1,7 +1,7 @@
 use alloc::boxed::Box;
 use core::fmt::{Debug, Display};
 use core::num::NonZeroU32;
-use core::ops::{Deref, DerefMut};
+use core::ops::DerefMut;
 use downcast_rs::Downcast;
 
 #[cfg(feature = "std")]
@@ -327,6 +327,12 @@ where
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 /// An optional dyn instrumentation.
 ///
 /// For ease of use, this type implements [`Deref`] and [`DerefMut`] to `&dyn Instrumentation`,
@@ -341,7 +347,13 @@ pub(crate) struct DynInstrumentation {
     inner: Option<Box<dyn Instrumentation>>,
 }
 
-impl Deref for DynInstrumentation {
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
+impl core::ops::Deref for DynInstrumentation {
     type Target = dyn Instrumentation;
 
     fn deref(&self) -> &Self::Target {
@@ -349,6 +361,12 @@ impl Deref for DynInstrumentation {
     }
 }
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl DerefMut for DynInstrumentation {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner
@@ -357,6 +375,12 @@ impl DerefMut for DynInstrumentation {
     }
 }
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl DynInstrumentation {
     /// Create a instance of the default instrumentation provider
     #[diesel_derives::__diesel_public_if(
@@ -412,6 +436,12 @@ impl DynInstrumentation {
     }
 }
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl<I: Instrumentation> From<I> for DynInstrumentation {
     fn from(instrumentation: I) -> Self {
         Self {
@@ -420,14 +450,31 @@ impl<I: Instrumentation> From<I> for DynInstrumentation {
         }
     }
 }
-
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 struct NoInstrumentation;
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl Instrumentation for NoInstrumentation {
     fn on_connection_event(&mut self, _: InstrumentationEvent<'_>) {}
 }
 
 /// Unwrap unnecessary boxing levels
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 fn unpack_instrumentation(
     mut instrumentation: Box<dyn Instrumentation>,
 ) -> Box<dyn Instrumentation> {

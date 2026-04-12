@@ -116,6 +116,11 @@ where
     /// "overflow evaluating requirement" as a result of calling this method,
     /// you may need an `&` in front of the argument to this method.
     ///
+    /// `#[derive(Insertable)]` usually generates implementations for both owned
+    /// and borrowed records, but `#[diesel(serialize_as)]` consumes the field
+    /// value via `.into()`. In that case, only the owned form implements
+    /// `Insertable`, so call `.values(record)` instead of `.values(&record)`.
+    ///
     /// [`insert_into`]: crate::insert_into()
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
