@@ -1214,8 +1214,8 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
                 for diesel::internal::derives::multiconnection::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
         },
         quote::quote! {
-            <I, C, PK, Tab, QId, const HAS_STATIC_QUERY_ID: bool> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiBatchUpdateSupport>
-                for diesel::internal::derives::multiconnection::BatchUpdate<I, C, PK, Tab, QId, HAS_STATIC_QUERY_ID>
+            <I, C, PK, Tab> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiBatchUpdateSupport>
+                for diesel::internal::derives::multiconnection::BatchUpdate<I, C, PK, Tab>
         },
         quote::quote! {
             <S> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiAliasSyntax>

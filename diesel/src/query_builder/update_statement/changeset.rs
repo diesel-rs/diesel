@@ -231,7 +231,7 @@ where
     &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
 {
     type Target = U::Target;
-    type Changeset = BatchUpdate<I, C, PK, U::Target, (), false>;
+    type Changeset = BatchUpdate<I, C, PK, U::Target>;
 
     fn as_changeset(self) -> Self::Changeset {
         let values = self
@@ -270,7 +270,7 @@ where
     &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
 {
     type Target = U::Target;
-    type Changeset = BatchUpdate<I, C, PK, U::Target, (), false>;
+    type Changeset = BatchUpdate<I, C, PK, U::Target>;
 
     fn as_changeset(self) -> Self::Changeset {
         let mut values = Vec::with_capacity(N);

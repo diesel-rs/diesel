@@ -13,6 +13,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## Unreleased
 
 ### Added
+* Added Batch-Update support for the Postgres and MySQL backends.
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
 * Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
@@ -29,6 +30,11 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Added support for libsqlite3-sys 0.37.0
+
+## [2.3.8] 2026-04-13
+
+* Add support for Batch-Update for Postgres and MySQL
+* Add Batch-Update example to `diesel::update` docs.
 
 ## [2.3.7] 2026-03-13
 

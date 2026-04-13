@@ -2,6 +2,7 @@
 
 use super::query_builder::PgQueryBuilder;
 use super::{PgMetadataLookup, PgValue};
+use crate::backend::sql_dialect::batch_update_support::SupportsBatchUpdate;
 use crate::backend::*;
 use crate::deserialize::Queryable;
 use crate::expression::operators::LikeIsAllowedForType;
@@ -135,7 +136,7 @@ impl SqlDialect for Pg {
 
     type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
 
-    type BatchUpdateSupport = sql_dialect::batch_update_support::PostgresLikeBatchUpdateSupport;
+    type BatchUpdateSupport = PostgresLikeBatchUpdateSupport;
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
@@ -185,3 +186,8 @@ pub struct PgNotification {
     /// not set and empty here)
     pub payload: String,
 }
+
+#[derive(Debug, Copy, Clone)]
+pub struct PostgresLikeBatchUpdateSupport;
+
+impl SupportsBatchUpdate for PostgresLikeBatchUpdateSupport {}

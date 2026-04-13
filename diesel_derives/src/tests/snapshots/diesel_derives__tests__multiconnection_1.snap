@@ -593,20 +593,10 @@ mod multi_connection_impl {
             C,
             PK,
             Tab,
-            QId,
-            const HAS_STATIC_QUERY_ID: bool,
         > diesel::query_builder::QueryFragment<
             super::backend::MultiBackend,
             super::backend::MultiBatchUpdateSupport,
-        >
-        for diesel::internal::derives::multiconnection::BatchUpdate<
-            I,
-            C,
-            PK,
-            Tab,
-            QId,
-            HAS_STATIC_QUERY_ID,
-        >
+        > for diesel::internal::derives::multiconnection::BatchUpdate<I, C, PK, Tab>
         where
             Self: diesel::query_builder::QueryFragment<
                     <PgConnection as diesel::connection::Connection>::Backend,

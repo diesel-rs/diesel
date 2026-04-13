@@ -500,24 +500,8 @@ pub(crate) mod sql_dialect {
 
         /// Indicates that this backend does not support batch
         /// update statements.
-        /// In this case diesel will emulate batch update support
-        /// by updating each row on its own
         #[derive(Debug, Copy, Clone)]
         pub struct DoesNotSupportBatchUpdate;
-
-        /// Indicates that this backend supports postgres style
-        /// batch update statements to update multiple rows using one
-        /// update statement
-        #[derive(Debug, Copy, Clone)]
-        pub struct PostgresLikeBatchUpdateSupport;
-
-        /// Indicates that this backend supports mysql style
-        /// batch update statements to update multiple rows using one
-        /// update statement
-        #[derive(Debug, Copy, Clone)]
-        pub struct MySqlLikeBatchUpdateSupport;
-
-        impl SupportsBatchUpdate for PostgresLikeBatchUpdateSupport {}
     }
 
     /// This module contains all reusable options to configure
