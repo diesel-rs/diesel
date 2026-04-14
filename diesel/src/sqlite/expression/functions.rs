@@ -343,7 +343,7 @@ extern "SQL" {
     /// - [`json_extract_double`](json_extract_double_1()) for floating-point values
     /// - [`json_extract_json`](json_extract_json_1()) for JSON objects or arrays
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -359,7 +359,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::json;
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": "xyz"});
     /// let result = diesel::select(json_extract_string_1::<Json, _, _>(json, "$.a"))
@@ -397,7 +397,7 @@ extern "SQL" {
     /// - [`json_extract_double`](json_extract_double_1()) for floating-point values
     /// - [`json_extract_json`](json_extract_json_1()) for JSON objects or arrays
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -413,7 +413,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::json;
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
     /// let result = diesel::select(json_extract_integer_1::<Json, _, _>(json, "$.c[2].f"))
@@ -446,7 +446,7 @@ extern "SQL" {
     /// - [`json_extract_integer`](json_extract_integer_1()) for integer values
     /// - [`json_extract_json`](json_extract_json_1()) for JSON objects or arrays
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -462,7 +462,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::json;
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": 3.14});
     /// let result = diesel::select(json_extract_double_1::<Json, _, _>(json, "$.a"))
@@ -494,7 +494,7 @@ extern "SQL" {
     /// - [`json_extract_integer`](json_extract_integer_1()) for integer values
     /// - [`json_extract_double`](json_extract_double_1()) for floating-point values
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -510,7 +510,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::{json, Value};
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
     /// let result = diesel::select(json_extract_json_1::<Json, _, _>(json, "$"))
@@ -565,7 +565,7 @@ extern "SQL" {
     /// - [`jsonb_extract_double`](jsonb_extract_double_1()) for floating-point values
     /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -581,7 +581,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::json;
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": "xyz"});
     /// let result = diesel::select(jsonb_extract_string_1::<Json, _, _>(json, "$.a"))
@@ -616,7 +616,7 @@ extern "SQL" {
     /// - [`jsonb_extract_double`](jsonb_extract_double_1()) for floating-point values
     /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -632,7 +632,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::json;
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
     /// let result = diesel::select(jsonb_extract_integer_1::<Json, _, _>(json, "$.c[2].f"))
@@ -662,7 +662,7 @@ extern "SQL" {
     /// - [`jsonb_extract_integer`](jsonb_extract_integer_1()) for integer values
     /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -678,7 +678,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::json;
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": 3.14});
     /// let result = diesel::select(jsonb_extract_double_1::<Json, _, _>(json, "$.a"))
@@ -715,7 +715,7 @@ extern "SQL" {
     /// - [`jsonb_extract_integer`](jsonb_extract_integer_1()) for integer values
     /// - [`jsonb_extract_double`](jsonb_extract_double_1()) for floating-point values
     ///
-    /// This function requires at least SQLite 3.38 or newer.
+    /// This function requires at least SQLite 3.9 or newer.
     ///
     /// # Example
     ///
@@ -731,7 +731,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Jsonb, Nullable};
     /// #     use serde_json::{json, Value};
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 9, 0);
     ///
     /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
     /// let result = diesel::select(jsonb_extract_jsonb_1::<Json, _, _>(json, "$"))
