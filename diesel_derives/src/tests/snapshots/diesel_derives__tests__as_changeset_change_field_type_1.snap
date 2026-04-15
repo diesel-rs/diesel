@@ -6,6 +6,15 @@ info:
 ---
 const _: () = {
     use diesel;
+    fn _check_owned()
+    where
+        String: diesel::expression::AsExpression<
+            <users::r#name as diesel::Expression>::SqlType,
+        >,
+        String: diesel::expression::AsExpression<
+            <users::r#age as diesel::Expression>::SqlType,
+        >,
+    {}
     impl diesel::query_builder::AsChangeset for User {
         type Target = users::table;
         type Changeset = <(

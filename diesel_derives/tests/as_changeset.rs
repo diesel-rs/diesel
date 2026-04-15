@@ -1001,3 +1001,25 @@ fn optional_embedded_struct() {
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
 }
+
+// that's just a compile test to make sure that this pattern works
+// The expected behaviour here is that there are no `&UserAttributes: AsChangeset`
+// impl and no `&UserForm: AsChangeset` impl as well.
+#[test]
+fn embedded_with_serialize_as_on_inner_struct() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserAttributes<'a> {
+        hair_color: &'a str,
+        #[diesel(serialize_as = String)]
+        r#type: &'a str,
+    }
+
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserForm<'a> {
+        name: &'a str,
+        #[diesel(embed)]
+        attribute: Option<UserAttributes<'a>>,
+    }
+}
