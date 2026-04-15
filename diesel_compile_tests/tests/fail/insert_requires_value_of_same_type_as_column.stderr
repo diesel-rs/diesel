@@ -5,14 +5,14 @@ LL |     insert_into(users).values(&name.eq(1));
    |                                     ^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `{integer}`
    |
    = help: the following other types implement trait `AsExpression<T>`:
-             `&&f32` implements `AsExpression<Nullable<diesel::sql_types::Float>>`
-             `&&f32` implements `AsExpression<diesel::sql_types::Float>`
-             `&&f64` implements `AsExpression<Nullable<diesel::sql_types::Double>>`
-             `&&f64` implements `AsExpression<diesel::sql_types::Double>`
-             `&&i16` implements `AsExpression<Nullable<diesel::sql_types::SmallInt>>`
-             `&&i16` implements `AsExpression<diesel::sql_types::SmallInt>`
-             `&&i32` implements `AsExpression<Nullable<diesel::sql_types::Integer>>`
-             `&&i32` implements `AsExpression<diesel::sql_types::Integer>`
+             `&f32` implements `AsExpression<diesel::sql_types::Float>`
+             `&f64` implements `AsExpression<diesel::sql_types::Double>`
+             `&i16` implements `AsExpression<diesel::sql_types::SmallInt>`
+             `&i32` implements `AsExpression<diesel::sql_types::Integer>`
+             `&i64` implements `AsExpression<diesel::sql_types::BigInt>`
+             `&i8` implements `AsExpression<TinyInt>`
+             `&u16` implements `AsExpression<Unsigned<SmallInt>>`
+             `&u32` implements `AsExpression<Oid>`
            and N others
 
    For more information about this error, try `rustc --explain E0277`.

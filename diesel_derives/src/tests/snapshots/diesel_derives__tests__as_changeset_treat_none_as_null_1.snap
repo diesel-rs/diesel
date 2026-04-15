@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+  input: "#[derive(AsChangeset)]\n#[diesel(treat_none_as_null = true)]\nstruct User {\n    id: i32,\n    name: Option<String>,\n}\n"
 ---
 const _: () = {
     use diesel;
@@ -15,7 +15,7 @@ const _: () = {
     impl diesel::query_builder::AsChangeset for User {
         type Target = users::table;
         type Changeset = <(
-            diesel::dsl::Eq<users::r#name, String>,
+            diesel::dsl::Eq<users::r#name, Option<String>>,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
@@ -35,12 +35,12 @@ const _: () = {
     impl<'update> diesel::query_builder::AsChangeset for &'update User
     where
         (
-            diesel::dsl::Eq<users::r#name, &'update String>,
+            diesel::dsl::Eq<users::r#name, &'update Option<String>>,
         ): diesel::query_builder::AsChangeset,
     {
         type Target = users::table;
         type Changeset = <(
-            diesel::dsl::Eq<users::r#name, &'update String>,
+            diesel::dsl::Eq<users::r#name, &'update Option<String>>,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,

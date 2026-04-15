@@ -50,6 +50,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 }
             }
 
+            #[diagnostic::do_not_recommend]
             impl #impl_generics diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'__expr #struct_ty #where_clause
             {
@@ -60,6 +61,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 }
             }
 
+            #[diagnostic::do_not_recommend]
             impl #impl_generics2 diesel::expression::AsExpression<#sql_type>
                 for &'__expr2 &'__expr #struct_ty #where_clause2
             {
@@ -70,6 +72,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 }
             }
 
+            #[diagnostic::do_not_recommend]
             impl #impl_generics2 diesel::expression::AsExpression<diesel::sql_types::Nullable<#sql_type>>
                 for &'__expr2 &'__expr #struct_ty #where_clause2
             {

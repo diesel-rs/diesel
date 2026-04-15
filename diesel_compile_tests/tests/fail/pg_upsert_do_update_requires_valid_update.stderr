@@ -130,12 +130,12 @@ LL |         .set(name.eq(excluded(id)));
    |                   ^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `Excluded<id>`
    |
    = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+             `&'__expr NaiveDate` implements `AsExpression<diesel::sql_types::Date>`
            and N others

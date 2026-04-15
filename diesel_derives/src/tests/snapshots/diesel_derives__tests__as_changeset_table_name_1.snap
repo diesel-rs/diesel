@@ -2,26 +2,29 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+  input: "#[derive(AsChangeset)]\n#[diesel(table_name = crate::schema::admin_users)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
 ---
 const _: () = {
     use diesel;
     fn _check_owned()
     where
         String: diesel::expression::AsExpression<
-            <users::r#name as diesel::Expression>::SqlType,
+            <crate::schema::admin_users::r#name as diesel::Expression>::SqlType,
         >,
     {}
     impl diesel::query_builder::AsChangeset for User {
-        type Target = users::table;
+        type Target = crate::schema::admin_users::table;
         type Changeset = <(
-            diesel::dsl::Eq<users::r#name, String>,
+            diesel::dsl::Eq<crate::schema::admin_users::r#name, String>,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
         ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
             diesel::query_builder::AsChangeset::as_changeset((
-                diesel::ExpressionMethods::eq(users::r#name, self.name),
+                diesel::ExpressionMethods::eq(
+                    crate::schema::admin_users::r#name,
+                    self.name,
+                ),
             ))
         }
     }
@@ -29,24 +32,27 @@ const _: () = {
     fn _check_borrowed<'update>()
     where
         &'update String: diesel::expression::AsExpression<
-            <users::r#name as diesel::Expression>::SqlType,
+            <crate::schema::admin_users::r#name as diesel::Expression>::SqlType,
         >,
     {}
     impl<'update> diesel::query_builder::AsChangeset for &'update User
     where
         (
-            diesel::dsl::Eq<users::r#name, &'update String>,
+            diesel::dsl::Eq<crate::schema::admin_users::r#name, &'update String>,
         ): diesel::query_builder::AsChangeset,
     {
-        type Target = users::table;
+        type Target = crate::schema::admin_users::table;
         type Changeset = <(
-            diesel::dsl::Eq<users::r#name, &'update String>,
+            diesel::dsl::Eq<crate::schema::admin_users::r#name, &'update String>,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
         ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
             diesel::query_builder::AsChangeset::as_changeset((
-                diesel::ExpressionMethods::eq(users::r#name, &self.name),
+                diesel::ExpressionMethods::eq(
+                    crate::schema::admin_users::r#name,
+                    &self.name,
+                ),
             ))
         }
     }

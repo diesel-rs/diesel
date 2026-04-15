@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+  input: "#[derive(AsChangeset)]\n#[diesel(primary_key(id, short_code))]\nstruct User {\n    id: i32,\n    short_code: String,\n    name: String,\n}\n"
 ---
 const _: () = {
     use diesel;

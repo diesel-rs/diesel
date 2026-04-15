@@ -112,7 +112,7 @@ fn derive_into_single_table(
                     table_name,
                     &field.ty,
                     treat_none_as_default_value,
-                    false,
+                    None,
                     &mut field_ty_bounds_guard,
                 )?);
 
@@ -121,7 +121,7 @@ fn derive_into_single_table(
                     table_name,
                     &field.ty,
                     treat_none_as_default_value,
-                    true,
+                    Some(parse_quote!('insert)),
                     &mut borrowed_field_ty_bounds_guard,
                 )?);
             }
@@ -144,7 +144,7 @@ fn derive_into_single_table(
                     table_name,
                     ty,
                     treat_none_as_default_value,
-                    false,
+                    None,
                     &mut field_ty_bounds_guard,
                 )?);
 
@@ -224,7 +224,7 @@ fn derive_into_single_table(
 //
 // That's something that is not supported by rustc currently: https://github.com/rust-lang/rust/issues/21974
 // It might be fixed with the new trait solver which might land 2026
-fn filter_bounds(
+pub fn filter_bounds(
     guard: &HashMap<Type, HashSet<Vec<Lifetime>>>,
     type_to_check: syn::Type,
     bound: TokenStream,
@@ -359,12 +359,12 @@ fn field_expr(
 }
 
 /// Generate explicit trait bound with field span to improve error messages
-fn generate_field_bound(
+pub(crate) fn generate_field_bound(
     field: &Field,
     table_name: &Path,
     ty: &Type,
     treat_none_as_default_value: bool,
-    borrowed: bool,
+    borrowed: Option<Lifetime>,
     guard: &mut HashMap<Type, HashSet<Vec<Lifetime>>>,
 ) -> Result<(syn::Type, TokenStream)> {
     let column_name = field.column_name()?.to_ident()?;
@@ -389,8 +389,8 @@ fn generate_field_bound(
         .entry(type_for_guard.clone())
         .or_default()
         .insert(life_times);
-    let bound_ty = if borrowed {
-        quote_spanned! {span=> &'insert #ty_to_check}
+    let bound_ty = if let Some(lt) = borrowed {
+        quote_spanned! {span=> &#lt #ty_to_check}
     } else {
         quote_spanned! {span=> #ty_to_check}
     };

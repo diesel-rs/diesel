@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+  input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    name: String,\n    #[diesel(embed)]\n    post: Post,\n}\n"
 ---
 const _: () = {
     use diesel;
@@ -16,12 +16,14 @@ const _: () = {
         type Target = users::table;
         type Changeset = <(
             diesel::dsl::Eq<users::r#name, String>,
+            Post,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
         ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
             diesel::query_builder::AsChangeset::as_changeset((
                 diesel::ExpressionMethods::eq(users::r#name, self.name),
+                self.post,
             ))
         }
     }
@@ -36,17 +38,20 @@ const _: () = {
     where
         (
             diesel::dsl::Eq<users::r#name, &'update String>,
+            &'update Post,
         ): diesel::query_builder::AsChangeset,
     {
         type Target = users::table;
         type Changeset = <(
             diesel::dsl::Eq<users::r#name, &'update String>,
+            &'update Post,
         ) as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(
             self,
         ) -> <Self as diesel::query_builder::AsChangeset>::Changeset {
             diesel::query_builder::AsChangeset::as_changeset((
                 diesel::ExpressionMethods::eq(users::r#name, &self.name),
+                &self.post,
             ))
         }
     }
