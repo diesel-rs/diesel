@@ -2,6 +2,7 @@
 
 use super::MysqlValue;
 use super::query_builder::MysqlQueryBuilder;
+use crate::backend::sql_dialect::batch_update_support::SupportsBatchUpdate;
 use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 use crate::backend::*;
 use crate::internal::derives::multiconnection::sql_dialect;
@@ -82,6 +83,8 @@ impl SqlDialect for Mysql {
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
     type DefaultValueClauseForInsert = MysqlStyleDefaultValueClause;
 
+    type BatchUpdateSupport = MySqlLikeBatchUpdateSupport;
+
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
 
@@ -119,3 +122,8 @@ pub struct MysqlOnConflictClause;
 pub struct MysqlRequiresOrderForWindowFunctions;
 
 impl SupportsOnConflictClause for MysqlOnConflictClause {}
+
+#[derive(Debug, Clone, Copy)]
+pub struct MySqlLikeBatchUpdateSupport;
+
+impl SupportsBatchUpdate for MySqlLikeBatchUpdateSupport {}

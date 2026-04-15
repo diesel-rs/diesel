@@ -21,7 +21,7 @@ LL | |     W: ValidWhereClause<F>,
 note: required by a bound in `diesel::update`
    --> DIESEL/diesel/diesel/src/query_builder/functions.rs
     |
- LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
  
     help: consider removing this method call, as the receiver has type `users::table` and `users::table: IntoUpdateTarget` trivially holds

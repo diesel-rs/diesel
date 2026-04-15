@@ -250,6 +250,72 @@ macro_rules! tuple_impls {
                 }
             }
 
+            impl<$($T,)+ Tab, __DB> BatchColumn<Tab, __DB> for ($($T,)+)
+            where
+                $($T: BatchColumn<Tab, __DB>,)+
+                Tab: Table,
+                __DB: Backend,
+            {
+                type Table = Tab;
+
+                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.walk_ast(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+            }
+
+            impl<$($T,)+ Tab, __DB> BatchColumnAssign<Tab, __DB> for ($($T,)+)
+            where
+                $($T: BatchColumnAssign<Tab, __DB>,)+
+                Tab: Table,
+                __DB: Backend,
+            {
+                type Table = Tab;
+
+                fn walk_ast<'b>(
+                    &'b self,
+                    mut out: AstPass<'_, 'b, __DB>,
+                    sep: &'_ str,
+                    ambiguous: bool,
+                    alias: &'_ str,
+                ) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(sep);
+                        }
+                        self.$idx.walk_ast(out.reborrow(), sep, ambiguous, alias)?;
+                    )+
+                    Ok(())
+                }
+            }
+
+            impl<$($T,)+ $($ST,)+ Tab, __DB> BatchValue<($($ST,)+), Tab, __DB> for ($($T,)+)
+            where
+                $($T: BatchValue<$ST, Tab, __DB>,)+
+                $($ST: SqlType + TypedExpressionType,)+
+                Tab: Table,
+                __DB: Backend,
+                $(__DB: HasSqlType<$ST>,)+
+            {
+                type Table = Tab;
+                type SqlType = ($($ST,)+);
+
+                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.walk_ast(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+            }
+
             fake_variadic! {
                 $Tuple ->
                 impl<Target, $($T,)+> AsChangeset for ($($T,)+) where

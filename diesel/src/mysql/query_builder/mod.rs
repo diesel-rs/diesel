@@ -5,6 +5,7 @@ use crate::result::QueryResult;
 #[doc(inline)]
 pub use self::query_fragment_impls::DuplicatedKeys;
 
+mod batch_update;
 mod limit_offset;
 mod query_fragment_impls;
 

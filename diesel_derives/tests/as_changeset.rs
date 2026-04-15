@@ -1001,3 +1001,136 @@ fn optional_embedded_struct() {
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
 }
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[test]
+fn named_struct_batch() {
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    struct User {
+        id: i32,
+        name: String,
+        hair_color: String,
+        r#type: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let update_sean = User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue1"),
+        r#type: String::from("super1"),
+    };
+    let update_tess = User {
+        id: 2,
+        name: String::from("Tess"),
+        hair_color: String::from("black1"),
+        r#type: String::from("regular1"),
+    };
+
+    // Check compilation and query for &[]
+    let users_batch = [update_sean, update_tess];
+    let update_users = update(users::table).set(&users_batch);
+    let debug_arr_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+
+    // Check compilation and query for &Vec
+    let users_batch: Vec<User> = Vec::from(&users_batch);
+    let update_users = update(users::table).set(&users_batch);
+    let debug_vec_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+
+    // Expected to create the same query
+    assert_eq!(debug_arr_users.to_string(), debug_vec_users.to_string());
+
+    // Should update both Jim and Tess
+    update_users.execute(connection).unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Sean"),
+            Some(String::from("blue1")),
+            Some(String::from("super1")),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            Some(String::from("black1")),
+            Some(String::from("regular1")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[test]
+fn named_struct_batch_grouped_pkey() {
+    table! {
+        #[sql_name = "users"]
+        users_alt (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Text,
+            r#type -> Text,
+        }
+    }
+
+    // Switched order of fields still works.
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    #[diesel(primary_key(id, name))] // mandatory: provide grouped primary key.
+    #[diesel(table_name = users_alt)]
+    struct User {
+        hair_color: String,
+        id: i32,
+        r#type: String,
+        name: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let update_sean = User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue2"),
+        r#type: String::from("super2"),
+    };
+    let update_tess = User {
+        id: 2,
+        name: String::from("Tess_not_found"),
+        hair_color: String::from("black2"),
+        r#type: String::from("regular2"),
+    };
+
+    // Check compilation and query for &[]
+    let users_batch = [update_sean, update_tess];
+    let update_users = update(users_alt::table).set(&users_batch);
+    let debug_arr_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+
+    // Check compilation and query for &Vec
+    let users_batch: Vec<User> = Vec::from(&users_batch);
+    let update_users = update(users_alt::table).set(&users_batch);
+    let debug_vec_users = diesel::debug_query::<crate::helpers::TestBackend, _>(&update_users);
+
+    // Expected to create the same query
+    assert_eq!(debug_arr_users.to_string(), debug_vec_users.to_string());
+
+    // Should update both Jim and Tess
+    update_users.execute(connection).unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Sean"),
+            String::from("blue2"),
+            String::from("super2"),
+        ),
+        (
+            2,
+            String::from("Tess"),
+            String::from("brown"),
+            String::from("admin"),
+        ),
+    ];
+    let actual = users_alt::table.order(users_alt::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}

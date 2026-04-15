@@ -1,3 +1,4 @@
+pub(crate) mod batch_update;
 pub(crate) mod changeset;
 pub(super) mod target;
 
@@ -22,6 +23,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
         UpdateStatement {
             from_clause: target.table.from_clause(),
             where_clause: target.where_clause,
+            set_clause: SetClause::Immediate,
             values: SetNotCalled,
             returning: NoReturningClause,
         }
@@ -41,6 +43,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause,
+            set_clause: <V as AsChangeset>::set_clause(),
             values: values.as_changeset(),
             returning: self.returning,
         }
@@ -57,6 +60,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
 pub struct UpdateStatement<T: QuerySource, U, V = SetNotCalled, Ret = NoReturningClause> {
     from_clause: T::FromClause,
     where_clause: U,
+    set_clause: SetClause,
     values: V,
     returning: Ret,
 }
@@ -163,6 +167,7 @@ where
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.and(predicate),
+            set_clause: self.set_clause,
             values: self.values,
             returning: self.returning,
         }
@@ -180,6 +185,7 @@ where
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.into(),
+            set_clause: self.set_clause,
             values: self.values,
             returning: self.returning,
         }
@@ -203,7 +209,7 @@ where
         out.unsafe_to_cache_prepared();
         out.push_sql("UPDATE ");
         self.from_clause.walk_ast(out.reborrow())?;
-        out.push_sql(" SET ");
+        self.set_clause.walk_ast(out.reborrow())?;
         self.values.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
@@ -277,6 +283,7 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause,
+            set_clause: self.set_clause,
             values: self.values,
             returning: ReturningClause(returns),
         }
@@ -304,5 +311,35 @@ mod private {
         Changes: crate::AsChangeset,
     {
         type Out = crate::query_builder::UpdateStatement<T, W, Changes::Changeset>;
+    }
+}
+
+/// Determines when the `SET` part of an update statement will be added to the sql.
+///
+/// Usual single row updates default to [SetClause::Immediate]. Batch row updates
+/// will use [SetClause::Delegated].
+///
+/// - [SetClause::Immediate]
+///   will add `SET` right after the [UpdateStatement::from_clause] `QueryFragment`. \
+///   `Update users SET ... ;`
+/// - [SetClause::Delegated]
+///   hands over the control of adding `SET` to [UpdateStatement::values] `QueryFragment`. \
+///   `Update users ... SET ... ; ` will then be permitted.  \
+///   Batch update for mysql requires this behavior.
+#[derive(Clone, Copy, Debug)]
+pub enum SetClause {
+    Immediate,
+    Delegated,
+}
+
+impl<DB> QueryFragment<DB> for SetClause
+where
+    DB: Backend,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        if let SetClause::Immediate = self {
+            out.push_sql(" SET ");
+        }
+        Ok(())
     }
 }
