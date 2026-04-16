@@ -23,6 +23,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Fixed
 
 * Raise a compile-time error when mixing aggregate and non-aggregate expressions in an `ORDER BY` clause without a `GROUP BY` clause
+* Calling `.count()` or `.select(aggregate_expr)` on a query that already has a non-aggregate `.order_by()` clause now raises a compile-time error instead of generating invalid SQL that would be rejected by the database at runtime (fixes [#3815](https://github.com/diesel-rs/diesel/issues/3815))
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
 
 ### Changed
