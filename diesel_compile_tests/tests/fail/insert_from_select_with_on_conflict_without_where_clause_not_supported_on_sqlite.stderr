@@ -17,6 +17,13 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
  LL | |     S: QueryFragment<crate::mysql::Mysql>,
      | |__________________________________________^ `OnConflictSelectWrapper<S>` implements `QueryFragment<Mysql>`
      |
+    ::: DIESEL/diesel/diesel/src/pg/query_builder/query_fragment_impls.rs
+     |
+ LL | / impl<S> QueryFragment<crate::pg::Pg> for OnConflictSelectWrapper<S>
+ LL | | where
+ LL | |     S: QueryFragment<crate::pg::Pg>,
+     | |____________________________________^ `OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
+     |
     ::: DIESEL/diesel/diesel/src/sqlite/query_builder/query_fragment_impls.rs
      |
   LL | / impl<F, S, D, W, O, LOf, G, H, LC> QueryFragment<crate::sqlite::Sqlite>
@@ -33,13 +40,6 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
   LL | |         QueryFragment<crate::sqlite::Sqlite>,
   LL | |     QS: QueryFragment<crate::sqlite::Sqlite>,
      | |_____________________________________________^ `OnConflictSelectWrapper<...>` implements `QueryFragment<Sqlite>`
-     |
-    ::: DIESEL/diesel/diesel/src/pg/query_builder/query_fragment_impls.rs
-     |
- LL | / impl<S> QueryFragment<crate::pg::Pg> for OnConflictSelectWrapper<S>
- LL | | where
- LL | |     S: QueryFragment<crate::pg::Pg>,
-     | |____________________________________^ `OnConflictSelectWrapper<S>` implements `QueryFragment<Pg>`
      = note: required for `InsertFromSelect<..., ...>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Sqlite>`

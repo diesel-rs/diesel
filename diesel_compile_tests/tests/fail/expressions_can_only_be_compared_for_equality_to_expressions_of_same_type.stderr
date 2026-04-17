@@ -23,7 +23,6 @@ help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented fo
  LL |         name -> VarChar,
    |         ^^^^
    = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
@@ -31,6 +30,7 @@ help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented fo
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+             `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
            and N others
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -2,10 +2,11 @@ error[E0277]: `Groups` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_does_not_support_group_frame_clauses.rs:21:22
      |
   LL |         .load::<i64>(&mut connection)
-     |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql, NoGroupWindowFrameUnit>` is not implemented for `Groups`
+     |          ----        ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
+     = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_clause_group_support::NoGroupWindowFrameUnit>` is not implemented for `Groups`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
@@ -34,7 +35,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>

@@ -16,12 +16,12 @@ LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
     |   ------------------------------------------- doesn't satisfy `_: QueryRelation` or `_: RunQueryDsl<_>`
     |
     = note: the following trait bounds were not satisfied:
-            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<users::columns::id>>: QueryRelation`
-            which is required by `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
-            `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<users::columns::id>>: QueryRelation`
-            which is required by `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
-            `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<users::columns::id>>: QueryRelation`
-            which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: QueryRelation`
+            which is required by `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: QueryRelation`
+            which is required by `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: QueryRelation`
+            which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
  
     
 error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
@@ -121,7 +121,6 @@ LL |         .set(name.eq(excluded(id)));
    |                   ^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `Excluded<id>`
    |
    = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
@@ -129,4 +128,5 @@ LL |         .set(name.eq(excluded(id)));
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+             `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
            and N others

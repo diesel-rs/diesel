@@ -22,7 +22,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     S: SelectClauseExpression<FromClause<F>>,
 LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
-    | |_____________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    | |_____________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
     |
    ::: DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
     |
@@ -42,7 +42,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
-    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `table: DistinctOnDsl<(name, name)>` is not satisfied
    --> tests/fail/distinct_on_allows_only_fields_of_table.rs:31:10
@@ -68,7 +69,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     S: SelectClauseExpression<FromClause<F>>,
 LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
-    | |_____________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    | |_____________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
     |
    ::: DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
     |
