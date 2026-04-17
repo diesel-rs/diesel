@@ -34,9 +34,9 @@ LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 LL | | where
 LL | |     G: ValidGroupByClause,
 ...   |
-LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Sele...
-LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
+    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
@@ -128,9 +128,9 @@ LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 LL | | where
 LL | |     G: ValidGroupByClause,
 ...   |
-LL | |     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Sele...
-LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
+    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>

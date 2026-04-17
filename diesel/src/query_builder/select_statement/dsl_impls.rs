@@ -131,6 +131,9 @@ where
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    O: ValidGrouping<G::Expressions>,
+    <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+        MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
 {
     type Output = SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 
