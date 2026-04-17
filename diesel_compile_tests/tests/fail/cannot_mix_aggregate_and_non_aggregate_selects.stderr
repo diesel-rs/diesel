@@ -66,8 +66,6 @@ note: required for `__Derived<nullable_int_col, max<..., ...>>` to implement `Va
  LL | #[declare_sql_function]
     | ^^^^^^^^^^^^^^^^^^^^^^^ type parameter would need to implement `ValidGrouping<()>`
     = help: consider manually implementing `ValidGrouping<()>` to avoid undesired bounds
-    = note: 1 redundant requirement hidden
-    = note: required for `f<nullable_int_col, max<Nullable<Integer>, ...>>` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<f<nullable_int_col, max<..., ...>>>`
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)

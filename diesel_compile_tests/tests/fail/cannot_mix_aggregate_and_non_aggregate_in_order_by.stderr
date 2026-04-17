@@ -27,7 +27,8 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
-
+ 
+    
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:21:39
     |
@@ -57,7 +58,8 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
-
+ 
+    
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:28:24
     |
@@ -87,7 +89,8 @@ LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
 LL |     where
 LL |         Self: methods::ThenOrderDsl<Order>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
-
+ 
+    
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:32:41
     |
@@ -117,13 +120,15 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
-
+ 
+    
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:36:34
     |
  LL |     let _ = users.order_by(name).count();
-    |                                  ^^^^^ the trait `SelectDsl<CountStar>` is not implemented for `SelectStatement<..., ..., ..., ..., ...>`
+    |                                  ^^^^^ unsatisfied trait bound
     |
+    = help: the trait `SelectDsl<diesel::dsl::CountStar>` is not implemented for `SelectStatement<..., ..., ..., ..., ...>`
 help: the following other types implement trait `SelectDsl<Selection>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
@@ -134,7 +139,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
 LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
-    | |___________________________________________________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>`
+    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
@@ -143,6 +148,6 @@ LL | |     G: ValidGroupByClause,
 LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>`
-
+    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+ 
     For more information about this error, try `rustc --explain E0277`.
