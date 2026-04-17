@@ -12,6 +12,24 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.3.8] 2026-04-24
+
+* Added support for libsqlite3-sys 0.37.0
+* Raise a compile-time error when mixing aggregate and non-aggregate expressions in an `ORDER BY` clause without a `GROUP BY` clause
+* Calling `.count()` or `.select(aggregate_expr)` on a query that already has a non-aggregate `.order_by()` clause now raises a compile-time error instead of generating invalid SQL that would be rejected by the database at runtime (fixes [#3815](https://github.com/diesel-rs/diesel/issues/3815))
+* Added documentation for migration transaction behaviour at the crate root
+* Improved compile time error messages for `#[derive(AsChangeset)]`
+* Allow to use generic types in `infix_operator!()`
+* Fixes for several instances of unsound, unspecified or otherwise dangerous behaviour:
+    + Unsound string construction in `SqliteValue::read_text`/`FromSql<Text, Sqlite> for String`
+    + Invalid alignment for over aligned data in `SqliteConnection::register_function` for aggregate functions
+    + Potential memory leaks in `SqliteConnection::register_function`
+    + Access to padding bytes while serializing Date/time types in the Mysql backend
+    + SQL Option Injection in PostgreSQL `COPY FROM/TO`
+    + Unspecified pointer cast in `Debug`/`Display` implementation of batch `INSERT` statements for SQLite
+    + Invalid call order of SQLite API functions in `SqliteValue::read_text`/`FromSql<Text, Sqlite> for String`/`SqliteValue::read_blob()`/`FromSql<Binary, Sqlite> for Vec<u8>`
+    + Potential unsound pointer access for `FromSql<Binary, _> for Vec<u8>` and `FromSql<Text, _> for String` for third party backends (requires changes to the third party backend as well)
+
 ## [2.3.7] 2026-03-13
 
 * Add support for libsqlite3-sys 0.36
@@ -2323,3 +2341,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.5]: https://github.com/diesel-rs/diesel/compare/v2.3.4...v2.3.5
 [2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6
 [2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7
+[2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8

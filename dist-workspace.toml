@@ -27,6 +27,8 @@ msvc-crt-static = false
 precise-builds = true
 # Whether to embed dependency information using cargo-auditable
 cargo-auditable = true
+# Whether to enable GitHub Attestations
+github-attestations = true
 
 [dist.min-glibc-version]
 "*" = "2.17"
