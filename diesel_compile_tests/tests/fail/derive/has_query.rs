@@ -23,6 +23,7 @@ struct User1 {
 }
 
 #[derive(HasQuery)]
+//~^ ERROR: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<...>` is not satisfied
 #[diesel(table_name = posts)]
 struct UserMixedUp {
     id: i32,

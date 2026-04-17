@@ -266,10 +266,8 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 ...
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
-     = note: required for `lower<Text, name>` to implement `Expression`
-     = note: 1 redundant requirement hidden
-     = note: required for `AggregateExpression<..., ..., ..., ...>` to implement `Expression`
-     = note: required for `users::table` to implement `SelectDsl<AggregateExpression<..., ..., ..., ...>>`
+     = note: required for `lower<Text, name>` to implement `ValidGrouping<()>`
+     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ...>>`
   
      
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
