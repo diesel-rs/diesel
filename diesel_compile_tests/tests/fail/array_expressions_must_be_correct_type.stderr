@@ -1,12 +1,13 @@
-error[E0277]: cannot select `f64` from `NoFromClause`
+error[E0277]: cannot select `f64` from `diesel::query_builder::from_clause::NoFromClause`
    --> tests/fail/array_expressions_must_be_correct_type.rs:9:12
     |
   LL |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&mut connection);
-    |     ------ ^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<NoFromClause>` is not implemented for `f64`
+    |     ------ ^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |     |
     |     required by a bound introduced by this call
     |
-    = note: `f64` is no valid selection for `NoFromClause`
+    = help: the trait `SelectableExpression<diesel::query_builder::from_clause::NoFromClause>` is not implemented for `f64`
+    = note: `f64` is no valid selection for `diesel::query_builder::from_clause::NoFromClause`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `&'a T` implements `SelectableExpression<QS>`
               `(T, T1)` implements `SelectableExpression<QS>`
@@ -66,15 +67,16 @@ LL |     crate::dsl::select<T>: AsQuery,
     |                            ^^^^^^^ required by this bound in `select`
  
     
-error[E0277]: cannot select `f64` from `NoFromClause`
+error[E0277]: cannot select `f64` from `diesel::query_builder::from_clause::NoFromClause`
     --> tests/fail/array_expressions_must_be_correct_type.rs:9:56
      |
    LL |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&mut connection);
-     |                                 ----------             ^^^^^^^^^^^^^^^ the trait `SelectableExpression<NoFromClause>` is not implemented for `f64`
+     |                                 ----------             ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |                                 |
      |                                 required by a bound introduced by this call
      |
-     = note: `f64` is no valid selection for `NoFromClause`
+     = help: the trait `SelectableExpression<diesel::query_builder::from_clause::NoFromClause>` is not implemented for `f64`
+     = note: `f64` is no valid selection for `diesel::query_builder::from_clause::NoFromClause`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `&'a T` implements `SelectableExpression<QS>`
                `(T, T1)` implements `SelectableExpression<QS>`

@@ -13,13 +13,13 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `bad
     |       ^^^
     = note: `bad::columns::age` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              `bad::columns::age` implements `SelectableExpression<JoinOn<Join, On>>`
               `bad::columns::age` implements `SelectableExpression<Only<bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `bad::columns::age` implements `SelectableExpression<Tablesample<bad::table, TSM>>`
               `bad::columns::age` implements `SelectableExpression<bad::table>`
+              `bad::columns::age` implements `SelectableExpression<SelectStatement<...>>`
               `bad::columns::age` implements `SelectableExpression<Join<Left, Right, Inner>>`
               `bad::columns::age` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `bad::columns::age` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -47,13 +47,13 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `bad
     |       ^^^
     = note: `bad::columns::age` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              `bad::columns::age` implements `SelectableExpression<JoinOn<Join, On>>`
               `bad::columns::age` implements `SelectableExpression<Only<bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `bad::columns::age` implements `SelectableExpression<Tablesample<bad::table, TSM>>`
               `bad::columns::age` implements `SelectableExpression<bad::table>`
+              `bad::columns::age` implements `SelectableExpression<SelectStatement<...>>`
               `bad::columns::age` implements `SelectableExpression<Join<Left, Right, Inner>>`
               `bad::columns::age` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `bad::columns::age` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`

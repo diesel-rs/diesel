@@ -29,7 +29,7 @@ help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecia
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
@@ -67,7 +67,7 @@ help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecia
      = note: 3 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
@@ -102,7 +102,7 @@ help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecia
      = note: 5 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
@@ -129,9 +129,9 @@ LL |   pub struct IncompleteOnConflict<Stmt, Target> {
     |   --------------------------------------------- doesn't satisfy `_: QueryRelation` or `_: RunQueryDsl<_>`
     |
     = note: the following trait bounds were not satisfied:
-            `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<OnConstraint<'_>>>: QueryRelation`
-            which is required by `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
-            `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<OnConstraint<'_>>>: QueryRelation`
-            which is required by `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
-            `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<OnConstraint<'_>>>: QueryRelation`
-            which is required by `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+            `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: QueryRelation`
+            which is required by `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+            `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: QueryRelation`
+            which is required by `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+            `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: QueryRelation`
+            which is required by `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::RunQueryDsl<_>`

@@ -1,4 +1,4 @@
-error[E0433]: failed to resolve: use of unresolved module or unlinked crate `users`
+error[E0433]: cannot find module or crate `users` in this scope
  --> tests/fail/derive/no_table.rs:5:8
   |
 LL | struct User {
@@ -6,7 +6,7 @@ LL | struct User {
   |
   = help: you might be missing a crate named `users`
 
-error[E0433]: failed to resolve: use of unresolved module or unlinked crate `users`
+error[E0433]: cannot find module or crate `users` in this scope
   --> tests/fail/derive/no_table.rs:12:23
    |
 LL | #[diesel(table_name = users)]

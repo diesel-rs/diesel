@@ -1,10 +1,10 @@
-error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
+error[E0277]: the trait bound `str: Expression` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:20:28
    |
 LL |     int_primary_key::table.find("1");
-   |                            ^^^^ the trait `diesel::Expression` is not implemented for `str`
+   |                            ^^^^ the trait `Expression` is not implemented for `str`
    |
-   = help: the following other types implement trait `diesel::Expression`:
+   = help: the following other types implement trait `Expression`:
              &T
              AliasedField<S, C>
              Box<T>
@@ -12,12 +12,12 @@ LL |     int_primary_key::table.find("1");
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              Collate<T, C>
-             Exists<T>
+             SqlLiteral<ST, T>
            and N others
-   = note: required for `&str` to implement `diesel::Expression`
+   = note: required for `&str` to implement `Expression`
    = note: 1 redundant requirement hidden
-   = note: required for `Eq<id, &str>` to implement `diesel::Expression`
-   = note: required for `SelectStatement<FromClause<int_primary_key::table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
+   = note: required for `Eq<id, &str>` to implement `Expression`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
 
    
 error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
@@ -40,18 +40,18 @@ LL |     int_primary_key::table.find("1");
    = note: 1 redundant requirement hidden
    = note: required for `Eq<id, &str>` to implement `ValidGrouping<()>`
    = note: required for `Grouped<Eq<id, &str>>` to implement `NonAggregate`
-   = note: required for `SelectStatement<FromClause<int_primary_key::table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
 
    
-error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
+error[E0277]: the trait bound `{integer}: Expression` is not satisfied
    --> tests/fail/find_requires_correct_type.rs:24:36
     |
  LL |     string_primary_key::table.find(1);
-    |                               ---- ^ the trait `diesel::Expression` is not implemented for `{integer}`
+    |                               ---- ^ the trait `Expression` is not implemented for `{integer}`
     |                               |
     |                               required by a bound introduced by this call
     |
-    = help: the following other types implement trait `diesel::Expression`:
+    = help: the following other types implement trait `Expression`:
               &T
               AliasedField<S, C>
               Box<T>
@@ -59,10 +59,10 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
               CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
               CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
               Collate<T, C>
-              Exists<T>
+              SqlLiteral<ST, T>
             and N others
-    = note: required for `Eq<id, {integer}>` to implement `diesel::Expression`
-note: required for `string_primary_key::columns::id` to implement `EqAll<{integer}>`
+    = note: required for `Eq<id, {integer}>` to implement `Expression`
+note: required for `string_primary_key::columns::id` to implement `diesel::EqAll<{integer}>`
    --> tests/fail/find_requires_correct_type.rs:13:9
     |
  LL |         id -> VarChar,
@@ -99,7 +99,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
             and N others
     = note: required for `Eq<id, {integer}>` to implement `ValidGrouping<()>`
     = note: required for `Grouped<Eq<id, {integer}>>` to implement `NonAggregate`
-    = note: required for `SelectStatement<FromClause<string_primary_key::table>>` to implement `FilterDsl<Grouped<Eq<id, {integer}>>>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Eq<id, {integer}>>>`
     = note: 1 redundant requirement hidden
     = note: required for `string_primary_key::table` to implement `FilterDsl<Grouped<Eq<id, {integer}>>>`
     = note: required for `string_primary_key::table` to implement `FindDsl<{integer}>`
