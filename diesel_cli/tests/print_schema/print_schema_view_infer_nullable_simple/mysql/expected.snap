@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_simple"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    test {
+        #[max_length = 4]
+        name -> Varchar,
+        id -> Integer,
+    }
+}

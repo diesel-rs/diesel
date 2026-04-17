@@ -3,8 +3,18 @@ use crate::expression::SqlLiteral;
 use crate::query_builder::*;
 use crate::query_source::Column;
 
-#[doc(hidden)]
-pub trait OnConflictTarget<Table> {}
+mod sealed {
+    pub trait Sealed {}
+}
+
+impl sealed::Sealed for NoConflictTarget {}
+impl<T> sealed::Sealed for ConflictTarget<T> {}
+
+/// Represents the target of an `ON CONFLICT` clause.
+///
+/// This trait is sealed and cannot be implemented for types outside of Diesel,
+/// and may be used to constrain generic parameters.
+pub trait OnConflictTarget<Table>: sealed::Sealed {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -24,7 +34,26 @@ impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct ConflictTarget<T>(pub T);
+pub struct ConflictTarget<T>(T);
+
+impl<T> ConflictTarget<T> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    /// Creates a new `ConflictTarget` wrapping the given target.
+    ///
+    /// # Arguments
+    ///
+    /// * `target` - The target of the `ON CONFLICT` clause.
+    pub(crate) fn new(target: T) -> Self {
+        ConflictTarget(target)
+    }
+    /// Returns a reference to the inner target.
+    #[allow(dead_code)]
+    pub(crate) fn target(&self) -> &T {
+        &self.0
+    }
+}
 
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
 where

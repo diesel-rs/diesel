@@ -169,9 +169,11 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("redo").run();
 
     assert!(!result.is_success());
-    assert!(result
-        .stderr()
-        .contains("Failed to run redo_error_migrations_fails with: "));
+    assert!(
+        result
+            .stderr()
+            .contains("Failed to run redo_error_migrations_fails with: ")
+    );
 }
 
 #[test]

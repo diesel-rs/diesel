@@ -12,7 +12,7 @@ LL | | }
 
 error: invalid `table!` syntax 
        help: please see the `table!` macro docs for more info
-       help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
+       help: docs available at: `https://docs.diesel.rs/0.1.x/diesel/macro.table.html`
        
  --> tests/fail/table_invalid_syntax_1.rs:4:1
   |

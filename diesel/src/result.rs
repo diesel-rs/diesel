@@ -1,8 +1,11 @@
 //! Errors, type aliases, and functions related to working with `Result`.
 
-use std::error::Error as StdError;
-use std::ffi::NulError;
-use std::fmt::{self, Display};
+use alloc::boxed::Box;
+use alloc::ffi::NulError;
+use alloc::string::String;
+use alloc::string::ToString;
+use core::error::Error as StdError;
+use core::fmt::{self, Display};
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
@@ -94,6 +97,12 @@ pub enum Error {
 
     /// Transaction manager broken, likely due to a broken connection. No other operations are possible.
     BrokenTransactionManager,
+
+    /// Internal integer conversion failed
+    IntegerConversion(core::num::TryFromIntError),
+
+    /// Closing a handle failed
+    ClosingHandle(&'static str),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -223,6 +232,36 @@ impl DatabaseErrorInformation for String {
     }
     fn statement_position(&self) -> Option<i32> {
         None
+    }
+}
+
+impl DatabaseErrorInformation for core::convert::Infallible {
+    fn message(&self) -> &str {
+        match *self {}
+    }
+
+    fn details(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn hint(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn table_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn column_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn constraint_name(&self) -> Option<&str> {
+        match *self {}
+    }
+
+    fn statement_position(&self) -> Option<i32> {
+        match *self {}
     }
 }
 
@@ -367,6 +406,12 @@ impl Display for Error {
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
             }
+            Error::IntegerConversion(ref e) => {
+                write!(f, "Internal integer conversion error: {e}")
+            }
+            Error::ClosingHandle(message) => {
+                write!(f, "Error closing SQLite blob: {message}")
+            }
         }
     }
 }
@@ -378,6 +423,7 @@ impl StdError for Error {
             Error::QueryBuilderError(ref e) => Some(&**e),
             Error::DeserializationError(ref e) => Some(&**e),
             Error::SerializationError(ref e) => Some(&**e),
+            Error::IntegerConversion(ref e) => Some(e),
             _ => None,
         }
     }
@@ -422,6 +468,13 @@ impl PartialEq for Error {
 fn error_impls_send() {
     let err: Error = unimplemented!();
     let x: &dyn Send = &err;
+}
+
+#[cfg(test)]
+#[allow(warnings)]
+fn infallible_impls_database_error_information() {
+    let err: core::convert::Infallible = unimplemented!();
+    let x: &dyn DatabaseErrorInformation = &err;
 }
 
 /// An unexpected `NULL` was encountered during deserialization
@@ -492,7 +545,7 @@ pub struct DeserializeFieldError {
 
 impl DeserializeFieldError {
     #[cold]
-    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn std::error::Error + Send + Sync>) -> Self
+    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn core::error::Error + Send + Sync>) -> Self
     where
         DB: crate::backend::Backend,
         F: crate::row::Field<'a, DB>,

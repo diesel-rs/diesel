@@ -139,13 +139,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -173,13 +173,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
  
     
@@ -324,13 +324,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -358,13 +358,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
  
     
@@ -509,13 +509,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -543,13 +543,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
  
     
@@ -674,13 +674,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -708,13 +708,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
  
     
@@ -859,13 +859,13 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -893,11 +893,11 @@ LL | pub struct Nullable<ST>(ST);
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
               `&'__expr Cents` implements `AsExpression<Money>`
+              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
               `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
               `&'__expr MysqlTime` implements `AsExpression<Datetime>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
               `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-              `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
             and N others

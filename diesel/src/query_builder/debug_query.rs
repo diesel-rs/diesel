@@ -1,7 +1,10 @@
 use super::{AstPass, QueryBuilder, QueryFragment};
 use crate::backend::Backend;
-use std::fmt::{self, Debug, Display};
-use std::marker::PhantomData;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::fmt::{self, Debug, Display};
+use core::marker::PhantomData;
 
 /// A struct that implements `fmt::Display` and `fmt::Debug` to show the SQL
 /// representation of a query.

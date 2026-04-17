@@ -1,6 +1,6 @@
+use crate::expression::Expression;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::And;
-use crate::expression::Expression;
 use crate::expression_methods::*;
 use crate::sql_types::Bool;
 

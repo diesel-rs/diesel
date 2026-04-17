@@ -118,7 +118,6 @@ pub trait MigrationHarness<DB: Backend> {
             .into_iter()
             .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
-
         for applied_version in applied_versions {
             migrations.remove(&applied_version);
         }
@@ -140,7 +139,7 @@ pub trait MigrationHarness<DB: Backend> {
     /// [`FileBasedMigrations`](crate::FileBasedMigrations) to learn how to configure
     /// this for a specific migration.
     fn run_migration(&mut self, migration: &dyn Migration<DB>)
-        -> Result<MigrationVersion<'static>>;
+    -> Result<MigrationVersion<'static>>;
 
     /// Revert a single migration
     ///
@@ -164,11 +163,7 @@ impl<C, DB> MigrationHarness<DB> for C
 where
     DB: Backend + diesel::internal::migrations::DieselReserveSpecialization,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
-    __diesel_schema_migrations::table: methods::BoxedDsl<
-        'static,
-        DB,
-        Output = __diesel_schema_migrations::BoxedQuery<'static, DB>,
-    >,
+    __diesel_schema_migrations::table: methods::BoxedDsl<'static, DB, Output = __diesel_schema_migrations::BoxedQuery<'static, DB>>,
     __diesel_schema_migrations::BoxedQuery<'static, DB, VarChar>:
         methods::LoadQuery<'static, C, MigrationVersion<'static>>,
     diesel::internal::migrations::DefaultValues: QueryFragment<DB>,

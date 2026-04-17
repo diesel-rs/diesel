@@ -12,6 +12,22 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+* Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
+* Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
+* Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
+* Added `json_extract` and `jsonb_extract` SQL function support for the SQLite backend
+* Added `SqliteConnection::get_read_only_blob` method to stream blob's from a SQLite database to Rust via `std::io::Read`
+
+### Fixed
+
+* Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
+
+### Changed
+
+* The minimal supported Rust version is now 1.88.0
+* Add support for no-std environments using the SQLite backend
+
 ## [2.3.8] 2026-04-24
 
 * Added support for libsqlite3-sys 0.37.0

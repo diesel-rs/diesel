@@ -12,9 +12,17 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
+use crate::sqlite::SqliteValue;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
-use crate::sqlite::SqliteValue;
+use alloc::boxed::Box;
+use alloc::rc::Rc;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use core::cell::{Ref, RefCell};
+use core::marker::PhantomData;
+use core::mem::ManuallyDrop;
+use core::ops::DerefMut;
 
 pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
@@ -23,7 +31,7 @@ pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut(&RawConnection, Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
+    F: FnMut(&RawConnection, Args) -> Ret + core::panic::UnwindSafe + Send + 'static,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -51,7 +59,7 @@ pub(super) fn register_noargs<RetSqlType, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+    F: FnMut() -> Ret + core::panic::UnwindSafe + Send + 'static,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
@@ -64,7 +72,7 @@ pub(super) fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -181,7 +189,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }

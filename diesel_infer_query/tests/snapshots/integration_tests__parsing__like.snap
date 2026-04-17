@@ -1,0 +1,117 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT 'abc' LIKE 'foo', 'cde' LIKE NULL, 'fgh' ILIKE '%', 'ijk' ILIKE NULL, 'abc' NOT LIKE '%', 'abc' NOT LIKE NULL"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: Some(
+                        "foo",
+                    ),
+                    is_null: false,
+                },
+                op: "LIKE",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "cde",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                op: "LIKE",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "fgh",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: Some(
+                        "%",
+                    ),
+                    is_null: false,
+                },
+                op: "ILIKE",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "ijk",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                op: "ILIKE",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: Some(
+                        "%",
+                    ),
+                    is_null: false,
+                },
+                op: "NOT LIKE",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                op: "NOT LIKE",
+                statically_not_null: false,
+            },
+        },
+    ],
+}

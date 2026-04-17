@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type};
+use syn::{DeriveInput, Ident, LitStr, Result, Type, parse_quote, parse_quote_spanned};
 
 use crate::attrs::AttributeSpanWrapper;
 use crate::field::{Field, FieldName};

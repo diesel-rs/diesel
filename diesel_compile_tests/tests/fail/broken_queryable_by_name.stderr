@@ -11,20 +11,20 @@ LL |     name: i32,
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
 help: the following other types implement trait `FromSql<A, DB>`
-  --> DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
    |
-LL | impl FromSql<Integer, Mysql> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
   ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+  ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
    |
-LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+LL | impl FromSql<Integer, Mysql> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
    = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = help: see issue #48214
@@ -66,20 +66,20 @@ LL |     name: i32,
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
 help: the following other types implement trait `FromSql<A, DB>`
-  --> DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
    |
-LL | impl FromSql<Integer, Mysql> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
   ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+  ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
    |
-LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+LL | impl FromSql<Integer, Mysql> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
    = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = help: see issue #48214

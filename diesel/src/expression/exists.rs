@@ -1,7 +1,7 @@
 //! This module contains the query dsl node definition
 //! for `EXISTS` expressions
 
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::backend::{Backend, SqlDialect, sql_dialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
 use crate::helper_types;

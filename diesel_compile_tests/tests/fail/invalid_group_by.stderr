@@ -82,14 +82,14 @@ help: the following other types implement trait `ValidGrouping<GroupByClause>`
  LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
  LL | | where
  LL | |     S: AliasSource,
- LL | |     C: Column<Table = S::Target>,
-    | |_________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
+ LL | |     C: QueryRelationField<QueryRelation = S::Target>,
+    | |_____________________________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
 ...
  LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
  LL | | where
  LL | |     S: AliasSource,
- LL | |     C1: Column<Table = S::Target>,
- LL | |     C2: Column<Table = S::Target>,
+ LL | |     C1: QueryRelationField<QueryRelation = S::Target>,
+ LL | |     C2: QueryRelationField<QueryRelation = S::Target>,
  LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
     | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
@@ -165,14 +165,14 @@ help: the following other types implement trait `ValidGrouping<GroupByClause>`
  LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
  LL | | where
  LL | |     S: AliasSource,
- LL | |     C: Column<Table = S::Target>,
-    | |_________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
+ LL | |     C: QueryRelationField<QueryRelation = S::Target>,
+    | |_____________________________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
 ...
  LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
  LL | | where
  LL | |     S: AliasSource,
- LL | |     C1: Column<Table = S::Target>,
- LL | |     C2: Column<Table = S::Target>,
+ LL | |     C1: QueryRelationField<QueryRelation = S::Target>,
+ LL | |     C2: QueryRelationField<QueryRelation = S::Target>,
  LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
     | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`

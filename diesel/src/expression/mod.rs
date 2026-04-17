@@ -45,6 +45,8 @@ pub(crate) mod subselect;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::operators::Concat;
 
+pub use self::operators::Collate;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport
@@ -73,9 +75,10 @@ pub(crate) mod dsl {
     pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres_backend")]
+    #[allow(ambiguous_glob_reexports)]
     pub use crate::pg::expression::dsl::*;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     pub use crate::sqlite::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())
@@ -118,6 +121,8 @@ pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 use crate::backend::Backend;
 use crate::dsl::{AsExprOf, AsSelect};
 use crate::sql_types::{HasSqlType, SingleValue, SqlType};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 /// Represents a typed fragment of SQL.
 ///
@@ -139,6 +144,7 @@ pub mod expression_types {
     use super::{QueryMetadata, TypedExpressionType};
     use crate::backend::Backend;
     use crate::sql_types::SingleValue;
+    use alloc::vec::Vec;
 
     /// Query nodes with this expression type do not have a statically at compile
     /// time known expression type.

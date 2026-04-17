@@ -1,0 +1,35 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_left_join"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    posts (id) {
+        id -> Int4,
+        user_id -> Int4,
+        title -> Text,
+        body -> Nullable<Text>,
+    }
+}
+
+diesel::view! {
+    test {
+        user_id -> Int4,
+        user_name -> Text,
+        user_hair_color -> Nullable<Text>,
+        post_id -> Nullable<Int4>,
+        post_title -> Nullable<Text>,
+        post_body -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Int4,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(posts, test, users,);

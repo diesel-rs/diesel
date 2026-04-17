@@ -116,7 +116,7 @@ pub(crate) mod lower_utils {
         f: F,
     ) -> QueryResult<()>
     where
-        F: Fn(input) -> Ret + std::panic::UnwindSafe + Send + 'static,
+        F: Fn(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
         (input,): FromSqlRow<(Text,), Sqlite> + StaticallySizedRow<(Text,), Sqlite>,
         Ret: ToSql<Text, Sqlite>,
     {
@@ -142,7 +142,7 @@ pub(crate) mod lower_utils {
         mut f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(input) -> Ret + std::panic::UnwindSafe + Send + 'static,
+        F: FnMut(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
         (input,): FromSqlRow<(Text,), Sqlite> + StaticallySizedRow<(Text,), Sqlite>,
         Ret: ToSql<Text, Sqlite>,
     {

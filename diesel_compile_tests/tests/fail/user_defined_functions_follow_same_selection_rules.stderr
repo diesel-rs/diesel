@@ -11,13 +11,13 @@ LL | #[declare_sql_function]
    | ^^^^^^^^^^^^^^^^^^^^^^^
    = help: the following other types implement trait `AsExpression<T>`:
              `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-             `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
-             `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
+             `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
            and N others
 
       = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)

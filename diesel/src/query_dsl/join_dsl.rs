@@ -1,7 +1,7 @@
 use crate::helper_types;
 use crate::query_builder::AsQuery;
 use crate::query_source::joins::OnClauseWrapper;
-use crate::query_source::{JoinTo, QuerySource, Table};
+use crate::query_source::{JoinTo, QueryRelation, QuerySource};
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
@@ -13,7 +13,7 @@ pub trait InternalJoinDsl<Rhs, Kind, On> {
 
 impl<T, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for T
 where
-    T: Table + AsQuery,
+    T: QueryRelation + AsQuery,
     T::Query: InternalJoinDsl<Rhs, Kind, On>,
 {
     type Output = <T::Query as InternalJoinDsl<Rhs, Kind, On>>::Output;

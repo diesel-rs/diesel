@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
+use crate::MigrationError;
 use crate::errors::RunMigrationsError;
 use crate::file_based_migrations::{DieselMigrationName, TomlMetadataWrapper};
-use crate::MigrationError;
 use diesel::backend::Backend;
 use diesel::migration::{Migration, MigrationName, MigrationSource, MigrationVersion, Result};
 
