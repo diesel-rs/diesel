@@ -1,10 +1,10 @@
-error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::table>` is not satisfied
+error[E0277]: the trait bound `table: UndecoratedInsertRecord<table>` is not satisfied
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:30:24
    |
 LL |     insert_into(posts).values(vec![users, users]);
    |                        ^^^^^^ unsatisfied trait bound
    |
-help: the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
+help: the trait `diesel::query_builder::insert_statement::UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:6:1
    |
  LL | / table! {
@@ -14,7 +14,7 @@ help: the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `
 ...  |
 LL | | }
    | |_^
-   = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
+   = help: the following other types implement trait `diesel::query_builder::insert_statement::UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
              `(T, T1)` implements `UndecoratedInsertRecord<Tab>`
              `(T, T1, T2)` implements `UndecoratedInsertRecord<Tab>`

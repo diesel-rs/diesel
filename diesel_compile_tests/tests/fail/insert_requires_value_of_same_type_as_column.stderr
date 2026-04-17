@@ -9,10 +9,9 @@ LL |     insert_into(users).values(&name.eq(1));
              `&f64` implements `AsExpression<diesel::sql_types::Double>`
              `&i16` implements `AsExpression<diesel::sql_types::SmallInt>`
              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
-             `&i64` implements `AsExpression<diesel::sql_types::BigInt>`
+             `&i64` implements `AsExpression<BigInt>`
              `&i8` implements `AsExpression<TinyInt>`
-             `&u16` implements `AsExpression<Unsigned<SmallInt>>`
+             `&u16` implements `AsExpression<Unsigned<diesel::sql_types::SmallInt>>`
              `&u32` implements `AsExpression<Oid>`
            and N others
-
-   For more information about this error, try `rustc --explain E0277`.
+For more information about this error, try `rustc --explain E0277`.

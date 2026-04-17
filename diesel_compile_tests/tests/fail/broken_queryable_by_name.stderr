@@ -108,19 +108,20 @@ LL |     id: String,
    = help: see issue #48214
    = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `Untyped: load_dsl::private::CompatibleType<User, _>` is not satisfied
+error[E0277]: the trait bound `Untyped: CompatibleType<User, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
   LL |     let s = diesel::sql_query("…").load::<User>(conn);
-     |                                    ----         ^^^^ the trait `load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
+     |                                    ----         ^^^^ unsatisfied trait bound
      |                                    |
      |                                    required by a bound introduced by this call
      |
+     = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<User, _>` is not implemented for `Untyped`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
              on your struct `User` and in your query `.select(User::as_select())` to get a better error message
-help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
+help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
     --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
      |
  LL | /     impl<U, DB> CompatibleType<U, DB> for Untyped
@@ -129,7 +130,7 @@ help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `U
  LL | |         DB: Backend,
      | |____________________^
      = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
@@ -137,7 +138,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-
+  
+     
 error[E0277]: the trait bound `User: FromSqlRow<_, _>` is not satisfied
     --> tests/fail/broken_queryable_by_name.rs:36:49
      |
@@ -175,7 +177,7 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
      | |_________________________________________________________^ `InsertStatement<T, ..., ...>`
      = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>

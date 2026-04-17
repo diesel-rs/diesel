@@ -1,0 +1,36 @@
+error[E0425]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable2.rs:26:5
+   |
+LL |     non_existing: String,
+   |     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable2.rs:32:41
+   |
+LL |         select_expression_type = users::non_existing
+   |                                         ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable2.rs:39:53
+   |
+LL |         select_expression_type = (users::id, users::non_existing)
+   |                                                     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable2.rs:26:5
+   |
+LL |     non_existing: String,
+   |     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable2.rs:30:36
+   |
+LL |         select_expression = users::non_existing,
+   |                                    ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable2.rs:37:48
+   |
+LL |         select_expression = (users::id, users::non_existing),
+   |                                                ^^^^^^^^^^^^ not found in `users`
+For more information about this error, try `rustc --explain E0425`.

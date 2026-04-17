@@ -13,13 +13,13 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
     |         ^^^^^^
     = note: `non_users::columns::noname` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
               `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
     |
@@ -46,13 +46,13 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
     |         ^^^^^^
     = note: `non_users::columns::noname` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
               `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -80,13 +80,13 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
     |         ^^^^^^
     = note: `non_users::columns::noname` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
-              `non_users::columns::noname` implements `SelectableExpression<JoinOn<Join, On>>`
               `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs

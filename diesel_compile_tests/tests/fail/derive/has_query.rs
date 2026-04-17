@@ -17,7 +17,7 @@ table! {
 
 #[derive(HasQuery)]
 struct User1 {
-    //~^ ERROR: failed to resolve: use of unresolved module or unlinked crate `user1s`
+    //~^ ERROR: cannot find module or crate `user1s` in this scope
     id: i32,
     name: String,
 }

@@ -74,17 +74,18 @@ LL |     embed_user: User,
              `(T1, T2, T3, T4, T5, T6, T7, T)` implements `FromStaticSqlRow<(ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST), __DB>`
            and N others
 note: required for `User` to implement `Queryable<(Integer, Text), Pg>`
-  --> tests/fail/selectable_with_typemisamatch.rs:12:22
+  --> tests/fail/selectable_with_typemisamatch.rs:15:8
    |
 LL | #[derive(Selectable, Queryable)]
-   |                      ^^^^^^^^^ unsatisfied trait bound introduced in this `derive` macro
+   |                      --------- type parameter would need to implement `Queryable<(Integer, Text), Pg>`
 ...
 LL | struct User {
    |        ^^^^
+   = help: consider manually implementing `Queryable<(Integer, Text), Pg>` to avoid undesired bounds
    = note: required for `User` to implement `FromSqlRow<(Integer, Text), Pg>`
    = help: see issue #48214
 
-      = note: this error originates in the derive macro `Selectable` which comes from the expansion of the derive macro `Queryable` (in Nightly builds, run with -Z macro-backtrace for more info)
+      = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectBy<User, _>: CompatibleType<_, _>` is not satisfied
     --> tests/fail/selectable_with_typemisamatch.rs:43:15
@@ -94,12 +95,12 @@ error[E0277]: the trait bound `SelectBy<User, _>: CompatibleType<_, _>` is not s
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `load_dsl::private::CompatibleType<_, _>` is not implemented for `diesel::expression::select_by::SelectBy<User, _>`
+     = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<_, _>` is not implemented for `diesel::expression::select_by::SelectBy<User, _>`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
              on your struct `_` and in your query `.select(_::as_select())` to get a better error message
-help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `diesel::expression::select_by::SelectBy<U, DB>`
+help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is implemented for `diesel::expression::select_by::SelectBy<U, DB>`
     --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
      |
  LL | /     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
@@ -111,7 +112,7 @@ help: the trait `load_dsl::private::CompatibleType<U, DB>` is implemented for `d
  LL | |         U: FromSqlRow<ST, DB>,
      | |______________________________^
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, _>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>

@@ -6,7 +6,7 @@ error[E0277]: `Groups` frame clauses require a ordered window function
     |
     = note: call `.window_order(some_column)` first
 help: the trait `ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder>` is not implemented for `Groups`
-      but trait `ValidFrameClause<Order<_, true>>` is implemented for it
+      but trait `ValidFrameClause<diesel::expression::functions::aggregate_expressions::aggregate_order::Order<_, true>>` is implemented for it
    --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
     |
 LL | impl<O> ValidFrameClause<Order<O, true>> for Groups {}
