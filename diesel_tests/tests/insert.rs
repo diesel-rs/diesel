@@ -290,6 +290,53 @@ fn insert_records_with_custom_returning_clause() {
     assert_eq!(expected_users, inserted_users);
 }
 
+// regression test for https://github.com/diesel-rs/diesel/issues/4989
+#[diesel_test_helper::test]
+#[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+fn batch_insert_with_custom_returning_clause_sqlite() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ];
+
+    let inserted_users = insert_into(users)
+        .values(new_users)
+        .returning((name, hair_color))
+        .get_results::<(String, Option<String>)>(connection)
+        .unwrap();
+    let expected_users = vec![
+        ("Sean".to_string(), Some("Black".to_string())),
+        ("Tess".to_string(), None),
+    ];
+
+    assert_eq!(expected_users, inserted_users);
+}
+
+// regression test for https://github.com/diesel-rs/diesel/issues/4989
+#[diesel_test_helper::test]
+#[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+fn batch_insert_with_returning_id_sqlite() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+        NewUser::new("Jim", Some("Brown")),
+    ];
+
+    let inserted_ids = insert_into(users)
+        .values(new_users)
+        .returning(id)
+        .get_results::<i32>(connection)
+        .unwrap();
+
+    assert_eq!(inserted_ids.len(), 3);
+}
+
 #[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn batch_insert_with_defaults() {
