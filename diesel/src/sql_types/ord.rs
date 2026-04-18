@@ -24,6 +24,8 @@ impl SqlOrd for sql_types::Timestamptz {}
 impl SqlOrd for sql_types::Citext {}
 #[cfg(feature = "postgres_backend")]
 impl<T: SqlOrd> SqlOrd for sql_types::Array<T> {}
+#[cfg(feature = "postgres")]
+impl SqlOrd for sql_types::Numeric {}
 
 #[cfg(feature = "mysql_backend")]
 impl SqlOrd for sql_types::Datetime {}
