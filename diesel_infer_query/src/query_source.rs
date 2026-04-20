@@ -142,7 +142,7 @@ impl<'a> QuerySource<'a> {
                         ObjectNamePart::Identifier(schema),
                         ObjectNamePart::Identifier(name),
                     ] => (&name.value, Some(schema.value.as_str())),
-                    // for now anythinge else is not supported, but that should be fine
+                    // for now anything else is not supported, but that should be fine
                     _ => {
                         return Err(Error::UnsupportedSql {
                             msg: format!("Unsupported name: `{name}`"),
