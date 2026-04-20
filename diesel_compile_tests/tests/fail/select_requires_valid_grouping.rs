@@ -41,7 +41,7 @@ allow_columns_to_appear_in_same_group_by_clause!(
 
 fn main() {
     use diesel::dsl;
-    // cases thas should compile
+    // cases that should compile
 
     // A column appearing in the group by clause should be considered valid for the select clause
     let source = users::table.group_by(users::name).select(users::name);

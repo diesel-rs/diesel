@@ -521,7 +521,7 @@ impl ToSql<crate::schema::smdb::sql_types::ServiceEndpoint, Pg> for Endpoint {
 
 I cannot stress enough that it is paramount that the tuple type signature must match exactly the Postgres type signature
 defined in your up.sql.
-Ideally, you want to use the split view function in your IDE to have the up.sql in one pane and the the ToSql
+Ideally, you want to use the split view function in your IDE to have the up.sql in one pane and the ToSql
 implementation in another pane, both side by side, to double check
 that the number and types match.
 If the type or number of types mismatch, you will get a compiler error telling you that somehow either
