@@ -175,7 +175,10 @@ impl PgMetadataLookup for Dummy {
             schema.map(Into::into).map(Cow::Owned),
             Cow::Owned(type_name.into()),
         );
-        crate::pg::PgTypeMetadata(Err(FailedToLookupTypeError::new_internal(cache_key)))
+        crate::pg::PgTypeMetadata {
+            inner: Err(FailedToLookupTypeError::new_internal(cache_key)),
+            bind_oid_override: None,
+        }
     }
 }
 

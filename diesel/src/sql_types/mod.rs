@@ -205,7 +205,6 @@ pub type Decimal = Numeric;
 ///
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[diesel(postgres_type(oid = 25, array_oid = 1009))]
 #[diesel(sqlite_type(name = "Text"))]
 #[diesel(mysql_type(name = "String"))]
 pub struct Text;

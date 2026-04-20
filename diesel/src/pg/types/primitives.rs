@@ -1,9 +1,22 @@
 use std::io::prelude::*;
 
 use crate::deserialize::{self, FromSql, Queryable};
-use crate::pg::{Pg, PgValue};
+use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
+use crate::sql_types::HasSqlType;
+
+#[cfg(feature = "postgres_backend")]
+impl HasSqlType<sql_types::Text> for Pg {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        // Use OID 0 (untyped string literal) for scalar bind parameters.
+        // This lets PostgreSQL infer the parameter type from the column being
+        // compared, which is required for index scans on `char(n)` / `bpchar`
+        // columns (issue #1912). The real OID (25) is still returned by `oid()`
+        // and is used when encoding array element types in binary payloads.
+        PgTypeMetadata::new_with_untyped_bind(25, 1009)
+    }
+}
 
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Bool, Pg> for bool {

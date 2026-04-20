@@ -104,7 +104,7 @@ impl Statement {
         let sql_cstr = CString::new(sql)?;
         let param_types_vec = param_types
             .iter()
-            .map(|x| x.oid())
+            .map(|x| x.bind_oid())
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
 
