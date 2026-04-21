@@ -1,6 +1,7 @@
 use std::io::Write;
+use std::mem;
 use std::os::raw as libc;
-use std::{mem, slice};
+use std::ptr;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
@@ -53,7 +54,7 @@ pub struct MysqlTime {
 impl MysqlTime {
     /// Construct a new instance of [MysqlTime]
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub const fn new(
         year: libc::c_uint,
         month: libc::c_uint,
         day: libc::c_uint,
@@ -77,6 +78,77 @@ impl MysqlTime {
             time_type,
             time_zone_displacement,
         }
+    }
+
+    // Serialize a given `MysqlTime` instance to a byte buffer
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    #[allow(unsafe_code)] // manual serialization of a type to a byte array
+    fn serialize(&self) -> [u8; mem::size_of::<MysqlTime>()] {
+        unsafe fn copy_bytes<T>(out: &mut [u8], field_ptr: &T, start: *const MysqlTime)
+        where
+            T: Copy,
+        {
+            let field_ptr = ptr::from_ref(field_ptr);
+            let offset = unsafe {
+                // SAFETY:
+                // * The inner function is only called with non-zero sized fields of the same struct
+                (field_ptr as *const u8).offset_from(start as *const u8)
+            };
+            let out_ptr = out.as_mut_ptr();
+            unsafe {
+                // SAFETY:
+                // * The inner function ensures that we have a pointer to `T` so it's valid to copy size_of<T>` bytes
+                // * The outer function only calls the inner function for primitive types with a defined layout
+                //   For integers (any field beside `neg`) any bit pattern is valid
+                //   For bools (the `neg` field) only 0 and 1 are valid pattern, but given that we
+                //   go from bool to u8 that's no problem as 0 and 1 are valid u8 bit patterns
+                ptr::copy::<u8>(
+                    field_ptr as *const u8,
+                    dbg!(out_ptr.offset(offset)),
+                    mem::size_of::<T>(),
+                )
+            };
+        }
+        // Start with an empty buffer here
+        let mut buffer = [0_u8; mem::size_of::<MysqlTime>()];
+
+        // we are allowed to have several shared references to self (and it's fields)
+        let start = ptr::from_ref(self);
+
+        // full destructing here to make sure we don't miss a field
+        let MysqlTime {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            second_part,
+            neg,
+            time_type,
+            time_zone_displacement,
+        } = self;
+        // we manually write out each field to an intermediate buffer here
+        // to make sure we don't touch the padding bytes contained in `MysqlTime`
+        // touching the padding bytes would be undefined behaviour
+        unsafe {
+            // SAFETY:
+            // * We only call copy_bytes on fields of the struct
+            // * All struct fields are primitive types
+            copy_bytes(&mut buffer, year, start);
+            copy_bytes(&mut buffer, month, start);
+            copy_bytes(&mut buffer, day, start);
+            copy_bytes(&mut buffer, hour, start);
+            copy_bytes(&mut buffer, minute, start);
+            copy_bytes(&mut buffer, second, start);
+            copy_bytes(&mut buffer, second_part, start);
+            copy_bytes(&mut buffer, neg, start);
+            copy_bytes(&mut buffer, time_type, start);
+            copy_bytes(&mut buffer, time_zone_displacement, start);
+        }
+        buffer
     }
 }
 
@@ -115,13 +187,10 @@ macro_rules! mysql_time_impls {
     ($ty:ty) => {
         #[cfg(feature = "mysql_backend")]
         impl ToSql<$ty, Mysql> for MysqlTime {
-            #[allow(unsafe_code)] // pointer cast
             fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
-                let bytes = unsafe {
-                    let bytes_ptr = self as *const MysqlTime as *const u8;
-                    slice::from_raw_parts(bytes_ptr, mem::size_of::<MysqlTime>())
-                };
-                out.write_all(bytes)?;
+                let buffer = self.serialize();
+
+                out.write_all(&buffer)?;
                 Ok(IsNull::No)
             }
         }

@@ -474,6 +474,16 @@ pub trait FromSql<A, DB: Backend>: Sized {
     }
 }
 
+/// A helper trait for deserializing data in a borrowed variant
+///
+/// This is mostly useful for getting a `&str` or `&[u8]` in your code
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) trait FromSqlRef<'a, A, DB: Backend>: Sized {
+    fn from_sql(bytes: DB::RawValue<'a>) -> Result<Self>;
+}
+
 /// Deserialize a database row into a rust data structure
 ///
 /// Diesel provides wild card implementations of this trait for all types

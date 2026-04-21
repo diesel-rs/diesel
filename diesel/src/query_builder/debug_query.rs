@@ -38,23 +38,37 @@ where
     Ok(query_builder.finish())
 }
 
-fn display<DB>(query: &dyn QueryFragment<DB>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+fn fmt_query<DB>(
+    query: &dyn QueryFragment<DB>,
+    f: &mut fmt::Formatter<'_>,
+    formatter: fn(String, &DebugBinds<'_>, f: &mut fmt::Formatter<'_>) -> fmt::Result,
+) -> fmt::Result
 where
     DB: Backend + Default,
     DB::QueryBuilder: Default,
 {
-    let debug_binds = DebugBinds::<DB>::new(query);
+    let backend = DB::default();
+    let mut buffer = Vec::new();
+    let ast_pass = AstPass::debug_binds(&mut buffer, &backend);
+    query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
+    let debug_binds = DebugBinds::new(&buffer);
     let query = serialize_query(query)?;
+    formatter(query, &debug_binds, f)
+}
+
+pub(crate) fn display(
+    query: String,
+    debug_binds: &DebugBinds<'_>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
     write!(f, "{query} -- binds: {debug_binds:?}")
 }
 
-fn debug<DB>(query: &dyn QueryFragment<DB>, f: &mut fmt::Formatter<'_>) -> fmt::Result
-where
-    DB: Backend + Default,
-    DB::QueryBuilder: Default,
-{
-    let debug_binds = DebugBinds::<DB>::new(query);
-    let query = serialize_query(query)?;
+pub(crate) fn debug(
+    query: String,
+    debug_binds: &DebugBinds<'_>,
+    f: &mut fmt::Formatter<'_>,
+) -> fmt::Result {
     f.debug_struct("Query")
         .field("sql", &query)
         .field("binds", &debug_binds)
@@ -68,7 +82,7 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        display(self.query, f)
+        fmt_query(self.query, f, display)
     }
 }
 
@@ -79,35 +93,25 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        debug(self.query, f)
+        fmt_query(self.query, f, debug)
     }
 }
 
 /// A struct that implements `fmt::Debug` by walking the given AST and writing
 /// the `fmt::Debug` implementation of each bind parameter.
-pub(crate) struct DebugBinds<'a, DB> {
-    query: &'a dyn QueryFragment<DB>,
+pub(crate) struct DebugBinds<'a> {
+    binds: &'a [Box<dyn Debug + 'a>],
 }
 
-impl<'a, DB> DebugBinds<'a, DB>
-where
-    DB: Backend,
-{
-    fn new(query: &'a dyn QueryFragment<DB>) -> Self {
-        DebugBinds { query }
+impl<'a> DebugBinds<'a> {
+    pub(crate) fn new(binds: &'a [Box<dyn Debug + 'a>]) -> Self {
+        DebugBinds { binds }
     }
 }
 
-impl<DB> Debug for DebugBinds<'_, DB>
-where
-    DB: Backend + Default,
-{
+impl Debug for DebugBinds<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let backend = DB::default();
-        let mut buffer = Vec::new();
-        let ast_pass = AstPass::debug_binds(&mut buffer, &backend);
-        self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
-        format_list(f, &buffer)
+        format_list(f, self.binds)
     }
 }
 

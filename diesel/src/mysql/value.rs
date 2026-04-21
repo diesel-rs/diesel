@@ -26,7 +26,7 @@ impl<'a> MysqlValue<'a> {
     }
 
     /// Get the underlying raw byte representation
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &'a [u8] {
         self.raw
     }
 

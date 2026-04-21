@@ -5,7 +5,6 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use super::raw::RawConnection;
-use super::row::PrivateSqliteRow;
 use super::{Sqlite, SqliteAggregateFunction, SqliteBindValue};
 use crate::backend::Backend;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
@@ -16,11 +15,6 @@ use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
 use crate::sqlite::SqliteValue;
-use std::cell::{Ref, RefCell};
-use std::marker::PhantomData;
-use std::mem::ManuallyDrop;
-use std::ops::DerefMut;
-use std::rc::Rc;
 
 pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
@@ -126,28 +120,8 @@ where
 }
 
 struct FunctionRow<'a> {
-    // we use `ManuallyDrop` to prevent dropping the content of the internal vector
-    // as this buffer is owned by sqlite not by diesel
-    args: Rc<RefCell<ManuallyDrop<PrivateSqliteRow<'a, 'static>>>>,
+    args: &'a [Option<OwnedSqliteValue>],
     field_count: usize,
-    marker: PhantomData<&'a ffi::sqlite3_value>,
-}
-
-impl Drop for FunctionRow<'_> {
-    #[allow(unsafe_code)] // manual drop calls
-    fn drop(&mut self) {
-        if let Some(args) = Rc::get_mut(&mut self.args) {
-            if let PrivateSqliteRow::Duplicated { column_names, .. } =
-                DerefMut::deref_mut(RefCell::get_mut(args))
-            {
-                if Rc::strong_count(column_names) == 1 {
-                    // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
-                    // it's fine to just drop the values here
-                    unsafe { std::ptr::drop_in_place(column_names as *mut _) }
-                }
-            }
-        }
-    }
 }
 
 impl FunctionRow<'_> {
@@ -155,7 +129,7 @@ impl FunctionRow<'_> {
     fn new(args: &mut [*mut ffi::sqlite3_value]) -> Self {
         let lengths = args.len();
         let args = unsafe {
-            Vec::from_raw_parts(
+            core::slice::from_raw_parts(
                 // This cast is safe because:
                 // * Casting from a pointer to an array to a pointer to the first array
                 // element is safe
@@ -168,25 +142,15 @@ impl FunctionRow<'_> {
                 // Option<NonNull<T>> has the same size as *mut T"
                 // * The last point remains true for `OwnedSqliteValue` as `#[repr(transparent)]
                 // guarantees the same layout as the inner type
-                // * It's unsafe to drop the vector (and the vector elements)
-                // because of this we wrap the vector (or better the Row)
-                // Into `ManualDrop` to prevent the dropping
                 args as *mut [*mut ffi::sqlite3_value] as *mut ffi::sqlite3_value
                     as *mut Option<OwnedSqliteValue>,
-                lengths,
                 lengths,
             )
         };
 
         Self {
             field_count: lengths,
-            args: Rc::new(RefCell::new(ManuallyDrop::new(
-                PrivateSqliteRow::Duplicated {
-                    values: args,
-                    column_names: Rc::from(vec![None; lengths]),
-                },
-            ))),
-            marker: PhantomData,
+            args,
         }
     }
 }
@@ -212,7 +176,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
     {
         let col_idx = self.idx(idx)?;
         Some(FunctionArgument {
-            args: self.args.borrow(),
+            args: self.args,
             col_idx,
         })
     }
@@ -239,7 +203,7 @@ impl<'a> RowIndex<&'a str> for FunctionRow<'_> {
 }
 
 struct FunctionArgument<'a> {
-    args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a, 'static>>>,
+    args: &'a [Option<OwnedSqliteValue>],
     col_idx: usize,
 }
 
@@ -253,9 +217,6 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
     }
 
     fn value(&self) -> Option<<Sqlite as Backend>::RawValue<'_>> {
-        SqliteValue::new(
-            Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
-            self.col_idx,
-        )
+        SqliteValue::from_function_row(self.args, self.col_idx)
     }
 }

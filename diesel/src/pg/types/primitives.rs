@@ -1,5 +1,7 @@
 use std::io::prelude::*;
 
+#[cfg(feature = "postgres_backend")]
+use crate::deserialize::FromSqlRef;
 use crate::deserialize::{self, FromSql, Queryable};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -52,6 +54,13 @@ impl FromSql<sql_types::Text, Pg> for *const str {
 }
 
 #[cfg(feature = "postgres_backend")]
+impl<'a> FromSqlRef<'a, sql_types::Text, Pg> for &'a str {
+    fn from_sql(value: PgValue<'a>) -> deserialize::Result<Self> {
+        Ok(core::str::from_utf8(value.as_bytes())?)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
 impl Queryable<sql_types::VarChar, Pg> for *const str {
     type Row = Self;
 
@@ -93,6 +102,12 @@ impl FromSql<sql_types::Citext, Pg> for String {
 impl FromSql<sql_types::Binary, Pg> for *const [u8] {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const _)
+    }
+}
+
+impl<'a> FromSqlRef<'a, sql_types::Binary, Pg> for &'a [u8] {
+    fn from_sql(bytes: PgValue<'a>) -> deserialize::Result<Self> {
+        Ok(bytes.as_bytes())
     }
 }
 

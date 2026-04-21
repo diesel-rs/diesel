@@ -5,7 +5,7 @@ mod numeric;
 
 use super::connection::SqliteValue;
 use super::Sqlite;
-use crate::deserialize::{self, FromSql, Queryable};
+use crate::deserialize::{self, FromSql, FromSqlRef, Queryable};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
@@ -21,6 +21,13 @@ impl FromSql<sql_types::VarChar, Sqlite> for *const str {
     fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         let text = value.read_text();
         Ok(text as *const _)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a> FromSqlRef<'a, sql_types::VarChar, Sqlite> for &'a str {
+    fn from_sql(mut value: SqliteValue<'a, 'a, 'a>) -> deserialize::Result<Self> {
+        Ok(value.as_utf8_str()?)
     }
 }
 
@@ -43,6 +50,13 @@ impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
     fn from_sql(mut bytes: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         let bytes = bytes.read_blob();
         Ok(bytes as *const _)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl<'a> FromSqlRef<'a, sql_types::Binary, Sqlite> for &'a [u8] {
+    fn from_sql(mut value: SqliteValue<'a, 'a, 'a>) -> deserialize::Result<Self> {
+        Ok(value.read_blob())
     }
 }
 

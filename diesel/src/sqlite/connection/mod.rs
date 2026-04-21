@@ -1016,4 +1016,37 @@ mod tests {
         check_empty_query_error(crate::sql_query("\n\t").execute(connection));
         check_empty_query_error(crate::sql_query("-- SELECT 1;").execute(connection));
     }
+
+    #[diesel_test_helper::test]
+    fn aggregate_function_works_with_aligned_data() {
+        #[derive(Debug, Default)]
+        #[repr(align(64))]
+        struct OverAligned;
+
+        impl SqliteAggregateFunction<i32> for OverAligned {
+            type Output = i64;
+
+            fn step(&mut self, _value: i32) {
+                let need = core::mem::align_of::<Self>();
+                let got = core::mem::align_of_val(self);
+                assert_eq!(need, got);
+            }
+
+            fn finalize(_agg: Option<Self>) -> i64 {
+                0
+            }
+        }
+        #[declare_sql_function]
+        extern "SQL" {
+            #[aggregate]
+            fn over_aligned_sum(x: Integer) -> diesel::sql_types::BigInt;
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+        over_aligned_sum_utils::register_impl::<OverAligned, _>(&mut conn).unwrap();
+
+        diesel::select(over_aligned_sum(1))
+            .execute(&mut conn)
+            .unwrap();
+    }
 }
