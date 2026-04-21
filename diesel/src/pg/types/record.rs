@@ -1,5 +1,6 @@
 use byteorder::*;
 use core::num::NonZeroU32;
+use std::cell::Cell;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql, Queryable};
@@ -133,6 +134,14 @@ macro_rules! tuple_impls {
 
 diesel_derives::__diesel_for_each_tuple!(tuple_impls);
 
+thread_local! {
+    static INSIDE_PG_ROW: Cell<bool> = const { Cell::new(false) };
+}
+
+pub(super) fn is_inside_pg_row() -> bool {
+    INSIDE_PG_ROW.with(|v| v.get())
+}
+
 #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
 pub struct PgTuple<T>(T);
 
@@ -142,7 +151,10 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("ROW(");
-        self.0.walk_ast(out.reborrow())?;
+        let was_inside = INSIDE_PG_ROW.with(|v| v.replace(true));
+        let result = self.0.walk_ast(out.reborrow());
+        INSIDE_PG_ROW.with(|v| v.set(was_inside));
+        result?;
         out.push_sql(")");
         Ok(())
     }
