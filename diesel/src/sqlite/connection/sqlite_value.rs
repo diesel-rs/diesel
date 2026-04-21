@@ -33,6 +33,14 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
     // while holding this value. We ensure this by including
     // a reference to the row above.
     value: NonNull<ffi::sqlite3_value>,
+    // An optional storage for a string that is
+    // created from an non-utf8 blob value via `read_str`
+    // This field mostly exists for as we cannot
+    // return an error in that case as the API is
+    // stable and doesn't return a `Result`. We instead
+    // use `String::from_utf8_lossy` there and need
+    // to store the potential owned result here
+    string_ref: Option<alloc::boxed::Box<str>>,
 }
 
 #[derive(Debug)]
@@ -70,6 +78,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         let ret = Self {
             _row: Some(row),
             value,
+            string_ref: None,
         };
         if ret.value_type().is_none() {
             None
@@ -83,7 +92,11 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         col_idx: usize,
     ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
         let value = row.values.get(col_idx).and_then(|v| v.as_ref())?.value;
-        let ret = Self { _row: None, value };
+        let ret = Self {
+            _row: None,
+            value,
+            string_ref: None,
+        };
         if ret.value_type().is_none() {
             None
         } else {
@@ -91,18 +104,57 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         }
     }
 
-    pub(crate) fn parse_string<'value, R>(&'value mut self, f: impl FnOnce(&'value str) -> R) -> R {
-        let s = unsafe {
-            let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
+    pub(super) fn from_function_row(
+        row: &'row [Option<OwnedSqliteValue>],
+        col_idx: usize,
+    ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
+        let value = row.get(col_idx).and_then(|v| v.as_ref())?.value;
+        let ret = Self {
+            _row: None,
+            value,
+            string_ref: None,
+        };
+        if ret.value_type().is_none() {
+            None
+        } else {
+            Some(ret)
+        }
+    }
+
+    pub(crate) fn as_byte_string(&mut self) -> &'row [u8] {
+        unsafe {
+            // https://sqlite.org/c3ref/value_blob.html
+            // Please pay particular attention to the fact that the pointer returned
+            // from sqlite3_value_blob(), sqlite3_value_text(), or sqlite3_value_text16()
+            // can be invalidated by a subsequent call to sqlite3_value_bytes(), sqlite3_value_bytes16(),
+            // sqlite3_value_text(), or sqlite3_value_text16().
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
-            let bytes = slice::from_raw_parts(
+            let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
+            slice::from_raw_parts(
                 ptr,
                 len.try_into()
                     .expect("Diesel expects to run at least on a 32 bit platform"),
-            );
-            // The string is guaranteed to be utf8 according to
-            // https://www.sqlite.org/c3ref/value_blob.html
-            str::from_utf8_unchecked(bytes)
+            )
+        }
+    }
+
+    pub(crate) fn as_utf8_str(&mut self) -> Result<&'row str, core::str::Utf8Error> {
+        str::from_utf8(self.as_byte_string())
+    }
+
+    pub(crate) fn parse_string<'value, R>(&'value mut self, f: impl FnOnce(&'value str) -> R) -> R {
+        let bytes = self.as_byte_string();
+        // For blobs this might return non-utf values
+        //
+        // The sqlite documentation there seems to be at least inaccurate
+        let s = match alloc::string::String::from_utf8_lossy(bytes) {
+            alloc::borrow::Cow::Borrowed(s) => s,
+            alloc::borrow::Cow::Owned(b) => {
+                self.string_ref = Some(b.into_boxed_str());
+                self.string_ref
+                    .as_deref()
+                    .expect("We initialised it literally above")
+            }
         };
         f(s)
     }
@@ -129,10 +181,15 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
-    pub fn read_blob(&mut self) -> &[u8] {
+    pub fn read_blob(&mut self) -> &'row [u8] {
         unsafe {
-            let ptr = ffi::sqlite3_value_blob(self.value.as_ptr());
+            // https://sqlite.org/c3ref/value_blob.html
+            // Please pay particular attention to the fact that the pointer returned
+            // from sqlite3_value_blob(), sqlite3_value_text(), or sqlite3_value_text16()
+            // can be invalidated by a subsequent call to sqlite3_value_bytes(), sqlite3_value_bytes16(),
+            // sqlite3_value_text(), or sqlite3_value_text16().
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
+            let ptr = ffi::sqlite3_value_blob(self.value.as_ptr());
             if len == 0 {
                 // rusts std-lib has an debug_assert that prevents creating
                 // slices without elements from a pointer
@@ -248,7 +305,7 @@ mod tests {
         diesel::sql_query("INSERT INTO tests(int, text, blob, float) VALUES(?, ?, ?, ?)")
             .bind::<Int4, _>(42)
             .bind::<Text, _>("foo")
-            .bind::<Blob, _>(b"foo")
+            .bind::<Blob, _>([0xFF_u8, 0xFE, 0xFD])
             .bind::<Double, _>(3.14)
             .execute(&mut conn)
             .unwrap();
@@ -293,9 +350,9 @@ mod tests {
         let mut blob_value = blob_field.value().unwrap();
         assert_eq!(blob_value.read_double(), 0.0);
         let mut blob_value = blob_field.value().unwrap();
-        assert_eq!(blob_value.read_text(), "foo");
+        assert_eq!(blob_value.read_text(), "\u{fffd}\u{fffd}\u{fffd}"); // ���
         let mut blob_value = blob_field.value().unwrap();
-        assert_eq!(blob_value.read_blob(), b"foo");
+        assert_eq!(blob_value.read_blob(), [0xFF, 0xFE, 0xFD]);
 
         let mut float_value = float_field.value().unwrap();
         assert_eq!(float_value.read_integer(), 3);

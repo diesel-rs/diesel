@@ -1,4 +1,6 @@
 use crate::Queryable;
+#[cfg(feature = "mysql_backend")]
+use crate::deserialize::FromSqlRef;
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
@@ -167,6 +169,14 @@ impl FromSql<Text, Mysql> for *const str {
 }
 
 #[cfg(feature = "mysql_backend")]
+impl<'a> FromSqlRef<'a, Text, Mysql> for &'a str {
+    fn from_sql(bytes: MysqlValue<'a>) -> deserialize::Result<Self> {
+        let string = str::from_utf8(bytes.as_bytes())?;
+        Ok(string)
+    }
+}
+
+#[cfg(feature = "mysql_backend")]
 impl Queryable<Text, Mysql> for *const str {
     type Row = Self;
 
@@ -184,6 +194,13 @@ impl Queryable<Text, Mysql> for *const str {
 impl FromSql<Binary, Mysql> for *const [u8] {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const [u8])
+    }
+}
+
+#[cfg(feature = "mysql_backend")]
+impl<'a> FromSqlRef<'a, Binary, Mysql> for &'a [u8] {
+    fn from_sql(bytes: MysqlValue<'a>) -> deserialize::Result<Self> {
+        Ok(bytes.as_bytes())
     }
 }
 

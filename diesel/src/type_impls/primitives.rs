@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSql, Queryable};
+use crate::deserialize::{self, FromSql, FromSqlRef, Queryable};
 #[cfg(feature = "std")]
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::serialize::{self, Output, ToSql};
@@ -130,14 +130,10 @@ mod foreign_impls {
 impl<ST, DB> FromSql<ST, DB> for String
 where
     DB: Backend,
-    *const str: FromSql<ST, DB>,
+    for<'a> &'a str: FromSqlRef<'a, ST, DB>,
 {
-    #[allow(unsafe_code)] // ptr dereferencing
     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-        let str_ptr = <*const str as FromSql<ST, DB>>::from_sql(bytes)?;
-        // We know that the pointer impl will never return null
-        let string = unsafe { &*str_ptr };
-        Ok(string.to_owned())
+        <&str as FromSqlRef<'_, ST, DB>>::from_sql(bytes).map(|v| v.to_owned())
     }
 }
 
@@ -169,14 +165,10 @@ where
 impl<ST, DB> FromSql<ST, DB> for Vec<u8>
 where
     DB: Backend,
-    *const [u8]: FromSql<ST, DB>,
+    for<'a> &'a [u8]: FromSqlRef<'a, ST, DB>,
 {
-    #[allow(unsafe_code)] // ptr dereferencing
     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-        let slice_ptr = <*const [u8] as FromSql<ST, DB>>::from_sql(bytes)?;
-        // We know that the pointer impl will never return null
-        let bytes = unsafe { &*slice_ptr };
-        Ok(bytes.to_owned())
+        <&[u8] as FromSqlRef<'_, ST, DB>>::from_sql(bytes).map(|v| v.to_owned())
     }
 }
 
