@@ -1,6 +1,6 @@
 use byteorder::*;
-use core::num::NonZeroU32;
 use core::cell::Cell;
+use core::num::NonZeroU32;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql, Queryable};
