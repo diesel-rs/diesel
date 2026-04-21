@@ -69,7 +69,13 @@ impl core::fmt::Display for FailedToLookupTypeError {
 /// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[must_use]
-pub struct PgTypeMetadata(pub(in crate::pg) Result<InnerPgTypeMetadata, FailedToLookupTypeError>);
+pub struct PgTypeMetadata {
+    pub(in crate::pg) inner: Result<InnerPgTypeMetadata, FailedToLookupTypeError>,
+    /// When `Some`, overrides the OID sent as the bind parameter type.
+    /// Used to send OID 0 (untyped) for string types so PostgreSQL infers
+    /// the type from context rather than casting the column to `text`.
+    pub(in crate::pg) bind_oid_override: Option<u32>,
+}
 
 impl PgTypeMetadata {
     /// Create a new instance of this type based on known constant [OIDs].
@@ -80,10 +86,33 @@ impl PgTypeMetadata {
     /// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
     /// [PgMetadataLookup]: struct.PgMetadataLookup.html
     pub fn new(type_oid: u32, array_oid: u32) -> Self {
-        Self(Ok(InnerPgTypeMetadata {
-            oid: type_oid,
-            array_oid,
-        }))
+        Self {
+            inner: Ok(InnerPgTypeMetadata {
+                oid: type_oid,
+                array_oid,
+            }),
+            bind_oid_override: None,
+        }
+    }
+
+    /// Like [`new`], but sends OID 0 (untyped string literal) as the bind
+    /// parameter type instead of the real OID. This lets PostgreSQL infer the
+    /// parameter type from context (e.g. the column type being compared),
+    /// which is required for index scans on `char(n)` / `bpchar` columns.
+    ///
+    /// The real OID is still returned by [`oid`] and is used when encoding
+    /// array element types in binary payloads.
+    ///
+    /// [`new`]: Self::new
+    /// [`oid`]: Self::oid
+    pub(in crate::pg) fn new_with_untyped_bind(type_oid: u32, array_oid: u32) -> Self {
+        Self {
+            inner: Ok(InnerPgTypeMetadata {
+                oid: type_oid,
+                array_oid,
+            }),
+            bind_oid_override: Some(0),
+        }
     }
 
     /// Create a new instance of this type based on dynamically lookup information
@@ -95,21 +124,43 @@ impl PgTypeMetadata {
     /// implement the corresponding lookup functionality
     #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
     pub fn from_result(r: Result<(u32, u32), FailedToLookupTypeError>) -> Self {
-        Self(r.map(|(oid, array_oid)| InnerPgTypeMetadata { oid, array_oid }))
+        Self {
+            inner: r.map(|(oid, array_oid)| InnerPgTypeMetadata { oid, array_oid }),
+            bind_oid_override: None,
+        }
     }
 
     /// The [OID] of `T`
     ///
     /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
     pub fn oid(&self) -> Result<u32, impl core::error::Error + Send + Sync + use<>> {
-        self.0.as_ref().map(|i| i.oid).map_err(Clone::clone)
+        self.inner.as_ref().map(|i| i.oid).map_err(Clone::clone)
+    }
+
+    /// The OID to send as the bind parameter type for scalar values of `T`.
+    ///
+    /// For most types this equals [`oid`]. For string types (`Text`,
+    /// `VarChar`, `Bpchar`) this returns 0 so PostgreSQL treats the
+    /// parameter as an untyped literal and infers the type from context.
+    ///
+    /// [`oid`]: Self::oid
+    pub(in crate::pg) fn bind_oid(
+        &self,
+    ) -> Result<u32, impl core::error::Error + Send + Sync + use<>> {
+        self.inner
+            .as_ref()
+            .map(|i| self.bind_oid_override.unwrap_or(i.oid))
+            .map_err(Clone::clone)
     }
 
     /// The [OID] of `T[]`
     ///
     /// [OID]: https://www.postgresql.org/docs/current/static/datatype-oid.html
     pub fn array_oid(&self) -> Result<u32, impl core::error::Error + Send + Sync + use<>> {
-        self.0.as_ref().map(|i| i.array_oid).map_err(Clone::clone)
+        self.inner
+            .as_ref()
+            .map(|i| i.array_oid)
+            .map_err(Clone::clone)
     }
 }
 

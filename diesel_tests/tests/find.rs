@@ -1,6 +1,60 @@
 use crate::schema::*;
 use diesel::*;
 
+#[cfg(feature = "postgres")]
+table! {
+    bpchar_pk_table (id) {
+        id -> diesel::pg::sql_types::Bpchar,
+        value -> Integer,
+    }
+}
+
+// Regression test for https://github.com/diesel-rs/diesel/issues/1912:
+// char(n) / bpchar columns must be queryable by index — sending OID 25 (text)
+// caused PostgreSQL to cast the column to text, defeating bpchar indexes.
+// OID 0 (untyped) lets PostgreSQL infer the type from context.
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn find_by_bpchar_pk() {
+    use self::bpchar_pk_table::dsl::*;
+    let conn = &mut connection();
+    diesel::sql_query(
+        "CREATE TABLE bpchar_pk_table (id CHAR(11) PRIMARY KEY, value INTEGER NOT NULL)",
+    )
+    .execute(conn)
+    .unwrap();
+    diesel::sql_query("INSERT INTO bpchar_pk_table (id, value) VALUES ('00005000000', 42)")
+        .execute(conn)
+        .unwrap();
+
+    let result = bpchar_pk_table
+        .find("00005000000")
+        .first::<(String, i32)>(conn);
+    assert_eq!(Ok(("00005000000".to_string(), 42)), result);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn filter_by_bpchar_column() {
+    use self::bpchar_pk_table::dsl::*;
+    let conn = &mut connection();
+    diesel::sql_query(
+        "CREATE TABLE bpchar_pk_table (id CHAR(11) PRIMARY KEY, value INTEGER NOT NULL)",
+    )
+    .execute(conn)
+    .unwrap();
+    diesel::sql_query(
+        "INSERT INTO bpchar_pk_table (id, value) VALUES ('00005000000', 42), ('00001000000', 7)",
+    )
+    .execute(conn)
+    .unwrap();
+
+    let result = bpchar_pk_table
+        .filter(id.eq("00005000000"))
+        .first::<(String, i32)>(conn);
+    assert_eq!(Ok(("00005000000".to_string(), 42)), result);
+}
+
 #[diesel_test_helper::test]
 fn find() {
     use crate::schema::users::table as users;

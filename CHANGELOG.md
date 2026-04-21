@@ -22,6 +22,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
+* Fixed queries on `char(n)` / `bpchar` columns performing sequential scans instead of index scans on PostgreSQL. Diesel was sending bind parameters with OID 25 (`text`), causing PostgreSQL to cast the column to `text` for comparison. Diesel now sends OID 0 (untyped string literal), allowing PostgreSQL to infer the parameter type from context and use the column's native type for the comparison. (fixes [#1912](https://github.com/diesel-rs/diesel/issues/1912))
 * Raise a compile-time error when mixing aggregate and non-aggregate expressions in an `ORDER BY` clause without a `GROUP BY` clause
 * Calling `.count()` or `.select(aggregate_expr)` on a query that already has a non-aggregate `.order_by()` clause now raises a compile-time error instead of generating invalid SQL that would be rejected by the database at runtime (fixes [#3815](https://github.com/diesel-rs/diesel/issues/3815))
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order

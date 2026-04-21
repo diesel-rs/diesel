@@ -33,9 +33,12 @@ where
     Pg: HasSqlType<T>,
 {
     fn metadata(lookup: &mut Self::MetadataLookup) -> PgTypeMetadata {
-        match <Pg as HasSqlType<T>>::metadata(lookup).0 {
+        match <Pg as HasSqlType<T>>::metadata(lookup).inner {
             Ok(tpe) => PgTypeMetadata::new(tpe.array_oid, 0),
-            c @ Err(_) => PgTypeMetadata(c),
+            c @ Err(_) => PgTypeMetadata {
+                inner: c,
+                bind_oid_override: None,
+            },
         }
     }
 }

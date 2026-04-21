@@ -69,11 +69,17 @@ where
             Ok(type_metadata) => {
                 self.get_metadata_cache()
                     .store_type(cache_key, type_metadata);
-                PgTypeMetadata(Ok(type_metadata))
+                PgTypeMetadata {
+                    inner: Ok(type_metadata),
+                    bind_oid_override: None,
+                }
             }
-            Err(_e) => PgTypeMetadata(Err(FailedToLookupTypeError::new_internal(
-                cache_key.into_owned(),
-            ))),
+            Err(_e) => PgTypeMetadata {
+                inner: Err(FailedToLookupTypeError::new_internal(
+                    cache_key.into_owned(),
+                )),
+                bind_oid_override: None,
+            },
         }
     }
 
@@ -181,7 +187,10 @@ impl PgMetadataCache {
 
     /// Lookup the OID of a custom type
     pub fn lookup_type(&self, type_name: &PgMetadataCacheKey<'_>) -> Option<PgTypeMetadata> {
-        Some(PgTypeMetadata(Ok(*self.cache.get(type_name)?)))
+        Some(PgTypeMetadata {
+            inner: Ok(*self.cache.get(type_name)?),
+            bind_oid_override: None,
+        })
     }
 
     /// Store the OID of a custom type
