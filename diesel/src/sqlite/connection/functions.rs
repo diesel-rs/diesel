@@ -16,13 +16,7 @@ use crate::sqlite::SqliteValue;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
 use alloc::boxed::Box;
-use alloc::rc::Rc;
 use alloc::string::ToString;
-use alloc::vec::Vec;
-use core::cell::{Ref, RefCell};
-use core::marker::PhantomData;
-use core::mem::ManuallyDrop;
-use core::ops::DerefMut;
 
 pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,

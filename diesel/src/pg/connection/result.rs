@@ -4,9 +4,8 @@ extern crate pq_sys;
 use self::pq_sys::*;
 use alloc::rc::Rc;
 use core::ffi as libc;
-use core::ffi::CStr;
 use core::num::NonZeroU32;
-use core::{slice, str};
+use core::str;
 
 use super::raw::{RawConnection, RawResult, ResultField};
 use super::row::PgRow;

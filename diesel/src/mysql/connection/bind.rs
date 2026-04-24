@@ -1,11 +1,11 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::cmp;
 use core::ffi as libc;
 use core::mem::MaybeUninit;
 use core::mem::{self, ManuallyDrop};
 use core::ops::Index;
 use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
-use core::cmp;
 
 use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql::connection::stmt::StatementMetadata;

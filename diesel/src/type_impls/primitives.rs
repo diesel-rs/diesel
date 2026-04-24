@@ -1,6 +1,5 @@
 use crate::backend::Backend;
-use crate::deserialize::FromSqlRef;
-use crate::deserialize::{self, FromSql, Queryable};
+use crate::deserialize::{self, FromSql, FromSqlRef, Queryable};
 #[cfg(feature = "std")]
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::serialize::{self, Output, ToSql};
