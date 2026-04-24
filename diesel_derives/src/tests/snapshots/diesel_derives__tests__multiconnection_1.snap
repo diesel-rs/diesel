@@ -2021,6 +2021,33 @@ mod multi_connection_impl {
                     }
                 }
             }
+            fn save_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
+                match self {
+                    Self::Pg(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.save_search_path()
+                    }
+                    Self::Sqlite(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.save_search_path()
+                    }
+                }
+            }
+            fn restore_search_path(
+                &mut self,
+                search_path: &str,
+            ) -> diesel::QueryResult<()> {
+                match self {
+                    Self::Pg(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.restore_search_path(search_path)
+                    }
+                    Self::Sqlite(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.restore_search_path(search_path)
+                    }
+                }
+            }
         }
         impl diesel::r2d2::R2D2Connection for MultiConnection {
             fn ping(&mut self) -> diesel::QueryResult<()> {

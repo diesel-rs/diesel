@@ -200,6 +200,16 @@ pub trait MigrationConnection: Connection {
     /// }
     /// ```
     fn setup(&mut self) -> QueryResult<usize>;
+
+    /// Save the current search_path so it can be restored after a migration.
+    fn save_search_path(&mut self) -> QueryResult<Option<String>> {
+        Ok(None)
+    }
+
+    /// Restore the search_path previously saved.
+    fn restore_search_path(&mut self, _search_path: &str) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 #[cfg(feature = "postgres")]
@@ -207,6 +217,22 @@ impl MigrationConnection for crate::pg::PgConnection {
     fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+    }
+
+    fn save_search_path(&mut self) -> QueryResult<Option<String>> {
+        use crate::RunQueryDsl;
+        use crate::dsl::{select, sql};
+        let search_path =
+            select(sql::<Text>("current_setting('search_path')")).get_result::<String>(self)?;
+        Ok(Some(search_path))
+    }
+
+    fn restore_search_path(&mut self, search_path: &str) -> QueryResult<()> {
+        use crate::RunQueryDsl;
+        crate::sql_query("SELECT set_config('search_path', $1, false)")
+            .bind::<Text, _>(search_path)
+            .execute(self)?;
+        Ok(())
     }
 }
 
