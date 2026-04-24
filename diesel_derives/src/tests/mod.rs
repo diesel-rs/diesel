@@ -82,6 +82,21 @@ fn format_input(input: proc_macro2::TokenStream) -> String {
         .unwrap_or_else(|_| input.to_string())
 }
 
+/// Expands a proc-macro with the given input and compares the output against a snapshot.
+///
+/// This function is used for snapshot testing of proc-macro output. It:
+/// 1. Calls the proc-macro function with the provided input
+/// 2. Pretty-prints the generated code
+/// 3. Compares it against a saved snapshot file using `insta`
+///
+/// # Arguments
+///
+/// * `function` - The proc-macro function to test (e.g., `table_proc_inner`)
+/// * `input` - The input tokens to pass to the macro
+/// * `attribute` - Formatter that wraps the input for display in the snapshot
+/// * `snapshot_name` - The name of the snapshot file to compare against. This should
+///   vary based on features that affect code generation (e.g., "postgres") since
+///   different features produce different output that requires separate snapshots.
 #[track_caller]
 fn expand_with<Fn: ProcMacroFn>(
     function: Fn,
