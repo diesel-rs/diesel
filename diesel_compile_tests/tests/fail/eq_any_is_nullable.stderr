@@ -16,7 +16,7 @@ help: the following other types implement trait `FromSql<A, DB>`
      |
     ::: DIESEL/diesel/diesel/src/pg/types/primitives.rs
      |
-   LL | impl FromSql<sql_types::Bool, Pg> for bool {
+  LL | impl FromSql<sql_types::Bool, Pg> for bool {
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `bool` implements `FromSql<diesel::sql_types::Bool, Pg>`
      |
     ::: DIESEL/diesel/diesel/src/mysql/types/mod.rs
