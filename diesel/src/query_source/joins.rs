@@ -284,8 +284,8 @@ where
     }
 }
 
-#[doc(hidden)]
 #[derive(Debug, Clone, Copy, Default, QueryId)]
+/// Represents an inner join between two tables
 pub struct Inner;
 
 impl<DB> QueryFragment<DB> for Inner
