@@ -1,6 +1,5 @@
 use core::ffi as libc;
-use core::mem;
-use core::ptr;
+use core::{mem, ptr};
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
