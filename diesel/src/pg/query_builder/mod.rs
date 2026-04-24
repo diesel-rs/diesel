@@ -9,6 +9,8 @@ pub(crate) mod on_constraint;
 pub(crate) mod only;
 mod query_fragment_impls;
 pub(crate) mod tablesample;
+#[cfg(feature = "postgres_backend")]
+pub use self::copy::CopyFromExpression;
 pub use self::copy::{CopyFormat, CopyFromQuery, CopyHeader, CopyTarget, CopyToQuery};
 pub use self::distinct_on::DistinctOnClause;
 pub use self::distinct_on::OrderDecorator;
