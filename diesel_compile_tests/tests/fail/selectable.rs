@@ -58,7 +58,7 @@ struct PostWithWrongField {
 #[derive(Selectable)]
 // wrong table name here
 #[diesel(table_name = post)]
-//~^ ERROR: failed to resolve: use of unresolved module or unlinked crate `post`
+//~^ ERROR: cannot find module or crate `post` in this scope
 struct PostWithWrongTableName {
     id: i32,
     title: String,
@@ -177,8 +177,8 @@ fn main() {
         .inner_join(posts::table)
         .group_by(posts::id)
         .select(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
-        //~| ERROR: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
+        //~^ ERROR: the trait bound `id: IsContainedInGroupBy<id>` is not satisfied
+        //~| ERROR: the trait bound `id: IsContainedInGroupBy<name>` is not satisfied
         .load(&mut conn)
         .unwrap();
 

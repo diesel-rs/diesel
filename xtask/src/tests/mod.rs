@@ -276,7 +276,7 @@ impl TestArgs {
                             .as_ref()
                             .unwrap()
                             .path()
-                            .join(&p.name)
+                            .join(&*p.name)
                             .display()
                             .to_string()
                     } else {

@@ -372,4 +372,22 @@ mod tests {
 
         assert_eq!(0, migrations.len());
     }
+
+    #[test]
+    fn migration_paths_in_directory_ignores_empty_directories() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let empty_path = migrations_path.join("an_empty_migration_dir");
+
+        fs::create_dir(migrations_path.as_path()).unwrap();
+        fs::create_dir(empty_path.as_path()).unwrap();
+
+        let migrations = migrations_in_directory(&migrations_path)
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(0, migrations.len());
+    }
 }

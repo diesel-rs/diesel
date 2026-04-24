@@ -350,9 +350,20 @@ fn last_error_message(conn: *const PGconn) -> String {
 #[allow(missing_debug_implementations)]
 pub(super) struct RawResult(NonNull<PGresult>);
 
+// SAFETY:
+// https://www.postgresql.org/docs/current/libpq-threading.html
+//
+// PGresult objects are normally read-only after creation,
+// and so can be passed around freely between threads. However,
+// if you use any of the PGresult-modifying functions described in
+// Section 31.12 or Section 31.14, it's up to you to avoid concurrent operations on the same PGresult, too.
+//
+// The type doesn't expose the raw pointer
+// and we don't call such Pgresult-modifying below
 unsafe impl Send for RawResult {}
 unsafe impl Sync for RawResult {}
 
+// Make sure to only call non-modifying functions here
 impl RawResult {
     #[allow(clippy::new_ret_no_self)]
     fn new(ptr: *mut PGresult, conn: &RawConnection) -> QueryResult<Self> {
@@ -364,14 +375,104 @@ impl RawResult {
         })
     }
 
-    pub(super) fn as_ptr(&self) -> *mut PGresult {
-        self.0.as_ptr()
-    }
-
     pub(super) fn error_message(&self) -> &str {
         let ptr = unsafe { PQresultErrorMessage(self.0.as_ptr()) };
         let cstr = unsafe { CStr::from_ptr(ptr) };
         cstr.to_str().unwrap_or_default()
+    }
+
+    pub(super) fn get_result_field(&self, field: ResultField) -> Option<&str> {
+        let ptr = unsafe { PQresultErrorField(self.0.as_ptr(), field as libc::c_int) };
+        if ptr.is_null() {
+            return None;
+        }
+
+        let c_str = unsafe { CStr::from_ptr(ptr) };
+        c_str.to_str().ok()
+    }
+
+    pub(super) fn result_status(&self) -> pq_sys::ExecStatusType {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            PQresultStatus(self.0.as_ptr())
+        }
+    }
+
+    pub(super) fn column_count(&self) -> libc::c_int {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            PQnfields(self.0.as_ptr())
+        }
+    }
+
+    pub(super) fn row_count(&self) -> libc::c_int {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            PQntuples(self.0.as_ptr())
+        }
+    }
+
+    pub(super) fn rows_affected(&self) -> &CStr {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            let count_char_ptr = PQcmdTuples(self.0.as_ptr());
+            CStr::from_ptr(count_char_ptr)
+        }
+    }
+
+    pub(super) fn get_bytes(&self, row_idx: i32, col_idx: i32) -> &[u8] {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            let value_ptr = PQgetvalue(self.0.as_ptr(), row_idx, col_idx) as *const u8;
+            let num_bytes = PQgetlength(self.0.as_ptr(), row_idx, col_idx);
+            if value_ptr.is_null() {
+                &[]
+            } else {
+                // SAFETY:
+                // * we rely on correct information from libpq here, if the provided length and pointer are invalid
+                core::slice::from_raw_parts(
+                    value_ptr,
+                    num_bytes
+                        .try_into()
+                        .expect("Diesel expects at least a 32 bit operating system"),
+                )
+            }
+        }
+    }
+
+    pub(super) fn is_null(&self, row_idx: libc::c_int, col_idx: libc::c_int) -> libc::c_int {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            PQgetisnull(self.0.as_ptr(), row_idx, col_idx)
+        }
+    }
+
+    pub(super) fn column_type(&self, col_idx: libc::c_int) -> pq_sys::Oid {
+        unsafe {
+            // SAFETY:
+            // We have a unique not null pointer here
+            PQftype(self.0.as_ptr(), col_idx)
+        }
+    }
+
+    pub(super) fn column_name(&self, col_idx: libc::c_int) -> Option<&CStr> {
+        unsafe {
+            // https://www.postgresql.org/docs/13/libpq-exec.html#LIBPQ-PQFNAME
+            // states that the returned ptr is valid till the underlying result is freed
+            // That means we can couple the lifetime to self
+            let ptr = PQfname(self.0.as_ptr(), col_idx);
+            if ptr.is_null() {
+                None
+            } else {
+                Some(CStr::from_ptr(ptr))
+            }
+        }
     }
 }
 
@@ -379,4 +480,20 @@ impl Drop for RawResult {
     fn drop(&mut self) {
         unsafe { PQclear(self.0.as_ptr()) }
     }
+}
+
+/// Represents valid options to
+/// [`PQresultErrorField`](https://www.postgresql.org/docs/current/static/libpq-exec.html#LIBPQ-PQRESULTERRORFIELD)
+/// Their values are defined as C preprocessor macros, and therefore are not exported by libpq-sys.
+/// Their values can be found in `postgres_ext.h`
+#[repr(i32)]
+pub(super) enum ResultField {
+    SqlState = 'C' as i32,
+    MessagePrimary = 'M' as i32,
+    MessageDetail = 'D' as i32,
+    MessageHint = 'H' as i32,
+    TableName = 't' as i32,
+    ColumnName = 'c' as i32,
+    ConstraintName = 'n' as i32,
+    StatementPosition = 'P' as i32,
 }

@@ -1,5 +1,6 @@
 #![allow(unsafe_code)] // module uses ffi
 use mysqlclient_sys as ffi;
+use std::cmp;
 use std::mem::MaybeUninit;
 use std::mem::{self, ManuallyDrop};
 use std::ops::Index;
@@ -178,6 +179,13 @@ pub(super) struct BindData {
 // instead of just copying the pointer
 impl Clone for BindData {
     fn clone(&self) -> Self {
+        // we just make sure here that we never create a
+        // slice larger than the allocation
+        let length = cmp::min(
+            self.capacity,
+            self.length.try_into().expect("usize fits the length"),
+        );
+
         let (ptr, len, capacity) = if let Some(ptr) = self.bytes {
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
@@ -187,10 +195,7 @@ impl Clone for BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(
-                    ptr.as_ptr(),
-                    self.length.try_into().expect("usize is at least 32bit"),
-                )
+                std::slice::from_raw_parts(ptr.as_ptr(), length)
             };
             bind_buffer(slice.to_owned())
         } else {
@@ -514,10 +519,9 @@ impl BindData {
     /// this function is unsafe unless the binds are immediately rebound.
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
-            if let Some(bytes) = self.bytes {
+            if let Some(bytes) = self.bytes.take() {
                 let mut bytes =
                     unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
-                self.bytes = None;
 
                 let offset = self.capacity;
                 let length = usize::try_from(self.length).expect("Usize is at least 32 bit");

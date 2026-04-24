@@ -16,15 +16,15 @@ note: expected this to be `diesel::query_source::Once`
 ...    |
   LL | | }
      | |_^
-note: required for `columns::hair_color` to implement `AppearsOnTable<NoFromClause>`
+note: required for `columns::hair_color` to implement `AppearsOnTable<diesel::query_builder::from_clause::NoFromClause>`
     --> tests/fail/columns_cannot_be_rhs_of_insert.rs:10:9
      |
   LL |         hair_color -> Text,
      |         ^^^^^^^^^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden
-     = note: required for `&columns::hair_color` to implement `AppearsOnTable<NoFromClause>`
-     = note: required for `ColumnInsertValue<columns::name, &columns::hair_color>` to implement `InsertValues<_, users::table>`
+     = note: required for `&columns::hair_color` to implement `AppearsOnTable<diesel::query_builder::from_clause::NoFromClause>`
+     = note: required for `ColumnInsertValue<name, &hair_color>` to implement `diesel::insertable::InsertValues<_, users::table>`
      = note: required for `ValuesClause<ColumnInsertValue<name, &...>, ...>` to implement `QueryFragment<_>`
      = note: 1 redundant requirement hidden
      = note: required for `InsertStatement<table, ValuesClause<..., ...>>` to implement `QueryFragment<_>`

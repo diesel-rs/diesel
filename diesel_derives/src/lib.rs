@@ -79,7 +79,7 @@ mod valid_grouping;
 /// Normally, Diesel produces two implementations of the `AsChangeset` trait for your
 /// struct using this derive: one for an owned version and one for a borrowed version.
 /// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
-/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
+/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer update a borrowed
 /// versions of your struct.
 ///
 /// By default, any `Option` fields on the struct are skipped if their value is
@@ -356,7 +356,8 @@ fn derive_identifiable_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 /// struct using this derive: one for an owned version and one for a borrowed version.
 /// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
 /// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
-/// versions of your struct.
+/// versions of your struct. Call `.values(your_struct)` instead of `.values(&your_struct)`
+/// in that case.
 ///
 /// # Attributes
 ///

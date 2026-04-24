@@ -10,14 +10,14 @@ help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `
 LL | #[declare_sql_function]
    | ^^^^^^^^^^^^^^^^^^^^^^^
    = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
              `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+             `&'__expr NullValueTreatment` implements `AsExpression<NullValueTreatmentEnum>`
+             `&'__expr PgDate` implements `AsExpression<diesel::sql_types::Date>`
            and N others
 
       = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -41,7 +41,7 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
      = note: required for `WhereClause<Grouped<Eq<name, bar<title>>>>` to implement `ValidWhereClause<FromClause<table>>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, User>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>

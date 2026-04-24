@@ -1,16 +1,16 @@
-error[E0277]: the trait bound `posts::columns::user_id: IsContainedInGroupBy<users::columns::id>` is not satisfied
+error[E0277]: the trait bound `user_id: IsContainedInGroupBy<id>` is not satisfied
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
 LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
    |          ^^^^^^ unsatisfied trait bound
    |
-help: the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::user_id`
+help: the trait `diesel::expression::IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::user_id`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:16:9
    |
 LL |         user_id -> Integer,
    |         ^^^^^^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-help: the following other types implement trait `IsContainedInGroupBy<T>`
+help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:12:1
    |
 LL | / table! {
@@ -20,36 +20,36 @@ LL | |         title -> Text,
 LL | |         user_id -> Integer,
    | |         ^^^^^^^
    | |         |     |
-   | |_________|_____`posts::columns::user_id` implements `IsContainedInGroupBy<posts::columns::id>`
-   |           |     `posts::columns::user_id` implements `IsContainedInGroupBy<posts::columns::title>`
-   |           `posts::columns::user_id` implements `IsContainedInGroupBy<posts::columns::user_id>`
-   = note: required for `(posts::columns::user_id,)` to implement `IsContainedInGroupBy<users::columns::id>`
+   | |_________|_____`posts::columns::user_id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
+   |           |     `posts::columns::user_id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
+   |           `posts::columns::user_id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
+   = note: required for `(posts::columns::user_id,)` to implement `diesel::expression::IsContainedInGroupBy<users::columns::id>`
    = note: 1 redundant requirement hidden
-   = note: required for `(users::columns::id, posts::columns::user_id)` to implement `IsContainedInGroupBy<users::columns::id>`
+   = note: required for `(users::columns::id, posts::columns::user_id)` to implement `diesel::expression::IsContainedInGroupBy<users::columns::id>`
 note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:7:9
    |
  LL |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
+   = note: required for `(id, user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(id, user_id, CountStar)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<posts::columns::user_id>` is not satisfied
+error[E0277]: the trait bound `id: IsContainedInGroupBy<user_id>` is not satisfied
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:29:10
    |
 LL |         .select((users::id, posts::user_id, diesel::dsl::count_star()));
    |          ^^^^^^ unsatisfied trait bound
    |
-help: the trait `IsContainedInGroupBy<posts::columns::user_id>` is not implemented for `users::columns::id`
+help: the trait `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>` is not implemented for `users::columns::id`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:7:9
    |
  LL |         id -> Integer,
    |         ^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-help: the following other types implement trait `IsContainedInGroupBy<T>`
+help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:5:1
    |
  LL | / table! {
@@ -57,16 +57,16 @@ help: the following other types implement trait `IsContainedInGroupBy<T>`
  LL | |         id -> Integer,
    | |         ^^
    | |_________||
-   |           |`users::columns::id` implements `IsContainedInGroupBy<users::columns::name>`
-   |           `users::columns::id` implements `IsContainedInGroupBy<users::columns::id>`
-   = note: required for `(users::columns::id, posts::columns::user_id)` to implement `IsContainedInGroupBy<posts::columns::user_id>`
+   |           |`users::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::name>`
+   |           `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::id>`
+   = note: required for `(users::columns::id, posts::columns::user_id)` to implement `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
 note: required for `posts::columns::user_id` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:16:9
    |
 LL |         user_id -> Integer,
    |         ^^^^^^^
    = note: 2 redundant requirements hidden
-   = note: required for `(users::columns::id, posts::columns::user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
+   = note: required for `(id, user_id, CountStar)` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(id, user_id, CountStar)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

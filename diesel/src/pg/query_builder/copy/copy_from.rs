@@ -55,8 +55,11 @@ impl QueryFragment<Pg> for CopyFromOptions {
                 pass.push_sql(comma);
                 comma = ", ";
                 pass.push_sql("DEFAULT '");
-                // cannot use binds here :(
-                pass.push_sql(default);
+                // we cannot use binds here
+                // so we need to make sure quotes in
+                // the input are handled correctly
+                let default = default.replace('\'', "''");
+                pass.push_sql(&default);
                 pass.push_sql("'");
             }
             if let Some(ref header) = self.header {

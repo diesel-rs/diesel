@@ -50,7 +50,7 @@ pub(crate) fn expand(
             }
         };
 
-        result.append_all(expanded.into_iter());
+        result.append_all(expanded);
     }
 
     if !generate_return_type_helpers {
@@ -124,7 +124,7 @@ fn expand_one(
             helper_type_modules.push(return_type_helper_module_path);
         }
 
-        result.append_all(expanded.tokens.into_iter());
+        result.append_all(expanded.tokens);
     }
 
     if generate_return_type_helpers {
@@ -299,7 +299,7 @@ fn add_variadic_doc_comments(
     attributes: &mut Vec<AttributeSpanWrapper<SqlFunctionAttribute>>,
     fn_name: &str,
 ) {
-    let mut doc_comments_end = attributes.len()
+    let doc_comments_end = attributes.len()
         - attributes
             .iter()
             .rev()
@@ -334,7 +334,9 @@ fn add_variadic_doc_comments(
         #[doc(alias = #fn_name)]
     };
 
-    for new_attribute in doc_comments {
+    for (doc_comments_end, new_attribute) in
+        (attributes.len() - doc_comments_end..).zip(doc_comments)
+    {
         attributes.insert(
             doc_comments_end,
             AttributeSpanWrapper {
@@ -343,7 +345,6 @@ fn add_variadic_doc_comments(
                 ident_span: Span::mixed_site(),
             },
         );
-        doc_comments_end += 1;
     }
 }
 

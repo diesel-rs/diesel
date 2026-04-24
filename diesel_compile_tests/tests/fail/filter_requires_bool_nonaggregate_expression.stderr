@@ -14,7 +14,7 @@ LL | impl BoolOrNullableBool for Bool {}
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Bool`
 LL | impl BoolOrNullableBool for Nullable<Bool> {}
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<diesel::sql_types::Bool>`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<columns::name>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<columns::name>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `FilterDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::filter`
@@ -25,7 +25,8 @@ LL |     fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predic
 LL |     where
 LL |         Self: methods::FilterDsl<Predicate>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::filter`
-
+ 
+    
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:17:26
     |
@@ -45,6 +46,6 @@ LL |     impl MixedAggregates<Yes> for Yes {
 LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `Grouped<Eq<sum<Integer, id>, Bound<..., i64>>>` to implement `NonAggregate`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, ...>>>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Eq<sum<Integer, id>, ...>>>`
  
     For more information about this error, try `rustc --explain E0277`.

@@ -70,11 +70,13 @@ macro_rules! __diesel_operator_body {
             $crate::expression::ValidGrouping
         )]
         #[doc(hidden)]
+        #[allow(unreachable_pub)]
         pub struct $name<$($ty_param,)+> {
             $(pub(crate) $field_name: $ty_param,)+
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
+            #[allow(dead_code)]
             pub(crate) fn new($($field_name: $ty_param,)+) -> Self {
                 $name { $($field_name,)+ }
             }
@@ -200,6 +202,9 @@ macro_rules! __diesel_operator_to_sql {
 ///
 /// // Specifying both the return types and the backend
 /// infix_operator!(And, " && ", TsQuery, backend: Pg);
+///
+/// // Generic types are also supported as the return type
+/// infix_operator!(MyOp, " OP ", Unsigned<TinyInt>);
 /// ```
 ///
 /// ## Example usage
@@ -241,21 +246,21 @@ macro_rules! infix_operator {
         $crate::infix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
-    ($name:ident, $operator:expr, $($return_ty:tt)::*) => {
+    ($name:ident, $operator:expr, $return_ty:ty) => {
         $crate::__diesel_infix_operator!(
             name = $name,
             operator = $operator,
-            return_ty = NullableBasedOnArgs ($($return_ty)::*),
+            return_ty = NullableBasedOnArgs ($return_ty),
             backend_ty_params = (DB,),
             backend_ty = DB,
         );
     };
 
-    ($name:ident, $operator:expr, $($return_ty:tt)::*, backend: $backend:ty) => {
+    ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
         $crate::__diesel_infix_operator!(
             name = $name,
             operator = $operator,
-            return_ty = NullableBasedOnArgs ($($return_ty)::*),
+            return_ty = NullableBasedOnArgs ($return_ty),
             backend_ty_params = (),
             backend_ty = $backend,
         );
@@ -265,11 +270,11 @@ macro_rules! infix_operator {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_infix_operator {
-    ($name:ident, $operator:expr, ConstantNullability $($return_ty:tt)::*) => {
+    ($name:ident, $operator:expr, ConstantNullability $return_ty:ty) => {
         $crate::__diesel_infix_operator!(
             name = $name,
             operator = $operator,
-            return_ty = ($($return_ty)::*),
+            return_ty = ($return_ty),
             backend_ty_params = (DB,),
             backend_ty = DB,
         );
@@ -283,11 +288,11 @@ macro_rules! __diesel_infix_operator {
             backend_ty = $backend,
         );
     };
-    ($name:ident, $operator:expr, ConstantNullability $($return_ty:tt)::*, backend: $backend:ty) => {
+    ($name:ident, $operator:expr, ConstantNullability $return_ty:ty, backend: $backend:ty) => {
         $crate::__diesel_infix_operator!(
             name = $name,
             operator = $operator,
-            return_ty = ($($return_ty)::*),
+            return_ty = ($return_ty),
             backend_ty_params = (),
             backend_ty = $backend,
         );
