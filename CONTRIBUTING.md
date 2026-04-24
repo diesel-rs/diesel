@@ -169,7 +169,7 @@ There are still a number of restrictions and rules you as a PR author are asked 
 * We ask you to write pull request descriptions and discussion comments on your own. 
   We are able to ask an AI agent on our own if we feel that might be helpful.
 * For issues marked as "mentoring available" or "good first issue" consider that these issues are for onboarding new contributors 
-  to the code base. Consider if fully solving such an issue only by using LLM's/AI is helping you to gain experience.
+  to the code base. Resolving such an issue only by using LLM's/AI won't help you to gain experience.
 
 For a more in depth description we would like to point to NlNet's policies about [using generative AI](https://nlnet.nl/foundation/policies/generativeAI/) in projects they are funding. This document outlines many of the points 
 above in with more details and explanations. 
