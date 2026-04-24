@@ -1,0 +1,65 @@
+[package]
+name = "diesel-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde_json = "1.0"
+ipnetwork = "0.21"
+
+[dependencies.diesel]
+path = "../diesel"
+features = [
+    "postgres_backend",
+    "serde_json",
+    "numeric",
+    "network-address",
+    "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+]
+
+[[bin]]
+name = "fuzz_pg_numeric"
+path = "fuzz_targets/fuzz_pg_numeric.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_pg_array"
+path = "fuzz_targets/fuzz_pg_array.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_pg_range"
+path = "fuzz_targets/fuzz_pg_range.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_pg_record"
+path = "fuzz_targets/fuzz_pg_record.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_pg_jsonb"
+path = "fuzz_targets/fuzz_pg_jsonb.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_pg_network"
+path = "fuzz_targets/fuzz_pg_network.rs"
+test = false
+doc = false
+bench = false
