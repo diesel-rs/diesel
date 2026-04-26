@@ -106,7 +106,7 @@ impl MysqlTime {
                 //   go from bool to u8 that's no problem as 0 and 1 are valid u8 bit patterns
                 ptr::copy::<u8>(
                     field_ptr as *const u8,
-                    dbg!(out_ptr.offset(offset)),
+                    out_ptr.offset(offset),
                     mem::size_of::<T>(),
                 )
             };
