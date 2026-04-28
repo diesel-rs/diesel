@@ -15,6 +15,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## [2.3.9] 2026-04-30
 
 * Removed a `dbg!` statement from the Mysql backend that caused unwanted output
+* Fix a regression in `#[derive(AsChangeset)]` introduced in 2.3.8 where structs with a type or const generic parameter referenced in a field type failed to compile with `error[E0425]: cannot find type 'T' in this scope`. The diagnostic helper functions added to improve `AsChangeset` error messages now forward all generic parameters of the input struct, not only lifetimes.
 
 ## [2.3.8] 2026-04-24
 
@@ -2346,4 +2347,3 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6
 [2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7
 [2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8
-[2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9

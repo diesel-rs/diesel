@@ -170,10 +170,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             super::insertable::filter_bounds(&field_ty_bounds_guard, type_to_check, bound)
         });
 
-    let tpe_lifetimes = item.generics.lifetimes();
-
     let changeset_owned = quote! {
-        fn _check_owned<#(#tpe_lifetimes,)*>()
+        fn _check_owned #impl_generics ()
         where #(#field_ty_bounds,)*
         {}
 
@@ -203,18 +201,21 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                         bound,
                     )
                 });
-        let tpe_lifetimes = item.generics.lifetimes().map(|lp| {
-            let lt = &lp.lifetime;
-            let bound = lp.bounds.iter();
-            if lp.bounds.is_empty() {
-                quote!(#lt: 'update)
-            } else {
-                quote!(#lt: 'update + #(#bound +)*)
+        let borrowed_check_params = item.generics.params.iter().map(|p| match p {
+            syn::GenericParam::Lifetime(lp) => {
+                let lt = &lp.lifetime;
+                let bounds = lp.bounds.iter();
+                if lp.bounds.is_empty() {
+                    quote!(#lt: 'update)
+                } else {
+                    quote!(#lt: 'update + #(#bounds +)*)
+                }
             }
+            syn::GenericParam::Type(_) | syn::GenericParam::Const(_) => quote!(#p),
         });
         quote! {
             #[allow(clippy::multiple_bound_locations)]
-            fn _check_borrowed<'update, #(#tpe_lifetimes,)*>()
+            fn _check_borrowed<'update, #(#borrowed_check_params,)*>()
             where
                 #(#borrowed_field_ty_bounds,)*
             {}
