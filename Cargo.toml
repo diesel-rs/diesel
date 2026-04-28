@@ -55,6 +55,10 @@ opt-level = 3
 [workspace.lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(diesel_docsrs)'] }
 
+[workspace.lints.clippy]
+dbg_macro = "warn"
+print_stdout = "warn"
+
 # The profile that 'cargo dist' will build with
 [profile.dist]
 inherits = "release"

@@ -34,3 +34,6 @@ default = []
 sqlite = []
 postgres = []
 mysql = []
+
+[lints]
+workspace = true

@@ -89,3 +89,6 @@ name = "tests"
 
 [package.metadata.dist]
 features = ["sqlite-bundled", "postgres-bundled", "mysql-bundled"]
+
+[lints]
+workspace = true

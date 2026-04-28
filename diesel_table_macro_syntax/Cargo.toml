@@ -16,3 +16,6 @@ edition = "2021"
 
 [dependencies]
 syn = {version = "2", features = ["full"]}
+
+[lints]
+workspace = true

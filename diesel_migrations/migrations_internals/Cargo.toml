@@ -13,3 +13,6 @@ keywords = ["diesel", "internal"]
 [dependencies]
 serde = {version = "1.0.0", features = ["derive"]}
 toml = { version = "1.0.0", default-features = false, features = ["parse", "serde"] }
+
+[lints]
+workspace = true
