@@ -1,0 +1,1160 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sqlparser-0.61.0/src/ast/helpers/stmt_create_table.rs`."><title>stmt_create_table.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="sqlparser" data-themes="" data-resource-suffix="" data-rustdoc-version="1.97.0-nightly (52b6e2c20 2026-04-27)" data-channel="nightly" data-search-js="search-b5634cc7.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-aa4d37ac.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">sqlparser/ast/helpers/</div>stmt_create_table.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Licensed to the Apache Software Foundation (ASF) under one
+<a href=#2 id=2 data-nosnippet>2</a>// or more contributor license agreements.  See the NOTICE file
+<a href=#3 id=3 data-nosnippet>3</a>// distributed with this work for additional information
+<a href=#4 id=4 data-nosnippet>4</a>// regarding copyright ownership.  The ASF licenses this file
+<a href=#5 id=5 data-nosnippet>5</a>// to you under the Apache License, Version 2.0 (the
+<a href=#6 id=6 data-nosnippet>6</a>// "License"); you may not use this file except in compliance
+<a href=#7 id=7 data-nosnippet>7</a>// with the License.  You may obtain a copy of the License at
+<a href=#8 id=8 data-nosnippet>8</a>//
+<a href=#9 id=9 data-nosnippet>9</a>//   http://www.apache.org/licenses/LICENSE-2.0
+<a href=#10 id=10 data-nosnippet>10</a>//
+<a href=#11 id=11 data-nosnippet>11</a>// Unless required by applicable law or agreed to in writing,
+<a href=#12 id=12 data-nosnippet>12</a>// software distributed under the License is distributed on an
+<a href=#13 id=13 data-nosnippet>13</a>// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+<a href=#14 id=14 data-nosnippet>14</a>// KIND, either express or implied.  See the License for the
+<a href=#15 id=15 data-nosnippet>15</a>// specific language governing permissions and limitations
+<a href=#16 id=16 data-nosnippet>16</a>// under the License.
+<a href=#17 id=17 data-nosnippet>17</a>
+<a href=#18 id=18 data-nosnippet>18</a></span><span class="attr">#[cfg(not(feature = <span class="string">"std"</span>))]
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">use </span>alloc::{boxed::Box, format, string::String, vec, vec::Vec};
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a><span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
+<a href=#22 id=22 data-nosnippet>22</a></span><span class="kw">use </span>serde::{Deserialize, Serialize};
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a><span class="attr">#[cfg(feature = <span class="string">"visitor"</span>)]
+<a href=#25 id=25 data-nosnippet>25</a></span><span class="kw">use </span>sqlparser_derive::{<a href="../../../../sqlparser_derive/derive.Visit.html">Visit</a>, <a href="../../../../sqlparser_derive/derive.VisitMut.html">VisitMut</a>};
+<a href=#26 id=26 data-nosnippet>26</a>
+<a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span><span class="kw">crate</span>::ast::{
+<a href=#28 id=28 data-nosnippet>28</a>    <a href="../ddl.rs.html#2769-2776">ClusteredBy</a>, <a href="../ddl.rs.html#1523-1530">ColumnDef</a>, <a href="../mod.rs.html#10256-10262">CommentDef</a>, <a href="../ddl.rs.html#2887-3035">CreateTable</a>, <a href="../mod.rs.html#11329-11341">CreateTableLikeKind</a>, <a href="../mod.rs.html#3041-3053">CreateTableOptions</a>, <a href="../mod.rs.html#817-1320">Expr</a>,
+<a href=#29 id=29 data-nosnippet>29</a>    <a href="../mod.rs.html#7985-8000">FileFormat</a>, <a href="../ddl.rs.html#3348-3367">ForValues</a>, <a href="../mod.rs.html#8166-8183">HiveDistributionStyle</a>, <a href="../mod.rs.html#8333-8342">HiveFormat</a>, <a href="../mod.rs.html#203-211">Ident</a>, <a href="../mod.rs.html#11415-11420">InitializeKind</a>, <a href="../mod.rs.html#352">ObjectName</a>,
+<a href=#30 id=30 data-nosnippet>30</a>    <a href="../mod.rs.html#8926-8933">OnCommit</a>, <a href="../mod.rs.html#1493-1498">OneOrManyWithParens</a>, <a href="../query.rs.html#40-69">Query</a>, <a href="../mod.rs.html#11390-11397">RefreshModeKind</a>, <a href="../mod.rs.html#10182-10187">RowAccessPolicy</a>, <a href="../mod.rs.html#3403-4729">Statement</a>,
+<a href=#31 id=31 data-nosnippet>31</a>    <a href="../mod.rs.html#10802-10807">StorageSerializationPolicy</a>, <a href="../table_constraints.rs.html#42-104">TableConstraint</a>, <a href="../query.rs.html#2555-2570">TableVersion</a>, <a href="../mod.rs.html#10213-10218">Tag</a>, <a href="../mod.rs.html#10289-10294">WrappedCollection</a>,
+<a href=#32 id=32 data-nosnippet>32</a>};
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">use </span><a href="../../parser/mod.rs.html#52-59"><span class="kw">crate</span>::parser::ParserError</a>;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="doccomment">/// Builder for create table statement variant ([1]).
+<a href=#37 id=37 data-nosnippet>37</a>///
+<a href=#38 id=38 data-nosnippet>38</a>/// This structure helps building and accessing a create table with more ease, without needing to:
+<a href=#39 id=39 data-nosnippet>39</a>/// - Match the enum itself a lot of times; or
+<a href=#40 id=40 data-nosnippet>40</a>/// - Moving a lot of variables around the code.
+<a href=#41 id=41 data-nosnippet>41</a>///
+<a href=#42 id=42 data-nosnippet>42</a>/// # Example
+<a href=#43 id=43 data-nosnippet>43</a>/// ```rust
+<a href=#44 id=44 data-nosnippet>44</a>/// use sqlparser::ast::helpers::stmt_create_table::CreateTableBuilder;
+<a href=#45 id=45 data-nosnippet>45</a>/// use sqlparser::ast::{ColumnDef, DataType, Ident, ObjectName};
+<a href=#46 id=46 data-nosnippet>46</a>/// let builder = CreateTableBuilder::new(ObjectName::from(vec![Ident::new("table_name")]))
+<a href=#47 id=47 data-nosnippet>47</a>///    .if_not_exists(true)
+<a href=#48 id=48 data-nosnippet>48</a>///    .columns(vec![ColumnDef {
+<a href=#49 id=49 data-nosnippet>49</a>///        name: Ident::new("c1"),
+<a href=#50 id=50 data-nosnippet>50</a>///        data_type: DataType::Int(None),
+<a href=#51 id=51 data-nosnippet>51</a>///        options: vec![],
+<a href=#52 id=52 data-nosnippet>52</a>/// }]);
+<a href=#53 id=53 data-nosnippet>53</a>/// // You can access internal elements with ease
+<a href=#54 id=54 data-nosnippet>54</a>/// assert!(builder.if_not_exists);
+<a href=#55 id=55 data-nosnippet>55</a>/// // Convert to a statement
+<a href=#56 id=56 data-nosnippet>56</a>/// assert_eq!(
+<a href=#57 id=57 data-nosnippet>57</a>///    builder.build().to_string(),
+<a href=#58 id=58 data-nosnippet>58</a>///    "CREATE TABLE IF NOT EXISTS table_name (c1 INT)"
+<a href=#59 id=59 data-nosnippet>59</a>/// )
+<a href=#60 id=60 data-nosnippet>60</a>/// ```
+<a href=#61 id=61 data-nosnippet>61</a>///
+<a href=#62 id=62 data-nosnippet>62</a>/// [1]: crate::ast::Statement::CreateTable
+<a href=#63 id=63 data-nosnippet>63</a></span><span class="expansion"><input id=expand-63 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CreateTableBuilder {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">let </span>names: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">_ </span>=
+            <span class="kw-2">&amp;</span>[<span class="string">"or_replace"</span>, <span class="string">"temporary"</span>, <span class="string">"external"</span>, <span class="string">"global"</span>,
+                        <span class="string">"if_not_exists"</span>, <span class="string">"transient"</span>, <span class="string">"volatile"</span>, <span class="string">"iceberg"</span>,
+                        <span class="string">"dynamic"</span>, <span class="string">"name"</span>, <span class="string">"columns"</span>, <span class="string">"constraints"</span>,
+                        <span class="string">"hive_distribution"</span>, <span class="string">"hive_formats"</span>, <span class="string">"file_format"</span>,
+                        <span class="string">"location"</span>, <span class="string">"query"</span>, <span class="string">"without_rowid"</span>, <span class="string">"like"</span>, <span class="string">"clone"</span>,
+                        <span class="string">"version"</span>, <span class="string">"comment"</span>, <span class="string">"on_commit"</span>, <span class="string">"on_cluster"</span>,
+                        <span class="string">"primary_key"</span>, <span class="string">"order_by"</span>, <span class="string">"partition_by"</span>, <span class="string">"cluster_by"</span>,
+                        <span class="string">"clustered_by"</span>, <span class="string">"inherits"</span>, <span class="string">"partition_of"</span>, <span class="string">"for_values"</span>,
+                        <span class="string">"strict"</span>, <span class="string">"copy_grants"</span>, <span class="string">"enable_schema_evolution"</span>,
+                        <span class="string">"change_tracking"</span>, <span class="string">"data_retention_time_in_days"</span>,
+                        <span class="string">"max_data_extension_time_in_days"</span>, <span class="string">"default_ddl_collation"</span>,
+                        <span class="string">"with_aggregation_policy"</span>, <span class="string">"with_row_access_policy"</span>,
+                        <span class="string">"with_tags"</span>, <span class="string">"base_location"</span>, <span class="string">"external_volume"</span>, <span class="string">"catalog"</span>,
+                        <span class="string">"catalog_sync"</span>, <span class="string">"storage_serialization_policy"</span>,
+                        <span class="string">"table_options"</span>, <span class="string">"target_lag"</span>, <span class="string">"warehouse"</span>, <span class="string">"refresh_mode"</span>,
+                        <span class="string">"initialize"</span>, <span class="string">"require_user"</span>];
+        <span class="kw">let </span>values: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw">dyn </span>::core::fmt::Debug] =
+            <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.or_replace, <span class="kw-2">&amp;</span><span class="self">self</span>.temporary, <span class="kw-2">&amp;</span><span class="self">self</span>.external, <span class="kw-2">&amp;</span><span class="self">self</span>.global,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.if_not_exists, <span class="kw-2">&amp;</span><span class="self">self</span>.transient, <span class="kw-2">&amp;</span><span class="self">self</span>.volatile,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.iceberg, <span class="kw-2">&amp;</span><span class="self">self</span>.dynamic, <span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span><span class="self">self</span>.columns,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.constraints, <span class="kw-2">&amp;</span><span class="self">self</span>.hive_distribution,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.hive_formats, <span class="kw-2">&amp;</span><span class="self">self</span>.file_format, <span class="kw-2">&amp;</span><span class="self">self</span>.location,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.query, <span class="kw-2">&amp;</span><span class="self">self</span>.without_rowid, <span class="kw-2">&amp;</span><span class="self">self</span>.like, <span class="kw-2">&amp;</span><span class="self">self</span>.clone,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.version, <span class="kw-2">&amp;</span><span class="self">self</span>.comment, <span class="kw-2">&amp;</span><span class="self">self</span>.on_commit,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.on_cluster, <span class="kw-2">&amp;</span><span class="self">self</span>.primary_key, <span class="kw-2">&amp;</span><span class="self">self</span>.order_by,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.partition_by, <span class="kw-2">&amp;</span><span class="self">self</span>.cluster_by, <span class="kw-2">&amp;</span><span class="self">self</span>.clustered_by,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.inherits, <span class="kw-2">&amp;</span><span class="self">self</span>.partition_of, <span class="kw-2">&amp;</span><span class="self">self</span>.for_values,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.strict, <span class="kw-2">&amp;</span><span class="self">self</span>.copy_grants,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.enable_schema_evolution, <span class="kw-2">&amp;</span><span class="self">self</span>.change_tracking,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.data_retention_time_in_days,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.max_data_extension_time_in_days,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.default_ddl_collation, <span class="kw-2">&amp;</span><span class="self">self</span>.with_aggregation_policy,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.with_row_access_policy, <span class="kw-2">&amp;</span><span class="self">self</span>.with_tags,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.base_location, <span class="kw-2">&amp;</span><span class="self">self</span>.external_volume, <span class="kw-2">&amp;</span><span class="self">self</span>.catalog,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.catalog_sync, <span class="kw-2">&amp;</span><span class="self">self</span>.storage_serialization_policy,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.table_options, <span class="kw-2">&amp;</span><span class="self">self</span>.target_lag, <span class="kw-2">&amp;</span><span class="self">self</span>.warehouse,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.refresh_mode, <span class="kw-2">&amp;</span><span class="self">self</span>.initialize, &amp;&amp;<span class="self">self</span>.require_user];
+        ::core::fmt::Formatter::debug_struct_fields_finish(f,
+            <span class="string">"CreateTableBuilder"</span>, names, values)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>CreateTableBuilder {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; CreateTableBuilder {
+        CreateTableBuilder {
+            or_replace: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.or_replace),
+            temporary: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.temporary),
+            external: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.external),
+            global: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.global),
+            if_not_exists: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.if_not_exists),
+            transient: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.transient),
+            volatile: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.volatile),
+            iceberg: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.iceberg),
+            dynamic: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.dynamic),
+            name: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.name),
+            columns: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.columns),
+            constraints: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.constraints),
+            hive_distribution: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.hive_distribution),
+            hive_formats: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.hive_formats),
+            file_format: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.file_format),
+            location: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.location),
+            query: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.query),
+            without_rowid: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.without_rowid),
+            like: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.like),
+            clone: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.clone),
+            version: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.version),
+            comment: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.comment),
+            on_commit: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.on_commit),
+            on_cluster: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.on_cluster),
+            primary_key: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.primary_key),
+            order_by: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.order_by),
+            partition_by: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.partition_by),
+            cluster_by: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.cluster_by),
+            clustered_by: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.clustered_by),
+            inherits: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.inherits),
+            partition_of: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.partition_of),
+            for_values: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.for_values),
+            strict: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.strict),
+            copy_grants: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.copy_grants),
+            enable_schema_evolution: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.enable_schema_evolution),
+            change_tracking: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.change_tracking),
+            data_retention_time_in_days: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.data_retention_time_in_days),
+            max_data_extension_time_in_days: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.max_data_extension_time_in_days),
+            default_ddl_collation: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.default_ddl_collation),
+            with_aggregation_policy: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.with_aggregation_policy),
+            with_row_access_policy: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.with_row_access_policy),
+            with_tags: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.with_tags),
+            base_location: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.base_location),
+            external_volume: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.external_volume),
+            catalog: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.catalog),
+            catalog_sync: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.catalog_sync),
+            storage_serialization_policy: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.storage_serialization_policy),
+            table_options: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.table_options),
+            target_lag: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.target_lag),
+            warehouse: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.warehouse),
+            refresh_mode: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.refresh_mode),
+            initialize: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.initialize),
+            require_user: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.require_user),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>CreateTableBuilder {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>CreateTableBuilder) -&gt; bool {
+        <span class="self">self</span>.or_replace == other.or_replace &amp;&amp;
+                                                                                                                                                                                                                        <span class="self">self</span>.temporary == other.temporary &amp;&amp;
+                                                                                                                                                                                                                    <span class="self">self</span>.external == other.external &amp;&amp;
+                                                                                                                                                                                                                <span class="self">self</span>.if_not_exists == other.if_not_exists &amp;&amp;
+                                                                                                                                                                                                            <span class="self">self</span>.transient == other.transient &amp;&amp;
+                                                                                                                                                                                                        <span class="self">self</span>.volatile == other.volatile &amp;&amp;
+                                                                                                                                                                                                    <span class="self">self</span>.iceberg == other.iceberg &amp;&amp;
+                                                                                                                                                                                                <span class="self">self</span>.dynamic == other.dynamic &amp;&amp;
+                                                                                                                                                                                            <span class="self">self</span>.without_rowid == other.without_rowid &amp;&amp;
+                                                                                                                                                                                        <span class="self">self</span>.strict == other.strict &amp;&amp;
+                                                                                                                                                                                    <span class="self">self</span>.copy_grants == other.copy_grants &amp;&amp;
+                                                                                                                                                                                <span class="self">self</span>.require_user == other.require_user &amp;&amp;
+                                                                                                                                                                            <span class="self">self</span>.global == other.global &amp;&amp; <span class="self">self</span>.name == other.name &amp;&amp;
+                                                                                                                                                                    <span class="self">self</span>.columns == other.columns &amp;&amp;
+                                                                                                                                                                <span class="self">self</span>.constraints == other.constraints &amp;&amp;
+                                                                                                                                                            <span class="self">self</span>.hive_distribution == other.hive_distribution &amp;&amp;
+                                                                                                                                                        <span class="self">self</span>.hive_formats == other.hive_formats &amp;&amp;
+                                                                                                                                                    <span class="self">self</span>.file_format == other.file_format &amp;&amp;
+                                                                                                                                                <span class="self">self</span>.location == other.location &amp;&amp; <span class="self">self</span>.query == other.query
+                                                                                                                                        &amp;&amp; <span class="self">self</span>.like == other.like &amp;&amp; <span class="self">self</span>.clone == other.clone &amp;&amp;
+                                                                                                                                <span class="self">self</span>.version == other.version &amp;&amp;
+                                                                                                                            <span class="self">self</span>.comment == other.comment &amp;&amp;
+                                                                                                                        <span class="self">self</span>.on_commit == other.on_commit &amp;&amp;
+                                                                                                                    <span class="self">self</span>.on_cluster == other.on_cluster &amp;&amp;
+                                                                                                                <span class="self">self</span>.primary_key == other.primary_key &amp;&amp;
+                                                                                                            <span class="self">self</span>.order_by == other.order_by &amp;&amp;
+                                                                                                        <span class="self">self</span>.partition_by == other.partition_by &amp;&amp;
+                                                                                                    <span class="self">self</span>.cluster_by == other.cluster_by &amp;&amp;
+                                                                                                <span class="self">self</span>.clustered_by == other.clustered_by &amp;&amp;
+                                                                                            <span class="self">self</span>.inherits == other.inherits &amp;&amp;
+                                                                                        <span class="self">self</span>.partition_of == other.partition_of &amp;&amp;
+                                                                                    <span class="self">self</span>.for_values == other.for_values &amp;&amp;
+                                                                                <span class="self">self</span>.enable_schema_evolution ==
+                                                                                    other.enable_schema_evolution &amp;&amp;
+                                                                            <span class="self">self</span>.change_tracking == other.change_tracking &amp;&amp;
+                                                                        <span class="self">self</span>.data_retention_time_in_days ==
+                                                                            other.data_retention_time_in_days &amp;&amp;
+                                                                    <span class="self">self</span>.max_data_extension_time_in_days ==
+                                                                        other.max_data_extension_time_in_days &amp;&amp;
+                                                                <span class="self">self</span>.default_ddl_collation == other.default_ddl_collation &amp;&amp;
+                                                            <span class="self">self</span>.with_aggregation_policy ==
+                                                                other.with_aggregation_policy &amp;&amp;
+                                                        <span class="self">self</span>.with_row_access_policy == other.with_row_access_policy
+                                                    &amp;&amp; <span class="self">self</span>.with_tags == other.with_tags &amp;&amp;
+                                                <span class="self">self</span>.base_location == other.base_location &amp;&amp;
+                                            <span class="self">self</span>.external_volume == other.external_volume &amp;&amp;
+                                        <span class="self">self</span>.catalog == other.catalog &amp;&amp;
+                                    <span class="self">self</span>.catalog_sync == other.catalog_sync &amp;&amp;
+                                <span class="self">self</span>.storage_serialization_policy ==
+                                    other.storage_serialization_policy &amp;&amp;
+                            <span class="self">self</span>.table_options == other.table_options &amp;&amp;
+                        <span class="self">self</span>.target_lag == other.target_lag &amp;&amp;
+                    <span class="self">self</span>.warehouse == other.warehouse &amp;&amp;
+                <span class="self">self</span>.refresh_mode == other.refresh_mode &amp;&amp;
+            <span class="self">self</span>.initialize == other.initialize
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>CreateTableBuilder {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;bool&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;ObjectName&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;ColumnDef&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Vec&lt;TableConstraint&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;HiveDistributionStyle&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;HiveFormat&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;FileFormat&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Box&lt;Query&gt;&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;CreateTableLikeKind&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;ObjectName&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;TableVersion&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;CommentDef&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;OnCommit&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Ident&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Box&lt;Expr&gt;&gt;&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;OneOrManyWithParens&lt;Expr&gt;&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Box&lt;Expr&gt;&gt;&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;WrappedCollection&lt;Vec&lt;Expr&gt;&gt;&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;ClusteredBy&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;ObjectName&gt;&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;ObjectName&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;ForValues&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;bool&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;u64&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;u64&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;ObjectName&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;RowAccessPolicy&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Tag&gt;&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;StorageSerializationPolicy&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;CreateTableOptions&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;Ident&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;RefreshModeKind&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;InitializeKind&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>CreateTableBuilder {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.or_replace, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.temporary, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.external, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.global, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.if_not_exists, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.transient, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.volatile, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.iceberg, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.dynamic, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.name, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.columns, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.constraints, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.hive_distribution, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.hive_formats, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.file_format, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.location, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.query, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.without_rowid, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.like, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.clone, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.version, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.comment, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.on_commit, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.on_cluster, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.primary_key, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.order_by, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.partition_by, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.cluster_by, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.clustered_by, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.inherits, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.partition_of, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.for_values, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.strict, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.copy_grants, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.enable_schema_evolution, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.change_tracking, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.data_retention_time_in_days, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.max_data_extension_time_in_days,
+            state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.default_ddl_collation, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.with_aggregation_policy, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.with_row_access_policy, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.with_tags, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.base_location, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.external_volume, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.catalog, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.catalog_sync, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.storage_serialization_policy, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.table_options, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.target_lag, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.warehouse, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.refresh_mode, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.initialize, state);
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.require_user, state)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a></span></span></span><span class="attr">)]
+<a href=#64 id=64 data-nosnippet>64</a>#[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
+<a href=#65 id=65 data-nosnippet>65</a></span><span class="expansion"><input id=expand-65 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[cfg_attr(feature = <span class="string">"visitor"</span>, derive(<span class=expanded><span class="kw">impl </span>sqlparser::ast::Visit <span class="kw">for </span>CreateTableBuilder {
+    <span class="kw">fn </span>visit&lt;V: sqlparser::ast::Visitor&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, visitor: <span class="kw-2">&amp;mut </span>V)
+        -&gt; ::std::ops::ControlFlow&lt;V::Break&gt; {
+        ::recursive::__impl::stacker::maybe_grow(::recursive::get_minimum_stack_size(),
+            ::recursive::get_stack_allocation_size(),
+            <span class="kw">move </span>|| -&gt; ::std::ops::ControlFlow&lt;V::Break&gt;
+                {
+                    {
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.or_replace, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.temporary, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.external, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.global, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.if_not_exists, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.transient, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.volatile, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.iceberg, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.dynamic, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.name, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.columns, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.constraints, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.hive_distribution,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.hive_formats, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.file_format, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.location, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.query, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.without_rowid, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.like, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.clone, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.version, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.comment, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.on_commit, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.on_cluster, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.primary_key, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.order_by, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.partition_by, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.cluster_by, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.clustered_by, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.inherits, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.partition_of, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.for_values, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.strict, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.copy_grants, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.enable_schema_evolution,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.change_tracking,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.data_retention_time_in_days,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.max_data_extension_time_in_days,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.default_ddl_collation,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.with_aggregation_policy,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.with_row_access_policy,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.with_tags, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.base_location, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.external_volume,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.catalog, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.catalog_sync, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.storage_serialization_policy,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.table_options, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.target_lag, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.warehouse, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.refresh_mode, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.initialize, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::Visit::visit(<span class="kw-2">&amp;</span><span class="self">self</span>.require_user, visitor)<span class="question-mark">?</span>;
+                        ::std::ops::ControlFlow::Continue(())
+                    }
+                })
+    }
+}</span><span class="original"><a href="../../../../sqlparser_derive/derive.Visit.html">Visit</a></span>, <span class=expanded><span class="kw">impl </span>sqlparser::ast::VisitMut <span class="kw">for </span>CreateTableBuilder {
+    <span class="kw">fn </span>visit&lt;V: sqlparser::ast::VisitorMut&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, visitor: <span class="kw-2">&amp;mut </span>V)
+        -&gt; ::std::ops::ControlFlow&lt;V::Break&gt; {
+        ::recursive::__impl::stacker::maybe_grow(::recursive::get_minimum_stack_size(),
+            ::recursive::get_stack_allocation_size(),
+            <span class="kw">move </span>|| -&gt; ::std::ops::ControlFlow&lt;V::Break&gt;
+                {
+                    {
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.or_replace,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.temporary,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.external,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.global, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.if_not_exists,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.transient,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.volatile,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.iceberg,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.dynamic,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.name, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.columns,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.constraints,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.hive_distribution,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.hive_formats,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.file_format,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.location,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.query, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.without_rowid,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.like, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.clone, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.version,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.comment,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.on_commit,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.on_cluster,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.primary_key,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.order_by,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.partition_by,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.cluster_by,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.clustered_by,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.inherits,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.partition_of,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.for_values,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.strict, visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.copy_grants,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.enable_schema_evolution,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.change_tracking,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.data_retention_time_in_days,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.max_data_extension_time_in_days,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.default_ddl_collation,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.with_aggregation_policy,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.with_row_access_policy,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.with_tags,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.base_location,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.external_volume,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.catalog,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.catalog_sync,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.storage_serialization_policy,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.table_options,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.target_lag,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.warehouse,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.refresh_mode,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.initialize,
+                                visitor)<span class="question-mark">?</span>;
+                        sqlparser::ast::VisitMut::visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>.require_user,
+                                visitor)<span class="question-mark">?</span>;
+                        ::std::ops::ControlFlow::Continue(())
+                    }
+                })
+    }
+}</span><span class="original"><a href="../../../../sqlparser_derive/derive.VisitMut.html">VisitMut</a></span></span></span><span class="attr">))]
+<a href=#66 id=66 data-nosnippet>66</a></span><span class="kw">pub struct </span><a href="#66-173">CreateTableBuilder</a> {
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="doccomment">/// Whether the statement uses `OR REPLACE`.
+<a href=#68 id=68 data-nosnippet>68</a>    </span><span class="kw">pub </span>or_replace: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="doccomment">/// Whether the table is `TEMPORARY`.
+<a href=#70 id=70 data-nosnippet>70</a>    </span><span class="kw">pub </span>temporary: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="doccomment">/// Whether the table is `EXTERNAL`.
+<a href=#72 id=72 data-nosnippet>72</a>    </span><span class="kw">pub </span>external: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="doccomment">/// Optional `GLOBAL` flag for dialects that support it.
+<a href=#74 id=74 data-nosnippet>74</a>    </span><span class="kw">pub </span>global: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;,
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="doccomment">/// Whether `IF NOT EXISTS` was specified.
+<a href=#76 id=76 data-nosnippet>76</a>    </span><span class="kw">pub </span>if_not_exists: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="doccomment">/// Whether `TRANSIENT` was specified.
+<a href=#78 id=78 data-nosnippet>78</a>    </span><span class="kw">pub </span>transient: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="doccomment">/// Whether `VOLATILE` was specified.
+<a href=#80 id=80 data-nosnippet>80</a>    </span><span class="kw">pub </span>volatile: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="doccomment">/// Iceberg-specific table flag.
+<a href=#82 id=82 data-nosnippet>82</a>    </span><span class="kw">pub </span>iceberg: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="doccomment">/// Whether `DYNAMIC` table option is set.
+<a href=#84 id=84 data-nosnippet>84</a>    </span><span class="kw">pub </span>dynamic: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="doccomment">/// The table name.
+<a href=#86 id=86 data-nosnippet>86</a>    </span><span class="kw">pub </span>name: <a href="../mod.rs.html#352">ObjectName</a>,
+<a href=#87 id=87 data-nosnippet>87</a>    <span class="doccomment">/// Column definitions for the table.
+<a href=#88 id=88 data-nosnippet>88</a>    </span><span class="kw">pub </span>columns: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../ddl.rs.html#1523-1530">ColumnDef</a>&gt;,
+<a href=#89 id=89 data-nosnippet>89</a>    <span class="doccomment">/// Table-level constraints.
+<a href=#90 id=90 data-nosnippet>90</a>    </span><span class="kw">pub </span>constraints: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../table_constraints.rs.html#42-104">TableConstraint</a>&gt;,
+<a href=#91 id=91 data-nosnippet>91</a>    <span class="doccomment">/// Hive distribution style.
+<a href=#92 id=92 data-nosnippet>92</a>    </span><span class="kw">pub </span>hive_distribution: <a href="../mod.rs.html#8166-8183">HiveDistributionStyle</a>,
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="doccomment">/// Optional Hive format settings.
+<a href=#94 id=94 data-nosnippet>94</a>    </span><span class="kw">pub </span>hive_formats: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#8333-8342">HiveFormat</a>&gt;,
+<a href=#95 id=95 data-nosnippet>95</a>    <span class="doccomment">/// Optional file format for storage.
+<a href=#96 id=96 data-nosnippet>96</a>    </span><span class="kw">pub </span>file_format: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#7985-8000">FileFormat</a>&gt;,
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="doccomment">/// Optional storage location.
+<a href=#98 id=98 data-nosnippet>98</a>    </span><span class="kw">pub </span>location: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#99 id=99 data-nosnippet>99</a>    <span class="doccomment">/// Optional `AS SELECT` query for the table.
+<a href=#100 id=100 data-nosnippet>100</a>    </span><span class="kw">pub </span>query: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../query.rs.html#40-69">Query</a>&gt;&gt;,
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="doccomment">/// Whether `WITHOUT ROWID` is set.
+<a href=#102 id=102 data-nosnippet>102</a>    </span><span class="kw">pub </span>without_rowid: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#103 id=103 data-nosnippet>103</a>    <span class="doccomment">/// Optional `LIKE` clause kind.
+<a href=#104 id=104 data-nosnippet>104</a>    </span><span class="kw">pub </span>like: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#11329-11341">CreateTableLikeKind</a>&gt;,
+<a href=#105 id=105 data-nosnippet>105</a>    <span class="doccomment">/// Optional `CLONE` source object name.
+<a href=#106 id=106 data-nosnippet>106</a>    </span><span class="kw">pub </span>clone: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;,
+<a href=#107 id=107 data-nosnippet>107</a>    <span class="doccomment">/// Optional table version.
+<a href=#108 id=108 data-nosnippet>108</a>    </span><span class="kw">pub </span>version: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../query.rs.html#2555-2570">TableVersion</a>&gt;,
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="doccomment">/// Optional table comment.
+<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="kw">pub </span>comment: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10256-10262">CommentDef</a>&gt;,
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="doccomment">/// Optional `ON COMMIT` behavior.
+<a href=#112 id=112 data-nosnippet>112</a>    </span><span class="kw">pub </span>on_commit: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#8926-8933">OnCommit</a>&gt;,
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="doccomment">/// Optional cluster identifier.
+<a href=#114 id=114 data-nosnippet>114</a>    </span><span class="kw">pub </span>on_cluster: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#203-211">Ident</a>&gt;,
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="doccomment">/// Optional primary key expression.
+<a href=#116 id=116 data-nosnippet>116</a>    </span><span class="kw">pub </span>primary_key: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;,
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="doccomment">/// Optional `ORDER BY` for clustering/sorting.
+<a href=#118 id=118 data-nosnippet>118</a>    </span><span class="kw">pub </span>order_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#1493-1498">OneOrManyWithParens</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;,
+<a href=#119 id=119 data-nosnippet>119</a>    <span class="doccomment">/// Optional `PARTITION BY` expression.
+<a href=#120 id=120 data-nosnippet>120</a>    </span><span class="kw">pub </span>partition_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;,
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="doccomment">/// Optional `CLUSTER BY` expressions.
+<a href=#122 id=122 data-nosnippet>122</a>    </span><span class="kw">pub </span>cluster_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10289-10294">WrappedCollection</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;&gt;,
+<a href=#123 id=123 data-nosnippet>123</a>    <span class="doccomment">/// Optional `CLUSTERED BY` clause.
+<a href=#124 id=124 data-nosnippet>124</a>    </span><span class="kw">pub </span>clustered_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../ddl.rs.html#2769-2776">ClusteredBy</a>&gt;,
+<a href=#125 id=125 data-nosnippet>125</a>    <span class="doccomment">/// Optional parent tables (`INHERITS`).
+<a href=#126 id=126 data-nosnippet>126</a>    </span><span class="kw">pub </span>inherits: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;&gt;,
+<a href=#127 id=127 data-nosnippet>127</a>    <span class="doccomment">/// Optional partitioned table (`PARTITION OF`)
+<a href=#128 id=128 data-nosnippet>128</a>    </span><span class="kw">pub </span>partition_of: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;,
+<a href=#129 id=129 data-nosnippet>129</a>    <span class="doccomment">/// Range of values associated with the partition (`FOR VALUES`)
+<a href=#130 id=130 data-nosnippet>130</a>    </span><span class="kw">pub </span>for_values: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../ddl.rs.html#3348-3367">ForValues</a>&gt;,
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="doccomment">/// `STRICT` table flag.
+<a href=#132 id=132 data-nosnippet>132</a>    </span><span class="kw">pub </span>strict: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#133 id=133 data-nosnippet>133</a>    <span class="doccomment">/// Whether to copy grants from the source.
+<a href=#134 id=134 data-nosnippet>134</a>    </span><span class="kw">pub </span>copy_grants: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#135 id=135 data-nosnippet>135</a>    <span class="doccomment">/// Optional flag for schema evolution support.
+<a href=#136 id=136 data-nosnippet>136</a>    </span><span class="kw">pub </span>enable_schema_evolution: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;,
+<a href=#137 id=137 data-nosnippet>137</a>    <span class="doccomment">/// Optional change tracking flag.
+<a href=#138 id=138 data-nosnippet>138</a>    </span><span class="kw">pub </span>change_tracking: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;,
+<a href=#139 id=139 data-nosnippet>139</a>    <span class="doccomment">/// Optional data retention time in days.
+<a href=#140 id=140 data-nosnippet>140</a>    </span><span class="kw">pub </span>data_retention_time_in_days: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="doccomment">/// Optional max data extension time in days.
+<a href=#142 id=142 data-nosnippet>142</a>    </span><span class="kw">pub </span>max_data_extension_time_in_days: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
+<a href=#143 id=143 data-nosnippet>143</a>    <span class="doccomment">/// Optional default DDL collation.
+<a href=#144 id=144 data-nosnippet>144</a>    </span><span class="kw">pub </span>default_ddl_collation: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="doccomment">/// Optional aggregation policy object name.
+<a href=#146 id=146 data-nosnippet>146</a>    </span><span class="kw">pub </span>with_aggregation_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;,
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="doccomment">/// Optional row access policy applied to the table.
+<a href=#148 id=148 data-nosnippet>148</a>    </span><span class="kw">pub </span>with_row_access_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10182-10187">RowAccessPolicy</a>&gt;,
+<a href=#149 id=149 data-nosnippet>149</a>    <span class="doccomment">/// Optional tags/labels attached to the table metadata.
+<a href=#150 id=150 data-nosnippet>150</a>    </span><span class="kw">pub </span>with_tags: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#10213-10218">Tag</a>&gt;&gt;,
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="doccomment">/// Optional base location for staged data.
+<a href=#152 id=152 data-nosnippet>152</a>    </span><span class="kw">pub </span>base_location: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#153 id=153 data-nosnippet>153</a>    <span class="doccomment">/// Optional external volume identifier.
+<a href=#154 id=154 data-nosnippet>154</a>    </span><span class="kw">pub </span>external_volume: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#155 id=155 data-nosnippet>155</a>    <span class="doccomment">/// Optional catalog name.
+<a href=#156 id=156 data-nosnippet>156</a>    </span><span class="kw">pub </span>catalog: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#157 id=157 data-nosnippet>157</a>    <span class="doccomment">/// Optional catalog synchronization option.
+<a href=#158 id=158 data-nosnippet>158</a>    </span><span class="kw">pub </span>catalog_sync: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#159 id=159 data-nosnippet>159</a>    <span class="doccomment">/// Optional storage serialization policy.
+<a href=#160 id=160 data-nosnippet>160</a>    </span><span class="kw">pub </span>storage_serialization_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10802-10807">StorageSerializationPolicy</a>&gt;,
+<a href=#161 id=161 data-nosnippet>161</a>    <span class="doccomment">/// Parsed table options from the statement.
+<a href=#162 id=162 data-nosnippet>162</a>    </span><span class="kw">pub </span>table_options: <a href="../mod.rs.html#3041-3053">CreateTableOptions</a>,
+<a href=#163 id=163 data-nosnippet>163</a>    <span class="doccomment">/// Optional target lag configuration.
+<a href=#164 id=164 data-nosnippet>164</a>    </span><span class="kw">pub </span>target_lag: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;,
+<a href=#165 id=165 data-nosnippet>165</a>    <span class="doccomment">/// Optional warehouse identifier.
+<a href=#166 id=166 data-nosnippet>166</a>    </span><span class="kw">pub </span>warehouse: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#203-211">Ident</a>&gt;,
+<a href=#167 id=167 data-nosnippet>167</a>    <span class="doccomment">/// Optional refresh mode for materialized tables.
+<a href=#168 id=168 data-nosnippet>168</a>    </span><span class="kw">pub </span>refresh_mode: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#11390-11397">RefreshModeKind</a>&gt;,
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="doccomment">/// Optional initialization kind for the table.
+<a href=#170 id=170 data-nosnippet>170</a>    </span><span class="kw">pub </span>initialize: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#11415-11420">InitializeKind</a>&gt;,
+<a href=#171 id=171 data-nosnippet>171</a>    <span class="doccomment">/// Whether operations require a user identity.
+<a href=#172 id=172 data-nosnippet>172</a>    </span><span class="kw">pub </span>require_user: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#173 id=173 data-nosnippet>173</a>}
+<a href=#174 id=174 data-nosnippet>174</a>
+<a href=#175 id=175 data-nosnippet>175</a><span class="kw">impl </span><a href="#66-173">CreateTableBuilder</a> {
+<a href=#176 id=176 data-nosnippet>176</a>    <span class="doccomment">/// Create a new `CreateTableBuilder` for the given table name.
+<a href=#177 id=177 data-nosnippet>177</a>    </span><span class="kw">pub fn </span>new(name: <a href="../mod.rs.html#352">ObjectName</a>) -&gt; <span class="self">Self </span>{
+<a href=#178 id=178 data-nosnippet>178</a>        <span class="self">Self </span>{
+<a href=#179 id=179 data-nosnippet>179</a>            or_replace: <span class="bool-val">false</span>,
+<a href=#180 id=180 data-nosnippet>180</a>            temporary: <span class="bool-val">false</span>,
+<a href=#181 id=181 data-nosnippet>181</a>            external: <span class="bool-val">false</span>,
+<a href=#182 id=182 data-nosnippet>182</a>            global: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#183 id=183 data-nosnippet>183</a>            if_not_exists: <span class="bool-val">false</span>,
+<a href=#184 id=184 data-nosnippet>184</a>            transient: <span class="bool-val">false</span>,
+<a href=#185 id=185 data-nosnippet>185</a>            volatile: <span class="bool-val">false</span>,
+<a href=#186 id=186 data-nosnippet>186</a>            iceberg: <span class="bool-val">false</span>,
+<a href=#187 id=187 data-nosnippet>187</a>            dynamic: <span class="bool-val">false</span>,
+<a href=#188 id=188 data-nosnippet>188</a>            <a href="#177">name</a>,
+<a href=#189 id=189 data-nosnippet>189</a><span class="expansion"><input id=expand-189 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            columns: <span class=expanded>::alloc::vec::Vec::new()</span><span class="original"><a href="https://doc.rust-lang.org/nightly/alloc/macro.vec.html">vec!</a>[]</span></span>,
+<a href=#190 id=190 data-nosnippet>190</a><span class="expansion"><input id=expand-190 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            constraints: <span class=expanded>::alloc::vec::Vec::new()</span><span class="original"><a href="https://doc.rust-lang.org/nightly/alloc/macro.vec.html">vec!</a>[]</span></span>,
+<a href=#191 id=191 data-nosnippet>191</a>            hive_distribution: HiveDistributionStyle::<a href="../mod.rs.html#8182">NONE</a>,
+<a href=#192 id=192 data-nosnippet>192</a>            hive_formats: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#193 id=193 data-nosnippet>193</a>            file_format: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#194 id=194 data-nosnippet>194</a>            location: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#195 id=195 data-nosnippet>195</a>            query: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#196 id=196 data-nosnippet>196</a>            without_rowid: <span class="bool-val">false</span>,
+<a href=#197 id=197 data-nosnippet>197</a>            like: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#198 id=198 data-nosnippet>198</a>            clone: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#199 id=199 data-nosnippet>199</a>            version: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#200 id=200 data-nosnippet>200</a>            comment: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#201 id=201 data-nosnippet>201</a>            on_commit: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#202 id=202 data-nosnippet>202</a>            on_cluster: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#203 id=203 data-nosnippet>203</a>            primary_key: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#204 id=204 data-nosnippet>204</a>            order_by: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#205 id=205 data-nosnippet>205</a>            partition_by: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#206 id=206 data-nosnippet>206</a>            cluster_by: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#207 id=207 data-nosnippet>207</a>            clustered_by: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#208 id=208 data-nosnippet>208</a>            inherits: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#209 id=209 data-nosnippet>209</a>            partition_of: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#210 id=210 data-nosnippet>210</a>            for_values: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#211 id=211 data-nosnippet>211</a>            strict: <span class="bool-val">false</span>,
+<a href=#212 id=212 data-nosnippet>212</a>            copy_grants: <span class="bool-val">false</span>,
+<a href=#213 id=213 data-nosnippet>213</a>            enable_schema_evolution: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#214 id=214 data-nosnippet>214</a>            change_tracking: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#215 id=215 data-nosnippet>215</a>            data_retention_time_in_days: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#216 id=216 data-nosnippet>216</a>            max_data_extension_time_in_days: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#217 id=217 data-nosnippet>217</a>            default_ddl_collation: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#218 id=218 data-nosnippet>218</a>            with_aggregation_policy: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#219 id=219 data-nosnippet>219</a>            with_row_access_policy: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#220 id=220 data-nosnippet>220</a>            with_tags: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#221 id=221 data-nosnippet>221</a>            base_location: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#222 id=222 data-nosnippet>222</a>            external_volume: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#223 id=223 data-nosnippet>223</a>            catalog: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#224 id=224 data-nosnippet>224</a>            catalog_sync: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#225 id=225 data-nosnippet>225</a>            storage_serialization_policy: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#226 id=226 data-nosnippet>226</a>            table_options: CreateTableOptions::<a href="../mod.rs.html#3044">None</a>,
+<a href=#227 id=227 data-nosnippet>227</a>            target_lag: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#228 id=228 data-nosnippet>228</a>            warehouse: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#229 id=229 data-nosnippet>229</a>            refresh_mode: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#230 id=230 data-nosnippet>230</a>            initialize: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>,
+<a href=#231 id=231 data-nosnippet>231</a>            require_user: <span class="bool-val">false</span>,
+<a href=#232 id=232 data-nosnippet>232</a>        }
+<a href=#233 id=233 data-nosnippet>233</a>    }
+<a href=#234 id=234 data-nosnippet>234</a>    <span class="doccomment">/// Set `OR REPLACE` for the CREATE TABLE statement.
+<a href=#235 id=235 data-nosnippet>235</a>    </span><span class="kw">pub fn </span>or_replace(<span class="kw-2">mut </span><span class="self">self</span>, or_replace: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#236 id=236 data-nosnippet>236</a>        <a class="self" href="#235">self</a>.or_replace = <a href="#235">or_replace</a>;
+<a href=#237 id=237 data-nosnippet>237</a>        <a class="self" href="#235">self</a>
+<a href=#238 id=238 data-nosnippet>238</a>    }
+<a href=#239 id=239 data-nosnippet>239</a>    <span class="doccomment">/// Mark the table as `TEMPORARY`.
+<a href=#240 id=240 data-nosnippet>240</a>    </span><span class="kw">pub fn </span>temporary(<span class="kw-2">mut </span><span class="self">self</span>, temporary: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#241 id=241 data-nosnippet>241</a>        <a class="self" href="#240">self</a>.temporary = <a href="#240">temporary</a>;
+<a href=#242 id=242 data-nosnippet>242</a>        <a class="self" href="#240">self</a>
+<a href=#243 id=243 data-nosnippet>243</a>    }
+<a href=#244 id=244 data-nosnippet>244</a>    <span class="doccomment">/// Mark the table as `EXTERNAL`.
+<a href=#245 id=245 data-nosnippet>245</a>    </span><span class="kw">pub fn </span>external(<span class="kw-2">mut </span><span class="self">self</span>, external: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#246 id=246 data-nosnippet>246</a>        <a class="self" href="#245">self</a>.external = <a href="#245">external</a>;
+<a href=#247 id=247 data-nosnippet>247</a>        <a class="self" href="#245">self</a>
+<a href=#248 id=248 data-nosnippet>248</a>    }
+<a href=#249 id=249 data-nosnippet>249</a>    <span class="doccomment">/// Set optional `GLOBAL` flag (dialect-specific).
+<a href=#250 id=250 data-nosnippet>250</a>    </span><span class="kw">pub fn </span>global(<span class="kw-2">mut </span><span class="self">self</span>, global: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#251 id=251 data-nosnippet>251</a>        <a class="self" href="#250">self</a>.global = <a href="#250">global</a>;
+<a href=#252 id=252 data-nosnippet>252</a>        <a class="self" href="#250">self</a>
+<a href=#253 id=253 data-nosnippet>253</a>    }
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="doccomment">/// Set `IF NOT EXISTS`.
+<a href=#255 id=255 data-nosnippet>255</a>    </span><span class="kw">pub fn </span>if_not_exists(<span class="kw-2">mut </span><span class="self">self</span>, if_not_exists: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#256 id=256 data-nosnippet>256</a>        <a class="self" href="#255">self</a>.if_not_exists = <a href="#255">if_not_exists</a>;
+<a href=#257 id=257 data-nosnippet>257</a>        <a class="self" href="#255">self</a>
+<a href=#258 id=258 data-nosnippet>258</a>    }
+<a href=#259 id=259 data-nosnippet>259</a>    <span class="doccomment">/// Set `TRANSIENT` flag.
+<a href=#260 id=260 data-nosnippet>260</a>    </span><span class="kw">pub fn </span>transient(<span class="kw-2">mut </span><span class="self">self</span>, transient: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#261 id=261 data-nosnippet>261</a>        <a class="self" href="#260">self</a>.transient = <a href="#260">transient</a>;
+<a href=#262 id=262 data-nosnippet>262</a>        <a class="self" href="#260">self</a>
+<a href=#263 id=263 data-nosnippet>263</a>    }
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="doccomment">/// Set `VOLATILE` flag.
+<a href=#265 id=265 data-nosnippet>265</a>    </span><span class="kw">pub fn </span>volatile(<span class="kw-2">mut </span><span class="self">self</span>, volatile: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#266 id=266 data-nosnippet>266</a>        <a class="self" href="#265">self</a>.volatile = <a href="#265">volatile</a>;
+<a href=#267 id=267 data-nosnippet>267</a>        <a class="self" href="#265">self</a>
+<a href=#268 id=268 data-nosnippet>268</a>    }
+<a href=#269 id=269 data-nosnippet>269</a>    <span class="doccomment">/// Enable Iceberg table semantics.
+<a href=#270 id=270 data-nosnippet>270</a>    </span><span class="kw">pub fn </span>iceberg(<span class="kw-2">mut </span><span class="self">self</span>, iceberg: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#271 id=271 data-nosnippet>271</a>        <a class="self" href="#270">self</a>.iceberg = <a href="#270">iceberg</a>;
+<a href=#272 id=272 data-nosnippet>272</a>        <a class="self" href="#270">self</a>
+<a href=#273 id=273 data-nosnippet>273</a>    }
+<a href=#274 id=274 data-nosnippet>274</a>    <span class="doccomment">/// Set `DYNAMIC` table option.
+<a href=#275 id=275 data-nosnippet>275</a>    </span><span class="kw">pub fn </span>dynamic(<span class="kw-2">mut </span><span class="self">self</span>, dynamic: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#276 id=276 data-nosnippet>276</a>        <a class="self" href="#275">self</a>.dynamic = <a href="#275">dynamic</a>;
+<a href=#277 id=277 data-nosnippet>277</a>        <a class="self" href="#275">self</a>
+<a href=#278 id=278 data-nosnippet>278</a>    }
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="doccomment">/// Set the table column definitions.
+<a href=#280 id=280 data-nosnippet>280</a>    </span><span class="kw">pub fn </span>columns(<span class="kw-2">mut </span><span class="self">self</span>, columns: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../ddl.rs.html#1523-1530">ColumnDef</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#281 id=281 data-nosnippet>281</a>        <a class="self" href="#280">self</a>.columns = <a href="#280">columns</a>;
+<a href=#282 id=282 data-nosnippet>282</a>        <a class="self" href="#280">self</a>
+<a href=#283 id=283 data-nosnippet>283</a>    }
+<a href=#284 id=284 data-nosnippet>284</a>    <span class="doccomment">/// Set table-level constraints.
+<a href=#285 id=285 data-nosnippet>285</a>    </span><span class="kw">pub fn </span>constraints(<span class="kw-2">mut </span><span class="self">self</span>, constraints: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../table_constraints.rs.html#42-104">TableConstraint</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#286 id=286 data-nosnippet>286</a>        <a class="self" href="#285">self</a>.constraints = <a href="#285">constraints</a>;
+<a href=#287 id=287 data-nosnippet>287</a>        <a class="self" href="#285">self</a>
+<a href=#288 id=288 data-nosnippet>288</a>    }
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="doccomment">/// Set Hive distribution style.
+<a href=#290 id=290 data-nosnippet>290</a>    </span><span class="kw">pub fn </span>hive_distribution(<span class="kw-2">mut </span><span class="self">self</span>, hive_distribution: <a href="../mod.rs.html#8166-8183">HiveDistributionStyle</a>) -&gt; <span class="self">Self </span>{
+<a href=#291 id=291 data-nosnippet>291</a>        <a class="self" href="#290">self</a>.hive_distribution = <a href="#290">hive_distribution</a>;
+<a href=#292 id=292 data-nosnippet>292</a>        <a class="self" href="#290">self</a>
+<a href=#293 id=293 data-nosnippet>293</a>    }
+<a href=#294 id=294 data-nosnippet>294</a>    <span class="doccomment">/// Set Hive-specific formats.
+<a href=#295 id=295 data-nosnippet>295</a>    </span><span class="kw">pub fn </span>hive_formats(<span class="kw-2">mut </span><span class="self">self</span>, hive_formats: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#8333-8342">HiveFormat</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#296 id=296 data-nosnippet>296</a>        <a class="self" href="#295">self</a>.hive_formats = <a href="#295">hive_formats</a>;
+<a href=#297 id=297 data-nosnippet>297</a>        <a class="self" href="#295">self</a>
+<a href=#298 id=298 data-nosnippet>298</a>    }
+<a href=#299 id=299 data-nosnippet>299</a>    <span class="doccomment">/// Set file format for the table (e.g., PARQUET).
+<a href=#300 id=300 data-nosnippet>300</a>    </span><span class="kw">pub fn </span>file_format(<span class="kw-2">mut </span><span class="self">self</span>, file_format: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#7985-8000">FileFormat</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#301 id=301 data-nosnippet>301</a>        <a class="self" href="#300">self</a>.file_format = <a href="#300">file_format</a>;
+<a href=#302 id=302 data-nosnippet>302</a>        <a class="self" href="#300">self</a>
+<a href=#303 id=303 data-nosnippet>303</a>    }
+<a href=#304 id=304 data-nosnippet>304</a>    <span class="doccomment">/// Set storage `location` for the table.
+<a href=#305 id=305 data-nosnippet>305</a>    </span><span class="kw">pub fn </span>location(<span class="kw-2">mut </span><span class="self">self</span>, location: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#306 id=306 data-nosnippet>306</a>        <a class="self" href="#305">self</a>.location = <a href="#305">location</a>;
+<a href=#307 id=307 data-nosnippet>307</a>        <a class="self" href="#305">self</a>
+<a href=#308 id=308 data-nosnippet>308</a>    }
+<a href=#309 id=309 data-nosnippet>309</a>    <span class="doccomment">/// Set an underlying `AS SELECT` query for the table.
+<a href=#310 id=310 data-nosnippet>310</a>    </span><span class="kw">pub fn </span>query(<span class="kw-2">mut </span><span class="self">self</span>, query: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../query.rs.html#40-69">Query</a>&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#311 id=311 data-nosnippet>311</a>        <a class="self" href="#310">self</a>.query = <a href="#310">query</a>;
+<a href=#312 id=312 data-nosnippet>312</a>        <a class="self" href="#310">self</a>
+<a href=#313 id=313 data-nosnippet>313</a>    }
+<a href=#314 id=314 data-nosnippet>314</a>    <span class="doccomment">/// Set `WITHOUT ROWID` option.
+<a href=#315 id=315 data-nosnippet>315</a>    </span><span class="kw">pub fn </span>without_rowid(<span class="kw-2">mut </span><span class="self">self</span>, without_rowid: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#316 id=316 data-nosnippet>316</a>        <a class="self" href="#315">self</a>.without_rowid = <a href="#315">without_rowid</a>;
+<a href=#317 id=317 data-nosnippet>317</a>        <a class="self" href="#315">self</a>
+<a href=#318 id=318 data-nosnippet>318</a>    }
+<a href=#319 id=319 data-nosnippet>319</a>    <span class="doccomment">/// Set `LIKE` clause for the table.
+<a href=#320 id=320 data-nosnippet>320</a>    </span><span class="kw">pub fn </span>like(<span class="kw-2">mut </span><span class="self">self</span>, like: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#11329-11341">CreateTableLikeKind</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#321 id=321 data-nosnippet>321</a>        <a class="self" href="#320">self</a>.like = <a href="#320">like</a>;
+<a href=#322 id=322 data-nosnippet>322</a>        <a class="self" href="#320">self</a>
+<a href=#323 id=323 data-nosnippet>323</a>    }
+<a href=#324 id=324 data-nosnippet>324</a>    <span class="comment">// Different name to allow the object to be cloned
+<a href=#325 id=325 data-nosnippet>325</a>    </span><span class="doccomment">/// Set `CLONE` source object name.
+<a href=#326 id=326 data-nosnippet>326</a>    </span><span class="kw">pub fn </span>clone_clause(<span class="kw-2">mut </span><span class="self">self</span>, clone: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#327 id=327 data-nosnippet>327</a>        <a class="self" href="#326">self</a>.clone = <a href="#326">clone</a>;
+<a href=#328 id=328 data-nosnippet>328</a>        <a class="self" href="#326">self</a>
+<a href=#329 id=329 data-nosnippet>329</a>    }
+<a href=#330 id=330 data-nosnippet>330</a>    <span class="doccomment">/// Set table `VERSION`.
+<a href=#331 id=331 data-nosnippet>331</a>    </span><span class="kw">pub fn </span>version(<span class="kw-2">mut </span><span class="self">self</span>, version: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../query.rs.html#2555-2570">TableVersion</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#332 id=332 data-nosnippet>332</a>        <a class="self" href="#331">self</a>.version = <a href="#331">version</a>;
+<a href=#333 id=333 data-nosnippet>333</a>        <a class="self" href="#331">self</a>
+<a href=#334 id=334 data-nosnippet>334</a>    }
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="doccomment">/// Set a comment for the table or following column definitions.
+<a href=#336 id=336 data-nosnippet>336</a>    </span><span class="kw">pub fn </span>comment_after_column_def(<span class="kw-2">mut </span><span class="self">self</span>, comment: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10256-10262">CommentDef</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#337 id=337 data-nosnippet>337</a>        <a class="self" href="#336">self</a>.comment = <a href="#336">comment</a>;
+<a href=#338 id=338 data-nosnippet>338</a>        <a class="self" href="#336">self</a>
+<a href=#339 id=339 data-nosnippet>339</a>    }
+<a href=#340 id=340 data-nosnippet>340</a>    <span class="doccomment">/// Set `ON COMMIT` behavior for temporary tables.
+<a href=#341 id=341 data-nosnippet>341</a>    </span><span class="kw">pub fn </span>on_commit(<span class="kw-2">mut </span><span class="self">self</span>, on_commit: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#8926-8933">OnCommit</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#342 id=342 data-nosnippet>342</a>        <a class="self" href="#341">self</a>.on_commit = <a href="#341">on_commit</a>;
+<a href=#343 id=343 data-nosnippet>343</a>        <a class="self" href="#341">self</a>
+<a href=#344 id=344 data-nosnippet>344</a>    }
+<a href=#345 id=345 data-nosnippet>345</a>    <span class="doccomment">/// Set cluster identifier for the table.
+<a href=#346 id=346 data-nosnippet>346</a>    </span><span class="kw">pub fn </span>on_cluster(<span class="kw-2">mut </span><span class="self">self</span>, on_cluster: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#203-211">Ident</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#347 id=347 data-nosnippet>347</a>        <a class="self" href="#346">self</a>.on_cluster = <a href="#346">on_cluster</a>;
+<a href=#348 id=348 data-nosnippet>348</a>        <a class="self" href="#346">self</a>
+<a href=#349 id=349 data-nosnippet>349</a>    }
+<a href=#350 id=350 data-nosnippet>350</a>    <span class="doccomment">/// Set a primary key expression for the table.
+<a href=#351 id=351 data-nosnippet>351</a>    </span><span class="kw">pub fn </span>primary_key(<span class="kw-2">mut </span><span class="self">self</span>, primary_key: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#352 id=352 data-nosnippet>352</a>        <a class="self" href="#351">self</a>.primary_key = <a href="#351">primary_key</a>;
+<a href=#353 id=353 data-nosnippet>353</a>        <a class="self" href="#351">self</a>
+<a href=#354 id=354 data-nosnippet>354</a>    }
+<a href=#355 id=355 data-nosnippet>355</a>    <span class="doccomment">/// Set `ORDER BY` clause for clustered/sorted tables.
+<a href=#356 id=356 data-nosnippet>356</a>    </span><span class="kw">pub fn </span>order_by(<span class="kw-2">mut </span><span class="self">self</span>, order_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#1493-1498">OneOrManyWithParens</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#357 id=357 data-nosnippet>357</a>        <a class="self" href="#356">self</a>.order_by = <a href="#356">order_by</a>;
+<a href=#358 id=358 data-nosnippet>358</a>        <a class="self" href="#356">self</a>
+<a href=#359 id=359 data-nosnippet>359</a>    }
+<a href=#360 id=360 data-nosnippet>360</a>    <span class="doccomment">/// Set `PARTITION BY` expression.
+<a href=#361 id=361 data-nosnippet>361</a>    </span><span class="kw">pub fn </span>partition_by(<span class="kw-2">mut </span><span class="self">self</span>, partition_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#362 id=362 data-nosnippet>362</a>        <a class="self" href="#361">self</a>.partition_by = <a href="#361">partition_by</a>;
+<a href=#363 id=363 data-nosnippet>363</a>        <a class="self" href="#361">self</a>
+<a href=#364 id=364 data-nosnippet>364</a>    }
+<a href=#365 id=365 data-nosnippet>365</a>    <span class="doccomment">/// Set `CLUSTER BY` expression(s).
+<a href=#366 id=366 data-nosnippet>366</a>    </span><span class="kw">pub fn </span>cluster_by(<span class="kw-2">mut </span><span class="self">self</span>, cluster_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10289-10294">WrappedCollection</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#367 id=367 data-nosnippet>367</a>        <a class="self" href="#366">self</a>.cluster_by = <a href="#366">cluster_by</a>;
+<a href=#368 id=368 data-nosnippet>368</a>        <a class="self" href="#366">self</a>
+<a href=#369 id=369 data-nosnippet>369</a>    }
+<a href=#370 id=370 data-nosnippet>370</a>    <span class="doccomment">/// Set `CLUSTERED BY` clause.
+<a href=#371 id=371 data-nosnippet>371</a>    </span><span class="kw">pub fn </span>clustered_by(<span class="kw-2">mut </span><span class="self">self</span>, clustered_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../ddl.rs.html#2769-2776">ClusteredBy</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#372 id=372 data-nosnippet>372</a>        <a class="self" href="#371">self</a>.clustered_by = <a href="#371">clustered_by</a>;
+<a href=#373 id=373 data-nosnippet>373</a>        <a class="self" href="#371">self</a>
+<a href=#374 id=374 data-nosnippet>374</a>    }
+<a href=#375 id=375 data-nosnippet>375</a>    <span class="doccomment">/// Set parent tables via `INHERITS`.
+<a href=#376 id=376 data-nosnippet>376</a>    </span><span class="kw">pub fn </span>inherits(<span class="kw-2">mut </span><span class="self">self</span>, inherits: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#377 id=377 data-nosnippet>377</a>        <a class="self" href="#376">self</a>.inherits = <a href="#376">inherits</a>;
+<a href=#378 id=378 data-nosnippet>378</a>        <a class="self" href="#376">self</a>
+<a href=#379 id=379 data-nosnippet>379</a>    }
+<a href=#380 id=380 data-nosnippet>380</a>
+<a href=#381 id=381 data-nosnippet>381</a>    <span class="doccomment">/// Sets the table which is partitioned to create the current table.
+<a href=#382 id=382 data-nosnippet>382</a>    </span><span class="kw">pub fn </span>partition_of(<span class="kw-2">mut </span><span class="self">self</span>, partition_of: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#383 id=383 data-nosnippet>383</a>        <a class="self" href="#382">self</a>.partition_of = <a href="#382">partition_of</a>;
+<a href=#384 id=384 data-nosnippet>384</a>        <a class="self" href="#382">self</a>
+<a href=#385 id=385 data-nosnippet>385</a>    }
+<a href=#386 id=386 data-nosnippet>386</a>
+<a href=#387 id=387 data-nosnippet>387</a>    <span class="doccomment">/// Sets the range of values associated with the partition.
+<a href=#388 id=388 data-nosnippet>388</a>    </span><span class="kw">pub fn </span>for_values(<span class="kw-2">mut </span><span class="self">self</span>, for_values: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../ddl.rs.html#3348-3367">ForValues</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#389 id=389 data-nosnippet>389</a>        <a class="self" href="#388">self</a>.for_values = <a href="#388">for_values</a>;
+<a href=#390 id=390 data-nosnippet>390</a>        <a class="self" href="#388">self</a>
+<a href=#391 id=391 data-nosnippet>391</a>    }
+<a href=#392 id=392 data-nosnippet>392</a>
+<a href=#393 id=393 data-nosnippet>393</a>    <span class="doccomment">/// Set `STRICT` option.
+<a href=#394 id=394 data-nosnippet>394</a>    </span><span class="kw">pub fn </span>strict(<span class="kw-2">mut </span><span class="self">self</span>, strict: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#395 id=395 data-nosnippet>395</a>        <a class="self" href="#394">self</a>.strict = <a href="#394">strict</a>;
+<a href=#396 id=396 data-nosnippet>396</a>        <a class="self" href="#394">self</a>
+<a href=#397 id=397 data-nosnippet>397</a>    }
+<a href=#398 id=398 data-nosnippet>398</a>    <span class="doccomment">/// Enable copying grants from source object.
+<a href=#399 id=399 data-nosnippet>399</a>    </span><span class="kw">pub fn </span>copy_grants(<span class="kw-2">mut </span><span class="self">self</span>, copy_grants: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#400 id=400 data-nosnippet>400</a>        <a class="self" href="#399">self</a>.copy_grants = <a href="#399">copy_grants</a>;
+<a href=#401 id=401 data-nosnippet>401</a>        <a class="self" href="#399">self</a>
+<a href=#402 id=402 data-nosnippet>402</a>    }
+<a href=#403 id=403 data-nosnippet>403</a>    <span class="doccomment">/// Enable or disable schema evolution features.
+<a href=#404 id=404 data-nosnippet>404</a>    </span><span class="kw">pub fn </span>enable_schema_evolution(<span class="kw-2">mut </span><span class="self">self</span>, enable_schema_evolution: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#405 id=405 data-nosnippet>405</a>        <a class="self" href="#404">self</a>.enable_schema_evolution = <a href="#404">enable_schema_evolution</a>;
+<a href=#406 id=406 data-nosnippet>406</a>        <a class="self" href="#404">self</a>
+<a href=#407 id=407 data-nosnippet>407</a>    }
+<a href=#408 id=408 data-nosnippet>408</a>    <span class="doccomment">/// Enable or disable change tracking.
+<a href=#409 id=409 data-nosnippet>409</a>    </span><span class="kw">pub fn </span>change_tracking(<span class="kw-2">mut </span><span class="self">self</span>, change_tracking: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#410 id=410 data-nosnippet>410</a>        <a class="self" href="#409">self</a>.change_tracking = <a href="#409">change_tracking</a>;
+<a href=#411 id=411 data-nosnippet>411</a>        <a class="self" href="#409">self</a>
+<a href=#412 id=412 data-nosnippet>412</a>    }
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="doccomment">/// Set data retention time (in days).
+<a href=#414 id=414 data-nosnippet>414</a>    </span><span class="kw">pub fn </span>data_retention_time_in_days(<span class="kw-2">mut </span><span class="self">self</span>, data_retention_time_in_days: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#415 id=415 data-nosnippet>415</a>        <a class="self" href="#414">self</a>.data_retention_time_in_days = <a href="#414">data_retention_time_in_days</a>;
+<a href=#416 id=416 data-nosnippet>416</a>        <a class="self" href="#414">self</a>
+<a href=#417 id=417 data-nosnippet>417</a>    }
+<a href=#418 id=418 data-nosnippet>418</a>    <span class="doccomment">/// Set maximum data extension time (in days).
+<a href=#419 id=419 data-nosnippet>419</a>    </span><span class="kw">pub fn </span>max_data_extension_time_in_days(
+<a href=#420 id=420 data-nosnippet>420</a>        <span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#421 id=421 data-nosnippet>421</a>        max_data_extension_time_in_days: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
+<a href=#422 id=422 data-nosnippet>422</a>    ) -&gt; <span class="self">Self </span>{
+<a href=#423 id=423 data-nosnippet>423</a>        <a class="self" href="#420">self</a>.max_data_extension_time_in_days = <a href="#421">max_data_extension_time_in_days</a>;
+<a href=#424 id=424 data-nosnippet>424</a>        <a class="self" href="#420">self</a>
+<a href=#425 id=425 data-nosnippet>425</a>    }
+<a href=#426 id=426 data-nosnippet>426</a>    <span class="doccomment">/// Set default DDL collation.
+<a href=#427 id=427 data-nosnippet>427</a>    </span><span class="kw">pub fn </span>default_ddl_collation(<span class="kw-2">mut </span><span class="self">self</span>, default_ddl_collation: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#428 id=428 data-nosnippet>428</a>        <a class="self" href="#427">self</a>.default_ddl_collation = <a href="#427">default_ddl_collation</a>;
+<a href=#429 id=429 data-nosnippet>429</a>        <a class="self" href="#427">self</a>
+<a href=#430 id=430 data-nosnippet>430</a>    }
+<a href=#431 id=431 data-nosnippet>431</a>    <span class="doccomment">/// Set aggregation policy object.
+<a href=#432 id=432 data-nosnippet>432</a>    </span><span class="kw">pub fn </span>with_aggregation_policy(<span class="kw-2">mut </span><span class="self">self</span>, with_aggregation_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#433 id=433 data-nosnippet>433</a>        <a class="self" href="#432">self</a>.with_aggregation_policy = <a href="#432">with_aggregation_policy</a>;
+<a href=#434 id=434 data-nosnippet>434</a>        <a class="self" href="#432">self</a>
+<a href=#435 id=435 data-nosnippet>435</a>    }
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="doccomment">/// Attach a row access policy to the table.
+<a href=#437 id=437 data-nosnippet>437</a>    </span><span class="kw">pub fn </span>with_row_access_policy(
+<a href=#438 id=438 data-nosnippet>438</a>        <span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#439 id=439 data-nosnippet>439</a>        with_row_access_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10182-10187">RowAccessPolicy</a>&gt;,
+<a href=#440 id=440 data-nosnippet>440</a>    ) -&gt; <span class="self">Self </span>{
+<a href=#441 id=441 data-nosnippet>441</a>        <a class="self" href="#438">self</a>.with_row_access_policy = <a href="#439">with_row_access_policy</a>;
+<a href=#442 id=442 data-nosnippet>442</a>        <a class="self" href="#438">self</a>
+<a href=#443 id=443 data-nosnippet>443</a>    }
+<a href=#444 id=444 data-nosnippet>444</a>    <span class="doccomment">/// Attach tags/labels to the table metadata.
+<a href=#445 id=445 data-nosnippet>445</a>    </span><span class="kw">pub fn </span>with_tags(<span class="kw-2">mut </span><span class="self">self</span>, with_tags: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#10213-10218">Tag</a>&gt;&gt;) -&gt; <span class="self">Self </span>{
+<a href=#446 id=446 data-nosnippet>446</a>        <a class="self" href="#445">self</a>.with_tags = <a href="#445">with_tags</a>;
+<a href=#447 id=447 data-nosnippet>447</a>        <a class="self" href="#445">self</a>
+<a href=#448 id=448 data-nosnippet>448</a>    }
+<a href=#449 id=449 data-nosnippet>449</a>    <span class="doccomment">/// Set a base storage location for staged data.
+<a href=#450 id=450 data-nosnippet>450</a>    </span><span class="kw">pub fn </span>base_location(<span class="kw-2">mut </span><span class="self">self</span>, base_location: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#451 id=451 data-nosnippet>451</a>        <a class="self" href="#450">self</a>.base_location = <a href="#450">base_location</a>;
+<a href=#452 id=452 data-nosnippet>452</a>        <a class="self" href="#450">self</a>
+<a href=#453 id=453 data-nosnippet>453</a>    }
+<a href=#454 id=454 data-nosnippet>454</a>    <span class="doccomment">/// Set an external volume identifier.
+<a href=#455 id=455 data-nosnippet>455</a>    </span><span class="kw">pub fn </span>external_volume(<span class="kw-2">mut </span><span class="self">self</span>, external_volume: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#456 id=456 data-nosnippet>456</a>        <a class="self" href="#455">self</a>.external_volume = <a href="#455">external_volume</a>;
+<a href=#457 id=457 data-nosnippet>457</a>        <a class="self" href="#455">self</a>
+<a href=#458 id=458 data-nosnippet>458</a>    }
+<a href=#459 id=459 data-nosnippet>459</a>    <span class="doccomment">/// Set the catalog name for the table.
+<a href=#460 id=460 data-nosnippet>460</a>    </span><span class="kw">pub fn </span>catalog(<span class="kw-2">mut </span><span class="self">self</span>, catalog: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#461 id=461 data-nosnippet>461</a>        <a class="self" href="#460">self</a>.catalog = <a href="#460">catalog</a>;
+<a href=#462 id=462 data-nosnippet>462</a>        <a class="self" href="#460">self</a>
+<a href=#463 id=463 data-nosnippet>463</a>    }
+<a href=#464 id=464 data-nosnippet>464</a>    <span class="doccomment">/// Set catalog synchronization option.
+<a href=#465 id=465 data-nosnippet>465</a>    </span><span class="kw">pub fn </span>catalog_sync(<span class="kw-2">mut </span><span class="self">self</span>, catalog_sync: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#466 id=466 data-nosnippet>466</a>        <a class="self" href="#465">self</a>.catalog_sync = <a href="#465">catalog_sync</a>;
+<a href=#467 id=467 data-nosnippet>467</a>        <a class="self" href="#465">self</a>
+<a href=#468 id=468 data-nosnippet>468</a>    }
+<a href=#469 id=469 data-nosnippet>469</a>    <span class="doccomment">/// Set a storage serialization policy.
+<a href=#470 id=470 data-nosnippet>470</a>    </span><span class="kw">pub fn </span>storage_serialization_policy(
+<a href=#471 id=471 data-nosnippet>471</a>        <span class="kw-2">mut </span><span class="self">self</span>,
+<a href=#472 id=472 data-nosnippet>472</a>        storage_serialization_policy: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10802-10807">StorageSerializationPolicy</a>&gt;,
+<a href=#473 id=473 data-nosnippet>473</a>    ) -&gt; <span class="self">Self </span>{
+<a href=#474 id=474 data-nosnippet>474</a>        <a class="self" href="#471">self</a>.storage_serialization_policy = <a href="#472">storage_serialization_policy</a>;
+<a href=#475 id=475 data-nosnippet>475</a>        <a class="self" href="#471">self</a>
+<a href=#476 id=476 data-nosnippet>476</a>    }
+<a href=#477 id=477 data-nosnippet>477</a>    <span class="doccomment">/// Set arbitrary table options parsed from the statement.
+<a href=#478 id=478 data-nosnippet>478</a>    </span><span class="kw">pub fn </span>table_options(<span class="kw-2">mut </span><span class="self">self</span>, table_options: <a href="../mod.rs.html#3041-3053">CreateTableOptions</a>) -&gt; <span class="self">Self </span>{
+<a href=#479 id=479 data-nosnippet>479</a>        <a class="self" href="#478">self</a>.table_options = <a href="#478">table_options</a>;
+<a href=#480 id=480 data-nosnippet>480</a>        <a class="self" href="#478">self</a>
+<a href=#481 id=481 data-nosnippet>481</a>    }
+<a href=#482 id=482 data-nosnippet>482</a>    <span class="doccomment">/// Set a target lag configuration (dialect-specific).
+<a href=#483 id=483 data-nosnippet>483</a>    </span><span class="kw">pub fn </span>target_lag(<span class="kw-2">mut </span><span class="self">self</span>, target_lag: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#484 id=484 data-nosnippet>484</a>        <a class="self" href="#483">self</a>.target_lag = <a href="#483">target_lag</a>;
+<a href=#485 id=485 data-nosnippet>485</a>        <a class="self" href="#483">self</a>
+<a href=#486 id=486 data-nosnippet>486</a>    }
+<a href=#487 id=487 data-nosnippet>487</a>    <span class="doccomment">/// Associate the table with a warehouse identifier.
+<a href=#488 id=488 data-nosnippet>488</a>    </span><span class="kw">pub fn </span>warehouse(<span class="kw-2">mut </span><span class="self">self</span>, warehouse: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#203-211">Ident</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#489 id=489 data-nosnippet>489</a>        <a class="self" href="#488">self</a>.warehouse = <a href="#488">warehouse</a>;
+<a href=#490 id=490 data-nosnippet>490</a>        <a class="self" href="#488">self</a>
+<a href=#491 id=491 data-nosnippet>491</a>    }
+<a href=#492 id=492 data-nosnippet>492</a>    <span class="doccomment">/// Set refresh mode for materialized/managed tables.
+<a href=#493 id=493 data-nosnippet>493</a>    </span><span class="kw">pub fn </span>refresh_mode(<span class="kw-2">mut </span><span class="self">self</span>, refresh_mode: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#11390-11397">RefreshModeKind</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#494 id=494 data-nosnippet>494</a>        <a class="self" href="#493">self</a>.refresh_mode = <a href="#493">refresh_mode</a>;
+<a href=#495 id=495 data-nosnippet>495</a>        <a class="self" href="#493">self</a>
+<a href=#496 id=496 data-nosnippet>496</a>    }
+<a href=#497 id=497 data-nosnippet>497</a>    <span class="doccomment">/// Set initialization mode for the table.
+<a href=#498 id=498 data-nosnippet>498</a>    </span><span class="kw">pub fn </span>initialize(<span class="kw-2">mut </span><span class="self">self</span>, initialize: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#11415-11420">InitializeKind</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#499 id=499 data-nosnippet>499</a>        <a class="self" href="#498">self</a>.initialize = <a href="#498">initialize</a>;
+<a href=#500 id=500 data-nosnippet>500</a>        <a class="self" href="#498">self</a>
+<a href=#501 id=501 data-nosnippet>501</a>    }
+<a href=#502 id=502 data-nosnippet>502</a>    <span class="doccomment">/// Require a user identity for table operations.
+<a href=#503 id=503 data-nosnippet>503</a>    </span><span class="kw">pub fn </span>require_user(<span class="kw-2">mut </span><span class="self">self</span>, require_user: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>) -&gt; <span class="self">Self </span>{
+<a href=#504 id=504 data-nosnippet>504</a>        <a class="self" href="#503">self</a>.require_user = <a href="#503">require_user</a>;
+<a href=#505 id=505 data-nosnippet>505</a>        <a class="self" href="#503">self</a>
+<a href=#506 id=506 data-nosnippet>506</a>    }
+<a href=#507 id=507 data-nosnippet>507</a>    <span class="doccomment">/// Consume the builder and produce a `CreateTable`.
+<a href=#508 id=508 data-nosnippet>508</a>    </span><span class="kw">pub fn </span>build(<span class="self">self</span>) -&gt; <a href="../ddl.rs.html#2887-3035">CreateTable</a> {
+<a href=#509 id=509 data-nosnippet>509</a>        <a href="../ddl.rs.html#2887-3035">CreateTable</a> {
+<a href=#510 id=510 data-nosnippet>510</a>            or_replace: <a class="self" href="#508">self</a>.or_replace,
+<a href=#511 id=511 data-nosnippet>511</a>            temporary: <a class="self" href="#508">self</a>.temporary,
+<a href=#512 id=512 data-nosnippet>512</a>            external: <a class="self" href="#508">self</a>.external,
+<a href=#513 id=513 data-nosnippet>513</a>            global: <a class="self" href="#508">self</a>.global,
+<a href=#514 id=514 data-nosnippet>514</a>            if_not_exists: <a class="self" href="#508">self</a>.if_not_exists,
+<a href=#515 id=515 data-nosnippet>515</a>            transient: <a class="self" href="#508">self</a>.transient,
+<a href=#516 id=516 data-nosnippet>516</a>            volatile: <a class="self" href="#508">self</a>.volatile,
+<a href=#517 id=517 data-nosnippet>517</a>            iceberg: <a class="self" href="#508">self</a>.iceberg,
+<a href=#518 id=518 data-nosnippet>518</a>            dynamic: <a class="self" href="#508">self</a>.dynamic,
+<a href=#519 id=519 data-nosnippet>519</a>            name: <a class="self" href="#508">self</a>.name,
+<a href=#520 id=520 data-nosnippet>520</a>            columns: <a class="self" href="#508">self</a>.columns,
+<a href=#521 id=521 data-nosnippet>521</a>            constraints: <a class="self" href="#508">self</a>.constraints,
+<a href=#522 id=522 data-nosnippet>522</a>            hive_distribution: <a class="self" href="#508">self</a>.hive_distribution,
+<a href=#523 id=523 data-nosnippet>523</a>            hive_formats: <a class="self" href="#508">self</a>.hive_formats,
+<a href=#524 id=524 data-nosnippet>524</a>            file_format: <a class="self" href="#508">self</a>.file_format,
+<a href=#525 id=525 data-nosnippet>525</a>            location: <a class="self" href="#508">self</a>.location,
+<a href=#526 id=526 data-nosnippet>526</a>            query: <a class="self" href="#508">self</a>.query,
+<a href=#527 id=527 data-nosnippet>527</a>            without_rowid: <a class="self" href="#508">self</a>.without_rowid,
+<a href=#528 id=528 data-nosnippet>528</a>            like: <a class="self" href="#508">self</a>.like,
+<a href=#529 id=529 data-nosnippet>529</a>            clone: <a class="self" href="#508">self</a>.clone,
+<a href=#530 id=530 data-nosnippet>530</a>            version: <a class="self" href="#508">self</a>.version,
+<a href=#531 id=531 data-nosnippet>531</a>            comment: <a class="self" href="#508">self</a>.comment,
+<a href=#532 id=532 data-nosnippet>532</a>            on_commit: <a class="self" href="#508">self</a>.on_commit,
+<a href=#533 id=533 data-nosnippet>533</a>            on_cluster: <a class="self" href="#508">self</a>.on_cluster,
+<a href=#534 id=534 data-nosnippet>534</a>            primary_key: <a class="self" href="#508">self</a>.primary_key,
+<a href=#535 id=535 data-nosnippet>535</a>            order_by: <a class="self" href="#508">self</a>.order_by,
+<a href=#536 id=536 data-nosnippet>536</a>            partition_by: <a class="self" href="#508">self</a>.partition_by,
+<a href=#537 id=537 data-nosnippet>537</a>            cluster_by: <a class="self" href="#508">self</a>.cluster_by,
+<a href=#538 id=538 data-nosnippet>538</a>            clustered_by: <a class="self" href="#508">self</a>.clustered_by,
+<a href=#539 id=539 data-nosnippet>539</a>            inherits: <a class="self" href="#508">self</a>.inherits,
+<a href=#540 id=540 data-nosnippet>540</a>            partition_of: <a class="self" href="#508">self</a>.partition_of,
+<a href=#541 id=541 data-nosnippet>541</a>            for_values: <a class="self" href="#508">self</a>.for_values,
+<a href=#542 id=542 data-nosnippet>542</a>            strict: <a class="self" href="#508">self</a>.strict,
+<a href=#543 id=543 data-nosnippet>543</a>            copy_grants: <a class="self" href="#508">self</a>.copy_grants,
+<a href=#544 id=544 data-nosnippet>544</a>            enable_schema_evolution: <a class="self" href="#508">self</a>.enable_schema_evolution,
+<a href=#545 id=545 data-nosnippet>545</a>            change_tracking: <a class="self" href="#508">self</a>.change_tracking,
+<a href=#546 id=546 data-nosnippet>546</a>            data_retention_time_in_days: <a class="self" href="#508">self</a>.data_retention_time_in_days,
+<a href=#547 id=547 data-nosnippet>547</a>            max_data_extension_time_in_days: <a class="self" href="#508">self</a>.max_data_extension_time_in_days,
+<a href=#548 id=548 data-nosnippet>548</a>            default_ddl_collation: <a class="self" href="#508">self</a>.default_ddl_collation,
+<a href=#549 id=549 data-nosnippet>549</a>            with_aggregation_policy: <a class="self" href="#508">self</a>.with_aggregation_policy,
+<a href=#550 id=550 data-nosnippet>550</a>            with_row_access_policy: <a class="self" href="#508">self</a>.with_row_access_policy,
+<a href=#551 id=551 data-nosnippet>551</a>            with_tags: <a class="self" href="#508">self</a>.with_tags,
+<a href=#552 id=552 data-nosnippet>552</a>            base_location: <a class="self" href="#508">self</a>.base_location,
+<a href=#553 id=553 data-nosnippet>553</a>            external_volume: <a class="self" href="#508">self</a>.external_volume,
+<a href=#554 id=554 data-nosnippet>554</a>            catalog: <a class="self" href="#508">self</a>.catalog,
+<a href=#555 id=555 data-nosnippet>555</a>            catalog_sync: <a class="self" href="#508">self</a>.catalog_sync,
+<a href=#556 id=556 data-nosnippet>556</a>            storage_serialization_policy: <a class="self" href="#508">self</a>.storage_serialization_policy,
+<a href=#557 id=557 data-nosnippet>557</a>            table_options: <a class="self" href="#508">self</a>.table_options,
+<a href=#558 id=558 data-nosnippet>558</a>            target_lag: <a class="self" href="#508">self</a>.target_lag,
+<a href=#559 id=559 data-nosnippet>559</a>            warehouse: <a class="self" href="#508">self</a>.warehouse,
+<a href=#560 id=560 data-nosnippet>560</a>            refresh_mode: <a class="self" href="#508">self</a>.refresh_mode,
+<a href=#561 id=561 data-nosnippet>561</a>            initialize: <a class="self" href="#508">self</a>.initialize,
+<a href=#562 id=562 data-nosnippet>562</a>            require_user: <a class="self" href="#508">self</a>.require_user,
+<a href=#563 id=563 data-nosnippet>563</a>        }
+<a href=#564 id=564 data-nosnippet>564</a>    }
+<a href=#565 id=565 data-nosnippet>565</a>}
+<a href=#566 id=566 data-nosnippet>566</a>
+<a href=#567 id=567 data-nosnippet>567</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html">TryFrom</a>&lt;<a href="../mod.rs.html#3403-4729">Statement</a>&gt; <span class="kw">for </span><a href="#66-173">CreateTableBuilder</a> {
+<a href=#568 id=568 data-nosnippet>568</a>    <span class="kw">type </span>Error = <a href="../../parser/mod.rs.html#52-59">ParserError</a>;
+<a href=#569 id=569 data-nosnippet>569</a>
+<a href=#570 id=570 data-nosnippet>570</a>    <span class="comment">// As the builder can be transformed back to a statement, it shouldn't be a problem to take the
+<a href=#571 id=571 data-nosnippet>571</a>    // ownership.
+<a href=#572 id=572 data-nosnippet>572</a>    </span><span class="kw">fn </span>try_from(stmt: <a href="../mod.rs.html#3403-4729">Statement</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+<a href=#573 id=573 data-nosnippet>573</a>        <span class="kw">match </span><a href="#572">stmt</a> {
+<a href=#574 id=574 data-nosnippet>574</a>            Statement::<a href="../mod.rs.html#3555">CreateTable</a>(create_table) =&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#574">create_table</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>()),
+<a href=#575 id=575 data-nosnippet>575</a><span class="expansion"><input id=expand-575 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="kw">_ </span>=&gt; <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(ParserError::<a href="../../parser/mod.rs.html#56">ParserError</a>(<span class=expanded>::alloc::__export::must_use({
+        ::alloc::fmt::format(<span class="macro">format_args!</span>(<span class="string">"Expected create table statement, but received: {0}"</span>,
+                stmt))
+    })</span><span class="original"><a href="https://doc.rust-lang.org/nightly/alloc/macro.format.html">format!</a>(
+<a href=#576 id=576 data-nosnippet>576</a>                <span class="string">"Expected create table statement, but received: {stmt}"
+<a href=#577 id=577 data-nosnippet>577</a>            </span>)</span></span>)),
+<a href=#578 id=578 data-nosnippet>578</a>        }
+<a href=#579 id=579 data-nosnippet>579</a>    }
+<a href=#580 id=580 data-nosnippet>580</a>}
+<a href=#581 id=581 data-nosnippet>581</a>
+<a href=#582 id=582 data-nosnippet>582</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="../ddl.rs.html#2887-3035">CreateTable</a>&gt; <span class="kw">for </span><a href="#66-173">CreateTableBuilder</a> {
+<a href=#583 id=583 data-nosnippet>583</a>    <span class="kw">fn </span>from(table: <a href="../ddl.rs.html#2887-3035">CreateTable</a>) -&gt; <span class="self">Self </span>{
+<a href=#584 id=584 data-nosnippet>584</a>        <span class="self">Self </span>{
+<a href=#585 id=585 data-nosnippet>585</a>            or_replace: <a href="#583">table</a>.or_replace,
+<a href=#586 id=586 data-nosnippet>586</a>            temporary: <a href="#583">table</a>.temporary,
+<a href=#587 id=587 data-nosnippet>587</a>            external: <a href="#583">table</a>.external,
+<a href=#588 id=588 data-nosnippet>588</a>            global: <a href="#583">table</a>.global,
+<a href=#589 id=589 data-nosnippet>589</a>            if_not_exists: <a href="#583">table</a>.if_not_exists,
+<a href=#590 id=590 data-nosnippet>590</a>            transient: <a href="#583">table</a>.transient,
+<a href=#591 id=591 data-nosnippet>591</a>            volatile: <a href="#583">table</a>.volatile,
+<a href=#592 id=592 data-nosnippet>592</a>            iceberg: <a href="#583">table</a>.iceberg,
+<a href=#593 id=593 data-nosnippet>593</a>            dynamic: <a href="#583">table</a>.dynamic,
+<a href=#594 id=594 data-nosnippet>594</a>            name: <a href="#583">table</a>.name,
+<a href=#595 id=595 data-nosnippet>595</a>            columns: <a href="#583">table</a>.columns,
+<a href=#596 id=596 data-nosnippet>596</a>            constraints: <a href="#583">table</a>.constraints,
+<a href=#597 id=597 data-nosnippet>597</a>            hive_distribution: <a href="#583">table</a>.hive_distribution,
+<a href=#598 id=598 data-nosnippet>598</a>            hive_formats: <a href="#583">table</a>.hive_formats,
+<a href=#599 id=599 data-nosnippet>599</a>            file_format: <a href="#583">table</a>.file_format,
+<a href=#600 id=600 data-nosnippet>600</a>            location: <a href="#583">table</a>.location,
+<a href=#601 id=601 data-nosnippet>601</a>            query: <a href="#583">table</a>.query,
+<a href=#602 id=602 data-nosnippet>602</a>            without_rowid: <a href="#583">table</a>.without_rowid,
+<a href=#603 id=603 data-nosnippet>603</a>            like: <a href="#583">table</a>.like,
+<a href=#604 id=604 data-nosnippet>604</a>            clone: <a href="#583">table</a>.clone,
+<a href=#605 id=605 data-nosnippet>605</a>            version: <a href="#583">table</a>.version,
+<a href=#606 id=606 data-nosnippet>606</a>            comment: <a href="#583">table</a>.comment,
+<a href=#607 id=607 data-nosnippet>607</a>            on_commit: <a href="#583">table</a>.on_commit,
+<a href=#608 id=608 data-nosnippet>608</a>            on_cluster: <a href="#583">table</a>.on_cluster,
+<a href=#609 id=609 data-nosnippet>609</a>            primary_key: <a href="#583">table</a>.primary_key,
+<a href=#610 id=610 data-nosnippet>610</a>            order_by: <a href="#583">table</a>.order_by,
+<a href=#611 id=611 data-nosnippet>611</a>            partition_by: <a href="#583">table</a>.partition_by,
+<a href=#612 id=612 data-nosnippet>612</a>            cluster_by: <a href="#583">table</a>.cluster_by,
+<a href=#613 id=613 data-nosnippet>613</a>            clustered_by: <a href="#583">table</a>.clustered_by,
+<a href=#614 id=614 data-nosnippet>614</a>            inherits: <a href="#583">table</a>.inherits,
+<a href=#615 id=615 data-nosnippet>615</a>            partition_of: <a href="#583">table</a>.partition_of,
+<a href=#616 id=616 data-nosnippet>616</a>            for_values: <a href="#583">table</a>.for_values,
+<a href=#617 id=617 data-nosnippet>617</a>            strict: <a href="#583">table</a>.strict,
+<a href=#618 id=618 data-nosnippet>618</a>            copy_grants: <a href="#583">table</a>.copy_grants,
+<a href=#619 id=619 data-nosnippet>619</a>            enable_schema_evolution: <a href="#583">table</a>.enable_schema_evolution,
+<a href=#620 id=620 data-nosnippet>620</a>            change_tracking: <a href="#583">table</a>.change_tracking,
+<a href=#621 id=621 data-nosnippet>621</a>            data_retention_time_in_days: <a href="#583">table</a>.data_retention_time_in_days,
+<a href=#622 id=622 data-nosnippet>622</a>            max_data_extension_time_in_days: <a href="#583">table</a>.max_data_extension_time_in_days,
+<a href=#623 id=623 data-nosnippet>623</a>            default_ddl_collation: <a href="#583">table</a>.default_ddl_collation,
+<a href=#624 id=624 data-nosnippet>624</a>            with_aggregation_policy: <a href="#583">table</a>.with_aggregation_policy,
+<a href=#625 id=625 data-nosnippet>625</a>            with_row_access_policy: <a href="#583">table</a>.with_row_access_policy,
+<a href=#626 id=626 data-nosnippet>626</a>            with_tags: <a href="#583">table</a>.with_tags,
+<a href=#627 id=627 data-nosnippet>627</a>            base_location: <a href="#583">table</a>.base_location,
+<a href=#628 id=628 data-nosnippet>628</a>            external_volume: <a href="#583">table</a>.external_volume,
+<a href=#629 id=629 data-nosnippet>629</a>            catalog: <a href="#583">table</a>.catalog,
+<a href=#630 id=630 data-nosnippet>630</a>            catalog_sync: <a href="#583">table</a>.catalog_sync,
+<a href=#631 id=631 data-nosnippet>631</a>            storage_serialization_policy: <a href="#583">table</a>.storage_serialization_policy,
+<a href=#632 id=632 data-nosnippet>632</a>            table_options: <a href="#583">table</a>.table_options,
+<a href=#633 id=633 data-nosnippet>633</a>            target_lag: <a href="#583">table</a>.target_lag,
+<a href=#634 id=634 data-nosnippet>634</a>            warehouse: <a href="#583">table</a>.warehouse,
+<a href=#635 id=635 data-nosnippet>635</a>            refresh_mode: <a href="#583">table</a>.refresh_mode,
+<a href=#636 id=636 data-nosnippet>636</a>            initialize: <a href="#583">table</a>.initialize,
+<a href=#637 id=637 data-nosnippet>637</a>            require_user: <a href="#583">table</a>.require_user,
+<a href=#638 id=638 data-nosnippet>638</a>        }
+<a href=#639 id=639 data-nosnippet>639</a>    }
+<a href=#640 id=640 data-nosnippet>640</a>}
+<a href=#641 id=641 data-nosnippet>641</a>
+<a href=#642 id=642 data-nosnippet>642</a><span class="doccomment">/// Helper return type when parsing configuration for a `CREATE TABLE` statement.
+<a href=#643 id=643 data-nosnippet>643</a></span><span class="expansion"><input id=expand-643 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>CreateTableConfiguration {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; CreateTableConfiguration {
+        CreateTableConfiguration {
+            partition_by: ::core::default::Default::default(),
+            cluster_by: ::core::default::Default::default(),
+            inherits: ::core::default::Default::default(),
+            table_options: ::core::default::Default::default(),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span></span></span><span class="attr">)]
+<a href=#644 id=644 data-nosnippet>644</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span><a href="#644-649">CreateTableConfiguration</a> {
+<a href=#645 id=645 data-nosnippet>645</a>    <span class="kw">pub </span>partition_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;,
+<a href=#646 id=646 data-nosnippet>646</a>    <span class="kw">pub </span>cluster_by: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../mod.rs.html#10289-10294">WrappedCollection</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#817-1320">Expr</a>&gt;&gt;&gt;,
+<a href=#647 id=647 data-nosnippet>647</a>    <span class="kw">pub </span>inherits: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../mod.rs.html#352">ObjectName</a>&gt;&gt;,
+<a href=#648 id=648 data-nosnippet>648</a>    <span class="kw">pub </span>table_options: <a href="../mod.rs.html#3041-3053">CreateTableOptions</a>,
+<a href=#649 id=649 data-nosnippet>649</a>}
+<a href=#650 id=650 data-nosnippet>650</a>
+<a href=#651 id=651 data-nosnippet>651</a><span class="attr">#[cfg(test)]
+<a href=#652 id=652 data-nosnippet>652</a></span><span class="kw">mod </span>tests {
+<a href=#653 id=653 data-nosnippet>653</a>    <span class="kw">use </span><span class="kw">crate</span>::ast::helpers::stmt_create_table::CreateTableBuilder;
+<a href=#654 id=654 data-nosnippet>654</a>    <span class="kw">use </span><span class="kw">crate</span>::ast::{Ident, ObjectName, Statement};
+<a href=#655 id=655 data-nosnippet>655</a>    <span class="kw">use </span><span class="kw">crate</span>::parser::ParserError;
+<a href=#656 id=656 data-nosnippet>656</a>
+<a href=#657 id=657 data-nosnippet>657</a>    <span class="attr">#[test]
+<a href=#658 id=658 data-nosnippet>658</a>    </span><span class="kw">pub fn </span>test_from_valid_statement() {
+<a href=#659 id=659 data-nosnippet>659</a>        <span class="kw">let </span>builder = CreateTableBuilder::new(ObjectName::from(<span class="macro">vec!</span>[Ident::new(<span class="string">"table_name"</span>)]));
+<a href=#660 id=660 data-nosnippet>660</a>
+<a href=#661 id=661 data-nosnippet>661</a>        <span class="kw">let </span>create_table = builder.clone().build();
+<a href=#662 id=662 data-nosnippet>662</a>        <span class="kw">let </span>stmt: Statement = create_table.into();
+<a href=#663 id=663 data-nosnippet>663</a>
+<a href=#664 id=664 data-nosnippet>664</a>        <span class="macro">assert_eq!</span>(builder, CreateTableBuilder::try_from(stmt).unwrap());
+<a href=#665 id=665 data-nosnippet>665</a>    }
+<a href=#666 id=666 data-nosnippet>666</a>
+<a href=#667 id=667 data-nosnippet>667</a>    <span class="attr">#[test]
+<a href=#668 id=668 data-nosnippet>668</a>    </span><span class="kw">pub fn </span>test_from_invalid_statement() {
+<a href=#669 id=669 data-nosnippet>669</a>        <span class="kw">let </span>stmt = Statement::Commit {
+<a href=#670 id=670 data-nosnippet>670</a>            chain: <span class="bool-val">false</span>,
+<a href=#671 id=671 data-nosnippet>671</a>            end: <span class="bool-val">false</span>,
+<a href=#672 id=672 data-nosnippet>672</a>            modifier: <span class="prelude-val">None</span>,
+<a href=#673 id=673 data-nosnippet>673</a>        };
+<a href=#674 id=674 data-nosnippet>674</a>
+<a href=#675 id=675 data-nosnippet>675</a>        <span class="macro">assert_eq!</span>(
+<a href=#676 id=676 data-nosnippet>676</a>            CreateTableBuilder::try_from(stmt).unwrap_err(),
+<a href=#677 id=677 data-nosnippet>677</a>            ParserError::ParserError(
+<a href=#678 id=678 data-nosnippet>678</a>                <span class="string">"Expected create table statement, but received: COMMIT"</span>.to_owned()
+<a href=#679 id=679 data-nosnippet>679</a>            )
+<a href=#680 id=680 data-nosnippet>680</a>        );
+<a href=#681 id=681 data-nosnippet>681</a>    }
+<a href=#682 id=682 data-nosnippet>682</a>}
+</code></pre></div></section></main></body></html>

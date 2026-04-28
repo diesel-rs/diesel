@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["CREATE_MIGRATIONS_TABLE"],"struct":["MigrationVersion"],"trait":["Migration","MigrationConnection","MigrationMetadata","MigrationName","MigrationSource"],"type":["Result"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["recursive"],"fn":["get_minimum_stack_size","get_stack_allocation_size","set_minimum_stack_size","set_stack_allocation_size"]};

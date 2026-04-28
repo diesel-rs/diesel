@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Utilties to aid trait implementations"><title>rand_core::utils - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="rand_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.97.0-nightly (52b6e2c20 2026-04-27)" data-channel="nightly" data-search-js="search-b5634cc7.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-aa4d37ac.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="icon" href="https://www.rust-lang.org/favicon.ico"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module utils</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../../rand_core/index.html"><img src="https://www.rust-lang.org/logos/rust-logo-128x128-blk.png" alt="logo"></a><h2><a href="../../rand_core/index.html">rand_<wbr>core</a><span class="version">0.10.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module utils</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#portability" title="Portability">Portability</a></li><li><a href="#implementing-tryrng" title="Implementing `TryRng`">Implementing <code>TryRng</code></a></li><li><a href="#implementing-seedablerng" title="Implementing `SeedableRng`">Implementing <code>SeedableRng</code></a></li><li><a href="#example" title="Example">Example</a></li></ul><h3><a href="#traits">Module Items</a></h3><ul class="block"><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate rand_<wbr>core</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">rand_core</a></div><h1>Module <span>utils</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/rand_core/utils.rs.html#1-151">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Utilties to aid trait implementations</p>
+<h3 id="portability"><a class="doc-anchor" href="#portability">§</a>Portability</h3>
+<p>For cross-platform reproducibility, Little-Endian order (least-significant
+part first) has been chosen as the standard for inter-type conversion.
+For example, <a href="fn.next_u64_via_u32.html" title="fn rand_core::utils::next_u64_via_u32"><code>next_u64_via_u32</code></a> generates two <code>u32</code> values <code>x, y</code>,
+then outputs <code>(y &lt;&lt; 32) | x</code>.</p>
+<p>Byte-swapping (like the std <code>to_le</code> functions) is only needed to convert
+to/from byte sequences, and since its purpose is reproducibility,
+non-reproducible sources (e.g. <code>OsRng</code>) need not bother with it.</p>
+<h3 id="implementing-tryrng"><a class="doc-anchor" href="#implementing-tryrng">§</a>Implementing <a href="../trait.TryRng.html" title="trait rand_core::TryRng"><code>TryRng</code></a></h3>
+<p>Usually an implementation of <a href="../trait.TryRng.html" title="trait rand_core::TryRng"><code>TryRng</code></a> will implement one of the three
+methods over its internal source. The following helpers are provided for
+the remaining implementations.</p>
+<p><strong><code>fn try_next_u32</code>:</strong></p>
+<ul>
+<li><code>self.next_u64() as u32</code></li>
+<li><code>(self.next_u64() &gt;&gt; 32) as u32</code></li>
+<li><code><a href="fn.next_word_via_fill.html" title="fn rand_core::utils::next_word_via_fill">next_word_via_fill</a>(self)</code></li>
+</ul>
+<p><strong><code>fn try_next_u64</code>:</strong></p>
+<ul>
+<li><code><a href="fn.next_u64_via_u32.html" title="fn rand_core::utils::next_u64_via_u32">next_u64_via_u32</a>(self)</code></li>
+<li><code><a href="fn.next_word_via_fill.html" title="fn rand_core::utils::next_word_via_fill">next_word_via_fill</a>(self)</code></li>
+</ul>
+<p><strong><code>fn try_fill_bytes</code>:</strong></p>
+<ul>
+<li><code><a href="fn.fill_bytes_via_next_word.html" title="fn rand_core::utils::fill_bytes_via_next_word">fill_bytes_via_next_word</a>(self, dest)</code></li>
+</ul>
+<h3 id="implementing-seedablerng"><a class="doc-anchor" href="#implementing-seedablerng">§</a>Implementing <a href="../trait.SeedableRng.html" title="trait rand_core::SeedableRng"><code>SeedableRng</code></a></h3>
+<p>In many cases, <a href="../trait.SeedableRng.html#associatedtype.Seed" title="associated type rand_core::SeedableRng::Seed"><code>SeedableRng::Seed</code></a> must be converted to <code>[u32; _]</code> or
+<code>[u64; _]</code>. <a href="fn.read_words.html" title="fn rand_core::utils::read_words"><code>read_words</code></a> may be used for this.</p>
+<h3 id="example"><a class="doc-anchor" href="#example">§</a>Example</h3>
+<p>We demonstrate a simple multiplicative congruential generator (MCG), taken
+from M.E. O’Neill’s blog post <a href="https://www.pcg-random.org/posts/does-it-beat-the-minimal-standard.html">Does It Beat the Minimal Standard?</a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>core::convert::Infallible;
+<span class="kw">use </span>rand_core::{Rng, SeedableRng, TryRng, utils};
+
+<span class="kw">pub struct </span>Mcg128(u128);
+
+<span class="kw">impl </span>SeedableRng <span class="kw">for </span>Mcg128 {
+    <span class="kw">type </span>Seed = [u8; <span class="number">16</span>];
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>from_seed(seed: <span class="self">Self</span>::Seed) -&gt; <span class="self">Self </span>{
+        <span class="comment">// Always use little-endian byte order to ensure portable results
+        </span><span class="self">Self</span>(u128::from_le_bytes(seed))
+    }
+}
+
+<span class="kw">impl </span>TryRng <span class="kw">for </span>Mcg128 {
+    <span class="kw">type </span>Error = Infallible;
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>try_next_u32(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u32, Infallible&gt; {
+        <span class="prelude-val">Ok</span>((<span class="self">self</span>.next_u64() &gt;&gt; <span class="number">32</span>) <span class="kw">as </span>u32)
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>try_next_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u64, Infallible&gt; {
+        <span class="self">self</span>.<span class="number">0 </span>= <span class="self">self</span>.<span class="number">0</span>.wrapping_mul(<span class="number">0x0fc94e3bf4e9ab32866458cd56f5e605</span>);
+        <span class="prelude-val">Ok</span>((<span class="self">self</span>.<span class="number">0 </span>&gt;&gt; <span class="number">64</span>) <span class="kw">as </span>u64)
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>try_fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dst: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), Infallible&gt; {
+        utils::fill_bytes_via_next_word(dst, || <span class="self">self</span>.try_next_u64())
+    }
+}</code></pre></div></div></details><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Word.html" title="trait rand_core::utils::Word">Word</a></dt><dd>A marker trait for supported “word” types.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.fill_bytes_via_next_word.html" title="fn rand_core::utils::fill_bytes_via_next_word">fill_<wbr>bytes_<wbr>via_<wbr>next_<wbr>word</a></dt><dd>Fill <code>dst</code> with bytes using <code>next_word</code></dd><dt><a class="fn" href="fn.next_u64_via_u32.html" title="fn rand_core::utils::next_u64_via_u32">next_<wbr>u64_<wbr>via_<wbr>u32</a></dt><dd>Generate a <code>u64</code> using <code>next_u32</code>, little-endian order.</dd><dt><a class="fn" href="fn.next_word_via_fill.html" title="fn rand_core::utils::next_word_via_fill">next_<wbr>word_<wbr>via_<wbr>fill</a></dt><dd>Generate a <code>u32</code> or <code>u64</code> word using <code>fill_bytes</code></dd><dt><a class="fn" href="fn.read_words.html" title="fn rand_core::utils::read_words">read_<wbr>words</a></dt><dd>Reads an array of words from a byte slice</dd></dl></section></div></main></body></html>

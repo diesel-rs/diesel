@@ -1,0 +1,207 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Methods present on all expressions, except tuples"><title>ExpressionMethods in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><h2 class="location"><a href="#">ExpressionMethods</a></h2><div class="sidebar-elems"><section><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.asc">asc</a></li><li><a href="#method.between">between</a></li><li><a href="#method.desc">desc</a></li><li><a href="#method.eq">eq</a></li><li><a href="#method.eq_any">eq_any</a></li><li><a href="#method.ge">ge</a></li><li><a href="#method.gt">gt</a></li><li><a href="#method.is_not_null">is_not_null</a></li><li><a href="#method.is_null">is_null</a></li><li><a href="#method.le">le</a></li><li><a href="#method.lt">lt</a></li><li><a href="#method.ne">ne</a></li><li><a href="#method.ne_all">ne_all</a></li><li><a href="#method.not_between">not_between</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="trait" href="#">ExpressionMethods</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#9-495">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait ExpressionMethods: <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+<details class="toggle type-contents-toggle"><summary class="hideme"><span>Show 14 methods</span></summary>    // Provided methods
+    fn <a href="#method.eq" class="fn">eq</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Eq.html" title="type diesel::dsl::Eq">Eq</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.ne" class="fn">ne</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.NotEq.html" title="type diesel::dsl::NotEq">NotEq</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.eq_any" class="fn">eq_any</a>&lt;T&gt;(self, values: T) -&gt; <a class="type" href="../dsl/type.EqAny.html" title="type diesel::dsl::EqAny">EqAny</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/array_comparison/trait.AsInExpression.html" title="trait diesel::expression::array_comparison::AsInExpression">AsInExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.ne_all" class="fn">ne_all</a>&lt;T&gt;(self, values: T) -&gt; <a class="type" href="../dsl/type.NeAny.html" title="type diesel::dsl::NeAny">NeAny</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/array_comparison/trait.AsInExpression.html" title="trait diesel::expression::array_comparison::AsInExpression">AsInExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_null" class="fn">is_null</a>(self) -&gt; <a class="type" href="../dsl/type.IsNull.html" title="type diesel::dsl::IsNull">IsNull</a>&lt;Self&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_not_null" class="fn">is_not_null</a>(self) -&gt; <a class="type" href="../dsl/type.IsNotNull.html" title="type diesel::dsl::IsNotNull">IsNotNull</a>&lt;Self&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.gt" class="fn">gt</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Gt.html" title="type diesel::dsl::Gt">Gt</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.ge" class="fn">ge</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.GtEq.html" title="type diesel::dsl::GtEq">GtEq</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.lt" class="fn">lt</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Lt.html" title="type diesel::dsl::Lt">Lt</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.le" class="fn">le</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.LtEq.html" title="type diesel::dsl::LtEq">LtEq</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.between" class="fn">between</a>&lt;T, U&gt;(self, lower: T, upper: U) -&gt; <a class="type" href="../dsl/type.Between.html" title="type diesel::dsl::Between">Between</a>&lt;Self, T, U&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,
+             U: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.not_between" class="fn">not_between</a>&lt;T, U&gt;(self, lower: T, upper: U) -&gt; <a class="type" href="../dsl/type.NotBetween.html" title="type diesel::dsl::NotBetween">NotBetween</a>&lt;Self, T, U&gt;
+       <span class="where">where Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,
+             U: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.desc" class="fn">desc</a>(self) -&gt; <a class="type" href="../dsl/type.Desc.html" title="type diesel::dsl::Desc">Desc</a>&lt;Self&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.asc" class="fn">asc</a>(self) -&gt; <a class="type" href="../dsl/type.Asc.html" title="type diesel::dsl::Asc">Asc</a>&lt;Self&gt; { ... }
+</details>}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Methods present on all expressions, except tuples</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.eq" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#71-77">source</a><h4 class="code-header">fn <a href="#method.eq" class="fn">eq</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Eq.html" title="type diesel::dsl::Eq">Eq</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>=</code> expression.</p>
+<p>Note that this function follows SQL semantics around <code>None</code>/<code>null</code> values,
+so <code>eq(None)</code> will never match. Use <a href="../expression_methods/trait.ExpressionMethods.html#method.is_null" title="method diesel::expression_methods::ExpressionMethods::is_null"><code>is_null</code></a> instead.</p>
+<p>To get behavior that is more like the Rust <code>=</code> operator you can also use the
+sqlite-specific <a href="../expression_methods/trait.SqliteExpressionMethods.html#method.is" title="method diesel::expression_methods::SqliteExpressionMethods::is"><code>is</code></a>
+or the
+postgres-specific <a href="../expression_methods/trait.PgExpressionMethods.html#method.is_not_distinct_from" title="method diesel::expression_methods::PgExpressionMethods::is_not_distinct_from"><code>is_not_distinct_from</code></a>
+.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users.select(id).filter(name.eq(<span class="string">"Sean"</span>));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), data.first(connection));</code></pre></div>
+<p>Matching against <code>None</code> follows SQL semantics:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = animals
+    .select(species)
+    .filter(name.eq::&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;(<span class="prelude-val">None</span>))
+    .first::&lt;String&gt;(connection);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Err</span>(diesel::NotFound), data);
+
+<span class="kw">let </span>data = animals
+    .select(species)
+    .filter(name.is_null())
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"spider"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.ne" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#94-100">source</a><h4 class="code-header">fn <a href="#method.ne" class="fn">ne</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.NotEq.html" title="type diesel::dsl::NotEq">NotEq</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>!=</code> expression.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users.select(id).filter(name.ne(<span class="string">"Sean"</span>));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">2</span>), data.first(connection));</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.eq_any" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#140-146">source</a><h4 class="code-header">fn <a href="#method.eq_any" class="fn">eq_any</a>&lt;T&gt;(self, values: T) -&gt; <a class="type" href="../dsl/type.EqAny.html" title="type diesel::dsl::EqAny">EqAny</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/array_comparison/trait.AsInExpression.html" title="trait diesel::expression::array_comparison::AsInExpression">AsInExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>IN</code> statement.</p>
+<p>Queries using this method will not typically be
+placed in the prepared statement cache. However,
+in cases when a subquery is passed to the method, that
+query will use the cache (assuming the subquery
+itself is safe to cache).
+On PostgreSQL, this method automatically performs a <code>= ANY()</code>
+query.</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users::table.select(users::id).filter(users::name.eq_any(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Jim"</span>]));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">3</span>]), data.load(connection));
+
+<span class="comment">// Calling `eq_any` with an empty array is the same as doing `WHERE 1=0`
+</span><span class="kw">let </span>data = users::table.select(users::id).filter(users::name.eq_any(Vec::&lt;String&gt;::new()));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[]), data.load::&lt;i32&gt;(connection));
+
+<span class="comment">// Calling `eq_any` with a subquery is the same as using
+// `WHERE {column} IN {subquery}`.
+
+</span><span class="kw">let </span>subquery = users::table.filter(users::name.eq(<span class="string">"Sean"</span>)).select(users::id).into_boxed();
+<span class="kw">let </span>data = posts::table.select(posts::id).filter(posts::user_id.eq_any(subquery));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>]), data.load::&lt;i32&gt;(connection));
+</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.ne_all" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#176-182">source</a><h4 class="code-header">fn <a href="#method.ne_all" class="fn">ne_all</a>&lt;T&gt;(self, values: T) -&gt; <a class="type" href="../dsl/type.NeAny.html" title="type diesel::dsl::NeAny">NeAny</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/array_comparison/trait.AsInExpression.html" title="trait diesel::expression::array_comparison::AsInExpression">AsInExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>NOT IN</code> statement.</p>
+<p>Queries using this method will not be
+placed in the prepared statement cache. On PostgreSQL, this
+method automatically performs a <code>!= ALL()</code> query.</p>
+<h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users.select(id).filter(name.ne_all(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Jim"</span>]));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="number">2</span>]), data.load(connection));
+
+<span class="kw">let </span>data = users.select(id).filter(name.ne_all(<span class="macro">vec!</span>[<span class="string">"Tess"</span>]));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">3</span>]), data.load(connection));
+
+<span class="comment">// Calling `ne_any` with an empty array is the same as doing `WHERE 1=1`
+</span><span class="kw">let </span>data = users.select(id).filter(name.ne_all(Vec::&lt;String&gt;::new()));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]), data.load(connection));</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.is_null" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#212-214">source</a><h4 class="code-header">fn <a href="#method.is_null" class="fn">is_null</a>(self) -&gt; <a class="type" href="../dsl/type.IsNull.html" title="type diesel::dsl::IsNull">IsNull</a>&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Creates a SQL <code>IS NULL</code> expression.</p>
+<h5 id="example-4"><a class="doc-anchor" href="#example-4">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = animals
+    .select(species)
+    .filter(name.is_null())
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"spider"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.is_not_null" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#244-246">source</a><h4 class="code-header">fn <a href="#method.is_not_null" class="fn">is_not_null</a>(self) -&gt; <a class="type" href="../dsl/type.IsNotNull.html" title="type diesel::dsl::IsNotNull">IsNotNull</a>&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Creates a SQL <code>IS NOT NULL</code> expression.</p>
+<h5 id="example-5"><a class="doc-anchor" href="#example-5">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = animals
+    .select(species)
+    .filter(name.is_not_null())
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"dog"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.gt" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#271-277">source</a><h4 class="code-header">fn <a href="#method.gt" class="fn">gt</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Gt.html" title="type diesel::dsl::Gt">Gt</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>&gt;</code> expression.</p>
+<h5 id="example-6"><a class="doc-anchor" href="#example-6">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users
+    .select(name)
+    .filter(id.gt(<span class="number">1</span>))
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"Tess"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.ge" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#302-308">source</a><h4 class="code-header">fn <a href="#method.ge" class="fn">ge</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.GtEq.html" title="type diesel::dsl::GtEq">GtEq</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>&gt;=</code> expression.</p>
+<h5 id="example-7"><a class="doc-anchor" href="#example-7">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users
+    .select(name)
+    .filter(id.ge(<span class="number">2</span>))
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"Tess"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.lt" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#333-339">source</a><h4 class="code-header">fn <a href="#method.lt" class="fn">lt</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Lt.html" title="type diesel::dsl::Lt">Lt</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>&lt;</code> expression.</p>
+<h5 id="example-8"><a class="doc-anchor" href="#example-8">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users
+    .select(name)
+    .filter(id.lt(<span class="number">2</span>))
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"Sean"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.le" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#364-370">source</a><h4 class="code-header">fn <a href="#method.le" class="fn">le</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.LtEq.html" title="type diesel::dsl::LtEq">LtEq</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>&lt;=</code> expression.</p>
+<h5 id="example-9"><a class="doc-anchor" href="#example-9">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users
+    .select(name)
+    .filter(id.le(<span class="number">2</span>))
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"Sean"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.between" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#392-402">source</a><h4 class="code-header">fn <a href="#method.between" class="fn">between</a>&lt;T, U&gt;(self, lower: T, upper: U) -&gt; <a class="type" href="../dsl/type.Between.html" title="type diesel::dsl::Between">Between</a>&lt;Self, T, U&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,
+    U: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>BETWEEN</code> expression using the given lower and upper
+bounds.</p>
+<h5 id="example-10"><a class="doc-anchor" href="#example-10">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = animals
+    .select(species)
+    .filter(legs.between(<span class="number">2</span>, <span class="number">6</span>))
+    .first(connection);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="string">"dog"</span>.to_string()), data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.not_between" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#428-438">source</a><h4 class="code-header">fn <a href="#method.not_between" class="fn">not_between</a>&lt;T, U&gt;(self, lower: T, upper: U) -&gt; <a class="type" href="../dsl/type.NotBetween.html" title="type diesel::dsl::NotBetween">NotBetween</a>&lt;Self, T, U&gt;<div class="where">where
+    Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,
+    U: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a SQL <code>NOT BETWEEN</code> expression using the given lower and upper
+bounds.</p>
+<h5 id="example-11"><a class="doc-anchor" href="#example-11">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = animals
+    .select(species)
+    .filter(legs.not_between(<span class="number">2</span>, <span class="number">6</span>))
+    .first::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">"spider"</span>, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.desc" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#464-466">source</a><h4 class="code-header">fn <a href="#method.desc" class="fn">desc</a>(self) -&gt; <a class="type" href="../dsl/type.Desc.html" title="type diesel::dsl::Desc">Desc</a>&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Creates a SQL <code>DESC</code> expression, representing this expression in
+descending order.</p>
+<h5 id="example-12"><a class="doc-anchor" href="#example-12">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>names = users
+    .select(name)
+    .order(name.desc())
+    .load::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Tess"</span>, <span class="string">"Sean"</span>], names);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.asc" class="method"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#492-494">source</a><h4 class="code-header">fn <a href="#method.asc" class="fn">asc</a>(self) -&gt; <a class="type" href="../dsl/type.Asc.html" title="type diesel::dsl::Asc">Asc</a>&lt;Self&gt;</h4></section></summary><div class="docblock"><p>Creates a SQL <code>ASC</code> expression, representing this expression in
+ascending order.</p>
+<p>This is the same as leaving the direction unspecified. It is useful if
+you need to provide an unknown ordering, and need to box the return
+value of a function.</p>
+<h5 id="example-13"><a class="doc-anchor" href="#example-13">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>ordering: Box&lt;<span class="kw">dyn </span>BoxableExpression&lt;users, DB, SqlType = NotSelectable&gt;&gt; =
+    <span class="kw">if </span>order == <span class="string">"name" </span>{
+        Box::new(name.desc())
+    } <span class="kw">else </span>{
+        Box::new(id.asc())
+    };</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-ExpressionMethods-for-T" class="impl"><a class="src rightside" href="../../src/diesel/expression_methods/global_expression_methods.rs.html#497-502">source</a><a href="#impl-ExpressionMethods-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="../expression_methods/trait.ExpressionMethods.html" title="trait diesel::expression_methods::ExpressionMethods">ExpressionMethods</a> for T<div class="where">where
+    T: <a class="trait" href="trait.Expression.html" title="trait diesel::prelude::Expression">Expression</a>,
+    T::<a class="associatedtype" href="trait.Expression.html#associatedtype.SqlType" title="type diesel::prelude::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>,</div></h3></section></div><script src="../../trait.impl/diesel/expression_methods/global_expression_methods/trait.ExpressionMethods.js" async></script></section></div></main></body></html>

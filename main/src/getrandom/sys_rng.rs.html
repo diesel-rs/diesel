@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/getrandom-0.4.2/src/sys_rng.rs`."><title>sys_rng.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="getrandom" data-themes="" data-resource-suffix="" data-rustdoc-version="1.97.0-nightly (52b6e2c20 2026-04-27)" data-channel="nightly" data-search-js="search-b5634cc7.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-aa4d37ac.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="icon" href="https://www.rust-lang.org/favicon.ico"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">getrandom/</div>sys_rng.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="error.rs.html#45"><span class="kw">crate</span>::Error</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>rand_core::{<a href="../../rand_core/trait.TryCryptoRng.html">TryCryptoRng</a>, <a href="../../rand_core/trait.TryRng.html">TryRng</a>};
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a><span class="doccomment">/// A [`TryRng`] interface over the system's preferred random number source
+<a href=#5 id=5 data-nosnippet>5</a>///
+<a href=#6 id=6 data-nosnippet>6</a>/// This is a zero-sized struct. It can be freely constructed with just `SysRng`.
+<a href=#7 id=7 data-nosnippet>7</a>///
+<a href=#8 id=8 data-nosnippet>8</a>/// This struct is also available as [`rand::rngs::SysRng`] when using [rand].
+<a href=#9 id=9 data-nosnippet>9</a>///
+<a href=#10 id=10 data-nosnippet>10</a>/// # Usage example
+<a href=#11 id=11 data-nosnippet>11</a>///
+<a href=#12 id=12 data-nosnippet>12</a>/// `SysRng` implements [`TryRng`]:
+<a href=#13 id=13 data-nosnippet>13</a>/// ```
+<a href=#14 id=14 data-nosnippet>14</a>/// use getrandom::{rand_core::TryRng, SysRng};
+<a href=#15 id=15 data-nosnippet>15</a>///
+<a href=#16 id=16 data-nosnippet>16</a>/// let mut key = [0u8; 32];
+<a href=#17 id=17 data-nosnippet>17</a>/// SysRng.try_fill_bytes(&amp;mut key).unwrap();
+<a href=#18 id=18 data-nosnippet>18</a>/// ```
+<a href=#19 id=19 data-nosnippet>19</a>///
+<a href=#20 id=20 data-nosnippet>20</a>/// Using it as an [`Rng`] is possible using [`UnwrapErr`]:
+<a href=#21 id=21 data-nosnippet>21</a>/// ```
+<a href=#22 id=22 data-nosnippet>22</a>/// use getrandom::rand_core::{Rng, UnwrapErr};
+<a href=#23 id=23 data-nosnippet>23</a>/// use getrandom::SysRng;
+<a href=#24 id=24 data-nosnippet>24</a>///
+<a href=#25 id=25 data-nosnippet>25</a>/// let mut rng = UnwrapErr(SysRng);
+<a href=#26 id=26 data-nosnippet>26</a>/// let random_u64 = rng.next_u64();
+<a href=#27 id=27 data-nosnippet>27</a>/// ```
+<a href=#28 id=28 data-nosnippet>28</a>///
+<a href=#29 id=29 data-nosnippet>29</a>/// [rand]: https://crates.io/crates/rand
+<a href=#30 id=30 data-nosnippet>30</a>/// [`rand::rngs::SysRng`]: https://docs.rs/rand/latest/rand/rngs/struct.SysRng.html
+<a href=#31 id=31 data-nosnippet>31</a>/// [`Rng`]: rand_core::Rng
+<a href=#32 id=32 data-nosnippet>32</a>/// [`UnwrapErr`]: rand_core::UnwrapErr
+<a href=#33 id=33 data-nosnippet>33</a></span><span class="expansion"><input id=expand-33 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>SysRng {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; SysRng { <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>SysRng { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>SysRng {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f, <span class="string">"SysRng"</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>SysRng {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; SysRng { SysRng {} }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span></span></span><span class="attr">)]
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">pub struct </span><a href="#34">SysRng</a>;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="kw">impl </span><a href="../../rand_core/trait.TryRng.html">TryRng</a> <span class="kw">for </span><a href="#34">SysRng</a> {
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="kw">type </span>Error = <a href="error.rs.html#45">Error</a>;
+<a href=#38 id=38 data-nosnippet>38</a>
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="attr">#[inline]
+<a href=#40 id=40 data-nosnippet>40</a>    </span><span class="kw">fn </span>try_next_u32(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>, <a href="error.rs.html#45">Error</a>&gt; {
+<a href=#41 id=41 data-nosnippet>41</a>        <span class="kw">crate</span>::<a href="lib.rs.html#143-145">u32</a>()
+<a href=#42 id=42 data-nosnippet>42</a>    }
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="attr">#[inline]
+<a href=#45 id=45 data-nosnippet>45</a>    </span><span class="kw">fn </span>try_next_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.u64.html">u64</a>, <a href="error.rs.html#45">Error</a>&gt; {
+<a href=#46 id=46 data-nosnippet>46</a>        <span class="kw">crate</span>::<a href="lib.rs.html#157-159">u64</a>()
+<a href=#47 id=47 data-nosnippet>47</a>    }
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="attr">#[inline]
+<a href=#50 id=50 data-nosnippet>50</a>    </span><span class="kw">fn </span>try_fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, dest: <span class="kw-2">&amp;mut </span>[<a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="error.rs.html#45">Error</a>&gt; {
+<a href=#51 id=51 data-nosnippet>51</a>        <span class="kw">crate</span>::<a href="lib.rs.html#87-93">fill</a>(<a href="#50">dest</a>)
+<a href=#52 id=52 data-nosnippet>52</a>    }
+<a href=#53 id=53 data-nosnippet>53</a>}
+<a href=#54 id=54 data-nosnippet>54</a>
+<a href=#55 id=55 data-nosnippet>55</a><span class="kw">impl </span><a href="../../rand_core/trait.TryCryptoRng.html">TryCryptoRng</a> <span class="kw">for </span><a href="#34">SysRng</a> {}
+</code></pre></div></section></main></body></html>

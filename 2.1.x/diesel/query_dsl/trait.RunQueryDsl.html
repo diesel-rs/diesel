@@ -1,0 +1,191 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Methods used to execute queries."><title>RunQueryDsl in diesel::query_dsl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><h2 class="location"><a href="#">RunQueryDsl</a></h2><div class="sidebar-elems"><section><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.execute">execute</a></li><li><a href="#method.first">first</a></li><li><a href="#method.get_result">get_result</a></li><li><a href="#method.get_results">get_results</a></li><li><a href="#method.load">load</a></li><li><a href="#method.load_iter">load_iter</a></li></ul><h3><a href="#object-safety">Object Safety</a></h3><h3><a href="#implementors">Implementors</a></h3></section><h2><a href="index.html">In diesel::query_dsl</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">query_dsl</a>::<wbr><a class="trait" href="#">RunQueryDsl</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel/query_dsl/mod.rs.html#1393-1783">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub trait RunQueryDsl&lt;Conn&gt;: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Provided methods
+    fn <a href="#method.execute" class="fn">execute</a>(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;
+       <span class="where">where Conn: <a class="trait" href="../prelude/trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a>,
+             Self: <a class="trait" href="methods/trait.ExecuteDsl.html" title="trait diesel::query_dsl::methods::ExecuteDsl">ExecuteDsl</a>&lt;Conn&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.load" class="fn">load</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;U&gt;&gt;
+       <span class="where">where Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.load_iter" class="fn">load_iter</a>&lt;'conn, 'query: 'conn, U, B&gt;(
+        self,
+        conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;'conn mut Conn</a>
+    ) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;Self::<a class="associatedtype" href="methods/trait.LoadQuery.html#associatedtype.RowIter" title="type diesel::query_dsl::methods::LoadQuery::RowIter">RowIter</a>&lt;'conn&gt;&gt;
+       <span class="where">where U: 'conn,
+             Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U, B&gt; + 'conn</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.get_result" class="fn">get_result</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;U&gt;
+       <span class="where">where Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.get_results" class="fn">get_results</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;U&gt;&gt;
+       <span class="where">where Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.first" class="fn">first</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;U&gt;
+       <span class="where">where Self: <a class="trait" href="methods/trait.LimitDsl.html" title="trait diesel::query_dsl::methods::LimitDsl">LimitDsl</a>,
+             <a class="type" href="../helper_types/type.Limit.html" title="type diesel::helper_types::Limit">Limit</a>&lt;Self&gt;: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;</span> { ... }
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Methods used to execute queries.</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.execute" class="method"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1428-1434">source</a><h4 class="code-header">fn <a href="#method.execute" class="fn">execute</a>(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;<div class="where">where
+    Conn: <a class="trait" href="../prelude/trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a>,
+    Self: <a class="trait" href="methods/trait.ExecuteDsl.html" title="trait diesel::query_dsl::methods::ExecuteDsl">ExecuteDsl</a>&lt;Conn&gt;,</div></h4></section></summary><div class="docblock"><p>Executes the given command, returning the number of rows affected.</p>
+<p><code>execute</code> is usually used in conjunction with <a href="../dsl/fn.insert_into.html" title="fn diesel::dsl::insert_into"><code>insert_into</code></a>,
+<a href="../dsl/fn.update.html" title="fn diesel::dsl::update"><code>update</code></a> and <a href="../dsl/fn.delete.html" title="fn diesel::dsl::delete"><code>delete</code></a> where the number of
+affected rows is often enough information.</p>
+<p>When asking the database to return data from a query, <a href="../prelude/trait.RunQueryDsl.html#method.load" title="method diesel::prelude::RunQueryDsl::load"><code>load</code></a> should
+probably be used instead.</p>
+<h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>inserted_rows = insert_into(users)
+    .values(name.eq(<span class="string">"Ruby"</span>))
+    .execute(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">1</span>, inserted_rows);
+
+<span class="kw">let </span>inserted_rows = insert_into(users)
+    .values(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[name.eq(<span class="string">"Jim"</span>), name.eq(<span class="string">"James"</span>)])
+    .execute(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">2</span>, inserted_rows);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.load" class="method"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1540-1545">source</a><h4 class="code-header">fn <a href="#method.load" class="fn">load</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;U&gt;&gt;<div class="where">where
+    Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;,</div></h4></section></summary><div class="docblock"><p>Executes the given query, returning a <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec"><code>Vec</code></a> with the returned rows.</p>
+<p>When using the query builder, the return type can be
+a tuple of the values, or a struct which implements <a href="../prelude/trait.Queryable.html" title="trait diesel::prelude::Queryable"><code>Queryable</code></a>.</p>
+<p>When this method is called on <a href="../dsl/fn.sql_query.html" title="fn diesel::dsl::sql_query"><code>sql_query</code></a>,
+the return type can only be a struct which implements <a href="../prelude/trait.QueryableByName.html" title="trait diesel::prelude::QueryableByName"><code>QueryableByName</code></a></p>
+<p>For insert, update, and delete operations where only a count of affected is needed,
+<a href="../prelude/trait.RunQueryDsl.html#method.execute" title="method diesel::prelude::RunQueryDsl::execute"><code>execute</code></a> should be used instead.</p>
+<h6 id="how-to-resolve-compiler-errors-while-loading-data-from-the-database"><a class="doc-anchor" href="#how-to-resolve-compiler-errors-while-loading-data-from-the-database">§</a>How to resolve compiler errors while loading data from the database</h6>
+<p>In case you getting uncomprehensable compiler errors while loading data
+from the database into a type using <a href="../prelude/derive.Queryable.html" title="derive diesel::prelude::Queryable"><code>#[derive(Queryable)]</code></a>
+you might want to consider
+using  <a href="../prelude/derive.Selectable.html" title="derive diesel::prelude::Selectable"><code>#[derive(Selectable)]</code></a> +
+<code>#[diesel(check_for_backend(YourBackendType))]</code>
+to check for mismatching fields at compile time. This drastically improves
+the quality of the generated error messages by pointing to concrete type mismatches at
+field level.You need to specify the concrete database backend
+this specific struct is indented to be used with, as otherwise rustc cannot correctly
+identify the required deserialization implementation.</p>
+<h5 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h5><h6 id="returning-a-single-field"><a class="doc-anchor" href="#returning-a-single-field">§</a>Returning a single field</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users.select(name)
+    .load::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>], data);</code></pre></div>
+<h6 id="returning-a-tuple"><a class="doc-anchor" href="#returning-a-tuple">§</a>Returning a tuple</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>data = users
+    .load::&lt;(i32, String)&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected_data = <span class="macro">vec!</span>[
+    (<span class="number">1</span>, String::from(<span class="string">"Sean"</span>)),
+    (<span class="number">2</span>, String::from(<span class="string">"Tess"</span>)),
+];
+<span class="macro">assert_eq!</span>(expected_data, data);</code></pre></div>
+<h6 id="returning-a-struct"><a class="doc-anchor" href="#returning-a-struct">§</a>Returning a struct</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Queryable, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">let </span>data = users
+    .load::&lt;User&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected_data = <span class="macro">vec!</span>[
+    User { id: <span class="number">1</span>, name: String::from(<span class="string">"Sean"</span>) },
+    User { id: <span class="number">2</span>, name: String::from(<span class="string">"Tess"</span>) },
+];
+<span class="macro">assert_eq!</span>(expected_data, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.load_iter" class="method"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1664-1673">source</a><h4 class="code-header">fn <a href="#method.load_iter" class="fn">load_iter</a>&lt;'conn, 'query: 'conn, U, B&gt;(
+    self,
+    conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;'conn mut Conn</a>
+) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;Self::<a class="associatedtype" href="methods/trait.LoadQuery.html#associatedtype.RowIter" title="type diesel::query_dsl::methods::LoadQuery::RowIter">RowIter</a>&lt;'conn&gt;&gt;<div class="where">where
+    U: 'conn,
+    Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U, B&gt; + 'conn,</div></h4></section></summary><div class="docblock"><p>Executes the given query, returning an <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html" title="trait core::iter::traits::iterator::Iterator"><code>Iterator</code></a> with the returned rows.</p>
+<p>The iterator’s item is <a href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult"><code>QueryResult&lt;U&gt;</code></a>.</p>
+<p>You should normally prefer to use <a href="../prelude/trait.RunQueryDsl.html#method.load" title="method diesel::prelude::RunQueryDsl::load"><code>RunQueryDsl::load</code></a> instead. This method
+is provided for situations where the result needs to be collected into a different
+container than a <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec"><code>Vec</code></a></p>
+<p>When using the query builder, the return type can be
+a tuple of the values, or a struct which implements <a href="../prelude/trait.Queryable.html" title="trait diesel::prelude::Queryable"><code>Queryable</code></a>.
+This type is specified by the first generic type of this function.</p>
+<p>The second generic type parameter specifies the so called loading mode,
+which describes how the connection implementation loads data from the database.
+All connections should provide a implementation for
+<a href="../connection/struct.DefaultLoadingMode.html" title="struct diesel::connection::DefaultLoadingMode"><code>DefaultLoadingMode</code></a>.</p>
+<p>They may provide additional modes. Checkout the documentation of the concrete
+connection types for details. For connection implementations that provide
+more than one loading mode it is <strong>required</strong> to specify this generic paramater.
+This is currently true for <code>PgConnection</code>.</p>
+<p>When this method is called on <a href="../dsl/fn.sql_query.html" title="fn diesel::dsl::sql_query"><code>sql_query</code></a>,
+the return type can only be a struct which implements <a href="../prelude/trait.QueryableByName.html" title="trait diesel::prelude::QueryableByName"><code>QueryableByName</code></a></p>
+<p>For insert, update, and delete operations where only a count of affected is needed,
+<a href="../prelude/trait.RunQueryDsl.html#method.execute" title="method diesel::prelude::RunQueryDsl::execute"><code>execute</code></a> should be used instead.</p>
+<h5 id="examples-1"><a class="doc-anchor" href="#examples-1">§</a>Examples</h5><h6 id="returning-a-single-field-1"><a class="doc-anchor" href="#returning-a-single-field-1">§</a>Returning a single field</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::connection::DefaultLoadingMode;
+
+<span class="kw">let </span>data = users.select(name)
+    .load_iter::&lt;String, DefaultLoadingMode&gt;(connection)<span class="question-mark">?
+    </span>.collect::&lt;QueryResult&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">"Sean"</span>, <span class="string">"Tess"</span>], data);</code></pre></div>
+<h6 id="returning-a-tuple-1"><a class="doc-anchor" href="#returning-a-tuple-1">§</a>Returning a tuple</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>diesel::connection::DefaultLoadingMode;
+
+<span class="kw">let </span>data = users
+    .load_iter::&lt;(i32, String), DefaultLoadingMode&gt;(connection)<span class="question-mark">?
+    </span>.collect::&lt;QueryResult&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()<span class="question-mark">?</span>;
+<span class="kw">let </span>expected_data = <span class="macro">vec!</span>[
+    (<span class="number">1</span>, String::from(<span class="string">"Sean"</span>)),
+    (<span class="number">2</span>, String::from(<span class="string">"Tess"</span>)),
+];
+<span class="macro">assert_eq!</span>(expected_data, data);</code></pre></div>
+<h6 id="returning-a-struct-1"><a class="doc-anchor" href="#returning-a-struct-1">§</a>Returning a struct</h6>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Queryable, PartialEq, Debug)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="kw">use </span>diesel::connection::DefaultLoadingMode;
+
+<span class="kw">let </span>data = users
+    .load_iter::&lt;User, DefaultLoadingMode&gt;(connection)<span class="question-mark">?
+    </span>.collect::&lt;QueryResult&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()<span class="question-mark">?</span>;
+<span class="kw">let </span>expected_data = <span class="macro">vec!</span>[
+    User { id: <span class="number">1</span>, name: String::from(<span class="string">"Sean"</span>) },
+    User { id: <span class="number">2</span>, name: String::from(<span class="string">"Tess"</span>) },
+];
+<span class="macro">assert_eq!</span>(expected_data, data);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.get_result" class="method"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1720-1728">source</a><h4 class="code-header">fn <a href="#method.get_result" class="fn">get_result</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;U&gt;<div class="where">where
+    Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;,</div></h4></section></summary><div class="docblock"><p>Runs the command, and returns the affected row.</p>
+<p><code>Err(NotFound)</code> will be returned if the query affected 0 rows. You can
+call <code>.optional()</code> on the result of this if the command was optional to
+get back a <code>Result&lt;Option&lt;U&gt;&gt;</code></p>
+<p>When this method is called on an insert, update, or delete statement,
+it will implicitly add a <code>RETURNING *</code> to the query,
+unless a returning clause was already specified.</p>
+<p>This method only returns the first row that was affected, even if more
+rows are affected.</p>
+<h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>inserted_row = insert_into(users)
+    .values(name.eq(<span class="string">"Ruby"</span>))
+    .get_result(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>((<span class="number">3</span>, String::from(<span class="string">"Ruby"</span>)), inserted_row);
+
+<span class="comment">// This will return `NotFound`, as there is no user with ID 4
+</span><span class="kw">let </span>update_result = update(users.find(<span class="number">4</span>))
+    .set(name.eq(<span class="string">"Jim"</span>))
+    .get_result::&lt;(i32, String)&gt;(connection);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Err</span>(diesel::NotFound), update_result);</code></pre></div>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.get_results" class="method"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1736-1741">source</a><h4 class="code-header">fn <a href="#method.get_results" class="fn">get_results</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;U&gt;&gt;<div class="where">where
+    Self: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;,</div></h4></section></summary><div class="docblock"><p>Runs the command, returning an <code>Vec</code> with the affected rows.</p>
+<p>This method is an alias for <a href="../prelude/trait.RunQueryDsl.html#method.load" title="method diesel::prelude::RunQueryDsl::load"><code>load</code></a>, but with a name that makes more
+sense for insert, update, and delete statements.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.first" class="method"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1776-1782">source</a><h4 class="code-header">fn <a href="#method.first" class="fn">first</a>&lt;'query, U&gt;(self, conn: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;mut Conn</a>) -&gt; <a class="type" href="../prelude/type.QueryResult.html" title="type diesel::prelude::QueryResult">QueryResult</a>&lt;U&gt;<div class="where">where
+    Self: <a class="trait" href="methods/trait.LimitDsl.html" title="trait diesel::query_dsl::methods::LimitDsl">LimitDsl</a>,
+    <a class="type" href="../helper_types/type.Limit.html" title="type diesel::helper_types::Limit">Limit</a>&lt;Self&gt;: <a class="trait" href="methods/trait.LoadQuery.html" title="trait diesel::query_dsl::methods::LoadQuery">LoadQuery</a>&lt;'query, Conn, U&gt;,</div></h4></section></summary><div class="docblock"><p>Attempts to load a single record.</p>
+<p>This method is equivalent to <code>.limit(1).get_result()</code></p>
+<p>Returns <code>Ok(record)</code> if found, and <code>Err(NotFound)</code> if no results are
+returned. If the query truly is optional, you can call <code>.optional()</code> on
+the result of this to get a <code>Result&lt;Option&lt;U&gt;&gt;</code>.</p>
+<h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example:</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[name.eq(<span class="string">"Sean"</span>), name.eq(<span class="string">"Pascal"</span>)])
+    .execute(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>first_name = users.order(id).select(name).first(connection);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(String::from(<span class="string">"Sean"</span>)), first_name);
+
+<span class="kw">let </span>not_found = users
+    .filter(name.eq(<span class="string">"Foo"</span>))
+    .first::&lt;(i32, String)&gt;(connection);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Err</span>(diesel::NotFound), not_found);</code></pre></div>
+</div></details></div><h2 id="object-safety" class="section-header">Object Safety<a href="#object-safety" class="anchor">§</a></h2><div class="object-safety-info">This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#object-safety">object safe</a>.</div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-RunQueryDsl%3CConn%3E-for-BoxedSelectStatement%3C'a,+ST,+QS,+DB,+GB%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/select_statement/boxed.rs.html#458">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-BoxedSelectStatement%3C'a,+ST,+QS,+DB,+GB%3E" class="anchor">§</a><h3 class="code-header">impl&lt;'a, ST, QS, DB, Conn, GB&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.BoxedSelectStatement.html" title="struct diesel::query_builder::BoxedSelectStatement">BoxedSelectStatement</a>&lt;'a, ST, QS, DB, GB&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-BoxedSqlQuery%3C'_,+%3CConn+as+Connection%3E::Backend,+Query%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/sql_query.rs.html#342">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-BoxedSqlQuery%3C'_,+%3CConn+as+Connection%3E::Backend,+Query%3E" class="anchor">§</a><h3 class="code-header">impl&lt;Conn: <a class="trait" href="../prelude/trait.Connection.html" title="trait diesel::prelude::Connection">Connection</a>, Query&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.BoxedSqlQuery.html" title="struct diesel::query_builder::BoxedSqlQuery">BoxedSqlQuery</a>&lt;'_, Conn::<a class="associatedtype" href="../prelude/trait.Connection.html#associatedtype.Backend" title="type diesel::prelude::Connection::Backend">Backend</a>, Query&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-SelectStatement%3CF,+S,+D,+W,+O,+LOf,+G,+H,+LC%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/select_statement/dsl_impls.rs.html#576-579">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-SelectStatement%3CF,+S,+D,+W,+O,+LOf,+G,+H,+LC%3E" class="anchor">§</a><h3 class="code-header">impl&lt;F, S, D, W, O, LOf, G, H, LC, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.SelectStatement.html" title="struct diesel::query_builder::SelectStatement">SelectStatement</a>&lt;F, S, D, W, O, LOf, G, H, LC&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-SqlQuery%3CInner%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/sql_query.rs.html#131">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-SqlQuery%3CInner%3E" class="anchor">§</a><h3 class="code-header">impl&lt;Inner, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.SqlQuery.html" title="struct diesel::query_builder::SqlQuery">SqlQuery</a>&lt;Inner&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-UncheckedBind%3CQuery,+Value%3E" class="impl"><a class="src rightside" href="../../src/diesel/expression/sql_literal.rs.html#372">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-UncheckedBind%3CQuery,+Value%3E" class="anchor">§</a><h3 class="code-header">impl&lt;Query, Value, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../expression/struct.UncheckedBind.html" title="struct diesel::expression::UncheckedBind">UncheckedBind</a>&lt;Query, Value&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-Alias%3CS%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_source/aliasing/dsl_impls.rs.html#231">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-Alias%3CS%3E" class="anchor">§</a><h3 class="code-header">impl&lt;S: <a class="trait" href="../query_source/trait.AliasSource.html" title="trait diesel::query_source::AliasSource">AliasSource</a>, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_source/struct.Alias.html" title="struct diesel::query_source::Alias">Alias</a>&lt;S&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-SqlLiteral%3CST,+T%3E" class="impl"><a class="src rightside" href="../../src/diesel/expression/sql_literal.rs.html#191">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-SqlLiteral%3CST,+T%3E" class="anchor">§</a><h3 class="code-header">impl&lt;ST, T, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../expression/struct.SqlLiteral.html" title="struct diesel::expression::SqlLiteral">SqlLiteral</a>&lt;ST, T&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-T" class="impl"><a class="src rightside" href="../../src/diesel/query_dsl/mod.rs.html#1791">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for T<div class="where">where
+    T: <a class="trait" href="../prelude/trait.Table.html" title="trait diesel::prelude::Table">Table</a>,</div></h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-DeleteStatement%3CT,+U,+Ret%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/delete_statement/mod.rs.html#295">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-DeleteStatement%3CT,+U,+Ret%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T, U, Ret, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.DeleteStatement.html" title="struct diesel::query_builder::DeleteStatement">DeleteStatement</a>&lt;T, U, Ret&gt;<div class="where">where
+    T: <a class="trait" href="../prelude/trait.QuerySource.html" title="trait diesel::prelude::QuerySource">QuerySource</a>,</div></h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-InsertStatement%3CT,+U,+Op,+Ret%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/insert_statement/mod.rs.html#266">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-InsertStatement%3CT,+U,+Op,+Ret%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="../prelude/trait.QuerySource.html" title="trait diesel::prelude::QuerySource">QuerySource</a>, U, Op, Ret, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.InsertStatement.html" title="struct diesel::query_builder::InsertStatement">InsertStatement</a>&lt;T, U, Op, Ret&gt;</h3></section><section id="impl-RunQueryDsl%3CConn%3E-for-UpdateStatement%3CT,+U,+V,+Ret%3E" class="impl"><a class="src rightside" href="../../src/diesel/query_builder/update_statement/mod.rs.html#252">source</a><a href="#impl-RunQueryDsl%3CConn%3E-for-UpdateStatement%3CT,+U,+V,+Ret%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T: <a class="trait" href="../prelude/trait.QuerySource.html" title="trait diesel::prelude::QuerySource">QuerySource</a>, U, V, Ret, Conn&gt; <a class="trait" href="../prelude/trait.RunQueryDsl.html" title="trait diesel::prelude::RunQueryDsl">RunQueryDsl</a>&lt;Conn&gt; for <a class="struct" href="../query_builder/struct.UpdateStatement.html" title="struct diesel::query_builder::UpdateStatement">UpdateStatement</a>&lt;T, U, V, Ret&gt;</h3></section></div><script src="../../trait.impl/diesel/query_dsl/trait.RunQueryDsl.js" async></script></section></div></main></body></html>

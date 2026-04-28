@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["establish_connection","joins","m_to_n_relations","main","new_author","new_book","new_books_author","new_page","one_to_n_relations","setup_data"],"mod":["model","schema"]};

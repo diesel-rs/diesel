@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MysqlType","NumericRepresentation"],"mod":["data_types","sql_types"],"struct":["Mysql","MysqlConnection","MysqlQueryBuilder","MysqlValue"]};

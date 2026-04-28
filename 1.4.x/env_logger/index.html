@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A logger configured via an environment variable which writes to standard error."><meta name="keywords" content="rust, rustlang, rust-lang, env_logger"><title>env_logger - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="shortcut icon" href="http:&#x2F;&#x2F;www.rust-lang.org&#x2F;favicon.ico"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../env_logger/index.html'><div class='logo-container rust-logo'><img src='http:&#x2F;&#x2F;www.rust-lang.org&#x2F;logos&#x2F;rust-logo-128x128-blk-v2.png' alt='logo'></div></a><h2 class="location">Crate env_logger</h2><div class="block version"><div class="narrow-helper"></div><p>Version 0.3.5</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all env_logger's items</p></a><div class="block items"><ul><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="env_logger" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">env_logger</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/env_logger/lib.rs.html#11-623" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A logger configured via an environment variable which writes to standard
+error.</p>
+<h2 id="example" class="section-header"><a href="#example">Example</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#[<span class="ident">macro_use</span>]</span> <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">log</span>;
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">env_logger</span>;
+
+<span class="kw">use</span> <span class="ident">log::LogLevel</span>;
+
+<span class="kw">fn</span> <span class="ident">main</span>() {
+    <span class="ident">env_logger::init</span>().<span class="ident">unwrap</span>();
+
+    <span class="macro">debug!</span>(<span class="string">&quot;this is a debug {}&quot;</span>, <span class="string">&quot;message&quot;</span>);
+    <span class="macro">error!</span>(<span class="string">&quot;this is printed by default&quot;</span>);
+
+    <span class="kw">if</span> <span class="macro">log_enabled!</span>(<span class="ident">LogLevel::Info</span>) {
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="number">3</span> <span class="op">*</span> <span class="number">4</span>; <span class="comment">// expensive computation</span>
+        <span class="macro">info!</span>(<span class="string">&quot;the answer was: {}&quot;</span>, <span class="ident">x</span>);
+    }
+}</pre></div>
+<p>Assumes the binary is <code>main</code>:</p>
+<div class="example-wrap"><pre class="language-{.bash}">$ RUST_LOG=error ./main
+ERROR:main: this is printed by default</pre></div><div class="example-wrap"><pre class="language-{.bash}">$ RUST_LOG=info ./main
+ERROR:main: this is printed by default
+INFO:main: the answer was: 12</pre></div><div class="example-wrap"><pre class="language-{.bash}">$ RUST_LOG=debug ./main
+DEBUG:main: this is a debug message
+ERROR:main: this is printed by default
+INFO:main: the answer was: 12</pre></div>
+<p>You can also set the log level on a per module basis:</p>
+<div class="example-wrap"><pre class="language-{.bash}">$ RUST_LOG=main=info ./main
+ERROR:main: this is printed by default
+INFO:main: the answer was: 12</pre></div>
+<p>And enable all logging:</p>
+<div class="example-wrap"><pre class="language-{.bash}">$ RUST_LOG=main ./main
+DEBUG:main: this is a debug message
+ERROR:main: this is printed by default
+INFO:main: the answer was: 12</pre></div>
+<p>See the documentation for the log crate for more information about its API.</p>
+<h2 id="enabling-logging" class="section-header"><a href="#enabling-logging">Enabling logging</a></h2>
+<p>Log levels are controlled on a per-module basis, and by default all logging
+is disabled except for <code>error!</code>. Logging is controlled via the <code>RUST_LOG</code>
+environment variable. The value of this environment variable is a
+comma-separated list of logging directives. A logging directive is of the
+form:</p>
+<div class="example-wrap"><pre class="language-text">path::to::module=log_level</pre></div>
+<p>The path to the module is rooted in the name of the crate it was compiled
+for, so if your program is contained in a file <code>hello.rs</code>, for example, to
+turn on logging for this file you would use a value of <code>RUST_LOG=hello</code>.
+Furthermore, this path is a prefix-search, so all modules nested in the
+specified module will also have logging enabled.</p>
+<p>The actual <code>log_level</code> is optional to specify. If omitted, all logging will
+be enabled. If specified, it must be one of the strings <code>debug</code>, <code>error</code>,
+<code>info</code>, <code>warn</code>, or <code>trace</code>.</p>
+<p>As the log level for a module is optional, the module to enable logging for
+is also optional. If only a <code>log_level</code> is provided, then the global log
+level for all modules is set to this value.</p>
+<p>Some examples of valid values of <code>RUST_LOG</code> are:</p>
+<ul>
+<li><code>hello</code> turns on all logging for the ‘hello’ module</li>
+<li><code>info</code> turns on all info logging</li>
+<li><code>hello=debug</code> turns on debug logging for ‘hello’</li>
+<li><code>hello,std::option</code> turns on hello, and std’s option logging</li>
+<li><code>error,hello=warn</code> turn on global error logging and also warn for hello</li>
+</ul>
+<h2 id="filtering-results" class="section-header"><a href="#filtering-results">Filtering results</a></h2>
+<p>A RUST_LOG directive may include a regex filter. The syntax is to append <code>/</code>
+followed by a regex. Each message is checked against the regex, and is only
+logged if it matches. Note that the matching is done after formatting the
+log string but before adding any logging meta-data. There is a single filter
+for all modules.</p>
+<p>Some examples:</p>
+<ul>
+<li><code>hello/foo</code> turns on all logging for the ‘hello’ module where the log
+message includes ‘foo’.</li>
+<li><code>info/f.o</code> turns on all info logging where the log message includes ‘foo’,
+‘f1o’, ‘fao’, etc.</li>
+<li><code>hello=debug/foo*foo</code> turns on debug logging for ‘hello’ where the log
+message includes ‘foofoo’ or ‘fofoo’ or ‘fooooooofoo’, etc.</li>
+<li><code>error,hello=warn/[0-9] scopes</code> turn on global error logging and also
+warn for hello. In both cases the log message must include a single digit
+number followed by ‘scopes’.</li>
+</ul>
+</div></details><h2 id="structs" class="section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-left module-item"><a class="struct" href="struct.LogBuilder.html" title="env_logger::LogBuilder struct">LogBuilder</a></div><div class="item-right docblock-short"><p>LogBuilder acts as builder for initializing the Logger.
+It can be used to customize the log format, change the enviromental variable used
+to provide the logging directives and also set the default log level filter.</p>
+</div><div class="item-left module-item"><a class="struct" href="struct.Logger.html" title="env_logger::Logger struct">Logger</a></div><div class="item-right docblock-short"><p>The logger.</p>
+</div></div><h2 id="functions" class="section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-left module-item"><a class="fn" href="fn.init.html" title="env_logger::init fn">init</a></div><div class="item-right docblock-short"><p>Initializes the global logger with an env logger.</p>
+</div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="env_logger" data-search-index-js="../search-index.js" data-search-js="../search.js"></div>
+    <script src="../main.js"></script>
+</body></html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The `Generator` trait and `BlockRng`"><title>rand_core::block - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="rand_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.97.0-nightly (52b6e2c20 2026-04-27)" data-channel="nightly" data-search-js="search-b5634cc7.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-aa4d37ac.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="icon" href="https://www.rust-lang.org/favicon.ico"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module block</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../../rand_core/index.html"><img src="https://www.rust-lang.org/logos/rust-logo-128x128-blk.png" alt="logo"></a><h2><a href="../../rand_core/index.html">rand_<wbr>core</a><span class="version">0.10.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module block</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate rand_<wbr>core</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">rand_core</a></div><h1>Module <span>block</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/rand_core/block.rs.html#1-308">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The <a href="trait.Generator.html" title="trait rand_core::block::Generator"><code>Generator</code></a> trait and <a href="struct.BlockRng.html" title="struct rand_core::block::BlockRng"><code>BlockRng</code></a></p>
+<p>Trait <a href="trait.Generator.html" title="trait rand_core::block::Generator"><code>Generator</code></a> may be implemented by block-generators; that is PRNGs
+whose output is a <em>block</em> of words, such as <code>[u32; 16]</code>.</p>
+<p>The struct <a href="struct.BlockRng.html" title="struct rand_core::block::BlockRng"><code>BlockRng</code></a> wraps such a <a href="trait.Generator.html" title="trait rand_core::block::Generator"><code>Generator</code></a> together with an output
+buffer and implements several methods (e.g. <a href="struct.BlockRng.html#method.next_word" title="method rand_core::block::BlockRng::next_word"><code>BlockRng::next_word</code></a>) to
+assist in the implementation of <a href="../trait.TryRng.html" title="trait rand_core::TryRng"><code>TryRng</code></a>. Note that (unlike in earlier
+versions of <code>rand_core</code>) <a href="struct.BlockRng.html" title="struct rand_core::block::BlockRng"><code>BlockRng</code></a> itself does not implement <a href="../trait.TryRng.html" title="trait rand_core::TryRng"><code>TryRng</code></a>
+since in practice we found it was always beneficial to use a wrapper type
+over <a href="struct.BlockRng.html" title="struct rand_core::block::BlockRng"><code>BlockRng</code></a>.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>core::convert::Infallible;
+<span class="kw">use </span>rand_core::{Rng, SeedableRng, TryRng};
+<span class="kw">use </span>rand_core::block::{Generator, BlockRng};
+
+<span class="kw">struct </span>MyRngCore {
+    <span class="comment">// Generator state ...
+</span>}
+
+<span class="kw">impl </span>Generator <span class="kw">for </span>MyRngCore {
+    <span class="kw">type </span>Output = [u32; <span class="number">8</span>];
+
+    <span class="kw">fn </span>generate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, output: <span class="kw-2">&amp;mut </span><span class="self">Self</span>::Output) {
+        <span class="comment">// Write a new block to output...
+    </span>}
+}
+
+<span class="comment">// Our RNG is a wrapper over BlockRng
+</span><span class="kw">pub struct </span>MyRng(BlockRng&lt;MyRngCore&gt;);
+
+<span class="kw">impl </span>SeedableRng <span class="kw">for </span>MyRng {
+    <span class="kw">type </span>Seed = [u8; <span class="number">32</span>];
+    <span class="kw">fn </span>from_seed(seed: <span class="self">Self</span>::Seed) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>core = MyRngCore {
+            <span class="comment">// ...
+        </span>};
+        MyRng(BlockRng::new(core))
+    }
+}
+
+<span class="kw">impl </span>TryRng <span class="kw">for </span>MyRng {
+    <span class="kw">type </span>Error = Infallible;
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>try_next_u32(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u32, Infallible&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="number">0</span>.next_word())
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>try_next_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u64, Infallible&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="number">0</span>.next_u64_from_u32())
+    }
+
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>try_fill_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bytes: <span class="kw-2">&amp;mut </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;(), Infallible&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="number">0</span>.fill_bytes(bytes))
+    }
+}
+
+<span class="comment">// And if applicable: impl TryCryptoRng for MyRng {}
+
+</span><span class="kw">let </span><span class="kw-2">mut </span>rng = MyRng::seed_from_u64(<span class="number">0</span>);
+<span class="macro">println!</span>(<span class="string">"First value: {}"</span>, rng.next_u32());</code></pre></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.BlockRng.html" title="struct rand_core::block::BlockRng">Block<wbr>Rng</a></dt><dd>RNG functionality for a block <a href="trait.Generator.html" title="trait rand_core::block::Generator"><code>Generator</code></a></dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Generator.html" title="trait rand_core::block::Generator">Generator</a></dt><dd>A random (block) generator</dd></dl></section></div></main></body></html>

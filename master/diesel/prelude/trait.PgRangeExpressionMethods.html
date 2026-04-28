@@ -1,0 +1,493 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="PostgreSQL specific methods present on range expressions."><title>PgRangeExpressionMethods in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">PgRangeExpressionMethods</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.3.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">PgRange<wbr>Expression<wbr>Methods</a></h2><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.contains" title="contains">contains</a></li><li><a href="#method.contains_range" title="contains_range">contains_range</a></li><li><a href="#method.difference_range" title="difference_range">difference_range</a></li><li><a href="#method.greater_than" title="greater_than">greater_than</a></li><li><a href="#method.intersection_range" title="intersection_range">intersection_range</a></li><li><a href="#method.is_contained_by" title="is_contained_by">is_contained_by</a></li><li><a href="#method.lesser_than" title="lesser_than">lesser_than</a></li><li><a href="#method.overlaps_with" title="overlaps_with">overlaps_with</a></li><li><a href="#method.range_adjacent" title="range_adjacent">range_adjacent</a></li><li><a href="#method.range_extends_left_to" title="range_extends_left_to">range_extends_left_to</a></li><li><a href="#method.range_extends_right_to" title="range_extends_right_to">range_extends_right_to</a></li><li><a href="#method.union_range" title="union_range">union_range</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>prelude</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a></div><h1>Trait <span class="trait">PgRange<wbr>Expression<wbr>Methods</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel/pg/expression/expression_methods.rs.html#1168-2179">Source</a> </span></div><pre class="rust item-decl"><code>pub trait PgRangeExpressionMethods: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+    // Provided methods
+    fn <a href="#method.contains" class="fn">contains</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeContains.html" title="type diesel::dsl::RangeContains">RangeContains</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: RangeOrMultirange,
+             &lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a> as RangeOrMultirange&gt;::Inner: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a> + <a class="trait" href="../expression/trait.TypedExpressionType.html" title="trait diesel::expression::TypedExpressionType">TypedExpressionType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a> as RangeOrMultirange&gt;::Inner&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.contains_range" class="fn">contains_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.ContainsRange.html" title="type diesel::dsl::ContainsRange">ContainsRange</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_contained_by" class="fn">is_contained_by</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedBy.html" title="type diesel::dsl::IsContainedBy">IsContainedBy</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.overlaps_with" class="fn">overlaps_with</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.OverlapsWith.html" title="type diesel::dsl::OverlapsWith">OverlapsWith</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.range_extends_right_to" class="fn">range_extends_right_to</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeExtendsRightTo.html" title="type diesel::dsl::RangeExtendsRightTo">RangeExtendsRightTo</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.range_extends_left_to" class="fn">range_extends_left_to</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeExtendsLeftTo.html" title="type diesel::dsl::RangeExtendsLeftTo">RangeExtendsLeftTo</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.lesser_than" class="fn">lesser_than</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.LesserThanRange.html" title="type diesel::dsl::LesserThanRange">LesserThanRange</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.greater_than" class="fn">greater_than</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.GreaterThanRange.html" title="type diesel::dsl::GreaterThanRange">GreaterThanRange</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.range_adjacent" class="fn">range_adjacent</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeAdjacent.html" title="type diesel::dsl::RangeAdjacent">RangeAdjacent</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.union_range" class="fn">union_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.UnionRange.html" title="type diesel::dsl::UnionRange">UnionRange</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.difference_range" class="fn">difference_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Difference.html" title="type diesel::dsl::Difference">Difference</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.intersection_range" class="fn">intersection_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Intersection.html" title="type diesel::dsl::Intersection">Intersection</a>&lt;Self, T&gt;
+       <span class="where">where Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+             T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;</span> { ... }
+}</code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>postgres_backend</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>PostgreSQL specific methods present on range expressions.</p>
+</div></details><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.contains" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1245-1252">Source</a><h4 class="code-header">fn <a href="#method.contains" class="fn">contains</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeContains.html" title="type diesel::dsl::RangeContains">RangeContains</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: RangeOrMultirange,
+    &lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a> as RangeOrMultirange&gt;::Inner: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a> + <a class="trait" href="../expression/trait.TypedExpressionType.html" title="trait diesel::expression::TypedExpressionType">TypedExpressionType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a> as RangeOrMultirange&gt;::Inner&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>@&gt;</code> expression.</p>
+<p>This operator returns true whether a range contains an specific element</p>
+<p>This operator evaluates to true for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-----]
+other:    |</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----]
+other: |</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----]
+other:      |</code></pre></div>
+<p>This operator evaluates to false for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-----]
+other:          |</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:    [----]
+other: |</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----)
+other:      |</code></pre></div><h5 id="example"><a class="doc-anchor" href="#example">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(
+    diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().contains(<span class="number">4</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+<span class="macro">assert!</span>(
+    !diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().contains(<span class="number">8</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+
+<span class="macro">assert!</span>(
+    diesel::select((<span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]).into_sql::&lt;Multirange&lt;Integer&gt;&gt;().contains(<span class="number">4</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+<span class="macro">assert!</span>(
+    !diesel::select((<span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]).into_sql::&lt;Multirange&lt;Integer&gt;&gt;().contains(<span class="number">8</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.contains_range" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1327-1333">Source</a><h4 class="code-header">fn <a href="#method.contains_range" class="fn">contains_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.ContainsRange.html" title="type diesel::dsl::ContainsRange">ContainsRange</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>@&gt;</code> expression.</p>
+<p>This operator returns true whether a range contains another range</p>
+<p>This operator evaluates to true for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-------]
+other:     [--]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other: [------]</code></pre></div>
+<p>This operator evaluates to false for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-----]
+other:     [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:    [----]
+other: [--------]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----)
+other: [----]</code></pre></div><h5 id="example-1"><a class="doc-anchor" href="#example-1">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(
+    diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().contains_range(<span class="number">1</span>..<span class="number">5</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+<span class="macro">assert!</span>(
+    !diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().contains_range(<span class="number">3</span>..<span class="number">7</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .contains_range(<span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .contains_range(<span class="macro">vec!</span>[<span class="number">3</span>..<span class="number">7</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.is_contained_by" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1409-1415">Source</a><h4 class="code-header">fn <a href="#method.is_contained_by" class="fn">is_contained_by</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.IsContainedBy.html" title="type diesel::dsl::IsContainedBy">IsContainedBy</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&lt;@</code> expression.</p>
+<p>This operator returns true whether a range is contained by another range</p>
+<p>This operator evaluates to true for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-----]
+other: [-------]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----]
+other: [----]</code></pre></div>
+<p>This operator evaluates to false for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------]
+other:   [---]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:   [----]
+other: [-----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----]
+other:   [----]</code></pre></div><h5 id="example-2"><a class="doc-anchor" href="#example-2">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(
+    diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().is_contained_by(<span class="number">1</span>..<span class="number">5</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+<span class="macro">assert!</span>(
+    !diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().is_contained_by(<span class="number">3</span>..<span class="number">7</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .is_contained_by(<span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .is_contained_by(<span class="macro">vec!</span>[<span class="number">3</span>..<span class="number">7</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.overlaps_with" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1500-1506">Source</a><h4 class="code-header">fn <a href="#method.overlaps_with" class="fn">overlaps_with</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.OverlapsWith.html" title="type diesel::dsl::OverlapsWith">OverlapsWith</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&amp;&amp;</code> expression.</p>
+<p>This operator returns true whether two ranges overlap.</p>
+<p>This operator evaluates to true for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-----]
+other:    [-----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:     [----]
+other: [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:     [----]
+other:  [-------]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:   [----]
+other:  [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:   [----]
+other:  [----)</code></pre></div>
+<p>This operator evaluates to false for the following cases:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [-----]
+other:          [-----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:       [----]
+other: [--]</code></pre></div><h5 id="example-3"><a class="doc-anchor" href="#example-3">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(
+    diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().overlaps_with(<span class="number">3</span>..<span class="number">7</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+<span class="macro">assert!</span>(
+    !diesel::select((<span class="number">1</span>..<span class="number">5</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().overlaps_with(<span class="number">10</span>..<span class="number">15</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .overlaps_with(<span class="macro">vec!</span>[<span class="number">3</span>..<span class="number">7</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">5</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .overlaps_with(<span class="macro">vec!</span>[<span class="number">10</span>..<span class="number">15</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.range_extends_right_to" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1608-1614">Source</a><h4 class="code-header">fn <a href="#method.range_extends_right_to" class="fn">range_extends_right_to</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeExtendsRightTo.html" title="type diesel::dsl::RangeExtendsRightTo">RangeExtendsRightTo</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&amp;&lt;</code> expression.</p>
+<p>This operator returns true whether the argument range extend to the right of the current range</p>
+<p>Postgresql defines “extends” as does not have a lower bound smaller than the lower bound of the
+self range. That means the right hand side range can overlap parts of the left hand side
+range or be on the right side of the left hand side range</p>
+<p>The following constelations evaluate to true:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------)
+other:    [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----)
+other:         [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------)
+other:    [------)</code></pre></div>
+<p>The following constelations evaluate to false:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:             [------]
+other:    [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:            [------]
+other:         [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other: [------)</code></pre></div><h5 id="example-4"><a class="doc-anchor" href="#example-4">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..<span class="number">20</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .range_extends_right_to(<span class="number">18</span>..<span class="number">20</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..<span class="number">20</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .range_extends_right_to(<span class="number">25</span>..<span class="number">30</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    (<span class="number">1</span>..<span class="number">20</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .range_extends_right_to(-<span class="number">10</span>..<span class="number">0</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">20</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_extends_right_to(<span class="macro">vec!</span>[<span class="number">18</span>..<span class="number">20</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">20</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_extends_right_to(<span class="macro">vec!</span>[<span class="number">25</span>..<span class="number">30</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">20</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_extends_right_to(<span class="macro">vec!</span>[-<span class="number">10</span>..<span class="number">0</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.range_extends_left_to" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1716-1722">Source</a><h4 class="code-header">fn <a href="#method.range_extends_left_to" class="fn">range_extends_left_to</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeExtendsLeftTo.html" title="type diesel::dsl::RangeExtendsLeftTo">RangeExtendsLeftTo</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&amp;&gt;</code> expression.</p>
+<p>This operator returns true whether a range does extend to the left of another</p>
+<p>Postgresql defines “extends” as does not have a upper bound greater than the upper bound of the
+self range. That means the right hand side range can overlap parts of the left hand side
+range or be on the left side of the left hand side range</p>
+<p>The following constelations evaluate to true:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:        [------)
+other:    [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:          [----)
+other: [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------)
+other:        [------)</code></pre></div>
+<p>The following constelations evaluate to false:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [--------]
+other:    [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other:          [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other: (------]</code></pre></div><h5 id="example-5"><a class="doc-anchor" href="#example-5">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..<span class="number">20</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .range_extends_left_to(-<span class="number">10</span>..<span class="number">5</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..<span class="number">20</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .range_extends_left_to(-<span class="number">10</span>..-<span class="number">5</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    (<span class="number">1</span>..<span class="number">20</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .range_extends_left_to(<span class="number">25</span>..<span class="number">30</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">20</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_extends_left_to(<span class="macro">vec!</span>[-<span class="number">10</span>..<span class="number">5</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">20</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_extends_left_to(<span class="macro">vec!</span>[-<span class="number">10</span>..-<span class="number">5</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">20</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_extends_left_to(<span class="macro">vec!</span>[<span class="number">25</span>..<span class="number">30</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.lesser_than" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1799-1805">Source</a><h4 class="code-header">fn <a href="#method.lesser_than" class="fn">lesser_than</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.LesserThanRange.html" title="type diesel::dsl::LesserThanRange">LesserThanRange</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&lt;&lt;</code> expression.</p>
+<p>Is the first range strictly left of the second?</p>
+<p>The following constelations evaluate to true:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------)
+other:            [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----)
+other:      [----)</code></pre></div>
+<p>The following constelations evaluate to false:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:             [------]
+other:    [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:     [------]
+other:         [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other:        [------)</code></pre></div><h5 id="example-6"><a class="doc-anchor" href="#example-6">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(posts)
+    .values(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        (versions.eq((Bound::Included(<span class="number">1</span>), Bound::Included(<span class="number">2</span>)))),
+        (versions.eq((Bound::Included(<span class="number">3</span>), Bound::Included(<span class="number">4</span>)))),
+        (versions.eq((Bound::Included(<span class="number">5</span>), Bound::Included(<span class="number">6</span>))))
+    ])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>data = posts.select(id)
+    .filter(versions.lesser_than((Bound::Included(<span class="number">1</span>), Bound::Included(<span class="number">4</span>))))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(data.is_empty());
+
+<span class="kw">let </span>data = posts.select(id)
+    .filter(versions.lesser_than((Bound::Included(<span class="number">5</span>), Bound::Included(<span class="number">8</span>))))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>], data);</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.greater_than" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1882-1888">Source</a><h4 class="code-header">fn <a href="#method.greater_than" class="fn">greater_than</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.GreaterThanRange.html" title="type diesel::dsl::GreaterThanRange">GreaterThanRange</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>&gt;&gt;</code> expression.</p>
+<p>Is the first range strictly right of the second?</p>
+<p>The following constelations evaluate to true:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:          [------)
+other: [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:        [----)
+other:  [----)</code></pre></div>
+<p>The following constelations evaluate to false:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other:          [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:     [------]
+other:         [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:         [------]
+other: [------]</code></pre></div><h5 id="example-7"><a class="doc-anchor" href="#example-7">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>diesel::insert_into(posts)
+    .values(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        (versions.eq((Bound::Included(<span class="number">1</span>), Bound::Included(<span class="number">2</span>)))),
+        (versions.eq((Bound::Included(<span class="number">3</span>), Bound::Included(<span class="number">4</span>)))),
+        (versions.eq((Bound::Included(<span class="number">5</span>), Bound::Included(<span class="number">6</span>))))
+    ])
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>data = posts.select(id)
+    .filter(versions.greater_than((Bound::Included(<span class="number">1</span>), Bound::Included(<span class="number">2</span>))))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="number">2</span>, <span class="number">3</span>], data);
+
+<span class="kw">let </span>data = posts.select(id)
+    .filter(versions.greater_than((Bound::Included(<span class="number">5</span>), Bound::Included(<span class="number">8</span>))))
+    .load::&lt;i32&gt;(conn)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(data.is_empty());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.range_adjacent" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#1977-1983">Source</a><h4 class="code-header">fn <a href="#method.range_adjacent" class="fn">range_adjacent</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.RangeAdjacent.html" title="type diesel::dsl::RangeAdjacent">RangeAdjacent</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>-|-</code> expression.</p>
+<p>This operator evaluates to true if the two ranges are adjacent</p>
+<p>The following constelations evaluate to true:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------)
+other:         [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:       [----)
+other: [----)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:        [----)
+other: [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [----]
+other:       [----]</code></pre></div>
+<p>The following constelations evaluate to false:</p>
+<div class="example-wrap"><pre class="language-text"><code>self:        [------]
+other:    [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:     [------]
+other:         [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other:        [------]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:  [------]
+other:           [------]</code></pre></div><h5 id="example-8"><a class="doc-anchor" href="#example-8">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(
+    diesel::select((<span class="number">1</span>..<span class="number">2</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().range_adjacent(<span class="number">2</span>..=<span class="number">6</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+<span class="macro">assert!</span>(
+    !diesel::select((<span class="number">4</span>..<span class="number">7</span>).into_sql::&lt;Range&lt;Integer&gt;&gt;().range_adjacent(<span class="number">2</span>..=<span class="number">6</span>))
+        .first::&lt;bool&gt;(conn)
+        .unwrap()
+);
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">2</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_adjacent(<span class="macro">vec!</span>[<span class="number">2</span>..=<span class="number">6</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+<span class="macro">assert!</span>(!diesel::select(
+    <span class="macro">vec!</span>[<span class="number">4</span>..<span class="number">7</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .range_adjacent(<span class="macro">vec!</span>[<span class="number">2</span>..=<span class="number">6</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.union_range" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2039-2045">Source</a><h4 class="code-header">fn <a href="#method.union_range" class="fn">union_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.UnionRange.html" title="type diesel::dsl::UnionRange">UnionRange</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>+</code> expression.</p>
+<p>This operator unions two ranges and returns the union.</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------)
+other:      [----)
+result: [--------)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:          [----)
+other: [----)
+result: error</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:      [----)
+other: [----]
+result [--------)</code></pre></div><h5 id="example-9"><a class="doc-anchor" href="#example-9">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..=<span class="number">2</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .union_range(<span class="number">2</span>..=<span class="number">6</span>)
+        .eq(<span class="number">1</span>..=<span class="number">6</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..=<span class="number">2</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .union_range(<span class="macro">vec!</span>[<span class="number">1</span>..=<span class="number">6</span>])
+        .eq(<span class="macro">vec!</span>[<span class="number">1</span>..=<span class="number">6</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.difference_range" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2104-2110">Source</a><h4 class="code-header">fn <a href="#method.difference_range" class="fn">difference_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Difference.html" title="type diesel::dsl::Difference">Difference</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>-</code> expression.</p>
+<p>This operator takes two ranges and returns the difference.</p>
+<p>The second range must not be contained in the first in such a way that the
+difference would not be a single range.</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------)
+other:      [----)
+result: [---)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:      [----)
+other:  [----)
+result:      [--)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:      [--------)
+other:       [----]
+result: error</code></pre></div><h5 id="example-10"><a class="doc-anchor" href="#example-10">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..=<span class="number">8</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .difference_range(<span class="number">3</span>..=<span class="number">8</span>)
+        .eq(<span class="number">1</span>..<span class="number">3</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..=<span class="number">8</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .difference_range(<span class="macro">vec!</span>[<span class="number">3</span>..=<span class="number">8</span>])
+        .eq(<span class="macro">vec!</span>[<span class="number">1</span>..<span class="number">3</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details><details class="toggle method-toggle" open><summary><section id="method.intersection_range" class="method"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2172-2178">Source</a><h4 class="code-header">fn <a href="#method.intersection_range" class="fn">intersection_range</a>&lt;T&gt;(self, other: T) -&gt; <a class="type" href="../dsl/type.Intersection.html" title="type diesel::dsl::Intersection">Intersection</a>&lt;Self, T&gt;<div class="where">where
+    Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: <a class="trait" href="../sql_types/trait.SqlType.html" title="trait diesel::sql_types::SqlType">SqlType</a>,
+    T: <a class="trait" href="../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;Self::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>&gt;,</div></h4></section></summary><div class="docblock"><p>Creates a PostgreSQL <code>*</code> expression.</p>
+<p>This operator takes two ranges and returns the intersection.</p>
+<div class="example-wrap"><pre class="language-text"><code>self:   [------)
+other:      [----)
+result:     [--)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:      [----)
+other:  [----)
+result:    [-)</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:    [--------)
+other:     [----]
+result:    [----]</code></pre></div><div class="example-wrap"><pre class="language-text"><code>self:    [--------)
+other:               [----]
+result: empty range</code></pre></div><h5 id="example-11"><a class="doc-anchor" href="#example-11">§</a>Example</h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">assert!</span>(diesel::select(
+    (<span class="number">1</span>..=<span class="number">8</span>)
+        .into_sql::&lt;Range&lt;Integer&gt;&gt;()
+        .intersection_range(<span class="number">3</span>..=<span class="number">8</span>)
+        .eq(<span class="number">3</span>..=<span class="number">8</span>)
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());
+
+<span class="macro">assert!</span>(diesel::select(
+    <span class="macro">vec!</span>[<span class="number">1</span>..=<span class="number">8</span>]
+        .into_sql::&lt;Multirange&lt;Integer&gt;&gt;()
+        .intersection_range(<span class="macro">vec!</span>[<span class="number">3</span>..=<span class="number">8</span>])
+        .eq(<span class="macro">vec!</span>[<span class="number">3</span>..=<span class="number">8</span>])
+)
+.first::&lt;bool&gt;(conn)
+.unwrap());</code></pre></div></div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety", so this trait is not object safe.</i></p></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-PgRangeExpressionMethods-for-T" class="impl"><a class="src rightside" href="../../src/diesel/pg/expression/expression_methods.rs.html#2181-2186">Source</a><a href="#impl-PgRangeExpressionMethods-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="trait" href="../expression_methods/trait.PgRangeExpressionMethods.html" title="trait diesel::expression_methods::PgRangeExpressionMethods">PgRangeExpressionMethods</a> for T<div class="where">where
+    T: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,
+    T::<a class="associatedtype" href="../expression/trait.Expression.html#associatedtype.SqlType" title="type diesel::expression::Expression::SqlType">SqlType</a>: MultirangeOrRangeMaybeNullable,</div></h3></section></div><script src="../../trait.impl/diesel/pg/expression/expression_methods/trait.PgRangeExpressionMethods.js" async></script></section></div></main></body></html>

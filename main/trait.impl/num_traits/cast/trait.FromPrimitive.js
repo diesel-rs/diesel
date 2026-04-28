@@ -1,0 +1,9 @@
+(function() {
+    const implementors = Object.fromEntries([["bigdecimal",[["impl <a class=\"trait\" href=\"bigdecimal/trait.FromPrimitive.html\" title=\"trait bigdecimal::FromPrimitive\">FromPrimitive</a> for <a class=\"struct\" href=\"bigdecimal/struct.BigDecimal.html\" title=\"struct bigdecimal::BigDecimal\">BigDecimal</a>",0]]],["chrono",[["impl <a class=\"trait\" href=\"num_traits/cast/trait.FromPrimitive.html\" title=\"trait num_traits::cast::FromPrimitive\">FromPrimitive</a> for <a class=\"enum\" href=\"chrono/enum.Month.html\" title=\"enum chrono::Month\">Month</a>",0],["impl <a class=\"trait\" href=\"num_traits/cast/trait.FromPrimitive.html\" title=\"trait num_traits::cast::FromPrimitive\">FromPrimitive</a> for <a class=\"enum\" href=\"chrono/enum.Weekday.html\" title=\"enum chrono::Weekday\">Weekday</a>",0]]],["num_bigint",[["impl <a class=\"trait\" href=\"num_traits/cast/trait.FromPrimitive.html\" title=\"trait num_traits::cast::FromPrimitive\">FromPrimitive</a> for <a class=\"struct\" href=\"num_bigint/struct.BigInt.html\" title=\"struct num_bigint::BigInt\">BigInt</a>",0],["impl <a class=\"trait\" href=\"num_traits/cast/trait.FromPrimitive.html\" title=\"trait num_traits::cast::FromPrimitive\">FromPrimitive</a> for <a class=\"struct\" href=\"num_bigint/struct.BigUint.html\" title=\"struct num_bigint::BigUint\">BigUint</a>",0]]],["num_traits",[]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":59,"fragment_lengths":[273,497,532,18]}

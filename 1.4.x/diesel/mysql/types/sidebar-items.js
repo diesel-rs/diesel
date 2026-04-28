@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Datetime","Represents the MySQL datetime type."],["Unsigned","Represents the MySQL unsigned type."]]});

@@ -1,0 +1,467 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Methods used to construct select statements."><meta name="keywords" content="rust, rustlang, rust-lang, QueryDsl"><title>QueryDsl in diesel::query_dsl - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../diesel/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a><h2 class="location">Trait QueryDsl</h2><div class="sidebar-elems"><div class="block items"><h3 class="sidebar-title"><a href="#provided-methods">Provided Methods</a></h3><div class="sidebar-links"><a href="#method.count">count</a><a href="#method.distinct">distinct</a><a href="#method.distinct_on">distinct_on</a><a href="#method.filter">filter</a><a href="#method.find">find</a><a href="#method.for_key_share">for_key_share</a><a href="#method.for_no_key_update">for_no_key_update</a><a href="#method.for_share">for_share</a><a href="#method.for_update">for_update</a><a href="#method.inner_join">inner_join</a><a href="#method.into_boxed">into_boxed</a><a href="#method.left_join">left_join</a><a href="#method.left_outer_join">left_outer_join</a><a href="#method.limit">limit</a><a href="#method.no_wait">no_wait</a><a href="#method.nullable">nullable</a><a href="#method.offset">offset</a><a href="#method.or_filter">or_filter</a><a href="#method.order">order</a><a href="#method.order_by">order_by</a><a href="#method.select">select</a><a href="#method.single_value">single_value</a><a href="#method.skip_locked">skip_locked</a><a href="#method.then_order_by">then_order_by</a></div><h3 class="sidebar-title"><a href="#implementors">Implementors</a></h3></div><h2 class="location">Other items in<br><a href="../index.html">diesel</a>::<wbr><a href="index.html">query_dsl</a></h2><div id="sidebar-vars" data-name="QueryDsl" data-ty="trait" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Trait <a href="../index.html">diesel</a>::<wbr><a href="index.html">query_dsl</a>::<wbr><a class="trait" href="#">QueryDsl</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#79-1091" title="goto source code">[src]</a></span></h1><div class="docblock type-decl"><pre class="rust trait">pub trait QueryDsl: <a class="trait" href="https://doc.rust-lang.org/1.55.0/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a> {
+<details class="rustdoc-toggle type-contents-toggle"><summary class="hideme"><span>Show 24 methods</span></summary>    fn <a href="#method.distinct" class="fnname">distinct</a>(self) -&gt; <a class="type" href="../helper_types/type.Distinct.html" title="type diesel::helper_types::Distinct">Distinct</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.DistinctDsl.html" title="trait diesel::query_dsl::methods::DistinctDsl">DistinctDsl</a></span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.distinct_on" class="fnname">distinct_on</a>&lt;Expr&gt;(self, expr: Expr) -&gt; <a class="type" href="../helper_types/type.DistinctOn.html" title="type diesel::helper_types::DistinctOn">DistinctOn</a>&lt;Self, Expr&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.DistinctOnDsl.html" title="trait diesel::query_dsl::methods::DistinctOnDsl">DistinctOnDsl</a>&lt;Expr&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.select" class="fnname">select</a>&lt;Selection&gt;(self, selection: Selection) -&gt; <a class="type" href="../helper_types/type.Select.html" title="type diesel::helper_types::Select">Select</a>&lt;Self, Selection&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Selection: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SelectDsl.html" title="trait diesel::query_dsl::methods::SelectDsl">SelectDsl</a>&lt;Selection&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.count" class="fnname">count</a>(self) -&gt; <a class="type" href="../helper_types/type.Select.html" title="type diesel::helper_types::Select">Select</a>&lt;Self, CountStar&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SelectDsl.html" title="trait diesel::query_dsl::methods::SelectDsl">SelectDsl</a>&lt;CountStar&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.inner_join" class="fnname">inner_join</a>&lt;Rhs&gt;(self, rhs: Rhs) -&gt; Self::Output<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: JoinWithImplicitOnClause&lt;Rhs, Inner&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.left_outer_join" class="fnname">left_outer_join</a>&lt;Rhs&gt;(self, rhs: Rhs) -&gt; Self::Output<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: JoinWithImplicitOnClause&lt;Rhs, LeftOuter&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.left_join" class="fnname">left_join</a>&lt;Rhs&gt;(self, rhs: Rhs) -&gt; Self::Output<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: JoinWithImplicitOnClause&lt;Rhs, LeftOuter&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.filter" class="fnname">filter</a>&lt;Predicate&gt;(self, predicate: Predicate) -&gt; <a class="type" href="../helper_types/type.Filter.html" title="type diesel::helper_types::Filter">Filter</a>&lt;Self, Predicate&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.FilterDsl.html" title="trait diesel::query_dsl::methods::FilterDsl">FilterDsl</a>&lt;Predicate&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.or_filter" class="fnname">or_filter</a>&lt;Predicate&gt;(<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self, <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;predicate: Predicate<br>&nbsp;&nbsp;&nbsp;&nbsp;) -&gt; <a class="type" href="../helper_types/type.OrFilter.html" title="type diesel::helper_types::OrFilter">OrFilter</a>&lt;Self, Predicate&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OrFilterDsl.html" title="trait diesel::query_dsl::methods::OrFilterDsl">OrFilterDsl</a>&lt;Predicate&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.find" class="fnname">find</a>&lt;PK&gt;(self, id: PK) -&gt; <a class="type" href="../helper_types/type.Find.html" title="type diesel::helper_types::Find">Find</a>&lt;Self, PK&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.FindDsl.html" title="trait diesel::query_dsl::methods::FindDsl">FindDsl</a>&lt;PK&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.order" class="fnname">order</a>&lt;Expr&gt;(self, expr: Expr) -&gt; <a class="type" href="../helper_types/type.Order.html" title="type diesel::helper_types::Order">Order</a>&lt;Self, Expr&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Expr: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OrderDsl.html" title="trait diesel::query_dsl::methods::OrderDsl">OrderDsl</a>&lt;Expr&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.order_by" class="fnname">order_by</a>&lt;Expr&gt;(self, expr: Expr) -&gt; <a class="type" href="../helper_types/type.Order.html" title="type diesel::helper_types::Order">Order</a>&lt;Self, Expr&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Expr: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OrderDsl.html" title="trait diesel::query_dsl::methods::OrderDsl">OrderDsl</a>&lt;Expr&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.then_order_by" class="fnname">then_order_by</a>&lt;Order&gt;(self, order: Order) -&gt; <a class="type" href="../helper_types/type.ThenOrderBy.html" title="type diesel::helper_types::ThenOrderBy">ThenOrderBy</a>&lt;Self, Order&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ThenOrderDsl.html" title="trait diesel::query_dsl::methods::ThenOrderDsl">ThenOrderDsl</a>&lt;Order&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.limit" class="fnname">limit</a>(self, limit: <a class="primitive" href="https://doc.rust-lang.org/1.55.0/std/primitive.i64.html">i64</a>) -&gt; <a class="type" href="../helper_types/type.Limit.html" title="type diesel::helper_types::Limit">Limit</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LimitDsl.html" title="trait diesel::query_dsl::methods::LimitDsl">LimitDsl</a></span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.offset" class="fnname">offset</a>(self, offset: <a class="primitive" href="https://doc.rust-lang.org/1.55.0/std/primitive.i64.html">i64</a>) -&gt; <a class="type" href="../helper_types/type.Offset.html" title="type diesel::helper_types::Offset">Offset</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OffsetDsl.html" title="trait diesel::query_dsl::methods::OffsetDsl">OffsetDsl</a></span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.for_update" class="fnname">for_update</a>(self) -&gt; <a class="type" href="../helper_types/type.ForUpdate.html" title="type diesel::helper_types::ForUpdate">ForUpdate</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ForUpdateDsl.html" title="trait diesel::query_dsl::methods::ForUpdateDsl">ForUpdateDsl</a></span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.for_no_key_update" class="fnname">for_no_key_update</a>(self) -&gt; <a class="type" href="../helper_types/type.ForNoKeyUpdate.html" title="type diesel::helper_types::ForNoKeyUpdate">ForNoKeyUpdate</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LockingDsl.html" title="trait diesel::query_dsl::methods::LockingDsl">LockingDsl</a>&lt;ForNoKeyUpdate&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.for_share" class="fnname">for_share</a>(self) -&gt; <a class="type" href="../helper_types/type.ForShare.html" title="type diesel::helper_types::ForShare">ForShare</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LockingDsl.html" title="trait diesel::query_dsl::methods::LockingDsl">LockingDsl</a>&lt;ForShare&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.for_key_share" class="fnname">for_key_share</a>(self) -&gt; <a class="type" href="../helper_types/type.ForKeyShare.html" title="type diesel::helper_types::ForKeyShare">ForKeyShare</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LockingDsl.html" title="trait diesel::query_dsl::methods::LockingDsl">LockingDsl</a>&lt;ForKeyShare&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.skip_locked" class="fnname">skip_locked</a>(self) -&gt; <a class="type" href="../helper_types/type.SkipLocked.html" title="type diesel::helper_types::SkipLocked">SkipLocked</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ModifyLockDsl.html" title="trait diesel::query_dsl::methods::ModifyLockDsl">ModifyLockDsl</a>&lt;SkipLocked&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.no_wait" class="fnname">no_wait</a>(self) -&gt; <a class="type" href="../helper_types/type.NoWait.html" title="type diesel::helper_types::NoWait">NoWait</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ModifyLockDsl.html" title="trait diesel::query_dsl::methods::ModifyLockDsl">ModifyLockDsl</a>&lt;NoWait&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.into_boxed" class="fnname">into_boxed</a>&lt;'a, DB&gt;(self) -&gt; <a class="type" href="../helper_types/type.IntoBoxed.html" title="type diesel::helper_types::IntoBoxed">IntoBoxed</a>&lt;'a, Self, DB&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.BoxedDsl.html" title="trait diesel::query_dsl::methods::BoxedDsl">BoxedDsl</a>&lt;'a, DB&gt;</span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.single_value" class="fnname">single_value</a>(self) -&gt; <a class="type" href="../helper_types/type.SingleValue.html" title="type diesel::helper_types::SingleValue">SingleValue</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SingleValueDsl.html" title="trait diesel::query_dsl::methods::SingleValueDsl">SingleValueDsl</a></span>,
+    { ... }
+<div class="item-spacer"></div>    fn <a href="#method.nullable" class="fnname">nullable</a>(self) -&gt; <a class="type" href="../helper_types/type.NullableSelect.html" title="type diesel::helper_types::NullableSelect">NullableSelect</a>&lt;Self&gt;<br>&nbsp;&nbsp;&nbsp; <span class="where">where<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SelectNullableDsl.html" title="trait diesel::query_dsl::methods::SelectNullableDsl">SelectNullableDsl</a></span>,
+    { ... }
+</details>}</pre></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Methods used to construct select statements.</p>
+</div></details><h2 id="provided-methods" class="small-section-header">Provided methods<a href="#provided-methods" class="anchor"></a></h2><div class="methods"><details class="rustdoc-toggle" open><summary><div id="method.distinct" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#111-116" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.distinct" class="fnname">distinct</a>(self) -&gt; <a class="type" href="../helper_types/type.Distinct.html" title="type diesel::helper_types::Distinct">Distinct</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.DistinctDsl.html" title="trait diesel::query_dsl::methods::DistinctDsl">DistinctDsl</a>,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds the <code>DISTINCT</code> keyword to a query.</p>
+<p>This method will override any previous distinct clause that was present.
+For example, on PostgreSQL, <code>foo.distinct_on(bar).distinct()</code> will
+create the same query as <code>foo.distinct()</code>.</p>
+<h1 id="example" class="section-header"><a href="#example">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="ident">diesel::insert_into</span>(<span class="ident">users</span>)
+    .<span class="ident">values</span>(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[<span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Sean&quot;</span>); <span class="number">3</span>])
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">names</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>).<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">distinct_names</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>).<span class="ident">distinct</span>().<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Sean&quot;</span>; <span class="number">3</span>], <span class="ident">names</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Sean&quot;</span>; <span class="number">1</span>], <span class="ident">distinct_names</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.distinct_on" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#167-172" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.distinct_on" class="fnname">distinct_on</a>&lt;Expr&gt;(self, expr: Expr) -&gt; <a class="type" href="../helper_types/type.DistinctOn.html" title="type diesel::helper_types::DistinctOn">DistinctOn</a>&lt;Self, Expr&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.DistinctOnDsl.html" title="trait diesel::query_dsl::methods::DistinctOnDsl">DistinctOnDsl</a>&lt;Expr&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds the <code>DISTINCT ON</code> clause to a query.</p>
+<h1 id="example-1" class="section-header"><a href="#example-1">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="ident">diesel::insert_into</span>(<span class="ident">animals</span>)
+    .<span class="ident">values</span>(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        (<span class="ident">species</span>.<span class="ident">eq</span>(<span class="string">&quot;dog&quot;</span>), <span class="ident">name</span>.<span class="ident">eq</span>(<span class="prelude-val">Some</span>(<span class="string">&quot;Jack&quot;</span>)), <span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">4</span>)),
+        (<span class="ident">species</span>.<span class="ident">eq</span>(<span class="string">&quot;dog&quot;</span>), <span class="ident">name</span>.<span class="ident">eq</span>(<span class="prelude-val">None</span>), <span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">4</span>)),
+        (<span class="ident">species</span>.<span class="ident">eq</span>(<span class="string">&quot;spider&quot;</span>), <span class="ident">name</span>.<span class="ident">eq</span>(<span class="prelude-val">None</span>), <span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">8</span>)),
+    ])
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)
+    .<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">all_animals</span> <span class="op">=</span> <span class="ident">animals</span>.<span class="ident">select</span>((<span class="ident">species</span>, <span class="ident">name</span>, <span class="ident">legs</span>)).<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+<span class="kw">let</span> <span class="ident">distinct_animals</span> <span class="op">=</span> <span class="ident">animals</span>.<span class="ident">select</span>((<span class="ident">species</span>, <span class="ident">name</span>, <span class="ident">legs</span>)).<span class="ident">distinct_on</span>(<span class="ident">species</span>).<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">Animal::new</span>(<span class="string">&quot;dog&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;Jack&quot;</span>), <span class="number">4</span>),
+                   <span class="ident">Animal::new</span>(<span class="string">&quot;dog&quot;</span>, <span class="prelude-val">None</span>, <span class="number">4</span>),
+                   <span class="ident">Animal::new</span>(<span class="string">&quot;spider&quot;</span>, <span class="prelude-val">None</span>, <span class="number">8</span>)]), <span class="ident">all_animals</span>);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="ident">Animal::new</span>(<span class="string">&quot;dog&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;Jack&quot;</span>), <span class="number">4</span>),
+                   <span class="ident">Animal::new</span>(<span class="string">&quot;spider&quot;</span>, <span class="prelude-val">None</span>, <span class="number">8</span>)]), <span class="ident">distinct_animals</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.select" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#289-295" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.select" class="fnname">select</a>&lt;Selection&gt;(self, selection: Selection) -&gt; <a class="type" href="../helper_types/type.Select.html" title="type diesel::helper_types::Select">Select</a>&lt;Self, Selection&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Selection: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SelectDsl.html" title="trait diesel::query_dsl::methods::SelectDsl">SelectDsl</a>&lt;Selection&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds a <code>SELECT</code> clause to the query.</p>
+<p>If there was already a select clause present, it will be overridden.
+For example, <code>foo.select(bar).select(baz)</code> will produce the same
+query as <code>foo.select(baz)</code>.</p>
+<p>By default, the select clause will be roughly equivalent to <code>SELECT *</code>
+(however, Diesel will list all columns to ensure that they are in the
+order we expect).</p>
+<p><code>select</code> has slightly stricter bounds on its arguments than other
+methods. In particular, when used with a left outer join, <code>.nullable</code>
+must be called on columns that come from the right side of a join. It
+can be called on the column itself, or on an expression containing that
+column. <code>title.nullable()</code>, <code>lower(title).nullable()</code>, and <code>(id, title).nullable()</code> would all be valid.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="comment">// By default, all columns will be selected</span>
+<span class="kw">let</span> <span class="ident">all_users</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">load</span>::<span class="op">&lt;</span>(<span class="ident">i32</span>, <span class="ident">String</span>)<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[(<span class="number">1</span>, <span class="ident">String::from</span>(<span class="string">&quot;Sean&quot;</span>)), (<span class="number">2</span>, <span class="ident">String::from</span>(<span class="string">&quot;Tess&quot;</span>))], <span class="ident">all_users</span>);
+
+<span class="kw">let</span> <span class="ident">all_names</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>).<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Sean&quot;</span>, <span class="string">&quot;Tess&quot;</span>], <span class="ident">all_names</span>);</pre></div>
+<h3 id="when-used-with-a-left-join" class="section-header"><a href="#when-used-with-a-left-join">When used with a left join</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">let</span> <span class="ident">join</span> <span class="op">=</span> <span class="ident">users::table</span>.<span class="ident">left_join</span>(<span class="ident">posts::table</span>);
+
+<span class="comment">// By default, all columns from both tables are selected</span>
+<span class="kw">let</span> <span class="ident">all_data</span> <span class="op">=</span> <span class="ident">join</span>.<span class="ident">load</span>::<span class="op">&lt;</span>(<span class="ident">User</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Post</span><span class="op">&gt;</span>)<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">expected_data</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    (<span class="ident">User::new</span>(<span class="number">1</span>, <span class="string">&quot;Sean&quot;</span>), <span class="prelude-val">Some</span>(<span class="ident">Post::new</span>(<span class="ident">post_id</span>, <span class="number">1</span>, <span class="string">&quot;Sean&#39;s Post&quot;</span>))),
+    (<span class="ident">User::new</span>(<span class="number">2</span>, <span class="string">&quot;Tess&quot;</span>), <span class="prelude-val">None</span>),
+];
+<span class="macro">assert_eq!</span>(<span class="ident">expected_data</span>, <span class="ident">all_data</span>);
+
+<span class="comment">// Since `posts` is on the right side of a left join, `.nullable` is</span>
+<span class="comment">// needed.</span>
+<span class="kw">let</span> <span class="ident">names_and_titles</span> <span class="op">=</span> <span class="ident">join</span>.<span class="ident">select</span>((<span class="ident">users::name</span>, <span class="ident">posts::title</span>.<span class="ident">nullable</span>()))
+    .<span class="ident">load</span>::<span class="op">&lt;</span>(<span class="ident">String</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>)<span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">expected_data</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    (<span class="ident">String::from</span>(<span class="string">&quot;Sean&quot;</span>), <span class="prelude-val">Some</span>(<span class="ident">String::from</span>(<span class="string">&quot;Sean&#39;s Post&quot;</span>))),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Tess&quot;</span>), <span class="prelude-val">None</span>),
+];
+<span class="macro">assert_eq!</span>(<span class="ident">expected_data</span>, <span class="ident">names_and_titles</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.count" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#312-319" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.count" class="fnname">count</a>(self) -&gt; <a class="type" href="../helper_types/type.Select.html" title="type diesel::helper_types::Select">Select</a>&lt;Self, CountStar&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SelectDsl.html" title="trait diesel::query_dsl::methods::SelectDsl">SelectDsl</a>&lt;CountStar&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Get the count of a query. This is equivalent to <code>.select(count_star())</code></p>
+<h1 id="example-2" class="section-header"><a href="#example-2">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">count</span>().<span class="ident">get_result</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">2</span>), <span class="ident">count</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.inner_join" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#430-435" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.inner_join" class="fnname">inner_join</a>&lt;Rhs&gt;(self, rhs: Rhs) -&gt; Self::Output <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: JoinWithImplicitOnClause&lt;Rhs, Inner&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Join two tables using a SQL <code>INNER JOIN</code>.</p>
+<p>If you have invoked <a href="../macro.joinable.html"><code>joinable!</code></a> for the two tables, you can pass that
+table directly.  Otherwise you will need to use <a href="trait.JoinOnDsl.html#method.on"><code>.on</code></a> to specify the <code>ON</code>
+clause.</p>
+<p>You can join to as many tables as you’d like in a query, with the
+restriction that no table can appear in the query more than once. The reason
+for this restriction is that one of the appearances would require aliasing,
+and we do not currently have a fleshed out story for dealing with table
+aliases.</p>
+<p>You will also need to call <a href="../macro.allow_tables_to_appear_in_same_query.html"><code>allow_tables_to_appear_in_same_query!</code></a>.
+If you are using <code>infer_schema!</code> or <code>diesel print-schema</code>, this will
+have been generated for you.
+See the documentation for <a href="../macro.allow_tables_to_appear_in_same_query.html"><code>allow_tables_to_appear_in_same_query!</code></a> for
+details.</p>
+<p>Diesel expects multi-table joins to be semantically grouped based on the
+relationships. For example, <code>users.inner_join(posts.inner_join(comments))</code>
+is not the same as <code>users.inner_join(posts).inner_join(comments)</code>. The first
+would deserialize into <code>(User, (Post, Comment))</code> and generate the following
+SQL:</p>
+<div class="example-wrap"><pre class="language-sql">SELECT * FROM users
+    INNER JOIN posts ON posts.user_id = users.id
+    INNER JOIN comments ON comments.post_id = posts.id</pre></div>
+<p>While the second query would deserialize into <code>(User, Post, Comment)</code> and
+generate the following SQL:</p>
+<div class="example-wrap"><pre class="language-sql">SELECT * FROM users
+    INNER JOIN posts ON posts.user_id = users.id
+    INNER JOIN comments ON comments.user_id = users.id</pre></div><h1 id="examples-1" class="section-header"><a href="#examples-1">Examples</a></h1><h3 id="with-implicit-on-clause" class="section-header"><a href="#with-implicit-on-clause">With implicit <code>ON</code> clause</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">joinable!</span>(<span class="ident">posts</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">users</span> (<span class="ident">user_id</span>));
+<span class="macro">allow_tables_to_appear_in_same_query!</span>(<span class="ident">users</span>, <span class="ident">posts</span>);
+
+<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">inner_join</span>(<span class="ident">posts</span>)
+    .<span class="ident">select</span>((<span class="ident">name</span>, <span class="ident">title</span>))
+    .<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+
+<span class="kw">let</span> <span class="ident">expected_data</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    (<span class="ident">String::from</span>(<span class="string">&quot;Sean&quot;</span>), <span class="ident">String::from</span>(<span class="string">&quot;My first post&quot;</span>)),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Sean&quot;</span>), <span class="ident">String::from</span>(<span class="string">&quot;About Rust&quot;</span>)),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Tess&quot;</span>), <span class="ident">String::from</span>(<span class="string">&quot;My first post too&quot;</span>)),
+];
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="ident">expected_data</span>), <span class="ident">data</span>);</pre></div>
+<h3 id="with-explicit-on-clause" class="section-header"><a href="#with-explicit-on-clause">With explicit <code>ON</code> clause</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">allow_tables_to_appear_in_same_query!</span>(<span class="ident">users</span>, <span class="ident">posts</span>);
+
+<span class="ident">diesel::insert_into</span>(<span class="ident">posts</span>)
+    .<span class="ident">values</span>(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        (<span class="ident">user_id</span>.<span class="ident">eq</span>(<span class="number">1</span>), <span class="ident">title</span>.<span class="ident">eq</span>(<span class="string">&quot;Sean&#39;s post&quot;</span>)),
+        (<span class="ident">user_id</span>.<span class="ident">eq</span>(<span class="number">2</span>), <span class="ident">title</span>.<span class="ident">eq</span>(<span class="string">&quot;Sean is a jerk&quot;</span>)),
+    ])
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)
+    .<span class="ident">unwrap</span>();
+
+<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">users</span>
+    .<span class="ident">inner_join</span>(<span class="ident">posts</span>.<span class="ident">on</span>(<span class="ident">title</span>.<span class="ident">like</span>(<span class="ident">name</span>.<span class="ident">concat</span>(<span class="string">&quot;%&quot;</span>))))
+    .<span class="ident">select</span>((<span class="ident">name</span>, <span class="ident">title</span>))
+    .<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+<span class="kw">let</span> <span class="ident">expected_data</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    (<span class="ident">String::from</span>(<span class="string">&quot;Sean&quot;</span>), <span class="ident">String::from</span>(<span class="string">&quot;Sean&#39;s post&quot;</span>)),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Sean&quot;</span>), <span class="ident">String::from</span>(<span class="string">&quot;Sean is a jerk&quot;</span>)),
+];
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="ident">expected_data</span>), <span class="ident">data</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.left_outer_join" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#443-448" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.left_outer_join" class="fnname">left_outer_join</a>&lt;Rhs&gt;(self, rhs: Rhs) -&gt; Self::Output <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: JoinWithImplicitOnClause&lt;Rhs, LeftOuter&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Join two tables using a SQL <code>LEFT OUTER JOIN</code>.</p>
+<p>Behaves similarly to <a href="#method.inner_join"><code>inner_join</code></a>, but will produce a left join
+instead. See <a href="#method.inner_join"><code>inner_join</code></a> for usage examples.</p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.left_join" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#453-458" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.left_join" class="fnname">left_join</a>&lt;Rhs&gt;(self, rhs: Rhs) -&gt; Self::Output <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: JoinWithImplicitOnClause&lt;Rhs, LeftOuter&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Alias for <a href="#method.left_outer_join"><code>left_outer_join</code></a>.</p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.filter" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#481-486" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.filter" class="fnname">filter</a>&lt;Predicate&gt;(self, predicate: Predicate) -&gt; <a class="type" href="../helper_types/type.Filter.html" title="type diesel::helper_types::Filter">Filter</a>&lt;Self, Predicate&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.FilterDsl.html" title="trait diesel::query_dsl::methods::FilterDsl">FilterDsl</a>&lt;Predicate&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds to the <code>WHERE</code> clause of a query.</p>
+<p>If there is already a <code>WHERE</code> clause, the result will be <code>old AND new</code>.</p>
+<h1 id="example-3" class="section-header"><a href="#example-3">Example:</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">let</span> <span class="ident">seans_id</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">filter</span>(<span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Sean&quot;</span>)).<span class="ident">select</span>(<span class="ident">id</span>)
+    .<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), <span class="ident">seans_id</span>);
+<span class="kw">let</span> <span class="ident">tess_id</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">filter</span>(<span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Tess&quot;</span>)).<span class="ident">select</span>(<span class="ident">id</span>)
+    .<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">2</span>), <span class="ident">tess_id</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.or_filter" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#530-535" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.or_filter" class="fnname">or_filter</a>&lt;Predicate&gt;(self, predicate: Predicate) -&gt; <a class="type" href="../helper_types/type.OrFilter.html" title="type diesel::helper_types::OrFilter">OrFilter</a>&lt;Self, Predicate&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OrFilterDsl.html" title="trait diesel::query_dsl::methods::OrFilterDsl">OrFilterDsl</a>&lt;Predicate&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds to the <code>WHERE</code> clause of a query using <code>OR</code></p>
+<p>If there is already a <code>WHERE</code> clause, the result will be <code>(old OR new)</code>.
+Calling <code>foo.filter(bar).or_filter(baz)</code>
+is identical to <code>foo.filter(bar.or(baz))</code>.
+However, the second form is much harder to do dynamically.</p>
+<h1 id="example-4" class="section-header"><a href="#example-4">Example:</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="ident">diesel::insert_into</span>(<span class="ident">animals</span>)
+    .<span class="ident">values</span>(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        (<span class="ident">species</span>.<span class="ident">eq</span>(<span class="string">&quot;cat&quot;</span>), <span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">4</span>), <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Sinatra&quot;</span>)),
+        (<span class="ident">species</span>.<span class="ident">eq</span>(<span class="string">&quot;dog&quot;</span>), <span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">3</span>), <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Fido&quot;</span>)),
+        (<span class="ident">species</span>.<span class="ident">eq</span>(<span class="string">&quot;spider&quot;</span>), <span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">8</span>), <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Charlotte&quot;</span>)),
+    ])
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="kw">let</span> <span class="ident">good_animals</span> <span class="op">=</span> <span class="ident">animals</span>
+    .<span class="ident">filter</span>(<span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Fido&quot;</span>))
+    .<span class="ident">or_filter</span>(<span class="ident">legs</span>.<span class="ident">eq</span>(<span class="number">4</span>))
+    .<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">get_results</span>::<span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">expected</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    <span class="prelude-val">Some</span>(<span class="ident">String::from</span>(<span class="string">&quot;Sinatra&quot;</span>)),
+    <span class="prelude-val">Some</span>(<span class="ident">String::from</span>(<span class="string">&quot;Fido&quot;</span>)),
+];
+<span class="macro">assert_eq!</span>(<span class="ident">expected</span>, <span class="ident">good_animals</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.find" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#556-561" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.find" class="fnname">find</a>&lt;PK&gt;(self, id: PK) -&gt; <a class="type" href="../helper_types/type.Find.html" title="type diesel::helper_types::Find">Find</a>&lt;Self, PK&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.FindDsl.html" title="trait diesel::query_dsl::methods::FindDsl">FindDsl</a>&lt;PK&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Attempts to find a single record from the given table by primary key.</p>
+<h1 id="example-5" class="section-header"><a href="#example-5">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">let</span> <span class="ident">sean</span> <span class="op">=</span> (<span class="number">1</span>, <span class="string">&quot;Sean&quot;</span>.<span class="ident">to_string</span>());
+<span class="kw">let</span> <span class="ident">tess</span> <span class="op">=</span> (<span class="number">2</span>, <span class="string">&quot;Tess&quot;</span>.<span class="ident">to_string</span>());
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="ident">sean</span>), <span class="ident">users</span>.<span class="ident">find</span>(<span class="number">1</span>).<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="ident">tess</span>), <span class="ident">users</span>.<span class="ident">find</span>(<span class="number">2</span>).<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Err</span>::<span class="op">&lt;</span>(<span class="ident">i32</span>, <span class="ident">String</span>), <span class="kw">_</span><span class="op">&gt;</span>(<span class="ident">NotFound</span>), <span class="ident">users</span>.<span class="ident">find</span>(<span class="number">3</span>).<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>));</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.order" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#618-624" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.order" class="fnname">order</a>&lt;Expr&gt;(self, expr: Expr) -&gt; <a class="type" href="../helper_types/type.Order.html" title="type diesel::helper_types::Order">Order</a>&lt;Self, Expr&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Expr: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OrderDsl.html" title="trait diesel::query_dsl::methods::OrderDsl">OrderDsl</a>&lt;Expr&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Sets the order clause of a query.</p>
+<p>If there was already a order clause, it will be overridden. See
+also:
+<a href="../expression_methods/trait.ExpressionMethods.html#method.desc"><code>.desc()</code></a>
+and
+<a href="../expression_methods/trait.ExpressionMethods.html#method.asc"><code>.asc()</code></a></p>
+<p>Ordering by multiple columns can be achieved by passing a tuple of those
+columns.
+To construct an order clause of an unknown number of columns,
+see <a href="#method.then_order_by"><code>QueryDsl::then_order_by</code></a></p>
+<h1 id="examples-2" class="section-header"><a href="#examples-2">Examples</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="ident">diesel::insert_into</span>(<span class="ident">users</span>)
+    .<span class="ident">values</span>(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Saul&quot;</span>),
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Steve&quot;</span>),
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Stan&quot;</span>),
+    ])
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="kw">let</span> <span class="ident">ordered_names</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">order</span>(<span class="ident">name</span>.<span class="ident">desc</span>())
+    .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Steve&quot;</span>, <span class="string">&quot;Stan&quot;</span>, <span class="string">&quot;Saul&quot;</span>], <span class="ident">ordered_names</span>);
+
+<span class="ident">diesel::insert_into</span>(<span class="ident">users</span>).<span class="ident">values</span>(<span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Stan&quot;</span>)).<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>((<span class="ident">name</span>, <span class="ident">id</span>))
+    .<span class="ident">order</span>((<span class="ident">name</span>.<span class="ident">asc</span>(), <span class="ident">id</span>.<span class="ident">desc</span>()))
+    .<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">expected_data</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    (<span class="ident">String::from</span>(<span class="string">&quot;Saul&quot;</span>), <span class="number">3</span>),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Stan&quot;</span>), <span class="number">6</span>),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Stan&quot;</span>), <span class="number">5</span>),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Steve&quot;</span>), <span class="number">4</span>),
+];
+<span class="macro">assert_eq!</span>(<span class="ident">expected_data</span>, <span class="ident">data</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.order_by" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#627-633" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.order_by" class="fnname">order_by</a>&lt;Expr&gt;(self, expr: Expr) -&gt; <a class="type" href="../helper_types/type.Order.html" title="type diesel::helper_types::Order">Order</a>&lt;Self, Expr&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Expr: <a class="trait" href="../expression/trait.Expression.html" title="trait diesel::expression::Expression">Expression</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OrderDsl.html" title="trait diesel::query_dsl::methods::OrderDsl">OrderDsl</a>&lt;Expr&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Alias for <code>order</code></p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.then_order_by" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#681-686" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.then_order_by" class="fnname">then_order_by</a>&lt;Order&gt;(self, order: Order) -&gt; <a class="type" href="../helper_types/type.ThenOrderBy.html" title="type diesel::helper_types::ThenOrderBy">ThenOrderBy</a>&lt;Self, Order&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ThenOrderDsl.html" title="trait diesel::query_dsl::methods::ThenOrderDsl">ThenOrderDsl</a>&lt;Order&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Appends to the <code>ORDER BY</code> clause of this SQL query.</p>
+<p>Unlike <code>.order</code>, this method will append rather than replace.
+In other words,
+<code>.order_by(foo).order_by(bar)</code> is equivalent to <code>.order_by(bar)</code>.
+In contrast,
+<code>.order_by(foo).then_order_by(bar)</code> is equivalent to <code>.order((foo, bar))</code>.
+This method is only present on boxed queries.</p>
+<h1 id="examples-3" class="section-header"><a href="#examples-3">Examples</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="ident">diesel::insert_into</span>(<span class="ident">users</span>)
+    .<span class="ident">values</span>(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Saul&quot;</span>),
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Steve&quot;</span>),
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Stan&quot;</span>),
+        <span class="ident">name</span>.<span class="ident">eq</span>(<span class="string">&quot;Stan&quot;</span>),
+    ])
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>((<span class="ident">name</span>, <span class="ident">id</span>))
+    .<span class="ident">order_by</span>(<span class="ident">name</span>.<span class="ident">asc</span>())
+    .<span class="ident">then_order_by</span>(<span class="ident">id</span>.<span class="ident">desc</span>())
+    .<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">expected_data</span> <span class="op">=</span> <span class="macro">vec!</span>[
+    (<span class="ident">String::from</span>(<span class="string">&quot;Saul&quot;</span>), <span class="number">3</span>),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Stan&quot;</span>), <span class="number">6</span>),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Stan&quot;</span>), <span class="number">5</span>),
+    (<span class="ident">String::from</span>(<span class="string">&quot;Steve&quot;</span>), <span class="number">4</span>),
+];
+<span class="macro">assert_eq!</span>(<span class="ident">expected_data</span>, <span class="ident">data</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.limit" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#731-736" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.limit" class="fnname">limit</a>(self, limit: <a class="primitive" href="https://doc.rust-lang.org/1.55.0/std/primitive.i64.html">i64</a>) -&gt; <a class="type" href="../helper_types/type.Limit.html" title="type diesel::helper_types::Limit">Limit</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LimitDsl.html" title="trait diesel::query_dsl::methods::LimitDsl">LimitDsl</a>,&nbsp;</span></h4></div></summary><div class="docblock"><p>Sets the limit clause of the query.</p>
+<p>If there was already a limit clause, it will be overridden.</p>
+<h1 id="example-6" class="section-header"><a href="#example-6">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="comment">// Using a limit</span>
+<span class="kw">let</span> <span class="ident">limited</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">order</span>(<span class="ident">id</span>)
+    .<span class="ident">limit</span>(<span class="number">1</span>)
+    .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// Without a limit</span>
+<span class="kw">let</span> <span class="ident">no_limit</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">order</span>(<span class="ident">id</span>)
+    .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Sean&quot;</span>], <span class="ident">limited</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Sean&quot;</span>, <span class="string">&quot;Bastien&quot;</span>, <span class="string">&quot;Pascal&quot;</span>], <span class="ident">no_limit</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.offset" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#783-788" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.offset" class="fnname">offset</a>(self, offset: <a class="primitive" href="https://doc.rust-lang.org/1.55.0/std/primitive.i64.html">i64</a>) -&gt; <a class="type" href="../helper_types/type.Offset.html" title="type diesel::helper_types::Offset">Offset</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.OffsetDsl.html" title="trait diesel::query_dsl::methods::OffsetDsl">OffsetDsl</a>,&nbsp;</span></h4></div></summary><div class="docblock"><p>Sets the offset clause of the query.</p>
+<p>If there was already a offset clause, it will be overridden.</p>
+<h1 id="example-7" class="section-header"><a href="#example-7">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="comment">// Using an offset</span>
+<span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">order</span>(<span class="ident">id</span>)
+    .<span class="ident">limit</span>(<span class="number">2</span>)
+    .<span class="ident">offset</span>(<span class="number">1</span>)
+    .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="comment">// No Offset</span>
+<span class="kw">let</span> <span class="ident">no_offset</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">order</span>(<span class="ident">id</span>)
+    .<span class="ident">limit</span>(<span class="number">2</span>)
+    .<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Bastien&quot;</span>, <span class="string">&quot;Pascal&quot;</span>], <span class="ident">offset</span>);
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;Sean&quot;</span>, <span class="string">&quot;Bastien&quot;</span>], <span class="ident">no_offset</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.for_update" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#807-812" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.for_update" class="fnname">for_update</a>(self) -&gt; <a class="type" href="../helper_types/type.ForUpdate.html" title="type diesel::helper_types::ForUpdate">ForUpdate</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ForUpdateDsl.html" title="trait diesel::query_dsl::methods::ForUpdateDsl">ForUpdateDsl</a>,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds <code>FOR UPDATE</code> to the end of the select statement.</p>
+<p>This method is only available for MySQL and PostgreSQL. SQLite does not
+provide any form of row locking.</p>
+<p>Additionally, <code>.for_update</code> cannot be used on queries with a distinct
+clause, group by clause, having clause, or any unions. Queries with
+a <code>FOR UPDATE</code> clause cannot be boxed.</p>
+<h1 id="example-8" class="section-header"><a href="#example-8">Example</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// Executes `SELECT * FROM users FOR UPDATE`</span>
+<span class="ident">users</span>.<span class="ident">for_update</span>().<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.for_no_key_update" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#853-858" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.for_no_key_update" class="fnname">for_no_key_update</a>(self) -&gt; <a class="type" href="../helper_types/type.ForNoKeyUpdate.html" title="type diesel::helper_types::ForNoKeyUpdate">ForNoKeyUpdate</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LockingDsl.html" title="trait diesel::query_dsl::methods::LockingDsl">LockingDsl</a>&lt;ForNoKeyUpdate&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds <code>FOR NO KEY UPDATE</code> to the end of the select statement.</p>
+<p>This method is only available for PostgreSQL. SQLite does not
+provide any form of row locking, and MySQL does not support anything
+finer than row-level locking.</p>
+<p>Additionally, <code>.for_no_key_update</code> cannot be used on queries with a distinct
+clause, group by clause, having clause, or any unions. Queries with
+a <code>FOR NO KEY UPDATE</code> clause cannot be boxed.</p>
+<h1 id="example-9" class="section-header"><a href="#example-9">Example</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// Executes `SELECT * FROM users FOR NO KEY UPDATE`</span>
+<span class="ident">users</span>.<span class="ident">for_no_key_update</span>().<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.for_share" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#875-880" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.for_share" class="fnname">for_share</a>(self) -&gt; <a class="type" href="../helper_types/type.ForShare.html" title="type diesel::helper_types::ForShare">ForShare</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LockingDsl.html" title="trait diesel::query_dsl::methods::LockingDsl">LockingDsl</a>&lt;ForShare&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds <code>FOR SHARE</code> to the end of the select statement.</p>
+<p>This method is only available for MySQL and PostgreSQL. SQLite does not
+provide any form of row locking.</p>
+<p>Additionally, <code>.for_share</code> cannot be used on queries with a distinct
+clause, group by clause, having clause, or any unions. Queries with
+a <code>FOR SHARE</code> clause cannot be boxed.</p>
+<h1 id="example-10" class="section-header"><a href="#example-10">Example</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// Executes `SELECT * FROM users FOR SHARE`</span>
+<span class="ident">users</span>.<span class="ident">for_share</span>().<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.for_key_share" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#898-903" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.for_key_share" class="fnname">for_key_share</a>(self) -&gt; <a class="type" href="../helper_types/type.ForKeyShare.html" title="type diesel::helper_types::ForKeyShare">ForKeyShare</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.LockingDsl.html" title="trait diesel::query_dsl::methods::LockingDsl">LockingDsl</a>&lt;ForKeyShare&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds <code>FOR KEY SHARE</code> to the end of the select statement.</p>
+<p>This method is only available for PostgreSQL. SQLite does not
+provide any form of row locking, and MySQL does not support anything
+finer than row-level locking.</p>
+<p>Additionally, <code>.for_key_share</code> cannot be used on queries with a distinct
+clause, group by clause, having clause, or any unions. Queries with
+a <code>FOR KEY SHARE</code> clause cannot be boxed.</p>
+<h1 id="example-11" class="section-header"><a href="#example-11">Example</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// Executes `SELECT * FROM users FOR KEY SHARE`</span>
+<span class="ident">users</span>.<span class="ident">for_key_share</span>().<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.skip_locked" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#915-920" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.skip_locked" class="fnname">skip_locked</a>(self) -&gt; <a class="type" href="../helper_types/type.SkipLocked.html" title="type diesel::helper_types::SkipLocked">SkipLocked</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ModifyLockDsl.html" title="trait diesel::query_dsl::methods::ModifyLockDsl">ModifyLockDsl</a>&lt;SkipLocked&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds <code>SKIP LOCKED</code> to the end of a <code>FOR UPDATE</code> clause.</p>
+<p>This modifier is only supported in PostgreSQL 9.5+ and MySQL 8+.</p>
+<h1 id="example-12" class="section-header"><a href="#example-12">Example</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// Executes `SELECT * FROM users FOR UPDATE SKIP LOCKED`</span>
+<span class="ident">users</span>.<span class="ident">for_update</span>().<span class="ident">skip_locked</span>().<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.no_wait" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#932-937" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.no_wait" class="fnname">no_wait</a>(self) -&gt; <a class="type" href="../helper_types/type.NoWait.html" title="type diesel::helper_types::NoWait">NoWait</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.ModifyLockDsl.html" title="trait diesel::query_dsl::methods::ModifyLockDsl">ModifyLockDsl</a>&lt;NoWait&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Adds <code>NOWAIT</code> to the end of a <code>FOR UPDATE</code> clause.</p>
+<p>This modifier is only supported in PostgreSQL 9.5+ and MySQL 8+.</p>
+<h1 id="example-13" class="section-header"><a href="#example-13">Example</a></h1>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="comment">// Executes `SELECT * FROM users FOR UPDATE NOWAIT`</span>
+<span class="ident">users</span>.<span class="ident">for_update</span>().<span class="ident">no_wait</span>().<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.into_boxed" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#998-1004" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.into_boxed" class="fnname">into_boxed</a>&lt;'a, DB&gt;(self) -&gt; <a class="type" href="../helper_types/type.IntoBoxed.html" title="type diesel::helper_types::IntoBoxed">IntoBoxed</a>&lt;'a, Self, DB&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;DB: <a class="trait" href="../backend/trait.Backend.html" title="trait diesel::backend::Backend">Backend</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.BoxedDsl.html" title="trait diesel::query_dsl::methods::BoxedDsl">BoxedDsl</a>&lt;'a, DB&gt;,&nbsp;</span></h4></div></summary><div class="docblock"><p>Boxes the pieces of a query into a single type.</p>
+<p>This is useful for cases where you want to conditionally modify a query,
+but need the type to remain the same. The backend must be specified as
+part of this. It is not possible to box a query and have it be useable
+on multiple backends.</p>
+<p>A boxed query will incur a minor performance penalty, as the query builder
+can no longer be inlined by the compiler. For most applications this cost
+will be minimal.</p>
+<h3 id="example-14" class="section-header"><a href="#example-14">Example</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">query</span> <span class="op">=</span> <span class="ident">users::table</span>.<span class="ident">into_boxed</span>();
+<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">name</span>) <span class="op">=</span> <span class="ident">params</span>.<span class="ident">get</span>(<span class="string">&quot;name&quot;</span>) {
+    <span class="ident">query</span> <span class="op">=</span> <span class="ident">query</span>.<span class="ident">filter</span>(<span class="ident">users::name</span>.<span class="ident">eq</span>(<span class="ident">name</span>));
+}
+<span class="kw">let</span> <span class="ident">users</span> <span class="op">=</span> <span class="ident">query</span>.<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>);</pre></div>
+<p>Diesel queries also have a similar problem to <a href="https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html"><code>Iterator</code></a>, where
+returning them from a function requires exposing the implementation of that
+function. The <a href="../helper_types/index.html"><code>helper_types</code></a> module exists to help with this,
+but you might want to hide the return type or have it conditionally change.
+Boxing can achieve both.</p>
+<h3 id="example-15" class="section-header"><a href="#example-15">Example</a></h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">fn</span> <span class="ident">users_by_name</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">users::BoxedQuery</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">DB</span><span class="op">&gt;</span> {
+    <span class="ident">users::table</span>.<span class="ident">filter</span>(<span class="ident">users::name</span>.<span class="ident">eq</span>(<span class="ident">name</span>)).<span class="ident">into_boxed</span>()
+}
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), <span class="ident">users_by_name</span>(<span class="string">&quot;Sean&quot;</span>).<span class="ident">select</span>(<span class="ident">users::id</span>).<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>));
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">2</span>), <span class="ident">users_by_name</span>(<span class="string">&quot;Tess&quot;</span>).<span class="ident">select</span>(<span class="ident">users::id</span>).<span class="ident">first</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>));</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.single_value" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#1044-1049" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.single_value" class="fnname">single_value</a>(self) -&gt; <a class="type" href="../helper_types/type.SingleValue.html" title="type diesel::helper_types::SingleValue">SingleValue</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SingleValueDsl.html" title="trait diesel::query_dsl::methods::SingleValueDsl">SingleValueDsl</a>,&nbsp;</span></h4></div></summary><div class="docblock"><p>Wraps this select statement in parenthesis, allowing it to be used
+as an expression.</p>
+<p>SQL allows queries such as <code>foo = (SELECT ...)</code>, as long as the
+subselect returns only a single column, and 0 or 1 rows. This method
+indicates that you expect the query to only return a single value (this
+will be enforced by adding <code>LIMIT 1</code>).</p>
+<p>The SQL type of this will always be <code>Nullable</code>, as the query returns
+<code>NULL</code> if the table is empty or it otherwise returns 0 rows.</p>
+<h1 id="example-16" class="section-header"><a href="#example-16">Example</a></h1>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="ident">insert_into</span>(<span class="ident">posts::table</span>)
+    .<span class="ident">values</span>(<span class="ident">posts::user_id</span>.<span class="ident">eq</span>(<span class="number">1</span>))
+    .<span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="kw">let</span> <span class="ident">last_post</span> <span class="op">=</span> <span class="ident">posts::table</span>
+    .<span class="ident">order</span>(<span class="ident">posts::id</span>.<span class="ident">desc</span>());
+<span class="kw">let</span> <span class="ident">most_recently_active_user</span> <span class="op">=</span> <span class="ident">users</span>.<span class="ident">select</span>(<span class="ident">name</span>)
+    .<span class="ident">filter</span>(<span class="ident">id</span>.<span class="ident">nullable</span>().<span class="ident">eq</span>(<span class="ident">last_post</span>.<span class="ident">select</span>(<span class="ident">posts::user_id</span>).<span class="ident">single_value</span>()))
+    .<span class="ident">first</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">&quot;Sean&quot;</span>, <span class="ident">most_recently_active_user</span>);</pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.nullable" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#1085-1090" title="goto source code">[src]</a></div><h4 class="code-header">fn <a href="#method.nullable" class="fnname">nullable</a>(self) -&gt; <a class="type" href="../helper_types/type.NullableSelect.html" title="type diesel::helper_types::NullableSelect">NullableSelect</a>&lt;Self&gt; <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Self: <a class="trait" href="methods/trait.SelectNullableDsl.html" title="trait diesel::query_dsl::methods::SelectNullableDsl">SelectNullableDsl</a>,&nbsp;</span></h4></div></summary><div class="docblock"><p>Coerce the SQL type of the select clause to it’s nullable equivalent.</p>
+<p>This is use full for writing queries that contain subselects on non null
+fields comparing them to nullable fields.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">table!</span> {
+    <span class="ident">users</span> {
+        <span class="ident">id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">name</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Text</span>,
+    }
+}
+
+<span class="macro">table!</span> {
+    <span class="ident">posts</span> {
+        <span class="ident">id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">by_user</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Nullable</span><span class="op">&lt;</span><span class="ident">Text</span><span class="op">&gt;</span>,
+    }
+}
+
+<span class="ident">posts::table</span>.<span class="ident">filter</span>(
+   <span class="ident">posts::by_user</span>.<span class="ident">eq_any</span>(<span class="ident">users::table</span>.<span class="ident">select</span>(<span class="ident">users::name</span>).<span class="ident">nullable</span>())
+).<span class="ident">load</span>(<span class="kw-2">&amp;</span><span class="ident">connection</span>)<span class="question-mark">?</span>;</pre></div>
+</div></details></div><h2 id="implementors" class="small-section-header">Implementors<a href="#implementors" class="anchor"></a></h2><div class="item-list" id="implementors-list"><div id="impl-QueryDsl" class="impl has-srclink"><div class="rightside"><a class="srclink" href="../../src/diesel/query_dsl/mod.rs.html#1093" title="goto source code">[src]</a></div><a href="#impl-QueryDsl" class="anchor"></a><h3 class="code-header in-band">impl&lt;T:&nbsp;<a class="trait" href="../query_source/trait.Table.html" title="trait diesel::query_source::Table">Table</a>&gt; <a class="trait" href="trait.QueryDsl.html" title="trait diesel::query_dsl::QueryDsl">QueryDsl</a> for T</h3></div></div><script type="text/javascript" src="../../implementors/diesel/query_dsl/trait.QueryDsl.js" async></script></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="diesel" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script>
+</body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["UNICODE_VERSION"],"enum":["BidiClass","Direction"],"fn":["bidi_class"],"mod":["data_source","deprecated","format_chars","level"],"struct":["BidiInfo","HardcodedBidiData","InitialInfo","Paragraph","ParagraphInfo"],"type":["LevelRun"]};
