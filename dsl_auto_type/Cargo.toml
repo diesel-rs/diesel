@@ -19,3 +19,6 @@ syn = { version = "2", features = ["extra-traits", "full", "derive", "parsing", 
 
 [dev-dependencies]
 diesel = { path = "../diesel" }
+
+[lints]
+workspace = true

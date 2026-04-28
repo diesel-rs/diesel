@@ -80,12 +80,12 @@ impl MysqlTime {
         }
     }
 
-    // Serialize a given `MysqlTime` instance to a byte buffer
+    /// Serialize a given `MysqlTime` instance to a byte buffer
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     #[allow(unsafe_code)] // manual serialization of a type to a byte array
-    fn serialize(&self) -> [u8; mem::size_of::<MysqlTime>()] {
+    pub(crate) fn serialize(&self) -> [u8; mem::size_of::<MysqlTime>()] {
         unsafe fn copy_bytes<T>(out: &mut [u8], field_ptr: &T, start: *const MysqlTime)
         where
             T: Copy,
@@ -106,7 +106,7 @@ impl MysqlTime {
                 //   go from bool to u8 that's no problem as 0 and 1 are valid u8 bit patterns
                 ptr::copy::<u8>(
                     field_ptr as *const u8,
-                    dbg!(out_ptr.offset(offset)),
+                    out_ptr.offset(offset),
                     mem::size_of::<T>(),
                 )
             };

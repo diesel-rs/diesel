@@ -630,7 +630,7 @@ where
 {
     query_builder.push_sql("CREATE TYPE ");
     let record_type_name = format!("{}_RECORD", column_name.to_uppercase());
-    if dbg!(record_type_name.len()) > 64 {
+    if record_type_name.len() > 64 {
         return Err(diesel::result::Error::QueryBuilderError(
             format!(
                 "Failed to construct a suitable name \

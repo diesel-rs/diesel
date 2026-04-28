@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Example: querying basic schemas
 //!
 //! To run this:

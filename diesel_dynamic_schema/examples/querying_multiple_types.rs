@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Example: querying multiple types
 //!
 //! To run this:

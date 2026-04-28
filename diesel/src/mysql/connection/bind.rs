@@ -816,12 +816,11 @@ mod tests {
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
         let meta = (bind.tpe, bind.flags).into();
-        dbg!(meta);
 
         let value = bind.value().expect("Is not null");
         let value = MysqlValue::new_internal(value.as_bytes(), meta);
 
-        dbg!(T::from_sql(value))
+        T::from_sql(value)
     }
 
     #[cfg(feature = "extras")]
