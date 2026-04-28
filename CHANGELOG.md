@@ -22,6 +22,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Fixed
 
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
+* Fix a regression in `#[derive(AsChangeset)]` introduced in 2.3.8 where structs with a type or const generic parameter referenced in a field type failed to compile with `error[E0425]: cannot find type 'T' in this scope`. The diagnostic helper functions added to improve `AsChangeset` error messages now forward all generic parameters of the input struct, not only lifetimes.
 
 ### Changed
 

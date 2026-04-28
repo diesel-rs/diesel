@@ -275,15 +275,8 @@ fn with_lifetime_constraints() {
     assert_eq!(Ok(expected), actual);
 }
 
-// Regression test for the 2.3.8 `_check_owned` / `_check_borrowed` helpers
-// dropping type and const generics. Prior to the fix, the generated
-// diagnostic helper fns forwarded only lifetime params from the struct, so
-// a `where`-clause bound on a field type that mentioned a type param like
-// `T` failed to compile with `error[E0425]: cannot find type 'T' in this
-// scope`. Mirrors the lohi-lib failure shape: a generic wrapper type
-// (`Wrapper<T>`) used as a field type, where the wrapper implements
-// AsExpression independent of T, but the helper fn's where-clause still
-// names `T` via the field type.
+// Regression test: the diagnostic helper fns must forward type and const
+// generics, not only lifetimes.
 #[test]
 fn with_type_and_const_generics() {
     #[derive(FromSqlRow, AsExpression)]
@@ -312,9 +305,6 @@ fn with_type_and_const_generics() {
         }
     }
 
-    // Type generic referenced in a field type — exercises both the owned
-    // `_check_owned` helper (via `.set(form)`) and the borrowed
-    // `_check_borrowed` helper (via `.set(&form)`).
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
     struct UserForm<T: 'static> {
@@ -360,9 +350,6 @@ fn with_type_and_const_generics() {
     let actual = users::table.order(users::id).load(connection);
     assert_eq!(Ok(expected), actual);
 
-    // Lifetime + type + const generics on the same struct. Verifies the
-    // borrowed helper preserves the `'lifetime: 'update` outlives bounds
-    // while also forwarding type and const params.
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
     #[allow(dead_code)]
