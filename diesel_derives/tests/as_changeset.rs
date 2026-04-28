@@ -275,6 +275,104 @@ fn with_lifetime_constraints() {
     assert_eq!(Ok(expected), actual);
 }
 
+// Regression test for the 2.3.8 `_check_owned` / `_check_borrowed` helpers
+// dropping type and const generics. Prior to the fix, the generated
+// diagnostic helper fns forwarded only lifetime params from the struct, so
+// a `where`-clause bound on a field type that mentioned a type param like
+// `T` failed to compile with `error[E0425]: cannot find type 'T' in this
+// scope`. Mirrors the lohi-lib failure shape: a generic wrapper type
+// (`Wrapper<T>`) used as a field type, where the wrapper implements
+// AsExpression independent of T, but the helper fn's where-clause still
+// names `T` via the field type.
+#[test]
+fn with_type_and_const_generics() {
+    #[derive(FromSqlRow, AsExpression)]
+    #[diesel(sql_type = sql_types::Text)]
+    struct Wrapper<T: 'static>(String, std::marker::PhantomData<T>);
+
+    impl<T: 'static> Wrapper<T> {
+        fn new(s: impl Into<String>) -> Self {
+            Wrapper(s.into(), std::marker::PhantomData)
+        }
+    }
+
+    impl<T: 'static> std::fmt::Debug for Wrapper<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_tuple("Wrapper").field(&self.0).finish()
+        }
+    }
+
+    impl<DB, T: 'static> serialize::ToSql<sql_types::Text, DB> for Wrapper<T>
+    where
+        DB: backend::Backend,
+        String: serialize::ToSql<sql_types::Text, DB>,
+    {
+        fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, DB>) -> serialize::Result {
+            self.0.to_sql(out)
+        }
+    }
+
+    // Type generic referenced in a field type — exercises both the owned
+    // `_check_owned` helper (via `.set(form)`) and the borrowed
+    // `_check_borrowed` helper (via `.set(&form)`).
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct UserForm<T: 'static> {
+        name: Wrapper<T>,
+        hair_color: String,
+        r#type: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(&UserForm::<()> {
+            name: Wrapper::new("Jim"),
+            hair_color: String::from("blue"),
+            r#type: String::from("super"),
+        })
+        .execute(connection)
+        .unwrap();
+
+    update(users::table.find(2))
+        .set(UserForm::<()> {
+            name: Wrapper::new("Tess2"),
+            hair_color: String::from("red"),
+            r#type: String::from("admin"),
+        })
+        .execute(connection)
+        .unwrap();
+
+    let expected = vec![
+        (
+            1,
+            String::from("Jim"),
+            Some(String::from("blue")),
+            Some(String::from("super")),
+        ),
+        (
+            2,
+            String::from("Tess2"),
+            Some(String::from("red")),
+            Some(String::from("admin")),
+        ),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+
+    // Lifetime + type + const generics on the same struct. Verifies the
+    // borrowed helper preserves the `'lifetime: 'update` outlives bounds
+    // while also forwarding type and const params.
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    #[allow(dead_code)]
+    struct MixedForm<'a, T: 'static, const N: usize> {
+        name: Wrapper<T>,
+        hair_color: &'a str,
+        r#type: Wrapper<[T; N]>,
+    }
+}
+
 #[test]
 fn with_explicit_column_names() {
     #[derive(AsChangeset)]
