@@ -1,5 +1,5 @@
-use std::borrow::Cow;
-use std::marker::PhantomData;
+use alloc::borrow::Cow;
+use core::marker::PhantomData;
 
 use byteorder::NetworkEndian;
 use byteorder::WriteBytesExt;
@@ -7,21 +7,21 @@ use byteorder::WriteBytesExt;
 use super::CommonOptions;
 use super::CopyFormat;
 use super::CopyTarget;
+use crate::Connection;
+use crate::Insertable;
+use crate::QueryResult;
 use crate::expression::bound::Bound;
 use crate::insertable::ColumnInsertValue;
-use crate::pg::backend::FailedToLookupTypeError;
-use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::pg::Pg;
 use crate::pg::PgMetadataLookup;
+use crate::pg::backend::FailedToLookupTypeError;
+use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::query_builder::BatchInsert;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::QueryId;
 use crate::query_builder::ValuesClause;
 use crate::serialize::IsNull;
 use crate::serialize::ToSql;
-use crate::Connection;
-use crate::Insertable;
-use crate::QueryResult;
 use crate::{Column, Table};
 
 /// Describes the different possible settings for the `HEADER` option
@@ -134,7 +134,7 @@ where
 }
 
 pub trait CopyFromExpression<T> {
-    type Error: From<crate::result::Error> + std::error::Error;
+    type Error: From<crate::result::Error> + core::error::Error;
 
     fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error>;
 
@@ -148,7 +148,7 @@ pub trait CopyFromExpression<T> {
 
 impl<S, F, E> CopyFromExpression<S::Table> for CopyFrom<S, F>
 where
-    E: From<crate::result::Error> + std::error::Error,
+    E: From<crate::result::Error> + core::error::Error,
     S: CopyTarget,
     F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
 {
@@ -513,7 +513,7 @@ where
     C: Connection<Backend = Pg>,
 {
     /// The error type returned by the execute function
-    type Error: std::error::Error;
+    type Error: core::error::Error;
 
     /// See the trait documentation for details
     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;

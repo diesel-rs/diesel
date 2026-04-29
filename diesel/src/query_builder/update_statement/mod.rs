@@ -4,18 +4,18 @@ pub(super) mod target;
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{
-    is_aggregate, AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping,
+    AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
 };
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
-use crate::{query_builder::*, QuerySource};
+use crate::{QuerySource, query_builder::*};
 
-pub(crate) use self::private::UpdateAutoTypeHelper;
+pub(crate) use self::private::SetAutoTypeHelper;
 
 impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
@@ -32,7 +32,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     /// See [`update`](crate::update()) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
-    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+    pub fn set<V>(self, values: V) -> crate::dsl::Set<Self, V>
     where
         T: Table,
         V: changeset::AsChangeset<Target = T>,
@@ -288,18 +288,21 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 pub struct SetNotCalled;
 
 mod private {
-    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    /// Helper trait for `#[auto_type]`
+    ///
+    /// This trait allows inferring the return type of `UpdateStatement::set` and
+    /// `IncompleteDoUpdate::set` (via `IntoUpdateTarget`). It is used to define the
+    /// `Set` type alias in `diesel::dsl`.
     #[allow(unreachable_pub)]
-    pub trait UpdateAutoTypeHelper {
-        type Table;
-        type Where;
+    pub trait SetAutoTypeHelper<Changes> {
+        type Out;
     }
 
-    impl<T, W> UpdateAutoTypeHelper for crate::query_builder::UpdateStatement<T, W>
+    impl<T, W, Changes> SetAutoTypeHelper<Changes> for crate::query_builder::UpdateStatement<T, W>
     where
         T: crate::QuerySource,
+        Changes: crate::AsChangeset,
     {
-        type Table = T;
-        type Where = W;
+        type Out = crate::query_builder::UpdateStatement<T, W, Changes::Changeset>;
     }
 }

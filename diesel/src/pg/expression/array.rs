@@ -11,7 +11,7 @@ use crate::query_builder::{
     AstPass, BoxedSelectStatement, QueryFragment, QueryId, SelectQuery, SelectStatement,
 };
 use crate::sql_types::{self, SqlType};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// Creates an `ARRAY[e1, e2, ...]` or `ARRAY(subselect)` expression.
 ///

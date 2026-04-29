@@ -1,0 +1,56 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW ops AS SELECT 1 + 2, json @> 'json', name IS NULL FROM bar"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                op: "+",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Field {
+                    schema: None,
+                    query_source: "bar",
+                    field_name: "json",
+                    via_left_join: false,
+                },
+                right: Literal {
+                    value: Some(
+                        "json",
+                    ),
+                    is_null: false,
+                },
+                op: "@>",
+                statically_not_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: PostfixOp {
+                expr: Field {
+                    schema: None,
+                    query_source: "bar",
+                    field_name: "name",
+                    via_left_join: false,
+                },
+                op: "IS NULL",
+                statically_not_null: true,
+            },
+        },
+    ],
+}

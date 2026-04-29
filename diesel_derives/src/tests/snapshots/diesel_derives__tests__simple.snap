@@ -1,0 +1,12 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "allow_tables_to_appear_in_same_query! {\n    users, posts, comments\n}\n"
+---
+impl ::diesel::query_source::TableNotEqual<posts::table> for users::table {}
+impl ::diesel::query_source::TableNotEqual<users::table> for posts::table {}
+impl ::diesel::query_source::TableNotEqual<comments::table> for users::table {}
+impl ::diesel::query_source::TableNotEqual<users::table> for comments::table {}
+impl ::diesel::query_source::TableNotEqual<comments::table> for posts::table {}
+impl ::diesel::query_source::TableNotEqual<posts::table> for comments::table {}

@@ -4,8 +4,8 @@ use crate::deserialize::{
     self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
 };
 use crate::expression::{
-    is_contained_in_group_by, AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates,
-    QueryMetadata, Selectable, SelectableExpression, TypedExpressionType, ValidGrouping,
+    AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable,
+    SelectableExpression, TypedExpressionType, ValidGrouping, is_contained_in_group_by,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
 use crate::query_builder::*;
@@ -15,6 +15,7 @@ use crate::result::QueryResult;
 use crate::row::*;
 use crate::sql_types::{HasSqlType, IntoNullable, Nullable, OneIsNullable, SqlType};
 use crate::util::{TupleAppend, TupleSize};
+use alloc::vec::Vec;
 
 impl<T> TupleSize for T
 where
@@ -522,7 +523,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
         }
 
         impl<$T1, $($T,)* Col> IsContainedInGroupBy<Col> for ($T1, $($T,)*)
-        where Col: Column,
+        where Col: QueryRelationField,
               ($($T,)*): IsContainedInGroupBy<Col>,
               $T1: IsContainedInGroupBy<Col>,
               $T1::Output: is_contained_in_group_by::IsAny<<($($T,)*) as IsContainedInGroupBy<Col>>::Output>
@@ -532,7 +533,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
     };
     ($T1: ident,) => {
         impl<$T1, Col> IsContainedInGroupBy<Col> for ($T1,)
-        where Col: Column,
+        where Col: QueryRelationField,
               $T1: IsContainedInGroupBy<Col>
         {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;

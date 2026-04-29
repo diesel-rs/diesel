@@ -280,5 +280,7 @@ fn database_setup_no_default_migrations() {
     use std::path::Path;
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(!p.has_file(Path::new("custom_migrations").join("00000000000000_diesel_initial_setup")));
+    assert!(
+        !p.has_file(Path::new("custom_migrations").join("00000000000000_diesel_initial_setup"))
+    );
 }

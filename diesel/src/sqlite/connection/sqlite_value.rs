@@ -5,9 +5,9 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use std::cell::Ref;
-use std::ptr::NonNull;
-use std::{slice, str};
+use core::cell::Ref;
+use core::ptr::NonNull;
+use core::{slice, str};
 
 use crate::sqlite::SqliteType;
 
@@ -40,7 +40,7 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
     // stable and doesn't return a `Result`. We instead
     // use `String::from_utf8_lossy` there and need
     // to store the potential owned result here
-    string_ref: Option<Box<str>>,
+    string_ref: Option<alloc::boxed::Box<str>>,
 }
 
 #[derive(Debug)]
@@ -147,9 +147,9 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         // For blobs this might return non-utf values
         //
         // The sqlite documentation there seems to be at least inaccurate
-        let s = match String::from_utf8_lossy(bytes) {
-            std::borrow::Cow::Borrowed(s) => s,
-            std::borrow::Cow::Owned(b) => {
+        let s = match alloc::string::String::from_utf8_lossy(bytes) {
+            alloc::borrow::Cow::Borrowed(s) => s,
+            alloc::borrow::Cow::Owned(b) => {
                 self.string_ref = Some(b.into_boxed_str());
                 self.string_ref
                     .as_deref()

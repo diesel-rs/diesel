@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use syn::punctuated::Punctuated;
-use syn::{parse_quote, DeriveInput};
+use syn::{DeriveInput, parse_quote};
 
 use crate::model::{CheckForBackend, Model};
 

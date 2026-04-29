@@ -7,8 +7,8 @@ use quote::quote;
 use quote::quote_spanned;
 use std::collections::{HashMap, HashSet};
 use syn::spanned::Spanned as _;
-use syn::{parse_quote, Lifetime};
 use syn::{DeriveInput, Expr, Path, Result, Type};
+use syn::{Lifetime, parse_quote};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, true)?;

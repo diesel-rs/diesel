@@ -1,3 +1,4 @@
+use crate::QuerySource;
 use crate::expression::{SelectableExpression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
@@ -11,7 +12,6 @@ use crate::query_dsl::methods::DistinctOnDsl;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
 use crate::sql_types::SingleValue;
-use crate::QuerySource;
 use diesel::query_builder::order_clause::OrderClause;
 
 /// Represents `DISTINCT ON (...)`
@@ -95,7 +95,7 @@ macro_rules! valid_ordering {
         /* skip this one */
     };
     (@impl_one:
-     [allow_plain = $allow_plain: expr]
+     [allow_plain = $allow_plain: expr_2021]
      [generics: $($T:ident)*]
      [distinct: $($D:ident)*]
      [other: $($O:ident)*]

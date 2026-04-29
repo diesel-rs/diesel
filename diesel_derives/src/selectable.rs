@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use std::borrow::Cow;
 use syn::spanned::Spanned;
-use syn::{parse_quote, DeriveInput, Result};
+use syn::{DeriveInput, Result, parse_quote};
 
 use crate::field::Field;
 use crate::model::{CheckForBackend, Model};

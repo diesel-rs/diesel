@@ -33,9 +33,9 @@ pub mod multiconnection {
     #[doc(hidden)]
     pub use crate::query_builder::returning_clause::ReturningClause;
     #[doc(hidden)]
-    pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
-    #[doc(hidden)]
     pub use crate::query_builder::select_statement::SelectStatement;
+    #[doc(hidden)]
+    pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
     #[doc(hidden)]
     pub use crate::row::private::RowSealed;
     #[doc(hidden)]

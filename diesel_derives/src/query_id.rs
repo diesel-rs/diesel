@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
 use syn::DeriveInput;
+use syn::parse_quote;
 
 use crate::util::wrap_in_dummy_mod;
 
@@ -14,10 +14,10 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
     let is_window_function = item.attrs.iter().any(|a| {
         if a.path().is_ident("diesel") {
-            if let Ok(nested) = a.parse_args_with(
+            match a.parse_args_with(
                 syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
             ) {
-                nested.iter().any(|n| match n {
+                Ok(nested) => nested.iter().any(|n| match n {
                     syn::Meta::NameValue(n) => {
                         n.path.is_ident("diesel_internal_is_window")
                             && matches!(
@@ -29,9 +29,8 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
                             )
                     }
                     _ => false,
-                })
-            } else {
-                false
+                }),
+                _ => false,
             }
         } else {
             false

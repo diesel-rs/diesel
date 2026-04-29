@@ -1,6 +1,6 @@
 use syn::parse::{ParseStream, Result};
 use syn::token::Comma;
-use syn::{parenthesized, Ident, LitStr};
+use syn::{Ident, LitStr, parenthesized};
 
 use crate::deprecated::utils::parse_eq_and_lit_str;
 use crate::parsers::BelongsTo;

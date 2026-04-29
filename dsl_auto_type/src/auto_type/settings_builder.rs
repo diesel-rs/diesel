@@ -1,6 +1,6 @@
 use syn::parse_quote;
 
-use super::{case::Case, DeriveSettings, InferrerSettings};
+use super::{DeriveSettings, InferrerSettings, case::Case};
 
 #[derive(Default)]
 pub struct DeriveSettingsBuilder {

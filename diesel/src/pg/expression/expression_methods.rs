@@ -1,21 +1,25 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, CombinedAllNullableValue, InetOrCidr, JsonIndex, JsonOrNullableJson,
-    JsonOrNullableJsonOrJsonbOrNullableJsonb, JsonRemoveIndex, JsonbOrNullableJsonb,
-    MaybeNullableValue, MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable,
-    RangeOrMultirange, RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray,
-    TextOrNullableText,
+    ArrayOrNullableArray, CombinedAllNullableValue, InetOrCidr, IntegerOrNullableInteger,
+    JsonOrNullableJson, JsonRemoveIndex, JsonbOrNullableJsonb, MaybeNullableValue,
+    MultirangeOrNullableMultirange, MultirangeOrRangeMaybeNullable, RangeOrMultirange,
+    RangeOrNullableRange, RecordOrNullableRecord, TextArrayOrNullableTextArray, TextOrNullableText,
 };
 use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
+use crate::EscapeExpressionMethods;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Concat, Desc, Like, NotLike};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
+use crate::expression_methods::AnyJsonExpressionMethods;
+use crate::expression_methods::json_expression_methods::JsonIndex;
+use crate::expression_methods::json_expression_methods::private::JsonOrNullableJsonOrJsonbOrNullableJsonb;
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
+use crate::pg::expression::operators::RetrieveAsObjectJson;
+use crate::sql_types::Nullable;
 use crate::sql_types::{Array, Inet, Integer, Range, SqlType, Text, VarChar};
-use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
 #[cfg(feature = "postgres_backend")]
@@ -404,6 +408,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     {
         Grouped(IsContainedBy::new(self, other.as_expression()))
     }
+
     /// Indexes a PostgreSQL array.
     ///
     /// This operator indexes in to an array to access a single element.
@@ -459,6 +464,414 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
         T: AsExpression<Integer>,
     {
         ArrayIndex::new(self, other.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array. This is the same as [`PgArrayExpressionMethods::index`]
+    /// but takes a nullable expression for the parameter.
+    ///
+    /// This operator indexes in to an array to access a single element.
+    ///
+    /// Note that PostgreSQL arrays are 1-indexed, so `foo.index_nullable(1)` is the
+    /// first element in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.index_nullable(id.nullable()))
+    ///     .load::<Option<String>>(conn)?;
+    /// assert_eq!(vec![Some("cool".to_string()), Some("marvellous".to_string())], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.index_nullable(1).eq(Some("splendid")))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![2], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn index_nullable<T>(self, other: T) -> dsl::IndexNullable<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Nullable<Integer>>,
+    {
+        ArrayIndex::new(self, other.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array with the slice delimited by the given indexes.
+    ///
+    /// This operator indexes in to an array to access a subslice of the array.
+    ///
+    /// Note that PostgreSQL array slices are 1-indexed and inclusive, so
+    /// `foo.slice(1, 3)` returns the first three elements in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.slice(id, id))
+    ///     .load::<Vec<String>>(conn)?;
+    /// assert_eq!(vec![vec!["cool"], vec!["marvellous"]], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.slice(1, 2).eq(vec!["splendid", "marvellous"]))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![2], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn slice<T1, T2>(self, start: T1, end: T2) -> dsl::Slice<Self, T1, T2>
+    where
+        Self::SqlType: SqlType,
+        T1: AsExpression<Integer>,
+        T2: AsExpression<Integer>,
+    {
+        ArraySlice::new(self, start.as_expression(), end.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array with the slice delimited by the given indexes.
+    /// This is the same as [`PgArrayExpressionMethods::slice`]
+    /// but takes nullable expressions for the parameters.
+    ///
+    /// This operator indexes in to an array to access a subslice of the array.
+    ///
+    /// Note that PostgreSQL array slices are 1-indexed and inclusive, so
+    /// `foo.slice_nullable(1, 3)` returns the first three elements in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.slice_nullable(id.nullable(), id.nullable()))
+    ///     .load::<Option<Vec<String>>>(conn)?;
+    /// assert_eq!(vec![Some(vec!["cool".to_string()]), Some(vec!["marvellous".to_string()])], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.slice_nullable(1, 2).eq(Some(vec!["splendid", "marvellous"])))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![2], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn slice_nullable<T1, T2>(self, start: T1, end: T2) -> dsl::SliceNullable<Self, T1, T2>
+    where
+        Self::SqlType: SqlType,
+        T1: AsExpression<Nullable<Integer>>,
+        T2: AsExpression<Nullable<Integer>>,
+    {
+        ArraySlice::new(self, start.as_expression(), end.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array with the slice starting from the given index.
+    ///
+    /// This operator indexes in to an array to access a subslice of the array,
+    ///
+    /// Note that PostgreSQL array slices are 1-indexed, so
+    /// `foo.slice_from(1)` returns all the elements in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.slice_from(id))
+    ///     .load::<Vec<String>>(conn)?;
+    /// assert_eq!(vec![vec!["cool", "awesome"], vec!["marvellous"]], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.slice_from(2).eq(vec!["marvellous"]))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![2], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn slice_from<T>(self, start: T) -> dsl::SliceFrom<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Integer>,
+    {
+        ArraySliceFrom::new(self, start.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array with the slice starting from the given index.
+    /// This is the same as [`PgArrayExpressionMethods::slice_from`]
+    /// but takes a nullable expression for the parameter.
+    ///
+    /// This operator indexes in to an array to access a subslice of the array,
+    ///
+    /// Note that PostgreSQL array slices are 1-indexed, so
+    /// `foo.slice_from_nullable(1)` returns all the elements in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.slice_from_nullable(id.nullable()))
+    ///     .load::<Option<Vec<String>>>(conn)?;
+    /// assert_eq!(vec![Some(vec!["cool".to_string(), "awesome".to_string()]), Some(vec!["marvellous".to_string()])], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.slice_from_nullable(2).eq(Some(vec!["marvellous"])))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![2], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn slice_from_nullable<T>(self, start: T) -> dsl::SliceFromNullable<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Nullable<Integer>>,
+    {
+        ArraySliceFrom::new(self, start.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array with the slice ending with the given index.
+    ///
+    /// This operator indexes in to an array to access a subslice of the array,
+    ///
+    /// Note that PostgreSQL array slices are 1-indexed, so
+    /// `foo.slice_to(3)` returns the first three elements in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.slice_to(id))
+    ///     .load::<Vec<String>>(conn)?;
+    /// assert_eq!(vec![vec!["cool"], vec!["splendid", "marvellous"]], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.slice_to(1).eq(vec!["cool"]))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![1], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn slice_to<T>(self, end: T) -> dsl::SliceTo<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Integer>,
+    {
+        ArraySliceTo::new(self, end.as_expression())
+    }
+
+    /// Indexes a PostgreSQL array with the slice ending with the given index.
+    /// This is the same as [`PgArrayExpressionMethods::slice_to`]
+    /// but takes a nullable expression for the parameter.
+    ///
+    /// This operator indexes in to an array to access a subslice of the array,
+    ///
+    /// Note that PostgreSQL array slices are 1-indexed, so
+    /// `foo.slice_to_nullable(3)` returns the first three elements in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.slice_to_nullable(id.nullable()))
+    ///     .load::<Option<Vec<String>>>(conn)?;
+    /// assert_eq!(vec![Some(vec!["cool".to_string()]), Some(vec!["splendid".to_string(), "marvellous".to_string()])], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.slice_to_nullable(1).eq(Some(vec!["cool"])))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![1], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn slice_to_nullable<T>(self, end: T) -> dsl::SliceToNullable<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Nullable<Integer>>,
+    {
+        ArraySliceTo::new(self, end.as_expression())
     }
 
     /// Creates a PostgreSQL `||` expression.
@@ -3275,7 +3688,7 @@ where
 
 /// PostgreSQL specific methods present on JSON and JSONB expressions.
 #[cfg(feature = "postgres_backend")]
-pub trait PgAnyJsonExpressionMethods: Expression + Sized {
+pub trait PgAnyJsonExpressionMethods: AnyJsonExpressionMethods + Expression + Sized {
     /// Creates a PostgreSQL `->` expression.
     ///
     /// This operator extracts the value associated with the given key, that is provided on the
@@ -3367,114 +3780,12 @@ pub trait PgAnyJsonExpressionMethods: Expression + Sized {
     fn retrieve_as_object<T>(
         self,
         other: T,
-    ) -> dsl::RetrieveAsObjectJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    ) -> crate::pg::expression::helper_types::RetrieveAsObject<Self, T>
     where
         T: JsonIndex,
         <T::Expression as Expression>::SqlType: SqlType,
     {
         Grouped(RetrieveAsObjectJson::new(
-            self,
-            other.into_json_index_expression(),
-        ))
-    }
-
-    /// Creates a PostgreSQL `->>` expression.
-    ///
-    /// This operator extracts the value associated with the given key, that is provided on the
-    /// Right Hand Side of the operator.
-    ///
-    /// Extracts n'th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
-    /// Extracts JSON object field as Text with the given key.
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #    contacts {
-    /// #        id -> Integer,
-    /// #        name -> VarChar,
-    /// #        address -> Jsonb,
-    /// #    }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    ///
-    /// # #[cfg(feature = "serde_json")]
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::contacts::dsl::*;
-    /// #     let conn = &mut establish_connection();
-    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
-    /// #     diesel::sql_query("CREATE TABLE contacts (
-    /// #         id SERIAL PRIMARY KEY,
-    /// #         name VARCHAR NOT NULL,
-    /// #         address JSONB NOT NULL
-    /// #     )").execute(conn)
-    /// #        .unwrap();
-    /// #
-    /// let santas_address: serde_json::Value = serde_json::json!({
-    ///     "street": "Article Circle Expressway 1",
-    ///     "city": "North Pole",
-    ///     "postcode": "99705",
-    ///     "state": "Alaska"
-    /// });
-    /// diesel::insert_into(contacts)
-    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
-    ///     .execute(conn)?;
-    ///
-    /// let santas_postcode = contacts.select(address.retrieve_as_text("postcode")).get_result::<String>(conn)?;
-    /// assert_eq!(santas_postcode, "99705");
-    ///
-    ///
-    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
-    ///     {
-    ///         "street": "Somewhere In La 251",
-    ///         "city": "Los Angeles",
-    ///         "postcode": "12231223",
-    ///         "state": "California"
-    ///     },
-    ///     {
-    ///         "street": "Somewhere In Ny 251",
-    ///         "city": "New York",
-    ///         "postcode": "3213212",
-    ///         "state": "New York"
-    ///     }
-    /// ]);
-    ///
-    /// diesel::insert_into(contacts)
-    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
-    ///     .execute(conn)?;
-    ///
-    /// let roberts_second_address_in_db = contacts
-    ///                             .filter(name.eq("Robert Downey Jr."))
-    ///                             .select(address.retrieve_as_text(1))
-    ///                             .get_result::<String>(conn)?;
-    ///
-    /// let roberts_second_address = String::from(
-    ///     "{\"city\": \"New York\", \
-    ///     \"state\": \"New York\", \
-    ///     \"street\": \"Somewhere In Ny 251\", \
-    ///     \"postcode\": \"3213212\"}"
-    ///     );
-    /// assert_eq!(roberts_second_address, roberts_second_address_in_db);
-    /// #     Ok(())
-    /// # }
-    /// # #[cfg(not(feature = "serde_json"))]
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     Ok(())
-    /// # }
-    /// ```
-    fn retrieve_as_text<T>(
-        self,
-        other: T,
-    ) -> dsl::RetrieveAsTextJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
-    where
-        T: JsonIndex,
-        <T::Expression as Expression>::SqlType: SqlType,
-    {
-        Grouped(RetrieveAsTextJson::new(
             self,
             other.into_json_index_expression(),
         ))
@@ -3823,7 +4134,7 @@ pub(in crate::pg) mod private {
     };
     use crate::{Expression, IntoSql};
 
-    /// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
+    /// Marker trait used to implement `PgArrayExpressionMethods` on the appropriate
     /// types. Once coherence takes associated types into account, we can remove
     /// this trait.
     #[diagnostic::on_unimplemented(
@@ -3840,6 +4151,18 @@ pub(in crate::pg) mod private {
     impl<T> ArrayOrNullableArray for Nullable<Array<T>> {
         type Inner = T;
     }
+
+    /// Marker trait used to implement `PgArrayExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    #[diagnostic::on_unimplemented(
+        message = "`{Self}` is neither `diesel::sql_types::Integer` nor `diesel::sql_types::Nullable<Integer>`",
+        note = "try to provide an expression that produces one of the expected sql types"
+    )]
+    pub trait IntegerOrNullableInteger {}
+
+    impl IntegerOrNullableInteger for Integer {}
+    impl IntegerOrNullableInteger for Nullable<Integer> {}
 
     /// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
     #[diagnostic::on_unimplemented(
@@ -4047,67 +4370,6 @@ pub(in crate::pg) mod private {
     impl TextArrayOrTextOrInteger for Array<Text> {}
     impl TextArrayOrTextOrInteger for Text {}
     impl TextArrayOrTextOrInteger for Integer {}
-
-    /// Marker trait used to implement `PgAnyJsonExpressionMethods` on the appropriate types.
-    #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Json`, `diesel::sql_types::Jsonb`, `diesel::sql_types::Nullable<Json>` nor `diesel::sql_types::Nullable<Jsonb>`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
-    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
-
-    pub trait JsonIndex {
-        type Expression: Expression;
-
-        fn into_json_index_expression(self) -> Self::Expression;
-    }
-
-    impl<'a> JsonIndex for &'a str {
-        type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Text>()
-        }
-    }
-
-    impl JsonIndex for String {
-        type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<Text>()
-        }
-    }
-
-    impl JsonIndex for i32 {
-        type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self.into_sql::<crate::sql_types::Int4>()
-        }
-    }
-
-    impl<T> JsonIndex for T
-    where
-        T: Expression,
-        T::SqlType: TextOrInteger,
-    {
-        type Expression = Self;
-
-        fn into_json_index_expression(self) -> Self::Expression {
-            self
-        }
-    }
-
-    #[diagnostic::on_unimplemented(
-        message = "`{Self}` is neither `diesel::sql_types::Text` nor `diesel::sql_types::Integer`",
-        note = "try to provide an expression that produces one of the expected sql types"
-    )]
-    pub trait TextOrInteger {}
-    impl TextOrInteger for Text {}
-    impl TextOrInteger for Integer {}
 
     #[diagnostic::on_unimplemented(
         message = "`{Self}` is neither `diesel::sql_types::Binary` nor `diesel::sql_types::Nullable<Binary>`",

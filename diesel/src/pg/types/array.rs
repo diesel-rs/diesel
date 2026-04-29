@@ -1,12 +1,31 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::fmt;
+use core::fmt;
 use std::io::Write;
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
+
+#[cfg(feature = "postgres_backend")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Array<T>)]
+/// Postgres allows multi-dimensional arrays of at most 6 dimensions. Internally they are stored as a flattened
+/// representation with the dimension information encoded in the header. This struct represents a
+/// multi-dimensional array with elements of type `T` as opposed to Vec<T> which can be used for 1d-arrays.
+pub struct NdArray<T> {
+    /// A list that describes how many values for each dimension are returned
+    pub dims: Vec<usize>,
+    /// The actual data flattened to a single array
+    ///
+    /// This array contains values ordered by the left most dimension
+    /// which means there will be dim[0] values for the first element of the second dimension
+    /// followed by dim[0] values for the second element of the second dimensions
+    /// and so up to dim[1] times. Afterwards that number of values is repeated for dim[2],
+    /// and so for all dimensions in the dimension field above
+    pub data: Vec<T>,
+}
 
 #[cfg(feature = "postgres_backend")]
 impl<T> HasSqlType<Array<T>> for Pg
@@ -58,8 +77,58 @@ where
     }
 }
 
-use crate::expression::bound::Bound;
+#[cfg(feature = "postgres_backend")]
+impl<T, ST> FromSql<Array<ST>, Pg> for NdArray<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
+        let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
+        let _oid = bytes.read_i32::<NetworkEndian>()?;
+
+        if num_dimensions == 0 {
+            return Ok(NdArray {
+                dims: Vec::new(),
+                data: Vec::new(),
+            });
+        }
+
+        let num_dims: usize = num_dimensions
+            .try_into()
+            .map_err(|_| "number of dimensions must be positive")?;
+
+        let dims = (0..num_dims)
+            .map(|_| {
+                let num_elements = bytes.read_i32::<NetworkEndian>()?;
+                let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
+
+                let dim: usize = num_elements
+                    .try_into()
+                    .map_err(|_| "array dimension length must be positive")?;
+                Ok(dim)
+            })
+            .collect::<deserialize::Result<Vec<_>>>()?;
+
+        let data = (0..dims.iter().product::<usize>())
+            .map(|_| -> deserialize::Result<T> {
+                let elem_size = bytes.read_i32::<NetworkEndian>()?;
+                if has_null && elem_size == -1 {
+                    T::from_nullable_sql(None)
+                } else {
+                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
+                    bytes = new_bytes;
+                    T::from_sql(PgValue::new_internal(elem_bytes, &value))
+                }
+            })
+            .collect::<deserialize::Result<Vec<T>>>()?;
+        Ok(NdArray { dims, data })
+    }
+}
+
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {

@@ -1,7 +1,7 @@
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Ident};
+use syn::{Ident, parenthesized};
 
 pub fn parse_primary_key(name: Ident, input: ParseStream) -> Result<Punctuated<Ident, Comma>> {
     if input.is_empty() {

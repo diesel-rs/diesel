@@ -56,6 +56,8 @@ pub use crate::upsert;
 /// level types.
 pub mod data_types {
     #[doc(inline)]
+    pub use super::types::array::NdArray;
+    #[doc(inline)]
     pub use super::types::date_and_time::{PgDate, PgInterval, PgTime, PgTimestamp};
     #[doc(inline)]
     pub use super::types::floats::PgNumeric;

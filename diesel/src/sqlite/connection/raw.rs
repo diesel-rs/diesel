@@ -5,12 +5,6 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use std::ffi::{CString, NulError};
-use std::io::{stderr, Write};
-use std::os::raw as libc;
-use std::ptr::NonNull;
-use std::{mem, ptr, slice, str};
-
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
@@ -20,17 +14,25 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::ffi::{CString, NulError};
+use alloc::string::{String, ToString};
+use core::ffi as libc;
+use core::ptr::NonNull;
+use core::{mem, ptr, slice, str};
 
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
 macro_rules! assert_fail {
-    ($fmt:expr $(,$args:tt)*) => {
+    ($fmt:expr_2021 $(,$args:tt)*) => {
+        #[cfg(feature = "std")]
         eprint!(concat!(
             $fmt,
             "If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n",
             "Source location: {}:{}\n",
         ), $($args,)* file!(), line!());
-        std::process::abort()
+        crate::util::std_compat::abort()
     };
 }
 
@@ -92,10 +94,14 @@ impl RawConnection {
 
     pub(super) fn rows_affected_by_last_query(
         &self,
-    ) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<usize, Box<dyn core::error::Error + Send + Sync>> {
         let r = unsafe { ffi::sqlite3_changes(self.internal_connection.as_ptr()) };
 
         Ok(r.try_into()?)
+    }
+
+    pub(super) fn last_insert_rowid(&self) -> i64 {
+        unsafe { ffi::sqlite3_last_insert_rowid(self.internal_connection.as_ptr()) }
     }
 
     pub(super) fn register_sql_function<F, Ret, RetSqlType>(
@@ -107,7 +113,7 @@ impl RawConnection {
     ) -> QueryResult<()>
     where
         F: FnMut(&Self, &mut [*mut ffi::sqlite3_value]) -> QueryResult<Ret>
-            + std::panic::UnwindSafe
+            + core::panic::UnwindSafe
             + Send
             + 'static,
         Ret: ToSql<RetSqlType, Sqlite>,
@@ -148,7 +154,7 @@ impl RawConnection {
         num_args: usize,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
         Args: FromSqlRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
@@ -190,7 +196,7 @@ impl RawConnection {
         collation: F,
     ) -> QueryResult<()>
     where
-        F: Fn(&str, &str) -> std::cmp::Ordering + std::panic::UnwindSafe + Send + 'static,
+        F: Fn(&str, &str) -> core::cmp::Ordering + core::panic::UnwindSafe + Send + 'static,
     {
         let c_collation_name = Self::get_fn_name(collation_name)?;
         // only create the pointer as last step here as we otherwise could leak memory
@@ -222,7 +228,7 @@ impl RawConnection {
             let mut size: ffi::sqlite3_int64 = 0;
             let data_ptr = ffi::sqlite3_serialize(
                 self.internal_connection.as_ptr(),
-                std::ptr::null(),
+                core::ptr::null(),
                 &mut size as *mut _,
                 0,
             );
@@ -244,7 +250,7 @@ impl RawConnection {
         unsafe {
             let result = ffi::sqlite3_deserialize(
                 self.internal_connection.as_ptr(),
-                std::ptr::null(),
+                core::ptr::null(),
                 data.as_ptr() as *mut u8,
                 db_size,
                 db_size,
@@ -278,18 +284,67 @@ impl RawConnection {
             ))
         }
     }
+
+    pub(super) fn blob_open<'conn>(
+        &'conn self,
+        database_name: &str,
+        table_name: &str,
+        column_name: &str,
+        row_id: i64,
+    ) -> Result<super::sqlite_blob::SqliteReadOnlyBlob<'conn>, Error> {
+        let database_name = alloc::ffi::CString::new(database_name)?;
+        let column_name = alloc::ffi::CString::new(column_name)?;
+        let table_name = alloc::ffi::CString::new(table_name)?;
+
+        let mut blob: *mut ffi::sqlite3_blob = core::ptr::null_mut();
+
+        // SAFETY: All variables are properly initialized
+        let ret = unsafe {
+            ffi::sqlite3_blob_open(
+                self.internal_connection.as_ptr(),
+                database_name.as_c_str().as_ptr(),
+                table_name.as_c_str().as_ptr(),
+                column_name.as_c_str().as_ptr(),
+                row_id,
+                0,
+                &mut blob,
+            )
+        };
+
+        Self::process_sql_function_result(ret)?;
+
+        // SAFETY: `sqlite3_blob_open` initializes the `blob` variable IF the return value:
+        //
+        // > On success, SQLITE_OK is returned and the new BLOB handle is stored in *ppBlob.
+        // > Otherwise an error code is returned and, unless the error code is SQLITE_MISUSE,
+        // > *ppBlob is set to NULL.
+        //
+        // And we checked the `ret` value above
+        let blob = unsafe { core::ptr::NonNull::new_unchecked(blob) };
+
+        // SAFETY: According to the SQLite docs, this can only fail if an invalid pointer is passed
+        let blob_size = unsafe { ffi::sqlite3_blob_bytes(blob.as_ptr()) };
+        let blob_size = usize::try_from(blob_size).map_err(Error::IntegerConversion)?;
+
+        Ok(super::sqlite_blob::SqliteReadOnlyBlob {
+            blob,
+            read_index: 0,
+            blob_size,
+            _pd: core::marker::PhantomData,
+        })
+    }
 }
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
-        use std::thread::panicking;
+        use crate::util::std_compat::panicking;
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
             if panicking() {
-                write!(stderr(), "Error closing SQLite connection: {error_message}")
-                    .expect("Error writing to `stderr`");
+                #[cfg(feature = "std")]
+                eprintln!("Error closing SQLite connection: {error_message}");
             } else {
                 panic!("Error closing SQLite connection: {error_message}");
             }
@@ -338,13 +393,13 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
     F: FnMut(&RawConnection, &mut [*mut ffi::sqlite3_value]) -> QueryResult<Ret>
-        + std::panic::UnwindSafe
+        + core::panic::UnwindSafe
         + Send
         + 'static,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    use std::ops::Deref;
+    use core::ops::Deref;
     static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
     static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
 
@@ -373,9 +428,9 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
 
     // We need this to move the reference into the catch_unwind part
     // this is sound as `F` itself and the stored string is `UnwindSafe`
-    let callback = std::panic::AssertUnwindSafe(&mut data_ptr.callback);
+    let callback = core::panic::AssertUnwindSafe(&mut data_ptr.callback);
 
-    let result = std::panic::catch_unwind(move || {
+    let result = crate::util::std_compat::catch_unwind(move || {
         let _ = &callback;
         let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args as _) };
         let res = (callback.0)(&*conn, args)?;
@@ -398,19 +453,19 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
     Args: FromSqlRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let result = std::panic::catch_unwind(move || {
+    let result = crate::util::std_compat::catch_unwind(move || {
         let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args as _) };
         run_aggregator_step::<A, Args, ArgsSqlType>(ctx, args)
     })
     .unwrap_or_else(|e| {
-        Err(SqliteCallbackError::Panic(format!(
+        Err(SqliteCallbackError::Panic(alloc::format!(
             "{}::step() panicked",
-            std::any::type_name::<A>()
+            core::any::type_name::<A>()
         )))
     });
 
@@ -463,7 +518,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let result = std::panic::catch_unwind(|| {
+    let result = crate::util::std_compat::catch_unwind(|| {
         let aggregator = unsafe {
             // SAFETY:
             // * We set the corresponding data in `register_aggregate_function` above
@@ -486,9 +541,9 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
         Ok(())
     })
     .unwrap_or_else(|_e| {
-        Err(SqliteCallbackError::Panic(format!(
+        Err(SqliteCallbackError::Panic(alloc::format!(
             "{}::finalize() panicked",
-            std::any::type_name::<A>()
+            core::any::type_name::<A>()
         )))
     });
     if let Err(e) = result {
@@ -517,12 +572,12 @@ extern "C" fn run_collation_function<F>(
     rhs_ptr: *const libc::c_void,
 ) -> libc::c_int
 where
-    F: Fn(&str, &str) -> std::cmp::Ordering + Send + std::panic::UnwindSafe + 'static,
+    F: Fn(&str, &str) -> core::cmp::Ordering + Send + core::panic::UnwindSafe + 'static,
 {
     let user_ptr = user_ptr as *const CollationUserPtr<F>;
-    let user_ptr = std::panic::AssertUnwindSafe(unsafe { user_ptr.as_ref() });
+    let user_ptr = core::panic::AssertUnwindSafe(unsafe { user_ptr.as_ref() });
 
-    let result = std::panic::catch_unwind(|| {
+    let result = crate::util::std_compat::catch_unwind(|| {
         let user_ptr = user_ptr.ok_or_else(|| {
             SqliteCallbackError::Abort(
                 "Got a null pointer as data pointer. This should never happen",
@@ -569,10 +624,11 @@ where
     });
 
     match result {
-        Ok(std::cmp::Ordering::Less) => -1,
-        Ok(std::cmp::Ordering::Equal) => 0,
-        Ok(std::cmp::Ordering::Greater) => 1,
+        Ok(core::cmp::Ordering::Less) => -1,
+        Ok(core::cmp::Ordering::Equal) => 0,
+        Ok(core::cmp::Ordering::Greater) => 1,
         Err(SqliteCallbackError::Abort(a)) => {
+            #[cfg(feature = "std")]
             eprintln!(
                 "Collation function {} failed with: {}",
                 user_ptr
@@ -580,9 +636,10 @@ where
                     .unwrap_or_default(),
                 a
             );
-            std::process::abort()
+            crate::util::std_compat::abort()
         }
         Err(SqliteCallbackError::DieselError(e)) => {
+            #[cfg(feature = "std")]
             eprintln!(
                 "Collation function {} failed with: {}",
                 user_ptr
@@ -590,16 +647,17 @@ where
                     .unwrap_or_default(),
                 e
             );
-            std::process::abort()
+            crate::util::std_compat::abort()
         }
         Err(SqliteCallbackError::Panic(msg)) => {
+            #[cfg(feature = "std")]
             eprintln!("Collation function {} panicked", msg);
-            std::process::abort()
+            crate::util::std_compat::abort()
         }
     }
 }
 
 extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
     let ptr = data as *mut F;
-    unsafe { std::mem::drop(Box::from_raw(ptr)) };
+    unsafe { core::mem::drop(Box::from_raw(ptr)) };
 }

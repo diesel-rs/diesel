@@ -2,7 +2,7 @@ use chrono::*;
 use diesel::query_dsl::LoadQuery;
 pub use quickcheck::quickcheck;
 
-pub use crate::schema::{connection_without_transaction, TestConnection};
+pub use crate::schema::{TestConnection, connection_without_transaction};
 #[cfg(not(feature = "sqlite"))]
 pub use diesel::data_types::*;
 pub use diesel::result::Error;
