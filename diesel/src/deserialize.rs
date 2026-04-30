@@ -481,6 +481,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) trait FromSqlRef<'a, A, DB: Backend>: Sized {
+    /// See the trait documentation
     fn from_sql(bytes: DB::RawValue<'a>) -> Result<Self>;
 }
 

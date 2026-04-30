@@ -16,3 +16,6 @@ edition.workspace = true
 
 [dependencies]
 syn = {version = "2", features = ["full"]}
+
+[lints]
+workspace = true

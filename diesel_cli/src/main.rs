@@ -10,6 +10,10 @@
     clippy::used_underscore_binding,
     missing_copy_implementations
 )]
+#![allow(
+    clippy::print_stdout,
+    reason = "This is a CLI tool that's expected to output something"
+)]
 #![cfg_attr(not(test), warn(clippy::unwrap_used))]
 
 mod config;

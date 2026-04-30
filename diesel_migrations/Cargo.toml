@@ -34,3 +34,6 @@ default = ["diesel/std"]
 sqlite = []
 postgres = []
 mysql = []
+
+[lints]
+workspace = true
