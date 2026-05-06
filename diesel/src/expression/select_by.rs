@@ -136,7 +136,6 @@ where
         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>,
     Self: Expression,
 {
-    // The SqlType for a `SelectBy<T, DB>` is itself,
-    // not the SQL type of the underlying `T::SelectExpression`
-    type SqlType = <Self as Expression>::SqlType;
+    // Like in the Expression implementation
+    type SqlType = SelectBy<T, DB>;
 }
