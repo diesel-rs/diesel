@@ -1054,3 +1054,49 @@ fn batch_upsert_with_returning() {
 
     assert_eq!(inserted_users, expected_users);
 }
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_insert_on_conflict_do_update() {
+    use crate::schema::users::dsl::*;
+    use diesel::pg::returning::old;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    // `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
+    // the query will be rejected at execution time, so we just skip.
+    let server_version_num: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result(connection)
+    .unwrap();
+    if server_version_num < 180000 {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+
+    // Conflict path: row already exists, so `old.name` is `Some(...)`.
+    let (was, now): (Option<String>, String) = insert_into(users)
+        .values((id.eq(sean.id), name.eq("temp")))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq("Renamed"))
+        .returning((old(name), name))
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(Some("Sean".to_string()), was);
+    assert_eq!("Renamed", now);
+
+    // Non-conflict path: row is being inserted, so `old.name` is `None`.
+    let (was, now): (Option<String>, String) = insert_into(users)
+        .values(name.eq("Brand New"))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq("Should not happen"))
+        .returning((old(name), name))
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(None, was);
+    assert_eq!("Brand New", now);
+}

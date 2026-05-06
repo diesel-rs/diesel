@@ -4,7 +4,7 @@ error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clau
  LL |         .returning(non_users::columns::noname);
     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ expression `non_users::columns::noname` is not a valid `RETURNING` element here
     |
-help: the trait `ReturningExpression<diesel::query_builder::returning_clause::DeleteStmt, users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `ReturningExpression<DeleteStmt, users::table>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
@@ -12,7 +12,8 @@ help: the trait `ReturningExpression<diesel::query_builder::returning_clause::De
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
     = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
               `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
               `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
@@ -41,7 +42,7 @@ error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clau
  LL |         .returning(non_users::columns::noname);
     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ expression `non_users::columns::noname` is not a valid `RETURNING` element here
     |
-help: the trait `ReturningExpression<diesel::query_builder::returning_clause::InsertStmt, users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `ReturningExpression<InsertStmt, users::table>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
@@ -49,7 +50,8 @@ help: the trait `ReturningExpression<diesel::query_builder::returning_clause::In
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
     = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
               `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
               `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
@@ -78,7 +80,7 @@ error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clau
  LL |         .returning(non_users::columns::noname);
     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ expression `non_users::columns::noname` is not a valid `RETURNING` element here
     |
-help: the trait `ReturningExpression<diesel::query_builder::returning_clause::UpdateStmt, users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `ReturningExpression<UpdateStmt, users::table>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
@@ -86,7 +88,8 @@ help: the trait `ReturningExpression<diesel::query_builder::returning_clause::Up
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
     = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
               `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
               `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`

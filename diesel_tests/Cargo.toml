@@ -42,8 +42,6 @@ postgres = ["diesel/postgres", "diesel/network-address", "diesel/ipnet-address"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
 returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
-# Enables tests that require PostgreSQL 18 or newer (e.g. `RETURNING old.col`).
-pg18 = ["postgres"]
 
 [[test]]
 name = "integration_tests"

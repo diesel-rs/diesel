@@ -4,7 +4,8 @@ pub(super) mod target;
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{AppearsOnTable, MixedAggregates, ValidGrouping, is_aggregate};
-use crate::query_builder::returning_clause::*;
+use crate::query_builder::returning::returning_clause::*;
+use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
 use crate::query_builder::where_clause::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
@@ -222,7 +223,7 @@ impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
 where
     T: Table,
     UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>: Query,
-    T::AllColumns: ReturningExpression<UpdateStmt, T> + ValidGrouping<()>,
+    T::AllColumns: ReturningExpression<returning_expression::UpdateStmt, T> + ValidGrouping<()>,
     <T::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
@@ -237,10 +238,10 @@ where
 impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: ReturningExpression<UpdateStmt, T> + ValidGrouping<()>,
+    Ret: ReturningExpression<returning_expression::UpdateStmt, T> + ValidGrouping<()>,
     Ret::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    type SqlType = <Ret as ReturningExpression<UpdateStmt, T>>::SqlType;
+    type SqlType = <Ret as ReturningExpression<returning_expression::UpdateStmt, T>>::SqlType;
 }
 
 impl<T: QuerySource, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}
@@ -276,7 +277,7 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     ///
     /// [`diesel::pg::returning::old`]: crate::pg::returning::old
     ///
-    /// ```rust,no_run
+    /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # #[cfg(feature = "postgres")]
@@ -284,12 +285,11 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// #     use schema::users::dsl::*;
     /// #     use diesel::pg::returning::old;
     /// #     let connection = &mut establish_connection();
-    /// let old_name: String = diesel::update(users.filter(id.eq(1)))
+    /// let old_name = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))
     ///     .returning(old(name))
-    ///     .get_result(connection)
-    ///     .unwrap();
-    /// # let _ = old_name;
+    ///     .get_result(connection);
+    /// assert_eq!(Ok("Sean".to_string()), old_name);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
@@ -298,7 +298,7 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// `old(col)` can be combined with regular columns in a tuple to get
     /// both the pre- and post-update values back in a single round-trip:
     ///
-    /// ```rust,no_run
+    /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # #[cfg(feature = "postgres")]
@@ -306,12 +306,11 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// #     use schema::users::dsl::*;
     /// #     use diesel::pg::returning::old;
     /// #     let connection = &mut establish_connection();
-    /// let (was, now): (String, String) = diesel::update(users.filter(id.eq(1)))
+    /// let was_and_now = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))
     ///     .returning((old(name), name))
-    ///     .get_result(connection)
-    ///     .unwrap();
-    /// # let _ = (was, now);
+    ///     .get_result::<(String, String)>(connection);
+    /// assert_eq!(Ok(("Sean".to_string(), "Dean".to_string())), was_and_now);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}

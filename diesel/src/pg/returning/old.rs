@@ -2,13 +2,15 @@
 
 use crate::backend::{Backend, sql_dialect};
 use crate::expression::{Expression, ValidGrouping, is_aggregate};
-use crate::query_builder::returning_clause::{ReturningExpression, UpdateStmt};
+use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_source::Column;
 use crate::result::QueryResult;
+use crate::sql_types::IntoNullable;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
-/// clause of a PostgreSQL `UPDATE` statement.
+/// clause of a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE`
+/// statement.
 ///
 /// This is the type returned by [`old`].
 #[derive(Debug, Clone, Copy)]
@@ -33,14 +35,21 @@ impl<C> Old<C> {
 ///
 /// # Statement compatibility
 ///
-/// `old(col)` is currently only valid inside the `RETURNING` clause of an
-/// `UPDATE` statement (use in `INSERT` or `DELETE` `RETURNING` is rejected at
-/// compile time). Support for `INSERT ... ON CONFLICT DO UPDATE RETURNING
-/// old.col` is planned as a follow-up.
+/// `old(col)` is valid inside the `RETURNING` clause of:
+///
+/// * an `UPDATE` statement, where it has the same Rust SQL type as `col`
+///   (since every returned row necessarily came from a pre-existing row).
+/// * an `INSERT ... ON CONFLICT ... DO UPDATE` statement, where its Rust SQL
+///   type is `Nullable<C::SqlType>` because rows that were freshly inserted
+///   (rather than updated) have no `old` row, and `old.col` is `NULL` for
+///   them.
+///
+/// Use of `old(col)` in plain `INSERT` or `DELETE` `RETURNING` is rejected at
+/// compile time.
 ///
 /// # Example
 ///
-/// ```rust,no_run
+/// ```rust
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # #[cfg(feature = "postgres")]
@@ -48,12 +57,11 @@ impl<C> Old<C> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::pg::returning::old;
 /// #     let connection = &mut establish_connection();
-/// let (was, now): (String, String) = diesel::update(users.find(1))
+/// let was_and_now = diesel::update(users.find(1))
 ///     .set(name.eq("Updated"))
 ///     .returning((old(name), name))
-///     .get_result(connection)
-///     .unwrap();
-/// # let _ = (was, now);
+///     .get_result::<(String, String)>(connection);
+/// assert_eq!(Ok(("Sean".to_string(), "Updated".to_string())), was_and_now);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
@@ -75,11 +83,19 @@ where
     type IsAggregate = is_aggregate::No;
 }
 
-impl<C> ReturningExpression<UpdateStmt, C::Table> for Old<C>
+impl<C> ReturningExpression<returning_expression::UpdateStmt, C::Table> for Old<C>
 where
     C: Column,
 {
     type SqlType = <C as Expression>::SqlType;
+}
+
+impl<C> ReturningExpression<returning_expression::InsertOnConflictDoUpdateStmt, C::Table> for Old<C>
+where
+    C: Column,
+    <C as Expression>::SqlType: IntoNullable,
+{
+    type SqlType = <<C as Expression>::SqlType as IntoNullable>::Nullable;
 }
 
 impl<C, DB> QueryFragment<DB> for Old<C>

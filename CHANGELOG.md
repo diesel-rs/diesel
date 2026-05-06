@@ -18,7 +18,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
 * Added `json_extract` and `jsonb_extract` SQL function support for the SQLite backend
 * Added `SqliteConnection::get_read_only_blob` method to stream blob's from a SQLite database to Rust via `std::io::Read`
-* Added `diesel::pg::returning::old` to refer to a column's pre-update value in the `RETURNING` clause of a PostgreSQL `UPDATE` statement, e.g. `.returning((old(name), name))`. Emits SQL using the `RETURNING old.col` syntax introduced in PostgreSQL 18, and so requires PostgreSQL 18 or newer at execution time. Currently only valid in `UPDATE` `RETURNING` lists (rejected at compile time in `INSERT` and `DELETE`); support inside `INSERT ... ON CONFLICT DO UPDATE RETURNING` is planned as a follow-up.
+* Added `diesel::pg::returning::old` to refer to a column's pre-update value in the `RETURNING` clause of a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE` statement, e.g. `.returning((old(name), name))`. Emits SQL using the `RETURNING old.col` syntax introduced in PostgreSQL 18, and so requires PostgreSQL 18 or newer at execution time. In `UPDATE`, the returned Rust SQL type matches the column's. In `INSERT ... ON CONFLICT ... DO UPDATE`, the type is the column's type wrapped in `Nullable`, since `old.col` is `NULL` for rows that were freshly inserted. Use of `old(col)` in plain `INSERT` or `DELETE` `RETURNING` lists is rejected at compile time.
 
 ### Fixed
 

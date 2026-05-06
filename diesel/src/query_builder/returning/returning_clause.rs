@@ -1,0 +1,98 @@
+//! AST nodes for `RETURNING` clauses.
+//!
+//! Type-checking of the expressions inside a `RETURNING` clause lives in
+//! [`super::returning_expression`].
+
+use crate::QuerySource;
+use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::query_builder::{
+    AstPass, DeleteStatement, InsertStatement, QueryFragment, QueryId, UpdateStatement,
+};
+use crate::result::QueryResult;
+
+/// Marker type for `INSERT`/`UPDATE`/`DELETE` ASTs that do not have a
+/// `RETURNING` clause attached yet.
+///
+/// This is the default `Ret` parameter of [`InsertStatement`],
+/// [`UpdateStatement`] and [`DeleteStatement`]. Calling `.returning(...)` on
+/// such a statement swaps it out for a [`ReturningClause`].
+#[derive(Debug, Clone, Copy, QueryId)]
+pub struct NoReturningClause;
+
+impl<DB> QueryFragment<DB> for NoReturningClause
+where
+    DB: Backend + DieselReserveSpecialization,
+{
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        Ok(())
+    }
+}
+
+/// This type represents a SQL `Returning` clause
+///
+/// Custom backends can specialize the [`QueryFragment`]
+/// implementation via
+/// [`SqlDialect::ReturningClause`](crate::backend::SqlDialect::ReturningClause)
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
+#[derive(Debug, Clone, Copy, QueryId)]
+pub struct ReturningClause<Expr>(pub Expr);
+
+impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
+where
+    DB: Backend,
+    Self: QueryFragment<DB, DB::ReturningClause>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ReturningClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<Expr, DB>
+    QueryFragment<DB, crate::backend::sql_dialect::returning_clause::PgLikeReturningClause>
+    for ReturningClause<Expr>
+where
+    DB: Backend<
+        ReturningClause = crate::backend::sql_dialect::returning_clause::PgLikeReturningClause,
+    >,
+    Expr: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql(" RETURNING ");
+        self.0.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
+
+/// Helper trait that maps an `INSERT`/`UPDATE`/`DELETE` statement type to
+/// the same statement type with an explicit [`ReturningClause<S>`] attached.
+///
+/// This is used to spell the return type of `.returning(...)` in the `dsl`
+/// module without naming each individual statement type.
+pub trait ReturningClauseHelper<S> {
+    /// `Self` with a `RETURNING S` clause attached.
+    type WithReturning;
+}
+
+impl<S, T, U, Op> ReturningClauseHelper<S> for InsertStatement<T, U, Op>
+where
+    T: QuerySource,
+{
+    type WithReturning = InsertStatement<T, U, Op, ReturningClause<S>>;
+}
+
+impl<S, T, U, V> ReturningClauseHelper<S> for UpdateStatement<T, U, V>
+where
+    T: QuerySource,
+{
+    type WithReturning = UpdateStatement<T, U, V, ReturningClause<S>>;
+}
+
+impl<S, T, U> ReturningClauseHelper<S> for DeleteStatement<T, U>
+where
+    T: QuerySource,
+{
+    type WithReturning = DeleteStatement<T, U, ReturningClause<S>>;
+}

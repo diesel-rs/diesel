@@ -27,7 +27,7 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-pub(crate) mod returning_clause;
+pub mod returning;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -97,17 +97,10 @@ pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::returning_clause::ReturningClause;
+pub use self::returning::returning_clause::ReturningClause;
 
 #[doc(inline)]
-pub use self::returning_clause::ReturningExpression;
-
-#[diesel_derives::__diesel_public_if(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-)]
-#[doc(inline)]
-#[allow(unused_imports)]
-pub(crate) use self::returning_clause::{DeleteStmt, InsertStmt, UpdateStmt};
+pub use self::returning::returning_expression::ReturningExpression;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(

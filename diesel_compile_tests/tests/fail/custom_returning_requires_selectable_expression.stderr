@@ -4,7 +4,7 @@ error[E0277]: `bad::columns::age` cannot appear in the `RETURNING` clause of thi
  LL |         .returning(bad::age);
     |                    ^^^^^^^^ expression `bad::columns::age` is not a valid `RETURNING` element here
     |
-help: the trait `ReturningExpression<diesel::query_builder::returning_clause::UpdateStmt, users::table>` is not implemented for `bad::columns::age`
+help: the trait `ReturningExpression<UpdateStmt, users::table>` is not implemented for `bad::columns::age`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
@@ -12,7 +12,8 @@ help: the trait `ReturningExpression<diesel::query_builder::returning_clause::Up
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
     = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
               `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
               `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
@@ -43,11 +44,12 @@ error[E0277]: `(users::columns::name, bad::columns::age)` cannot appear in the `
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::InsertStmt, users::table>` is not implemented for `(users::columns::name, bad::columns::age)`
+    = help: the trait `ReturningExpression<InsertStmt, users::table>` is not implemented for `(users::columns::name, bad::columns::age)`
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
     = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
               (T, T1)
               (T, T1, T2)

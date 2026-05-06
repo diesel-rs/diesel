@@ -528,6 +528,13 @@ pub struct SqliteBatchInsertWrapper<V, T, QId, const STATIC_QUERY_ID: bool>(
     BatchInsert<V, T, QId, STATIC_QUERY_ID>,
 );
 
+impl<V, T, QId, const STATIC_QUERY_ID: bool>
+    crate::query_builder::returning::returning_expression::InsertStmtKind
+    for SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>
+{
+    type StmtKind = crate::query_builder::returning::returning_expression::InsertStmt;
+}
+
 impl<V, Tab, QId, const STATIC_QUERY_ID: bool> QueryFragment<Sqlite>
     for SqliteBatchInsertWrapper<Vec<ValuesClause<V, Tab>>, Tab, QId, STATIC_QUERY_ID>
 where

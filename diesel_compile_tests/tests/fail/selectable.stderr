@@ -365,15 +365,17 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::InsertStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = help: the trait `ReturningExpression<InsertStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
 help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expression::select_by::SelectBy<T, DB>`
    --> DIESEL/diesel/diesel/src/expression/select_by.rs
     |
-LL | / impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+LL | / impl<T, QS, DB, Stmt>
+LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
 LL | |     for SelectBy<T, DB>
 LL | | where
 LL | |     DB: Backend,
@@ -399,15 +401,17 @@ error[E0277]: `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::InsertStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+     = help: the trait `ReturningExpression<InsertStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
              must be a column, or a tuple of columns / `RETURNING`-valid 
              expressions, that belongs to the modified table.
-             `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+             `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+             ... DO UPDATE` `RETURNING` lists.
 help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expression::select_by::SelectBy<T, DB>`
     --> DIESEL/diesel/diesel/src/expression/select_by.rs
      |
- LL | / impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+ LL | / impl<T, QS, DB, Stmt>
+ LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
  LL | |     for SelectBy<T, DB>
  LL | | where
  LL | |     DB: Backend,
@@ -434,15 +438,17 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::UpdateStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = help: the trait `ReturningExpression<UpdateStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
 help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expression::select_by::SelectBy<T, DB>`
    --> DIESEL/diesel/diesel/src/expression/select_by.rs
     |
-LL | / impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+LL | / impl<T, QS, DB, Stmt>
+LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
 LL | |     for SelectBy<T, DB>
 LL | | where
 LL | |     DB: Backend,
@@ -468,15 +474,17 @@ error[E0277]: `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::UpdateStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+     = help: the trait `ReturningExpression<UpdateStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
              must be a column, or a tuple of columns / `RETURNING`-valid 
              expressions, that belongs to the modified table.
-             `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+             `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+             ... DO UPDATE` `RETURNING` lists.
 help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expression::select_by::SelectBy<T, DB>`
     --> DIESEL/diesel/diesel/src/expression/select_by.rs
      |
- LL | / impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+ LL | / impl<T, QS, DB, Stmt>
+ LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
  LL | |     for SelectBy<T, DB>
  LL | | where
  LL | |     DB: Backend,
@@ -503,15 +511,17 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::DeleteStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = help: the trait `ReturningExpression<DeleteStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
             must be a column, or a tuple of columns / `RETURNING`-valid 
             expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+            ... DO UPDATE` `RETURNING` lists.
 help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expression::select_by::SelectBy<T, DB>`
    --> DIESEL/diesel/diesel/src/expression/select_by.rs
     |
-LL | / impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+LL | / impl<T, QS, DB, Stmt>
+LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
 LL | |     for SelectBy<T, DB>
 LL | | where
 LL | |     DB: Backend,
@@ -537,15 +547,17 @@ error[E0277]: `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::DeleteStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+     = help: the trait `ReturningExpression<DeleteStmt, users::table>` is not implemented for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
              must be a column, or a tuple of columns / `RETURNING`-valid 
              expressions, that belongs to the modified table.
-             `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+             `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
+             ... DO UPDATE` `RETURNING` lists.
 help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expression::select_by::SelectBy<T, DB>`
     --> DIESEL/diesel/diesel/src/expression/select_by.rs
      |
- LL | / impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+ LL | / impl<T, QS, DB, Stmt>
+ LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
  LL | |     for SelectBy<T, DB>
  LL | | where
  LL | |     DB: Backend,

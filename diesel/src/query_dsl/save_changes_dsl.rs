@@ -42,7 +42,7 @@ where
     Update<Changes, Changes>: LoadQuery<'b, PgConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::query_builder::ReturningExpression<
-            crate::query_builder::UpdateStmt,
+            crate::query_builder::returning::returning_expression::UpdateStmt,
             Changes::Table,
         >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
@@ -66,7 +66,7 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, SqliteConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::query_builder::ReturningExpression<
-            crate::query_builder::UpdateStmt,
+            crate::query_builder::returning::returning_expression::UpdateStmt,
             Changes::Table,
         >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
@@ -91,7 +91,7 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::query_builder::ReturningExpression<
-            crate::query_builder::UpdateStmt,
+            crate::query_builder::returning::returning_expression::UpdateStmt,
             Changes::Table,
         >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:

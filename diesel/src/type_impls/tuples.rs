@@ -8,7 +8,7 @@ use crate::expression::{
     SelectableExpression, TypedExpressionType, ValidGrouping, is_contained_in_group_by,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
-use crate::query_builder::returning_clause::ReturningExpression;
+use crate::query_builder::returning::returning_expression::ReturningExpression;
 use crate::query_builder::*;
 use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::*;

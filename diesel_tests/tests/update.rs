@@ -671,12 +671,24 @@ fn update_array_slice_to_expression() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(all(feature = "postgres", feature = "pg18"))]
+#[cfg(feature = "postgres")]
 fn returning_old_column_in_update() {
     use crate::schema::users::dsl::*;
     use diesel::pg::returning::old;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    // `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
+    // the query will be rejected at execution time, so we just skip.
+    let server_version_num: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result(connection)
+    .unwrap();
+    if server_version_num < 180000 {
+        return;
+    }
+
     let sean = find_user_by_name("Sean", connection);
 
     let (was, now): (String, String) = update(users.filter(id.eq(sean.id)))
