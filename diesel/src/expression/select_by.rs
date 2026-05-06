@@ -134,7 +134,6 @@ where
     T: Selectable<DB>,
     T::SelectExpression:
         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>,
-    Self: Expression,
 {
     // Like in the Expression implementation
     type SqlType = SelectBy<T, DB>;
