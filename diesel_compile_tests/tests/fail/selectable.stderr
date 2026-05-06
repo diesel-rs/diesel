@@ -378,10 +378,10 @@ LL | / impl<T, QS, DB, Stmt>
 LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
 LL | |     for SelectBy<T, DB>
 LL | | where
-LL | |     DB: Backend,
-LL | |     T: Selectable<DB>,
-LL | |     Self: SelectableExpression<QS> + Expression,
-    | |________________________________________________^
+...   |
+LL | |         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, ...
+LL | |     Self: Expression,
+    | |_____________________^
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -414,10 +414,10 @@ help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expr
  LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
  LL | |     for SelectBy<T, DB>
  LL | | where
- LL | |     DB: Backend,
- LL | |     T: Selectable<DB>,
- LL | |     Self: SelectableExpression<QS> + Expression,
-     | |________________________________________________^
+...    |
+ LL | |         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt,...
+ LL | |     Self: Expression,
+     | |_____________________^
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `load`
@@ -451,10 +451,10 @@ LL | / impl<T, QS, DB, Stmt>
 LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
 LL | |     for SelectBy<T, DB>
 LL | | where
-LL | |     DB: Backend,
-LL | |     T: Selectable<DB>,
-LL | |     Self: SelectableExpression<QS> + Expression,
-    | |________________________________________________^
+...   |
+LL | |         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, ...
+LL | |     Self: Expression,
+    | |_____________________^
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -487,10 +487,10 @@ help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expr
  LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
  LL | |     for SelectBy<T, DB>
  LL | | where
- LL | |     DB: Backend,
- LL | |     T: Selectable<DB>,
- LL | |     Self: SelectableExpression<QS> + Expression,
-     | |________________________________________________^
+...    |
+ LL | |         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt,...
+ LL | |     Self: Expression,
+     | |_____________________^
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `load`
@@ -524,10 +524,10 @@ LL | / impl<T, QS, DB, Stmt>
 LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
 LL | |     for SelectBy<T, DB>
 LL | | where
-LL | |     DB: Backend,
-LL | |     T: Selectable<DB>,
-LL | |     Self: SelectableExpression<QS> + Expression,
-    | |________________________________________________^
+...   |
+LL | |         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, ...
+LL | |     Self: Expression,
+    | |_____________________^
     = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
@@ -560,10 +560,10 @@ help: the trait `ReturningExpression<Stmt, QS>` is implemented for `diesel::expr
  LL | |     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
  LL | |     for SelectBy<T, DB>
  LL | | where
- LL | |     DB: Backend,
- LL | |     T: Selectable<DB>,
- LL | |     Self: SelectableExpression<QS> + Expression,
-     | |________________________________________________^
+...    |
+ LL | |         crate::query_builder::returning::returning_expression::ReturningExpression<Stmt,...
+ LL | |     Self: Expression,
+     | |_____________________^
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `load`
