@@ -1,4 +1,5 @@
-use diesel::{associations::HasTable, *};
+use diesel::associations::HasTable;
+use diesel::*;
 
 #[cfg(feature = "postgres")]
 mod custom_schemas;
@@ -514,4 +515,19 @@ pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
         .filter(users::name.eq(name))
         .first(connection)
         .unwrap()
+}
+
+/// `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
+/// the query will be rejected at execution time, so we just skip.
+///
+/// Returns `true` if the connected PostgreSQL server is version 18 or newer.
+/// On non-postgres backends this always returns `false`.
+#[cfg(feature = "postgres")]
+pub fn pg_server_supports_returning_old(connection: &mut TestConnection) -> bool {
+    diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result::<i32>(connection)
+    .expect("Failed to get PostgreSQL server version")
+        >= 180000
 }

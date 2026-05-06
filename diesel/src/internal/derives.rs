@@ -31,7 +31,7 @@ pub mod multiconnection {
         BoxedLimitOffsetClause, LimitOffsetClause,
     };
     #[doc(hidden)]
-    pub use crate::query_builder::returning_clause::ReturningClause;
+    pub use crate::query_builder::returning::ReturningClause;
     #[doc(hidden)]
     pub use crate::query_builder::select_statement::SelectStatement;
     #[doc(hidden)]

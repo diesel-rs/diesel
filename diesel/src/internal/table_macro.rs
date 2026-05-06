@@ -10,6 +10,11 @@ pub use crate::query_builder::nodes::{
     Identifier, InfixNode, StaticQueryFragment, StaticQueryFragmentInstance,
 };
 #[doc(hidden)]
+pub mod returning {
+    #[doc(hidden)]
+    pub use crate::query_builder::returning::*;
+}
+#[doc(hidden)]
 pub use crate::query_builder::select_statement::SelectStatement;
 #[doc(hidden)]
 pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;

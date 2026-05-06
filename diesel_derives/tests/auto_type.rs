@@ -394,6 +394,12 @@ fn test_pg_timestamp_expression_methods() -> _ {
     pg_extras::timestamp.at_time_zone(s)
 }
 
+#[cfg(feature = "postgres")]
+#[auto_type]
+fn test_pg_returning_old() -> _ {
+    diesel::pg::returning::old(users::id)
+}
+
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn test_sqlite_expression_methods() -> _ {

@@ -21,6 +21,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::get_read_only_blob` method to stream blob's from a SQLite database to Rust via `std::io::Read`
 * Added support for casting to `REAL` in SQLite.
 * Added `ToSql`, `FromSql`, `Queryable`, and `AsExpression` impls for `Rc<T>`, `Arc<T>`, and `Box<T>` (including `Rc/Arc<dyn BoxableExpression>` for cloneable dynamic query fragments and the `<str>` / `<[u8]>` unsized variants).
+* Added `diesel::pg::returning::old` to refer to a column's pre-update value using the `RETURNING old.col` syntax in a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE` statement (requires PostgreSQL >=18).
 
 ### Fixed
 
