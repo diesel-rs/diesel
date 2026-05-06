@@ -8,6 +8,7 @@ use crate::expression::{
     SelectableExpression, TypedExpressionType, ValidGrouping, is_contained_in_group_by,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
+use crate::query_builder::returning_clause::ReturningExpression;
 use crate::query_builder::*;
 use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::*;
@@ -248,6 +249,19 @@ macro_rules! tuple_impls {
                     ($($T,)+): Expression,
                 {
                 }
+            }
+
+            // Tuples of `ReturningExpression<Stmt, Tab>` are themselves
+            // `ReturningExpression<Stmt, Tab>`. The `Stmt` and `Tab`
+            // parameters are shared across all elements, which is what enforces
+            // that every element is valid in the same statement / on the same
+            // table. There is no `AppearsOnTable<Tab>` bound on the tuple
+            // here (unlike on the `SelectableExpression` impl above) because
+            // the `Tab` parameter on each element already plays that role.
+            impl<$($T,)+ Stmt, Tab> ReturningExpression<Stmt, Tab> for ($($T,)+) where
+                $($T: ReturningExpression<Stmt, Tab>,)+
+            {
+                type SqlType = ($(<$T as ReturningExpression<Stmt, Tab>>::SqlType,)+);
             }
 
             fake_variadic! {

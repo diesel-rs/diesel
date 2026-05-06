@@ -669,3 +669,22 @@ fn update_array_slice_to_expression() {
 
     assert_eq!(Ok(expected_data), data);
 }
+
+#[diesel_test_helper::test]
+#[cfg(all(feature = "postgres", feature = "pg18"))]
+fn returning_old_column_in_update() {
+    use crate::schema::users::dsl::*;
+    use diesel::pg::returning::old;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
+
+    let (was, now): (String, String) = update(users.filter(id.eq(sean.id)))
+        .set(name.eq("Renamed"))
+        .returning((old(name), name))
+        .get_result(connection)
+        .unwrap();
+
+    assert_eq!("Sean", was);
+    assert_eq!("Renamed", now);
+}

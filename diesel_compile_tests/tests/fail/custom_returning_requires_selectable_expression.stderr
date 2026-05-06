@@ -1,25 +1,28 @@
-error[E0277]: cannot select `bad::columns::age` from `users::table`
+error[E0277]: `bad::columns::age` cannot appear in the `RETURNING` clause of this statement
    --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
     |
  LL |         .returning(bad::age);
-    |          --------- ^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |                    ^^^^^^^^ expression `bad::columns::age` is not a valid `RETURNING` element here
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+help: the trait `ReturningExpression<diesel::query_builder::returning_clause::UpdateStmt, users::table>` is not implemented for `bad::columns::age`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
     |       ^^^
-    = note: `bad::columns::age` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `bad::columns::age` implements `SelectableExpression<Only<bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<Tablesample<bad::table, TSM>>`
-              `bad::columns::age` implements `SelectableExpression<bad::table>`
-              `bad::columns::age` implements `SelectableExpression<SelectStatement<...>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `bad::columns::age` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
+            must be a column, or a tuple of columns / `RETURNING`-valid 
+            expressions, that belongs to the modified table.
+            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+    = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
+              `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2, T3)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2, T3, T4)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2, T3, T4, T5)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `ReturningExpression<Stmt, Tab>`
+              `(T, T1, T2, T3, T4, T5, T6, T7, T8)` implements `ReturningExpression<Stmt, Tab>`
+            and N others
     = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -32,29 +35,29 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `bad::columns::age` from `users::table`
+error[E0277]: `(users::columns::name, bad::columns::age)` cannot appear in the `RETURNING` clause of this statement
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
  LL |         .returning((name, bad::age));
-    |          --------- ^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          --------- ^^^^^^^^^^^^^^^^ expression `(users::columns::name, bad::columns::age)` is not a valid `RETURNING` element here
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
-    |
- LL |       age -> Integer,
-    |       ^^^
-    = note: `bad::columns::age` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `bad::columns::age` implements `SelectableExpression<Only<bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<Tablesample<bad::table, TSM>>`
-              `bad::columns::age` implements `SelectableExpression<bad::table>`
-              `bad::columns::age` implements `SelectableExpression<SelectStatement<...>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `bad::columns::age` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
+    = help: the trait `ReturningExpression<diesel::query_builder::returning_clause::InsertStmt, users::table>` is not implemented for `(users::columns::name, bad::columns::age)`
+    = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
+            must be a column, or a tuple of columns / `RETURNING`-valid 
+            expressions, that belongs to the modified table.
+            `old(col)` is only valid in `UPDATE` `RETURNING` lists.
+    = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
+              (T, T1)
+              (T, T1, T2)
+              (T, T1, T2, T3)
+              (T, T1, T2, T3, T4)
+              (T, T1, T2, T3, T4, T5)
+              (T, T1, T2, T3, T4, T5, T6)
+              (T, T1, T2, T3, T4, T5, T6, T7)
+              (T, T1, T2, T3, T4, T5, T6, T7, T8)
+            and N others
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -65,33 +68,4 @@ LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
-        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
-    |
- LL |         .returning((name, bad::age));
-    |          --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
-    |          |
-    |          required by a bound introduced by this call
-    |
-note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
-    |
- LL |       age -> Integer,
-    |       ^^^
-    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-    = note: 1 redundant requirement hidden
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<users::table>`
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
-    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
-note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
-    |
-LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
-LL |     where
-LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
-    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+    For more information about this error, try `rustc --explain E0277`.

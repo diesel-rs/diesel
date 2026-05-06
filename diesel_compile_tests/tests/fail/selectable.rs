@@ -195,13 +195,9 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
         .unwrap();
 
     // cannot load results from more than one table via
@@ -209,26 +205,18 @@ fn main() {
     let _ = diesel::update(users::table)
         .set(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
         .unwrap();
 
     // cannot load results from more than one table via
     // returning clauses
     let _ = diesel::delete(users::table)
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
         .unwrap();
 
     // cannot use this method without deriving selectable

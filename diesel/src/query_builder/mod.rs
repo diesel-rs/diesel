@@ -100,6 +100,16 @@ pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 pub use self::returning_clause::ReturningClause;
 
 #[doc(inline)]
+pub use self::returning_clause::ReturningExpression;
+
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+#[allow(unused_imports)]
+pub(crate) use self::returning_clause::{DeleteStmt, InsertStmt, UpdateStmt};
+
+#[doc(inline)]
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]

@@ -269,7 +269,7 @@ where
 impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
 where
     T: Table,
-    T::AllColumns: SelectableExpression<T>,
+    T::AllColumns: SelectableExpression<T> + ReturningExpression<DeleteStmt, T>,
     DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
 {
     type SqlType = <Self::Query as Query>::SqlType;
@@ -283,9 +283,9 @@ where
 impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: SelectableExpression<T>,
+    Ret: ReturningExpression<DeleteStmt, T>,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as ReturningExpression<DeleteStmt, T>>::SqlType;
 }
 
 impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> where T: QuerySource {}
@@ -314,7 +314,6 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// ```
     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     where
-        E: SelectableExpression<T>,
         DeleteStatement<T, U, ReturningClause<E>>: Query,
     {
         DeleteStatement {

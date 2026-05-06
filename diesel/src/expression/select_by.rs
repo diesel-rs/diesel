@@ -125,3 +125,20 @@ where
     Self: Expression,
 {
 }
+
+// `SelectBy<T, DB>` is single-value-shaped at the type level (its `SqlType` is
+// itself), but it does not implement [`SingleValue`] because it is not a true
+// SQL type. We therefore provide an explicit `ReturningExpression` impl
+// instead of relying on the `SingleValue`-bounded blanket impl in
+// `returning_clause.rs`.
+//
+// [`SingleValue`]: crate::sql_types::SingleValue
+impl<T, QS, DB, Stmt> crate::query_builder::returning_clause::ReturningExpression<Stmt, QS>
+    for SelectBy<T, DB>
+where
+    DB: Backend,
+    T: Selectable<DB>,
+    Self: SelectableExpression<QS> + Expression,
+{
+    type SqlType = <Self as Expression>::SqlType;
+}

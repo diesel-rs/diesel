@@ -30,7 +30,7 @@ fn main() {
     let stmt = update(users.filter(id.eq(1)))
         .set(name.eq("Bill"))
         .returning(bad::age);
-    //~^ ERROR: cannot select `bad::columns::age` from `users::table`
+    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
 
     let new_user = NewUser {
         name: "Foobar".to_string(),
@@ -38,6 +38,5 @@ fn main() {
     let stmt = insert_into(users)
         .values(&new_user)
         .returning((name, bad::age));
-    //~^ ERROR: cannot select `bad::columns::age` from `users::table`
-    //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
 }
