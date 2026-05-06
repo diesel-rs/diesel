@@ -169,17 +169,3 @@ impl<V, Target, Changeset, Tab, WhereClause> InsertStmtKind
 {
     type StmtKind = InsertOnConflictDoUpdateStmt;
 }
-
-impl<U> InsertStmtKind for &U
-where
-    U: InsertStmtKind,
-{
-    type StmtKind = U::StmtKind;
-}
-
-impl<U> InsertStmtKind for &mut U
-where
-    U: InsertStmtKind,
-{
-    type StmtKind = U::StmtKind;
-}
