@@ -126,6 +126,10 @@ where
 {
 }
 
+// TODO: the current design prevents using Selectable with `old`.
+// We should consider whether we instead want a design where the columns
+// are explicitly wrapped in nullable if relevant, so that we can actually
+// implement `Expression` for `old` (and open use of `assume_not_null` and co).
 impl<T, QS, DB, Stmt>
     crate::query_builder::returning::returning_expression::ReturningExpression<Stmt, QS>
     for SelectBy<T, DB>
