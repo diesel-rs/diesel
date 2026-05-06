@@ -1,18 +1,19 @@
 pub(crate) mod changeset;
 pub(super) mod target;
 
+use crate::QuerySource;
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{AppearsOnTable, MixedAggregates, ValidGrouping, is_aggregate};
 use crate::query_builder::returning::returning_clause::*;
 use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
 use crate::query_builder::where_clause::*;
+use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
-use crate::{QuerySource, query_builder::*};
 
 pub(crate) use self::private::SetAutoTypeHelper;
 

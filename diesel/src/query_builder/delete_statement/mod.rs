@@ -1,6 +1,6 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
-use crate::expression::{AppearsOnTable, SelectableExpression};
+use crate::expression::AppearsOnTable;
 use crate::query_builder::returning::returning_clause::*;
 use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
 use crate::query_builder::where_clause::*;
@@ -270,8 +270,8 @@ where
 impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
 where
     T: Table,
-    T::AllColumns: SelectableExpression<T> + ReturningExpression<returning_expression::DeleteStmt, T>,
     DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: ReturningExpression<returning_expression::DeleteStmt, T>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = DeleteStatement<T, U, ReturningClause<T::AllColumns>>;
