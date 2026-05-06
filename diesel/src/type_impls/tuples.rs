@@ -251,13 +251,6 @@ macro_rules! tuple_impls {
                 }
             }
 
-            // Tuples of `ReturningExpression<Stmt, Tab>` are themselves
-            // `ReturningExpression<Stmt, Tab>`. The `Stmt` and `Tab`
-            // parameters are shared across all elements, which is what enforces
-            // that every element is valid in the same statement / on the same
-            // table. There is no `AppearsOnTable<Tab>` bound on the tuple
-            // here (unlike on the `SelectableExpression` impl above) because
-            // the `Tab` parameter on each element already plays that role.
             impl<$($T,)+ Stmt, Tab> ReturningExpression<Stmt, Tab> for ($($T,)+) where
                 $($T: ReturningExpression<Stmt, Tab>,)+
             {
