@@ -100,9 +100,6 @@ pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 pub use self::returning::returning_clause::ReturningClause;
 
 #[doc(inline)]
-pub use self::returning::returning_expression::ReturningExpression;
-
-#[doc(inline)]
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]

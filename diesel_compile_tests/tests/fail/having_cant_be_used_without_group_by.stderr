@@ -34,7 +34,7 @@ LL |         .having(users::id.gt(1))
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              Collate<T, C>
-             SqlLiteral<ST, T>
+             Old<C>
            and N others
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), ..., _>` to implement `HavingDsl<_>`
 

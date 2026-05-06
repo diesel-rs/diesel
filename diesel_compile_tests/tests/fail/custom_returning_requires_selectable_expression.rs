@@ -30,7 +30,7 @@ fn main() {
     let stmt = update(users.filter(id.eq(1)))
         .set(name.eq("Bill"))
         .returning(bad::age);
-    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
+    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<UpdateStmt, users::table>`
 
     let new_user = NewUser {
         name: "Foobar".to_string(),
@@ -38,5 +38,8 @@ fn main() {
     let stmt = insert_into(users)
         .values(&new_user)
         .returning((name, bad::age));
-    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
+    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<InsertStmt, users::table>`
+    //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+    //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+    //~| ERROR: the trait bound `ReturningQuerySource<InsertStmt, users::table>: Table` is not satisfied
 }

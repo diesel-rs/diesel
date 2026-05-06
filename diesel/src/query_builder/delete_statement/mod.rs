@@ -1,8 +1,8 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
-use crate::expression::AppearsOnTable;
+use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
 use crate::query_builder::returning::returning_clause::*;
-use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
+use crate::query_builder::returning::returning_query_source::{self, ReturningQuerySource};
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
@@ -271,7 +271,8 @@ impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
 where
     T: Table,
     DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
-    T::AllColumns: ReturningExpression<returning_expression::DeleteStmt, T>,
+    T::AllColumns:
+        SelectableExpression<ReturningQuerySource<returning_query_source::DeleteStmt, T>>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = DeleteStatement<T, U, ReturningClause<T::AllColumns>>;
@@ -284,9 +285,9 @@ where
 impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: ReturningExpression<returning_expression::DeleteStmt, T>,
+    Ret: SelectableExpression<ReturningQuerySource<returning_query_source::DeleteStmt, T>>,
 {
-    type SqlType = <Ret as ReturningExpression<returning_expression::DeleteStmt, T>>::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
 impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> where T: QuerySource {}

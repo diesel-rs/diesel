@@ -25,15 +25,15 @@ fn main() {
 
     delete(users::table.filter(users::columns::name.eq("Bill")))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
+    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, users::table>`
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
+    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<InsertStmt, users::table>`
 
     update(users::table)
         .set(users::columns::name.eq("Bill"))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot appear in the `RETURNING` clause of this statement
+    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, users::table>`
 }

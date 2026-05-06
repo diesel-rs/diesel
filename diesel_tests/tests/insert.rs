@@ -1074,15 +1074,20 @@ fn returning_old_column_in_insert_on_conflict_do_update() {
         return;
     }
 
+    use diesel::ExpressionMethods;
+
     let sean = find_user_by_name("Sean", connection);
 
     // Conflict path: row already exists, so `old.name` is `Some(...)`.
+    // `old(col)` must be wrapped in `.nullable()` in `ON CONFLICT ... DO UPDATE`
+    // because rows that were freshly inserted (rather than updated) come back
+    // with `old.col = NULL`. Forgetting `.nullable()` is a compile-time error.
     let (was, now): (Option<String>, String) = insert_into(users)
         .values((id.eq(sean.id), name.eq("temp")))
         .on_conflict(id)
         .do_update()
         .set(name.eq("Renamed"))
-        .returning((old(name), name))
+        .returning((old(name).nullable(), name))
         .get_result(connection)
         .unwrap();
     assert_eq!(Some("Sean".to_string()), was);
@@ -1094,7 +1099,7 @@ fn returning_old_column_in_insert_on_conflict_do_update() {
         .on_conflict(id)
         .do_update()
         .set(name.eq("Should not happen"))
-        .returning((old(name), name))
+        .returning((old(name).nullable(), name))
         .get_result(connection)
         .unwrap();
     assert_eq!(None, was);

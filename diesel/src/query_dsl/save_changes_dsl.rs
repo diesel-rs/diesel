@@ -41,9 +41,11 @@ where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
     Update<Changes, Changes>: LoadQuery<'b, PgConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
-        + crate::query_builder::ReturningExpression<
-            crate::query_builder::returning::returning_expression::UpdateStmt,
-            Changes::Table,
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::returning_query_source::ReturningQuerySource<
+                crate::query_builder::returning::returning_query_source::UpdateStmt,
+                Changes::Table,
+            >,
         >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
@@ -65,9 +67,11 @@ where
     Update<Changes, Changes>: ExecuteDsl<SqliteConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, SqliteConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
-        + crate::query_builder::ReturningExpression<
-            crate::query_builder::returning::returning_expression::UpdateStmt,
-            Changes::Table,
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::returning_query_source::ReturningQuerySource<
+                crate::query_builder::returning::returning_query_source::UpdateStmt,
+                Changes::Table,
+            >,
         >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
@@ -90,9 +94,11 @@ where
     Update<Changes, Changes>: ExecuteDsl<MysqlConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
-        + crate::query_builder::ReturningExpression<
-            crate::query_builder::returning::returning_expression::UpdateStmt,
-            Changes::Table,
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::returning_query_source::ReturningQuerySource<
+                crate::query_builder::returning::returning_query_source::UpdateStmt,
+                Changes::Table,
+            >,
         >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,

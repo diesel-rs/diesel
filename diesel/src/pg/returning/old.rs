@@ -1,12 +1,15 @@
 //! `RETURNING old.col` support for PostgreSQL 18 and later.
 
 use crate::backend::{Backend, sql_dialect};
-use crate::expression::{Expression, ValidGrouping, is_aggregate};
-use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
+use crate::expression::{
+    AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
+};
+use crate::query_builder::returning::returning_query_source::{
+    self, ReturningQuerySource, UpdateStmt,
+};
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_source::Column;
 use crate::result::QueryResult;
-use crate::sql_types::IntoNullable;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
 /// clause of a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE`
@@ -39,13 +42,25 @@ impl<C> Old<C> {
 ///
 /// * an `UPDATE` statement, where it has the same Rust SQL type as `col`
 ///   (since every returned row necessarily came from a pre-existing row).
-/// * an `INSERT ... ON CONFLICT ... DO UPDATE` statement, where its Rust SQL
-///   type is `Nullable<C::SqlType>` because rows that were freshly inserted
-///   (rather than updated) have no `old` row, and `old.col` is `NULL` for
-///   them.
+/// * an `INSERT ... ON CONFLICT ... DO UPDATE` statement, **but only when
+///   wrapped in [`.nullable()`]**: rows that were freshly inserted (rather
+///   than updated) have no `old` row, and `old.col` is `NULL` for them, so
+///   for type-safe deserialization you must opt into a nullable Rust SQL
+///   type. Writing `old(col)` directly (without `.nullable()`) in this
+///   context is rejected at compile time.
 ///
-/// Use of `old(col)` in plain `INSERT` or `DELETE` `RETURNING` is rejected at
-/// compile time.
+/// Use of `old(col)` in plain `INSERT` (without `ON CONFLICT ... DO UPDATE`)
+/// or `DELETE` `RETURNING` is rejected at compile time.
+///
+/// `Old<C>` is a regular [`Expression`] with `SqlType = C::SqlType`, so it
+/// composes with the rest of Diesel's expression DSL — it can appear inside a
+/// [`Selectable`] struct, be wrapped with [`.nullable()`] or
+/// [`.assume_not_null()`], etc.
+///
+/// [`.nullable()`]: crate::ExpressionMethods::nullable
+/// [`.assume_not_null()`]: crate::ExpressionMethods::assume_not_null
+/// [`Expression`]: crate::expression::Expression
+/// [`Selectable`]: crate::expression::Selectable
 ///
 /// # Example
 ///
@@ -76,6 +91,13 @@ impl<C> QueryId for Old<C> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
+impl<C> Expression for Old<C>
+where
+    C: Column + Expression,
+{
+    type SqlType = <C as Expression>::SqlType;
+}
+
 impl<C> ValidGrouping<()> for Old<C>
 where
     C: Column,
@@ -83,19 +105,42 @@ where
     type IsAggregate = is_aggregate::No;
 }
 
-impl<C> ReturningExpression<returning_expression::UpdateStmt, C::Table> for Old<C>
+// `Old<C>` is selectable on a `RETURNING` clause whose statement-kind marker
+// is `UpdateStmt`. It is deliberately *not* selectable on
+// `ReturningQuerySource<InsertOnConflictDoUpdateStmt, _>` directly — only
+// `Nullable<Old<C>>` is, via the existing `Nullable` machinery and the
+// `ToInnerJoin` mapping in `returning_query_source` (which makes
+// `InsertOnConflictDoUpdateStmt`'s inner-join "fall back" to `UpdateStmt`).
+// That's how we force users to write `old(col).nullable()` in an
+// `INSERT ... ON CONFLICT ... DO UPDATE RETURNING` and reject `old(col)`
+// alone at compile time.
+//
+// `AppearsOnTable` is implemented for both markers because it is what
+// `Nullable<Old<C>>: AppearsOnTable<ReturningQuerySource<InsertOnConflictDoUpdateStmt, _>>`
+// reduces to via the standard `Nullable<T>: AppearsOnTable<QS> where T: AppearsOnTable<QS>`
+// propagation. Restricting `AppearsOnTable` to `UpdateStmt` would block
+// `Nullable<Old<C>>` itself from resolving in the `InsertOnConflictDoUpdateStmt`
+// context. The compile-time gate stays at `SelectableExpression`.
+impl<C> AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
 where
     C: Column,
+    Self: Expression,
 {
-    type SqlType = <C as Expression>::SqlType;
 }
 
-impl<C> ReturningExpression<returning_expression::InsertOnConflictDoUpdateStmt, C::Table> for Old<C>
+impl<C> AppearsOnTable<ReturningQuerySource<returning_query_source::InsertOnConflictDoUpdateStmt, C::Table>>
+    for Old<C>
 where
     C: Column,
-    <C as Expression>::SqlType: IntoNullable,
+    Self: Expression,
 {
-    type SqlType = <<C as Expression>::SqlType as IntoNullable>::Nullable;
+}
+
+impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+where
+    C: Column,
+    Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+{
 }
 
 impl<C, DB> QueryFragment<DB> for Old<C>

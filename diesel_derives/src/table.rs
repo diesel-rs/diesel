@@ -890,6 +890,16 @@ fn expand_column_def(
         impl diesel::SelectableExpression<super::#query_source_ident> for #column_name {
         }
 
+        impl<__DieselInternalReturningStmt>
+            diesel::SelectableExpression<
+                diesel::query_builder::returning::returning_query_source::ReturningQuerySource<
+                    __DieselInternalReturningStmt,
+                    super::#query_source_ident,
+                >,
+            > for #column_name
+        {
+        }
+
         impl<QS> diesel::AppearsOnTable<QS> for #column_name where
             QS: diesel::query_source::AppearsInFromClause<super::#query_source_ident, Count=diesel::query_source::Once>,
         {

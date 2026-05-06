@@ -4,9 +4,11 @@ pub(super) mod target;
 use crate::QuerySource;
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed};
-use crate::expression::{AppearsOnTable, MixedAggregates, ValidGrouping, is_aggregate};
+use crate::expression::{
+    AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
+};
 use crate::query_builder::returning::returning_clause::*;
-use crate::query_builder::returning::returning_expression::{self, ReturningExpression};
+use crate::query_builder::returning::returning_query_source::{self, ReturningQuerySource};
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
@@ -224,7 +226,8 @@ impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
 where
     T: Table,
     UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>: Query,
-    T::AllColumns: ReturningExpression<returning_expression::UpdateStmt, T> + ValidGrouping<()>,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<returning_query_source::UpdateStmt, T>>
+        + ValidGrouping<()>,
     <T::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
@@ -239,10 +242,11 @@ where
 impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: ReturningExpression<returning_expression::UpdateStmt, T> + ValidGrouping<()>,
+    Ret: SelectableExpression<ReturningQuerySource<returning_query_source::UpdateStmt, T>>
+        + ValidGrouping<()>,
     Ret::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    type SqlType = <Ret as ReturningExpression<returning_expression::UpdateStmt, T>>::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
 impl<T: QuerySource, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}

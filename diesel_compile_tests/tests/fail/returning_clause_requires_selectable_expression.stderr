@@ -1,29 +1,26 @@
-error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clause of this statement
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, users::table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
  LL |         .returning(non_users::columns::noname);
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ expression `non_users::columns::noname` is not a valid `RETURNING` element here
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
     |
-help: the trait `ReturningExpression<DeleteStmt, users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<ReturningQuerySource<DeleteStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
-            must be a column, or a tuple of columns / `RETURNING`-valid 
-            expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
-            ... DO UPDATE` `RETURNING` lists.
-    = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
-              `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6, T7, T8)` implements `ReturningExpression<Stmt, Tab>`
-            and N others
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<DeleteStmt, users::table>`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
+              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
@@ -36,32 +33,29 @@ LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clause of this statement
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<InsertStmt, users::table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
     |
  LL |         .returning(non_users::columns::noname);
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ expression `non_users::columns::noname` is not a valid `RETURNING` element here
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
     |
-help: the trait `ReturningExpression<InsertStmt, users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<ReturningQuerySource<InsertStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
-            must be a column, or a tuple of columns / `RETURNING`-valid 
-            expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
-            ... DO UPDATE` `RETURNING` lists.
-    = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
-              `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6, T7, T8)` implements `ReturningExpression<Stmt, Tab>`
-            and N others
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<InsertStmt, users::table>`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
+              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -74,32 +68,29 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clause of this statement
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, users::table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
     |
  LL |         .returning(non_users::columns::noname);
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ expression `non_users::columns::noname` is not a valid `RETURNING` element here
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
     |
-help: the trait `ReturningExpression<UpdateStmt, users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<ReturningQuerySource<UpdateStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: for `INSERT`/`UPDATE`/`DELETE` `RETURNING` lists, every element 
-            must be a column, or a tuple of columns / `RETURNING`-valid 
-            expressions, that belongs to the modified table.
-            `old(col)` is only valid in `UPDATE` and `INSERT ... ON CONFLICT 
-            ... DO UPDATE` `RETURNING` lists.
-    = help: the following other types implement trait `ReturningExpression<Stmt, Table>`:
-              `(T, T1)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `ReturningExpression<Stmt, Tab>`
-              `(T, T1, T2, T3, T4, T5, T6, T7, T8)` implements `ReturningExpression<Stmt, Tab>`
-            and N others
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<UpdateStmt, users::table>`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
+              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
+              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
+              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
+              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs

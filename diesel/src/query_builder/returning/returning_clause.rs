@@ -1,7 +1,7 @@
 //! AST nodes for `RETURNING` clauses.
 //!
 //! Type-checking of the expressions inside a `RETURNING` clause lives in
-//! [`super::returning_expression`].
+//! [`super::returning_query_source`].
 
 use crate::QuerySource;
 use crate::backend::{Backend, DieselReserveSpecialization};
