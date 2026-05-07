@@ -361,7 +361,7 @@ LL |     impl MixedAggregates<Never> for No {
     = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<SelectBy<UserWithPostCount, Pg>>`
  
     
-error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<InsertStmt, users::table>`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -369,12 +369,12 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmt, users::table>>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::id`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
-    = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<InsertStmt, users::table>`
+    = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<..., ...>`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
               `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -399,7 +399,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<InsertStmt, users::table>`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -407,12 +407,12 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmt, users::table>>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::title`
    --> tests/fail/selectable.rs:15:9
     |
  LL |         title -> Text,
     |         ^^^^^
-    = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<InsertStmt, users::table>`
+    = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<..., ...>`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
               `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -445,14 +445,14 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -472,12 +472,11 @@ error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<..., ...>`
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<InsertStmt, users::table>`
-    = note: double check that `posts::table` and `ReturningQuerySource<InsertStmt, users::table>` appear in the same `allow_tables_to_appear_in_same_query!` 
+    = note: double check that `posts::table` and `ReturningQuerySource<..., ...>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
 help: the following other types implement trait `TableNotEqual<T>`
    --> tests/fail/selectable.rs:23:1
@@ -495,14 +494,14 @@ LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
     | |
     | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
     | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-    = note: required for `ReturningQuerySource<InsertStmt, users::table>` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+    = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
     = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -518,11 +517,11 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `ReturningQuerySource<InsertStmt, users::table>: Table` is not satisfied
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<InsertStmt, users::table>`
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<..., ...>`
     |          |
     |          required by a bound introduced by this call
     |
@@ -533,15 +532,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
               pg::metadata_lookup::pg_type::table
               posts::table
               users::table
-    = note: required for `ReturningQuerySource<InsertStmt, users::table>` to implement `QueryRelation`
-    = note: required for `ReturningQuerySource<InsertStmt, users::table>` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+    = note: required for `ReturningQuerySource<..., ...>` to implement `QueryRelation`
+    = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
     = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -557,7 +556,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<InsertStmt, users::table>`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
     --> tests/fail/selectable.rs:203:15
      |
  LL |         .load(&mut conn)
@@ -565,12 +564,12 @@ error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<Inse
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmt, users::table>>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::id`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
-     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<InsertStmt, users::table>`
+     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<..., ...>`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
                `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -596,7 +595,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<InsertStmt, users::table>`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
     --> tests/fail/selectable.rs:203:15
      |
  LL |         .load(&mut conn)
@@ -604,12 +603,12 @@ error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<I
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmt, users::table>>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::title`
     --> tests/fail/selectable.rs:15:9
      |
   LL |         title -> Text,
      |         ^^^^^
-     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<InsertStmt, users::table>`
+     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<..., ...>`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
                `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -643,14 +642,14 @@ error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as Appear
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -671,12 +670,11 @@ error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...
     --> tests/fail/selectable.rs:203:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ unsatisfied trait bound
+     |          ---- ^^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<..., ...>`
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<InsertStmt, users::table>`
-     = note: double check that `posts::table` and `ReturningQuerySource<InsertStmt, users::table>` appear in the same `allow_tables_to_appear_in_same_query!` 
+     = note: double check that `posts::table` and `ReturningQuerySource<..., ...>` appear in the same `allow_tables_to_appear_in_same_query!` 
              call if both are tables
 help: the following other types implement trait `TableNotEqual<T>`
     --> tests/fail/selectable.rs:23:1
@@ -694,14 +692,14 @@ help: the following other types implement trait `TableNotEqual<T>`
      | |
      | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
      | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
-     = note: required for `ReturningQuerySource<InsertStmt, users::table>` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+     = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: 1 redundant requirement hidden
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -718,11 +716,11 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `ReturningQuerySource<InsertStmt, users::table>: Table` is not satisfied
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
     --> tests/fail/selectable.rs:203:15
      |
  LL |         .load(&mut conn)
-     |          ---- ^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<InsertStmt, users::table>`
+     |          ---- ^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<..., ...>`
      |          |
      |          required by a bound introduced by this call
      |
@@ -733,15 +731,15 @@ error[E0277]: the trait bound `ReturningQuerySource<InsertStmt, users::table>: T
                pg::metadata_lookup::pg_type::table
                posts::table
                users::table
-     = note: required for `ReturningQuerySource<InsertStmt, users::table>` to implement `QueryRelation`
-     = note: required for `ReturningQuerySource<InsertStmt, users::table>` to implement `AppearsInFromClause<posts::table>`
-note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+     = note: required for `ReturningQuerySource<..., ...>` to implement `QueryRelation`
+     = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: 1 redundant requirement hidden
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<InsertStmt, users::table>>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
