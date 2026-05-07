@@ -1,6 +1,3 @@
-//! Type-checking and AST nodes for `INSERT`/`UPDATE`/`DELETE` `RETURNING`
-//! clauses.
-
 pub mod returning_query_source;
 
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]

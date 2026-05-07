@@ -109,12 +109,11 @@ where
 // `Table`; the actual restriction (`Old<C>` is only valid in `UPDATE`
 // `RETURNING` — and, transitively via `Nullable`, in
 // `INSERT ... ON CONFLICT ... DO UPDATE`) is expressed by the
-// `Table: ValidInReturningOf<Old<C>, StmtKind>` where-clause. When the
-// leaf isn't valid, the resulting error is anchored on
-// `ValidInReturningOf`'s `#[diagnostic::on_unimplemented]`, which
-// substitutes `{StmtKind}` and `{Self}` (the table) separately so they
-// render in full rather than collapsing to `<..., ...>` in long
-// `INSERT ... ON CONFLICT ...` chains.
+// `ValidInReturningOf` where-clause. When the leaf isn't valid, the
+// resulting error is anchored on `ValidInReturningOf`'s
+// `#[diagnostic::on_unimplemented]`, which substitutes `{Stmt}` and
+// `{Table}` separately so they render in full rather than collapsing to
+// `<..., ...>` in long `INSERT ... ON CONFLICT ...` chains.
 //
 // `AppearsOnTable` is intentionally generic in both `StmtKind` and
 // `Table`: that's required so the `Nullable<Old<C>>` propagation
@@ -131,15 +130,12 @@ where
 impl<C, StmtKind, Table> SelectableExpression<ReturningQuerySource<StmtKind, Table>> for Old<C>
 where
     C: Column,
-    Table: ValidInReturningOf<Self, StmtKind>,
+    Self: ValidInReturningOf<StmtKind, Table>,
     Self: AppearsOnTable<ReturningQuerySource<StmtKind, Table>>,
 {
 }
 
-// Self of `ValidInReturningOf` is the table (mirrors the
-// `AliasAppearsInFromClause` / `AliasAliasAppearsInFromClause` pattern):
-// orphan-rule-friendly for downstream crates that define their own tables.
-impl<C> ValidInReturningOf<Old<C>, UpdateStmt> for C::Table where C: Column {}
+impl<C> ValidInReturningOf<UpdateStmt, C::Table> for Old<C> where C: Column {}
 
 impl<C, DB> QueryFragment<DB> for Old<C>
 where

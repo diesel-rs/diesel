@@ -369,21 +369,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<posts::columns::id, InsertStmtWithoutOnConflictDoUpdate>` is not implemented for `users::table`
-   --> tests/fail/selectable.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `posts::columns::id` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `posts::columns::id`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, posts::table>` is implemented for it
+   --> tests/fail/selectable.rs:14:9
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> Text,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |         id -> Integer,
+    |         ^^
+    = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::id` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
@@ -411,21 +405,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<posts::columns::title, InsertStmtWithoutOnConflictDoUpdate>` is not implemented for `users::table`
-   --> tests/fail/selectable.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `posts::columns::title` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `posts::columns::title`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, posts::table>` is implemented for it
+   --> tests/fail/selectable.rs:15:9
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> Text,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |         title -> Text,
+    |         ^^^^^
+    = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::title` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:15:9
     |
@@ -578,21 +566,15 @@ error[E0277]: `posts::columns::id` cannot appear in the `RETURNING` clause of a 
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidInReturningOf<posts::columns::id, InsertStmtWithoutOnConflictDoUpdate>` is not implemented for `users::table`
-    --> tests/fail/selectable.rs:5:1
-     |
-   LL | / table! {
-   LL | |     users {
-     | |_________^
      = note: `posts::columns::id` is not a valid `RETURNING` element for this statement kind on this table
      = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-    --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `posts::columns::id`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, posts::table>` is implemented for it
+    --> tests/fail/selectable.rs:14:9
      |
-   LL |         id -> Integer,
-     |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-   LL |         name -> Text,
-     |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+  LL |         id -> Integer,
+     |         ^^
+     = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::id` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
@@ -621,21 +603,15 @@ error[E0277]: `posts::columns::title` cannot appear in the `RETURNING` clause of
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidInReturningOf<posts::columns::title, InsertStmtWithoutOnConflictDoUpdate>` is not implemented for `users::table`
-    --> tests/fail/selectable.rs:5:1
-     |
-   LL | / table! {
-   LL | |     users {
-     | |_________^
      = note: `posts::columns::title` is not a valid `RETURNING` element for this statement kind on this table
      = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-    --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `posts::columns::title`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, posts::table>` is implemented for it
+    --> tests/fail/selectable.rs:15:9
      |
-   LL |         id -> Integer,
-     |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-   LL |         name -> Text,
-     |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+  LL |         title -> Text,
+     |         ^^^^^
+     = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::title` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:15:9
      |
@@ -792,21 +768,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<posts::columns::id, UpdateStmt>` is not implemented for `users::table`
-   --> tests/fail/selectable.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `posts::columns::id` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `posts::columns::id`
+      but trait `ValidInReturningOf<UpdateStmt, posts::table>` is implemented for it
+   --> tests/fail/selectable.rs:14:9
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> Text,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |         id -> Integer,
+    |         ^^
+    = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::id` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
@@ -834,21 +804,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<posts::columns::title, UpdateStmt>` is not implemented for `users::table`
-   --> tests/fail/selectable.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `posts::columns::title` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `posts::columns::title`
+      but trait `ValidInReturningOf<UpdateStmt, posts::table>` is implemented for it
+   --> tests/fail/selectable.rs:15:9
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> Text,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |         title -> Text,
+    |         ^^^^^
+    = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::title` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:15:9
     |
@@ -1002,21 +966,15 @@ error[E0277]: `posts::columns::id` cannot appear in the `RETURNING` clause of a 
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidInReturningOf<posts::columns::id, UpdateStmt>` is not implemented for `users::table`
-    --> tests/fail/selectable.rs:5:1
-     |
-   LL | / table! {
-   LL | |     users {
-     | |_________^
      = note: `posts::columns::id` is not a valid `RETURNING` element for this statement kind on this table
      = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-    --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `posts::columns::id`
+      but trait `ValidInReturningOf<UpdateStmt, posts::table>` is implemented for it
+    --> tests/fail/selectable.rs:14:9
      |
-   LL |         id -> Integer,
-     |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-   LL |         name -> Text,
-     |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+  LL |         id -> Integer,
+     |         ^^
+     = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::id` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
@@ -1045,21 +1003,15 @@ error[E0277]: `posts::columns::title` cannot appear in the `RETURNING` clause of
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidInReturningOf<posts::columns::title, UpdateStmt>` is not implemented for `users::table`
-    --> tests/fail/selectable.rs:5:1
-     |
-   LL | / table! {
-   LL | |     users {
-     | |_________^
      = note: `posts::columns::title` is not a valid `RETURNING` element for this statement kind on this table
      = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-    --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `posts::columns::title`
+      but trait `ValidInReturningOf<UpdateStmt, posts::table>` is implemented for it
+    --> tests/fail/selectable.rs:15:9
      |
-   LL |         id -> Integer,
-     |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-   LL |         name -> Text,
-     |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+  LL |         title -> Text,
+     |         ^^^^^
+     = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::title` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:15:9
      |
@@ -1217,21 +1169,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<posts::columns::id, DeleteStmt>` is not implemented for `users::table`
-   --> tests/fail/selectable.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `posts::columns::id` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<DeleteStmt, users::table>` is not implemented for `posts::columns::id`
+      but trait `ValidInReturningOf<DeleteStmt, posts::table>` is implemented for it
+   --> tests/fail/selectable.rs:14:9
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> Text,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |         id -> Integer,
+    |         ^^
+    = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::id` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
@@ -1259,21 +1205,15 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<posts::columns::title, DeleteStmt>` is not implemented for `users::table`
-   --> tests/fail/selectable.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `posts::columns::title` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<DeleteStmt, users::table>` is not implemented for `posts::columns::title`
+      but trait `ValidInReturningOf<DeleteStmt, posts::table>` is implemented for it
+   --> tests/fail/selectable.rs:15:9
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> Text,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |         title -> Text,
+    |         ^^^^^
+    = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::title` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:15:9
     |
@@ -1427,21 +1367,15 @@ error[E0277]: `posts::columns::id` cannot appear in the `RETURNING` clause of a 
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidInReturningOf<posts::columns::id, DeleteStmt>` is not implemented for `users::table`
-    --> tests/fail/selectable.rs:5:1
-     |
-   LL | / table! {
-   LL | |     users {
-     | |_________^
      = note: `posts::columns::id` is not a valid `RETURNING` element for this statement kind on this table
      = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-    --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<DeleteStmt, users::table>` is not implemented for `posts::columns::id`
+      but trait `ValidInReturningOf<DeleteStmt, posts::table>` is implemented for it
+    --> tests/fail/selectable.rs:14:9
      |
-   LL |         id -> Integer,
-     |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-   LL |         name -> Text,
-     |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+  LL |         id -> Integer,
+     |         ^^
+     = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::id` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
@@ -1470,21 +1404,15 @@ error[E0277]: `posts::columns::title` cannot appear in the `RETURNING` clause of
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidInReturningOf<posts::columns::title, DeleteStmt>` is not implemented for `users::table`
-    --> tests/fail/selectable.rs:5:1
-     |
-   LL | / table! {
-   LL | |     users {
-     | |_________^
      = note: `posts::columns::title` is not a valid `RETURNING` element for this statement kind on this table
      = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-    --> tests/fail/selectable.rs:7:9
+help: the trait `ValidInReturningOf<DeleteStmt, users::table>` is not implemented for `posts::columns::title`
+      but trait `ValidInReturningOf<DeleteStmt, posts::table>` is implemented for it
+    --> tests/fail/selectable.rs:15:9
      |
-   LL |         id -> Integer,
-     |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-   LL |         name -> Text,
-     |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+  LL |         title -> Text,
+     |         ^^^^^
+     = help: for that trait implementation, expected `posts::table`, found `users::table`
 note: required for `posts::columns::title` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:15:9
      |

@@ -6,21 +6,15 @@ error[E0277]: `bad::columns::age` cannot appear in the `RETURNING` clause of a `
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<bad::columns::age, UpdateStmt>` is not implemented for `users::table`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `bad::columns::age` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:7:9
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `bad::columns::age`
+      but trait `ValidInReturningOf<UpdateStmt, bad::table>` is implemented for it
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> VarChar,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |       age -> Integer,
+    |       ^^^
+    = help: for that trait implementation, expected `bad::table`, found `users::table`
 note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
@@ -166,21 +160,15 @@ error[E0277]: `bad::columns::age` cannot appear in the `RETURNING` clause of a `
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `ValidInReturningOf<bad::columns::age, InsertStmtWithoutOnConflictDoUpdate>` is not implemented for `users::table`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:5:1
-    |
-  LL | / table! {
-  LL | |     users {
-    | |_________^
     = note: `bad::columns::age` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:7:9
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `bad::columns::age`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, bad::table>` is implemented for it
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
-  LL |         id -> Integer,
-    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
-  LL |         name -> VarChar,
-    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
+ LL |       age -> Integer,
+    |       ^^^
+    = help: for that trait implementation, expected `bad::table`, found `users::table`
 note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
