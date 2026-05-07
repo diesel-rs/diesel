@@ -25,15 +25,24 @@ fn main() {
 
     delete(users::table.filter(users::columns::name.eq("Bill")))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, users::table>`
+    //~^ ERROR: `non_users::columns::noname` cannot appear in the `RETURNING` clause of a `DeleteStmt` on `users::table`
+    //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+    //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+    //~| ERROR: the trait bound `ReturningQuerySource<DeleteStmt, users::table>: Table` is not satisfied
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<..., ...>`
+    //~^ ERROR: `non_users::columns::noname` cannot appear in the `RETURNING` clause of a `InsertStmtWithoutOnConflictDoUpdate` on `users::table`
+    //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+    //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+    //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
 
     update(users::table)
         .set(users::columns::name.eq("Bill"))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, users::table>`
+    //~^ ERROR: `non_users::columns::noname` cannot appear in the `RETURNING` clause of a `UpdateStmt` on `users::table`
+    //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+    //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+    //~| ERROR: the trait bound `ReturningQuerySource<UpdateStmt, users::table>: Table` is not satisfied
 }

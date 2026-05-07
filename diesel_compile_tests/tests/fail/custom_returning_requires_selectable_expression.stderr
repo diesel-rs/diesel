@@ -1,4 +1,4 @@
-error[E0277]: cannot select `bad::columns::age` from `ReturningQuerySource<UpdateStmt, users::table>`
+error[E0277]: `bad::columns::age` cannot appear in the `RETURNING` clause of a `UpdateStmt` on `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
     |
  LL |         .returning(bad::age);
@@ -6,21 +6,20 @@ error[E0277]: cannot select `bad::columns::age` from `ReturningQuerySource<Updat
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<UpdateStmt, users::table>>` is not implemented for `bad::columns::age`
+    = note: `bad::columns::age` is not a valid `RETURNING` element for this statement kind on this table
+    = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `bad::columns::age`
+      but trait `ValidInReturningOf<UpdateStmt, bad::table>` is implemented for it
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
     |       ^^^
-    = note: `bad::columns::age` is no valid selection for `ReturningQuerySource<UpdateStmt, users::table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `bad::columns::age` implements `SelectableExpression<Only<bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<ReturningQuerySource<__StmtKind, bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<Tablesample<bad::table, TSM>>`
-              `bad::columns::age` implements `SelectableExpression<bad::table>`
-              `bad::columns::age` implements `SelectableExpression<SelectStatement<...>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `bad::columns::age` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: for that trait implementation, expected `bad::table`, found `users::table`
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
     = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -33,29 +32,149 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `bad::columns::age` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
+    |
+ LL |         .returning(bad::age);
+    |          --------- ^^^^^^^^ expected `Once`, found `Never`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQuerySource<UpdateStmt, users::table>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
+    |
+ LL |         .returning(bad::age);
+    |          --------- ^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the trait `TableNotEqual<bad::table>` is not implemented for `ReturningQuerySource<UpdateStmt, users::table>`
+    = note: double check that `bad::table` and `ReturningQuerySource<UpdateStmt, users::table>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+help: the following other types implement trait `TableNotEqual<T>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:19:1
+    |
+ LL | allow_tables_to_appear_in_same_query!(users, bad);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `bad::table` implements `TableNotEqual<users::table>`
+    | `users::table` implements `TableNotEqual<bad::table>`
+    |
+   ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+    = note: required for `ReturningQuerySource<UpdateStmt, users::table>` to implement `AppearsInFromClause<bad::table>`
+note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQuerySource<UpdateStmt, users::table>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<UpdateStmt, users::table>: Table` is not satisfied
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
+    |
+ LL |         .returning(bad::age);
+    |          --------- ^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<UpdateStmt, users::table>`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `Table`:
+              Only<S>
+              Tablesample<S, TSM>
+              bad::table
+              pg::metadata_lookup::pg_namespace::table
+              pg::metadata_lookup::pg_type::table
+              users::table
+    = note: required for `ReturningQuerySource<UpdateStmt, users::table>` to implement `QueryRelation`
+    = note: required for `ReturningQuerySource<UpdateStmt, users::table>` to implement `AppearsInFromClause<bad::table>`
+note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQuerySource<UpdateStmt, users::table>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `bad::columns::age` cannot appear in the `RETURNING` clause of a `InsertStmtWithoutOnConflictDoUpdate` on `users::table`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:43:20
     |
  LL |         .returning((name, bad::age));
     |          --------- ^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `bad::columns::age`
+    = note: `bad::columns::age` is not a valid `RETURNING` element for this statement kind on this table
+    = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `bad::columns::age`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, bad::table>` is implemented for it
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
     |       ^^^
-    = note: `bad::columns::age` is no valid selection for `ReturningQuerySource<..., ...>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `bad::columns::age` implements `SelectableExpression<Only<bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<ReturningQuerySource<__StmtKind, bad::table>>`
-              `bad::columns::age` implements `SelectableExpression<Tablesample<bad::table, TSM>>`
-              `bad::columns::age` implements `SelectableExpression<bad::table>`
-              `bad::columns::age` implements `SelectableExpression<SelectStatement<...>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `bad::columns::age` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `bad::columns::age` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: for that trait implementation, expected `bad::table`, found `users::table`
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
+    = note: 1 redundant requirement hidden
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
@@ -70,7 +189,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:43:20
     |
  LL |         .returning((name, bad::age));
     |          --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
@@ -83,8 +202,12 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQue
  LL |       age -> Integer,
     |       ^^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
     = note: 1 redundant requirement hidden
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
@@ -99,7 +222,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:43:20
     |
  LL |         .returning((name, bad::age));
     |          --------- ^^^^^^^^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `ReturningQuerySource<..., ...>`
@@ -130,8 +253,12 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQue
     |
  LL |       age -> Integer,
     |       ^^^
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
     = note: 1 redundant requirement hidden
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
@@ -146,7 +273,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
         = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:43:20
     |
  LL |         .returning((name, bad::age));
     |          --------- ^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<..., ...>`
@@ -167,8 +294,12 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQue
     |
  LL |       age -> Integer,
     |       ^^^
+note: required for `bad::columns::age` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+    |
+ LL |       age -> Integer,
+    |       ^^^
     = note: 1 redundant requirement hidden
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`

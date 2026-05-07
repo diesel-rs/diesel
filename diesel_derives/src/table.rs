@@ -889,12 +889,38 @@ fn expand_column_def(
         impl diesel::SelectableExpression<super::#query_source_ident> for #column_name {
         }
 
-        impl<__StmtKind>
+        // Per-column impl is kept generic in both `__StmtKind` and the table
+        // (`__Table`), with the actual restriction expressed via the
+        // `ValidInReturningOf` where-clause. This routes the failure point —
+        // when `#column_name` is used in a `RETURNING` clause for the wrong
+        // table — to `ValidInReturningOf`'s `#[diagnostic::on_unimplemented]`,
+        // which substitutes `{Stmt}` and `{Table}` separately and so renders
+        // their names in full (no `<..., ...>` truncation).
+        impl<__StmtKind, __Table>
             diesel::SelectableExpression<
                 diesel::query_builder::returning::returning_query_source::ReturningQuerySource<
                     __StmtKind,
-                    super::#query_source_ident,
+                    __Table,
                 >,
+            > for #column_name
+        where
+            #column_name: diesel::query_builder::returning::returning_query_source::ValidInReturningOf<
+                __StmtKind,
+                __Table,
+            >,
+            Self: diesel::AppearsOnTable<
+                diesel::query_builder::returning::returning_query_source::ReturningQuerySource<
+                    __StmtKind,
+                    __Table,
+                >,
+            >,
+        {
+        }
+
+        impl<__StmtKind>
+            diesel::query_builder::returning::returning_query_source::ValidInReturningOf<
+                __StmtKind,
+                super::#query_source_ident,
             > for #column_name
         {
         }

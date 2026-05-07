@@ -14,7 +14,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = note: `posts::columns::id` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+              `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<__StmtKind, __Table>>`
               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
               `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
               `posts::columns::id` implements `SelectableExpression<posts::table>`

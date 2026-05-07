@@ -5,7 +5,7 @@ use crate::expression::{
     AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
 use crate::query_builder::returning::returning_query_source::{
-    self, ReturningQuerySource, UpdateStmt,
+    ReturningQuerySource, UpdateStmt, ValidInReturningOf,
 };
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_source::Column;
@@ -105,45 +105,37 @@ where
     type IsAggregate = is_aggregate::No;
 }
 
-// `Old<C>` is selectable on a `RETURNING` clause whose statement-kind marker
-// is `UpdateStmt`. It is deliberately *not* selectable on
-// `ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, _>` directly — only
-// `Nullable<Old<C>>` is, via the existing `Nullable` machinery and the
-// `ToInnerJoin` mapping in `returning_query_source` (which makes
-// `InsertStmtWithOnConflictDoUpdate`'s inner-join "fall back" to `UpdateStmt`).
-// That's how we force users to write `old(col).nullable()` in an
-// `INSERT ... ON CONFLICT ... DO UPDATE RETURNING` and reject `old(col)`
-// alone at compile time.
+// The `SelectableExpression` impl is kept fully generic in `StmtKind` and
+// `Table`; the actual restriction (`Old<C>` is only valid in `UPDATE`
+// `RETURNING` — and, transitively via `Nullable`, in
+// `INSERT ... ON CONFLICT ... DO UPDATE`) is expressed by the
+// `ValidInReturningOf` where-clause. When the leaf isn't valid, the
+// resulting error is anchored on `ValidInReturningOf`'s
+// `#[diagnostic::on_unimplemented]`, which substitutes `{Stmt}` and
+// `{Table}` separately so they render in full rather than collapsing to
+// `<..., ...>` in long `INSERT ... ON CONFLICT ...` chains.
 //
-// `AppearsOnTable` is implemented for both markers because it is what
-// `Nullable<Old<C>>: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, _>>`
-// reduces to via the standard `Nullable<T>: AppearsOnTable<QS> where T: AppearsOnTable<QS>`
-// propagation. Restricting `AppearsOnTable` to `UpdateStmt` would block
-// `Nullable<Old<C>>` itself from resolving in the `InsertStmtWithOnConflictDoUpdate`
-// context. The compile-time gate stays at `SelectableExpression`.
-impl<C> AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+// `AppearsOnTable` is intentionally generic in both `StmtKind` and
+// `Table`: that's required so the `Nullable<Old<C>>` propagation
+// (`Nullable<T>: AppearsOnTable<QS> where T: AppearsOnTable<QS>`) lights
+// up for `ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, _>` —
+// the compile-time gate stays at `SelectableExpression`/`ValidInReturningOf`.
+impl<C, StmtKind, Table> AppearsOnTable<ReturningQuerySource<StmtKind, Table>> for Old<C>
 where
     C: Column,
     Self: Expression,
 {
 }
 
-impl<C>
-    AppearsOnTable<
-        ReturningQuerySource<returning_query_source::InsertStmtWithOnConflictDoUpdate, C::Table>,
-    > for Old<C>
+impl<C, StmtKind, Table> SelectableExpression<ReturningQuerySource<StmtKind, Table>> for Old<C>
 where
     C: Column,
-    Self: Expression,
+    Self: ValidInReturningOf<StmtKind, Table>,
+    Self: AppearsOnTable<ReturningQuerySource<StmtKind, Table>>,
 {
 }
 
-impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
-where
-    C: Column,
-    Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
-{
-}
+impl<C> ValidInReturningOf<UpdateStmt, C::Table> for Old<C> where C: Column {}
 
 impl<C, DB> QueryFragment<DB> for Old<C>
 where

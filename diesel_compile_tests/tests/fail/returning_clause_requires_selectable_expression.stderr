@@ -1,4 +1,4 @@
-error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, users::table>`
+error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clause of a `DeleteStmt` on `users::table`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
  LL |         .returning(non_users::columns::noname);
@@ -6,21 +6,20 @@ error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySou
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<DeleteStmt, users::table>>` is not implemented for `non_users::columns::noname`
+    = note: `non_users::columns::noname` is not a valid `RETURNING` element for this statement kind on this table
+    = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
+help: the trait `ValidInReturningOf<DeleteStmt, users::table>` is not implemented for `non_users::columns::noname`
+      but trait `ValidInReturningOf<DeleteStmt, non_users::table>` is implemented for it
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<DeleteStmt, users::table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
-              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
-              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
-              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: for that trait implementation, expected `non_users::table`, found `users::table`
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
     = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
@@ -33,29 +32,140 @@ LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<DeleteStmt, users::table>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `Query`
+note: required by a bound in `DeleteStatement::<T, U>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
  LL |         .returning(non_users::columns::noname);
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `non_users::columns::noname`
+    = help: the trait `TableNotEqual<non_users::table>` is not implemented for `ReturningQuerySource<DeleteStmt, users::table>`
+    = note: double check that `non_users::table` and `ReturningQuerySource<DeleteStmt, users::table>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+    = note: required for `ReturningQuerySource<DeleteStmt, users::table>` to implement `AppearsInFromClause<non_users::table>`
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<DeleteStmt, users::table>>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<..., ...>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
-              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
-              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
-              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `Query`
+note: required by a bound in `DeleteStatement::<T, U>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+ 
+        = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<DeleteStmt, users::table>: Table` is not satisfied
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<DeleteStmt, users::table>`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `Table`:
+              Only<S>
+              Tablesample<S, TSM>
+              non_users::table
+              pg::metadata_lookup::pg_namespace::table
+              pg::metadata_lookup::pg_type::table
+              users::table
+    = note: required for `ReturningQuerySource<DeleteStmt, users::table>` to implement `QueryRelation`
+    = note: required for `ReturningQuerySource<DeleteStmt, users::table>` to implement `AppearsInFromClause<non_users::table>`
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<DeleteStmt, users::table>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `DeleteStatement<table, WhereClause<...>, ...>` to implement `Query`
+note: required by a bound in `DeleteStatement::<T, U>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clause of a `InsertStmtWithoutOnConflictDoUpdate` on `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:35:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `non_users::columns::noname` is not a valid `RETURNING` element for this statement kind on this table
+    = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
+help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `non_users::columns::noname`
+      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, non_users::table>` is implemented for it
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = help: for that trait implementation, expected `non_users::table`, found `users::table`
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -68,29 +178,139 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, users::table>`
-   --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:35:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:35:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `TableNotEqual<non_users::table>` is not implemented for `ReturningQuerySource<..., ...>`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: double check that `non_users::table` and `ReturningQuerySource<..., ...>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+    = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<non_users::table>`
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+        = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:35:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<..., ...>`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `Table`:
+              Only<S>
+              Tablesample<S, TSM>
+              non_users::table
+              pg::metadata_lookup::pg_namespace::table
+              pg::metadata_lookup::pg_type::table
+              users::table
+    = note: required for `ReturningQuerySource<..., ...>` to implement `QueryRelation`
+    = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<non_users::table>`
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clause of a `UpdateStmt` on `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:43:20
     |
  LL |         .returning(non_users::columns::noname);
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<UpdateStmt, users::table>>` is not implemented for `non_users::columns::noname`
+    = note: `non_users::columns::noname` is not a valid `RETURNING` element for this statement kind on this table
+    = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
+help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `non_users::columns::noname`
+      but trait `ValidInReturningOf<UpdateStmt, non_users::table>` is implemented for it
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<UpdateStmt, users::table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
-              `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
-              `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
-              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `non_users::columns::noname` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: for that trait implementation, expected `non_users::table`, found `users::table`
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -102,4 +322,115 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
-For more information about this error, try `rustc --explain E0277`.
+
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:43:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<UpdateStmt, users::table>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:43:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the trait `TableNotEqual<non_users::table>` is not implemented for `ReturningQuerySource<UpdateStmt, users::table>`
+    = note: double check that `non_users::table` and `ReturningQuerySource<UpdateStmt, users::table>` appear in the same `allow_tables_to_appear_in_same_query!` 
+            call if both are tables
+help: the following other types implement trait `TableNotEqual<T>`
+   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+    |
+LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | |
+    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
+    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
+    = note: required for `ReturningQuerySource<UpdateStmt, users::table>` to implement `AppearsInFromClause<non_users::table>`
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<UpdateStmt, users::table>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `allow_tables_to_appear_in_same_query` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `ReturningQuerySource<UpdateStmt, users::table>: Table` is not satisfied
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:43:20
+    |
+ LL |         .returning(non_users::columns::noname);
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<UpdateStmt, users::table>`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `Table`:
+              Only<S>
+              Tablesample<S, TSM>
+              non_users::table
+              pg::metadata_lookup::pg_namespace::table
+              pg::metadata_lookup::pg_type::table
+              users::table
+    = note: required for `ReturningQuerySource<UpdateStmt, users::table>` to implement `QueryRelation`
+    = note: required for `ReturningQuerySource<UpdateStmt, users::table>` to implement `AppearsInFromClause<non_users::table>`
+note: required for `non_users::columns::noname` to implement `AppearsOnTable<ReturningQuerySource<UpdateStmt, users::table>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+    |
+ LL |         noname -> VarChar,
+    |         ^^^^^^
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
