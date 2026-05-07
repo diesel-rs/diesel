@@ -114,13 +114,6 @@ where
 // That's how we force users to write `old(col).nullable()` in an
 // `INSERT ... ON CONFLICT ... DO UPDATE RETURNING` and reject `old(col)`
 // alone at compile time.
-//
-// `AppearsOnTable` is implemented for both markers because it is what
-// `Nullable<Old<C>>: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, _>>`
-// reduces to via the standard `Nullable<T>: AppearsOnTable<QS> where T: AppearsOnTable<QS>`
-// propagation. Restricting `AppearsOnTable` to `UpdateStmt` would block
-// `Nullable<Old<C>>` itself from resolving in the `InsertStmtWithOnConflictDoUpdate`
-// context. The compile-time gate stays at `SelectableExpression`.
 impl<C> AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
 where
     C: Column,
