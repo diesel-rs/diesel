@@ -8,29 +8,36 @@ use crate::query_source::joins::ToInnerJoin;
 use crate::query_source::{AppearsInFromClause, Once};
 use core::marker::PhantomData;
 
-/// Marker trait used to drive `RETURNING`-clause type-checking errors.
+/// Helper trait used to drive `RETURNING`-clause type-checking.
 ///
-/// This trait is implemented for an expression `E` exactly when `E` is a
-/// valid leaf for the `RETURNING` clause of a `Stmt`-kind statement on
-/// `Table`. It is plugged in as a `where`-clause on every per-column /
-/// per-leaf `SelectableExpression<ReturningQuerySource<Stmt, Table>>` impl
-/// — i.e. those impls are kept generic in `Stmt` and `Table`, and the
-/// where-clause `Self: ValidInReturningOf<Stmt, Table>` is what actually
-/// constrains them. When the leaf isn't valid, the resulting error message
-/// is anchored on this trait, whose [`#[diagnostic::on_unimplemented]`]
-/// substitutes `{Stmt}` and `{Table}` *separately* (each with its own
-/// pretty-print budget) so neither argument is collapsed to `...` the way a
-/// single `ReturningQuerySource<Stmt, Table>` slot can be in long
+/// `Table: ValidInReturningOf<Expr, StmtKind>` holds exactly when `Expr` is
+/// a valid leaf for the `RETURNING` clause of a `StmtKind`-kind statement on
+/// `Table`. It is plugged in as a `where`-clause on every per-leaf
+/// `SelectableExpression<ReturningQuerySource<StmtKind, Table>>` impl —
+/// those impls are kept generic in `StmtKind` and `Table`, and the
+/// where-clause `Table: ValidInReturningOf<Self, StmtKind>` is what
+/// actually constrains them.
+///
+/// The shape — table-as-`Self`, expression-as-trait-parameter — mirrors
+/// [`AliasAppearsInFromClause`] / [`AliasAliasAppearsInFromClause`]: it is
+/// the orphan-rule-friendly direction for downstream crates that define
+/// their own tables, since the table is then a *local* `Self` they can
+/// implement on.
+///
+/// `#[diagnostic::on_unimplemented]` substitutes `{StmtKind}` and `{Self}`
+/// (the table) into the message *separately*, each with its own
+/// pretty-print budget, so neither is collapsed to `...` the way a single
+/// `ReturningQuerySource<StmtKind, Table>` slot can be in long
 /// `INSERT ... ON CONFLICT ...` chains.
 ///
-/// The same idea is used elsewhere in `diesel` — see
-/// [`crate::expression::operators::LikeIsAllowedForType`] for a precedent.
+/// [`AliasAppearsInFromClause`]: crate::query_source::AliasAppearsInFromClause
+/// [`AliasAliasAppearsInFromClause`]: crate::query_source::AliasAliasAppearsInFromClause
 #[diagnostic::on_unimplemented(
-    message = "`{Self}` cannot appear in the `RETURNING` clause of a `{StmtKind}` on `{Table}`",
-    note = "`{Self}` is not a valid `RETURNING` element for this statement kind on this table",
+    message = "`{Expr}` cannot appear in the `RETURNING` clause of a `{StmtKind}` on `{Self}`",
+    note = "`{Expr}` is not a valid `RETURNING` element for this statement kind on this table",
     note = "for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`"
 )]
-pub trait ValidInReturningOf<Table, StmtKind> {}
+pub trait ValidInReturningOf<Expr, StmtKind> {}
 
 /// Statement-kind marker
 #[derive(Debug, Copy, Clone)]

@@ -889,13 +889,14 @@ fn expand_column_def(
         impl diesel::SelectableExpression<super::#query_source_ident> for #column_name {
         }
 
-        // Per-column impl is kept generic in both `__StmtKind` and the table
-        // (`__Table`), with the actual restriction expressed via the
-        // `ValidInReturningOf` where-clause. This routes the failure point —
-        // when `#column_name` is used in a `RETURNING` clause for the wrong
-        // table — to `ValidInReturningOf`'s `#[diagnostic::on_unimplemented]`,
-        // which substitutes `{Stmt}` and `{Table}` separately and so renders
-        // their names in full (no `<..., ...>` truncation).
+        // Per-column `SelectableExpression<ReturningQuerySource<...>>` impl
+        // kept generic in both `__StmtKind` and the table (`__Table`), with
+        // the actual restriction expressed via the `ValidInReturningOf`
+        // where-clause. This routes the failure point — when `#column_name`
+        // is used in a `RETURNING` clause for the wrong table — to
+        // `ValidInReturningOf`'s `#[diagnostic::on_unimplemented]`, which
+        // substitutes `{Self}` (the table) and `{StmtKind}` separately and
+        // so renders their names in full (no `<..., ...>` truncation).
         impl<__StmtKind, __Table>
             diesel::SelectableExpression<
                 diesel::query_builder::returning::returning_query_source::ReturningQuerySource<
@@ -904,9 +905,9 @@ fn expand_column_def(
                 >,
             > for #column_name
         where
-            #column_name: diesel::query_builder::returning::returning_query_source::ValidInReturningOf<
+            __Table: diesel::query_builder::returning::returning_query_source::ValidInReturningOf<
+                #column_name,
                 __StmtKind,
-                __Table,
             >,
             Self: diesel::AppearsOnTable<
                 diesel::query_builder::returning::returning_query_source::ReturningQuerySource<
@@ -917,11 +918,15 @@ fn expand_column_def(
         {
         }
 
+        // Self of `ValidInReturningOf` is the *table* (mirrors the
+        // `AliasAppearsInFromClause` / `AliasAliasAppearsInFromClause`
+        // pattern): orphan-rule-friendly for downstream crates that define
+        // their own tables and want to plug them into `RETURNING`.
         impl<__StmtKind>
             diesel::query_builder::returning::returning_query_source::ValidInReturningOf<
+                #column_name,
                 __StmtKind,
-                super::#query_source_ident,
-            > for #column_name
+            > for super::#query_source_ident
         {
         }
 

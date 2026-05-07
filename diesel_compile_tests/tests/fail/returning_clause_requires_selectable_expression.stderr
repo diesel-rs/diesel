@@ -6,15 +6,21 @@ error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clau
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `ValidInReturningOf<non_users::columns::noname, DeleteStmt>` is not implemented for `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: `non_users::columns::noname` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the trait `ValidInReturningOf<DeleteStmt, users::table>` is not implemented for `non_users::columns::noname`
-      but trait `ValidInReturningOf<DeleteStmt, non_users::table>` is implemented for it
-   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:7:9
     |
- LL |         noname -> VarChar,
-    |         ^^^^^^
-    = help: for that trait implementation, expected `non_users::table`, found `users::table`
+  LL |         id -> Integer,
+    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
+  LL |         name -> VarChar,
+    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
 note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
@@ -152,15 +158,21 @@ error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clau
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `ValidInReturningOf<non_users::columns::noname, InsertStmtWithoutOnConflictDoUpdate>` is not implemented for `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: `non_users::columns::noname` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, users::table>` is not implemented for `non_users::columns::noname`
-      but trait `ValidInReturningOf<InsertStmtWithoutOnConflictDoUpdate, non_users::table>` is implemented for it
-   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:7:9
     |
- LL |         noname -> VarChar,
-    |         ^^^^^^
-    = help: for that trait implementation, expected `non_users::table`, found `users::table`
+  LL |         id -> Integer,
+    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
+  LL |         name -> VarChar,
+    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
 note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
@@ -297,15 +309,21 @@ error[E0277]: `non_users::columns::noname` cannot appear in the `RETURNING` clau
     |          |
     |          required by a bound introduced by this call
     |
+help: the trait `ValidInReturningOf<non_users::columns::noname, UpdateStmt>` is not implemented for `users::table`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+    | |_________^
     = note: `non_users::columns::noname` is not a valid `RETURNING` element for this statement kind on this table
     = note: for `INSERT ... ON CONFLICT ... DO UPDATE`, wrap with `.nullable()` so freshly-inserted rows can return `NULL` for `old.col`
-help: the trait `ValidInReturningOf<UpdateStmt, users::table>` is not implemented for `non_users::columns::noname`
-      but trait `ValidInReturningOf<UpdateStmt, non_users::table>` is implemented for it
-   --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
+help: the following other types implement trait `ValidInReturningOf<Expr, StmtKind>`
+   --> tests/fail/returning_clause_requires_selectable_expression.rs:7:9
     |
- LL |         noname -> VarChar,
-    |         ^^^^^^
-    = help: for that trait implementation, expected `non_users::table`, found `users::table`
+  LL |         id -> Integer,
+    |         ^^ `users::table` implements `ValidInReturningOf<users::columns::id, __StmtKind>`
+  LL |         name -> VarChar,
+    |         ^^^^ `users::table` implements `ValidInReturningOf<users::columns::name, __StmtKind>`
 note: required for `non_users::columns::noname` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
