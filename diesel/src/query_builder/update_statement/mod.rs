@@ -280,29 +280,6 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// returns the value of the column **before** the update was applied.
     /// This requires PostgreSQL 18 or newer.
     ///
-    /// [`diesel::pg::returning::old`]: crate::pg::returning::old
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # #[cfg(feature = "postgres")]
-    /// # fn main() {
-    /// #     use schema::users::dsl::*;
-    /// #     use diesel::pg::returning::old;
-    /// #     let connection = &mut establish_connection();
-    /// let old_name = diesel::update(users.filter(id.eq(1)))
-    ///     .set(name.eq("Dean"))
-    ///     .returning(old(name))
-    ///     .get_result(connection);
-    /// assert_eq!(Ok("Sean".to_string()), old_name);
-    /// # }
-    /// # #[cfg(not(feature = "postgres"))]
-    /// # fn main() {}
-    /// ```
-    ///
-    /// `old(col)` can be combined with regular columns in a tuple to get
-    /// both the pre- and post-update values back in a single round-trip:
-    ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
