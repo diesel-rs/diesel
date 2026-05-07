@@ -38,8 +38,8 @@ fn main() {
     let stmt = insert_into(users)
         .values(&new_user)
         .returning((name, bad::age));
-    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<InsertStmt, users::table>`
+    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<..., ...>`
     //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
     //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-    //~| ERROR: the trait bound `ReturningQuerySource<InsertStmt, users::table>: Table` is not satisfied
+    //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
 }

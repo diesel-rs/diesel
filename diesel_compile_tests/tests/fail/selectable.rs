@@ -195,17 +195,17 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<InsertStmt, users::table>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<InsertStmt, users::table>`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
         //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-        //~| ERROR: the trait bound `ReturningQuerySource<InsertStmt, users::table>: Table` is not satisfied
+        //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<InsertStmt, users::table>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<InsertStmt, users::table>`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
         //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-        //~| ERROR: the trait bound `ReturningQuerySource<InsertStmt, users::table>: Table` is not satisfied
+        //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
         .unwrap();
 
     // cannot load results from more than one table via

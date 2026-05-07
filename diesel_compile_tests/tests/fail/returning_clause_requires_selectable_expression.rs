@@ -30,7 +30,7 @@ fn main() {
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<InsertStmt, users::table>`
+    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<..., ...>`
 
     update(users::table)
         .set(users::columns::name.eq("Bill"))
