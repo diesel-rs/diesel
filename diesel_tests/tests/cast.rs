@@ -68,9 +68,9 @@ mod fallible_cast {
     test_fallible_cast!(text_to_float4, "3.1" => &str, Text => Float4, 3.1 => f32);
     #[cfg(feature = "postgres")]
     test_fallible_cast!(decimal_to_float4, "3.1".parse().unwrap() => bigdecimal::BigDecimal, Decimal => Float8, 3.1 => f64);
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_fallible_cast!(text_to_float8, "3.1" => &str, Text => Float4, 3.1 => f32);
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_fallible_cast!(decimal_to_float8, "3.1".parse().unwrap() => bigdecimal::BigDecimal, Decimal => Float8, 3.1 => f64);
     #[cfg(feature = "postgres")]
     test_fallible_cast!(text_to_json, "[1, 2, 3]" => &str, Text => Json, serde_json::json!([1,2,3]) => serde_json::Value);
@@ -147,16 +147,16 @@ mod infallible_cast {
     test_infallible_cast!(int4_to_float4, 3 => i32, Integer => Float, 3.0 => f32);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(int8_to_float4, 3 => i64, BigInt => Float, 3.0 => f32);
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_infallible_cast!(int4_to_float8, 3 => i32, Integer => Double, 3.0 => f64);
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_infallible_cast!(int8_to_float8, 3 => i64, BigInt => Double, 3.0 => f64);
 
     #[cfg(feature = "postgres")]
     test_infallible_cast!(bool_to_text, true => bool, Bool => Text, String::from("true") => String);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(float4_to_text, 3.1 => f32, Float4 => Text, String::from("3.1") => String);
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_infallible_cast!(float8_to_text, 3.1 => f64, Float8 => Text, String::from("3.1") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_infallible_cast!(int4_to_text, 3 => i32, Integer => Text, String::from("3") => String);
