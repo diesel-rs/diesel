@@ -376,3 +376,8 @@ pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 
 #[doc(inline)]
 pub use super::return_type_helpers::*;
+
+/// The return type of [`old(col)`](crate::pg::returning::old).
+#[cfg(feature = "postgres_backend")]
+#[allow(non_camel_case_types)] // required for `#[auto_type]`
+pub type old<C> = crate::pg::returning::Old<C>;
