@@ -530,11 +530,10 @@ pub struct SqliteBatchInsertWrapper<V, T, QId, const STATIC_QUERY_ID: bool>(
     BatchInsert<V, T, QId, STATIC_QUERY_ID>,
 );
 
-impl<V, T, QId, const STATIC_QUERY_ID: bool>
-    crate::query_builder::returning::returning_query_source::InsertStmtKind
+impl<V, T, QId, const STATIC_QUERY_ID: bool> crate::query_builder::InsertStmtKind
     for SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>
 {
-    type StmtKind = crate::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate;
+    type StmtKind = crate::query_builder::InsertStmtWithoutOnConflictDoUpdate;
 }
 
 impl<V, Tab, QId, const STATIC_QUERY_ID: bool> QueryFragment<Sqlite>

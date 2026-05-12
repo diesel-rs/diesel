@@ -10,7 +10,15 @@ error[E0277]: `ReturningClause<(id, name)>` is no valid SQL fragment for the `Sq
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
-    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
+    --> DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
      |
   LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
   LL | | where
@@ -26,14 +34,6 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
   LL | |     >,
   LL | |     Expr: QueryFragment<DB>,
      | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
-     |
-    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
-     |
-   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
-   LL | | where
-   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
-  LL | |     Expr: QueryFragment<DB>,
-     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
      = note: required for `ReturningClause<(id, name)>` to implement `QueryFragment<Sqlite>`
      = note: 1 redundant requirement hidden
      = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`
@@ -60,7 +60,15 @@ error[E0277]: `ReturningClause<name>` is no valid SQL fragment for the `Sqlite` 
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
-    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
+    --> DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
      |
   LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
   LL | | where
@@ -76,14 +84,6 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
   LL | |     >,
   LL | |     Expr: QueryFragment<DB>,
      | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, PgLikeReturningClause>`
-     |
-    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
-     |
-   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
-   LL | | where
-   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
-  LL | |     Expr: QueryFragment<DB>,
-     | |____________________________^ `ReturningClause<Expr>` implements `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
      = note: required for `ReturningClause<name>` to implement `QueryFragment<Sqlite>`
      = note: 1 redundant requirement hidden
      = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `QueryFragment<Sqlite>`

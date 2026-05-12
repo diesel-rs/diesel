@@ -105,8 +105,8 @@ help: the trait `SelectableExpression<Alias<users2>>` is not implemented for `us
     = note: `users::columns::id` is no valid selection for `Alias<users2>`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `users::columns::id` implements `SelectableExpression<Only<users::table>>`
-              `users::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `users::columns::id` implements `SelectableExpression<Tablesample<users::table, TSM>>`
+              `users::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `users::columns::id` implements `SelectableExpression<SelectStatement<...>>`
               `users::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
               `users::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
@@ -142,8 +142,8 @@ help: the trait `SelectableExpression<Alias<users2>>` is not implemented for `us
      = note: `users::columns::id` is no valid selection for `Alias<users2>`
      = help: the following other types implement trait `SelectableExpression<QS>`:
                `users::columns::id` implements `SelectableExpression<Only<users::table>>`
-               `users::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
                `users::columns::id` implements `SelectableExpression<Tablesample<users::table, TSM>>`
+               `users::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
                `users::columns::id` implements `SelectableExpression<SelectStatement<...>>`
                `users::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
                `users::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`

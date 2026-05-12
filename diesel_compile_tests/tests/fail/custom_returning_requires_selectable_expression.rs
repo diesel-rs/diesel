@@ -30,7 +30,7 @@ fn main() {
     let stmt = update(users.filter(id.eq(1)))
         .set(name.eq("Bill"))
         .returning(bad::age);
-    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<UpdateStmt, users::table>`
+    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<UpdateStmt, table>`
 
     let new_user = NewUser {
         name: "Foobar".to_string(),

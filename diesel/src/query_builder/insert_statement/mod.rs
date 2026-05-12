@@ -11,8 +11,6 @@ pub(crate) use self::private::Insert;
 )]
 pub(crate) use self::private::{InsertOrIgnore, Replace};
 
-use super::returning::returning_clause::*;
-use super::returning::returning_query_source::{InsertStmtKind, ReturningQuerySource};
 use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
@@ -597,7 +595,7 @@ mod private {
         type Table = T;
         type Op = Op;
         type Values = ();
-        type Ret = crate::query_builder::returning::returning_clause::NoReturningClause;
+        type Ret = crate::query_builder::NoReturningClause;
     }
 
     impl<T, U, Op, Ret> InsertAutoTypeHelper for InsertStatement<T, U, Op, Ret>

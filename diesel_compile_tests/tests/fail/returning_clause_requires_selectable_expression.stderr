@@ -1,4 +1,4 @@
-error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, users::table>`
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
  LL |         .returning(non_users::columns::noname);
@@ -6,16 +6,16 @@ error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySou
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<DeleteStmt, users::table>>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<DeleteStmt, users::table>`
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -41,7 +41,7 @@ error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySou
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
@@ -49,8 +49,8 @@ help: the trait `SelectableExpression<ReturningQuerySource<InsertStmtWithoutOnCo
     = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<..., ...>`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -68,7 +68,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, users::table>`
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
     |
  LL |         .returning(non_users::columns::noname);
@@ -76,16 +76,16 @@ error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySou
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<ReturningQuerySource<UpdateStmt, users::table>>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<UpdateStmt, users::table>`
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `non_users::columns::noname` implements `SelectableExpression<Only<non_users::table>>`
-              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `non_users::columns::noname` implements `SelectableExpression<Tablesample<non_users::table, TSM>>`
+              `non_users::columns::noname` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `non_users::columns::noname` implements `SelectableExpression<SelectStatement<...>>`
               `non_users::columns::noname` implements `SelectableExpression<non_users::table>`
               `non_users::columns::noname` implements `SelectableExpression<Join<Left, Right, Inner>>`

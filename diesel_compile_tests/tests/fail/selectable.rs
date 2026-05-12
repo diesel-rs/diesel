@@ -213,34 +213,34 @@ fn main() {
     let _ = diesel::update(users::table)
         .set(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, users::table>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, users::table>`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
         //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-        //~| ERROR: the trait bound `ReturningQuerySource<UpdateStmt, users::table>: Table` is not satisfied
+        //~| ERROR: the trait bound `ReturningQuerySource<UpdateStmt, table>: Table` is not satisfied
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, users::table>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, users::table>`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
         //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-        //~| ERROR: the trait bound `ReturningQuerySource<UpdateStmt, users::table>: Table` is not satisfied
+        //~| ERROR: the trait bound `ReturningQuerySource<UpdateStmt, table>: Table` is not satisfied
         .unwrap();
 
     // cannot load results from more than one table via
     // returning clauses
     let _ = diesel::delete(users::table)
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, users::table>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, users::table>`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
         //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-        //~| ERROR: the trait bound `ReturningQuerySource<DeleteStmt, users::table>: Table` is not satisfied
+        //~| ERROR: the trait bound `ReturningQuerySource<DeleteStmt, table>: Table` is not satisfied
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, users::table>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, users::table>`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
         //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...>` is not satisfied
-        //~| ERROR: the trait bound `ReturningQuerySource<DeleteStmt, users::table>: Table` is not satisfied
+        //~| ERROR: the trait bound `ReturningQuerySource<DeleteStmt, table>: Table` is not satisfied
         .unwrap();
 
     // cannot use this method without deriving selectable

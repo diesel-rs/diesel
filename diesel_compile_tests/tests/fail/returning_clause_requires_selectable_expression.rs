@@ -25,7 +25,7 @@ fn main() {
 
     delete(users::table.filter(users::columns::name.eq("Bill")))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, users::table>`
+    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, table>`
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
@@ -35,5 +35,5 @@ fn main() {
     update(users::table)
         .set(users::columns::name.eq("Bill"))
         .returning(non_users::columns::noname);
-    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, users::table>`
+    //~^ ERROR: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, table>`
 }

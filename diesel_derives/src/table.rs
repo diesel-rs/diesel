@@ -891,7 +891,7 @@ fn expand_column_def(
 
         impl<__StmtKind>
             diesel::SelectableExpression<
-                diesel::query_builder::returning::returning_query_source::ReturningQuerySource<
+                diesel::internal::table_macro::ReturningQuerySource<
                     __StmtKind,
                     super::#query_source_ident,
                 >,
