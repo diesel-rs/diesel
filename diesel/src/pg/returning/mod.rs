@@ -7,6 +7,6 @@
 // Naming: we suffix with `_impl` to avoid name conflicts with the `old` re-export below.
 mod old_impl;
 
-pub use self::old_impl::{Old, old};
+pub use self::old_impl::old;
 
 pub(crate) use self::old_impl::return_type_helpers_reexported;
