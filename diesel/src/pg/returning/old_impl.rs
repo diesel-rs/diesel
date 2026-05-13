@@ -52,7 +52,8 @@ impl<C> Old<C> {
 ///   context is rejected at compile time.
 ///
 /// Use of `old(col)` in plain `INSERT` (without `ON CONFLICT ... DO UPDATE`)
-/// or `DELETE` `RETURNING` is rejected at compile time.
+/// or `DELETE` `RETURNING` is rejected at compile time, as it is not useful
+/// there. (Note that `ON CONFLICT DO NOTHING` never returns untouched rows.)
 ///
 /// `Old<C>` is a regular [`Expression`] with `SqlType = C::SqlType`, so it
 /// composes with the rest of Diesel's expression DSL — it can appear inside a
