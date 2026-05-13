@@ -415,7 +415,7 @@ pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
 
 /// `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
 /// the query will be rejected at execution time, so we just skip.
-
+///
 /// Returns `true` if the connected PostgreSQL server is version 18 or newer.
 /// On non-postgres backends this always returns `false`.
 #[cfg(feature = "postgres")]
