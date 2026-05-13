@@ -1063,14 +1063,7 @@ fn returning_old_column_in_insert_on_conflict_do_update() {
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    // `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
-    // the query will be rejected at execution time, so we just skip.
-    let server_version_num: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
-        "SELECT current_setting('server_version_num')::int",
-    )
-    .get_result(connection)
-    .unwrap();
-    if server_version_num < 180000 {
+    if !pg_server_supports_returning_old(connection) {
         return;
     }
 
@@ -1113,12 +1106,7 @@ fn returning_old_column_in_insert_on_conflict_do_update_via_selectable() {
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    let server_version_num: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
-        "SELECT current_setting('server_version_num')::int",
-    )
-    .get_result(connection)
-    .unwrap();
-    if server_version_num < 180000 {
+    if !pg_server_supports_returning_old(connection) {
         return;
     }
 
