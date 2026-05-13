@@ -700,3 +700,47 @@ fn returning_old_column_in_update() {
     assert_eq!("Sean", was);
     assert_eq!("Renamed", now);
 }
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_update_via_selectable() {
+    use crate::schema::users;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let server_version_num: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result(connection)
+    .unwrap();
+    if server_version_num < 180000 {
+        return;
+    }
+
+    // Mix `old(col)` and a raw column on the same table inside a `Selectable`
+    // struct: in `UPDATE`, the row necessarily existed pre-update, so `old(col)`
+    // has the same Rust SQL type as the column itself.
+    #[derive(Queryable, Selectable, PartialEq, Debug)]
+    #[diesel(table_name = users)]
+    struct UpdateOldNew {
+        #[diesel(select_expression = diesel::pg::returning::old(users::name))]
+        was: String,
+        name: String,
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+
+    let row: UpdateOldNew = update(users::table.filter(users::id.eq(sean.id)))
+        .set(users::name.eq("Renamed"))
+        .returning(UpdateOldNew::as_select())
+        .get_result(connection)
+        .unwrap();
+
+    assert_eq!(
+        UpdateOldNew {
+            was: "Sean".to_string(),
+            name: "Renamed".to_string(),
+        },
+        row,
+    );
+}

@@ -397,8 +397,7 @@ fn test_pg_timestamp_expression_methods() -> _ {
 #[cfg(feature = "postgres")]
 #[auto_type]
 fn test_pg_returning_old() -> _ {
-    use diesel::pg::returning::old;
-    old(users::id)
+    diesel::pg::returning::old(users::id)
 }
 
 #[cfg(feature = "sqlite")]

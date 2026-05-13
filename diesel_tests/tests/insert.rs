@@ -1105,3 +1105,67 @@ fn returning_old_column_in_insert_on_conflict_do_update() {
     assert_eq!(None, was);
     assert_eq!("Brand New", now);
 }
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_insert_on_conflict_do_update_via_selectable() {
+    use crate::schema::users;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let server_version_num: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result(connection)
+    .unwrap();
+    if server_version_num < 180000 {
+        return;
+    }
+
+    // In `INSERT ... ON CONFLICT ... DO UPDATE`, freshly inserted rows have no
+    // pre-existing values, so `old(col)` must be wrapped in `.nullable()` —
+    // and the `Selectable` field must therefore be an `Option<...>`.
+    #[derive(Queryable, Selectable, PartialEq, Debug)]
+    #[diesel(table_name = users)]
+    struct UpsertOldNew {
+        #[diesel(select_expression = diesel::pg::returning::old(users::name).nullable())]
+        was: Option<String>,
+        name: String,
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+
+    // Conflict path: row already exists, so `old.name` is `Some(...)`.
+    let row: UpsertOldNew = insert_into(users::table)
+        .values((users::id.eq(sean.id), users::name.eq("temp")))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("Renamed"))
+        .returning(UpsertOldNew::as_select())
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(
+        UpsertOldNew {
+            was: Some("Sean".to_string()),
+            name: "Renamed".to_string(),
+        },
+        row,
+    );
+
+    // Non-conflict path: row is being inserted, so `old.name` is `None`.
+    let row: UpsertOldNew = insert_into(users::table)
+        .values(users::name.eq("Brand New"))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("Should not happen"))
+        .returning(UpsertOldNew::as_select())
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(
+        UpsertOldNew {
+            was: None,
+            name: "Brand New".to_string(),
+        },
+        row,
+    );
+}

@@ -156,3 +156,13 @@ where
         Ok(())
     }
 }
+
+pub use return_type_helpers_reexported::*;
+
+pub(crate) mod return_type_helpers_reexported {
+    use super::Old;
+
+    /// The return type of [`old(col)`](old()).
+    #[allow(non_camel_case_types)]
+    pub type old<C> = Old<C>;
+}
