@@ -1,6 +1,9 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
+use crate::query_builder::returning::{
+    DeleteStmt, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;

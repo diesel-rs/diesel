@@ -15,6 +15,9 @@ use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::returning::{
+    InsertStmtKind, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
@@ -595,7 +598,7 @@ mod private {
         type Table = T;
         type Op = Op;
         type Values = ();
-        type Ret = crate::query_builder::NoReturningClause;
+        type Ret = crate::query_builder::returning::NoReturningClause;
     }
 
     impl<T, U, Op, Ret> InsertAutoTypeHelper for InsertStatement<T, U, Op, Ret>

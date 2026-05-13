@@ -4,10 +4,10 @@ use crate::backend::{Backend, sql_dialect};
 use crate::expression::{
     AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
-use crate::query_builder::{
-    AstPass, InsertStmtWithOnConflictDoUpdate, QueryFragment, QueryId, ReturningQuerySource,
-    UpdateStmt,
+use crate::query_builder::returning::{
+    InsertStmtWithOnConflictDoUpdate, ReturningQuerySource, UpdateStmt,
 };
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_source::Column;
 use crate::result::QueryResult;
 

@@ -7,6 +7,9 @@ use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{
     AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
 };
+use crate::query_builder::returning::{
+    NoReturningClause, ReturningClause, ReturningQuerySource, UpdateStmt,
+};
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;

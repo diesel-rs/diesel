@@ -42,8 +42,8 @@ where
     Update<Changes, Changes>: LoadQuery<'b, PgConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::expression::SelectableExpression<
-            crate::query_builder::ReturningQuerySource<
-                crate::query_builder::UpdateStmt,
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
                 Changes::Table,
             >,
         >,
@@ -68,8 +68,8 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, SqliteConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::expression::SelectableExpression<
-            crate::query_builder::ReturningQuerySource<
-                crate::query_builder::UpdateStmt,
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
                 Changes::Table,
             >,
         >,
@@ -95,8 +95,8 @@ where
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::expression::SelectableExpression<
-            crate::query_builder::ReturningQuerySource<
-                crate::query_builder::UpdateStmt,
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
                 Changes::Table,
             >,
         >,

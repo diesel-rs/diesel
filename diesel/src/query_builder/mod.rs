@@ -27,7 +27,6 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-pub(crate) mod returning;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -95,24 +94,10 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 #[doc(inline)]
 pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
-#[doc(inline)]
-#[diesel_derives::__diesel_public_if(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-)]
-pub(crate) use self::returning::returning_clause::{
-    NoReturningClause, ReturningClause, ReturningClauseHelper,
-};
-
-#[doc(inline)]
-#[diesel_derives::__diesel_public_if(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-)]
-#[allow(unused_imports)] // `InsertStmtWithoutOnConflictDoUpdate` happens to only
-// be referenced via this path on `cfg(feature = "sqlite")`
-pub(crate) use self::returning::returning_query_source::{
-    DeleteStmt, InsertStmtKind, InsertStmtWithOnConflictDoUpdate,
-    InsertStmtWithoutOnConflictDoUpdate, ReturningQuerySource, UpdateStmt,
-};
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod returning;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub mod returning;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(

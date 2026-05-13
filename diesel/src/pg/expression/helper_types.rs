@@ -4,8 +4,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression_methods::JsonIndex;
 use crate::pg::expression::expression_methods::private::JsonRemoveIndex;
 use crate::pg::types::sql_types::Array;
-use crate::sql_types::Nullable;
-use crate::sql_types::{Inet, Integer, VarChar};
+use crate::sql_types::{Inet, Integer, Nullable, VarChar};
 
 /// The return type of [`lhs.ilike(rhs)`](super::expression_methods::PgTextExpressionMethods::ilike)
 #[cfg(feature = "postgres_backend")]
@@ -378,6 +377,5 @@ pub type ConcatArray<Lhs, Rhs> = crate::dsl::Concat<Lhs, Rhs>;
 pub use super::return_type_helpers::*;
 
 /// The return type of [`old(col)`](crate::pg::returning::old).
-#[cfg(feature = "postgres_backend")]
 #[allow(non_camel_case_types)] // required for `#[auto_type]`
 pub type old<C> = crate::pg::returning::Old<C>;
