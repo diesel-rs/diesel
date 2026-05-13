@@ -133,16 +133,25 @@ where
     }
 }
 
+/// Trait for types that can be used as the source of a PostgreSQL `COPY FROM` statement.
+///
+/// Implement this trait to support custom backends (e.g. async runtimes like diesel-async)
+/// that need to execute COPY FROM with their own I/O.
 pub trait CopyFromExpression<T> {
+    /// The Error type representing failures in the callback or stream.
     type Error: From<crate::result::Error> + core::error::Error;
 
+    /// The callback executed with the internal `std::io::Write` wrapper to
+    /// buffer and send bytes to the database.
     fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error>;
 
+    /// Append the target format representations to the query AST.
     fn walk_target<'b>(
         &'b self,
         pass: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::QueryResult<()>;
 
+    /// Retrieve the parsed `COPY FROM` options.
     fn options(&self) -> &CopyFromOptions;
 }
 
@@ -371,6 +380,10 @@ where
 ///
 /// [`from_raw_data`]: CopyFromQuery::from_raw_data
 /// [`from_insertable`]: CopyFromQuery::from_insertable
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(table, action)
+)]
 #[derive(Debug)]
 #[must_use = "`COPY FROM` statements are only executed when calling `.execute()`."]
 #[cfg(feature = "postgres_backend")]

@@ -853,7 +853,7 @@ pub mod prelude {
     pub use crate::pg::PgConnection;
     #[doc(inline)]
     #[cfg(feature = "postgres_backend")]
-    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
+    pub use crate::pg::query_builder::copy::{CopyFromExpression, ExecuteCopyFromDsl};
     #[cfg(feature = "__sqlite-shared")]
     #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;
