@@ -17,11 +17,13 @@ use crate::result::QueryResult;
 ///
 /// This is the type returned by [`old()`](old()).
 #[derive(Debug, Clone, Copy)]
-pub struct Old<C>(C);
+pub struct Old<C> {
+    _column: C,
+}
 
 impl<C> Old<C> {
     pub(crate) fn new(c: C) -> Self {
-        Old(c)
+        Old { _column: c }
     }
 }
 
