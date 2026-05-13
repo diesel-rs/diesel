@@ -52,18 +52,10 @@ impl<C> Old<C> {
 ///   context is rejected at compile time.
 ///
 /// Use of `old(col)` in plain `INSERT` (without `ON CONFLICT ... DO UPDATE`)
-/// or `DELETE` `RETURNING` is rejected at compile time, as it is not useful
+/// or `DELETE` `RETURNING` is rejected at compile time, because it is not useful
 /// there. (Note that `ON CONFLICT DO NOTHING` never returns untouched rows.)
 ///
-/// `Old<C>` is a regular [`Expression`] with `SqlType = C::SqlType`, so it
-/// composes with the rest of Diesel's expression DSL — it can appear inside a
-/// [`Selectable`] struct, be wrapped with [`.nullable()`] or
-/// [`.assume_not_null()`], etc.
-///
 /// [`.nullable()`]: crate::NullableExpressionMethods::nullable
-/// [`.assume_not_null()`]: crate::NullableExpressionMethods::assume_not_null
-/// [`Expression`]: crate::expression::Expression
-/// [`Selectable`]: crate::expression::Selectable
 ///
 /// # Example
 ///
