@@ -33,9 +33,9 @@ fn main() {
         .do_update()
         .set(users::name.eq(""))
         .returning(UpsertOldNew::as_select())
-        //~^ ERROR: cannot select `Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .get_result::<UpsertOldNew>(&mut connection)
-        //~^ ERROR: cannot select `Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .unwrap();
 
     // The plain tuple version mirrors the same constraint: writing
@@ -46,8 +46,8 @@ fn main() {
         .do_update()
         .set(users::name.eq(""))
         .returning(old(users::name))
-        //~^ ERROR: cannot select `Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .unwrap();
 }
