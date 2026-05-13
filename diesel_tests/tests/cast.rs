@@ -69,7 +69,7 @@ mod fallible_cast {
     #[cfg(feature = "postgres")]
     test_fallible_cast!(decimal_to_float4, "3.1".parse().unwrap() => bigdecimal::BigDecimal, Decimal => Float8, 3.1 => f64);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
-    test_fallible_cast!(text_to_float8, "3.1" => &str, Text => Float4, 3.1 => f32);
+    test_fallible_cast!(text_to_float8, "3.1" => &str, Text => Float8, 3.1 => f64);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
     test_fallible_cast!(decimal_to_float8, "3.1".parse().unwrap() => bigdecimal::BigDecimal, Decimal => Float8, 3.1 => f64);
     #[cfg(feature = "postgres")]
