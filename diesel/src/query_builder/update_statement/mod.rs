@@ -275,7 +275,7 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     ///
     /// ### Returning the pre-update value (PostgreSQL 18+):
     ///
-    /// `RETURNING old.col` — exposed via [`diesel::pg::returning::old`] —
+    /// `RETURNING old.col` — exposed via [`diesel::pg::returning::old()`] —
     /// returns the value of the column **before** the update was applied.
     /// This requires PostgreSQL 18 or newer.
     ///

@@ -25,7 +25,8 @@ pub struct DeleteStmt;
 pub struct InsertStmtWithOnConflictDoUpdate;
 
 /// Synthetic query source used as the `QS` parameter of
-/// [`SelectableExpression`] / [`AppearsOnTable`] when type-checking
+/// [`SelectableExpression`](crate::expression::SelectableExpression) /
+/// [`AppearsOnTable`](crate::expression::AppearsOnTable) when type-checking
 /// `RETURNING` clauses.
 ///
 /// `StmtKind` is one of the marker structs above; `T` is the table that the

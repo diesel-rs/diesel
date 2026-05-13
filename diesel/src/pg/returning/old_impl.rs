@@ -15,7 +15,7 @@ use crate::result::QueryResult;
 /// clause of a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE`
 /// statement.
 ///
-/// This is the type returned by [`old`].
+/// This is the type returned by [`old()`](old()).
 #[derive(Debug, Clone, Copy)]
 pub struct Old<C>(C);
 
@@ -57,8 +57,8 @@ impl<C> Old<C> {
 /// [`Selectable`] struct, be wrapped with [`.nullable()`] or
 /// [`.assume_not_null()`], etc.
 ///
-/// [`.nullable()`]: crate::ExpressionMethods::nullable
-/// [`.assume_not_null()`]: crate::ExpressionMethods::assume_not_null
+/// [`.nullable()`]: crate::NullableExpressionMethods::nullable
+/// [`.assume_not_null()`]: crate::NullableExpressionMethods::assume_not_null
 /// [`Expression`]: crate::expression::Expression
 /// [`Selectable`]: crate::expression::Selectable
 ///
@@ -167,7 +167,7 @@ pub use return_type_helpers_reexported::*;
 pub(crate) mod return_type_helpers_reexported {
     use super::Old;
 
-    /// The return type of [`old(col)`](old()).
+    /// The return type of [`old(col)`](super::old()).
     #[allow(non_camel_case_types)]
     pub type old<C> = Old<C>;
 }
