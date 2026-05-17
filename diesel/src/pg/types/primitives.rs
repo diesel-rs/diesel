@@ -10,7 +10,11 @@ use crate::sql_types;
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Bool, Pg> for bool {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
-        Ok(bytes.as_bytes()[0] != 0)
+        let first_byte = bytes
+            .as_bytes()
+            .first()
+            .ok_or("Received an empty response from the server")?;
+        Ok(*first_byte != 0)
     }
 }
 
@@ -26,7 +30,11 @@ impl ToSql<sql_types::Bool, Pg> for bool {
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::CChar, Pg> for u8 {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
-        Ok(bytes.as_bytes()[0])
+        let first_byte = bytes
+            .as_bytes()
+            .first()
+            .ok_or("Received an empty response from the server")?;
+        Ok(*first_byte)
     }
 }
 
