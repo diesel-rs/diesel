@@ -55,7 +55,7 @@ impl FromSql<sql_types::Text, Pg> for *const str {
 
 #[cfg(feature = "postgres_backend")]
 impl<'a> FromSqlRef<'a, sql_types::Text, Pg> for &'a str {
-    fn from_sql(value: PgValue<'a>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'a mut PgValue<'_>) -> deserialize::Result<Self> {
         Ok(core::str::from_utf8(value.as_bytes())?)
     }
 }
@@ -106,7 +106,7 @@ impl FromSql<sql_types::Binary, Pg> for *const [u8] {
 }
 
 impl<'a> FromSqlRef<'a, sql_types::Binary, Pg> for &'a [u8] {
-    fn from_sql(bytes: PgValue<'a>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: &'a mut PgValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes())
     }
 }

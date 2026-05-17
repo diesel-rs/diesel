@@ -27,7 +27,7 @@ impl FromSql<sql_types::VarChar, Sqlite> for *const str {
 
 #[cfg(feature = "__sqlite-shared")]
 impl<'a> FromSqlRef<'a, sql_types::VarChar, Sqlite> for &'a str {
-    fn from_sql(mut value: SqliteValue<'a, 'a, 'a>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'a mut SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.as_utf8_str()?)
     }
 }
@@ -56,7 +56,7 @@ impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
 
 #[cfg(feature = "__sqlite-shared")]
 impl<'a> FromSqlRef<'a, sql_types::Binary, Sqlite> for &'a [u8] {
-    fn from_sql(mut value: SqliteValue<'a, 'a, 'a>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'a mut SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         Ok(value.read_blob())
     }
 }

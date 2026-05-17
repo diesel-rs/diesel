@@ -482,7 +482,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
 )]
 pub(crate) trait FromSqlRef<'a, A, DB: Backend>: Sized {
     /// See the trait documentation
-    fn from_sql(bytes: DB::RawValue<'a>) -> Result<Self>;
+    fn from_sql(bytes: &'a mut DB::RawValue<'_>) -> Result<Self>;
 }
 
 /// Deserialize a database row into a rust data structure
