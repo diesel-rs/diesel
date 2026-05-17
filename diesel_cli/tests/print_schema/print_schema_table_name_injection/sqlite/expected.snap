@@ -1,0 +1,24 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_table_name_injection"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    parent_table (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    #[sql_name = "quote'table"]
+    quote_table (id) {
+        id -> Nullable<Integer>,
+        name -> Nullable<Text>,
+        parent_id -> Integer,
+    }
+}
+
+diesel::joinable!(quote_table -> parent_table (parent_id));
+
+diesel::allow_tables_to_appear_in_same_query!(parent_table, quote_table,);

@@ -1833,4 +1833,30 @@ mod tests {
         assert_eq!(first_res, 0);
         assert_eq!(second_res, 0);
     }
+
+    #[diesel_test_helper::test]
+    fn test_injection() {
+        diesel::table! {
+            #[sql_name = "quote'table"]
+            quote_table (id) {
+                id -> Nullable<Integer>,
+                name -> Nullable<Text>,
+            }
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+
+        conn.batch_execute("CREATE TABLE \"quote'table\" (id INTEGER PRIMARY KEY, name TEXT);")
+            .unwrap();
+
+        diesel::insert_into(quote_table::table)
+            .values((quote_table::id.eq(1), quote_table::name.eq("Jane")))
+            .execute(&mut conn)
+            .unwrap();
+
+        let data = quote_table::table
+            .load::<(Option<i32>, Option<String>)>(&mut conn)
+            .unwrap();
+        assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+    }
 }

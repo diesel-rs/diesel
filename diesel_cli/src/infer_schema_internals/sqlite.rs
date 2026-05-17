@@ -35,6 +35,10 @@ table! {
     }
 }
 
+fn escape_identifier(identifier: &str) -> String {
+    identifier.replace('\'', "''")
+}
+
 pub fn load_table_names(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
@@ -84,7 +88,10 @@ pub fn load_foreign_key_constraints(
     let rows = tables
         .into_iter()
         .map(|(_, child_table)| {
-            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.sql_name);
+            let query = format!(
+                "PRAGMA FOREIGN_KEY_LIST('{}')",
+                escape_identifier(&child_table.sql_name)
+            );
             sql::<pragma_foreign_key_list::SqlType>(&query)
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
@@ -166,9 +173,15 @@ pub fn get_table_data(
          * This would return hidden columns as well, but those would need to be created at runtime
          * therefore they aren't an issue.
          */
-        format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_XINFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     } else {
-        format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_INFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     };
 
     // See: https://github.com/diesel-rs/diesel/issues/3579 as to why we use a direct
@@ -277,7 +290,10 @@ pub fn column_is_row_id(
         return Ok(false);
     }
 
-    let table_list_query = format!("PRAGMA TABLE_LIST('{}')", &table.sql_name);
+    let table_list_query = format!(
+        "PRAGMA TABLE_LIST('{}')",
+        escape_identifier(&table.sql_name)
+    );
     let table_list_results = sql_query(table_list_query).load::<WithoutRowIdInformation>(conn)?;
 
     let res = table_list_results
@@ -312,9 +328,15 @@ pub fn get_primary_keys(
 ) -> QueryResult<Vec<String>> {
     let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
-        format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_XINFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     } else {
-        format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_INFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     };
     let results = sql_query(query).load::<PrimaryKeyInformation>(conn)?;
     let mut collected: Vec<String> = results
