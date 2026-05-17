@@ -1774,4 +1774,63 @@ mod tests {
             .execute(&mut conn)
             .unwrap();
     }
+
+    #[diesel_test_helper::test]
+    fn sum_twice() {
+        #[derive(Default)]
+        struct Sum(i32);
+
+        impl SqliteAggregateFunction<i32> for Sum {
+            type Output = i32;
+
+            fn step(&mut self, value: i32) {
+                self.0 += value;
+            }
+
+            fn finalize(agg: Option<Self>) -> i32 {
+                agg.map(|s| s.0).unwrap_or_default()
+            }
+        }
+
+        #[declare_sql_function]
+        extern "SQL" {
+            #[aggregate]
+            fn my_sum(x: Integer) -> Integer;
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+        my_sum_utils::register_impl::<Sum, _>(&mut conn).unwrap();
+
+        conn.batch_execute(
+            "
+            CREATE TABLE test(key1 INTEGER, key2 INTEGER);
+            INSERT INTO test(key1, key2) VALUES (1, 2), (2, 4), (3, 6);
+",
+        )
+        .unwrap();
+
+        table! {
+            test (key1, key2) {
+                key1 -> Integer,
+                key2 -> Integer,
+            }
+        }
+
+        let (first_res, second_res) = test::table
+            .select((my_sum(test::key1), my_sum(test::key2)))
+            .get_result::<(i32, i32)>(&mut conn)
+            .unwrap();
+
+        assert_eq!(first_res, 6);
+        assert_eq!(second_res, 12);
+
+        conn.batch_execute("DELETE FROM test").unwrap();
+        let (first_res, second_res) = test::table
+            .select((my_sum(test::key1), my_sum(test::key2)))
+            .get_result::<(i32, i32)>(&mut conn)
+            .unwrap();
+
+        assert_eq!(first_res, 0);
+        assert_eq!(second_res, 0);
+    }
 }
