@@ -532,7 +532,9 @@ impl BindData {
 
                 let offset = self.capacity;
                 let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
-                let truncated_amount = length - offset;
+                let truncated_amount = length
+                    .checked_sub(offset)
+                    .expect("offset is always smaller than the actual length");
 
                 debug_assert!(
                     truncated_amount > 0,
