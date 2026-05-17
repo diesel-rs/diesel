@@ -13,6 +13,7 @@ LL |         id -> Integer,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::id` implements `SelectableExpression<posts::table>`
              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -38,6 +39,7 @@ LL |         user_id -> Integer,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::user_id` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::user_id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::user_id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::user_id` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::user_id` implements `SelectableExpression<posts::table>`
              `posts::columns::user_id` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -82,6 +84,7 @@ LL |         id -> Integer,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::id` implements `SelectableExpression<posts::table>`
              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`

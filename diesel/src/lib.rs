@@ -779,7 +779,7 @@ pub mod helper_types {
     /// [`UpdateStatement::returning`] and
     /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
     pub type Returning<Q, S> =
-        <Q as crate::query_builder::returning_clause::ReturningClauseHelper<S>>::WithReturning;
+        <Q as crate::query_builder::returning::ReturningClauseHelper<S>>::WithReturning;
 
     #[doc(hidden)] // used for `QueryDsl::count`
     pub type Count<Q> = Select<Q, CountStar>;

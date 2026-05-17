@@ -11,11 +11,13 @@ pub(crate) use self::private::Insert;
 )]
 pub(crate) use self::private::{InsertOrIgnore, Replace};
 
-use super::returning_clause::*;
 use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::returning::{
+    InsertStmtKind, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
@@ -285,7 +287,9 @@ where
 impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
 where
     T: Table,
+    U: InsertStmtKind,
     InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<U::StmtKind, T>>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>;
@@ -298,9 +302,10 @@ where
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
     T: QuerySource,
-    Ret: Expression + SelectableExpression<T> + NonAggregate,
+    U: InsertStmtKind,
+    Ret: SelectableExpression<ReturningQuerySource<U::StmtKind, T>> + NonAggregate,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
 impl<T: QuerySource, U, Op, Ret, Conn> RunQueryDsl<Conn> for InsertStatement<T, U, Op, Ret> {}
@@ -593,7 +598,7 @@ mod private {
         type Table = T;
         type Op = Op;
         type Values = ();
-        type Ret = crate::query_builder::returning_clause::NoReturningClause;
+        type Ret = crate::query_builder::returning::NoReturningClause;
     }
 
     impl<T, U, Op, Ret> InsertAutoTypeHelper for InsertStatement<T, U, Op, Ret>

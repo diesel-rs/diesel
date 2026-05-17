@@ -497,6 +497,14 @@ pub mod users {
             }
         }
         impl diesel::SelectableExpression<super::table> for id {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for id {}
         impl<QS> diesel::AppearsOnTable<QS> for id
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -718,6 +726,14 @@ pub mod users {
             }
         }
         impl diesel::SelectableExpression<super::table> for name {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for name {}
         impl<QS> diesel::AppearsOnTable<QS> for name
         where
             QS: diesel::query_source::AppearsInFromClause<

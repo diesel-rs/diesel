@@ -45,6 +45,7 @@ LL |         title -> Text,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::title` implements `SelectableExpression<posts::table>`
              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -108,6 +109,7 @@ LL |         title -> Text,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::title` implements `SelectableExpression<posts::table>`
              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -230,6 +232,7 @@ LL |         title -> Text,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::title` implements `SelectableExpression<posts::table>`
              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -293,6 +296,7 @@ LL |         title -> Text,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::title` implements `SelectableExpression<posts::table>`
              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -415,6 +419,7 @@ LL |         title -> Text,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::title` implements `SelectableExpression<posts::table>`
              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -478,6 +483,7 @@ LL |         title -> Text,
    = help: the following other types implement trait `SelectableExpression<QS>`:
              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+             `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
              `posts::columns::title` implements `SelectableExpression<posts::table>`
              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -590,6 +596,7 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -643,6 +650,7 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -765,6 +773,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
@@ -828,6 +837,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = help: the following other types implement trait `SelectableExpression<QS>`:
               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
+              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
               `posts::columns::title` implements `SelectableExpression<posts::table>`
               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`

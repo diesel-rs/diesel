@@ -1054,3 +1054,106 @@ fn batch_upsert_with_returning() {
 
     assert_eq!(inserted_users, expected_users);
 }
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_insert_on_conflict_do_update() {
+    use crate::schema::users::dsl::*;
+    use diesel::pg::returning::old;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    use diesel::ExpressionMethods;
+
+    let sean = find_user_by_name("Sean", connection);
+
+    // Conflict path: row already exists, so `old.name` is `Some(...)`.
+    // `old(col)` must be wrapped in `.nullable()` in `ON CONFLICT ... DO UPDATE`
+    // because rows that were freshly inserted (rather than updated) come back
+    // with `old.col = NULL`. Forgetting `.nullable()` is a compile-time error.
+    let (was, now): (Option<String>, String) = insert_into(users)
+        .values((id.eq(sean.id), name.eq("temp")))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq("Renamed"))
+        .returning((old(name).nullable(), name))
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(Some("Sean".to_string()), was);
+    assert_eq!("Renamed", now);
+
+    // Non-conflict path: row is being inserted, so `old.name` is `None`.
+    let (was, now): (Option<String>, String) = insert_into(users)
+        .values(name.eq("Brand New"))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq("Should not happen"))
+        .returning((old(name).nullable(), name))
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(None, was);
+    assert_eq!("Brand New", now);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_insert_on_conflict_do_update_via_selectable() {
+    use crate::schema::users;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    // In `INSERT ... ON CONFLICT ... DO UPDATE`, freshly inserted rows have no
+    // pre-existing values, so `old(col)` must be wrapped in `.nullable()` —
+    // and the `Selectable` field must therefore be an `Option<...>`.
+    #[derive(Queryable, Selectable, PartialEq, Debug)]
+    #[diesel(table_name = users)]
+    struct UpsertOldNew {
+        #[diesel(select_expression = diesel::pg::returning::old(users::name).nullable())]
+        was: Option<String>,
+        name: String,
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+
+    // Conflict path: row already exists, so `old.name` is `Some(...)`.
+    let row: UpsertOldNew = insert_into(users::table)
+        .values((users::id.eq(sean.id), users::name.eq("temp")))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("Renamed"))
+        .returning(UpsertOldNew::as_select())
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(
+        UpsertOldNew {
+            was: Some("Sean".to_string()),
+            name: "Renamed".to_string(),
+        },
+        row,
+    );
+
+    // Non-conflict path: row is being inserted, so `old.name` is `None`.
+    let row: UpsertOldNew = insert_into(users::table)
+        .values(users::name.eq("Brand New"))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("Should not happen"))
+        .returning(UpsertOldNew::as_select())
+        .get_result(connection)
+        .unwrap();
+    assert_eq!(
+        UpsertOldNew {
+            was: None,
+            name: "Brand New".to_string(),
+        },
+        row,
+    );
+}

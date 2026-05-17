@@ -27,7 +27,6 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-pub(crate) mod returning_clause;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -95,9 +94,10 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 #[doc(inline)]
 pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod returning;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-#[doc(inline)]
-pub use self::returning_clause::ReturningClause;
+pub mod returning;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(

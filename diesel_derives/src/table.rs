@@ -1,7 +1,6 @@
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
 use proc_macro2::{Span, TokenStream};
-use syn::Ident;
-use syn::parse_quote;
+use syn::{Ident, parse_quote};
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
@@ -888,6 +887,16 @@ fn expand_column_def(
         }
 
         impl diesel::SelectableExpression<super::#query_source_ident> for #column_name {
+        }
+
+        impl<__StmtKind>
+            diesel::SelectableExpression<
+                diesel::internal::table_macro::returning::ReturningQuerySource<
+                    __StmtKind,
+                    super::#query_source_ident,
+                >,
+            > for #column_name
+        {
         }
 
         impl<QS> diesel::AppearsOnTable<QS> for #column_name where
