@@ -170,7 +170,7 @@ impl FromSql<Text, Mysql> for *const str {
 
 #[cfg(feature = "mysql_backend")]
 impl<'a> FromSqlRef<'a, Text, Mysql> for &'a str {
-    fn from_sql(bytes: MysqlValue<'a>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: &'a mut MysqlValue<'_>) -> deserialize::Result<Self> {
         let string = str::from_utf8(bytes.as_bytes())?;
         Ok(string)
     }
@@ -199,7 +199,7 @@ impl FromSql<Binary, Mysql> for *const [u8] {
 
 #[cfg(feature = "mysql_backend")]
 impl<'a> FromSqlRef<'a, Binary, Mysql> for &'a [u8] {
-    fn from_sql(bytes: MysqlValue<'a>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: &'a mut MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes())
     }
 }
