@@ -50,4 +50,14 @@ fn main() {
         .get_result::<String>(&mut connection)
         //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .unwrap();
+
+    // With Nullable, this compiles
+    insert_into(users::table)
+        .values(users::name.eq(""))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq(""))
+        .returning(old(users::name).nullable())
+        .get_result::<Option<String>>(&mut connection)
+        .unwrap();
 }
