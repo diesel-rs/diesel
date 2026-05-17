@@ -131,8 +131,8 @@ where
     DB: Backend,
     for<'a> &'a str: FromSqlRef<'a, ST, DB>,
 {
-    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-        <&str as FromSqlRef<'_, ST, DB>>::from_sql(bytes).map(|v| v.to_owned())
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&str as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(|v| v.to_owned())
     }
 }
 
@@ -162,8 +162,8 @@ where
     DB: Backend,
     for<'a> &'a [u8]: FromSqlRef<'a, ST, DB>,
 {
-    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
-        <&[u8] as FromSqlRef<'_, ST, DB>>::from_sql(bytes).map(|v| v.to_owned())
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&[u8] as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(|v| v.to_owned())
     }
 }
 

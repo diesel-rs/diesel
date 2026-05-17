@@ -455,6 +455,12 @@ fn print_schema_sqlite_primary_key_as_bigint() {
     );
 }
 
+#[test]
+#[cfg(feature = "sqlite")]
+fn table_name_injecetion() {
+    test_print_schema("print_schema_table_name_injection", vec![])
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

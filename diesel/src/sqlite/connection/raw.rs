@@ -159,25 +159,17 @@ impl RawConnection {
             .try_into()
             .map_err(|e| Error::SerializationError(Box::new(e)))?;
 
-        // we pass in the aggregate instance as a user pointer
-        // instead of relying on `sqlite3_aggregate_context` to have
-        // control about the allocation. Specifically allocating
-        // on the rust side will make sure the alignment of the
-        // aggregate instance is correct
-        // Any potential failing code is happening above so we don't leak this memory
-        let ctx_ptr = Box::into_raw(Box::new(None::<A>));
-
         let result = unsafe {
             ffi::sqlite3_create_function_v2(
                 self.internal_connection.as_ptr(),
                 fn_name.as_ptr(),
                 num_args,
                 flags,
-                ctx_ptr.cast(),
+                core::ptr::null_mut(),
                 None,
                 Some(run_aggregator_step_function::<_, _, _, _, A>),
                 Some(run_aggregator_final_function::<_, _, _, _, A>),
-                Some(destroy_boxed::<Option<A>>),
+                None,
             )
         };
 
@@ -428,25 +420,45 @@ where
     A: SqliteAggregateFunction<Args>,
     Args: FromSqlRow<ArgsSqlType, Sqlite>,
 {
-    static NULL_CTX_ERR: &str =
-        "We've written the aggregator to the user data, but it could not be retrieved.";
-
     let aggregator = unsafe {
-        // SAFETY:
-        // * We set the corresponding data in `register_aggregate_function` above
-        // * It has the correct type
-        let aggregate_context = ffi::sqlite3_user_data(ctx) as *mut Option<A>;
-        // SAFETY:
-        // * The layout is correct as we allocated the value on the rust side
-        // * The alignment is correct as we allocated the value on the rust side
-        match aggregate_context.as_mut() {
-            Some(Some(agg)) => agg,
-            Some(r) => {
-                *r = Some(A::default());
-                r.as_mut().expect("Initialised literally above")
+        const {
+            if core::mem::size_of::<*mut A>() == 0 {
+                panic!(
+                    "The pointer size is zero, that's unexpected.\
+                        If you ever see this error message open a issue\
+                        describing your environment"
+                );
             }
-            None => return Err(SqliteCallbackError::Abort(NULL_CTX_ERR)),
         }
+        // sqlite3_aggregate_context will return a memory allocation of the requested
+        // size. For the first call this will be zeroed, for any future call in the same execution
+        // this will contain the value we wrote into it.
+        //
+        // We write just a pointer to rust allocated memory in there to
+        // have the rust side deal with layout and alignment of our aggregator
+        let ctx = ffi::sqlite3_aggregate_context(
+            ctx,
+            core::mem::size_of::<*mut A>()
+                .try_into()
+                .expect("Memory size of a pointer is smaller than i32::MAX"),
+        )
+        // we cast the returned memory here to be a pointer to the aggregate instance
+        .cast::<*mut A>();
+        // we are interested in the inner pointer
+        let inner = &mut *ctx;
+        // if the inner pointer is null we the aggregate_step
+        // function is executed the first time and we need to create the actual
+        // aggregator
+        if inner.is_null() {
+            // for that we allocate a box and turn it into a raw pointer
+            // by leaking the memory
+            let obj = Box::into_raw(Box::new(A::default()));
+            *inner = obj;
+        }
+        // at this point the inner value is never null
+        // as we initialised in in the null branch above,
+        // therefore it's sound to dereference the pointer here
+        &mut **inner
     };
 
     let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
@@ -465,16 +477,41 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
 {
     let result = std::panic::catch_unwind(|| {
         let aggregator = unsafe {
-            // SAFETY:
-            // * We set the corresponding data in `register_aggregate_function` above
-            // * It has the correct type
-            let aggregate_context = ffi::sqlite3_user_data(ctx) as *mut Option<A>;
-            // SAFETY:
-            // * The value has the correct layout as we initialised it on the rust side
-            // * The value has the correct alignment as we initialised it on the rust side
-            aggregate_context.as_mut()
-        }
-        .and_then(|a| a.take());
+            // Get back the aggregated context
+            // This might be null
+            let ctx = ffi::sqlite3_aggregate_context(
+                ctx,
+                // use zero sized allocation here to not allocate if this is the first call to `sqlite3_aggregate_context`
+                0,
+            )
+            // the allocation contains a pointer to the actual aggregator
+            .cast::<*mut A>();
+            // if the context was not allocated yet
+            // we get back a null pointer here due to
+            // the requested zero sized allocation
+            if ctx.is_null() {
+                None
+            } else {
+                // from this point we are interested in the inner pointer
+                // we checked above that this pointer is not null
+                // so it's sound to dereference it
+                let inner = &mut *ctx;
+                if inner.is_null() {
+                    // if the inner pointer is null the aggregator has not been initialized
+                    None
+                } else {
+                    // if it's not null
+                    // we need to construct back the box and move out the
+                    // value to correctly deallocate the allocation
+                    let value = Box::from_raw(*inner);
+                    let value = Some(*value);
+                    // we also want to write a null pointer back to the
+                    // context to make sure that there is no dangling pointer left
+                    *inner = core::ptr::null_mut();
+                    value
+                }
+            }
+        };
 
         let res = A::finalize(aggregator);
         let value = process_sql_function_result(&res)?;
