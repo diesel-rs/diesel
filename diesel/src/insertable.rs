@@ -317,6 +317,38 @@ where
     }
 }
 
+impl<T, Tab, const N: usize> Insertable<Tab> for alloc::rc::Rc<[T; N]>
+where
+    T: Insertable<Tab> + core::clone::Clone,
+{
+    // We can reuse the query id for [T; N] here as this compiles down to the
+    // same query. `T: Clone` is required because shared ownership of `Rc`
+    // prevents moving the array elements out; we clone via `<[T]>::to_vec()`.
+    // The `Box<[T; N]>` impl above does not need this bound because it owns
+    // the array exclusively and can move elements out via `Vec::from`.
+    type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
+
+    fn values(self) -> Self::Values {
+        let v = self.to_vec();
+        let values = v.into_iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
+    }
+}
+
+impl<T, Tab, const N: usize> Insertable<Tab> for alloc::sync::Arc<[T; N]>
+where
+    T: Insertable<Tab> + core::clone::Clone,
+{
+    // See the `Rc<[T; N]>` impl above for the `T: Clone` rationale.
+    type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
+
+    fn values(self) -> Self::Values {
+        let v = self.to_vec();
+        let values = v.into_iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
+    }
+}
+
 mod private {
     // This helper exists to differentiate between
     // Insertable implementations for tuples and for single values

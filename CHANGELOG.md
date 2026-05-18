@@ -20,6 +20,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `json_extract` and `jsonb_extract` SQL function support for the SQLite backend
 * Added `SqliteConnection::get_read_only_blob` method to stream blob's from a SQLite database to Rust via `std::io::Read`
 * Added support for casting to `REAL` in SQLite.
+* Added `ToSql`, `FromSql`, `Queryable`, and `AsExpression` impls for `Rc<T>`, `Arc<T>`, and `Box<T>` (including `Rc/Arc<dyn BoxableExpression>` for cloneable dynamic query fragments and the `<str>` / `<[u8]>` unsized variants).
 
 ### Fixed
 

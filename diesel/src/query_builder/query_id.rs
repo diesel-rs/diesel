@@ -86,6 +86,22 @@ impl<T: QueryId + ?Sized> QueryId for Box<T> {
     const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
 }
 
+impl<T: QueryId + ?Sized> QueryId for alloc::rc::Rc<T> {
+    type QueryId = T::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+
+    const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
+}
+
+impl<T: QueryId + ?Sized> QueryId for alloc::sync::Arc<T> {
+    type QueryId = T::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+
+    const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
+}
+
 impl<T: QueryId + ?Sized> QueryId for &T {
     type QueryId = T::QueryId;
 

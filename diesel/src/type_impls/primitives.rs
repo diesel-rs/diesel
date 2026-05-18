@@ -8,6 +8,7 @@ use crate::sql_types::{
 };
 use alloc::borrow::Cow;
 use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
 use alloc::fmt;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -270,5 +271,174 @@ where
 
     fn as_expression(self) -> Self::Expression {
         Bound::new(&**self)
+    }
+}
+
+impl<T: ?Sized, ST, DB> ToSql<ST, DB> for Box<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+    Self: fmt::Debug,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        ToSql::<ST, DB>::to_sql(&**self, out)
+    }
+}
+
+impl<T, ST, DB> FromSql<ST, DB> for Box<T>
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(Box::from)
+    }
+}
+
+impl<T: ?Sized, ST, DB> Queryable<ST, DB> for Box<T>
+where
+    ST: SingleValue,
+    DB: Backend,
+    Self: FromSql<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+impl<T: ?Sized, ST, DB> ToSql<ST, DB> for alloc::rc::Rc<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+    Self: fmt::Debug,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        ToSql::<ST, DB>::to_sql(&**self, out)
+    }
+}
+
+impl<T, ST, DB> FromSql<ST, DB> for alloc::rc::Rc<T>
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(alloc::rc::Rc::from)
+    }
+}
+
+impl<T: ?Sized, ST, DB> Queryable<ST, DB> for alloc::rc::Rc<T>
+where
+    ST: SingleValue,
+    DB: Backend,
+    Self: FromSql<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+impl<T: ?Sized, ST, DB> ToSql<ST, DB> for alloc::sync::Arc<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+    Self: fmt::Debug,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        ToSql::<ST, DB>::to_sql(&**self, out)
+    }
+}
+
+impl<T, ST, DB> FromSql<ST, DB> for alloc::sync::Arc<T>
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+{
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(alloc::sync::Arc::from)
+    }
+}
+
+impl<T: ?Sized, ST, DB> Queryable<ST, DB> for alloc::sync::Arc<T>
+where
+    ST: SingleValue,
+    DB: Backend,
+    Self: FromSql<ST, DB>,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+// `FromSql` for the unsized-inner-type cases (`Box<str>`, `Rc<str>`, `Arc<str>`,
+// and the `[u8]` equivalents). The generic `FromSql for Box<T> where T: FromSql`
+// blanket above can't cover these because `str`/`[u8]` are `!Sized` and cannot
+// implement `FromSql` themselves. Instead we go through `FromSqlRef` for `&str` /
+// `&[u8]` and then build the smart pointer with `Box::from` / `Rc::from` / `Arc::from`,
+// which all accept `&str` or `&[u8]` and allocate a sized backing buffer.
+
+impl<ST, DB> FromSql<ST, DB> for Box<str>
+where
+    DB: Backend,
+    for<'a> &'a str: FromSqlRef<'a, ST, DB>,
+{
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&str as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(Box::from)
+    }
+}
+
+impl<ST, DB> FromSql<ST, DB> for alloc::rc::Rc<str>
+where
+    DB: Backend,
+    for<'a> &'a str: FromSqlRef<'a, ST, DB>,
+{
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&str as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(alloc::rc::Rc::from)
+    }
+}
+
+impl<ST, DB> FromSql<ST, DB> for alloc::sync::Arc<str>
+where
+    DB: Backend,
+    for<'a> &'a str: FromSqlRef<'a, ST, DB>,
+{
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&str as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(alloc::sync::Arc::from)
+    }
+}
+
+impl<ST, DB> FromSql<ST, DB> for Box<[u8]>
+where
+    DB: Backend,
+    for<'a> &'a [u8]: FromSqlRef<'a, ST, DB>,
+{
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&[u8] as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(Box::from)
+    }
+}
+
+impl<ST, DB> FromSql<ST, DB> for alloc::rc::Rc<[u8]>
+where
+    DB: Backend,
+    for<'a> &'a [u8]: FromSqlRef<'a, ST, DB>,
+{
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&[u8] as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(alloc::rc::Rc::from)
+    }
+}
+
+impl<ST, DB> FromSql<ST, DB> for alloc::sync::Arc<[u8]>
+where
+    DB: Backend,
+    for<'a> &'a [u8]: FromSqlRef<'a, ST, DB>,
+{
+    fn from_sql(mut bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
+        <&[u8] as FromSqlRef<'_, ST, DB>>::from_sql(&mut bytes).map(alloc::sync::Arc::from)
     }
 }
