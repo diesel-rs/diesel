@@ -12,6 +12,7 @@ use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::query_builder::*;
 
 pub use self::aliasing::{Alias, AliasSource, AliasedField};
+pub use self::joins::Inner;
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 pub(crate) use self::private::Pick;
