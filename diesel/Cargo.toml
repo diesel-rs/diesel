@@ -97,7 +97,7 @@ chrono = ["diesel_derives/chrono", "dep:chrono"]
 time = ["diesel_derives/time", "dep:time"]
 uuid = ["dep:uuid"]
 serde_json = ["dep:serde_json"]
-__sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
+__sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing", "dep:bitflags"]
 __with_asan_tests = [
     "libsqlite3-sys?/bundled",
     "libsqlite3-sys?/with-asan",
