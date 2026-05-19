@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Either"],"macro":[["for_both",1],["try_left",1],["try_right",1]],"struct":["IterEither"],"trait":["IntoEither"]};
