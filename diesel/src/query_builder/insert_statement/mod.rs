@@ -116,6 +116,11 @@ where
     /// "overflow evaluating requirement" as a result of calling this method,
     /// you may need an `&` in front of the argument to this method.
     ///
+    /// `#[derive(Insertable)]` usually generates implementations for both owned
+    /// and borrowed records, but `#[diesel(serialize_as)]` consumes the field
+    /// value via `.into()`. In that case, only the owned form implements
+    /// `Insertable`, so call `.values(record)` instead of `.values(&record)`.
+    ///
     /// [`insert_into`]: crate::insert_into()
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
@@ -223,6 +228,40 @@ impl<T: QuerySource, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, O
     }
 }
 
+// This is a separate free standing function
+// so that the debug impl for sqlite can use it with
+// slightly adjusted types
+pub(super) fn walk_ast_intern<'b, T, U, Op, Ret, DB>(
+    mut out: AstPass<'_, 'b, DB>,
+    records: &'b U,
+    into_clause: &'b T::FromClause,
+    operator: &'b Op,
+    returning: &'b Ret,
+) -> QueryResult<()>
+where
+    DB: Backend + DieselReserveSpecialization,
+    T: Table,
+    T::FromClause: QueryFragment<DB>,
+    U: QueryFragment<DB> + CanInsertInSingleQuery<DB>,
+    Op: QueryFragment<DB>,
+    Ret: QueryFragment<DB>,
+{
+    if records.rows_to_insert() == Some(0) {
+        out.push_sql("SELECT 1 FROM ");
+        into_clause.walk_ast(out.reborrow())?;
+        out.push_sql(" WHERE 1=0");
+        return Ok(());
+    }
+
+    operator.walk_ast(out.reborrow())?;
+    out.push_sql(" INTO ");
+    into_clause.walk_ast(out.reborrow())?;
+    out.push_sql(" ");
+    records.walk_ast(out.reborrow())?;
+    returning.walk_ast(out.reborrow())?;
+    Ok(())
+}
+
 impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret>
 where
     DB: Backend + DieselReserveSpecialization,
@@ -232,21 +271,14 @@ where
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.records.rows_to_insert() == Some(0) {
-            out.push_sql("SELECT 1 FROM ");
-            self.into_clause.walk_ast(out.reborrow())?;
-            out.push_sql(" WHERE 1=0");
-            return Ok(());
-        }
-
-        self.operator.walk_ast(out.reborrow())?;
-        out.push_sql(" INTO ");
-        self.into_clause.walk_ast(out.reborrow())?;
-        out.push_sql(" ");
-        self.records.walk_ast(out.reborrow())?;
-        self.returning.walk_ast(out.reborrow())?;
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        walk_ast_intern::<T, U, Op, Ret, DB>(
+            out,
+            &self.records,
+            &self.into_clause,
+            &self.operator,
+            &self.returning,
+        )
     }
 }
 

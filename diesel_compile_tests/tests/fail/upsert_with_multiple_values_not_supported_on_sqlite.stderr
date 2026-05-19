@@ -6,9 +6,9 @@ error[E0271]: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefault
      |          |
      |          required by a bound introduced by this call
      |
-     = note: required for `BatchInsert<Vec<...>, ..., (), false>` to implement `CanInsertInSingleQuery<Sqlite>`
+     = note: required for `BatchInsert<Vec<...>, ..., (), false>` to implement `diesel::insertable::CanInsertInSingleQuery<Sqlite>`
      = note: 1 redundant requirement hidden
-     = note: required for `OnConflictValues<..., ..., ...>` to implement `CanInsertInSingleQuery<Sqlite>`
+     = note: required for `OnConflictValues<..., ..., ...>` to implement `diesel::insertable::CanInsertInSingleQuery<Sqlite>`
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Sqlite>`
      = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
@@ -35,11 +35,11 @@ error[E0277]: `BatchInsert<Vec<...>, ..., (), false>` is no valid SQL fragment f
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/insert_statement/batch_insert.rs
      |
-  LL | / impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
-  LL | |     for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
-  LL | | where
-  LL | |     DB: Backend,
-  LL | |     Self: QueryFragment<DB, DB::BatchInsertSupport>,
+ LL | / impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
+ LL | |     for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
+ LL | | where
+ LL | |     DB: Backend,
+ LL | |     Self: QueryFragment<DB, DB::BatchInsertSupport>,
      | |____________________________________________________^ `BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB>`
 ...
  LL | / impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool>

@@ -206,12 +206,12 @@ pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
 #[cfg(all(feature = "postgres_backend", feature = "__sqlite-shared"))]
-#[allow(unreachable_pub)]
+#[allow(unreachable_pub, ambiguous_glob_reexports)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
 #[cfg(all(feature = "__sqlite-shared", not(feature = "postgres_backend")))]
-#[allow(unreachable_pub)]
+#[allow(unreachable_pub, ambiguous_glob_reexports)]
 pub use crate::sqlite::expression::helper_types::*;
 
 #[doc(inline)]

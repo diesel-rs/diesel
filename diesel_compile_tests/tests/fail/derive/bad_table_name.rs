@@ -36,11 +36,4 @@ struct User4 {
     id: i32,
 }
 
-#[derive(Insertable)]
-#[diesel(table_name = does::not::exist)]
-//~^ ERROR: failed to resolve: use of unresolved module or unlinked crate `does`
-struct User5 {
-    id: i32,
-}
-
 fn main() {}

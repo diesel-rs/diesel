@@ -34,6 +34,6 @@ fn main() {
     let conn = &mut PgConnection::establish("…").unwrap();
 
     let s = diesel::sql_query("…").load::<User>(conn);
-    //~^ ERROR: the trait bound `Untyped: load_dsl::private::CompatibleType<User, _>` is not satisfied
+    //~^ ERROR: the trait bound `Untyped: CompatibleType<User, _>` is not satisfied
     //~| ERROR: the trait bound `User: FromSqlRow<_, _>` is not satisfied
 }

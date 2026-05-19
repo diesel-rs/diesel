@@ -25,7 +25,7 @@ note: required for `more_stuff::columns::names` to implement `AppearsOnTable<stu
      = note: required for `WhereClause<Grouped<Eq<name, Any<names>>>>` to implement `ValidWhereClause<FromClause<table>>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, _>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>

@@ -118,7 +118,6 @@ pub trait MigrationHarness<DB: Backend> {
             .into_iter()
             .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
-
         for applied_version in applied_versions {
             migrations.remove(&applied_version);
         }
@@ -134,6 +133,11 @@ pub trait MigrationHarness<DB: Backend> {
     ///
     /// Types implementing this trait should call [`Migration::run`] internally and record
     /// that a specific migration version was executed afterwards.
+    ///
+    /// The default implementation wraps the migration in a transaction when the migration
+    /// metadata reports `run_in_transaction = true` (the default). See
+    /// [`FileBasedMigrations`](crate::FileBasedMigrations) to learn how to configure
+    /// this for a specific migration.
     fn run_migration(&mut self, migration: &dyn Migration<DB>)
     -> Result<MigrationVersion<'static>>;
 
@@ -141,6 +145,11 @@ pub trait MigrationHarness<DB: Backend> {
     ///
     /// Types implementing this trait should call [`Migration::revert`] internally
     /// and record that a specific migration version was reverted afterwards.
+    ///
+    /// The default implementation wraps the revert in a transaction when the migration
+    /// metadata reports `run_in_transaction = true` (the default). See
+    /// [`FileBasedMigrations`](crate::FileBasedMigrations) to learn how to configure
+    /// this for a specific migration.
     fn revert_migration(
         &mut self,
         migration: &dyn Migration<DB>,

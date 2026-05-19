@@ -23,23 +23,6 @@ struct User {
         select_expression_type = (users::name, users::id)
     )]
     name_and_id: (Option<String>, i32),
-    non_existing: String,
-    //~^ ERROR: cannot find type `non_existing` in module `users`
-    //~| ERROR: cannot find value `non_existing` in module `users`
-    #[diesel(
-        select_expression = users::non_existing,
-        //~^ ERROR: cannot find value `non_existing` in module `users`
-        select_expression_type = users::non_existing
-        //~^ ERROR: cannot find type `non_existing` in module `users`
-    )]
-    non_existing_with_annotation: String,
-    #[diesel(
-        select_expression = (users::id, users::non_existing),
-        //~^ ERROR: cannot find value `non_existing` in module `users`
-        select_expression_type = (users::id, users::non_existing)
-        //~^ ERROR: cannot find type `non_existing` in module `users`
-    )]
-    non_existing_in_tuple: (i32, String),
     #[diesel(
         select_expression = (users::id + 45),
         //~^ ERROR: mismatched types

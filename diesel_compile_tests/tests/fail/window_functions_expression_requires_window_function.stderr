@@ -32,9 +32,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |     users::table.select(lower(users::name).partition_by(users::id));
    |                                            ^^^^^^^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -53,9 +53,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |     users::table.select(lower(users::name).partition_by(users::id));
    |                  ^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -66,7 +66,7 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
              first_value<T, value>
            and N others
    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
 
    
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
@@ -91,9 +91,9 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 ...
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
-     = note: required for `lower<Text, name>` to implement `diesel::Expression`
+     = note: required for `lower<Text, name>` to implement `Expression`
      = note: 1 redundant requirement hidden
-     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `diesel::Expression`
+     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `Expression`
      = note: required for `users::table` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
   
      
@@ -131,9 +131,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |     users::table.select(lower(users::name).over());
    |                                            ^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -152,9 +152,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |     users::table.select(lower(users::name).over());
    |                  ^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -165,7 +165,7 @@ LL |     users::table.select(lower(users::name).over());
              first_value<T, value>
            and N others
    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
 
    
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
@@ -190,9 +190,9 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 ...
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
-     = note: required for `lower<Text, name>` to implement `diesel::Expression`
+     = note: required for `lower<Text, name>` to implement `Expression`
      = note: 1 redundant requirement hidden
-     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `diesel::Expression`
+     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `Expression`
      = note: required for `users::table` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
   
      
@@ -228,9 +228,10 @@ error[E0277]: the trait bound `lower<Text, name>: IsAggregateFunction` is not sa
   --> tests/fail/window_functions_expression_requires_window_function.rs:27:44
    |
 LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
-   |                                            ^^^^^^^^^^^^^ the trait `IsAggregateFunction` is not implemented for `lower<Text, name>`
+   |                                            ^^^^^^^^^^^^^ unsatisfied trait bound
    |
-   = help: the following other types implement trait `IsAggregateFunction`:
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsAggregateFunction` is not implemented for `lower<Text, name>`
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsAggregateFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -265,10 +266,8 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 ...
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
-     = note: required for `lower<Text, name>` to implement `diesel::Expression`
-     = note: 1 redundant requirement hidden
-     = note: required for `AggregateExpression<..., ..., ..., ...>` to implement `diesel::Expression`
-     = note: required for `users::table` to implement `SelectDsl<AggregateExpression<..., ..., ..., ...>>`
+     = note: required for `lower<Text, name>` to implement `ValidGrouping<()>`
+     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ...>>`
   
      
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
@@ -305,9 +304,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |     users::table.select(lower(users::name).window_order(users::id));
    |                                            ^^^^^^^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -326,9 +325,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |     users::table.select(lower(users::name).window_order(users::id));
    |                  ^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -339,7 +338,7 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
              first_value<T, value>
            and N others
    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
 
    
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
@@ -364,9 +363,9 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 ...
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
-     = note: required for `lower<Text, name>` to implement `diesel::Expression`
+     = note: required for `lower<Text, name>` to implement `Expression`
      = note: 1 redundant requirement hidden
-     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `diesel::Expression`
+     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `Expression`
      = note: required for `users::table` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
   
      
@@ -404,9 +403,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
    |                                    ^^^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -425,9 +424,9 @@ error[E0277]: `lower<Text, name>` is not a window function
 LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
    |          ^^^^^^ remove this function call to use `lower<Text, name>` as normal SQL function
    |
-   = help: the trait `IsWindowFunction` is not implemented for `lower<Text, name>`
+   = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `IsWindowFunction`:
+   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -438,7 +437,7 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
              first_value<T, value>
            and N others
    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
 
    
 error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
@@ -463,9 +462,9 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 ...
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
-     = note: required for `lower<Text, name>` to implement `diesel::Expression`
+     = note: required for `lower<Text, name>` to implement `Expression`
      = note: 1 redundant requirement hidden
-     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `diesel::Expression`
+     = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `Expression`
      = note: required for `users::table` to implement `SelectDsl<AggregateExpression<..., ..., ..., ..., ...>>`
   
      For more information about this error, try `rustc --explain E0277`.

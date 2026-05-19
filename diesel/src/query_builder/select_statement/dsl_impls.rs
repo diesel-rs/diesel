@@ -131,6 +131,9 @@ where
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    O: ValidGrouping<G::Expressions>,
+    <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+        MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
 {
     type Output = SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 
@@ -274,6 +277,12 @@ where
     SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>:
         SelectQuery<SqlType = ST>,
     OrderClause<Expr>: ValidOrderingForDistinct<D>,
+    G: ValidGroupByClause,
+    S: SelectClauseExpression<FromClause<F>>,
+    Expr: ValidGrouping<G::Expressions>,
+    S::Selection: ValidGrouping<G::Expressions>,
+    <S::Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+        MixedAggregates<<Expr as ValidGrouping<G::Expressions>>::IsAggregate>,
 {
     type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>;
 
@@ -298,6 +307,12 @@ impl<F, S, D, W, O, LOf, G, H, LC, Expr> ThenOrderDsl<Expr>
 where
     F: QuerySource,
     Expr: AppearsOnTable<F>,
+    G: ValidGroupByClause,
+    S: SelectClauseExpression<FromClause<F>>,
+    Expr: ValidGrouping<G::Expressions>,
+    S::Selection: ValidGrouping<G::Expressions>,
+    <S::Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+        MixedAggregates<<Expr as ValidGrouping<G::Expressions>>::IsAggregate>,
 {
     type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, G, H, LC>;
 

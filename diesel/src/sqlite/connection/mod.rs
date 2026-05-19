@@ -10,6 +10,7 @@ mod owned_row;
 mod raw;
 mod row;
 mod serialized_database;
+pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
@@ -414,6 +415,57 @@ impl SqliteConnection {
         NonZeroI64::new(self.raw_connection.last_insert_rowid())
     }
 
+    /// Returns an object that can be used to stream a BLOB from the database
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # table! {
+    /// #     myblobs {
+    /// #         id -> Integer,
+    /// #         mydata -> Blob,
+    /// #     }
+    /// # }
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
+    /// use std::io::Read;
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.batch_execute("CREATE TABLE myblobs (id INTEGER PRIMARY KEY, mydata BLOB)")?;
+    /// conn.batch_execute("INSERT INTO myblobs (mydata) VALUES ('abc')")?;
+    /// let mut data = conn.get_read_only_blob(myblobs::mydata, 1)?;
+    /// let mut buf = vec![];
+    /// data.read_to_end(&mut buf)?;
+    /// assert_eq!(buf, b"abc");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_read_only_blob<'conn, 'query, U>(
+        &'conn self,
+        blob_column: U,
+        row_id: i64,
+    ) -> Result<sqlite_blob::SqliteReadOnlyBlob<'conn>, Error>
+    where
+        'query: 'conn,
+        U: crate::Column,
+        U::Table: nodes::StaticQueryFragment,
+        <U::Table as nodes::StaticQueryFragment>::Component: HasDatabaseAndTableName,
+    {
+        use crate::query_builder::nodes::StaticQueryFragment;
+        // this mostly exists for a more natural way to call this function
+        let _ = blob_column;
+
+        let database_name = U::Table::STATIC_COMPONENT.database_name().unwrap_or("main");
+        let column_name = U::NAME;
+        let table_name = U::Table::STATIC_COMPONENT.table_name();
+
+        self.raw_connection
+            .blob_open(database_name, table_name, column_name, row_id)
+    }
+
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
         F: FnOnce(&mut Self) -> Result<T, E>,
@@ -744,6 +796,41 @@ impl SqliteConnection {
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
 }
+
+mod private {
+    #[doc(hidden)]
+    pub trait HasDatabaseAndTableName {
+        fn database_name(&self) -> Option<&'static str>;
+        fn table_name(&self) -> &'static str;
+    }
+
+    impl HasDatabaseAndTableName for crate::query_builder::nodes::Identifier<'static> {
+        fn database_name(&self) -> Option<&'static str> {
+            None
+        }
+
+        fn table_name(&self) -> &'static str {
+            self.0
+        }
+    }
+
+    impl<M> HasDatabaseAndTableName
+        for crate::query_builder::nodes::InfixNode<
+            crate::query_builder::nodes::Identifier<'static>,
+            crate::query_builder::nodes::Identifier<'static>,
+            M,
+        >
+    {
+        fn database_name(&self) -> Option<&'static str> {
+            Some(self.lhs.0)
+        }
+
+        fn table_name(&self) -> &'static str {
+            self.rhs.0
+        }
+    }
+}
+pub(crate) use self::private::HasDatabaseAndTableName;
 
 #[cfg(test)]
 mod tests {
@@ -1496,5 +1583,280 @@ mod tests {
             .execute(conn)
             .unwrap();
         assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+    }
+
+    #[diesel_test_helper::test]
+    fn read_bytes_from_blob() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+                data2 -> Blob,
+            }
+        }
+
+        use std::io::Read;
+
+        let conn = &mut connection();
+
+        let _ =
+            crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB, data2 BLOB)")
+                .execute(conn);
+
+        let _ = crate::sql_query(
+            "INSERT INTO blobs (data, data2) VALUES ('abc', 'def'), ('123', '456')",
+        )
+        .execute(conn);
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        let mut buf = vec![];
+        data.read_to_end(&mut buf).unwrap();
+
+        assert_eq!(buf, b"abc");
+
+        let mut data2 = conn.get_read_only_blob(blobs::data2, 1).unwrap();
+        let mut buf = vec![];
+        data2.read_to_end(&mut buf).unwrap();
+
+        assert_eq!(buf, b"def");
+    }
+
+    #[diesel_test_helper::test]
+    fn read_seek_bytes() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::Read;
+        use std::io::Seek;
+        use std::io::SeekFrom;
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abcdefghi')").execute(conn);
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek one forward
+        assert_eq!(data.seek(SeekFrom::Current(1)).unwrap(), 2);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"c");
+
+        // Seek back to start
+        assert_eq!(data.seek(SeekFrom::Start(0)).unwrap(), 0);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek before start
+        assert_eq!(data.seek(SeekFrom::Current(-10)).unwrap(), 0);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek after end
+        data.seek(SeekFrom::Current(100)).unwrap();
+
+        // Now we don't get any bytes back
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn use_conn_after_blob_drop() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
+
+        let data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        drop(data);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('def')").execute(conn);
+    }
+
+    #[diesel_test_helper::test]
+    fn blob_transaction() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::Read;
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
+
+        {
+            let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+            let mut buf = vec![];
+            data.read_to_end(&mut buf).unwrap();
+            assert_eq!(buf, b"abc");
+        }
+
+        let res = conn.exclusive_transaction(|conn| {
+            crate::sql_query("UPDATE blobs SET data = 'def' WHERE id = 1").execute(conn)?;
+
+            let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+            let mut buf = vec![];
+            data.read_to_end(&mut buf).unwrap();
+            assert_eq!(buf, b"def");
+
+            Result::<(), _>::Err(Error::RollbackTransaction)
+        });
+
+        assert_eq!(res.unwrap_err(), Error::RollbackTransaction);
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        let mut buf = vec![];
+        data.read_to_end(&mut buf).unwrap();
+        assert_eq!(buf, b"abc");
+    }
+
+    #[diesel_test_helper::test]
+    fn aggregate_function_works_with_aligned_data() {
+        #[derive(Debug, Default)]
+        #[repr(align(64))]
+        struct OverAligned;
+
+        impl SqliteAggregateFunction<i32> for OverAligned {
+            type Output = i64;
+
+            fn step(&mut self, _value: i32) {
+                let need = core::mem::align_of::<Self>();
+                let got = core::mem::align_of_val(self);
+                assert_eq!(need, got);
+            }
+
+            fn finalize(_agg: Option<Self>) -> i64 {
+                0
+            }
+        }
+        #[declare_sql_function]
+        extern "SQL" {
+            #[aggregate]
+            fn over_aligned_sum(x: Integer) -> diesel::sql_types::BigInt;
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+        over_aligned_sum_utils::register_impl::<OverAligned, _>(&mut conn).unwrap();
+
+        diesel::select(over_aligned_sum(1))
+            .execute(&mut conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn sum_twice() {
+        #[derive(Default)]
+        struct Sum(i32);
+
+        impl SqliteAggregateFunction<i32> for Sum {
+            type Output = i32;
+
+            fn step(&mut self, value: i32) {
+                self.0 += value;
+            }
+
+            fn finalize(agg: Option<Self>) -> i32 {
+                agg.map(|s| s.0).unwrap_or_default()
+            }
+        }
+
+        #[declare_sql_function]
+        extern "SQL" {
+            #[aggregate]
+            fn my_sum(x: Integer) -> Integer;
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+        my_sum_utils::register_impl::<Sum, _>(&mut conn).unwrap();
+
+        conn.batch_execute(
+            "
+            CREATE TABLE test(key1 INTEGER, key2 INTEGER);
+            INSERT INTO test(key1, key2) VALUES (1, 2), (2, 4), (3, 6);
+",
+        )
+        .unwrap();
+
+        table! {
+            test (key1, key2) {
+                key1 -> Integer,
+                key2 -> Integer,
+            }
+        }
+
+        let (first_res, second_res) = test::table
+            .select((my_sum(test::key1), my_sum(test::key2)))
+            .get_result::<(i32, i32)>(&mut conn)
+            .unwrap();
+
+        assert_eq!(first_res, 6);
+        assert_eq!(second_res, 12);
+
+        conn.batch_execute("DELETE FROM test").unwrap();
+        let (first_res, second_res) = test::table
+            .select((my_sum(test::key1), my_sum(test::key2)))
+            .get_result::<(i32, i32)>(&mut conn)
+            .unwrap();
+
+        assert_eq!(first_res, 0);
+        assert_eq!(second_res, 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn test_injection() {
+        diesel::table! {
+            #[sql_name = "quote'table"]
+            quote_table (id) {
+                id -> Nullable<Integer>,
+                name -> Nullable<Text>,
+            }
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+
+        conn.batch_execute("CREATE TABLE \"quote'table\" (id INTEGER PRIMARY KEY, name TEXT);")
+            .unwrap();
+
+        diesel::insert_into(quote_table::table)
+            .values((quote_table::id.eq(1), quote_table::name.eq("Jane")))
+            .execute(&mut conn)
+            .unwrap();
+
+        let data = quote_table::table
+            .load::<(Option<i32>, Option<String>)>(&mut conn)
+            .unwrap();
+        assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
     }
 }

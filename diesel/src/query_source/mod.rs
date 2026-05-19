@@ -142,13 +142,15 @@ pub trait AppearsInFromClause<QS> {
 ///
 /// (Notably, a bunch of [`AppearsInFromClause`] for the tables and their aliases.)
 ///
-/// This trait is implemented by the [`allow_tables_to_appear_in_same_query!`] macro.
+/// This trait is implemented by the
+/// [`allow_tables_to_appear_in_same_query!`](crate::allow_tables_to_appear_in_same_query)
+/// macro.
 ///
 /// Troubleshooting
 /// ---------------
 /// If you encounter an error mentioning this trait, it could mean that either:
 /// - You are attempting to use tables that don't belong to the same database together
-///   (no call to [`allow_tables_to_appear_in_same_query!`] was made)
+///   (no call to [`allow_tables_to_appear_in_same_query!`](crate::allow_tables_to_appear_in_same_query) was made)
 /// - You are attempting to use two aliases to the same table in the same query, but they
 ///   were declared through different calls to [`alias!`](crate::alias)
 #[diagnostic::on_unimplemented(

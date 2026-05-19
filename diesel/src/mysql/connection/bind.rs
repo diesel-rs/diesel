@@ -1,4 +1,5 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::cmp;
 use core::ffi as libc;
 use core::mem::MaybeUninit;
 use core::mem::{self, ManuallyDrop};
@@ -138,17 +139,19 @@ bitflags::bitflags! {
         const BINARY_FLAG = 128;
         const ENUM_FLAG = 256;
         const AUTO_INCREMENT_FLAG = 512;
-        const TIMESTAMP_FLAG = 1024;
-        const SET_FLAG = 2048;
-        const NO_DEFAULT_VALUE_FLAG = 4096;
-        const ON_UPDATE_NOW_FLAG = 8192;
-        const NUM_FLAG = 32768;
-        const PART_KEY_FLAG = 16384;
-        const GROUP_FLAG = 32768;
-        const UNIQUE_FLAG = 65536;
-        const BINCMP_FLAG = 130_172;
+        const TIMESTAMP_FLAG = 1_024;
+        const SET_FLAG = 2_048;
+        const NO_DEFAULT_VALUE_FLAG = 4_096;
+        const ON_UPDATE_NOW_FLAG = 8_192;
+        const NUM_FLAG = 32_768;
+        const PART_KEY_FLAG = 16_384;
+        const GROUP_FLAG = (1 << 28);
+        const UNIQUE_FLAG = 65_536;
+        const BINCMP_FLAG = 131_072;
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
+        const EXPLICIT_NULL_FLAG = (1 << 27);
+        const NOT_SECONDARY_FLAG = (1 << 29);
     }
 }
 
@@ -178,6 +181,13 @@ pub(super) struct BindData {
 // instead of just copying the pointer
 impl Clone for BindData {
     fn clone(&self) -> Self {
+        // we just make sure here that we never create a
+        // slice larger than the allocation
+        let length = cmp::min(
+            self.capacity,
+            self.length.try_into().expect("usize fits the length"),
+        );
+
         let (ptr, len, capacity) = if let Some(ptr) = self.bytes {
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
@@ -187,10 +197,7 @@ impl Clone for BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                core::slice::from_raw_parts(
-                    ptr.as_ptr(),
-                    self.length.try_into().expect("usize is at least 32bit"),
-                )
+                core::slice::from_raw_parts(ptr.as_ptr(), length)
             };
             bind_buffer(slice.to_owned())
         } else {
@@ -521,14 +528,15 @@ impl BindData {
     /// this function is unsafe unless the binds are immediately rebound.
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
-            if let Some(bytes) = self.bytes {
+            if let Some(bytes) = self.bytes.take() {
                 let mut bytes =
                     unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
-                self.bytes = None;
 
                 let offset = self.capacity;
                 let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
-                let truncated_amount = length - offset;
+                let truncated_amount = length
+                    .checked_sub(offset)
+                    .expect("offset is always smaller than the actual length");
 
                 debug_assert!(
                     truncated_amount > 0,
@@ -819,12 +827,11 @@ mod tests {
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
         let meta = (bind.tpe, bind.flags).into();
-        dbg!(meta);
 
         let value = bind.value().expect("Is not null");
         let value = MysqlValue::new_internal(value.as_bytes(), meta);
 
-        dbg!(T::from_sql(value))
+        T::from_sql(value)
     }
 
     #[cfg(feature = "extras")]

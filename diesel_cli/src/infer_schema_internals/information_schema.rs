@@ -417,4 +417,32 @@ mod tests {
             get_primary_keys(&mut connection, &table_2).unwrap()
         );
     }
+
+    /// Regression test for https://github.com/diesel-rs/diesel/issues/436
+    ///
+    /// When a primary key column is renamed, `get_primary_keys` must return the
+    /// new name, not the old one.  The old `pg_attribute`-based implementation
+    /// kept a stale entry for the original name; the current
+    /// `information_schema.key_column_usage` implementation always reflects the
+    /// live constraint definition.
+    #[test]
+    fn get_primary_keys_reflects_renamed_primary_key_column() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_1 (non_standard_pk SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("ALTER TABLE test_schema.table_1 RENAME COLUMN non_standard_pk TO id")
+            .execute(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", "test_schema");
+        assert_eq!(
+            vec!["id".to_string()],
+            get_primary_keys(&mut connection, &table_1).unwrap()
+        );
+    }
 }

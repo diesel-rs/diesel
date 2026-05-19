@@ -9,7 +9,7 @@ pub type Is<Lhs, Rhs> = Grouped<super::operators::Is<Lhs, AsExpr<Rhs, Lhs>>>;
 /// The return type of `lhs.is_not(rhs)`.
 pub type IsNot<Lhs, Rhs> = Grouped<super::operators::IsNot<Lhs, AsExpr<Rhs, Lhs>>>;
 
-/// The return type of [`lhs.retrieve_as_object(rhs)`](super::expression_methods::SqliteAnyJsonExpressionMethods::retrieve_as_object)
+/// The return type of [`lhs.retrieve_as_object(rhs)`](super::expression_methods::SqliteAnyJsonExpressionMethods::retrieve_as_object_sqlite)
 ///
 /// Note: SQLite's `->` operator always returns JSON (TEXT representation), not JSONB
 #[cfg(feature = "__sqlite-shared")]

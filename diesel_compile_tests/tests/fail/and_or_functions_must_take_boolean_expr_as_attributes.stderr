@@ -9,9 +9,9 @@ help: the following other types implement trait `BoolOrNullableBool`
    --> DIESEL/diesel/diesel/src/sql_types/mod.rs
     |
 LL | impl BoolOrNullableBool for Bool {}
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Bool`
 LL | impl BoolOrNullableBool for Nullable<Bool> {}
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<diesel::sql_types::Bool>`
 note: required by a bound in `diesel::BoolExpressionMethods::and`
    --> DIESEL/diesel/diesel/src/expression_methods/bool_expression_methods.rs
     |
@@ -32,9 +32,9 @@ help: the following other types implement trait `BoolOrNullableBool`
    --> DIESEL/diesel/diesel/src/sql_types/mod.rs
     |
 LL | impl BoolOrNullableBool for Bool {}
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Bool`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Bool`
 LL | impl BoolOrNullableBool for Nullable<Bool> {}
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Bool>`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<diesel::sql_types::Bool>`
 note: required by a bound in `diesel::BoolExpressionMethods::or`
    --> DIESEL/diesel/diesel/src/expression_methods/bool_expression_methods.rs
     |

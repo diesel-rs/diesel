@@ -443,6 +443,27 @@ impl Drop for BoundStatement<'_, '_> {
 #[allow(missing_debug_implementations)]
 pub struct StatementUse<'stmt, 'query> {
     statement: BoundStatement<'stmt, 'query>,
+    // SAFETY:
+    // https://sqlite.org/c3ref/column_name.html
+    // This pointer is valid as long as:
+    // The returned string pointer is valid until either
+    // the prepared statement is destroyed by sqlite3_finalize()
+    // or until the statement is automatically reprepared by the first
+    // call to sqlite3_step() for a particular run or until the next call
+    // to sqlite3_column_name() or sqlite3_column_name16() on the same column.
+    //
+    // Step has an explicit `first` flag that resets this field
+    // in this case
+    // The `OnceCell` ensure that we never call
+    // `sqlite3_column_name` again after populating this field
+    //
+    // We also assume that we are the owner of `statement` and the
+    // inner pointer is not exposed anywhere else. This ensures
+    // no one else can call the functions mentioned above
+    //
+    // We use `*const str` instead of `&str`
+    // as this is essentially a self referential struct
+    // as we borrow into `statement`
     column_names: OnceCell<Vec<*const str>>,
 }
 

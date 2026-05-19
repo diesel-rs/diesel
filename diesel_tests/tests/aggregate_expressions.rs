@@ -1,5 +1,6 @@
 use crate::schema::connection_with_sean_and_tess_in_users_table;
 use crate::schema::posts;
+use crate::schema::users;
 use diesel::dsl;
 use diesel::prelude::*;
 
@@ -71,4 +72,43 @@ fn order() {
     let res = q.get_result::<i64>(&mut conn).unwrap();
 
     assert_eq!(res, 2);
+}
+
+#[diesel_test_helper::test]
+fn order_by_aggregate_with_aggregate_select() {
+    let mut conn = connection_with_sean_and_tess_in_users_table();
+    let res = users::table
+        .select(dsl::max(users::id))
+        .order_by(dsl::max(users::id))
+        .get_result::<Option<i32>>(&mut conn)
+        .unwrap();
+    assert_eq!(res, Some(2));
+}
+
+#[diesel_test_helper::test]
+fn order_by_group_by_column_with_aggregate_select() {
+    let mut conn = connection_with_sean_and_tess_in_users_table();
+    let mut res = users::table
+        .group_by(users::name)
+        .select((users::name, dsl::max(users::id)))
+        .order_by(users::name)
+        .load::<(String, Option<i32>)>(&mut conn)
+        .unwrap();
+    res.sort();
+    assert_eq!(
+        res,
+        vec![("Sean".to_string(), Some(1)), ("Tess".to_string(), Some(2)),]
+    );
+}
+
+#[diesel_test_helper::test]
+fn then_order_by_aggregate() {
+    let mut conn = connection_with_sean_and_tess_in_users_table();
+    let res = users::table
+        .select(dsl::max(users::id))
+        .order_by(dsl::max(users::id))
+        .then_order_by(dsl::count_star())
+        .get_result::<Option<i32>>(&mut conn)
+        .unwrap();
+    assert_eq!(res, Some(2));
 }

@@ -34,7 +34,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<Join<tab
      = note: required for `WhereClause<Grouped<In<id, Subselect<..., ...>>>>` to implement `ValidWhereClause<FromClause<table>>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
@@ -67,7 +67,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<Join<tab
      = note: required for `WhereClause<Grouped<Eq<id, Any<...>>>>` to implement `ValidWhereClause<FromClause<table>>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
@@ -100,7 +100,7 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<Join<tab
      = note: required for `WhereClause<Exists<...>>` to implement `ValidWhereClause<FromClause<table>>`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, _, (i32,)>`
-note: required by a bound in `diesel::RunQueryDsl::load`
+note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>

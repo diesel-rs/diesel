@@ -1,4 +1,4 @@
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:17:5
    |
 LL |     st.select(b);
@@ -15,7 +15,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.select(b);
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:19:5
    |
 LL |     st.select(b).distinct();
@@ -27,7 +27,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.select(b).distinct();
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:21:5
    |
 LL |     st.count();
@@ -39,7 +39,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.count();
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:23:5
    |
 LL |     st.order(b);
@@ -51,7 +51,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.order(b);
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:25:5
    |
 LL |     st.limit(1);
@@ -63,7 +63,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.limit(1);
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:27:5
    |
 LL |     st.offset(1);
@@ -75,7 +75,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.offset(1);
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:30:5
    |
 LL |     st.filter(b.eq(true));
@@ -87,7 +87,7 @@ help: use `let _ = ...` to ignore the resulting value
 LL |     let _ = st.filter(b.eq(true));
    |     +++++++
 
-error: unused `SelectStatement` that must be used
+error: unused `diesel::query_builder::select_statement::SelectStatement` that must be used
   --> tests/fail/must_use_query_methods.rs:32:5
    |
 LL |     st.filter(b.eq(true)).limit(1);

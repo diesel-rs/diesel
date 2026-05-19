@@ -20,6 +20,7 @@ const _: () = {
             diesel::internal::derives::as_expression::Bound::new(self)
         }
     }
+    #[diagnostic::do_not_recommend]
     impl<
         '__expr,
     > diesel::expression::AsExpression<
@@ -37,6 +38,7 @@ const _: () = {
             diesel::internal::derives::as_expression::Bound::new(self)
         }
     }
+    #[diagnostic::do_not_recommend]
     impl<'__expr, '__expr2> diesel::expression::AsExpression<diesel::sql_type::Integer>
     for &'__expr2 &'__expr Foo {
         type Expression = diesel::internal::derives::as_expression::Bound<
@@ -51,6 +53,7 @@ const _: () = {
             diesel::internal::derives::as_expression::Bound::new(self)
         }
     }
+    #[diagnostic::do_not_recommend]
     impl<
         '__expr,
         '__expr2,

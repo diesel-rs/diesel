@@ -162,6 +162,42 @@ impl<DB: Backend> Migration<DB> for Box<dyn Migration<DB> + '_> {
     }
 }
 
+impl<DB: Backend> Migration<DB> for alloc::rc::Rc<dyn Migration<DB> + '_> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).run(conn)
+    }
+
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).revert(conn)
+    }
+
+    fn metadata(&self) -> &dyn MigrationMetadata {
+        (**self).metadata()
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        (**self).name()
+    }
+}
+
+impl<DB: Backend> Migration<DB> for alloc::sync::Arc<dyn Migration<DB> + '_> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).run(conn)
+    }
+
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).revert(conn)
+    }
+
+    fn metadata(&self) -> &dyn MigrationMetadata {
+        (**self).metadata()
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        (**self).name()
+    }
+}
+
 impl<DB: Backend> Migration<DB> for &dyn Migration<DB> {
     fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (**self).run(conn)
@@ -223,5 +259,23 @@ impl MigrationConnection for crate::sqlite::SqliteConnection {
     fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Migration;
+    use crate::backend::Backend;
+    use alloc::boxed::Box;
+    use alloc::rc::Rc;
+    use alloc::sync::Arc;
+
+    fn assert_migration<DB: Backend, M: Migration<DB>>() {}
+
+    #[allow(dead_code)]
+    fn migration_for_box_rc_arc_dyn_compiles<DB: Backend>() {
+        assert_migration::<DB, Box<dyn Migration<DB>>>();
+        assert_migration::<DB, Rc<dyn Migration<DB>>>();
+        assert_migration::<DB, Arc<dyn Migration<DB>>>();
     }
 }

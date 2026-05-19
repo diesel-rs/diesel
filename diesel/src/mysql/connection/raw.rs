@@ -62,6 +62,7 @@ impl RawConnection {
         let port = connection_options.port();
         let unix_socket = connection_options.unix_socket();
         let client_flags = connection_options.client_flags();
+        let local_infile = connection_options.local_infile();
 
         if let Some(ssl_mode) = connection_options.ssl_mode() {
             self.set_ssl_mode(ssl_mode)
@@ -74,6 +75,9 @@ impl RawConnection {
         }
         if let Some(ssl_key) = connection_options.ssl_key() {
             self.set_ssl_key(ssl_key)
+        }
+        if let Some(local_infile) = local_infile {
+            self.set_local_infile(local_infile)
         }
 
         unsafe {
@@ -242,6 +246,19 @@ impl RawConnection {
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_KEY,
                 ssl_key.as_ptr() as *const core::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_local_infile(&self, local_infile: bool) {
+        let v = local_infile as u32;
+        let v_ptr: *const u32 = &v;
+        let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_LOCAL_INFILE,
+                n.as_ptr() as *const core::ffi::c_void,
             )
         };
     }

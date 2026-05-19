@@ -22,7 +22,6 @@ fn main() {
 
     // these should fail
     let _ = posts::table
-        //~^ ERROR: type annotations needed
         .group_by(posts::user_id)
         .distinct_on(posts::id)
         //~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: DistinctOnDsl<_>` is not satisfied
@@ -30,7 +29,6 @@ fn main() {
         .get_results::<i32>(&mut conn);
 
     let _ = posts::table
-        //~^ ERROR: type annotations needed
         .distinct_on(posts::id)
         .group_by(posts::user_id)
         .select(posts::user_id)
@@ -50,7 +48,6 @@ fn main() {
         .get_result::<i64>(&mut conn);
 
     let _ = posts::table
-        //~^ ERROR: type annotations needed
         .distinct_on(posts::user_id)
         .count()
         //~^ ERROR: the trait bound `SelectStatement<..., ..., ...>: SelectDsl<...>` is not satisfied

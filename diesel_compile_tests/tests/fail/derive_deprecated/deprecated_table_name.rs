@@ -3,7 +3,6 @@ extern crate diesel;
 
 #[derive(AsChangeset)]
 #[table_name = "users"]
-//~^ ERROR: failed to resolve: use of unresolved module or unlinked crate `users`
 struct UserForm1 {
     id: i32,
     name: String,

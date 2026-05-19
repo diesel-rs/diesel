@@ -2,11 +2,12 @@ use super::{BatchInsert, InsertStatement};
 use crate::insertable::InsertValues;
 use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
 use crate::prelude::*;
+use crate::query_builder::debug_query::DebugBinds;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
-use crate::query_builder::{AstPass, QueryId, ValuesClause};
+use crate::query_builder::{AstPass, QueryBuilder, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
 use crate::query_dsl::{LoadQuery, methods::ExecuteDsl};
-use crate::sqlite::Sqlite;
+use crate::sqlite::{Sqlite, SqliteQueryBuilder};
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec::Vec;
@@ -65,50 +66,93 @@ where
     }
 }
 
-#[allow(unsafe_code)] // cast to transparent wrapper type
 impl<'a, T, V, QId, Op, const STATIC_QUERY_ID: bool> DebugQueryHelper<No>
-    for DebugQuery<'a, InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>, Sqlite>
-where
-    T: Copy + QuerySource,
-    Op: Copy,
-    DebugQuery<
+    for DebugQuery<
         'a,
-        InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>,
+        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
         Sqlite,
-    >: Debug + Display,
+    >
+where
+    T: Copy + Table,
+    Op: Copy + QueryFragment<Sqlite>,
+    SqliteBatchInsertWrapper<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>:
+        QueryFragment<Sqlite>,
+    V: CanInsertInSingleQuery<Sqlite>,
+    T::FromClause: QueryFragment<Sqlite>,
 {
     fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = unsafe {
-            // This cast is safe as `SqliteBatchInsertWrapper` is #[repr(transparent)]
-            &*(self as *const DebugQuery<
-                'a,
-                InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
-                Sqlite,
-            >
-                as *const DebugQuery<
-                    'a,
-                    InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>,
-                    Sqlite,
-                >)
-        };
-        <_ as Debug>::fmt(value, f)
+        self.fmt_helper(f, crate::query_builder::debug_query::debug)
     }
 
     fn fmt_display(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = unsafe {
-            // This cast is safe as `SqliteBatchInsertWrapper` is #[repr(transparent)]
-            &*(self as *const DebugQuery<
-                'a,
-                InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
-                Sqlite,
-            >
-                as *const DebugQuery<
-                    'a,
-                    InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>,
-                    Sqlite,
+        self.fmt_helper(f, crate::query_builder::debug_query::display)
+    }
+}
+
+#[allow(unsafe_code)] // cast to transparent wrapper type
+impl<'a, T, V, QId, Op, const STATIC_QUERY_ID: bool>
+    DebugQuery<
+        'a,
+        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
+        Sqlite,
+    >
+where
+    T: Copy + Table,
+    Op: Copy + QueryFragment<Sqlite>,
+    SqliteBatchInsertWrapper<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>:
+        QueryFragment<Sqlite>,
+    V: CanInsertInSingleQuery<Sqlite>,
+    T::FromClause: QueryFragment<Sqlite>,
+{
+    fn fmt_helper(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        formatter: fn(String, &DebugBinds<'_>, &mut fmt::Formatter<'_>) -> fmt::Result,
+    ) -> fmt::Result {
+        // explicit destruct to make sure we use all  the fields
+        let InsertStatement {
+            operator,
+            target: _,
+            records,
+            returning,
+            into_clause,
+        } = self.query;
+        let records = unsafe {
+            // SAFETY:
+            // * SqliteBatchInsertWrapper is `#[repr(transparent)]` so this cast
+            // is allowed
+            &*(records as *const _
+                as *const SqliteBatchInsertWrapper<
+                    Vec<ValuesClause<V, T>>,
+                    T,
+                    QId,
+                    STATIC_QUERY_ID,
                 >)
         };
-        <_ as Display>::fmt(value, f)
+        let mut buffer = Vec::new();
+        let ast_pass = AstPass::debug_binds(&mut buffer, &Sqlite);
+        super::insert_statement::walk_ast_intern::<T, _, _, _, Sqlite>(
+            ast_pass,
+            records,
+            into_clause,
+            operator,
+            returning,
+        )
+        .map_err(|_| fmt::Error)?;
+        let mut query_builder = SqliteQueryBuilder::default();
+        let mut ast_pass_to_sql_options = Default::default();
+        let sql_pass = AstPass::to_sql(&mut query_builder, &mut ast_pass_to_sql_options, &Sqlite);
+        super::insert_statement::walk_ast_intern::<T, _, _, _, Sqlite>(
+            sql_pass,
+            records,
+            into_clause,
+            operator,
+            returning,
+        )
+        .map_err(|_| fmt::Error)?;
+        let query = query_builder.finish();
+        let debug_binds = crate::query_builder::debug_query::DebugBinds::new(&buffer);
+        formatter(query, &debug_binds, f)
     }
 }
 

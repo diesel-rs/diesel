@@ -10,10 +10,17 @@ error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the 
              this SQL syntax
 help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
-    --> DIESEL/diesel/diesel/src/pg/expression/operators.rs
+    --> DIESEL/diesel/diesel/src/expression/operators.rs
      |
-  LL | infix_operator!(ILike, " ILIKE ", backend: Pg);
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  LL | / ...   impl<$($ty_param,)+ $($backend_ty_param,)*> $crate::query_builder::QueryFragment<$...
+  LL | | ...       for $name<$($ty_param,)+> where
+  LL | | ...           $($ty_param: $crate::query_builder::QueryFragment<$backend_ty>,)+
+     | |_____________________________________________________________________________^
+     |
+    ::: DIESEL/diesel/diesel/src/pg/expression/operators.rs
+     |
+  LL |   infix_operator!(ILike, " ILIKE ", backend: Pg);
+     |   ---------------------------------------------- in this macro invocation
      = help: for that trait implementation, expected `Pg`, found `Sqlite`
      = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
@@ -42,10 +49,17 @@ error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the 
              this SQL syntax
 help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
-    --> DIESEL/diesel/diesel/src/pg/expression/operators.rs
+    --> DIESEL/diesel/diesel/src/expression/operators.rs
      |
-  LL | infix_operator!(ILike, " ILIKE ", backend: Pg);
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  LL | / ...   impl<$($ty_param,)+ $($backend_ty_param,)*> $crate::query_builder::QueryFragment<$...
+  LL | | ...       for $name<$($ty_param,)+> where
+  LL | | ...           $($ty_param: $crate::query_builder::QueryFragment<$backend_ty>,)+
+     | |_____________________________________________________________________________^
+     |
+    ::: DIESEL/diesel/diesel/src/pg/expression/operators.rs
+     |
+  LL |   infix_operator!(ILike, " ILIKE ", backend: Pg);
+     |   ---------------------------------------------- in this macro invocation
      = help: for that trait implementation, expected `Pg`, found `Mysql`
      = note: required for `Grouped<ILike<name, Bound<Text, &str>>>` to implement `QueryFragment<Mysql>`
      = note: 3 redundant requirements hidden

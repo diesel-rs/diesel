@@ -17,6 +17,6 @@ LL |     impl MixedAggregates<Yes> for Yes {
 LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `Grouped<Gt<count<Integer, id>, Bound<..., i64>>>` to implement `NonAggregate`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Grouped<Gt<count<Integer, id>, ...>>>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Gt<count<Integer, id>, ...>>>`
  
     For more information about this error, try `rustc --explain E0277`.

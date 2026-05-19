@@ -7,17 +7,17 @@ LL |     users.filter((id, name).is_not_null());
    = note: the following trait bounds were not satisfied:
            `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
            which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
-           `<(columns::id, columns::name) as diesel::Expression>::SqlType = Untyped`
+           `<(columns::id, columns::name) as Expression>::SqlType = Untyped`
            which is required by `(columns::id, columns::name): diesel::UntypedExpressionMethods`
            `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
            which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
-           `<&(columns::id, columns::name) as diesel::Expression>::SqlType = Untyped`
+           `<&(columns::id, columns::name) as Expression>::SqlType = Untyped`
            which is required by `&(columns::id, columns::name): diesel::UntypedExpressionMethods`
-           `&mut (columns::id, columns::name): diesel::Expression`
+           `&mut (columns::id, columns::name): Expression`
            which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`
-           `<&mut (columns::id, columns::name) as diesel::Expression>::SqlType = Untyped`
+           `<&mut (columns::id, columns::name) as Expression>::SqlType = Untyped`
            which is required by `&mut (columns::id, columns::name): diesel::UntypedExpressionMethods`
-           `&mut (columns::id, columns::name): diesel::Expression`
+           `&mut (columns::id, columns::name): Expression`
            which is required by `&mut (columns::id, columns::name): diesel::UntypedExpressionMethods`
 
 error[E0599]: the method `eq_any` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
@@ -31,6 +31,6 @@ LL |     users.filter((id, name).eq_any(users.find(1)));
            which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
            `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
            which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
-           `&mut (columns::id, columns::name): diesel::Expression`
+           `&mut (columns::id, columns::name): Expression`
            which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`
 For more information about this error, try `rustc --explain E0599`.

@@ -17,7 +17,7 @@ LL | |     Self: AsQuery,
 ...   |
 LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
 LL | |     H: QueryFragment<DB> + Send + 'a,
-    | |_____________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    | |_____________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<'a, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
@@ -26,7 +26,7 @@ LL | |     Self: AsQuery,
 ...   |
 LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
 LL | |     H: QueryFragment<DB> + Send + 'a,
-    | |_____________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>`
+    | |_____________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
  
     
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
@@ -74,7 +74,7 @@ LL | |     Self: AsQuery,
 ...   |
 LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
 LL | |     H: QueryFragment<DB> + Send + 'a,
-    | |_____________________________________^ `SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>`
+    | |_____________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<'a, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
@@ -83,7 +83,7 @@ LL | |     Self: AsQuery,
 ...   |
 LL | |     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
 LL | |     H: QueryFragment<DB> + Send + 'a,
-    | |_____________________________________^ `SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>`
+    | |_____________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
  
     
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
@@ -166,11 +166,11 @@ LL |     let mut a = users::table.into_boxed();
 LL |     a = users::table.group_by(users::id).into_boxed();
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `BoxedSelectStatement<'_, ..., ..., _>`, found `BoxedSelectStatement<'_, ..., ..., _, ...>`
    |
-   = note: expected struct `BoxedSelectStatement<'_, _, _, _, ()>`
-              found struct `BoxedSelectStatement<'_, _, _, _, users::columns::id>`
+   = note: expected struct `diesel::query_builder::select_statement::boxed::BoxedSelectStatement<'_, _, _, _, ()>`
+              found struct `diesel::query_builder::select_statement::boxed::BoxedSelectStatement<'_, _, _, _, users::columns::id>`
 
 error[E0277]: the trait bound `BoxedSelectStatement<'_, ..., ..., _>: GroupByDsl<_>` is not satisfied
-   --> tests/fail/boxed_queries_and_group_by.rs:92:10
+   --> tests/fail/boxed_queries_and_group_by.rs:91:10
     |
  LL |         .group_by(users::id)
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), ..., _>`
@@ -197,7 +197,7 @@ LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
  
     
 error[E0277]: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` is not satisfied
-   --> tests/fail/boxed_queries_and_group_by.rs:92:10
+   --> tests/fail/boxed_queries_and_group_by.rs:91:10
     |
  LL |         .group_by(users::id)
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<...>>`
@@ -213,7 +213,7 @@ LL | |     Expr: Expression + AppearsOnTable<F>,
  
     
 error[E0277]: the trait bound `BoxedSelectStatement<'_, ..., ..., _>: QueryRelation` is not satisfied
-   --> tests/fail/boxed_queries_and_group_by.rs:92:10
+   --> tests/fail/boxed_queries_and_group_by.rs:91:10
     |
  LL |         .group_by(users::id)
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), ..., _>`
@@ -237,13 +237,3 @@ LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>
 LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
 LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
     | |_______________________________________________^ `Alias<S>`
- 
-    
-error[E0282]: type annotations needed
-  --> tests/fail/boxed_queries_and_group_by.rs:89:5
-   |
-LL | /     users::table
-LL | |
-LL | |         .into_boxed()
-LL | |         .group_by(users::id)
-   | |____________________________^ cannot infer type

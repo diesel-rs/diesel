@@ -17,7 +17,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
     = note: required for `Join<table, SelectStatement<FromClause<...>>, ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
     = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<...>, ...>`
@@ -47,7 +47,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
    = note: 3 redundant requirements hidden
    = note: required for `Grouped<Eq<Nullable<user_id>, Nullable<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
    = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -70,7 +70,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
     = note: required for `Join<table, SelectStatement<FromClause<...>>, ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
     = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<...>, ...>`
@@ -100,7 +100,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
    = note: 3 redundant requirements hidden
    = note: required for `Grouped<Eq<Nullable<user_id>, Nullable<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
    = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -126,7 +126,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
     = note: required for `Join<table, SelectStatement<FromClause<...>>, ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
     = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<OnClauseWrapper<..., ...>, ...>`
@@ -156,7 +156,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, user_id>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
    = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -211,7 +211,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
     = note: required for `Join<table, SelectStatement<FromClause<...>>, ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
     = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<...>, ...>`
@@ -241,7 +241,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
    = note: 3 redundant requirements hidden
    = note: required for `Grouped<Eq<Nullable<user_id>, Nullable<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
    = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -264,7 +264,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
     = note: required for `Join<table, SelectStatement<FromClause<...>>, ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
     = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<...>, ...>`
@@ -294,7 +294,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
    = note: 3 redundant requirements hidden
    = note: required for `Grouped<Eq<Nullable<user_id>, Nullable<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
    = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -320,7 +320,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
     = note: required for `Join<table, SelectStatement<FromClause<...>>, ...>` to implement `QuerySource`
     = note: 1 redundant requirement hidden
     = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-    = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<OnClauseWrapper<..., ...>, ...>`
@@ -350,7 +350,7 @@ note: required for `users::columns::id` to implement `AppearsOnTable<Join<table,
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, user_id>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
    = note: required for `JoinOn<Join<table, ..., ...>, ...>` to implement `QuerySource`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `InternalJoinDsl<SelectStatement<...>, ..., ...>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 

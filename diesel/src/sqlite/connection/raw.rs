@@ -64,6 +64,12 @@ impl RawConnection {
             }
             err_code => {
                 let message = super::error_message(err_code);
+                // sqlite3_open_v2() may allocate a database connection handle
+                // even on failure. To avoid a resource leak, it must be released
+                // with sqlite3_close(). Passing a null pointer to sqlite3_close()
+                // is a harmless no-op, so no null check is needed.
+                // See: https://www.sqlite.org/c3ref/open.html
+                unsafe { ffi::sqlite3_close(conn_pointer) };
                 Err(ConnectionError::BadConnection(message.into()))
             }
         }
@@ -113,20 +119,22 @@ impl RawConnection {
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        let callback_fn = Box::into_raw(Box::new(CustomFunctionUserPtr {
-            callback: f,
-            function_name: fn_name.to_owned(),
-        }));
-        let fn_name = Self::get_fn_name(fn_name)?;
+        let c_fn_name = Self::get_fn_name(fn_name)?;
         let flags = Self::get_flags(deterministic);
         let num_args = num_args
             .try_into()
             .map_err(|e| Error::SerializationError(Box::new(e)))?;
+        // only create the pointer as last step here
+        // as we can otherwise leak memory
+        let callback_fn = Box::into_raw(Box::new(CustomFunctionUserPtr {
+            callback: f,
+            function_name: fn_name.to_owned(),
+        }));
 
         let result = unsafe {
             ffi::sqlite3_create_function_v2(
                 self.internal_connection.as_ptr(),
-                fn_name.as_ptr(),
+                c_fn_name.as_ptr(),
                 num_args,
                 flags,
                 callback_fn as *mut _,
@@ -163,7 +171,7 @@ impl RawConnection {
                 fn_name.as_ptr(),
                 num_args,
                 flags,
-                ptr::null_mut(),
+                core::ptr::null_mut(),
                 None,
                 Some(run_aggregator_step_function::<_, _, _, _, A>),
                 Some(run_aggregator_final_function::<_, _, _, _, A>),
@@ -182,16 +190,17 @@ impl RawConnection {
     where
         F: Fn(&str, &str) -> core::cmp::Ordering + core::panic::UnwindSafe + Send + 'static,
     {
+        let c_collation_name = Self::get_fn_name(collation_name)?;
+        // only create the pointer as last step here as we otherwise could leak memory
         let callback_fn = Box::into_raw(Box::new(CollationUserPtr {
             callback: collation,
             collation_name: collation_name.to_owned(),
         }));
-        let collation_name = Self::get_fn_name(collation_name)?;
 
         let result = unsafe {
             ffi::sqlite3_create_collation_v2(
                 self.internal_connection.as_ptr(),
-                collation_name.as_ptr(),
+                c_collation_name.as_ptr(),
                 ffi::SQLITE_UTF8,
                 callback_fn as *mut _,
                 Some(run_collation_function::<F>),
@@ -266,6 +275,55 @@ impl RawConnection {
                 Box::new(error_message.to_string()),
             ))
         }
+    }
+
+    pub(super) fn blob_open<'conn>(
+        &'conn self,
+        database_name: &str,
+        table_name: &str,
+        column_name: &str,
+        row_id: i64,
+    ) -> Result<super::sqlite_blob::SqliteReadOnlyBlob<'conn>, Error> {
+        let database_name = alloc::ffi::CString::new(database_name)?;
+        let column_name = alloc::ffi::CString::new(column_name)?;
+        let table_name = alloc::ffi::CString::new(table_name)?;
+
+        let mut blob: *mut ffi::sqlite3_blob = core::ptr::null_mut();
+
+        // SAFETY: All variables are properly initialized
+        let ret = unsafe {
+            ffi::sqlite3_blob_open(
+                self.internal_connection.as_ptr(),
+                database_name.as_c_str().as_ptr(),
+                table_name.as_c_str().as_ptr(),
+                column_name.as_c_str().as_ptr(),
+                row_id,
+                0,
+                &mut blob,
+            )
+        };
+
+        Self::process_sql_function_result(ret)?;
+
+        // SAFETY: `sqlite3_blob_open` initializes the `blob` variable IF the return value:
+        //
+        // > On success, SQLITE_OK is returned and the new BLOB handle is stored in *ppBlob.
+        // > Otherwise an error code is returned and, unless the error code is SQLITE_MISUSE,
+        // > *ppBlob is set to NULL.
+        //
+        // And we checked the `ret` value above
+        let blob = unsafe { core::ptr::NonNull::new_unchecked(blob) };
+
+        // SAFETY: According to the SQLite docs, this can only fail if an invalid pointer is passed
+        let blob_size = unsafe { ffi::sqlite3_blob_bytes(blob.as_ptr()) };
+        let blob_size = usize::try_from(blob_size).map_err(Error::IntegerConversion)?;
+
+        Ok(super::sqlite_blob::SqliteReadOnlyBlob {
+            blob,
+            read_index: 0,
+            blob_size,
+            _pd: core::marker::PhantomData,
+        })
     }
 }
 
@@ -381,15 +439,6 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     }
 }
 
-// Need a custom option type here, because the std lib one does not have guarantees about the discriminate values
-// See: https://github.com/rust-lang/rfcs/blob/master/text/2195-really-tagged-unions.md#opaque-tags
-#[repr(u8)]
-enum OptionalAggregator<A> {
-    // Discriminant is 0
-    None,
-    Some(A),
-}
-
 #[allow(warnings)]
 extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
     ctx: *mut ffi::sqlite3_context,
@@ -426,54 +475,47 @@ where
     A: SqliteAggregateFunction<Args>,
     Args: FromSqlRow<ArgsSqlType, Sqlite>,
 {
-    static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
-    static NULL_CTX_ERR: &str =
-        "We've written the aggregator to the aggregate context, but it could not be retrieved.";
-
-    let n_bytes: i32 = core::mem::size_of::<OptionalAggregator<A>>()
-        .try_into()
-        .expect("Aggregate context should be larger than 2^32");
-    let aggregate_context = unsafe {
-        // This block of unsafe code makes the following assumptions:
-        //
-        // * sqlite3_aggregate_context allocates sizeof::<OptionalAggregator<A>>
-        //   bytes of zeroed memory as documented here:
-        //   https://www.sqlite.org/c3ref/aggregate_context.html
-        //   A null pointer is returned for negative or zero sized types,
-        //   which should be impossible in theory. We check that nevertheless
-        //
-        // * OptionalAggregator::None has a discriminant of 0 as specified by
-        //   #[repr(u8)] + RFC 2195
-        //
-        // * If all bytes are zero, the discriminant is also zero, so we can
-        //   assume that we get OptionalAggregator::None in this case. This is
-        //   not UB as we only access the discriminant here, so we do not try
-        //   to read any other zeroed memory. After that we initialize our enum
-        //   by writing a correct value at this location via ptr::write_unaligned
-        //
-        // * We use ptr::write_unaligned as we did not found any guarantees that
-        //   the memory will have a correct alignment.
-        //   (Note I(weiznich): would assume that it is aligned correctly, but we
-        //    we cannot guarantee it, so better be safe than sorry)
-        ffi::sqlite3_aggregate_context(ctx, n_bytes)
-    };
-    let aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
     let aggregator = unsafe {
-        match aggregate_context.map(|a| &mut *a.as_ptr()) {
-            Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
-            Some(a_ptr @ &mut OptionalAggregator::None) => {
-                ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
-                if let OptionalAggregator::Some(agg) = a_ptr {
-                    agg
-                } else {
-                    return Err(SqliteCallbackError::Abort(NULL_CTX_ERR));
-                }
-            }
-            None => {
-                return Err(SqliteCallbackError::Abort(NULL_AG_CTX_ERR));
+        const {
+            if core::mem::size_of::<*mut A>() == 0 {
+                panic!(
+                    "The pointer size is zero, that's unexpected.\
+                        If you ever see this error message open a issue\
+                        describing your environment"
+                );
             }
         }
+        // sqlite3_aggregate_context will return a memory allocation of the requested
+        // size. For the first call this will be zeroed, for any future call in the same execution
+        // this will contain the value we wrote into it.
+        //
+        // We write just a pointer to rust allocated memory in there to
+        // have the rust side deal with layout and alignment of our aggregator
+        let ctx = ffi::sqlite3_aggregate_context(
+            ctx,
+            core::mem::size_of::<*mut A>()
+                .try_into()
+                .expect("Memory size of a pointer is smaller than i32::MAX"),
+        )
+        // we cast the returned memory here to be a pointer to the aggregate instance
+        .cast::<*mut A>();
+        // we are interested in the inner pointer
+        let inner = &mut *ctx;
+        // if the inner pointer is null we the aggregate_step
+        // function is executed the first time and we need to create the actual
+        // aggregator
+        if inner.is_null() {
+            // for that we allocate a box and turn it into a raw pointer
+            // by leaking the memory
+            let obj = Box::into_raw(Box::new(A::default()));
+            *inner = obj;
+        }
+        // at this point the inner value is never null
+        // as we initialised in in the null branch above,
+        // therefore it's sound to dereference the pointer here
+        &mut **inner
     };
+
     let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
     aggregator.step(args);
@@ -488,30 +530,42 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    static NO_AGGREGATOR_FOUND: &str = "We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer.";
-    let aggregate_context = unsafe {
-        // Within the xFinal callback, it is customary to set nBytes to 0 so no pointless memory
-        // allocations occur, a null pointer is returned in this case
-        // See: https://www.sqlite.org/c3ref/aggregate_context.html
-        //
-        // For the reasoning about the safety of the OptionalAggregator handling
-        // see the comment in run_aggregator_step_function.
-        ffi::sqlite3_aggregate_context(ctx, 0)
-    };
-
     let result = crate::util::std_compat::catch_unwind(|| {
-        let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
-
-        let aggregator = if let Some(a) = aggregate_context.as_mut() {
-            let a = unsafe { a.as_mut() };
-            match core::mem::replace(a, OptionalAggregator::None) {
-                OptionalAggregator::None => {
-                    return Err(SqliteCallbackError::Abort(NO_AGGREGATOR_FOUND));
+        let aggregator = unsafe {
+            // Get back the aggregated context
+            // This might be null
+            let ctx = ffi::sqlite3_aggregate_context(
+                ctx,
+                // use zero sized allocation here to not allocate if this is the first call to `sqlite3_aggregate_context`
+                0,
+            )
+            // the allocation contains a pointer to the actual aggregator
+            .cast::<*mut A>();
+            // if the context was not allocated yet
+            // we get back a null pointer here due to
+            // the requested zero sized allocation
+            if ctx.is_null() {
+                None
+            } else {
+                // from this point we are interested in the inner pointer
+                // we checked above that this pointer is not null
+                // so it's sound to dereference it
+                let inner = &mut *ctx;
+                if inner.is_null() {
+                    // if the inner pointer is null the aggregator has not been initialized
+                    None
+                } else {
+                    // if it's not null
+                    // we need to construct back the box and move out the
+                    // value to correctly deallocate the allocation
+                    let value = Box::from_raw(*inner);
+                    let value = Some(*value);
+                    // we also want to write a null pointer back to the
+                    // context to make sure that there is no dangling pointer left
+                    *inner = core::ptr::null_mut();
+                    value
                 }
-                OptionalAggregator::Some(a) => Some(a),
             }
-        } else {
-            None
         };
 
         let res = A::finalize(aggregator);
@@ -535,10 +589,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
 }
 
 unsafe fn context_error_str(ctx: *mut ffi::sqlite3_context, error: &str) {
-    let len: i32 = error
-        .len()
-        .try_into()
-        .expect("Trying to set a error message with more than 2^32 byte is not supported");
+    let len: i32 = error.len().try_into().unwrap_or(i32::MAX);
     unsafe {
         ffi::sqlite3_result_error(ctx, error.as_ptr() as *const _, len);
     }

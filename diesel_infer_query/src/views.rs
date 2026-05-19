@@ -4,6 +4,7 @@ use super::select::infer_from_select;
 use crate::error::Error;
 use crate::error::Result;
 use crate::select::Expression;
+use sqlparser::ast::CreateView;
 use sqlparser::parser::ParserOptions;
 
 /// An opaque representation of information
@@ -94,7 +95,7 @@ pub fn parse_view_def(definition: &str) -> Result<ViewData> {
 
     let select = match stmt {
         sqlparser::ast::Statement::Query(query) => query,
-        sqlparser::ast::Statement::CreateView { query, .. } => query,
+        sqlparser::ast::Statement::CreateView(CreateView { query, .. }) => query,
         stmt => {
             return Err(Error::UnsupportedSql {
                 msg: format!("Unexpected statement: `{stmt}`"),

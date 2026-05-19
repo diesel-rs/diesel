@@ -80,7 +80,7 @@ mod valid_grouping;
 /// Normally, Diesel produces two implementations of the `AsChangeset` trait for your
 /// struct using this derive: one for an owned version and one for a borrowed version.
 /// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
-/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
+/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer update a borrowed
 /// versions of your struct.
 ///
 /// By default, any `Option` fields on the struct are skipped if their value is
@@ -154,6 +154,19 @@ fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 /// If your type is unsized,
 /// you can specify this by adding the annotation `#[diesel(not_sized)]`
 /// as attribute on the type. This will skip the impls for non-reference types.
+///
+/// `Rc<T>`, `Arc<T>`, and `Box<T>` wrappers around Diesel's built-in primitive
+/// types (`String`, `i32`, `bool`, `Vec<u8>`, etc.) are supported as
+/// `AsExpression` values through Diesel's internal `foreign_derive`
+/// implementations, so fields like `Rc<String>` work transparently with
+/// `#[derive(Insertable)]` and `#[derive(Queryable)]`. The unsized variants
+/// `Rc<str>` / `Arc<str>` / `Box<str>` and the `[u8]` equivalents are supported
+/// as well (one heap allocation instead of two compared to `Rc<String>`).
+/// Wrapping a *user-defined* `AsExpression` type in `Rc`/`Arc`/`Box` is not
+/// currently supported because of coherence and orphan-rule conflicts between
+/// the wildcard
+/// `impl<T, ST> AsExpression<ST> for T where T: Expression<SqlType = ST>` and
+/// the smart-pointer `Expression` impls.
 ///
 /// Using this derive requires implementing the `ToSql` trait for your type.
 ///
@@ -357,7 +370,8 @@ fn derive_identifiable_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 /// struct using this derive: one for an owned version and one for a borrowed version.
 /// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
 /// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
-/// versions of your struct.
+/// versions of your struct. Call `.values(your_struct)` instead of `.values(&your_struct)`
+/// in that case.
 ///
 /// # Attributes
 ///

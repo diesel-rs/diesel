@@ -139,6 +139,7 @@ type_name! {
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
         Int8 => "bigint",
+        Double => "real",
         Text => "text",
         Json => "json",
         Jsonb => "jsonb",

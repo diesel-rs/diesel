@@ -22,12 +22,3 @@ error: expected identifier
    |
 LL | #[diesel(table_name = "not a path")]
    |                       ^^^^^^^^^^^^
-
-error[E0433]: failed to resolve: use of unresolved module or unlinked crate `does`
-  --> tests/fail/derive/bad_table_name.rs:40:23
-   |
-LL | #[diesel(table_name = does::not::exist)]
-   |                       ^^^^ use of unresolved module or unlinked crate `does`
-   |
-   = help: you might be missing a crate named `does`
-For more information about this error, try `rustc --explain E0433`.

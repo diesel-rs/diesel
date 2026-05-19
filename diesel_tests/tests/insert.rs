@@ -1,9 +1,11 @@
 use super::schema::*;
 use diesel::*;
+use std::rc::Rc;
+use std::sync::Arc;
 
 #[diesel_test_helper::test]
 fn insert_records() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users: &[_] = &[
         NewUser::new("Sean", Some("Black")),
@@ -14,7 +16,7 @@ fn insert_records() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -32,8 +34,152 @@ fn insert_records() {
 }
 
 #[diesel_test_helper::test]
-fn insert_records_as_vec() {
+fn insert_rc_string_records() {
     use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUserRcString {
+            name: Rc::new("Sean".to_string()),
+            hair_color: Some(Rc::new("Black".to_string())),
+        },
+        NewUserRcString {
+            name: Rc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.load::<UserRcString>(connection).unwrap();
+
+    let expected_users = vec![
+        UserRcString {
+            id: actual_users[0].id,
+            name: Rc::new("Sean".to_string()),
+            hair_color: Some(Rc::new("Black".to_string())),
+        },
+        UserRcString {
+            id: actual_users[1].id,
+            name: Rc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_rc_str_records() {
+    use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUserRcStr {
+            name: Rc::from("Sean"),
+            hair_color: Some(Rc::from("Black")),
+        },
+        NewUserRcStr {
+            name: Rc::from("Tess"),
+            hair_color: None,
+        },
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.load::<UserRcStr>(connection).unwrap();
+
+    let expected_users = vec![
+        UserRcStr {
+            id: actual_users[0].id,
+            name: Rc::from("Sean"),
+            hair_color: Some(Rc::from("Black")),
+        },
+        UserRcStr {
+            id: actual_users[1].id,
+            name: Rc::from("Tess"),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_arc_str_records() {
+    use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUserArcStr {
+            name: Arc::from("Sean"),
+            hair_color: Some(Arc::from("Black")),
+        },
+        NewUserArcStr {
+            name: Arc::from("Tess"),
+            hair_color: None,
+        },
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.load::<UserArcStr>(connection).unwrap();
+
+    let expected_users = vec![
+        UserArcStr {
+            id: actual_users[0].id,
+            name: Arc::from("Sean"),
+            hair_color: Some(Arc::from("Black")),
+        },
+        UserArcStr {
+            id: actual_users[1].id,
+            name: Arc::from("Tess"),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_arc_string_records() {
+    use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_users: &[_] = &[
+        NewUserArcString {
+            name: Arc::new("Sean".to_string()),
+            hair_color: Some(Arc::new("Black".to_string())),
+        },
+        NewUserArcString {
+            name: Arc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.load::<UserArcString>(connection).unwrap();
+
+    let expected_users = vec![
+        UserArcString {
+            id: actual_users[0].id,
+            name: Arc::new("Sean".to_string()),
+            hair_color: Some(Arc::new("Black".to_string())),
+        },
+        UserArcString {
+            id: actual_users[1].id,
+            name: Arc::new("Tess".to_string()),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_records_as_vec() {
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = vec![
         NewUser::new("Sean", Some("Black")),
@@ -44,7 +190,7 @@ fn insert_records_as_vec() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -63,7 +209,7 @@ fn insert_records_as_vec() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_static_array() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = [
         NewUser::new("Sean", Some("Black")),
@@ -74,7 +220,7 @@ fn insert_records_as_static_array() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -93,7 +239,7 @@ fn insert_records_as_static_array() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_static_array_ref() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = &[
         NewUser::new("Sean", Some("Black")),
@@ -104,7 +250,7 @@ fn insert_records_as_static_array_ref() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -123,7 +269,7 @@ fn insert_records_as_static_array_ref() {
 
 #[diesel_test_helper::test]
 fn insert_records_as_boxed_static_array() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users = Box::new([
         NewUser::new("Sean", Some("Black")),
@@ -134,7 +280,67 @@ fn insert_records_as_boxed_static_array() {
         .values(new_users)
         .execute(connection)
         .unwrap();
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
+
+    let expected_users = vec![
+        User {
+            id: actual_users[0].id,
+            name: "Sean".to_string(),
+            hair_color: Some("Black".to_string()),
+        },
+        User {
+            id: actual_users[1].id,
+            name: "Tess".to_string(),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_records_as_rc_static_array() {
+    use crate::schema::users::{id, table as users};
+    let connection = &mut connection();
+    let new_users = Rc::new([
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ]);
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
+
+    let expected_users = vec![
+        User {
+            id: actual_users[0].id,
+            name: "Sean".to_string(),
+            hair_color: Some("Black".to_string()),
+        },
+        User {
+            id: actual_users[1].id,
+            name: "Tess".to_string(),
+            hair_color: None,
+        },
+    ];
+    assert_eq!(expected_users, actual_users);
+}
+
+#[diesel_test_helper::test]
+fn insert_records_as_arc_static_array() {
+    use crate::schema::users::{id, table as users};
+    let connection = &mut connection();
+    let new_users = Arc::new([
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ]);
+
+    insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
 
     let expected_users = vec![
         User {
@@ -505,7 +711,7 @@ struct BorrowedUser<'a> {
 
 #[diesel_test_helper::test]
 fn insert_borrowed_content() {
-    use crate::schema::users::table as users;
+    use crate::schema::users::{id, table as users};
     let connection = &mut connection();
     let new_users: &[_] = &[BorrowedUser { name: "Sean" }, BorrowedUser { name: "Tess" }];
     insert_into(users)
@@ -513,7 +719,7 @@ fn insert_borrowed_content() {
         .execute(connection)
         .unwrap();
 
-    let actual_users = users.load::<User>(connection).unwrap();
+    let actual_users = users.order(id).load::<User>(connection).unwrap();
     let expected_users = vec![
         User::new(actual_users[0].id, "Sean"),
         User::new(actual_users[1].id, "Tess"),
@@ -929,6 +1135,7 @@ fn upsert_with_composite_primary_key_do_nothing() {
         .unwrap();
     let users = users::table
         .select(users::name)
+        .order(users::id)
         .load::<String>(conn)
         .unwrap();
 

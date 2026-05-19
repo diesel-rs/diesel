@@ -1,5 +1,7 @@
 use std::io::prelude::*;
 
+#[cfg(feature = "postgres_backend")]
+use crate::deserialize::FromSqlRef;
 use crate::deserialize::{self, FromSql, Queryable};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -8,7 +10,11 @@ use crate::sql_types;
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Bool, Pg> for bool {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
-        Ok(bytes.as_bytes()[0] != 0)
+        let first_byte = bytes
+            .as_bytes()
+            .first()
+            .ok_or("Received an empty response from the server")?;
+        Ok(*first_byte != 0)
     }
 }
 
@@ -24,7 +30,11 @@ impl ToSql<sql_types::Bool, Pg> for bool {
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::CChar, Pg> for u8 {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
-        Ok(bytes.as_bytes()[0])
+        let first_byte = bytes
+            .as_bytes()
+            .first()
+            .ok_or("Received an empty response from the server")?;
+        Ok(*first_byte)
     }
 }
 
@@ -48,6 +58,13 @@ impl FromSql<sql_types::Text, Pg> for *const str {
         use core::str;
         let string = str::from_utf8(value.as_bytes())?;
         Ok(string as *const _)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl<'a> FromSqlRef<'a, sql_types::Text, Pg> for &'a str {
+    fn from_sql(value: &'a mut PgValue<'_>) -> deserialize::Result<Self> {
+        Ok(core::str::from_utf8(value.as_bytes())?)
     }
 }
 
@@ -93,6 +110,12 @@ impl FromSql<sql_types::Citext, Pg> for String {
 impl FromSql<sql_types::Binary, Pg> for *const [u8] {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const _)
+    }
+}
+
+impl<'a> FromSqlRef<'a, sql_types::Binary, Pg> for &'a [u8] {
+    fn from_sql(bytes: &'a mut PgValue<'_>) -> deserialize::Result<Self> {
+        Ok(bytes.as_bytes())
     }
 }
 
