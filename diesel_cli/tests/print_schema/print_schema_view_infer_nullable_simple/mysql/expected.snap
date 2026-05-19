@@ -6,7 +6,6 @@ description: "Test: print_schema_view_infer_nullable_simple"
 
 diesel::view! {
     test {
-        #[max_length = 4]
         name -> Varchar,
         id -> Integer,
     }
