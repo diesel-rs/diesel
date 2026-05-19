@@ -7,7 +7,7 @@ description: "Test: print_schema_generated_columns_generated_always"
 diesel::table! {
     generated (id) {
         id -> Nullable<Integer>,
-        generated -> Nullable<Integer>,
+        #[sql_name = "generated"]
+        generated_ -> Nullable<Integer>,
     }
 }
-
