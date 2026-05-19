@@ -46,6 +46,7 @@ error[E0277]: cannot deserialize a value of the database type `diesel::sql_types
      = help: the following other types implement trait `FromSql<A, DB>`:
                `std::string::String` implements `FromSql<Citext, Pg>`
                `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
+               `std::string::String` implements `FromSql<diesel::sql_types::Bpchar, Pg>`
                `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
                `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
                `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
