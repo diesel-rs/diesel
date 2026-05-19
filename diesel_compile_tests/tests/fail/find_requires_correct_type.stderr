@@ -7,12 +7,12 @@ LL |     int_primary_key::table.find("1");
    = help: the following other types implement trait `Expression`:
              &T
              AliasedField<S, C>
+             Arc<T>
              Box<T>
              CaseWhen<..., ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              Collate<T, C>
-             SqlLiteral<ST, T>
            and N others
    = note: required for `&str` to implement `Expression`
    = note: 1 redundant requirement hidden
@@ -54,12 +54,12 @@ error[E0277]: the trait bound `{integer}: Expression` is not satisfied
     = help: the following other types implement trait `Expression`:
               &T
               AliasedField<S, C>
+              Arc<T>
               Box<T>
               CaseWhen<..., ...>
               CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
               CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
               Collate<T, C>
-              SqlLiteral<ST, T>
             and N others
     = note: required for `Eq<id, {integer}>` to implement `Expression`
 note: required for `string_primary_key::columns::id` to implement `diesel::EqAll<{integer}>`
