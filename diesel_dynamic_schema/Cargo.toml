@@ -36,6 +36,11 @@ name = "columns_used_in_where_clause"
 path = "examples/columns_used_in_where_clause.rs"
 required-features = ["diesel/sqlite"]
 
+[[example]]
+name = "copy_to_from"
+path = "examples/copy_to_from.rs"
+required-features = ["postgres", "diesel/postgres"]
+
 [[test]]
 name = "integration_tests"
 path = "tests/lib.rs"
