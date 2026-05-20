@@ -63,12 +63,19 @@ where
         }
 
         (0..num_elements)
-            .map(|_| {
+            .map(|_| -> deserialize::Result<_> {
                 let elem_size = bytes.read_i32::<NetworkEndian>()?;
                 if has_null && elem_size == -1 {
                     T::from_nullable_sql(None)
                 } else {
-                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
+                    let (elem_bytes, new_bytes) = bytes
+                        .split_at_checked(elem_size.try_into()?)
+                        .ok_or_else(|| {
+                            format!(
+                                "Invalid element byte count: Expected at least {elem_size} bytes, but only {} bytes were received",
+                                bytes.len()
+                            )
+                        })?;
                     bytes = new_bytes;
                     T::from_sql(PgValue::new_internal(elem_bytes, &value))
                 }
@@ -117,7 +124,14 @@ where
                 if has_null && elem_size == -1 {
                     T::from_nullable_sql(None)
                 } else {
-                    let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
+                    let (elem_bytes, new_bytes) = bytes
+                        .split_at_checked(elem_size.try_into()?)
+                        .ok_or_else(|| {
+                            format!(
+                                "Invalid element byte count: Expected at least {elem_size} bytes, but only {} bytes were received",
+                                bytes.len()
+                            )
+                        })?;
                     bytes = new_bytes;
                     T::from_sql(PgValue::new_internal(elem_bytes, &value))
                 }
@@ -229,5 +243,125 @@ where
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use byteorder::{NetworkEndian, WriteBytesExt};
+
+    use crate::data_types::NdArray;
+    use crate::deserialize::FromSql;
+    use crate::pg::{Pg, PgValue};
+    use crate::sql_types::{Array, Integer};
+
+    #[test]
+    fn check_invalid_element_size_for_array() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+
+        // dimensions
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // has null
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // oid
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // num elements
+        value.write_i32::<NetworkEndian>(2).unwrap();
+        // lower bound
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // elem size element 1
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        // the element itself
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <Vec<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element byte count: Expected at least 6 bytes, but only 4 bytes were received",
+        );
+
+        // check for the wrong number of elements
+        let mut value = Vec::<u8>::new();
+
+        // dimensions
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // has null
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // oid
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // num elements
+        value.write_i32::<NetworkEndian>(2).unwrap();
+        // lower bound
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // elem size element 1
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        // the element itself
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <Vec<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "failed to fill whole buffer"
+        );
+    }
+
+    #[test]
+    fn check_invalid_element_size_for_multidimensional_array() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+
+        // dimensions
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // has null
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // oid
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // num elements
+        value.write_i32::<NetworkEndian>(2).unwrap();
+        // lower bound
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // elem size element 1
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        // the element itself
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element byte count: Expected at least 6 bytes, but only 4 bytes were received",
+        );
+
+        // check for the wrong number of elements
+        let mut value = Vec::<u8>::new();
+
+        // dimensions
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // has null
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // oid
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // num elements
+        value.write_i32::<NetworkEndian>(2).unwrap();
+        // lower bound
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // elem size element 1
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        // the element itself
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "failed to fill whole buffer"
+        );
     }
 }

@@ -2,6 +2,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use crate::support::{database, project};
 
@@ -13,9 +14,10 @@ fn run_infer_schema_without_docs() {
 #[test]
 #[cfg(feature = "postgres")]
 fn run_except_custom_type_definitions() {
-    test_print_schema(
+    test_print_schema_with_options(
         "print_schema_except_custom_type_definitions",
         vec!["--except-custom-type-definitions", "MyType2"],
+        false, // we exclude a certain required type
     );
 }
 
@@ -172,9 +174,11 @@ fn print_schema_patch_file() {
 
 #[test]
 fn print_schema_custom_types() {
-    test_print_schema(
+    test_print_schema_with_options(
         "print_schema_custom_types",
         vec!["--import-types", "foo::*", "--import-types", "bar::*"],
+        // these modules don't exist so it's not meaningful to check if this compiles
+        false,
     );
 }
 
@@ -229,9 +233,10 @@ fn schema_file_is_relative_to_project_root() {
 #[test]
 #[cfg(feature = "postgres")]
 fn print_schema_disabling_custom_type_works() {
-    test_print_schema(
+    test_print_schema_with_options(
         "print_schema_disabling_custom_type_works",
         vec!["--no-generate-missing-sql-type-definitions"],
+        false, // explicitly exclude required types
     )
 }
 
@@ -510,8 +515,21 @@ fn print_schema_view_infer_nullable_mixed_schema() {
 
 #[test]
 #[cfg(feature = "sqlite")]
-fn table_name_injecetion() {
+fn print_schema_table_name_injecetion() {
     test_print_schema("print_schema_table_name_injection", vec![])
+}
+
+#[test]
+fn print_schema_rust_injection() {
+    test_print_schema(
+        "print_schema_rust_injection",
+        vec![
+            "--custom-type-derives",
+            "diesel::query_builder::QueryId",
+            "--custom-type-derives",
+            "Clone",
+        ],
+    )
 }
 
 #[cfg(feature = "sqlite")]
@@ -569,7 +587,13 @@ fn test_multiple_print_schema(test_name: &str, args: Vec<&str>) {
     });
 }
 
+#[track_caller]
 fn test_print_schema(test_name: &str, args: Vec<&str>) {
+    test_print_schema_with_options(test_name, args, true);
+}
+
+#[track_caller]
+fn test_print_schema_with_options(test_name: &str, args: Vec<&str>, check_compile: bool) {
     let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("print_schema")
@@ -597,11 +621,15 @@ fn test_print_schema(test_name: &str, args: Vec<&str>) {
     setting.bind(|| {
         insta::assert_snapshot!("expected", result);
 
-        test_print_schema_config(test_name, &test_path, schema);
+        test_print_schema_config(test_name, &test_path, &schema);
     });
+    if check_compile {
+        assert_schema_compiles(test_name, result);
+    }
 }
 
-fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
+#[track_caller]
+fn test_print_schema_config(test_name: &str, test_path: &Path, schema: &str) {
     let config = read_file(&test_path.join("diesel.toml"));
     let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
 
@@ -614,7 +642,7 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let p = p.build();
 
     p.command("setup").run();
-    p.create_migration("12345_create_schema", &schema, None, None);
+    p.create_migration("12345_create_schema", schema, None, None);
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
@@ -627,6 +655,74 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let result = result.stdout().replace("\r\n", "\n");
 
     insta::assert_snapshot!("expected", result);
+}
+
+#[track_caller]
+fn assert_schema_compiles(test_name: &str, schema: String) {
+    let temp_dir = tempfile::TempDir::with_prefix(format!("{test_name}_")).unwrap();
+    let res = Command::new("cargo")
+        .arg("init")
+        .arg(format!("--name={test_name}"))
+        .arg(temp_dir.path())
+        .status()
+        .unwrap();
+    assert!(res.success());
+    let schema_rs = temp_dir.path().join("src/schema.rs");
+    std::fs::write(schema_rs, schema).unwrap();
+    let main_rs = temp_dir.path().join("src/main.rs");
+    std::fs::write(main_rs, "mod schema;\n fn main() {}").unwrap();
+    let target_dir = std::env::var("CARGO_TARGET_DIR")
+        .unwrap_or_else(|_| env!("CARGO_TARGET_TMPDIR").to_string());
+    let diesel_path = env!("CARGO_MANIFEST_DIR");
+
+    let mut add_command = Command::new("cargo");
+
+    add_command
+        .arg("add")
+        .arg("--offline")
+        .arg(format!("--path={diesel_path}/../diesel"))
+        .arg(format!(
+            "--manifest-path={}/Cargo.toml",
+            temp_dir.path().display()
+        ))
+        .arg("--no-default-features");
+
+    if cfg!(feature = "sqlite") {
+        add_command.arg("-F").arg("sqlite");
+    }
+    if cfg!(feature = "mysql") {
+        add_command.arg("-F").arg("mysql");
+    }
+    if cfg!(feature = "postgres") {
+        add_command.arg("-F").arg("postgres");
+    }
+    let res = add_command.status().unwrap();
+    assert!(res.success());
+
+    let check = Command::new("cargo")
+        .arg("check")
+        .arg(format!(
+            "--manifest-path={}/Cargo.toml",
+            temp_dir.path().display()
+        ))
+        .arg(format!("--target-dir={target_dir}"))
+        .arg("--offline")
+        .output();
+
+    #[allow(clippy::print_stdout)]
+    match check {
+        Err(err) => panic!("Failed to compile test schema: {err}"),
+        Ok(o) if !o.status.success() => {
+            let p = temp_dir.keep();
+            println!("Test project: {}", p.display());
+            panic!(
+                "Failed to compile test schema: \n STDERR: \n{}\n STDOUT: \n {}",
+                String::from_utf8_lossy(&o.stderr),
+                String::from_utf8_lossy(&o.stdout)
+            );
+        }
+        _ => {}
+    }
 }
 
 fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
