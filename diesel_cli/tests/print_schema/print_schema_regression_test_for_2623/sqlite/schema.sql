@@ -6,7 +6,7 @@ CREATE TABLE tab_key1(
 
 CREATE TABLE tab_problem (
   id integer NOT NULL,
-  key1 bigint NOT NULL,
+  key1 integer NOT NULL,
 
   PRIMARY KEY (id),
   UNIQUE (key1),
