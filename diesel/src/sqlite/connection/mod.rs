@@ -171,6 +171,15 @@ pub struct SqliteConnection {
     // and avoiding static mut which will be deprecated in 2024 edition
     metadata_lookup: (),
     instrumentation: DynInstrumentation,
+    // We potentially need to store a serialized
+    // database in here to make sure the database bytes
+    // live as long as the connection
+    // This is used by SqliteConnection::deserialize_readonly_database_from_buffer
+    // only
+    // This field needs to come after the RawConnection
+    // as we need to make sure the data are still there until the
+    // connection is dropped
+    serialized_data: Vec<u8>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -215,7 +224,7 @@ impl Connection for SqliteConnection {
     ///
     /// * The database is stored in memory by default.
     /// * Persistent VFS (Virtual File Systems) is optional,
-    ///   see <https://github.com/Spxg/sqlite-wasm-rs/blob/master/sqlite-wasm-rs/src/vfs/README.md> for details
+    ///   see <https://github.com/Spxg/sqlite-wasm-rs> for details
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
@@ -570,7 +579,10 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
-        self.raw_connection.deserialize(data)
+        // we copy the buffer here
+        // to make sure the underlying buffer lives as long as the connection
+        self.serialized_data = data.to_vec();
+        self.raw_connection.deserialize(&self.serialized_data)
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -600,6 +612,7 @@ impl SqliteConnection {
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::none(),
+            serialized_data: Vec::new(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -664,6 +677,14 @@ mod tests {
             .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
             .unwrap();
 
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+
+        assert_eq!(expected_users, actual_users);
+        // drop the database here
+        // and requery the database to make sure the database owns
+        // required data
+        std::mem::drop(serialized_database);
         let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
         let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
 

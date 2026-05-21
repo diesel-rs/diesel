@@ -3,6 +3,7 @@ use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
 
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
@@ -156,6 +157,28 @@ fn sqlite_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     common_diesel_types(&mut types);
     types
+}
+
+fn escape_rust_string(input: &str) -> String {
+    let mut number_of_quotes = 0;
+    let mut number_of_hashes = 0;
+    for c in input.chars() {
+        match c {
+            '#' => number_of_hashes += 1,
+            '"' => number_of_quotes += 1,
+            _ => {}
+        }
+    }
+    let (raw, hashes) = if number_of_quotes > 0 {
+        (
+            "r",
+            Cow::Owned(std::iter::repeat_n('#', number_of_hashes + 1).collect::<String>()),
+        )
+    } else {
+        ("", Cow::Borrowed(""))
+    };
+
+    format!("{raw}{hashes}\"{input}\"{hashes}")
 }
 
 #[tracing::instrument(skip(connection))]
@@ -411,11 +434,16 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                     if let Some(ref schema) = ct.schema {
                         writeln!(
                             out,
-                            "#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]",
-                            ct.sql_name, schema
+                            "#[diesel(postgres_type(name = {}, schema = {}))]",
+                            escape_rust_string(&ct.sql_name),
+                            escape_rust_string(schema)
                         )?;
                     } else {
-                        writeln!(out, "#[diesel(postgres_type(name = \"{}\"))]", ct.sql_name)?;
+                        writeln!(
+                            out,
+                            "#[diesel(postgres_type(name = {}))]",
+                            escape_rust_string(&ct.sql_name)
+                        )?;
                     }
                     writeln!(out, "pub struct {};", ct.rust_name)?;
                 }
@@ -763,7 +791,11 @@ impl Display for TableDefinition<'_> {
             }
 
             if self.table.name.rust_name != self.table.name.sql_name {
-                writeln!(out, r#"#[sql_name = "{full_sql_name}"]"#,)?;
+                writeln!(
+                    out,
+                    r#"#[sql_name = {}]"#,
+                    escape_rust_string(&full_sql_name)
+                )?;
             }
 
             write!(out, "{} (", self.table.name)?;
@@ -837,7 +869,11 @@ impl Display for ColumnDefinitions<'_> {
 
                 // Write out attributes
                 if column.rust_name != column.sql_name {
-                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
+                    writeln!(
+                        out,
+                        r#"#[sql_name = {}]"#,
+                        escape_rust_string(&column.sql_name)
+                    )?;
                 }
                 if let Some(max_length) = column.ty.max_length {
                     writeln!(out, r#"#[max_length = {max_length}]"#)?;

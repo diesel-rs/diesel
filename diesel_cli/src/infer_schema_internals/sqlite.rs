@@ -54,28 +54,8 @@ pub fn load_table_names(
         .order(name)
         .load::<String>(connection)?
         .into_iter()
-        .map(|table| {
-            (
-                SupportedQueryRelationStructures::Table,
-                TableName::from_name(table),
-            )
-        });
-    let view = sqlite_master
-        .select(name)
-        .filter(name.not_like("\\_\\_%").escape('\\'))
-        .filter(name.not_like("sqlite%"))
-        .filter(tpe.eq("view"))
-        .order(name)
-        .load::<String>(connection)?
-        .into_iter()
-        .map(|table| {
-            (
-                SupportedQueryRelationStructures::View,
-                TableName::from_name(table),
-            )
-        });
-
-    Ok(tables.chain(view).collect())
+        .map(TableName::from_name)
+        .collect())
 }
 
 pub fn load_foreign_key_constraints(
@@ -162,7 +142,6 @@ pub fn get_table_data(
     conn: &mut SqliteConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
-    kind: SupportedQueryRelationStructures,
 ) -> QueryResult<Vec<ColumnInformation>> {
     let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
@@ -706,7 +685,7 @@ fn integer_primary_key_sqlite_3_37() {
                         &mut conn,
                         column_info,
                         &table,
-                        Some(&primary_keys),
+                        &primary_keys,
                         &HashMap::new(),
                         &PrintSchema {
                             sqlite_integer_primary_key_is_bigint: Some(true),
