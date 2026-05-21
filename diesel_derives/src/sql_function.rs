@@ -84,8 +84,13 @@ fn expand_one(
     let attributes = &mut input.attributes;
 
     let variadic_argument_count = attributes.iter().find_map(|attr| {
-        if let SqlFunctionAttribute::Variadic(_, c, flag) = &attr.item {
-            Some((c.base10_parse(), c.span(), flag.value))
+        if let SqlFunctionAttribute::Variadic {
+            count: number,
+            skip_zero_arg_variant: flag,
+            ..
+        } = &attr.item
+        {
+            Some((number.base10_parse(), number.span(), flag.value))
         } else {
             None
         }
@@ -355,7 +360,7 @@ fn parse_sql_name_attr(input: &mut SqlFunctionDecl) -> String {
         .attributes
         .iter()
         .find_map(|attr| match attr.item {
-            SqlFunctionAttribute::SqlName(_, ref value) => Some(value.value()),
+            SqlFunctionAttribute::SqlName { ref value, .. } => Some(value.value()),
             _ => None,
         })
         .unwrap_or_else(|| input.fn_name.to_string())
@@ -378,13 +383,13 @@ fn expand_nonvariadic(
 
     let is_aggregate = attributes
         .iter()
-        .any(|attr| matches!(attr.item, SqlFunctionAttribute::Aggregate(..)));
+        .any(|attr| matches!(attr.item, SqlFunctionAttribute::Aggregate { .. }));
 
     let can_be_called_directly = !function_cannot_be_called_directly(&attributes);
 
     let skip_return_type_helper = attributes
         .iter()
-        .any(|attr| matches!(attr.item, SqlFunctionAttribute::SkipReturnTypeHelper(..)));
+        .any(|attr| matches!(attr.item, SqlFunctionAttribute::SkipReturnTypeHelper { .. }));
 
     let window_attrs = attributes
         .iter()
@@ -395,7 +400,9 @@ fn expand_nonvariadic(
     let restrictions = attributes
         .iter()
         .find_map(|a| match a.item {
-            SqlFunctionAttribute::Restriction(ref r) => Some(r.clone()),
+            SqlFunctionAttribute::Restriction {
+                ref restriction, ..
+            } => Some(restriction.clone()),
             _ => None,
         })
         .unwrap_or_default();
@@ -539,11 +546,6 @@ fn expand_nonvariadic(
         #query_fragment_impl
     };
 
-    let is_supported_on_sqlite = cfg!(feature = "sqlite")
-        && type_args.is_empty()
-        && is_sqlite_type(&return_type)
-        && arg_type.iter().all(|a| is_sqlite_type(a));
-
     for window in &window_attrs {
         tokens.extend(generate_window_function_tokens(
             window,
@@ -569,7 +571,6 @@ fn expand_nonvariadic(
             &ty_generics,
             arg_name,
             arg_type,
-            is_supported_on_sqlite,
             !window_attrs.is_empty(),
             &return_type,
             &sql_name,
@@ -582,7 +583,6 @@ fn expand_nonvariadic(
             &ty_generics,
             arg_name,
             arg_type,
-            is_supported_on_sqlite,
             &return_type,
             &sql_name,
         );
@@ -705,6 +705,7 @@ fn generate_window_function_tokens(
     let SqlFunctionAttribute::Window {
         restrictions,
         require_order,
+        wrap_macro,
         ..
     } = &window.item
     else {
@@ -715,6 +716,7 @@ fn generate_window_function_tokens(
         ty_generics,
         fn_name,
         require_order.unwrap_or_default(),
+        wrap_macro.as_ref(),
     )
 }
 
@@ -726,7 +728,6 @@ fn generate_tokens_for_non_aggregate_functions(
     ty_generics: &syn::TypeGenerics<'_>,
     arg_name: &[&syn::Ident],
     arg_type: &[&syn::Type],
-    is_supported_on_sqlite: bool,
     return_type: &syn::Type,
     sql_name: &str,
 ) -> TokenStream {
@@ -744,124 +745,148 @@ fn generate_tokens_for_non_aggregate_functions(
             type IsAggregate = <__Derived<#(#arg_name,)*> as ValidGrouping<__DieselInternal>>::IsAggregate;
         }
     };
+    let (contains_none, types_for_sqlite_impl) =
+        collect_types_for_sqlite_impl(arg_type, return_type);
 
-    if is_supported_on_sqlite && !arg_name.is_empty() {
+    if !contains_none && !arg_name.is_empty() {
         tokens = quote! {
             #tokens
 
-            use diesel::sqlite::{Sqlite, SqliteConnection};
-            use diesel::serialize::ToSql;
-            use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
-            #[allow(dead_code)]
-            /// Registers an implementation for this function on the given connection
-            ///
-            /// This function must be called for every `SqliteConnection` before
-            /// this SQL function can be used on SQLite. The implementation must be
-            /// deterministic (returns the same result given the same arguments). If
-            /// the function is nondeterministic, call
-            /// `register_nondeterministic_impl` instead.
-            pub fn register_impl<F, Ret, #(#arg_name,)*>(
-                conn: &mut SqliteConnection,
-                f: F,
-            ) -> QueryResult<()>
-            where
-                F: Fn(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
-                    StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
-                Ret: ToSql<#return_type, Sqlite>,
-            {
-                conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
-                    #sql_name,
-                    true,
-                    move |(#(#arg_name,)*)| f(#(#arg_name,)*),
-                )
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite. The implementation must be
+                /// deterministic (returns the same result given the same arguments). If
+                /// the function is nondeterministic, call
+                /// `register_nondeterministic_impl` instead.
+                pub fn register_impl<F, Ret, #(#arg_name,)*>(
+                    conn: &mut diesel::sqlite::SqliteConnection,
+                    f: F,
+                ) -> diesel::result::QueryResult<()>
+                where
+                    F: Fn(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+                (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                    diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
+                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                {
+                    conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
+                        #sql_name,
+                        true,
+                        move |(#(#arg_name,)*)| f(#(#arg_name,)*),
+                    )
+                }
             }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
-            #[allow(dead_code)]
-            /// Registers an implementation for this function on the given connection
-            ///
-            /// This function must be called for every `SqliteConnection` before
-            /// this SQL function can be used on SQLite.
-            /// `register_nondeterministic_impl` should only be used if your
-            /// function can return different results with the same arguments (e.g.
-            /// `random`). If your function is deterministic, you should call
-            /// `register_impl` instead.
-            pub fn register_nondeterministic_impl<F, Ret, #(#arg_name,)*>(
-                conn: &mut SqliteConnection,
-                mut f: F,
-            ) -> QueryResult<()>
-            where
-                F: FnMut(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
-                    StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
-                Ret: ToSql<#return_type, Sqlite>,
-            {
-                conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
-                    #sql_name,
-                    false,
-                    move |(#(#arg_name,)*)| f(#(#arg_name,)*),
-                )
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite.
+                /// `register_nondeterministic_impl` should only be used if your
+                /// function can return different results with the same arguments (e.g.
+                /// `random`). If your function is deterministic, you should call
+                /// `register_impl` instead.
+                pub fn register_nondeterministic_impl<F, Ret, #(#arg_name,)*>(
+                    conn: &mut diesel::sqlite::SqliteConnection,
+                    mut f: F,
+                ) -> diesel::result::QueryResult<()>
+                where
+                    F: FnMut(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+                (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                    diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
+                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                {
+                    conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
+                        #sql_name,
+                        false,
+                        move |(#(#arg_name,)*)| f(#(#arg_name,)*),
+                    )
+                }
             }
         };
     }
 
-    if is_supported_on_sqlite && arg_name.is_empty() {
+    if !contains_none && arg_name.is_empty() {
         tokens = quote! {
             #tokens
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
-            use diesel::sqlite::{Sqlite, SqliteConnection};
-            use diesel::serialize::ToSql;
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite. The implementation must be
+                /// deterministic (returns the same result given the same arguments). If
+                /// the function is nondeterministic, call
+                /// `register_nondeterministic_impl` instead.
+                pub fn register_impl<F, Ret>(
+                    conn: &diesel::sqlite::SqliteConnection,
+                    f: F,
+                ) -> QueryResult<()>
+                where
+                    F: Fn() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                {
+                    conn.register_noarg_sql_function::<#return_type, _, _>(
+                        #sql_name,
+                        true,
+                        f,
+                    )
+                }
 
-            #[allow(dead_code)]
-            /// Registers an implementation for this function on the given connection
-            ///
-            /// This function must be called for every `SqliteConnection` before
-            /// this SQL function can be used on SQLite. The implementation must be
-            /// deterministic (returns the same result given the same arguments). If
-            /// the function is nondeterministic, call
-            /// `register_nondeterministic_impl` instead.
-            pub fn register_impl<F, Ret>(
-                conn: &SqliteConnection,
-                f: F,
-            ) -> QueryResult<()>
-            where
-                F: Fn() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                Ret: ToSql<#return_type, Sqlite>,
-            {
-                conn.register_noarg_sql_function::<#return_type, _, _>(
-                    #sql_name,
-                    true,
-                    f,
-                )
             }
-
-            #[allow(dead_code)]
-            /// Registers an implementation for this function on the given connection
-            ///
-            /// This function must be called for every `SqliteConnection` before
-            /// this SQL function can be used on SQLite.
-            /// `register_nondeterministic_impl` should only be used if your
-            /// function can return different results with the same arguments (e.g.
-            /// `random`). If your function is deterministic, you should call
-            /// `register_impl` instead.
-            pub fn register_nondeterministic_impl<F, Ret>(
-                conn: &SqliteConnection,
-                mut f: F,
-            ) -> QueryResult<()>
-            where
-                F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                Ret: ToSql<#return_type, Sqlite>,
-            {
-                conn.register_noarg_sql_function::<#return_type, _, _>(
-                    #sql_name,
-                    false,
-                    f,
-                )
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite.
+                /// `register_nondeterministic_impl` should only be used if your
+                /// function can return different results with the same arguments (e.g.
+                /// `random`). If your function is deterministic, you should call
+                /// `register_impl` instead.
+                pub fn register_nondeterministic_impl<F, Ret>(
+                    conn: &diesel::sqlite::SqliteConnection,
+                    mut f: F,
+                ) -> diesel::result::QueryResult<()>
+                where
+                    F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                {
+                    conn.register_noarg_sql_function::<#return_type, _, _>(
+                        #sql_name,
+                        false,
+                        f,
+                    )
+                }
             }
         };
     }
     tokens
+}
+
+fn collect_types_for_sqlite_impl<'a>(
+    arg_type: &[&'a Type],
+    return_type: &'a Type,
+) -> (bool, Vec<&'a Ident>) {
+    let mut contains_none = false;
+    let types_for_sqlite_impl = std::iter::once(return_type)
+        .chain(arg_type.iter().copied())
+        .filter_map(|t| {
+            let r = is_sqlite_type(t);
+            contains_none = contains_none || r.is_none();
+            r
+        })
+        .collect::<Vec<_>>();
+    (contains_none, types_for_sqlite_impl)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -873,7 +898,6 @@ fn generate_tokens_for_aggregate_functions(
     ty_generics: &syn::TypeGenerics<'_>,
     arg_name: &[&syn::Ident],
     arg_type: &[&syn::Type],
-    is_supported_on_sqlite: bool,
     is_window: bool,
     return_type: &syn::Type,
     sql_name: &str,
@@ -889,44 +913,54 @@ fn generate_tokens_for_aggregate_functions(
 
         impl #impl_generics IsAggregateFunction for #fn_name #ty_generics {}
     };
-    // we do not support custom window functions for sqlite yet
-    if is_supported_on_sqlite && !is_window {
-        tokens = quote! {
-            #tokens
 
-            use diesel::sqlite::{Sqlite, SqliteConnection};
-            use diesel::serialize::ToSql;
-            use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
-            use diesel::sqlite::SqliteAggregateFunction;
-            use diesel::sql_types::IntoNullable;
-        };
+    let (contains_none, types_for_sqlite_impl) =
+        collect_types_for_sqlite_impl(arg_type, return_type);
+    let types_for_sqlite_impl = &types_for_sqlite_impl;
+
+    // we do not support custom window functions for sqlite yet
+    if !contains_none && !is_window {
+        // tokens = quote! {
+        //     #tokens
+
+        //     diesel::internal::sql_functions::expand_sqlite_function! {
+        //         [#(#types_for_sqlite_impl,)*],
+        //         use diesel::sqlite::{Sqlite, SqliteConnection};
+        //         use diesel::serialize::ToSql;
+        //         use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
+        //         use diesel::sqlite::SqliteAggregateFunction;
+        //         use diesel::sql_types::IntoNullable;
+        //     }
+        // };
 
         match arg_name.len() {
             x if x > 1 => {
                 tokens = quote! {
                     #tokens
-
-                    #[allow(dead_code)]
-                    /// Registers an implementation for this aggregate function on the given connection
-                    ///
-                    /// This function must be called for every `SqliteConnection` before
-                    /// this SQL function can be used on SQLite. The implementation must be
-                    /// deterministic (returns the same result given the same arguments).
-                    pub fn register_impl<A, #(#arg_name,)*>(
-                        conn: &mut SqliteConnection
-                    ) -> QueryResult<()>
+                    diesel::internal::sql_functions::expand_sqlite_function! {
+                        [#(#types_for_sqlite_impl,)*],
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the given connection
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. The implementation must be
+                        /// deterministic (returns the same result given the same arguments).
+                        pub fn register_impl<A, #(#arg_name,)*>(
+                            conn: &mut diesel::sqlite::SqliteConnection
+                        ) -> diesel::result::QueryResult<()>
                         where
-                        A: SqliteAggregateFunction<(#(#arg_name,)*)>
+                            A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
                             + ::core::panic::RefUnwindSafe,
-                        A::Output: ToSql<#return_type, Sqlite>,
-                        (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
-                            StaticallySizedRow<(#(#arg_type,)*), Sqlite> +
+                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                        (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                            diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
-                    {
-                        conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
+                        {
+                            conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
+                        }
                     }
                 };
             }
@@ -937,28 +971,31 @@ fn generate_tokens_for_aggregate_functions(
                 tokens = quote! {
                     #tokens
 
-                    #[allow(dead_code)]
-                    /// Registers an implementation for this aggregate function on the given connection
-                    ///
-                    /// This function must be called for every `SqliteConnection` before
-                    /// this SQL function can be used on SQLite. The implementation must be
-                    /// deterministic (returns the same result given the same arguments).
-                    pub fn register_impl<A, #arg_name>(
-                        conn: &mut SqliteConnection
-                    ) -> QueryResult<()>
+                    diesel::internal::sql_functions::expand_sqlite_function! {
+                        [#(#types_for_sqlite_impl,)*],
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the given connection
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. The implementation must be
+                        /// deterministic (returns the same result given the same arguments).
+                        pub fn register_impl<A, #arg_name>(
+                            conn: &mut diesel::sqlite::SqliteConnection
+                        ) -> diesel::result::QueryResult<()>
                         where
-                        A: SqliteAggregateFunction<#arg_name>
+                            A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
                             + ::core::panic::RefUnwindSafe,
-                        A::Output: ToSql<#return_type, Sqlite>,
-                        #arg_name: FromSqlRow<#arg_type, Sqlite> +
-                            StaticallySizedRow<#arg_type, Sqlite> +
+                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                        #arg_name: diesel::deserialize::FromSqlRow<#arg_type, diesel::sqlite::Sqlite> +
+                            diesel::deserialize::StaticallySizedRow<#arg_type, diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
                             conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
                         }
+                    }
                 };
             }
             _ => (),
@@ -973,7 +1010,8 @@ fn function_cannot_be_called_directly(
     let mut has_aggregate = false;
     let mut has_window = false;
     for attr in attributes {
-        has_aggregate = has_aggregate || matches!(attr.item, SqlFunctionAttribute::Aggregate(..));
+        has_aggregate =
+            has_aggregate || matches!(attr.item, SqlFunctionAttribute::Aggregate { .. });
         has_window = has_window || matches!(attr.item, SqlFunctionAttribute::Window { .. });
     }
     has_window && !has_aggregate
@@ -1051,14 +1089,19 @@ fn merge_attributes(
 ) -> Vec<AttributeSpanWrapper<SqlFunctionAttribute>> {
     for attr in parsed_block_attrs {
         if attributes.iter().all(|a| match (&a.item, &attr.item) {
-            (SqlFunctionAttribute::Aggregate(_), SqlFunctionAttribute::Aggregate(_)) => todo!(),
+            (SqlFunctionAttribute::Aggregate { .. }, SqlFunctionAttribute::Aggregate { .. }) => {
+                todo!()
+            }
             (SqlFunctionAttribute::Window { .. }, SqlFunctionAttribute::Window { .. })
-            | (SqlFunctionAttribute::SqlName(_, _), SqlFunctionAttribute::SqlName(_, _))
-            | (SqlFunctionAttribute::Restriction(_), SqlFunctionAttribute::Restriction(_))
-            | (SqlFunctionAttribute::Variadic(_, _, _), SqlFunctionAttribute::Variadic(_, _, _))
+            | (SqlFunctionAttribute::SqlName { .. }, SqlFunctionAttribute::SqlName { .. })
             | (
-                SqlFunctionAttribute::SkipReturnTypeHelper(_),
-                SqlFunctionAttribute::SkipReturnTypeHelper(_),
+                SqlFunctionAttribute::Restriction { .. },
+                SqlFunctionAttribute::Restriction { .. },
+            )
+            | (SqlFunctionAttribute::Variadic { .. }, SqlFunctionAttribute::Variadic { .. })
+            | (
+                SqlFunctionAttribute::SkipReturnTypeHelper { .. },
+                SqlFunctionAttribute::SkipReturnTypeHelper { .. },
             ) => false,
             _ => true,
         }) {
@@ -1154,9 +1197,7 @@ impl Parse for SqlFunctionDecl {
     }
 }
 
-fn parse_attribute(
-    attr: syn::Attribute,
-) -> Result<Option<AttributeSpanWrapper<SqlFunctionAttribute>>> {
+fn parse_attribute(attr: syn::Attribute) -> Result<AttributeSpanWrapper<SqlFunctionAttribute>> {
     match &attr.meta {
         syn::Meta::NameValue(syn::MetaNameValue {
             path,
@@ -1166,16 +1207,20 @@ fn parse_attribute(
                     ..
                 }),
             ..
-        }) if path.is_ident("sql_name") => Ok(Some(AttributeSpanWrapper {
+        }) if path.is_ident("sql_name") => Ok(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: sql_name.span(),
-            item: SqlFunctionAttribute::SqlName(path.require_ident()?.clone(), sql_name.clone()),
-        })),
-        syn::Meta::Path(path) if path.is_ident("aggregate") => Ok(Some(AttributeSpanWrapper {
+            item: SqlFunctionAttribute::SqlName {
+                ident: path.require_ident()?.clone(),
+                value: sql_name.clone(),
+            },
+        }),
+        syn::Meta::Path(path) if path.is_ident("aggregate") => Ok(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: path.span(),
-            item: SqlFunctionAttribute::Aggregate(
-                path.require_ident()
+            item: SqlFunctionAttribute::Aggregate {
+                ident: path
+                    .require_ident()
                     .map_err(|e| {
                         syn::Error::new(
                             e.span(),
@@ -1183,14 +1228,15 @@ fn parse_attribute(
                         )
                     })?
                     .clone(),
-            ),
-        })),
+            },
+        }),
         syn::Meta::Path(path) if path.is_ident("skip_return_type_helper") => {
-            Ok(Some(AttributeSpanWrapper {
+            Ok(AttributeSpanWrapper {
                 ident_span: attr.span(),
                 attribute_span: path.span(),
-                item: SqlFunctionAttribute::SkipReturnTypeHelper(
-                    path.require_ident()
+                item: SqlFunctionAttribute::SkipReturnTypeHelper {
+                    ident: path
+                        .require_ident()
                         .map_err(|e| {
                             syn::Error::new(
                                 e.span(),
@@ -1198,10 +1244,10 @@ fn parse_attribute(
                             )
                         })?
                         .clone(),
-                ),
-            }))
+                },
+            })
         }
-        syn::Meta::Path(path) if path.is_ident("window") => Ok(Some(AttributeSpanWrapper {
+        syn::Meta::Path(path) if path.is_ident("window") => Ok(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: path.span(),
             item: SqlFunctionAttribute::Window {
@@ -1213,8 +1259,9 @@ fn parse_attribute(
                     .clone(),
                 restrictions: BackendRestriction::None,
                 require_order: None,
+                wrap_macro: None,
             },
-        })),
+        }),
         syn::Meta::List(syn::MetaList {
             path,
             delimiter: syn::MacroDelimiter::Paren(_),
@@ -1262,9 +1309,10 @@ fn parse_attribute(
                         ),
                     )
                 })?;
-            Ok(Some(AttributeSpanWrapper {
-                item: SqlFunctionAttribute::Variadic(
-                    path.require_ident()
+            Ok(AttributeSpanWrapper {
+                item: SqlFunctionAttribute::Variadic {
+                    ident: path
+                        .require_ident()
                         .map_err(|e| {
                             syn::Error::new(
                                 e.span(),
@@ -1272,18 +1320,18 @@ fn parse_attribute(
                             )
                         })?
                         .clone(),
-                    count.clone(),
-                    flag,
-                ),
+                    count: count.clone(),
+                    skip_zero_arg_variant: flag,
+                },
                 attribute_span: attr.span(),
                 ident_span: path.require_ident()?.span(),
-            }))
+            })
         }
-        syn::Meta::NameValue(_) | syn::Meta::Path(_) => Ok(Some(AttributeSpanWrapper {
+        syn::Meta::NameValue(_) | syn::Meta::Path(_) => Ok(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: attr.span(),
             item: SqlFunctionAttribute::Other(attr),
-        })),
+        }),
         syn::Meta::List(_) => {
             let name = attr.meta.path().require_ident()?;
             let attribute_span = attr.meta.span();
@@ -1306,9 +1354,7 @@ fn parse_attributes(
 ) -> Vec<AttributeSpanWrapper<SqlFunctionAttribute>> {
     let attribute_count = attributes.len();
 
-    let attributes = attributes
-        .into_iter()
-        .filter_map(|attr| parse_attribute(attr).transpose());
+    let attributes = attributes.into_iter().map(parse_attribute);
 
     let mut attributes_collected = Vec::with_capacity(attribute_count);
     for attr in attributes {
@@ -1351,42 +1397,24 @@ impl ToTokens for StrictFnArg {
     }
 }
 
-fn is_sqlite_type(ty: &Type) -> bool {
+fn is_sqlite_type(ty: &Type) -> Option<&Ident> {
     let last_segment = if let Type::Path(tp) = ty {
-        if let Some(segment) = tp.path.segments.last() {
-            segment
-        } else {
-            return false;
-        }
+        tp.path.segments.last()?
     } else {
-        return false;
+        return None;
     };
 
-    let ident = last_segment.ident.to_string();
+    let ident = &last_segment.ident;
     if ident == "Nullable" {
         if let PathArguments::AngleBracketed(ref ab) = last_segment.arguments
             && let Some(GenericArgument::Type(ty)) = ab.args.first()
         {
             return is_sqlite_type(ty);
         }
-        return false;
+        return None;
     }
 
-    [
-        "BigInt",
-        "Binary",
-        "Bool",
-        "Date",
-        "Double",
-        "Float",
-        "Integer",
-        "Numeric",
-        "SmallInt",
-        "Text",
-        "Time",
-        "Timestamp",
-    ]
-    .contains(&ident.as_str())
+    Some(ident)
 }
 
 #[derive(Default, Clone, Debug)]
@@ -1445,6 +1473,7 @@ impl BackendRestriction {
         ty_generics: &TypeGenerics<'_>,
         fn_name: &syn::Ident,
         require_order: bool,
+        wrap_macro: Option<&Path>,
     ) -> TokenStream {
         generics.params.push(parse_quote!(__P));
         generics.params.push(parse_quote!(__O));
@@ -1456,7 +1485,7 @@ impl BackendRestriction {
         } else {
             quote::quote! {__O}
         };
-        match *self {
+        let out = match *self {
             BackendRestriction::None => {
                 generics.params.push(parse_quote!(__DieselInternal));
                 let (impl_generics, _, _) = generics.split_for_impl();
@@ -1526,6 +1555,15 @@ impl BackendRestriction {
 
                 parse_quote!(#(#backends)*)
             }
+        };
+        if let Some(wrap_macro) = wrap_macro {
+            quote::quote! {
+                #wrap_macro! {
+                    #out
+                }
+            }
+        } else {
+            out
         }
     }
 
@@ -1678,31 +1716,57 @@ impl Parse for BackendRestriction {
 
 #[derive(Debug, Clone)]
 enum SqlFunctionAttribute {
-    Aggregate(Ident),
+    Aggregate {
+        ident: Ident,
+    },
     Window {
         ident: Ident,
         restrictions: BackendRestriction,
         require_order: Option<bool>,
+        wrap_macro: Option<Path>,
     },
-    SqlName(Ident, LitStr),
-    Restriction(BackendRestriction),
-    Variadic(Ident, LitInt, LitBool),
-    SkipReturnTypeHelper(Ident),
+    SqlName {
+        ident: Ident,
+        value: LitStr,
+    },
+    Restriction {
+        restriction: BackendRestriction,
+    },
+    Variadic {
+        ident: Ident,
+        count: LitInt,
+        skip_zero_arg_variant: LitBool,
+    },
+    SkipReturnTypeHelper {
+        ident: Ident,
+    },
     Other(Attribute),
 }
 
 impl MySpanned for SqlFunctionAttribute {
     fn span(&self) -> proc_macro2::Span {
         match self {
-            SqlFunctionAttribute::Restriction(BackendRestriction::Backends(ident, ..))
-            | SqlFunctionAttribute::Restriction(BackendRestriction::SqlDialect(ident, ..))
-            | SqlFunctionAttribute::Restriction(BackendRestriction::BackendBound(ident, ..))
-            | SqlFunctionAttribute::Aggregate(ident, ..)
+            SqlFunctionAttribute::Restriction {
+                restriction: BackendRestriction::Backends(ident, ..),
+                ..
+            }
+            | SqlFunctionAttribute::Restriction {
+                restriction: BackendRestriction::SqlDialect(ident, ..),
+                ..
+            }
+            | SqlFunctionAttribute::Restriction {
+                restriction: BackendRestriction::BackendBound(ident, ..),
+                ..
+            }
+            | SqlFunctionAttribute::Aggregate { ident, .. }
             | SqlFunctionAttribute::Window { ident, .. }
-            | SqlFunctionAttribute::Variadic(ident, ..)
-            | SqlFunctionAttribute::SkipReturnTypeHelper(ident)
-            | SqlFunctionAttribute::SqlName(ident, ..) => ident.span(),
-            SqlFunctionAttribute::Restriction(BackendRestriction::None) => {
+            | SqlFunctionAttribute::Variadic { ident, .. }
+            | SqlFunctionAttribute::SkipReturnTypeHelper { ident, .. }
+            | SqlFunctionAttribute::SqlName { ident, .. } => ident.span(),
+            SqlFunctionAttribute::Restriction {
+                restriction: BackendRestriction::None,
+                ..
+            } => {
                 unreachable!("We do not construct that")
             }
             SqlFunctionAttribute::Other(attribute) => attribute.span(),
@@ -1730,7 +1794,7 @@ impl SqlFunctionAttribute {
         input: &syn::parse::ParseBuffer<'_>,
         attr: Attribute,
         attribute_span: proc_macro2::Span,
-    ) -> Result<Option<AttributeSpanWrapper<Self>>> {
+    ) -> Result<AttributeSpanWrapper<Self>> {
         // rustc doesn't resolve cfg attrs for us :(
         // This is hacky, but mostly for internal use
         if name == "cfg_attr" {
@@ -1748,10 +1812,16 @@ impl SqlFunctionAttribute {
             let feature = input.parse::<LitStr>()?;
             let feature_value = feature.value();
             let _ = input.parse::<Token![,]>()?;
-            let ignore = match feature_value.as_str() {
-                "postgres_backend" => !cfg!(feature = "postgres"),
-                "sqlite" => !cfg!(feature = "sqlite"),
-                "mysql_backend" => !cfg!(feature = "mysql"),
+            let wrap_macro = match feature_value.as_str() {
+                "postgres_backend" => Some(syn::parse_quote!(
+                    diesel::internal::sql_functions::expand_pg
+                )),
+                "sqlite" | "__sqlite_shared" => Some(syn::parse_quote!(
+                    diesel::internal::sql_functions::expand_sqlite
+                )),
+                "mysql_backend" => Some(syn::parse_quote!(
+                    diesel::internal::sql_functions::expand_mysql
+                )),
                 feature => {
                     return Err(syn::Error::new(
                         feature.span(),
@@ -1765,8 +1835,11 @@ impl SqlFunctionAttribute {
             let name = input.parse::<Ident>()?;
             let inner;
             let _paren = parenthesized!(inner in input);
-            let ret = SqlFunctionAttribute::parse_attr(name, &inner, attr, attribute_span)?;
-            if ignore { Ok(None) } else { Ok(ret) }
+            let mut ret = SqlFunctionAttribute::parse_attr(name, &inner, attr, attribute_span)?;
+            if let SqlFunctionAttribute::Window { wrap_macro: w, .. } = &mut ret.item {
+                *w = wrap_macro;
+            }
+            Ok(ret)
         } else {
             let name_str = name.to_string();
             let parsed_attr = match &*name_str {
@@ -1793,20 +1866,19 @@ impl SqlFunctionAttribute {
                         ident: name,
                         restrictions,
                         require_order,
+                        wrap_macro: None,
                     }
                 }
-                "sql_name" => {
-                    parse_eq(input, "sql_name = \"SUM\"").map(|v| Self::SqlName(name, v))?
-                }
-                "backends" => {
-                    BackendRestriction::parse_backends(input, name).map(Self::Restriction)?
-                }
-                "dialect" => {
-                    BackendRestriction::parse_sql_dialect(input, name).map(Self::Restriction)?
-                }
-                "backend_bounds" => {
-                    BackendRestriction::parse_backend_bounds(input, name).map(Self::Restriction)?
-                }
+                "sql_name" => parse_eq(input, "sql_name = \"SUM\"").map(|v| Self::SqlName {
+                    ident: name,
+                    value: v,
+                })?,
+                "backends" => BackendRestriction::parse_backends(input, name)
+                    .map(|r| Self::Restriction { restriction: r })?,
+                "dialect" => BackendRestriction::parse_sql_dialect(input, name)
+                    .map(|r| Self::Restriction { restriction: r })?,
+                "backend_bounds" => BackendRestriction::parse_backend_bounds(input, name)
+                    .map(|r| Self::Restriction { restriction: r })?,
                 "variadic" => {
                     if input.peek(LitInt) {
                         let count = input.parse::<LitInt>()?;
@@ -1816,7 +1888,11 @@ impl SqlFunctionAttribute {
                                 "unexpected token after positional `#[variadic(..)]`",
                             ));
                         }
-                        Self::Variadic(name, count, LitBool::new(false, Span::call_site()))
+                        Self::Variadic {
+                            ident: name,
+                            count,
+                            skip_zero_arg_variant: LitBool::new(false, Span::call_site()),
+                        }
                     } else {
                         let key: Ident = input.parse()?;
                         if key != "last_arguments" {
@@ -1838,7 +1914,11 @@ impl SqlFunctionAttribute {
                         } else {
                             LitBool::new(false, Span::call_site())
                         };
-                        Self::Variadic(name, count, skip_zero)
+                        Self::Variadic {
+                            ident: name,
+                            count,
+                            skip_zero_arg_variant: skip_zero,
+                        }
                     }
                 }
                 _ => {
@@ -1853,11 +1933,11 @@ impl SqlFunctionAttribute {
                     SqlFunctionAttribute::Other(attr)
                 }
             };
-            Ok(Some(AttributeSpanWrapper {
+            Ok(AttributeSpanWrapper {
                 ident_span: parsed_attr.span(),
                 item: parsed_attr,
                 attribute_span,
-            }))
+            })
         }
     }
 }

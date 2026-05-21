@@ -217,4 +217,4 @@ macro_rules! do_nothing_for_composite_keys {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(do_nothing_for_composite_keys);
+crate::for_each_tuple!(do_nothing_for_composite_keys);

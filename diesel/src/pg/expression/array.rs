@@ -118,7 +118,7 @@ macro_rules! tuple_impls {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+crate::for_each_tuple!(tuple_impls);
 
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]

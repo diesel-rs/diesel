@@ -33,7 +33,7 @@ macro_rules! tuple_impls {
                 let mut bytes = value.as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
 
-                if num_elements != $Tuple {
+                if num_elements != $Tuple as i32 {
                     return Err(format!(
                         "Expected a tuple of {} elements, got {}",
                         $Tuple,
@@ -110,7 +110,7 @@ macro_rules! tuple_impls {
         {
             fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result {
                 let mut buffer = Vec::new();
-                out.write_i32::<NetworkEndian>($Tuple)?;
+                out.write_i32::<NetworkEndian>($Tuple as i32)?;
 
                 $(
                     let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
@@ -136,7 +136,7 @@ macro_rules! tuple_impls {
     )+}
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+diesel::for_each_tuple!(tuple_impls);
 
 #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
 pub struct PgTuple<T>(T);

@@ -103,4 +103,4 @@ macro_rules! impl_positional_order_expr_for_all_tuples {
     };
 }
 
-diesel_derives::__diesel_for_each_tuple!(impl_positional_order_expr_for_all_tuples);
+crate::for_each_tuple!(impl_positional_order_expr_for_all_tuples);

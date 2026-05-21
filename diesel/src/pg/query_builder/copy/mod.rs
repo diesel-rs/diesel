@@ -192,4 +192,4 @@ macro_rules! copy_target_for_columns {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(copy_target_for_columns);
+crate::for_each_tuple!(copy_target_for_columns);

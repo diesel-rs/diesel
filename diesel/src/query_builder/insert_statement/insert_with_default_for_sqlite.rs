@@ -800,4 +800,4 @@ macro_rules! impl_contains_defaultable_value {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+crate::for_each_tuple!(tuple_impls);
