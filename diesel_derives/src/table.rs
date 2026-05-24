@@ -875,11 +875,11 @@ fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStre
 fn fix_import_for_submodule(import: &syn::ItemUse) -> syn::ItemUse {
     let mut ret = import.clone();
 
-    if let syn::UseTree::Path(ref mut path) = ret.tree {
-        if path.ident == "super" {
-            let inner = path.clone();
-            *path.tree = syn::UseTree::Path(inner);
-        }
+    if let syn::UseTree::Path(ref mut path) = ret.tree
+        && path.ident == "super"
+    {
+        let inner = path.clone();
+        *path.tree = syn::UseTree::Path(inner);
     }
 
     ret
