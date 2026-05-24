@@ -1,6 +1,8 @@
 ---
 source: diesel_derives/src/tests/mod.rs
 expression: out
+info:
+  input: "table! {\n    users { id -> Integer, name -> Text, #[cfg(feature = \"chrono\")] created_at ->\n    Timestamp, }\n}\n"
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
@@ -21,14 +23,14 @@ pub mod users {
         pub use super::columns::created_at;
         pub use super::table as users;
     }
-    #[cfg(all(not(feature = "chrono")))]
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name) = (id, name);
-    #[cfg(all(feature = "chrono"))]
-    #[allow(non_upper_case_globals, dead_code)]
-    #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name, created_at) = (id, name, created_at);
+    pub const all_columns: AllColumns = (
+        id,
+        name,
+        #[cfg(feature = "chrono")]
+        created_at,
+    );
     #[allow(non_camel_case_types)]
     #[derive(
         Debug,
@@ -64,6 +66,14 @@ pub mod users {
     #[cfg(all(feature = "chrono"))]
     #[doc = concat!("The SQL type of all of the columns on this ", "table")]
     pub type SqlType = (Integer, Text, Timestamp);
+    #[cfg(all(not(feature = "chrono")))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name);
+    #[cfg(all(feature = "chrono"))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, created_at);
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -114,26 +124,14 @@ pub mod users {
             diesel::internal::table_macro::SelectStatement::simple(self)
         }
     }
-    #[cfg(all(not(feature = "chrono")))]
     impl diesel::Table for table {
         type PrimaryKey = id;
-        type AllColumns = (id, name);
+        type AllColumns = AllColumns;
         fn primary_key(&self) -> Self::PrimaryKey {
             id
         }
         fn all_columns() -> Self::AllColumns {
-            (id, name)
-        }
-    }
-    #[cfg(all(feature = "chrono"))]
-    impl diesel::Table for table {
-        type PrimaryKey = id;
-        type AllColumns = (id, name, created_at);
-        fn primary_key(&self) -> Self::PrimaryKey {
-            id
-        }
-        fn all_columns() -> Self::AllColumns {
-            (id, name, created_at)
+            (id, name, #[cfg(feature = "chrono")] created_at)
         }
     }
     impl diesel::associations::HasTable for table {
@@ -440,26 +438,13 @@ pub mod users {
         /// `all_columns`, and has a `SqlType` of `()` to prevent it
         /// being used that way
         pub struct star;
-        #[cfg(all(not(feature = "chrono")))]
         impl<__GB> diesel::expression::ValidGrouping<__GB> for star
         where
-            (id, name): diesel::expression::ValidGrouping<__GB>,
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
         {
-            type IsAggregate = <(
-                id,
-                name,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-        }
-        #[cfg(all(feature = "chrono"))]
-        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-        where
-            (id, name, created_at): diesel::expression::ValidGrouping<__GB>,
-        {
-            type IsAggregate = <(
-                id,
-                name,
-                created_at,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+            type IsAggregate = <super::AllColumns as diesel::expression::ValidGrouping<
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::Expression for star {
             type SqlType = diesel::expression::expression_types::NotSelectable;

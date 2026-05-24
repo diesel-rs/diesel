@@ -1,6 +1,8 @@
 ---
 source: diesel_derives/src/tests/mod.rs
 expression: out
+info:
+  input: "table! {\n    users { id -> Integer, name -> Text, #[cfg(feature = \"chrono\")] created_at ->\n    Timestamp, #[cfg(feature = \"uuid\")] user_uuid -> Uuid, #[cfg(feature = \"chrono\")]\n    updated_at -> Timestamp, }\n}\n"
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
@@ -25,31 +27,16 @@ pub mod users {
         pub use super::columns::updated_at;
         pub use super::table as users;
     }
-    #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name) = (id, name);
-    #[cfg(all(feature = "chrono", not(feature = "uuid")))]
-    #[allow(non_upper_case_globals, dead_code)]
-    #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name, created_at, updated_at) = (
+    pub const all_columns: AllColumns = (
         id,
         name,
+        #[cfg(feature = "chrono")]
         created_at,
+        #[cfg(feature = "chrono")]
         updated_at,
-    );
-    #[cfg(all(not(feature = "chrono"), feature = "uuid"))]
-    #[allow(non_upper_case_globals, dead_code)]
-    #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name, user_uuid) = (id, name, user_uuid);
-    #[cfg(all(feature = "chrono", feature = "uuid"))]
-    #[allow(non_upper_case_globals, dead_code)]
-    #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name, created_at, updated_at, user_uuid) = (
-        id,
-        name,
-        created_at,
-        updated_at,
+        #[cfg(feature = "uuid")]
         user_uuid,
     );
     #[allow(non_camel_case_types)]
@@ -93,6 +80,22 @@ pub mod users {
     #[cfg(all(feature = "chrono", feature = "uuid"))]
     #[doc = concat!("The SQL type of all of the columns on this ", "table")]
     pub type SqlType = (Integer, Text, Timestamp, Timestamp, Uuid);
+    #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name);
+    #[cfg(all(feature = "chrono", not(feature = "uuid")))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, created_at, updated_at);
+    #[cfg(all(not(feature = "chrono"), feature = "uuid"))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, user_uuid);
+    #[cfg(all(feature = "chrono", feature = "uuid"))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, created_at, updated_at, user_uuid);
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -143,48 +146,23 @@ pub mod users {
             diesel::internal::table_macro::SelectStatement::simple(self)
         }
     }
-    #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
     impl diesel::Table for table {
         type PrimaryKey = id;
-        type AllColumns = (id, name);
+        type AllColumns = AllColumns;
         fn primary_key(&self) -> Self::PrimaryKey {
             id
         }
         fn all_columns() -> Self::AllColumns {
-            (id, name)
-        }
-    }
-    #[cfg(all(feature = "chrono", not(feature = "uuid")))]
-    impl diesel::Table for table {
-        type PrimaryKey = id;
-        type AllColumns = (id, name, created_at, updated_at);
-        fn primary_key(&self) -> Self::PrimaryKey {
-            id
-        }
-        fn all_columns() -> Self::AllColumns {
-            (id, name, created_at, updated_at)
-        }
-    }
-    #[cfg(all(not(feature = "chrono"), feature = "uuid"))]
-    impl diesel::Table for table {
-        type PrimaryKey = id;
-        type AllColumns = (id, name, user_uuid);
-        fn primary_key(&self) -> Self::PrimaryKey {
-            id
-        }
-        fn all_columns() -> Self::AllColumns {
-            (id, name, user_uuid)
-        }
-    }
-    #[cfg(all(feature = "chrono", feature = "uuid"))]
-    impl diesel::Table for table {
-        type PrimaryKey = id;
-        type AllColumns = (id, name, created_at, updated_at, user_uuid);
-        fn primary_key(&self) -> Self::PrimaryKey {
-            id
-        }
-        fn all_columns() -> Self::AllColumns {
-            (id, name, created_at, updated_at, user_uuid)
+            (
+                id,
+                name,
+                #[cfg(feature = "chrono")]
+                created_at,
+                #[cfg(feature = "chrono")]
+                updated_at,
+                #[cfg(feature = "uuid")]
+                user_uuid,
+            )
         }
     }
     impl diesel::associations::HasTable for table {
@@ -491,57 +469,13 @@ pub mod users {
         /// `all_columns`, and has a `SqlType` of `()` to prevent it
         /// being used that way
         pub struct star;
-        #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
         impl<__GB> diesel::expression::ValidGrouping<__GB> for star
         where
-            (id, name): diesel::expression::ValidGrouping<__GB>,
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
         {
-            type IsAggregate = <(
-                id,
-                name,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-        }
-        #[cfg(all(feature = "chrono", not(feature = "uuid")))]
-        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-        where
-            (id, name, created_at, updated_at): diesel::expression::ValidGrouping<__GB>,
-        {
-            type IsAggregate = <(
-                id,
-                name,
-                created_at,
-                updated_at,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-        }
-        #[cfg(all(not(feature = "chrono"), feature = "uuid"))]
-        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-        where
-            (id, name, user_uuid): diesel::expression::ValidGrouping<__GB>,
-        {
-            type IsAggregate = <(
-                id,
-                name,
-                user_uuid,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-        }
-        #[cfg(all(feature = "chrono", feature = "uuid"))]
-        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-        where
-            (
-                id,
-                name,
-                created_at,
-                updated_at,
-                user_uuid,
-            ): diesel::expression::ValidGrouping<__GB>,
-        {
-            type IsAggregate = <(
-                id,
-                name,
-                created_at,
-                updated_at,
-                user_uuid,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+            type IsAggregate = <super::AllColumns as diesel::expression::ValidGrouping<
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::Expression for star {
             type SqlType = diesel::expression::expression_types::NotSelectable;

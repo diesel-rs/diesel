@@ -29,7 +29,7 @@ pub mod users {
     }
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name) = (id, name);
+    pub const all_columns: AllColumns = (id, name);
     #[allow(non_camel_case_types)]
     #[derive(
         Debug,
@@ -61,6 +61,9 @@ pub mod users {
     }
     #[doc = concat!("The SQL type of all of the columns on this ", "table")]
     pub type SqlType = (Integer, Text);
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name);
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -113,7 +116,7 @@ pub mod users {
     }
     impl diesel::Table for table {
         type PrimaryKey = id;
-        type AllColumns = (id, name);
+        type AllColumns = AllColumns;
         fn primary_key(&self) -> Self::PrimaryKey {
             id
         }
@@ -433,12 +436,11 @@ pub mod users {
         pub struct star;
         impl<__GB> diesel::expression::ValidGrouping<__GB> for star
         where
-            (id, name): diesel::expression::ValidGrouping<__GB>,
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
         {
-            type IsAggregate = <(
-                id,
-                name,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+            type IsAggregate = <super::AllColumns as diesel::expression::ValidGrouping<
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::Expression for star {
             type SqlType = diesel::expression::expression_types::NotSelectable;
