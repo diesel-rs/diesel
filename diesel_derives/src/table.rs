@@ -4,19 +4,6 @@ use syn::{Ident, parse_quote};
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
-/// Extracts only the `#[cfg(...)]` attributes from a list of attributes.
-///
-/// This is used to propagate feature gates from column definitions to the
-/// generated trait implementations, ensuring that feature-gated columns
-/// have all their impls properly gated.
-///
-/// # Arguments
-///
-/// * `attrs` - A slice of attributes from a column definition
-///
-/// # Returns
-///
-/// A vector of references to attributes that are `#[cfg(...)]` attributes
 fn cfg_attributes(attrs: &[syn::Attribute]) -> Vec<&syn::Attribute> {
     attrs
         .iter()
@@ -24,48 +11,21 @@ fn cfg_attributes(attrs: &[syn::Attribute]) -> Vec<&syn::Attribute> {
         .collect()
 }
 
-/// Returns true if the column has any `#[cfg(...)]` attributes.
-///
-/// # Arguments
-///
-/// * `column` - A column definition to check for cfg attributes
 fn has_cfg_attributes(column: &ColumnDef) -> bool {
     column.meta.iter().any(|attr| attr.path().is_ident("cfg"))
 }
 
-/// Represents a group of columns that share the same cfg condition.
-///
-/// This is used for generating combinatorial aggregate types where different
-/// combinations of feature flags result in different column sets.
 struct CfgGroup<'a> {
-    /// The cfg attributes that gate this group of columns (e.g., `#[cfg(feature = "chrono")]`)
     cfg_attrs: Vec<&'a syn::Attribute>,
-    /// The columns that belong to this cfg group
     columns: Vec<&'a ColumnDef>,
 }
 
-/// Enumerates every on/off combination over `n` cfg groups.
-///
-/// Yields `2^n` vectors of length `n`. When `n == 0` yields exactly one
-/// empty vector, which makes the no-cfg-groups case fall out naturally.
+/// Yields `2^n` flag vectors of length `n`. `n == 0` yields one empty vector,
+/// so callers can handle the no-cfg-groups case without a special branch.
 fn cfg_combinations(n: usize) -> impl Iterator<Item = Vec<bool>> {
     (0..1usize << n).map(move |mask| (0..n).map(|i| (mask >> i) & 1 == 1).collect())
 }
 
-/// Generates the combined cfg condition for a specific combination of enabled/disabled groups.
-///
-/// For example, if we have groups with `cfg(feature = "a")` and `cfg(feature = "b")`,
-/// and we want group A enabled but group B disabled, this generates:
-/// `#[cfg(all(feature = "a", not(feature = "b")))]`
-///
-/// # Arguments
-///
-/// * `groups` - All cfg groups for gated columns
-/// * `enabled_flags` - One boolean per group, `true` if the group is enabled
-///
-/// # Returns
-///
-/// A `TokenStream` containing the combined `#[cfg(all(...))]` attribute, or empty if no groups
 fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[bool]) -> TokenStream {
     debug_assert_eq!(groups.len(), enabled_flags.len());
 
@@ -78,16 +38,13 @@ fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[boo
     for (i, group) in groups.iter().enumerate() {
         let is_enabled = enabled_flags[i];
 
-        // Extract the inner content of each cfg attribute
         for attr in &group.cfg_attrs {
             let meta = &attr.meta;
             if let syn::Meta::List(list) = meta {
                 let tokens = &list.tokens;
                 if is_enabled {
-                    // Include the cfg condition as-is
                     conditions.push(quote::quote! { #tokens });
                 } else {
-                    // Wrap in not(...)
                     conditions.push(quote::quote! { not(#tokens) });
                 }
             }
@@ -103,29 +60,13 @@ fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[boo
     }
 }
 
-/// Tokens emitted by [`generate_aggregate_variants`].
-///
-/// `sql_type_variants` and `all_columns_type_variants` each contain `2^n` cfg-gated
-/// `pub type` aliases (one per combination of enabled cfg groups) because Rust does not
-/// allow `#[cfg]` on individual fields of a tuple type. Everything else collapses to a
-/// single declaration that uses `#[cfg]` on tuple expression fields (stable Rust).
 struct AggregateTokens {
-    /// One `pub const all_columns: AllColumns = (id, name, #[cfg(...)] foo, ...);`
     all_columns_const: TokenStream,
-    /// `2^n` `pub type SqlType = (..);` aliases.
     sql_type_variants: TokenStream,
-    /// `2^n` `pub type AllColumns = (..);` aliases.
     all_columns_type_variants: TokenStream,
-    /// One `impl<__GB> ValidGrouping<__GB> for star where super::AllColumns: ...`.
     valid_grouping_star: TokenStream,
 }
 
-/// Builds the tuple value expression `(id, name, #[cfg(...)] foo, ...)`.
-///
-/// Non-gated columns are emitted first (preserving the existing layout of the
-/// `all_columns` tuple), followed by each cfg group's columns annotated with the
-/// group's `#[cfg(...)]` attributes. Used as the body for `all_columns` const
-/// and the `all_columns()` methods on both `Table` and `QueryRelation`.
 fn all_columns_tuple_expr<'a>(
     non_gated_columns: &[&'a ColumnDef],
     cfg_groups: &[CfgGroup<'a>],
@@ -145,20 +86,9 @@ fn all_columns_tuple_expr<'a>(
     quote::quote! { (#(#fields)*) }
 }
 
-/// Generates the aggregate items used by the table/view module.
-///
-/// Two tuple type aliases (`SqlType` and `AllColumns`) get `2^n` cfg-gated
-/// variants because Rust does not yet allow `#[cfg]` on tuple type fields
-/// (see rust-lang/rfcs#3532). The `all_columns` const and the
-/// `ValidGrouping for star` impl reference those aliases and collapse to a
-/// single declaration each, using cfg-on-tuple-expression-field where a value
-/// expression is needed.
-///
-/// # Arguments
-///
-/// * `non_gated_columns` - Columns without any cfg attributes (always included)
-/// * `cfg_groups` - Groups of columns organized by their cfg condition
-/// * `kind_name` - "table" or "view" for documentation purposes
+/// `SqlType` and `AllColumns` need `2^n` cfg-gated variants because Rust does
+/// not allow `#[cfg]` on tuple type fields (rust-lang/rfcs#3532). The other
+/// items reference those aliases and stay as single declarations.
 fn generate_aggregate_variants<'a>(
     non_gated_columns: &[&'a ColumnDef],
     cfg_groups: &[CfgGroup<'a>],
@@ -225,20 +155,6 @@ fn generate_aggregate_variants<'a>(
     }
 }
 
-/// Generates the `Table` or `QueryRelation` trait impl plus the supporting
-/// trait impls that always accompany it.
-///
-/// The impl references the module-level `AllColumns` type alias (emitted by
-/// [`generate_aggregate_variants`]) so it does not need 2^n variants of its
-/// own. The `all_columns()` method body uses cfg-on-tuple-expression-field for
-/// any feature-gated columns.
-///
-/// # Arguments
-///
-/// * `non_gated_columns` - Columns without any cfg attributes
-/// * `cfg_groups` - Groups of columns organized by their cfg condition
-/// * `primary_key` - The primary key token stream (for tables only)
-/// * `kind` - Whether this is a table or view
 fn generate_kind_specific_impls<'a>(
     non_gated_columns: &[&'a ColumnDef],
     cfg_groups: &[CfgGroup<'a>],
@@ -321,23 +237,13 @@ fn generate_kind_specific_impls<'a>(
     }
 }
 
-/// Collects columns into cfg groups based on their cfg attributes.
-///
-/// Columns with the same cfg attributes (by string comparison) are grouped together.
-/// Non-gated columns are not included in any group.
-///
-/// # Arguments
-///
-/// * `columns` - An iterator over column definitions
-///
-/// # Returns
-///
-/// A vector of `CfgGroup`s, each containing columns with the same cfg condition
 fn collect_cfg_groups<'a>(
     columns: impl IntoIterator<Item = &'a ColumnDef> + Clone,
 ) -> Vec<CfgGroup<'a>> {
     use std::collections::HashMap;
 
+    // syn::Attribute does not implement Hash, so we key by its token-stream
+    // string representation.
     let mut groups_map: HashMap<String, CfgGroup<'a>> = HashMap::new();
 
     for col in columns.clone() {
@@ -346,7 +252,6 @@ fn collect_cfg_groups<'a>(
             continue;
         }
 
-        // Use stringified cfg attrs as the key for grouping
         let key = cfg_attrs
             .iter()
             .map(|a| quote::quote!(#a).to_string())
@@ -363,7 +268,8 @@ fn collect_cfg_groups<'a>(
             .push(col);
     }
 
-    // Convert to a Vec with stable ordering (by first occurrence in original columns)
+    // Order groups by first occurrence in the original column list so that
+    // generated cfg-combination output is deterministic.
     let mut groups: Vec<CfgGroup<'a>> = Vec::new();
     let mut seen_keys = std::collections::HashSet::new();
 
@@ -443,7 +349,6 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         input.view.use_statements.clone()
     };
 
-    // Separate columns into non-gated (always included) and collect cfg groups
     let non_gated_columns: Vec<_> = input
         .view
         .column_defs
@@ -452,7 +357,6 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         .collect();
     let cfg_groups = collect_cfg_groups(&input.view.column_defs);
 
-    // All column names (for primary key detection and error messages)
     let column_names = input
         .view
         .column_defs
@@ -584,8 +488,6 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         }
     });
 
-    // Generate aggregate items (2^n cfg'd tuple-type aliases plus single-instance
-    // value-expression items that reference them).
     let AggregateTokens {
         all_columns_const,
         sql_type_variants,
@@ -593,8 +495,6 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         valid_grouping_star,
     } = generate_aggregate_variants(&non_gated_columns, &cfg_groups, kind_name);
 
-    // Generate the single Table/QueryRelation impl plus the trailing
-    // non-combinatorial impls (HasTable, IntoUpdateTarget, Insertable, ...).
     let kind_specific_impls =
         generate_kind_specific_impls(&non_gated_columns, &cfg_groups, &primary_key, kind);
 
@@ -916,22 +816,6 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
     }
 }
 
-/// Generates `IsContainedInGroupBy` trait implementations for all column pairs.
-///
-/// This function creates the cross-product of `IsContainedInGroupBy` implementations
-/// between all columns in the table. If a column is the primary key, then all other
-/// columns are considered to be "contained in" a GROUP BY on that column (output `Yes`).
-///
-/// For feature-gated columns, the cfg attributes from both columns involved in the
-/// impl are applied to ensure the impl only exists when both columns are available.
-///
-/// # Arguments
-///
-/// * `table` - The table declaration containing all column definitions
-///
-/// # Returns
-///
-/// A vector of `TokenStream`s, each containing a pair of `IsContainedInGroupBy` impls
 fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStream> {
     let mut ret = Vec::with_capacity(table.view.column_defs.len() * table.view.column_defs.len());
 
@@ -962,7 +846,6 @@ fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStre
             let left_col = &left_col_def.column_name;
             let right_col = &right_col_def.column_name;
 
-            // Collect cfg attributes from both columns
             let left_cfg_attrs = cfg_attributes(&left_col_def.meta);
             let right_cfg_attrs = cfg_attributes(&right_col_def.meta);
 
@@ -986,26 +869,13 @@ fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStre
     ret
 }
 
-/// Adjusts a `use` statement to work correctly inside a nested submodule.
-///
-/// When an import starts with `super::`, we need to add another `super::`
-/// prefix so that it refers to the correct parent module when used inside
-/// the nested `columns` submodule.
-///
-/// # Arguments
-///
-/// * `import` - The original `use` statement to adjust
-///
-/// # Returns
-///
-/// A modified `use` statement with an additional `super::` prefix if needed
+/// Imports inside the nested `columns` submodule see `super::` as the table
+/// module rather than its parent, so any `use super::...` needs another
+/// `super::` prepended to resolve correctly.
 fn fix_import_for_submodule(import: &syn::ItemUse) -> syn::ItemUse {
     let mut ret = import.clone();
 
     if let syn::UseTree::Path(ref mut path) = ret.tree {
-        // prepend another `super` to the any import
-        // that starts with `super` so that it now refers to the correct
-        // module
         if path.ident == "super" {
             let inner = path.clone();
             *path.tree = syn::UseTree::Path(inner);
@@ -1015,18 +885,6 @@ fn fix_import_for_submodule(import: &syn::ItemUse) -> syn::ItemUse {
     ret
 }
 
-/// Checks if a SQL type is a numeric type that supports arithmetic operations.
-///
-/// Numeric types get `Add`, `Sub`, `Div`, and `Mul` operator implementations.
-/// This also handles `Nullable<T>` and `Unsigned<T>` wrapper types.
-///
-/// # Arguments
-///
-/// * `ty` - The SQL type path to check
-///
-/// # Returns
-///
-/// `true` if the type is a numeric SQL type
 fn is_numeric(ty: &syn::TypePath) -> bool {
     const NUMERIC_TYPES: &[&str] = &[
         "SmallInt",
@@ -1069,18 +927,6 @@ fn is_numeric(ty: &syn::TypePath) -> bool {
     }
 }
 
-/// Checks if a SQL type is a date/time type that supports arithmetic operations.
-///
-/// Date/time types get `Add` and `Sub` operator implementations for interval
-/// arithmetic. This also handles `Nullable<T>` wrapper types.
-///
-/// # Arguments
-///
-/// * `ty` - The SQL type path to check
-///
-/// # Returns
-///
-/// `true` if the type is a date/time SQL type
 fn is_date_time(ty: &syn::TypePath) -> bool {
     const DATE_TYPES: &[&str] = &["Time", "Date", "Timestamp", "Timestamptz"];
     if let Some(last) = ty.path.segments.last() {
@@ -1104,18 +950,6 @@ fn is_date_time(ty: &syn::TypePath) -> bool {
     }
 }
 
-/// Checks if a SQL type is a PostgreSQL network type that supports arithmetic.
-///
-/// Network types (`Cidr`, `Inet`) get `Add` and `Sub` operator implementations.
-/// This also handles `Nullable<T>` wrapper types.
-///
-/// # Arguments
-///
-/// * `ty` - The SQL type path to check
-///
-/// # Returns
-///
-/// `true` if the type is a network SQL type
 fn is_network(ty: &syn::TypePath) -> bool {
     const NETWORK_TYPES: &[&str] = &["Cidr", "Inet"];
 
@@ -1140,21 +974,6 @@ fn is_network(ty: &syn::TypePath) -> bool {
     }
 }
 
-/// Generates an arithmetic operator trait implementation for a column type.
-///
-/// This creates an `impl` of `core::ops::{Add,Sub,Mul,Div}` for the column struct,
-/// allowing expressions like `column + value` in queries.
-///
-/// # Arguments
-///
-/// * `op` - The operator name (e.g., "Add", "Sub", "Mul", "Div")
-/// * `tpe` - The column type identifier to implement the trait for
-/// * `cfg_attrs` - Any `#[cfg(...)]` attributes to apply to the impl block,
-///   ensuring feature-gated columns have their operator impls also gated
-///
-/// # Returns
-///
-/// A `TokenStream` containing the operator trait implementation
 fn generate_op_impl(op: &str, tpe: &syn::Ident, cfg_attrs: &[&syn::Attribute]) -> TokenStream {
     let fn_name = syn::Ident::new(&op.to_lowercase(), tpe.span());
     let op = syn::Ident::new(op, tpe.span());
@@ -1175,29 +994,6 @@ fn generate_op_impl(op: &str, tpe: &syn::Ident, cfg_attrs: &[&syn::Attribute]) -
     }
 }
 
-/// Generates all code for a single column definition.
-///
-/// This includes:
-/// - The column struct definition with all original attributes
-/// - `Expression`, `QueryFragment`, `SelectableExpression` impls
-/// - `AppearsOnTable`, `ValidGrouping`, `IsContainedInGroupBy` impls  
-/// - Join-related trait impls
-/// - `Column` or `QueryRelationField` impl depending on table/view
-/// - Arithmetic operator impls for numeric/date/network types
-/// - Backend-specific impls (e.g., PostgreSQL `Only` and `Tablesample`)
-///
-/// For feature-gated columns, all trait impls are wrapped with the column's
-/// `#[cfg(...)]` attributes to ensure they only exist when the feature is enabled.
-///
-/// # Arguments
-///
-/// * `column_def` - The column definition containing name, type, and attributes
-/// * `query_source_ident` - The identifier for the table/view struct
-/// * `kind` - Whether this is a table or view (affects which traits are implemented)
-///
-/// # Returns
-///
-/// A `TokenStream` containing all generated code for the column
 fn expand_column_def(
     column_def: &ColumnDef,
     query_source_ident: &Ident,
