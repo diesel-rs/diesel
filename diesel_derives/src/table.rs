@@ -44,6 +44,14 @@ struct CfgGroup<'a> {
     columns: Vec<&'a ColumnDef>,
 }
 
+/// Enumerates every on/off combination over `n` cfg groups.
+///
+/// Yields `2^n` vectors of length `n`. When `n == 0` yields exactly one
+/// empty vector, which makes the no-cfg-groups case fall out naturally.
+fn cfg_combinations(n: usize) -> impl Iterator<Item = Vec<bool>> {
+    (0..1usize << n).map(move |mask| (0..n).map(|i| (mask >> i) & 1 == 1).collect())
+}
+
 /// Generates the combined cfg condition for a specific combination of enabled/disabled groups.
 ///
 /// For example, if we have groups with `cfg(feature = "a")` and `cfg(feature = "b")`,
@@ -53,12 +61,14 @@ struct CfgGroup<'a> {
 /// # Arguments
 ///
 /// * `groups` - All cfg groups for gated columns
-/// * `enabled_mask` - A bitmask indicating which groups are enabled (1) or disabled (0)
+/// * `enabled_flags` - One boolean per group, `true` if the group is enabled
 ///
 /// # Returns
 ///
 /// A `TokenStream` containing the combined `#[cfg(all(...))]` attribute, or empty if no groups
-fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_mask: usize) -> TokenStream {
+fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[bool]) -> TokenStream {
+    debug_assert_eq!(groups.len(), enabled_flags.len());
+
     if groups.is_empty() {
         return TokenStream::new();
     }
@@ -66,7 +76,7 @@ fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_mask: usize)
     let mut conditions: Vec<TokenStream> = Vec::new();
 
     for (i, group) in groups.iter().enumerate() {
-        let is_enabled = (enabled_mask & (1 << i)) != 0;
+        let is_enabled = enabled_flags[i];
 
         // Extract the inner content of each cfg attribute
         for attr in &group.cfg_attrs {
@@ -139,20 +149,19 @@ fn generate_aggregate_variants<'a>(
     }
 
     // Generate 2^n variants for all combinations
-    let num_combinations = 1usize << cfg_groups.len();
     let mut all_columns_variants = Vec::new();
     let mut sql_type_variants = Vec::new();
     let mut valid_grouping_variants = Vec::new();
 
-    for mask in 0..num_combinations {
-        let cfg_condition = generate_combined_cfg_condition(cfg_groups, mask);
+    for flags in cfg_combinations(cfg_groups.len()) {
+        let cfg_condition = generate_combined_cfg_condition(cfg_groups, &flags);
 
         // Build the list of columns for this combination
         let mut column_names = base_column_names.clone();
         let mut column_types = base_column_types.clone();
 
         for (i, group) in cfg_groups.iter().enumerate() {
-            if (mask & (1 << i)) != 0 {
+            if flags[i] {
                 // This group is enabled, add its columns
                 for col in &group.columns {
                     column_names.push(&col.column_name);
@@ -289,17 +298,16 @@ fn generate_kind_specific_impls_variants<'a>(
     }
 
     // Generate 2^n variants for all combinations
-    let num_combinations = 1usize << cfg_groups.len();
     let mut variants = Vec::new();
 
-    for mask in 0..num_combinations {
-        let cfg_condition = generate_combined_cfg_condition(cfg_groups, mask);
+    for flags in cfg_combinations(cfg_groups.len()) {
+        let cfg_condition = generate_combined_cfg_condition(cfg_groups, &flags);
 
         // Build the list of columns for this combination
         let mut column_names = base_column_names.clone();
 
         for (i, group) in cfg_groups.iter().enumerate() {
-            if (mask & (1 << i)) != 0 {
+            if flags[i] {
                 for col in &group.columns {
                     column_names.push(&col.column_name);
                 }
