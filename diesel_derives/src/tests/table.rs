@@ -104,13 +104,14 @@ pub(crate) fn table_with_multiple_feature_gated_columns() {
 
 /// This test verifies that feature-gated columns produce the correct aggregate types
 /// depending on which features are enabled. The test checks:
-/// - `all_columns` const type
-/// - `SqlType` type alias
-/// - `Table::AllColumns` associated type
+/// - `all_columns` const (single declaration with cfg-on-tuple-expression-field)
+/// - `SqlType` type alias (2^n cfg-gated variants)
+/// - `AllColumns` type alias (2^n cfg-gated variants)
+/// - `Table::AllColumns` associated type (single declaration referencing the `AllColumns` alias)
 ///
-/// For a table with one feature-gated column (`#[cfg(feature = "chrono")] created_at`):
-/// - Without chrono: types should be `(id, name)` / `(Integer, Text)`
-/// - With chrono: types should be `(id, name, created_at)` / `(Integer, Text, Timestamp)`
+/// For a table with one feature-gated column (`#[cfg(feature = "test_chrono")] created_at`):
+/// - Without `test_chrono`: aliases resolve to `(id, name)` / `(Integer, Text)`
+/// - With `test_chrono`: aliases resolve to `(id, name, created_at)` / `(Integer, Text, Timestamp)`
 #[test]
 pub(crate) fn table_with_column_feature_gate_type_check() {
     let input = quote::quote! {
@@ -126,31 +127,28 @@ pub(crate) fn table_with_column_feature_gate_type_check() {
     let generated = crate::table_proc_inner(input);
     let generated_str = generated.to_string();
 
-    // Verify that appropriate cfg guards are present for all_columns
+    // Both cfg guards (enabled/disabled) must appear so the 2^n tuple-type
+    // aliases are selected correctly per build configuration.
     assert!(
         generated_str.contains("# [cfg (all (not (feature = \"test_chrono\")))]"),
-        "Should have cfg guard for non-chrono all_columns variant"
+        "Should have cfg guard for non-chrono variant"
     );
     assert!(
         generated_str.contains("# [cfg (all (feature = \"test_chrono\"))]"),
-        "Should have cfg guard for chrono all_columns variant"
+        "Should have cfg guard for chrono variant"
     );
 
-    // Verify correct column tuples in all_columns (note: trailing commas in generated code)
-    // Non-gated variant should have (id, name,)
-    assert!(
-        generated_str.contains("pub const all_columns : (id , name ,) = (id , name ,)"),
-        "Non-gated all_columns should be (id, name)"
-    );
-    // Gated variant should have (id, name, created_at,)
+    // `all_columns` is a single const using the `AllColumns` type alias and
+    // cfg-on-tuple-expression-field for the gated column.
     assert!(
         generated_str.contains(
-            "pub const all_columns : (id , name , created_at ,) = (id , name , created_at ,)"
+            "pub const all_columns : AllColumns = (id , name , # [cfg (feature = \"test_chrono\")] created_at ,)"
         ),
-        "Gated all_columns should include created_at"
+        "all_columns should be a single const referencing AllColumns alias with cfg on the gated tuple field"
     );
 
-    // Verify correct SqlType variants
+    // SqlType type alias retains 2^n variants (one per cfg combination)
+    // because Rust does not allow #[cfg] on tuple type fields.
     assert!(
         generated_str.contains("pub type SqlType = (Integer , Text ,) ;"),
         "Non-gated SqlType should be (Integer, Text)"
@@ -160,25 +158,33 @@ pub(crate) fn table_with_column_feature_gate_type_check() {
         "Gated SqlType should include Timestamp"
     );
 
-    // Verify Table impl has correct AllColumns type
+    // AllColumns type alias mirrors SqlType: 2^n cfg-gated tuple type variants.
     assert!(
-        generated_str.contains("type AllColumns = (id , name ,) ;"),
-        "Non-gated Table::AllColumns should be (id, name)"
+        generated_str.contains("pub type AllColumns = (id , name ,) ;"),
+        "Non-gated AllColumns alias should be (id, name)"
     );
     assert!(
-        generated_str.contains("type AllColumns = (id , name , created_at ,) ;"),
-        "Gated Table::AllColumns should include created_at"
+        generated_str.contains("pub type AllColumns = (id , name , created_at ,) ;"),
+        "Gated AllColumns alias should include created_at"
+    );
+
+    // `impl Table for table` is a single block that references the aliases.
+    assert!(
+        generated_str.contains("type AllColumns = AllColumns ;"),
+        "Table::AllColumns associated type should reference the AllColumns alias"
     );
 }
 
 /// This test verifies that multiple feature-gated columns with different features
-/// produce the correct combinatorial variants (2^n for n distinct feature groups).
+/// produce the correct combinatorial variants (2^n for n distinct feature groups)
+/// in the `SqlType` and `AllColumns` type aliases, while the `all_columns` const
+/// and the `Table` impl collapse to single declarations.
 ///
-/// For a table with two feature groups (`chrono` and `uuid`):
-/// - Neither enabled: `(id, name)`
-/// - Only chrono: `(id, name, created_at, updated_at)`
-/// - Only uuid: `(id, name, user_uuid)`
-/// - Both enabled: `(id, name, created_at, updated_at, user_uuid)`
+/// For a table with two feature groups (`test_chrono` and `test_uuid`):
+/// - Neither enabled: aliases resolve to `(id, name)` / `(Integer, Text)`
+/// - Only chrono: `(id, name, created_at, updated_at)` / `(Integer, Text, Timestamp, Timestamp)`
+/// - Only uuid: `(id, name, user_uuid)` / `(Integer, Text, Uuid)`
+/// - Both enabled: `(id, name, created_at, updated_at, user_uuid)` / `(Integer, Text, Timestamp, Timestamp, Uuid)`
 #[test]
 pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
     let input = quote::quote! {
@@ -197,7 +203,7 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
     let generated = crate::table_proc_inner(input);
     let generated_str = generated.to_string();
 
-    // Verify all 4 cfg combinations are present
+    // All 4 cfg combinations must appear as cfg guards on the 2^n tuple-type aliases.
     assert!(
         generated_str.contains(
             "# [cfg (all (not (feature = \"test_chrono\") , not (feature = \"test_uuid\")))]"
@@ -220,31 +226,18 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
         "Should have cfg guard for both features enabled"
     );
 
-    // Verify all_columns variants (note: trailing commas in generated code)
-    // Neither feature: (id, name,)
-    assert!(
-        generated_str.contains("pub const all_columns : (id , name ,) = (id , name ,)"),
-        "Neither feature: all_columns should be (id, name)"
-    );
-    // Only chrono: (id, name, created_at, updated_at,)
-    assert!(
-        generated_str.contains("pub const all_columns : (id , name , created_at , updated_at ,)"),
-        "Only chrono: all_columns should include chrono columns"
-    );
-    // Only uuid: (id, name, user_uuid,)
-    assert!(
-        generated_str.contains("pub const all_columns : (id , name , user_uuid ,)"),
-        "Only uuid: all_columns should include uuid column"
-    );
-    // Both features: (id, name, created_at, updated_at, user_uuid,)
+    // Single `all_columns` const uses cfg-on-tuple-expression-field for every gated column.
     assert!(
         generated_str.contains(
-            "pub const all_columns : (id , name , created_at , updated_at , user_uuid ,)"
+            "pub const all_columns : AllColumns = (id , name , \
+             # [cfg (feature = \"test_chrono\")] created_at , \
+             # [cfg (feature = \"test_chrono\")] updated_at , \
+             # [cfg (feature = \"test_uuid\")] user_uuid ,)"
         ),
-        "Both features: all_columns should include all columns"
+        "all_columns should be a single const referencing AllColumns with cfg on each gated tuple field"
     );
 
-    // Verify SqlType variants
+    // SqlType type alias keeps 2^n variants.
     assert!(
         generated_str.contains("pub type SqlType = (Integer , Text ,) ;"),
         "Neither feature: SqlType should be (Integer, Text)"
@@ -263,27 +256,36 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
         "Both features: SqlType should include all types"
     );
 
-    // Verify Table::AllColumns variants
+    // AllColumns type alias also keeps 2^n variants.
     assert!(
-        generated_str.contains("type AllColumns = (id , name ,) ;"),
-        "Neither feature: AllColumns should be (id, name)"
+        generated_str.contains("pub type AllColumns = (id , name ,) ;"),
+        "Neither feature: AllColumns alias should be (id, name)"
     );
     assert!(
-        generated_str.contains("type AllColumns = (id , name , created_at , updated_at ,) ;"),
-        "Only chrono: AllColumns should include chrono columns"
+        generated_str.contains("pub type AllColumns = (id , name , created_at , updated_at ,) ;"),
+        "Only chrono: AllColumns alias should include chrono columns"
     );
     assert!(
-        generated_str.contains("type AllColumns = (id , name , user_uuid ,) ;"),
-        "Only uuid: AllColumns should include uuid column"
+        generated_str.contains("pub type AllColumns = (id , name , user_uuid ,) ;"),
+        "Only uuid: AllColumns alias should include uuid column"
     );
     assert!(
-        generated_str
-            .contains("type AllColumns = (id , name , created_at , updated_at , user_uuid ,) ;"),
-        "Both features: AllColumns should include all columns"
+        generated_str.contains(
+            "pub type AllColumns = (id , name , created_at , updated_at , user_uuid ,) ;"
+        ),
+        "Both features: AllColumns alias should include all columns"
+    );
+
+    // The Table impl's associated type is a single reference to the alias.
+    assert!(
+        generated_str.contains("type AllColumns = AllColumns ;"),
+        "Table::AllColumns associated type should reference the AllColumns alias"
     );
 }
 
-/// This test verifies that ValidGrouping for star has correct combinatorial variants.
+/// Verifies that `impl ValidGrouping<__GB> for star` is emitted as a single impl
+/// that references the module-level `AllColumns` type alias (which itself carries
+/// the 2^n cfg-gated variants).
 #[test]
 pub(crate) fn table_with_feature_gate_valid_grouping_star_check() {
     let input = quote::quote! {
@@ -298,17 +300,17 @@ pub(crate) fn table_with_feature_gate_valid_grouping_star_check() {
     let generated = crate::table_proc_inner(input);
     let generated_str = generated.to_string();
 
-    // Verify ValidGrouping<__GB> for star has both variants (note: trailing commas)
-    // Non-gated: (id, name,)
-    assert!(
-        generated_str.contains("(id , name ,) : diesel :: expression :: ValidGrouping < __GB >"),
-        "Non-gated ValidGrouping for star should use (id, name)"
-    );
-    // Gated: (id, name, extra,)
+    // Single where-bound on the AllColumns alias, no inlined tuple.
     assert!(
         generated_str
-            .contains("(id , name , extra ,) : diesel :: expression :: ValidGrouping < __GB >"),
-        "Gated ValidGrouping for star should use (id, name, extra)"
+            .contains("super :: AllColumns : diesel :: expression :: ValidGrouping < __GB >"),
+        "ValidGrouping for star should reference super::AllColumns rather than an inlined column tuple"
+    );
+    assert!(
+        generated_str.contains(
+            "< super :: AllColumns as diesel :: expression :: ValidGrouping < __GB >> :: IsAggregate"
+        ),
+        "IsAggregate projection should be on super::AllColumns"
     );
 }
 
@@ -404,18 +406,16 @@ pub(crate) fn table_with_complex_feature_gates() {
         "Expression impl for advanced_field should have cfg guard"
     );
 
-    // Verify combinatorial variants exist for the aggregate types
-    // There are 4 distinct cfg groups, so there should be 2^4 = 16 variants
-    // We'll just check that some key combinations exist
-
-    // Base case: no features enabled (only id, name)
+    // `all_columns` is now a single const using cfg-on-tuple-expression-field for
+    // every gated column. The base case (no features) corresponds to the alias
+    // resolving to `(id, name)` at the type level; the const itself stays singular.
     assert!(
-        generated_str.contains("pub const all_columns : (id , name ,) = (id , name ,)"),
-        "Base all_columns should have only non-gated columns"
+        generated_str.contains("pub const all_columns : AllColumns = (id , name ,"),
+        "all_columns should be a single const referencing the AllColumns alias"
     );
 
-    // Check that the combinatorial cfg conditions include not() wrappers for disabled groups
-    // For example, when all features are disabled:
+    // The 2^n cfg guards on the SqlType / AllColumns aliases must include the
+    // negated forms of every group's complex cfg condition.
     assert!(
         generated_str.contains("not (all (feature = \"postgres\" , feature = \"chrono\"))"),
         "Combinatorial cfg should include negated complex conditions"

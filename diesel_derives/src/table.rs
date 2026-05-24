@@ -103,66 +103,81 @@ fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[boo
     }
 }
 
-/// Generates all combinatorial variants of aggregate types for feature-gated columns.
+/// Tokens emitted by [`generate_aggregate_variants`].
 ///
-/// This function generates 2^n variants of `all_columns`, `AllColumns`, and `SqlType`
-/// where n is the number of unique cfg groups. Each variant includes the appropriate
-/// `#[cfg(all(...))]` attribute to select it based on which features are enabled.
+/// `sql_type_variants` and `all_columns_type_variants` each contain `2^n` cfg-gated
+/// `pub type` aliases (one per combination of enabled cfg groups) because Rust does not
+/// allow `#[cfg]` on individual fields of a tuple type. Everything else collapses to a
+/// single declaration that uses `#[cfg]` on tuple expression fields (stable Rust).
+struct AggregateTokens {
+    /// One `pub const all_columns: AllColumns = (id, name, #[cfg(...)] foo, ...);`
+    all_columns_const: TokenStream,
+    /// `2^n` `pub type SqlType = (..);` aliases.
+    sql_type_variants: TokenStream,
+    /// `2^n` `pub type AllColumns = (..);` aliases.
+    all_columns_type_variants: TokenStream,
+    /// One `impl<__GB> ValidGrouping<__GB> for star where super::AllColumns: ...`.
+    valid_grouping_star: TokenStream,
+}
+
+/// Builds the tuple value expression `(id, name, #[cfg(...)] foo, ...)`.
+///
+/// Non-gated columns are emitted first (preserving the existing layout of the
+/// `all_columns` tuple), followed by each cfg group's columns annotated with the
+/// group's `#[cfg(...)]` attributes. Used as the body for `all_columns` const
+/// and the `all_columns()` methods on both `Table` and `QueryRelation`.
+fn all_columns_tuple_expr<'a>(
+    non_gated_columns: &[&'a ColumnDef],
+    cfg_groups: &[CfgGroup<'a>],
+) -> TokenStream {
+    let mut fields: Vec<TokenStream> = Vec::new();
+    for col in non_gated_columns {
+        let name = &col.column_name;
+        fields.push(quote::quote! { #name, });
+    }
+    for group in cfg_groups {
+        let attrs = &group.cfg_attrs;
+        for col in &group.columns {
+            let name = &col.column_name;
+            fields.push(quote::quote! { #(#attrs)* #name, });
+        }
+    }
+    quote::quote! { (#(#fields)*) }
+}
+
+/// Generates the aggregate items used by the table/view module.
+///
+/// Two tuple type aliases (`SqlType` and `AllColumns`) get `2^n` cfg-gated
+/// variants because Rust does not yet allow `#[cfg]` on tuple type fields
+/// (see rust-lang/rfcs#3532). The `all_columns` const and the
+/// `ValidGrouping for star` impl reference those aliases and collapse to a
+/// single declaration each, using cfg-on-tuple-expression-field where a value
+/// expression is needed.
 ///
 /// # Arguments
 ///
 /// * `non_gated_columns` - Columns without any cfg attributes (always included)
 /// * `cfg_groups` - Groups of columns organized by their cfg condition
 /// * `kind_name` - "table" or "view" for documentation purposes
-///
-/// # Returns
-///
-/// A tuple of (all_columns_variants, sql_type_variants, valid_grouping_star_variants)
 fn generate_aggregate_variants<'a>(
     non_gated_columns: &[&'a ColumnDef],
     cfg_groups: &[CfgGroup<'a>],
     kind_name: &str,
-) -> (TokenStream, TokenStream, TokenStream) {
+) -> AggregateTokens {
     let base_column_names: Vec<_> = non_gated_columns.iter().map(|c| &c.column_name).collect();
     let base_column_types: Vec<_> = non_gated_columns.iter().map(|c| &c.tpe).collect();
 
-    // If there are no cfg groups, generate simple non-conditional variants
-    if cfg_groups.is_empty() {
-        let all_columns = quote::quote! {
-            #[allow(non_upper_case_globals, dead_code)]
-            #[doc = concat!("A tuple of all of the columns on this", #kind_name)]
-            pub const all_columns: (#(#base_column_names,)*) = (#(#base_column_names,)*);
-        };
-        let sql_type = quote::quote! {
-            #[doc = concat!("The SQL type of all of the columns on this ", #kind_name)]
-            pub type SqlType = (#(#base_column_types,)*);
-        };
-        let valid_grouping = quote::quote! {
-            impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-            where
-                (#(#base_column_names,)*): diesel::expression::ValidGrouping<__GB>,
-            {
-                type IsAggregate = <(#(#base_column_names,)*) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-            }
-        };
-        return (all_columns, sql_type, valid_grouping);
-    }
-
-    // Generate 2^n variants for all combinations
-    let mut all_columns_variants = Vec::new();
     let mut sql_type_variants = Vec::new();
-    let mut valid_grouping_variants = Vec::new();
+    let mut all_columns_type_variants = Vec::new();
 
     for flags in cfg_combinations(cfg_groups.len()) {
         let cfg_condition = generate_combined_cfg_condition(cfg_groups, &flags);
 
-        // Build the list of columns for this combination
         let mut column_names = base_column_names.clone();
         let mut column_types = base_column_types.clone();
 
         for (i, group) in cfg_groups.iter().enumerate() {
             if flags[i] {
-                // This group is enabled, add its columns
                 for col in &group.columns {
                     column_names.push(&col.column_name);
                     column_types.push(&col.tpe);
@@ -170,38 +185,53 @@ fn generate_aggregate_variants<'a>(
             }
         }
 
-        all_columns_variants.push(quote::quote! {
-            #cfg_condition
-            #[allow(non_upper_case_globals, dead_code)]
-            #[doc = concat!("A tuple of all of the columns on this", #kind_name)]
-            pub const all_columns: (#(#column_names,)*) = (#(#column_names,)*);
-        });
-
         sql_type_variants.push(quote::quote! {
             #cfg_condition
             #[doc = concat!("The SQL type of all of the columns on this ", #kind_name)]
             pub type SqlType = (#(#column_types,)*);
         });
 
-        valid_grouping_variants.push(quote::quote! {
+        all_columns_type_variants.push(quote::quote! {
             #cfg_condition
-            impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-            where
-                (#(#column_names,)*): diesel::expression::ValidGrouping<__GB>,
-            {
-                type IsAggregate = <(#(#column_names,)*) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-            }
+            #[allow(non_camel_case_types, dead_code)]
+            #[doc = concat!("The tuple of all column structs on this ", #kind_name)]
+            pub type AllColumns = (#(#column_names,)*);
         });
     }
 
-    (
-        quote::quote! { #(#all_columns_variants)* },
-        quote::quote! { #(#sql_type_variants)* },
-        quote::quote! { #(#valid_grouping_variants)* },
-    )
+    let tuple_expr = all_columns_tuple_expr(non_gated_columns, cfg_groups);
+
+    let all_columns_const = quote::quote! {
+        #[allow(non_upper_case_globals, dead_code)]
+        #[doc = concat!("A tuple of all of the columns on this", #kind_name)]
+        pub const all_columns: AllColumns = #tuple_expr;
+    };
+
+    let valid_grouping_star = quote::quote! {
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
+        where
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
+        {
+            type IsAggregate =
+                <super::AllColumns as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+        }
+    };
+
+    AggregateTokens {
+        all_columns_const,
+        sql_type_variants: quote::quote! { #(#sql_type_variants)* },
+        all_columns_type_variants: quote::quote! { #(#all_columns_type_variants)* },
+        valid_grouping_star,
+    }
 }
 
-/// Generates combinatorial `Table` or `QueryRelation` trait impls for feature-gated columns.
+/// Generates the `Table` or `QueryRelation` trait impl plus the supporting
+/// trait impls that always accompany it.
+///
+/// The impl references the module-level `AllColumns` type alias (emitted by
+/// [`generate_aggregate_variants`]) so it does not need 2^n variants of its
+/// own. The `all_columns()` method body uses cfg-on-tuple-expression-field for
+/// any feature-gated columns.
 ///
 /// # Arguments
 ///
@@ -209,145 +239,29 @@ fn generate_aggregate_variants<'a>(
 /// * `cfg_groups` - Groups of columns organized by their cfg condition
 /// * `primary_key` - The primary key token stream (for tables only)
 /// * `kind` - Whether this is a table or view
-///
-/// # Returns
-///
-/// A `TokenStream` containing all variants of the Table/QueryRelation impl
-fn generate_kind_specific_impls_variants<'a>(
+fn generate_kind_specific_impls<'a>(
     non_gated_columns: &[&'a ColumnDef],
     cfg_groups: &[CfgGroup<'a>],
     primary_key: &Option<TokenStream>,
     kind: QuerySourceMacroKind,
 ) -> TokenStream {
-    let base_column_names: Vec<_> = non_gated_columns.iter().map(|c| &c.column_name).collect();
+    let tuple_expr = all_columns_tuple_expr(non_gated_columns, cfg_groups);
 
-    // If there are no cfg groups, generate simple non-conditional impl
-    if cfg_groups.is_empty() {
-        return match kind {
-            QuerySourceMacroKind::Table => quote::quote! {
-                impl diesel::Table for table {
-                    type PrimaryKey = #primary_key;
-                    type AllColumns = (#(#base_column_names,)*);
+    match kind {
+        QuerySourceMacroKind::Table => quote::quote! {
+            impl diesel::Table for table {
+                type PrimaryKey = #primary_key;
+                type AllColumns = AllColumns;
 
-                    fn primary_key(&self) -> Self::PrimaryKey {
-                        #primary_key
-                    }
-
-                    fn all_columns() -> Self::AllColumns {
-                        (#(#base_column_names,)*)
-                    }
+                fn primary_key(&self) -> Self::PrimaryKey {
+                    #primary_key
                 }
 
-                impl diesel::associations::HasTable for table {
-                    type Table = Self;
-
-                    fn table() -> Self::Table {
-                        table
-                    }
-                }
-
-                impl diesel::query_builder::IntoUpdateTarget for table {
-                    type WhereClause = <<Self as diesel::query_builder::AsQuery>::Query as diesel::query_builder::IntoUpdateTarget>::WhereClause;
-
-                    fn into_update_target(self) -> diesel::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
-                        use diesel::query_builder::AsQuery;
-                        let q: diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<table>> = self.as_query();
-                        q.into_update_target()
-                    }
-                }
-
-                impl<T> diesel::insertable::Insertable<T> for table
-                where
-                    <table as diesel::query_builder::AsQuery>::Query: diesel::insertable::Insertable<T>,
-                {
-                    type Values = <<table as diesel::query_builder::AsQuery>::Query as diesel::insertable::Insertable<T>>::Values;
-
-                    fn values(self) -> Self::Values {
-                        use diesel::query_builder::AsQuery;
-                        self.as_query().values()
-                    }
-                }
-
-                impl<'a, T> diesel::insertable::Insertable<T> for &'a table
-                where
-                    table: diesel::insertable::Insertable<T>,
-                {
-                    type Values = <table as diesel::insertable::Insertable<T>>::Values;
-
-                    fn values(self) -> Self::Values {
-                        (*self).values()
-                    }
-                }
-            },
-            QuerySourceMacroKind::View => quote::quote! {
-                #[doc(hidden)]
-                pub use self::view as table;
-
-                impl diesel::query_source::QueryRelation for view {
-                    type AllColumns = (#(#base_column_names,)*);
-
-                    fn all_columns() -> Self::AllColumns {
-                        (#(#base_column_names,)*)
-                    }
-                }
-
-                impl diesel::internal::table_macro::Sealed for view {}
-                impl diesel::query_source::View for view {}
-            },
-        };
-    }
-
-    // Generate 2^n variants for all combinations
-    let mut variants = Vec::new();
-
-    for flags in cfg_combinations(cfg_groups.len()) {
-        let cfg_condition = generate_combined_cfg_condition(cfg_groups, &flags);
-
-        // Build the list of columns for this combination
-        let mut column_names = base_column_names.clone();
-
-        for (i, group) in cfg_groups.iter().enumerate() {
-            if flags[i] {
-                for col in &group.columns {
-                    column_names.push(&col.column_name);
+                fn all_columns() -> Self::AllColumns {
+                    #tuple_expr
                 }
             }
-        }
 
-        let variant = match kind {
-            QuerySourceMacroKind::Table => quote::quote! {
-                #cfg_condition
-                impl diesel::Table for table {
-                    type PrimaryKey = #primary_key;
-                    type AllColumns = (#(#column_names,)*);
-
-                    fn primary_key(&self) -> Self::PrimaryKey {
-                        #primary_key
-                    }
-
-                    fn all_columns() -> Self::AllColumns {
-                        (#(#column_names,)*)
-                    }
-                }
-            },
-            QuerySourceMacroKind::View => quote::quote! {
-                #cfg_condition
-                impl diesel::query_source::QueryRelation for view {
-                    type AllColumns = (#(#column_names,)*);
-
-                    fn all_columns() -> Self::AllColumns {
-                        (#(#column_names,)*)
-                    }
-                }
-            },
-        };
-
-        variants.push(variant);
-    }
-
-    // Add non-combinatorial parts for table
-    let extra = match kind {
-        QuerySourceMacroKind::Table => quote::quote! {
             impl diesel::associations::HasTable for table {
                 type Table = Self;
 
@@ -393,14 +307,17 @@ fn generate_kind_specific_impls_variants<'a>(
             #[doc(hidden)]
             pub use self::view as table;
 
+            impl diesel::query_source::QueryRelation for view {
+                type AllColumns = AllColumns;
+
+                fn all_columns() -> Self::AllColumns {
+                    #tuple_expr
+                }
+            }
+
             impl diesel::internal::table_macro::Sealed for view {}
             impl diesel::query_source::View for view {}
         },
-    };
-
-    quote::quote! {
-        #(#variants)*
-        #extra
     }
 }
 
@@ -667,13 +584,19 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         }
     });
 
-    // Generate combinatorial aggregate type variants
-    let (all_columns_variants, sql_type_variants, valid_grouping_star_variants) =
-        generate_aggregate_variants(&non_gated_columns, &cfg_groups, kind_name);
+    // Generate aggregate items (2^n cfg'd tuple-type aliases plus single-instance
+    // value-expression items that reference them).
+    let AggregateTokens {
+        all_columns_const,
+        sql_type_variants,
+        all_columns_type_variants,
+        valid_grouping_star,
+    } = generate_aggregate_variants(&non_gated_columns, &cfg_groups, kind_name);
 
-    // Generate combinatorial Table/QueryRelation impl variants
+    // Generate the single Table/QueryRelation impl plus the trailing
+    // non-combinatorial impls (HasTable, IntoUpdateTarget, Insertable, ...).
     let kind_specific_impls =
-        generate_kind_specific_impls_variants(&non_gated_columns, &cfg_groups, &primary_key, kind);
+        generate_kind_specific_impls(&non_gated_columns, &cfg_groups, &primary_key, kind);
 
     let backend_specific_table_impls = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
@@ -768,7 +691,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 pub use super::#query_source_ident as #table_name;
             }
 
-            #all_columns_variants
+            #all_columns_const
 
             #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -789,6 +712,8 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
             }
 
             #sql_type_variants
+
+            #all_columns_type_variants
 
             #[doc = concat!("Helper type for representing a boxed query from this ", #kind_name)]
             pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<'a, ST, diesel::internal::table_macro::FromClause<#query_source_ident>, DB>;
@@ -954,7 +879,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 /// being used that way
                 pub struct star;
 
-                #valid_grouping_star_variants
+                #valid_grouping_star
 
                 impl diesel::Expression for star {
                     type SqlType = diesel::expression::expression_types::NotSelectable;
