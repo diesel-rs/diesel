@@ -31,7 +31,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 Ok(quote!(
                    {
                        let field = diesel::row::NamedRow::get::<#st, #deserialize_ty>(row, #name)?;
-                       <#deserialize_ty as std::convert::Into<#field_ty>>::into(field)
+                       <#deserialize_ty as ::core::convert::Into<#field_ty>>::into(field)
                    }
                 ))
             }
