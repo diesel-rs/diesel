@@ -133,7 +133,7 @@ impl SqliteChangeOp {
 
     /// Converts this single operation to the corresponding [`SqliteChangeOps`]
     /// bitmask.
-    pub fn to_ops(self) -> SqliteChangeOps {
+    pub(crate) fn to_ops(self) -> SqliteChangeOps {
         match self {
             SqliteChangeOp::Insert => SqliteChangeOps::INSERT,
             SqliteChangeOp::Update => SqliteChangeOps::UPDATE,

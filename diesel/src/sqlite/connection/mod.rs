@@ -721,16 +721,91 @@ impl SqliteConnection {
         self.register_change_hook(None, ops, Box::new(hook))
     }
 
+    /// Registers a callback invoked for any change on table `T` that matches
+    /// the given [`SqliteChangeOps`] mask.
+    ///
+    /// This is the typed counterpart to [`on_change`](Self::on_change):
+    /// `on_change` matches every table, this matches one table. The table is
+    /// identified by the [`table!`](macro@crate::table)-generated type `T`
+    /// (e.g. `users::table`),
+    /// so a table rename is a compile error rather than a silently dead hook.
+    ///
+    /// [`on_insert`](Self::on_insert), [`on_update`](Self::on_update), and
+    /// [`on_delete`](Self::on_delete) are thin wrappers over this method with a
+    /// single-op mask.
+    ///
+    /// See [`on_change`](Self::on_change) for the threading and `Send`
+    /// rationale, reentrancy rules, diesel's ownership of the single update
+    /// hook slot, and the recommended notify-then-requery usage pattern.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, SqliteChangeOps, SqliteChangeOp};
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let ops = Arc::new(Mutex::new(Vec::new()));
+    /// let ops2 = ops.clone();
+    ///
+    /// // Fire for inserts and updates on `users`, but not deletes.
+    /// conn.on_table_change::<users::table, _>(
+    ///     SqliteChangeOps::INSERT | SqliteChangeOps::UPDATE,
+    ///     move |event| ops2.lock().unwrap().push(event.op),
+    /// );
+    ///
+    /// diesel::insert_into(users::table)
+    ///     .values(users::name.eq("Alice"))
+    ///     .execute(conn).unwrap();
+    /// diesel::update(users::table.filter(users::id.eq(1)))
+    ///     .set(users::name.eq("Bob"))
+    ///     .execute(conn).unwrap();
+    /// diesel::delete(users::table.filter(users::id.eq(1)))
+    ///     .execute(conn).unwrap();
+    ///
+    /// // The DELETE did not match the mask.
+    /// assert_eq!(
+    ///     *ops.lock().unwrap(),
+    ///     vec![SqliteChangeOp::Insert, SqliteChangeOp::Update],
+    /// );
+    /// ```
+    pub fn on_table_change<T, F>(&mut self, ops: SqliteChangeOps, hook: F) -> ChangeHookId
+    where
+        T: StaticQueryFragment<Component = Identifier<'static>>,
+        F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
+    {
+        let table_name = T::STATIC_COMPONENT.0;
+        self.register_change_hook(Some(table_name), ops, Box::new(hook))
+    }
+
     /// Registers a callback invoked when a row is inserted into table `T`.
     ///
-    /// The generic parameter `T` is a [`table!`]-generated table type (e.g.
-    /// `users::table`). The table name is extracted at registration time via
+    /// Sugar for [`on_table_change::<T>`](Self::on_table_change) with
+    /// [`SqliteChangeOps::INSERT`].
+    ///
+    /// The generic parameter `T` is a [`table!`](macro@crate::table)-generated
+    /// table type (e.g. `users::table`). The table name is extracted at
+    /// registration time via
     /// [`StaticQueryFragment`].
     ///
     /// The callback fires synchronously during `sqlite3_step()`.
     /// The connection is **not** available inside the callback.
     ///
-    /// Multiple hooks can be registered on the same table; they fire in
+    /// See [`on_change`](Self::on_change) for the threading and `Send`
+    /// rationale, reentrancy rules, diesel's ownership of the single update
+    /// hook slot, and the recommended notify-then-requery usage pattern.
+    ///
+    /// Multiple hooks can be registered on the same table. They fire in
     /// registration order. The returned [`ChangeHookId`] can be passed to
     /// [`remove_change_hook`](Self::remove_change_hook) to remove just this
     /// hook, or use [`clear_change_hooks_for`](Self::clear_change_hooks_for)
@@ -773,8 +848,7 @@ impl SqliteConnection {
         T: StaticQueryFragment<Component = Identifier<'static>>,
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
-        let table_name = T::STATIC_COMPONENT.0;
-        self.register_change_hook(Some(table_name), SqliteChangeOps::INSERT, Box::new(hook))
+        self.on_table_change::<T, F>(SqliteChangeOps::INSERT, hook)
     }
 
     /// Registers a callback invoked when a row is updated in table `T`.
@@ -821,8 +895,7 @@ impl SqliteConnection {
         T: StaticQueryFragment<Component = Identifier<'static>>,
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
-        let table_name = T::STATIC_COMPONENT.0;
-        self.register_change_hook(Some(table_name), SqliteChangeOps::UPDATE, Box::new(hook))
+        self.on_table_change::<T, F>(SqliteChangeOps::UPDATE, hook)
     }
 
     /// Registers a callback invoked when a row is deleted from table `T`.
@@ -866,8 +939,7 @@ impl SqliteConnection {
         T: StaticQueryFragment<Component = Identifier<'static>>,
         F: FnMut(SqliteChangeEvent<'_>) + Send + 'static,
     {
-        let table_name = T::STATIC_COMPONENT.0;
-        self.register_change_hook(Some(table_name), SqliteChangeOps::DELETE, Box::new(hook))
+        self.on_table_change::<T, F>(SqliteChangeOps::DELETE, hook)
     }
 
     /// Removes a previously registered change hook by its [`ChangeHookId`].
@@ -4201,6 +4273,40 @@ mod tests {
             "change hook did not fire after the connection was moved"
         );
     }
+
+    #[diesel_test_helper::test]
+    fn on_table_change_respects_mask_and_table() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+        setup_hook_tables(conn);
+
+        let fired = Arc::new(Mutex::new(Vec::new()));
+        let fired2 = fired.clone();
+
+        // Fire for INSERT and UPDATE on hook_users only, not DELETE.
+        conn.on_table_change::<hook_users::table, _>(
+            SqliteChangeOps::INSERT | SqliteChangeOps::UPDATE,
+            move |event| fired2.lock().unwrap().push(event.op),
+        );
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('Alice')")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("UPDATE hook_users SET name = 'Bob' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("DELETE FROM hook_users WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        // A change on a different table must not fire this hook.
+        crate::sql_query("INSERT INTO hook_posts (title) VALUES ('Hello')")
+            .execute(conn)
+            .unwrap();
+
+        let events = fired.lock().unwrap().clone();
+        assert_eq!(events, vec![SqliteChangeOp::Insert, SqliteChangeOp::Update]);
+    }
+
     // ===================================================================
     // Commit / rollback hook tests
     // ===================================================================
