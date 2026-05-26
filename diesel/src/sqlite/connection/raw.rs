@@ -10,7 +10,7 @@ use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
 use alloc::string::{String, ToString};
 use core::any::Any;
-use core::cell::{Cell, RefCell};
+use core::cell::{Cell, OnceCell, RefCell};
 use core::ffi as libc;
 use core::ffi::CStr;
 use core::ptr::NonNull;
@@ -52,15 +52,16 @@ pub(super) struct RawConnection {
     /// Uses RefCell because the C callback needs mutable access while the
     /// connection may be immutably borrowed.
     ///
-    /// Boxed so the address handed to sqlite3_update_hook stays valid even if
-    /// the owning SqliteConnection is moved: a move relocates this `Box`
-    /// pointer but not the heap allocation it points at. The other hooks in
-    /// this struct (commit_hook, etc.) rely on the same property. INVARIANT:
-    /// once the address is registered (see register_raw_update_hook), nothing
-    /// may move out of or replace this Box for the lifetime of the
-    /// registration. The code never reassigns it, so a plain Box suffices and
-    /// Pin is not required.
-    pub(super) change_hooks: Box<RefCell<ChangeHookDispatcher>>,
+    /// Allocated lazily on first use (see `dispatcher`) and boxed, so that the
+    /// address handed to sqlite3_update_hook stays valid even if the owning
+    /// SqliteConnection is moved: a move relocates this `OnceCell` and the
+    /// `Box` pointer inside it, but not the heap allocation the box points at.
+    /// The lazy allocation matters because `from_ptr` is also used to build a
+    /// short-lived borrowed wrapper inside `run_custom_function` (kept in a
+    /// `ManuallyDrop`, so `Drop` never runs). Eagerly allocating here would
+    /// leak that box on every SQL-function call. INVARIANT: the box is created
+    /// at most once and never reassigned, so the registered address is stable.
+    pub(super) change_hooks: OnceCell<Box<RefCell<ChangeHookDispatcher>>>,
     /// Tracks whether the C-level update hook is currently installed, to
     /// avoid redundant FFI calls.
     update_hook_registered: Cell<bool>,
@@ -85,7 +86,7 @@ impl RawConnection {
     fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
         RawConnection {
             internal_connection: conn,
-            change_hooks: Box::new(RefCell::new(ChangeHookDispatcher::new())),
+            change_hooks: OnceCell::new(),
             update_hook_registered: Cell::new(false),
             commit_hook: None,
             rollback_hook: None,
@@ -407,14 +408,23 @@ impl RawConnection {
         }
     }
 
+    /// Returns the change-hook dispatcher, allocating it on first use.
+    ///
+    /// The dispatcher lives behind a `Box` whose heap address never changes
+    /// once created, so it is safe to hand to `sqlite3_update_hook`. Borrowed
+    /// wrappers that never register a hook (see `run_custom_function`) never
+    /// allocate it, which avoids leaking the box when their `Drop` is skipped.
+    pub(super) fn dispatcher(&self) -> &RefCell<ChangeHookDispatcher> {
+        self.change_hooks
+            .get_or_init(|| Box::new(RefCell::new(ChangeHookDispatcher::new())))
+    }
+
     /// Returns the address of the `RefCell<ChangeHookDispatcher>` that is
     /// handed to `sqlite3_update_hook` as user data. This is the single source
     /// of truth for that pointer: `register_raw_update_hook` registers exactly
     /// this address, and tests assert it stays stable across connection moves.
     pub(super) fn change_hooks_ptr(&self) -> *const RefCell<ChangeHookDispatcher> {
-        // Deref the Box to the heap-stored RefCell, whose address is stable
-        // across moves of RawConnection / SqliteConnection.
-        &*self.change_hooks as *const RefCell<ChangeHookDispatcher>
+        self.dispatcher() as *const RefCell<ChangeHookDispatcher>
     }
 
     /// Unregisters the C-level `sqlite3_update_hook`.
@@ -1386,7 +1396,7 @@ mod tests {
         let fired = Arc::new(Mutex::new(Vec::new()));
         let f2 = fired.clone();
 
-        conn.change_hooks.borrow_mut().add(
+        conn.dispatcher().borrow_mut().add(
             Some("t"),
             SqliteChangeOps::INSERT,
             Box::new(move |e| {
@@ -1412,7 +1422,7 @@ mod tests {
         let fired = Arc::new(Mutex::new(Vec::new()));
         let f2 = fired.clone();
 
-        conn.change_hooks.borrow_mut().add(
+        conn.dispatcher().borrow_mut().add(
             Some("t"),
             SqliteChangeOps::INSERT,
             Box::new(move |e| {
@@ -1440,7 +1450,7 @@ mod tests {
         let fired = Arc::new(Mutex::new(Vec::new()));
         let f2 = fired.clone();
 
-        conn.change_hooks.borrow_mut().add(
+        conn.dispatcher().borrow_mut().add(
             Some("t"),
             SqliteChangeOps::ALL,
             Box::new(move |e| {
@@ -1467,7 +1477,7 @@ mod tests {
         let fired = Arc::new(Mutex::new(Vec::new()));
         let f2 = fired.clone();
 
-        conn.change_hooks.borrow_mut().add(
+        conn.dispatcher().borrow_mut().add(
             Some("t"),
             SqliteChangeOps::ALL,
             Box::new(move |e| {
@@ -1493,7 +1503,7 @@ mod tests {
         let fired = Arc::new(Mutex::new(Vec::new()));
         let f2 = fired.clone();
 
-        conn.change_hooks.borrow_mut().add(
+        conn.dispatcher().borrow_mut().add(
             Some("t"),
             SqliteChangeOps::INSERT,
             Box::new(move |e| {
@@ -1519,7 +1529,7 @@ mod tests {
         let fired = Arc::new(Mutex::new(Vec::new()));
         let f2 = fired.clone();
 
-        conn.change_hooks.borrow_mut().add(
+        conn.dispatcher().borrow_mut().add(
             Some("t"),
             SqliteChangeOps::INSERT,
             Box::new(move |e| {
@@ -1548,7 +1558,7 @@ mod tests {
         conn.exec("CREATE TABLE t (id INTEGER PRIMARY KEY)")
             .unwrap();
 
-        conn.change_hooks
+        conn.dispatcher()
             .borrow_mut()
             .add(Some("t"), SqliteChangeOps::INSERT, Box::new(|_| {}));
 

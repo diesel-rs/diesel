@@ -1045,7 +1045,12 @@ impl SqliteConnection {
     /// assert_eq!(*count.lock().unwrap(), 1);
     /// ```
     pub fn remove_change_hook(&mut self, id: ChangeHookId) -> bool {
-        let mut hooks = self.raw_connection.change_hooks.borrow_mut();
+        // If no hook was ever registered the dispatcher was never allocated,
+        // so there is nothing to remove.
+        let Some(hooks) = self.raw_connection.change_hooks.get() else {
+            return false;
+        };
+        let mut hooks = hooks.borrow_mut();
         let removed = hooks.remove(id);
         let is_empty = hooks.is_empty();
         drop(hooks);
@@ -1107,7 +1112,10 @@ impl SqliteConnection {
         T: StaticQueryFragment<Component = Identifier<'static>>,
     {
         let table_name = T::STATIC_COMPONENT.0;
-        let mut hooks = self.raw_connection.change_hooks.borrow_mut();
+        let Some(hooks) = self.raw_connection.change_hooks.get() else {
+            return;
+        };
+        let mut hooks = hooks.borrow_mut();
         hooks.clear_for_table(table_name);
         let is_empty = hooks.is_empty();
         drop(hooks);
@@ -1153,7 +1161,9 @@ impl SqliteConnection {
     /// assert_eq!(*count.lock().unwrap(), 0);
     /// ```
     pub fn clear_all_change_hooks(&mut self) {
-        self.raw_connection.change_hooks.borrow_mut().clear_all();
+        if let Some(hooks) = self.raw_connection.change_hooks.get() {
+            hooks.borrow_mut().clear_all();
+        }
         self.raw_connection.unregister_raw_update_hook();
     }
 
@@ -1165,7 +1175,7 @@ impl SqliteConnection {
     ) -> ChangeHookId {
         self.raw_connection.register_raw_update_hook();
         self.raw_connection
-            .change_hooks
+            .dispatcher()
             .borrow_mut()
             .add(table_name, ops, hook)
     }
