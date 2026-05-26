@@ -4133,6 +4133,74 @@ mod tests {
         assert_eq!(recorded[0].1, 1);
     }
 
+    /// Regression test for the dangling-pointer soundness bug.
+    ///
+    /// `sqlite3_update_hook` is handed the address of the connection's change
+    /// hook dispatcher at registration time. If that dispatcher is stored
+    /// inline in the connection, moving the (freely movable, `Sized`)
+    /// `SqliteConnection` relocates the dispatcher while SQLite keeps pointing
+    /// at the old address, so the trampoline later dereferences freed memory.
+    ///
+    /// A purely behavioral test (move the connection, then write, then check
+    /// the callback fired) is not a reliable detector: reading the stale
+    /// pointer is undefined behavior that often happens to observe still-intact
+    /// memory, so the callback fires anyway and the test passes even on the
+    /// buggy code. Instead we assert the property the fix guarantees directly:
+    /// the registered pointer must stay valid across a move, i.e. the
+    /// dispatcher address must not change when the connection is relocated.
+    #[diesel_test_helper::test]
+    fn change_hook_dispatcher_address_is_stable_across_move() {
+        let mut conn = connection();
+        setup_hook_tables(&mut conn);
+        conn.on_insert::<hook_users::table, _>(|_| {});
+
+        // The exact pointer that was handed to sqlite3_update_hook.
+        let registered = conn.raw_connection.change_hooks_ptr();
+
+        // Relocate the connection by moving it onto the heap. With an inline
+        // dispatcher this changes the dispatcher's address. SQLite still holds
+        // `registered`, which now dangles.
+        let boxed = Box::new(conn);
+        let after_move = boxed.raw_connection.change_hooks_ptr();
+
+        assert_eq!(
+            registered, after_move,
+            "the change hook dispatcher moved with the connection, leaving the \
+             pointer registered with sqlite3_update_hook dangling"
+        );
+    }
+
+    /// End-to-end companion to the test above: after the connection is moved,
+    /// a write still fires the registered callback. On the fixed (boxed)
+    /// implementation this is deterministic. It documents that the feature
+    /// works through the move that real code performs (returning a connection,
+    /// storing it in a struct, handing it to a pool, etc.).
+    #[diesel_test_helper::test]
+    fn change_hook_fires_after_connection_move() {
+        use std::sync::{Arc, Mutex};
+
+        let count = Arc::new(Mutex::new(0u32));
+        let count2 = count.clone();
+
+        let mut conn = connection();
+        setup_hook_tables(&mut conn);
+        conn.on_insert::<hook_users::table, _>(move |_| {
+            *count2.lock().unwrap() += 1;
+        });
+
+        // Move the connection onto the heap after the hook was registered.
+        let mut boxed = Box::new(conn);
+
+        crate::sql_query("INSERT INTO hook_users (name) VALUES ('Alice')")
+            .execute(&mut *boxed)
+            .unwrap();
+
+        assert_eq!(
+            *count.lock().unwrap(),
+            1,
+            "change hook did not fire after the connection was moved"
+        );
+    }
     // ===================================================================
     // Commit / rollback hook tests
     // ===================================================================

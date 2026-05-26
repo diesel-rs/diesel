@@ -51,7 +51,16 @@ pub(super) struct RawConnection {
     /// dispatches events directly to registered hooks during sqlite3_step().
     /// Uses RefCell because the C callback needs mutable access while the
     /// connection may be immutably borrowed.
-    pub(super) change_hooks: RefCell<ChangeHookDispatcher>,
+    ///
+    /// Boxed so the address handed to sqlite3_update_hook stays valid even if
+    /// the owning SqliteConnection is moved: a move relocates this `Box`
+    /// pointer but not the heap allocation it points at. The other hooks in
+    /// this struct (commit_hook, etc.) rely on the same property. INVARIANT:
+    /// once the address is registered (see register_raw_update_hook), nothing
+    /// may move out of or replace this Box for the lifetime of the
+    /// registration. The code never reassigns it, so a plain Box suffices and
+    /// Pin is not required.
+    pub(super) change_hooks: Box<RefCell<ChangeHookDispatcher>>,
     /// Tracks whether the C-level update hook is currently installed, to
     /// avoid redundant FFI calls.
     update_hook_registered: Cell<bool>,
@@ -76,7 +85,7 @@ impl RawConnection {
     fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
         RawConnection {
             internal_connection: conn,
-            change_hooks: RefCell::new(ChangeHookDispatcher::new()),
+            change_hooks: Box::new(RefCell::new(ChangeHookDispatcher::new())),
             update_hook_registered: Cell::new(false),
             commit_hook: None,
             rollback_hook: None,
@@ -391,11 +400,21 @@ impl RawConnection {
                 ffi::sqlite3_update_hook(
                     self.internal_connection.as_ptr(),
                     Some(update_hook_trampoline),
-                    &self.change_hooks as *const RefCell<ChangeHookDispatcher> as *mut libc::c_void,
+                    self.change_hooks_ptr() as *mut libc::c_void,
                 );
             }
             self.update_hook_registered.set(true);
         }
+    }
+
+    /// Returns the address of the `RefCell<ChangeHookDispatcher>` that is
+    /// handed to `sqlite3_update_hook` as user data. This is the single source
+    /// of truth for that pointer: `register_raw_update_hook` registers exactly
+    /// this address, and tests assert it stays stable across connection moves.
+    pub(super) fn change_hooks_ptr(&self) -> *const RefCell<ChangeHookDispatcher> {
+        // Deref the Box to the heap-stored RefCell, whose address is stable
+        // across moves of RawConnection / SqliteConnection.
+        &*self.change_hooks as *const RefCell<ChangeHookDispatcher>
     }
 
     /// Unregisters the C-level `sqlite3_update_hook`.
