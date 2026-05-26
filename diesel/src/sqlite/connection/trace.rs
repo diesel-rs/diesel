@@ -90,7 +90,7 @@ pub enum SqliteTraceEvent<'a> {
         /// - Returns `false` for `INSERT`, `UPDATE`, `DELETE`, `CREATE`, etc.
         /// - Returns `false` for `WITH ... INSERT/UPDATE/DELETE ... RETURNING`
         /// - User-defined functions that modify the database via a separate
-        ///   connection are **not** detected; the statement itself is still
+        ///   connection are **not** detected. The statement itself is still
         ///   considered read-only
         /// - Virtual tables with side effects are **not** detected
         readonly: bool,

@@ -38,9 +38,14 @@ impl SqliteChangeOps {
     /// Match unknown/future operation codes.
     pub const UNKNOWN: SqliteChangeOps = SqliteChangeOps(8);
     /// Match all row-change operations (INSERT, UPDATE, DELETE, and UNKNOWN).
+    ///
+    /// `UNKNOWN` is included deliberately: if a future SQLite version emits an
+    /// operation code diesel does not recognize, a hook registered with `ALL`
+    /// still fires (with [`SqliteChangeOp::Unknown`] carrying the raw code)
+    /// rather than silently dropping the change.
     pub const ALL: SqliteChangeOps = SqliteChangeOps(15);
 
-    /// Returns `true` if `self` is a superset of `other` — i.e. every
+    /// Returns `true` if `self` is a superset of `other`, i.e. every
     /// operation bit set in `other` is also set in `self`.
     pub fn contains(self, other: SqliteChangeOps) -> bool {
         (self.0 & other.0) == other.0
@@ -94,13 +99,14 @@ impl core::fmt::Debug for SqliteChangeOps {
 }
 
 // ---------------------------------------------------------------------------
-// SqliteChangeOp — runtime enum
+// SqliteChangeOp: runtime enum
 // ---------------------------------------------------------------------------
 
 /// Identifies which kind of row change occurred.
 ///
 /// Returned as part of [`SqliteChangeEvent`] to callbacks registered via
-/// [`SqliteConnection::on_insert`], [`SqliteConnection::on_change`], etc.
+/// [`on_insert`](super::SqliteConnection::on_insert),
+/// [`on_change`](super::SqliteConnection::on_change), etc.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum SqliteChangeOp {
@@ -144,38 +150,30 @@ impl SqliteChangeOp {
 }
 
 // ---------------------------------------------------------------------------
-// SqliteChangeEvent — borrowed event passed to callbacks
+// SqliteChangeEvent: borrowed event passed to callbacks
 // ---------------------------------------------------------------------------
 
 /// Describes a single row change event from SQLite.
 ///
-/// The `db_name` field identifies which attached database the change occurred
-/// in — `"main"` for the primary database, `"temp"` for temporary tables,
-/// or the alias from an `ATTACH DATABASE` statement.
-///
-/// The `table_name` field is the name of the table that was modified.
-///
-/// The `rowid` field is SQLite's internal 64-bit row identifier. For tables
-/// with an `INTEGER PRIMARY KEY`, this is the same value as the primary key
-/// column. For tables with other primary key types, the rowid is a separate
-/// hidden value managed by SQLite internally.
-///
 /// See: <https://www.sqlite.org/c3ref/update_hook.html>
-/// See: <https://www.sqlite.org/rowidtable.html>
 #[derive(Debug, Clone, Copy)]
 pub struct SqliteChangeEvent<'a> {
     /// The operation that triggered this event.
     pub op: SqliteChangeOp,
-    /// The name of the database (e.g. `"main"`, `"temp"`, or an `ATTACH` alias).
+    /// The name of the database the change occurred in: `"main"` for the
+    /// primary database, `"temp"` for temporary tables, or the alias from an
+    /// `ATTACH DATABASE` statement.
     pub db_name: &'a str,
     /// The name of the table that was modified.
     pub table_name: &'a str,
-    /// The rowid of the affected row.
+    /// SQLite's internal 64-bit [rowid](https://www.sqlite.org/rowidtable.html)
+    /// of the affected row. For an `INTEGER PRIMARY KEY` table this equals the
+    /// primary key, otherwise it is a separate hidden value.
     pub rowid: i64,
 }
 
 /// An opaque handle to a registered change hook, used to remove it later
-/// via [`SqliteConnection::remove_change_hook`].
+/// via [`remove_change_hook`](super::SqliteConnection::remove_change_hook).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChangeHookId(pub(crate) usize);
 
@@ -473,7 +471,7 @@ mod tests {
         d.add(Some("users"), SqliteChangeOps::INSERT, Box::new(|_| {}));
         d.add(Some("posts"), SqliteChangeOps::INSERT, Box::new(|_| {}));
         d.add(
-            None, // catch-all — should NOT be removed
+            None, // catch-all, should NOT be removed
             SqliteChangeOps::ALL,
             Box::new(|_| {}),
         );

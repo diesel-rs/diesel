@@ -427,7 +427,7 @@ impl RawConnection {
         }
     }
 
-    /// Sets a commit hook. Only one can be active at a time; the previous
+    /// Sets a commit hook. Only one can be active at a time. The previous
     /// hook (if any) is replaced.
     ///
     /// The callback returns `true` to convert the commit into a rollback,

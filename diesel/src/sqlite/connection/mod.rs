@@ -636,16 +636,19 @@ impl SqliteConnection {
     /// Registers a callback invoked for any row change (insert, update, or
     /// delete) on any table, filtered by the given [`SqliteChangeOps`] mask.
     ///
-    /// This is the untyped variant — the table name is provided as a string
+    /// This is the untyped variant: the table name is provided as a string
     /// in [`SqliteChangeEvent::table_name`], suitable for logging all changes
     /// regardless of table.
     ///
-    /// The callback fires **synchronously during `sqlite3_step()`**, i.e.
-    /// while the triggering statement is executing. The connection is **not**
-    /// available inside the callback.
+    /// [`SqliteChangeOps::ALL`] also matches operation codes diesel does not
+    /// recognize (delivered as [`SqliteChangeOp::Unknown`]); see that constant
+    /// for the rationale.
     ///
     /// Multiple hooks can be registered on the same connection (and even
-    /// the same table); they fire in registration order.
+    /// the same table). They fire in registration order. Unlike the
+    /// single-slot commit, rollback, and WAL hooks (where re-registering
+    /// replaces the previous callback), change hooks are multiplexed and each
+    /// is removable individually by its [`ChangeHookId`].
     ///
     /// Returns a [`ChangeHookId`] that can be used to remove the hook later
     /// via [`remove_change_hook`](Self::remove_change_hook). You can also
@@ -669,6 +672,63 @@ impl SqliteConnection {
     ///   [`ON CONFLICT REPLACE`](https://www.sqlite.org/lang_conflict.html).
     /// - Not invoked for deletes using the
     ///   [truncate optimization](https://www.sqlite.org/lang_delete.html#truncateopt).
+    ///
+    /// # Threading and the `Send` bound
+    ///
+    /// The callback runs synchronously on the same thread that drives
+    /// `sqlite3_step()`, never on another thread, and the connection is not
+    /// available inside it. The `Send + 'static` bound is therefore structural
+    /// rather than a hint of concurrency: because [`SqliteConnection`] is itself
+    /// `Send`, a stored callback must also be `Send`, so that moving the
+    /// connection to another thread cannot smuggle a non-`Send` value across the
+    /// boundary.
+    ///
+    /// When a connection is confined to one thread the callback never actually
+    /// crosses a thread, yet the `Send` bound is still enforced. This is the
+    /// common case on `wasm32-unknown-unknown`: a default build is
+    /// single-threaded, and separate web workers each have their own memory, so
+    /// a connection created in one worker is never accessed from another. There
+    /// you can wrap `!Send` state (for example `Rc`-based UI state) in a newtype
+    /// with an `unsafe impl Send`:
+    ///
+    /// ```ignore
+    /// struct UiState { /* Rc-based, !Send signals */ }
+    /// // SAFETY: the connection, and therefore this callback, is only ever used
+    /// // from one thread, so the value never actually crosses a thread.
+    /// unsafe impl Send for UiState {}
+    /// ```
+    ///
+    /// This relies on that single-thread confinement. If you enable wasm threads
+    /// (shared-memory atomics) or otherwise move the connection to another
+    /// thread, the `unsafe impl Send` is unsound.
+    ///
+    /// # Reentrancy
+    ///
+    /// A callback must not run SQL that would re-enter the change hook (for
+    /// example an `INSERT` from inside the callback). The dispatcher is borrowed
+    /// for the duration of the dispatch loop, so any change produced while a
+    /// callback is running is not re-dispatched, and the callback cannot
+    /// register or remove hooks. Such reentrant changes are silently dropped
+    /// rather than panicking inside the C callback. Record what changed and act
+    /// on it after the statement finishes (see "Recommended usage" below).
+    ///
+    /// # Ownership of the update hook
+    ///
+    /// SQLite allows exactly one `sqlite3_update_hook` per connection, and
+    /// diesel owns that slot. Installing your own `sqlite3_update_hook` directly
+    /// on the same connection is unsupported: diesel will override it when a
+    /// change hook is registered and clear it on teardown. This does not collide
+    /// with the session extension, which uses the separate preupdate hook.
+    ///
+    /// # Recommended usage: notify, then re-query
+    ///
+    /// The callback receives a `rowid`, not the row itself, and the connection
+    /// is not usable while the triggering statement is mid-step. For a `DELETE`
+    /// the row is already gone. The robust pattern is to use the callback only
+    /// to record that something changed (for example bump a per-table dirty
+    /// flag or push the rowid into a shared queue), then re-query from
+    /// application code once the statement has finished, using
+    /// [`find_by_rowid`](Self::find_by_rowid) for inserts and updates.
     ///
     /// # Example
     ///
@@ -981,7 +1041,7 @@ impl SqliteConnection {
     /// diesel::insert_into(users::table)
     ///     .values(users::name.eq("Bob"))
     ///     .execute(conn).unwrap();
-    /// // Still 1 — the hook was removed.
+    /// // Still 1, the hook was removed.
     /// assert_eq!(*count.lock().unwrap(), 1);
     /// ```
     pub fn remove_change_hook(&mut self, id: ChangeHookId) -> bool {
@@ -1195,8 +1255,8 @@ impl SqliteConnection {
     /// committed.
     ///
     /// The callback returns a `bool`:
-    /// - `false` — the commit proceeds normally.
-    /// - `true` — the commit is converted into a rollback.
+    /// - `false`: the commit proceeds normally.
+    /// - `true`: the commit is converted into a rollback.
     ///
     /// Only one commit hook can be active at a time per connection.
     /// Registering a new one replaces the previous.
@@ -1250,38 +1310,7 @@ impl SqliteConnection {
     /// Removes the commit hook. Subsequent commits will not invoke any
     /// callback.
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use diesel::prelude::*;
-    /// use diesel::sqlite::SqliteConnection;
-    /// use std::sync::{Arc, Mutex};
-    ///
-    /// diesel::table! {
-    ///     users (id) {
-    ///         id -> Integer,
-    ///         name -> Text,
-    ///     }
-    /// }
-    ///
-    /// # use diesel::connection::SimpleConnection;
-    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
-    /// let count = Arc::new(Mutex::new(0u32));
-    /// let count2 = count.clone();
-    /// conn.on_commit(move || { *count2.lock().unwrap() += 1; false });
-    ///
-    /// conn.remove_commit_hook();
-    ///
-    /// conn.immediate_transaction(|conn| {
-    ///     diesel::insert_into(users::table)
-    ///         .values(users::name.eq("Alice"))
-    ///         .execute(conn)?;
-    ///     Ok::<_, diesel::result::Error>(())
-    /// }).unwrap();
-    ///
-    /// assert_eq!(*count.lock().unwrap(), 0);
-    /// ```
+    /// See [`on_commit`](Self::on_commit) for usage example.
     pub fn remove_commit_hook(&mut self) {
         self.raw_connection.remove_commit_hook();
     }
@@ -1332,27 +1361,7 @@ impl SqliteConnection {
 
     /// Removes the rollback hook.
     ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use diesel::prelude::*;
-    /// # use diesel::connection::SimpleConnection;
-    /// # use diesel::sqlite::SqliteConnection;
-    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// use std::sync::{Arc, Mutex};
-    ///
-    /// let count = Arc::new(Mutex::new(0u32));
-    /// let count2 = count.clone();
-    /// conn.on_rollback(move || { *count2.lock().unwrap() += 1; });
-    ///
-    /// conn.remove_rollback_hook();
-    ///
-    /// let _ = conn.immediate_transaction(|_conn| {
-    ///     Err::<(), _>(diesel::result::Error::RollbackTransaction)
-    /// });
-    ///
-    /// assert_eq!(*count.lock().unwrap(), 0);
-    /// ```
+    /// See [`on_rollback`](Self::on_rollback) for usage example.
     pub fn remove_rollback_hook(&mut self) {
         self.raw_connection.remove_rollback_hook();
     }
@@ -1361,8 +1370,8 @@ impl SqliteConnection {
     /// [WAL mode](https://www.sqlite.org/wal.html).
     ///
     /// The callback receives:
-    /// - `db_name` — the database name (`"main"`, `"temp"`, or an `ATTACH` alias).
-    /// - `n_pages` — the number of pages currently in the WAL file.
+    /// - `db_name`: the database name (`"main"`, `"temp"`, or an `ATTACH` alias).
+    /// - `n_pages`: the number of pages currently in the WAL file.
     ///
     /// Useful for triggering custom checkpoint logic via
     /// [`PRAGMA wal_checkpoint`](https://www.sqlite.org/pragma.html#pragma_wal_checkpoint).
@@ -1396,17 +1405,7 @@ impl SqliteConnection {
 
     /// Removes the WAL hook.
     ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// # use diesel::prelude::*;
-    /// # use diesel::connection::SimpleConnection;
-    /// # use diesel::sqlite::SqliteConnection;
-    /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
-    /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
-    /// conn.on_wal(|_db, _pages| { /* ... */ });
-    /// conn.remove_wal_hook();
-    /// ```
+    /// See [`on_wal`](Self::on_wal) for usage example.
     pub fn remove_wal_hook(&mut self) {
         self.raw_connection.remove_wal_hook();
     }
@@ -1613,10 +1612,10 @@ impl SqliteConnection {
     /// The callback receives events based on the provided [`SqliteTraceFlags`]
     /// mask. Available event types:
     ///
-    /// - `STMT` — Statement start (receives SQL text)
-    /// - `PROFILE` — Statement complete (receives SQL text and elapsed time)
-    /// - `ROW` — Each row returned (no data, very frequent!)
-    /// - `CLOSE` — Connection close
+    /// - `STMT`: Statement start (receives SQL text)
+    /// - `PROFILE`: Statement complete (receives SQL text and elapsed time)
+    /// - `ROW`: Each row returned (no data, very frequent!)
+    /// - `CLOSE`: Connection close
     ///
     /// **Performance Warning**: `SQLITE_TRACE_ROW` fires for EVERY row
     /// returned by a query. For large result sets, this can significantly
@@ -1688,22 +1687,32 @@ impl SqliteConnection {
     /// - `WITH ... INSERT/UPDATE/DELETE ... RETURNING` (the outer statement modifies data)
     /// - Write `PRAGMA` statements (e.g., `PRAGMA foreign_keys = ON`)
     ///
-    /// # Edge cases (not detected)
+    /// # Edge cases
     ///
-    /// - User-defined functions that modify the database via a separate connection
-    ///   are **not** detected; the statement itself is still considered read-only
-    /// - Virtual tables with write side effects are **not** detected
+    /// Some writes are not detected (for example writes via a user-defined
+    /// function on a separate connection, or virtual tables with side effects),
+    /// so the statement is still reported as read-only. See
+    /// [`SqliteTraceEvent::Statement::readonly`] for the full list.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```rust
     /// # use diesel::prelude::*;
     /// # use diesel::sqlite::SqliteConnection;
-    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// use std::sync::{Arc, Mutex};
     ///
-    /// conn.on_read(|sql| {
-    ///     println!("Read query executed: {}", sql);
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// let seen = Arc::new(Mutex::new(Vec::new()));
+    /// let seen2 = seen.clone();
+    ///
+    /// conn.on_read(move |sql| {
+    ///     seen2.lock().unwrap().push(sql.to_owned());
     /// });
+    ///
+    /// // A SELECT is read-only, so on_read fires for it.
+    /// diesel::sql_query("SELECT 1").execute(conn).unwrap();
+    ///
+    /// assert!(seen.lock().unwrap().iter().any(|s| s.contains("SELECT 1")));
     /// ```
     ///
     /// # Note
@@ -3584,7 +3593,7 @@ mod tests {
             fired2.lock().unwrap().push((event.op, event.rowid));
         });
 
-        // INSERT a row — the hook fires immediately during sqlite3_step().
+        // INSERT a row: the hook fires immediately during sqlite3_step().
         crate::sql_query("INSERT INTO hook_users (name) VALUES ('Alice')")
             .execute(conn)
             .unwrap();
@@ -3673,7 +3682,7 @@ mod tests {
         crate::sql_query("INSERT INTO hook_users (name) VALUES ('B')")
             .execute(conn)
             .unwrap();
-        // Should still be 1 — hook was removed.
+        // Should still be 1, hook was removed.
         assert_eq!(*fired.lock().unwrap(), 1);
     }
 
@@ -4072,7 +4081,7 @@ mod tests {
             }
         });
 
-        // DELETE without WHERE — truncate optimization kicks in.
+        // DELETE without WHERE: truncate optimization kicks in.
         crate::sql_query("DELETE FROM bulk").execute(conn).unwrap();
 
         assert!(
@@ -4151,7 +4160,7 @@ mod tests {
             .unwrap();
 
         let recorded = tables.lock().unwrap();
-        // Only the user table should appear; sqlite_sequence must be absent.
+        // Only the user table should appear, sqlite_sequence must be absent.
         assert!(
             recorded.iter().all(|t| t == "seq_test"),
             "expected only 'seq_test' events, got: {:?}",
@@ -4446,7 +4455,7 @@ mod tests {
             conn.on_rollback(move || {
                 *c2.lock().unwrap() += 1;
             });
-            // conn is dropped here — implicit close, not a rollback.
+            // conn is dropped here: implicit close, not a rollback.
         }
 
         assert_eq!(*count.lock().unwrap(), 0);
