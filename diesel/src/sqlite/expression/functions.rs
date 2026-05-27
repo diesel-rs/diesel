@@ -2127,6 +2127,147 @@ extern "SQL" {
         path: Text,
     ) -> Nullable<Jsonb>;
 
+    /// The `json_insert(X,P,V,...)` SQL function takes a single JSON value as its first argument
+    /// followed by zero or more pairs of path and value arguments. It returns a copy of the X
+    /// argument with the values V inserted at the paths P, but only where nothing already exists at
+    /// the path. Paths that already select an element of X are left unchanged.
+    ///
+    /// The path/value pairs are applied sequentially from left to right.
+    ///
+    /// A path that ends in `[#]` appends the value to an existing array.
+    ///
+    /// If the `json_insert(X)` function is called with no path/value pairs, then it returns the
+    /// input X reformatted, with excess whitespace removed.
+    ///
+    /// The `json_insert()` function throws an error if any of the path arguments is not a
+    /// well-formed path.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Json, Text};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1, "c": 3});
+    /// let result = diesel::select(json_insert_1::<Json, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1, "b": 2, "c": 3})), result);
+    ///
+    /// // A path that already exists is left unchanged.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_insert_1::<Json, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1})), result);
+    ///
+    /// // A path ending in "[#]" appends to an array.
+    /// let json = json!(['a', 'b', 'c']);
+    /// let result = diesel::select(json_insert_1::<Json, Text, _, _, _>(json, "$[#]", "d"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!(['a', 'b', 'c', 'd'])), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(
+    ///     json_insert_2::<Json, Integer, Integer, _, _, _, _, _>(json, "$.b", 2, "$.c", 3),
+    /// )
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1, "b": 2, "c": 3})), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_insert_0::<Json, _>(json))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1})), result);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn json_insert<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue, V: NotBlob>(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> Nullable<Json>;
+
+    /// The `jsonb_insert(X,P,V,...)` SQL function works just like the [`json_insert()`](json_insert_1())
+    /// function except that the result is returned in SQLite's private binary JSONB format rather than
+    /// in the standard RFC 8259 text format.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Jsonb, Text};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1, "c": 3});
+    /// let result = diesel::select(jsonb_insert_1::<Jsonb, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1, "b": 2, "c": 3})), result);
+    ///
+    /// // A path that already exists is left unchanged.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_insert_1::<Jsonb, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1})), result);
+    ///
+    /// // A path ending in "[#]" appends to an array.
+    /// let json = json!(['a', 'b', 'c']);
+    /// let result = diesel::select(jsonb_insert_1::<Jsonb, Text, _, _, _>(json, "$[#]", "d"))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!(['a', 'b', 'c', 'd'])), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(
+    ///     jsonb_insert_2::<Jsonb, Integer, Integer, _, _, _, _, _>(json, "$.b", 2, "$.c", 3),
+    /// )
+    /// .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1, "b": 2, "c": 3})), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_insert_0::<Jsonb, _>(json))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 1})), result);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn jsonb_insert<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue, V: NotBlob>(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> Nullable<Jsonb>;
+
     /// Applies an RFC 7396 MergePatch `patch` to the input JSON `target` and
     /// returns the patched JSON value.
     ///
