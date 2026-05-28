@@ -12,6 +12,7 @@ pub(crate) mod backend;
 pub(crate) mod connection;
 mod metadata_lookup;
 pub(crate) mod query_builder;
+pub mod returning;
 pub(crate) mod serialize;
 mod transaction;
 mod value;
