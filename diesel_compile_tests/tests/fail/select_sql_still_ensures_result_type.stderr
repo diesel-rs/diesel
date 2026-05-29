@@ -5,12 +5,12 @@ error[E0277]: cannot deserialize a value of the database type `BigInt` as `std::
      |                                                   ^^^^^^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `std::string::String`
      |
      = note: double check your type mappings via the documentation of `BigInt`
-     = help: the following other types implement trait `FromSql<A, DB>`:
-               `std::string::String` implements `FromSql<Citext, Pg>`
-               `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
-               `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
-               `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
-               `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
+     = help: `std::string::String` implements trait `FromSql<A, DB>`:
+               FromSql<Citext, Pg>
+               FromSql<TimestamptzSqlite, Sqlite>
+               FromSql<diesel::sql_types::Date, Sqlite>
+               FromSql<diesel::sql_types::Time, Sqlite>
+               FromSql<diesel::sql_types::Timestamp, Sqlite>
      = note: required for `std::string::String` to implement `Queryable<BigInt, _>`
      = note: required for `std::string::String` to implement `FromSqlRow<BigInt, _>`
      = note: required for `BigInt` to implement `CompatibleType<String, _>`

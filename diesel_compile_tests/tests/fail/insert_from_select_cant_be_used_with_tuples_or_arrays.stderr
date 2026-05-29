@@ -10,7 +10,7 @@ help: the trait `diesel::query_builder::insert_statement::UndecoratedInsertRecor
  LL | / table! {
  LL | |     users {
    | |_________^
-   = help: the following other types implement trait `diesel::query_builder::insert_statement::UndecoratedInsertRecord<Table>`:
+   = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
              `(T, T1)` implements `UndecoratedInsertRecord<Tab>`
              `(T, T1, T2)` implements `UndecoratedInsertRecord<Tab>`

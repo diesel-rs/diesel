@@ -85,15 +85,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         id -> Integer,
     |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::id` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/selectable.rs:14:9
     |
@@ -117,15 +117,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/selectable.rs:15:9
     |
@@ -195,15 +195,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
   LL |         id -> Integer,
      |         ^^
      = note: `posts::columns::id` is no valid selection for `users::table`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::id` implements `SelectableExpression<posts::table>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::id` to implement `SelectableExpression<Join<table, table, ...>>`
     --> tests/fail/selectable.rs:14:9
      |
@@ -239,15 +239,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
   LL |         title -> Text,
      |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `users::table`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::title` implements `SelectableExpression<posts::table>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
     --> tests/fail/selectable.rs:15:9
      |
@@ -281,7 +281,7 @@ help: the trait `diesel::expression::IsContainedInGroupBy<users::columns::id>` i
  LL |         id -> Integer,
     |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
+help: `posts::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`
    --> tests/fail/selectable.rs:12:1
     |
  LL | / table! {
@@ -289,9 +289,9 @@ help: the following other types implement trait `diesel::expression::IsContained
  LL | |         id -> Integer,
     | |         ^^
     | |         ||
-    | |_________|`posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
-    |           |`posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
-    |           `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
+    | |_________|`diesel::expression::IsContainedInGroupBy<posts::columns::title>`
+    |           |`diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
+    |           `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
 note: required for `users::columns::id` to implement `ValidGrouping<posts::columns::id>`
    --> tests/fail/selectable.rs:7:9
     |
@@ -315,7 +315,7 @@ help: the trait `diesel::expression::IsContainedInGroupBy<users::columns::name>`
  LL |         id -> Integer,
     |         ^^
     = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
+help: `posts::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`
    --> tests/fail/selectable.rs:12:1
     |
  LL | / table! {
@@ -323,9 +323,9 @@ help: the following other types implement trait `diesel::expression::IsContained
  LL | |         id -> Integer,
     | |         ^^
     | |         ||
-    | |_________|`posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
-    |           |`posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
-    |           `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
+    | |_________|`diesel::expression::IsContainedInGroupBy<posts::columns::title>`
+    |           |`diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
+    |           `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
 note: required for `users::columns::name` to implement `ValidGrouping<posts::columns::id>`
    --> tests/fail/selectable.rs:8:9
     |
@@ -347,14 +347,14 @@ LL |         .select(UserWithPostCount::as_select())
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
 ...
 LL |     impl MixedAggregates<Never> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(name, count<Integer, id>)` to implement `ValidGrouping<()>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>` to implement `ValidGrouping<()>`
@@ -375,15 +375,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
  LL |         id -> Integer,
     |         ^^
     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<..., ...>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -413,15 +413,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<..., ...>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -478,22 +478,11 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |
     = note: double check that `posts::table` and `ReturningQuerySource<..., ...>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
-help: the following other types implement trait `TableNotEqual<T>`
+help: the trait `TableNotEqual<posts::table>` is implemented for `users::table`
    --> tests/fail/selectable.rs:23:1
     |
  LL | allow_tables_to_appear_in_same_query!(users, posts);
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | |
-    | `posts::table` implements `TableNotEqual<users::table>`
-    | `users::table` implements `TableNotEqual<posts::table>`
-    |
-   ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
-    |
-LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | |
-    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
@@ -570,15 +559,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
   LL |         id -> Integer,
      |         ^^
      = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<..., ...>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::id` implements `SelectableExpression<posts::table>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -609,15 +598,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
   LL |         title -> Text,
      |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<..., ...>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::title` implements `SelectableExpression<posts::table>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -676,22 +665,11 @@ error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...
      |
      = note: double check that `posts::table` and `ReturningQuerySource<..., ...>` appear in the same `allow_tables_to_appear_in_same_query!` 
              call if both are tables
-help: the following other types implement trait `TableNotEqual<T>`
+help: the trait `TableNotEqual<posts::table>` is implemented for `users::table`
     --> tests/fail/selectable.rs:23:1
      |
   LL | allow_tables_to_appear_in_same_query!(users, posts);
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     | |
-     | `posts::table` implements `TableNotEqual<users::table>`
-     | `users::table` implements `TableNotEqual<posts::table>`
-     |
-    ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
-     |
- LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     | |
-     | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-     | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
      = note: required for `ReturningQuerySource<..., ...>` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
@@ -770,15 +748,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
  LL |         id -> Integer,
     |         ^^
     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -808,15 +786,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -874,22 +852,11 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     = help: the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<UpdateStmt, table>`
     = note: double check that `posts::table` and `ReturningQuerySource<UpdateStmt, table>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
-help: the following other types implement trait `TableNotEqual<T>`
+help: the trait `TableNotEqual<posts::table>` is implemented for `users::table`
    --> tests/fail/selectable.rs:23:1
     |
  LL | allow_tables_to_appear_in_same_query!(users, posts);
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | |
-    | `posts::table` implements `TableNotEqual<users::table>`
-    | `users::table` implements `TableNotEqual<posts::table>`
-    |
-   ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
-    |
-LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | |
-    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `ReturningQuerySource<UpdateStmt, table>` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
@@ -966,15 +933,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
   LL |         id -> Integer,
      |         ^^
      = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::id` implements `SelectableExpression<posts::table>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -1005,15 +972,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
   LL |         title -> Text,
      |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::title` implements `SelectableExpression<posts::table>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -1073,22 +1040,11 @@ error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...
      = help: the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<UpdateStmt, table>`
      = note: double check that `posts::table` and `ReturningQuerySource<UpdateStmt, table>` appear in the same `allow_tables_to_appear_in_same_query!` 
              call if both are tables
-help: the following other types implement trait `TableNotEqual<T>`
+help: the trait `TableNotEqual<posts::table>` is implemented for `users::table`
     --> tests/fail/selectable.rs:23:1
      |
   LL | allow_tables_to_appear_in_same_query!(users, posts);
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     | |
-     | `posts::table` implements `TableNotEqual<users::table>`
-     | `users::table` implements `TableNotEqual<posts::table>`
-     |
-    ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
-     |
- LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     | |
-     | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-     | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
      = note: required for `ReturningQuerySource<UpdateStmt, table>` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
@@ -1167,15 +1123,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
  LL |         id -> Integer,
     |         ^^
     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -1205,15 +1161,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -1271,22 +1227,11 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     = help: the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<DeleteStmt, table>`
     = note: double check that `posts::table` and `ReturningQuerySource<DeleteStmt, table>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
-help: the following other types implement trait `TableNotEqual<T>`
+help: the trait `TableNotEqual<posts::table>` is implemented for `users::table`
    --> tests/fail/selectable.rs:23:1
     |
  LL | allow_tables_to_appear_in_same_query!(users, posts);
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | |
-    | `posts::table` implements `TableNotEqual<users::table>`
-    | `users::table` implements `TableNotEqual<posts::table>`
-    |
-   ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
-    |
-LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | |
-    | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-    | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
     = note: required for `ReturningQuerySource<DeleteStmt, table>` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
@@ -1363,15 +1308,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
   LL |         id -> Integer,
      |         ^^
      = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::id` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::id` implements `SelectableExpression<posts::table>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -1402,15 +1347,15 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
   LL |         title -> Text,
      |         ^^^^^
      = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-               `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-               `posts::columns::title` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-               `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-               `posts::columns::title` implements `SelectableExpression<posts::table>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<posts::table>>
+               SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<posts::table>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
      = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
      = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
@@ -1470,22 +1415,11 @@ error[E0277]: the trait bound `ReturningQuerySource<..., ...>: TableNotEqual<...
      = help: the trait `TableNotEqual<posts::table>` is not implemented for `ReturningQuerySource<DeleteStmt, table>`
      = note: double check that `posts::table` and `ReturningQuerySource<DeleteStmt, table>` appear in the same `allow_tables_to_appear_in_same_query!` 
              call if both are tables
-help: the following other types implement trait `TableNotEqual<T>`
+help: the trait `TableNotEqual<posts::table>` is implemented for `users::table`
     --> tests/fail/selectable.rs:23:1
      |
   LL | allow_tables_to_appear_in_same_query!(users, posts);
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     | |
-     | `posts::table` implements `TableNotEqual<users::table>`
-     | `users::table` implements `TableNotEqual<posts::table>`
-     |
-    ::: DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
-     |
- LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     | |
-     | `pg::metadata_lookup::pg_namespace::table` implements `TableNotEqual<pg::metadata_lookup::pg_type::table>`
-     | `pg::metadata_lookup::pg_type::table` implements `TableNotEqual<pg::metadata_lookup::pg_namespace::table>`
      = note: required for `ReturningQuerySource<DeleteStmt, table>` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
@@ -1550,14 +1484,14 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0599]: the function or associated item `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
+error[E0599]: the associated function or constant `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
    --> tests/fail/selectable.rs:248:40
     |
  LL | struct UserWithoutSelectable {
-    | ---------------------------- function or associated item `as_select` not found for this struct because it doesn't satisfy `UserWithoutSelectable: diesel::Selectable<_>` or `UserWithoutSelectable: diesel::SelectableHelper<_>`
+    | ---------------------------- associated function or constant `as_select` not found for this struct because it doesn't satisfy `UserWithoutSelectable: diesel::Selectable<_>` or `UserWithoutSelectable: diesel::SelectableHelper<_>`
 ...
 LL |         .select(UserWithoutSelectable::as_select())
-    |                                        ^^^^^^^^^ function or associated item cannot be called on `UserWithoutSelectable` due to unsatisfied trait bounds
+    |                                        ^^^^^^^^^ associated function or constant cannot be called on `UserWithoutSelectable` due to unsatisfied trait bounds
     |
     = note: the following trait bounds were not satisfied:
             `UserWithoutSelectable: diesel::Selectable<_>`

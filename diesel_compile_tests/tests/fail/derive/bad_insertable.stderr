@@ -16,7 +16,6 @@ LL |     #[derive(AsExpression, FromSqlRow)]
    |              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
    |              `i32` implements `AsExpression<Nullable<diesel::sql_types::Integer>>`
    |              `i32` implements `AsExpression<diesel::sql_types::Integer>`
-   = help: see issue #48214
    = note: this error originates in the derive macro `Insertable` which comes from the expansion of the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `std::string::String: AsExpression<diesel::sql_types::Integer>` is not satisfied
@@ -38,6 +37,5 @@ LL |     id: String,
              `std::string::String` implements `AsExpression<Citext>`
              `std::string::String` implements `AsExpression<Nullable<Citext>>`
            and N others
-   = help: see issue #48214
    = note: this error originates in the derive macro `Insertable` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

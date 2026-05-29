@@ -10,7 +10,7 @@ help: the trait `diesel::expression::IsContainedInGroupBy<users::columns::id>` i
 LL |         user_id -> Integer,
    |         ^^^^^^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
+help: `posts::columns::user_id` implements trait `diesel::expression::IsContainedInGroupBy<T>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:12:1
    |
 LL | / table! {
@@ -20,9 +20,9 @@ LL | |         title -> Text,
 LL | |         user_id -> Integer,
    | |         ^^^^^^^
    | |         |     |
-   | |_________|_____`posts::columns::user_id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
-   |           |     `posts::columns::user_id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
-   |           `posts::columns::user_id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
+   | |_________|_____`diesel::expression::IsContainedInGroupBy<posts::columns::id>`
+   |           |     `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
+   |           `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
    = note: required for `(posts::columns::user_id,)` to implement `diesel::expression::IsContainedInGroupBy<users::columns::id>`
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::id, posts::columns::user_id)` to implement `diesel::expression::IsContainedInGroupBy<users::columns::id>`
@@ -49,7 +49,7 @@ help: the trait `diesel::expression::IsContainedInGroupBy<posts::columns::user_i
  LL |         id -> Integer,
    |         ^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
+help: `users::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:5:1
    |
  LL | / table! {
@@ -57,8 +57,8 @@ help: the following other types implement trait `diesel::expression::IsContained
  LL | |         id -> Integer,
    | |         ^^
    | |_________||
-   |           |`users::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::name>`
-   |           `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::id>`
+   |           |`diesel::expression::IsContainedInGroupBy<users::columns::name>`
+   |           `diesel::expression::IsContainedInGroupBy<users::columns::id>`
    = note: required for `(users::columns::id, posts::columns::user_id)` to implement `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
 note: required for `posts::columns::user_id` to implement `ValidGrouping<(users::columns::id, posts::columns::user_id)>`
   --> tests/fail/group_by_with_multiple_tables_gives_good_error_message.rs:16:9

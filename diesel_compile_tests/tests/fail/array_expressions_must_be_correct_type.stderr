@@ -8,16 +8,17 @@ error[E0277]: cannot select `f64` from `diesel::query_builder::from_clause::NoFr
     |
     = help: the trait `SelectableExpression<diesel::query_builder::from_clause::NoFromClause>` is not implemented for `f64`
     = note: `f64` is no valid selection for `diesel::query_builder::from_clause::NoFromClause`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `&'a T` implements `SelectableExpression<QS>`
-              `(T, T1)` implements `SelectableExpression<QS>`
-              `(T, T1, T2)` implements `SelectableExpression<QS>`
-              `(T, T1, T2, T3)` implements `SelectableExpression<QS>`
-              `(T, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
-              `(T, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
-              `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
-              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
-            and N others
+help: the following other types implement trait `SelectableExpression<QS>`
+   --> DIESEL/diesel/diesel/src/expression/assume_not_null.rs
+    |
+ LL | / impl<T> SelectableExpression<NoFromClause> for AssumeNotNull<T> where
+ LL | |     Self: AppearsOnTable<NoFromClause>
+    | |______________________________________^ `diesel::expression::assume_not_null::AssumeNotNull<T>`
+    |
+   ::: DIESEL/diesel/diesel/src/expression/nullable.rs
+    |
+ LL |   impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::nullable::Nullable<T>`
     = note: required for `(f64, f64)` to implement `SelectableExpression<NoFromClause>`
     = note: 1 redundant requirement hidden
     = note: required for `ArrayLiteral<(f64, f64), Integer>` to implement `SelectableExpression<NoFromClause>`
@@ -43,15 +44,15 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
     |     required by a bound introduced by this call
     |
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-              `&T` implements `ValidGrouping<GB>`
-              `()` implements `ValidGrouping<GB>`
-              `(T, T1)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-            and N others
+              AliasedField<S, C>
+              pg::metadata_lookup::pg_namespace::columns::nspname
+              pg::metadata_lookup::pg_namespace::columns::oid
+              pg::metadata_lookup::pg_type::columns::oid
+              pg::metadata_lookup::pg_type::columns::typarray
+              pg::metadata_lookup::pg_type::columns::typname
+              pg::metadata_lookup::pg_type::columns::typnamespace
+              SkipSelectableExpressionBoundCheckWrapper<T>
+              returning::old_impl::Old<C>
     = note: required for `(f64, f64)` to implement `ValidGrouping<()>`
     = note: 1 redundant requirement hidden
     = note: required for `ArrayLiteral<(f64, f64), Integer>` to implement `ValidGrouping<()>`
@@ -77,16 +78,17 @@ error[E0277]: cannot select `f64` from `diesel::query_builder::from_clause::NoFr
      |
      = help: the trait `SelectableExpression<diesel::query_builder::from_clause::NoFromClause>` is not implemented for `f64`
      = note: `f64` is no valid selection for `diesel::query_builder::from_clause::NoFromClause`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `&'a T` implements `SelectableExpression<QS>`
-               `(T, T1)` implements `SelectableExpression<QS>`
-               `(T, T1, T2)` implements `SelectableExpression<QS>`
-               `(T, T1, T2, T3)` implements `SelectableExpression<QS>`
-               `(T, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
-               `(T, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
-               `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
-               `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
-             and N others
+help: the following other types implement trait `SelectableExpression<QS>`
+    --> DIESEL/diesel/diesel/src/expression/assume_not_null.rs
+     |
+  LL | / impl<T> SelectableExpression<NoFromClause> for AssumeNotNull<T> where
+  LL | |     Self: AppearsOnTable<NoFromClause>
+     | |______________________________________^ `diesel::expression::assume_not_null::AssumeNotNull<T>`
+     |
+    ::: DIESEL/diesel/diesel/src/expression/nullable.rs
+     |
+  LL |   impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::nullable::Nullable<T>`
      = note: required for `(f64, f64)` to implement `SelectableExpression<NoFromClause>`
      = note: 1 redundant requirement hidden
      = note: required for `ArrayLiteral<(f64, f64), Integer>` to implement `SelectableExpression<NoFromClause>`
@@ -112,15 +114,15 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
      |                                 required by a bound introduced by this call
      |
      = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-               `&T` implements `ValidGrouping<GB>`
-               `()` implements `ValidGrouping<GB>`
-               `(T, T1)` implements `ValidGrouping<__GroupByClause>`
-               `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-               `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-               `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-               `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-               `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-             and N others
+               AliasedField<S, C>
+               pg::metadata_lookup::pg_namespace::columns::nspname
+               pg::metadata_lookup::pg_namespace::columns::oid
+               pg::metadata_lookup::pg_type::columns::oid
+               pg::metadata_lookup::pg_type::columns::typarray
+               pg::metadata_lookup::pg_type::columns::typname
+               pg::metadata_lookup::pg_type::columns::typnamespace
+               SkipSelectableExpressionBoundCheckWrapper<T>
+               returning::old_impl::Old<C>
      = note: required for `(f64, f64)` to implement `ValidGrouping<()>`
      = note: 1 redundant requirement hidden
      = note: required for `ArrayLiteral<(f64, f64), Integer>` to implement `ValidGrouping<()>`
@@ -179,14 +181,14 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
      = note: this usually means that the `Pg` database system does not support 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `&T` implements `QueryFragment<DB>`
-               `()` implements `QueryFragment<DB>`
-               `(T, T1)` implements `QueryFragment<__DB>`
-               `(T, T1, T2)` implements `QueryFragment<__DB>`
-               `(T, T1, T2, T3)` implements `QueryFragment<__DB>`
-               `(T, T1, T2, T3, T4)` implements `QueryFragment<__DB>`
-               `(T, T1, T2, T3, T4, T5)` implements `QueryFragment<__DB>`
-               `(T, T1, T2, T3, T4, T5, T6)` implements `QueryFragment<__DB>`
+               C
+               DistinctOnClause<T>
+               Only<S>
+               Posix
+               Tablesample<S, TSM>
+               TransactionBuilder<'_, C>
+               diesel::pg::expression::array::ArrayLiteral<T, ST>
+               diesel::pg::expression::array::ArraySubselect<T, ST>
              and N others
      = note: required for `(f64, f64)` to implement `QueryFragment<Pg>`
      = note: 4 redundant requirements hidden

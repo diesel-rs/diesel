@@ -9,14 +9,14 @@ error[E0277]: `Filter<WhereClause<Grouped<Eq<name, ...>>>>` is no valid SQL frag
      = help: the trait `QueryFragment<Mysql, backend::sql_dialect::aggregate_function_expressions::NoAggregateFunctionExpressions>` is not implemented for `Filter<WhereClause<Grouped<Eq<name, ...>>>>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
+help: `Filter<P>` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/aggregate_filter.rs
      |
   LL | / impl<P, DB> QueryFragment<DB> for Filter<P>
   LL | | where
   LL | |     Self: QueryFragment<DB, DB::AggregateFunctionExpressions>,
   LL | |     DB: Backend,
-     | |________________^ `Filter<P>` implements `QueryFragment<DB>`
+     | |________________^ `QueryFragment<DB>`
 ...
   LL | / impl<P, DB>
   LL | |     QueryFragment<
@@ -25,7 +25,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
 ...    |
   LL | |     P: QueryFragment<DB>,
   LL | |     DB: Backend + SqlDialect<AggregateFunctionExpressions = sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions>,
-     | |___________________________________________________________________________________________________________________________________________________^ `Filter<P>` implements `QueryFragment<DB, ...>`
+     | |___________________________________________________________________________________________________________________________________________________^ `QueryFragment<DB, ...>`
      = note: required for `Filter<WhereClause<Grouped<Eq<name, ...>>>>` to implement `QueryFragment<Mysql>`
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`

@@ -121,16 +121,18 @@ LL |         .select(users::id)
    |
    = help: the trait `diesel::expression::IsContainedInGroupBy<users::columns::id>` is not implemented for `AliasedField<post1, posts::columns::id>`
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-   = help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`:
-             `(T, T1)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2, T3)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2, T3, T4)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2, T3, T4, T5)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2, T3, T4, T5, T6)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-             `(T, T1, T2, T3, T4, T5, T6, T7, T8)` implements `diesel::expression::IsContainedInGroupBy<Col>`
-           and N others
+help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`
+  --> tests/fail/invalid_group_by.rs:6:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+   | |         ^^ `users::columns::id`
+ LL | |         name -> VarChar,
+   | |____________^ `users::columns::name`
+...
+LL |   allow_columns_to_appear_in_same_group_by_clause!(users::id, posts::id);
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `posts::columns::id`
 note: required for `users::columns::id` to implement `ValidGrouping<AliasedField<post1, posts::columns::id>>`
   --> tests/fail/invalid_group_by.rs:8:9
    |

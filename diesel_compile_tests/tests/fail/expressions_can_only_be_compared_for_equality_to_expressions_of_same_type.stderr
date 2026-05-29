@@ -4,13 +4,13 @@ error[E0277]: the trait bound `&str: AsExpression<diesel::sql_types::Integer>` i
 LL |     let pred = id.eq("string");
    |                   ^^ the trait `AsExpression<diesel::sql_types::Integer>` is not implemented for `&str`
    |
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&str` implements `AsExpression<Citext>`
-             `&str` implements `AsExpression<diesel::sql_types::Bpchar>`
-             `&str` implements `AsExpression<diesel::sql_types::Date>`
-             `&str` implements `AsExpression<diesel::sql_types::Text>`
-             `&str` implements `AsExpression<diesel::sql_types::Time>`
-             `&str` implements `AsExpression<diesel::sql_types::Timestamp>`
+   = help: `&str` implements trait `AsExpression<T>`:
+             AsExpression<Citext>
+             AsExpression<diesel::sql_types::Bpchar>
+             AsExpression<diesel::sql_types::Date>
+             AsExpression<diesel::sql_types::Text>
+             AsExpression<diesel::sql_types::Time>
+             AsExpression<diesel::sql_types::Timestamp>
 
 error[E0277]: the trait bound `columns::name: AsExpression<diesel::sql_types::Integer>` is not satisfied
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:17:19
@@ -24,15 +24,10 @@ help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented fo
  LL |         name -> VarChar,
    |         ^^^^
    = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-             `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
-           and N others
-
-      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+             &'__expr i32
+             Arc<i32>
+             Box<i32>
+             Rc<i32>
+             i32
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.
