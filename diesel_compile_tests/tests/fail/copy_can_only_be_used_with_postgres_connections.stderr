@@ -24,13 +24,13 @@ error[E0277]: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...
     |          required by a bound introduced by this call
     |
     = help: the trait `diesel::ExecuteCopyFromDsl<diesel::MysqlConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<...>>>`
-help: the following other types implement trait `diesel::ExecuteCopyFromDsl<C>`
+help: `CopyFromQuery<T, A>` implements trait `diesel::ExecuteCopyFromDsl<C>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_from.rs
     |
 LL | / impl<T, A> ExecuteCopyFromDsl<crate::PgConnection> for CopyFromQuery<T, A>
 LL | | where
 LL | |     A: CopyFromExpression<T>,
-    | |_____________________________^ `CopyFromQuery<T, A>` implements `diesel::ExecuteCopyFromDsl<diesel::PgConnection>`
+    | |_____________________________^ `diesel::ExecuteCopyFromDsl<diesel::PgConnection>`
 ...
 LL | / impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionMan...
 LL | |     for CopyFromQuery<T, A>
@@ -38,7 +38,7 @@ LL | | where
 LL | |     A: CopyFromExpression<T>,
 LL | |     C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
 LL | |     Self: ExecuteCopyFromDsl<C>,
-    | |________________________________^ `CopyFromQuery<T, A>` implements `ExecuteCopyFromDsl<PooledConnection<...>>`
+    | |________________________________^ `ExecuteCopyFromDsl<PooledConnection<...>>`
  
     
 error[E0277]: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
@@ -123,13 +123,13 @@ error[E0277]: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...
     |          required by a bound introduced by this call
     |
     = help: the trait `diesel::ExecuteCopyFromDsl<diesel::SqliteConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<...>>>`
-help: the following other types implement trait `diesel::ExecuteCopyFromDsl<C>`
+help: `CopyFromQuery<T, A>` implements trait `diesel::ExecuteCopyFromDsl<C>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_from.rs
     |
 LL | / impl<T, A> ExecuteCopyFromDsl<crate::PgConnection> for CopyFromQuery<T, A>
 LL | | where
 LL | |     A: CopyFromExpression<T>,
-    | |_____________________________^ `CopyFromQuery<T, A>` implements `diesel::ExecuteCopyFromDsl<diesel::PgConnection>`
+    | |_____________________________^ `diesel::ExecuteCopyFromDsl<diesel::PgConnection>`
 ...
 LL | / impl<T, A, C> ExecuteCopyFromDsl<crate::r2d2::PooledConnection<crate::r2d2::ConnectionMan...
 LL | |     for CopyFromQuery<T, A>
@@ -137,7 +137,7 @@ LL | | where
 LL | |     A: CopyFromExpression<T>,
 LL | |     C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
 LL | |     Self: ExecuteCopyFromDsl<C>,
-    | |________________________________^ `CopyFromQuery<T, A>` implements `ExecuteCopyFromDsl<PooledConnection<...>>`
+    | |________________________________^ `ExecuteCopyFromDsl<PooledConnection<...>>`
  
     
 error[E0277]: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied

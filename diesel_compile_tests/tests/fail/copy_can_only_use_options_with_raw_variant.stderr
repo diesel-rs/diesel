@@ -8,8 +8,7 @@ LL | |         .with_format(CopyFormat::Csv)
    | |_________|
    |
    |
-   = note: the method was found for
-           - `CopyFromQuery<T, pg::query_builder::copy::copy_from::CopyFrom<C, F>>`
+   = note: the method was found for `CopyFromQuery<T, pg::query_builder::copy::copy_from::CopyFrom<C, F>>`
 
    
 error[E0599]: the method `load` exists for struct `CopyToQuery<table, CopyToOptions>`, but its trait bounds were not satisfied

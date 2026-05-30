@@ -9,19 +9,19 @@ error[E0277]: `Groups` is no valid SQL fragment for the `Mysql` backend
      = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_clause_group_support::NoGroupWindowFrameUnit>` is not implemented for `Groups`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
+help: `Groups` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
   LL | /         impl<DB> QueryFragment<DB> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend,
   LL | |             Self: QueryFragment<DB, DB::$option>,
-     | |_________________________________________________^ `Groups` implements `QueryFragment<DB>`
+     | |_________________________________________________^ `QueryFragment<DB>`
 ...
   LL | /         impl<DB> QueryFragment<DB, $bound> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend<$option = $bound>,
-     | |__________________________________________________________^ `Groups` implements `QueryFragment<DB, IsoGroupWindowFrameUnit>`
+     | |__________________________________________________________^ `QueryFragment<DB, IsoGroupWindowFrameUnit>`
 ...
   LL | / simple_frame_expr_with_bound!(
   LL | |     /// Groups frame mode
