@@ -440,11 +440,13 @@ impl PgConnection {
         TransactionBuilder::new(self)
     }
 
-    pub(crate) fn copy_from<S, T>(&mut self, target: S) -> Result<usize, S::Error>
+    pub(crate) fn copy_from<S, T>(&mut self, table: T, target: S) -> Result<usize, S::Error>
     where
         S: CopyFromExpression<T>,
     {
-        let query = CopyFromWrapper(core::cell::RefCell::new(InternalCopyFromQuery::new(target)));
+        let query = CopyFromWrapper(core::cell::RefCell::new(InternalCopyFromQuery::new(
+            table, target,
+        )));
         let res =
             self.with_prepared_query(Box::new(query), false, &mut |stmt, binds, conn, source| {
                 fn inner_copy_in<S, T>(

@@ -150,3 +150,28 @@ impl<T, U> QueryId for Table<T, U> {
     type QueryId = ();
     const HAS_STATIC_QUERY_ID: bool = false;
 }
+
+/// A marker SQL type used for dynamic schema COPY operations
+/// where the actual column types are not known at compile time.
+#[cfg(feature = "postgres")]
+#[derive(Debug, Clone, Copy)]
+pub struct DynSqlType;
+
+#[cfg(feature = "postgres")]
+impl diesel::sql_types::SqlType for DynSqlType {
+    type IsNull = diesel::sql_types::is_nullable::NotNull;
+}
+
+#[cfg(feature = "postgres")]
+impl<T, U> diesel::pg::CopyTarget for Table<T, U>
+where
+    T: Borrow<str> + Clone + 'static,
+    U: Borrow<str> + Clone + 'static,
+{
+    type Table = Self;
+    type SqlType = DynSqlType;
+
+    fn walk_target<'b>(&'b self, mut pass: AstPass<'_, 'b, diesel::pg::Pg>) -> QueryResult<()> {
+        self.walk_ast(pass.reborrow())
+    }
+}

@@ -1,5 +1,4 @@
 use alloc::borrow::Cow;
-use core::marker::PhantomData;
 
 use byteorder::NetworkEndian;
 use byteorder::WriteBytesExt;
@@ -17,6 +16,7 @@ use crate::pg::PgMetadataLookup;
 use crate::pg::backend::FailedToLookupTypeError;
 use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::query_builder::BatchInsert;
+use crate::query_builder::ColumnList;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::QueryId;
 use crate::query_builder::ValuesClause;
@@ -90,21 +90,18 @@ impl CopyFromOptions {
 pub struct CopyFrom<S, F> {
     options: CopyFromOptions,
     copy_callback: F,
-    p: PhantomData<S>,
+    target: S,
 }
 
 pub(crate) struct InternalCopyFromQuery<S, T> {
     pub(crate) target: S,
-    p: PhantomData<T>,
+    table: T,
 }
 
 #[cfg(feature = "postgres")]
 impl<S, T> InternalCopyFromQuery<S, T> {
-    pub(crate) fn new(target: S) -> Self {
-        Self {
-            target,
-            p: PhantomData,
-        }
+    pub(crate) fn new(table: T, target: S) -> Self {
+        Self { target, table }
     }
 }
 
@@ -126,7 +123,7 @@ where
     ) -> crate::QueryResult<()> {
         pass.unsafe_to_cache_prepared();
         pass.push_sql("COPY ");
-        self.target.walk_target(pass.reborrow())?;
+        self.target.walk_target(&self.table, pass.reborrow())?;
         pass.push_sql(" FROM STDIN");
         self.target.options().walk_ast(pass.reborrow())?;
         Ok(())
@@ -140,6 +137,7 @@ pub trait CopyFromExpression<T> {
 
     fn walk_target<'b>(
         &'b self,
+        table: &'b T,
         pass: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::QueryResult<()>;
 
@@ -164,9 +162,10 @@ where
 
     fn walk_target<'b>(
         &'b self,
+        _table: &'b S::Table,
         pass: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::QueryResult<()> {
-        S::walk_target(pass)
+        self.target.walk_target(pass)
     }
 }
 
@@ -183,8 +182,9 @@ impl PgMetadataLookup for Dummy {
 }
 
 trait CopyFromInsertableHelper {
-    type Target: CopyTarget;
     const COLUMN_COUNT: i16;
+
+    fn walk_columns(pass: crate::query_builder::AstPass<'_, '_, Pg>) -> crate::QueryResult<()>;
 
     fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull>;
 }
@@ -201,16 +201,20 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
             __T>
                 where
                 __T: Table,
-                $($ST: Column<Table = __T>,)*
-                ($($ST,)*): CopyTarget,
+                $($ST: Column<Table = __T> + Default,)*
+                ($($ST,)*): ColumnList,
                 $($TT: ToSql<$T, Pg>,)*
             {
-                type Target = ($($ST,)*);
-
                 // statically known to always fit
                 // as we don't support more than 128 columns
                 #[allow(clippy::cast_possible_truncation)]
                 const COLUMN_COUNT: i16 = $Tuple as i16;
+
+                fn walk_columns(
+                    pass: crate::query_builder::AstPass<'_, '_, Pg>,
+                ) -> crate::QueryResult<()> {
+                    <($($ST,)*) as ColumnList>::walk_ast(&($($ST::default(),)*), pass)
+                }
 
                 fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
                     use crate::query_builder::ByteWrapper;
@@ -236,16 +240,20 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
             __T>
                 where
                 __T: Table,
-                $($ST: Column<Table = __T>,)*
-                ($($ST,)*): CopyTarget,
+                $($ST: Column<Table = __T> + Default,)*
+                ($($ST,)*): ColumnList,
                 $($TT: ToSql<$T, Pg>,)*
             {
-                type Target = ($($ST,)*);
-
                 // statically known to always fit
                 // as we don't support more than 128 columns
                 #[allow(clippy::cast_possible_truncation)]
                 const COLUMN_COUNT: i16 = $Tuple as i16;
+
+                fn walk_columns(
+                    pass: crate::query_builder::AstPass<'_, '_, Pg>,
+                ) -> crate::QueryResult<()> {
+                    <($($ST,)*) as ColumnList>::walk_ast(&($($ST::default(),)*), pass)
+                }
 
                 fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
                     use crate::query_builder::ByteWrapper;
@@ -278,6 +286,7 @@ impl<I, T, V, QId, const STATIC_QUERY_ID: bool> CopyFromExpression<T> for Insert
 where
     I: Insertable<T, Values = BatchInsert<Vec<V>, T, QId, STATIC_QUERY_ID>>,
     V: CopyFromInsertableHelper,
+    T: QueryFragment<Pg>,
 {
     type Error = crate::result::Error;
 
@@ -355,9 +364,14 @@ where
 
     fn walk_target<'b>(
         &'b self,
-        pass: crate::query_builder::AstPass<'_, 'b, Pg>,
+        table: &'b T,
+        mut pass: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::QueryResult<()> {
-        <V as CopyFromInsertableHelper>::Target::walk_target(pass)
+        table.walk_ast(pass.reborrow())?;
+        pass.push_sql("(");
+        V::walk_columns(pass.reborrow())?;
+        pass.push_sql(")");
+        Ok(())
     }
 }
 
@@ -389,7 +403,7 @@ where
     /// `action` expects a callback which accepts a [`std::io::Write`] argument. The necessary format
     /// accepted by this writer sink depends on the options provided via the `with_*` methods
     #[allow(clippy::wrong_self_convention)] // the sql struct is named that way
-    pub fn from_raw_data<F, C, E>(self, _target: C, action: F) -> CopyFromQuery<T, CopyFrom<C, F>>
+    pub fn from_raw_data<F, C, E>(self, target: C, action: F) -> CopyFromQuery<T, CopyFrom<C, F>>
     where
         C: CopyTarget<Table = T>,
         F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
@@ -397,7 +411,7 @@ where
         CopyFromQuery {
             table: self.table,
             action: CopyFrom {
-                p: PhantomData,
+                target,
                 options: Default::default(),
                 copy_callback: action,
             },
@@ -527,7 +541,7 @@ where
     type Error = A::Error;
 
     fn execute(self, conn: &mut crate::PgConnection) -> Result<usize, A::Error> {
-        conn.copy_from::<A, T>(self.action)
+        conn.copy_from::<A, T>(self.table, self.action)
     }
 }
 
