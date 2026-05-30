@@ -10,24 +10,23 @@ LL |     name: i32,
    = note: double check your type mappings via the documentation of `diesel::sql_types::Text`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-help: the following other types implement trait `FromSql<A, DB>`
+help: `i32` implements trait `FromSql<A, DB>`
   --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
    |
 LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Sqlite>`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
   ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Pg>`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
    |
   ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
    |
 LL | impl FromSql<Integer, Mysql> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `i32` implements `FromSql<diesel::sql_types::Integer, Mysql>`
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Mysql>`
    = note: required for `i32` to implement `diesel::Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
-   = help: see issue #48214
    = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>` is not satisfied
@@ -42,15 +41,14 @@ LL |     id: String,
    = note: double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
-   = help: the following other types implement trait `FromSql<A, DB>`:
-             `std::string::String` implements `FromSql<Citext, Pg>`
-             `std::string::String` implements `FromSql<TimestamptzSqlite, Sqlite>`
-             `std::string::String` implements `FromSql<diesel::sql_types::Date, Sqlite>`
-             `std::string::String` implements `FromSql<diesel::sql_types::Time, Sqlite>`
-             `std::string::String` implements `FromSql<diesel::sql_types::Timestamp, Sqlite>`
+   = help: `std::string::String` implements trait `FromSql<A, DB>`:
+             FromSql<Citext, Pg>
+             FromSql<TimestamptzSqlite, Sqlite>
+             FromSql<diesel::sql_types::Date, Sqlite>
+             FromSql<diesel::sql_types::Time, Sqlite>
+             FromSql<diesel::sql_types::Timestamp, Sqlite>
    = note: required for `std::string::String` to implement `diesel::Queryable<diesel::sql_types::Integer, Pg>`
    = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`
-   = help: see issue #48214
    = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `(String, i32): FromStaticSqlRow<(..., ...), ...>` is not satisfied
@@ -83,7 +81,6 @@ LL | struct User {
    |        ^^^^
    = help: consider manually implementing `Queryable<(Integer, Text), Pg>` to avoid undesired bounds
    = note: required for `User` to implement `FromSqlRow<(Integer, Text), Pg>`
-   = help: see issue #48214
 
       = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
 

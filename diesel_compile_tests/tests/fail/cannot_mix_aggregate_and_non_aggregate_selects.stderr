@@ -8,14 +8,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
 ...
 LL |     impl MixedAggregates<Never> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(columns::id, diesel::dsl::CountStar)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(columns::id, diesel::dsl::CountStar)>`
  
@@ -30,14 +30,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
 ...
 LL |     impl MixedAggregates<Never> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `Add<nullable_int_col, max<Nullable<Integer>, ...>>` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<Add<nullable_int_col, max<..., ...>>>`
  
@@ -52,14 +52,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
 ...
 LL |     impl MixedAggregates<Never> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
 note: required for `__Derived<nullable_int_col, max<..., ...>>` to implement `ValidGrouping<()>`
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:14:1
     |
