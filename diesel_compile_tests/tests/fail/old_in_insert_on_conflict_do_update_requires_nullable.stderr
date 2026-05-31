@@ -1,0 +1,128 @@
+error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+   --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:35:20
+    |
+ LL |         .returning(UpsertOldNew::as_select())
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+      but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
+   --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
+    |
+LL | / impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+LL | | where
+LL | |     C: Column,
+LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+    | |_____________________________________________________________________^
+    = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
+    = note: required for `(returning::old_impl::Old<columns::name>, columns::name)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: 1 redundant requirement hidden
+    = note: required for `diesel::expression::select_by::SelectBy<UpsertOldNew, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+    
+error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+    --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:37:37
+     |
+  LL |         .get_result::<UpsertOldNew>(&mut connection)
+     |          ----------                 ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+      but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
+     |
+ LL | / impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+ LL | | where
+ LL | |     C: Column,
+ LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+     | |_____________________________________________________________________^
+     = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
+     = note: required for `(returning::old_impl::Old<columns::name>, columns::name)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+     = note: 1 redundant requirement hidden
+     = note: required for `diesel::expression::select_by::SelectBy<UpsertOldNew, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UpsertOldNew>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
+error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+   --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:48:20
+    |
+ LL |         .returning(old(users::name))
+    |          --------- ^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+      but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
+   --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
+    |
+LL | / impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+LL | | where
+LL | |     C: Column,
+LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+    | |_____________________________________________________________________^
+    = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
+    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+LL |     where
+LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+ 
+    
+error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+    --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:50:31
+     |
+  LL |         .get_result::<String>(&mut connection)
+     |          ----------           ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+      but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
+    --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
+     |
+ LL | / impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+ LL | | where
+ LL | |     C: Column,
+ LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+     | |_____________________________________________________________________^
+     = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, std::string::String>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     For more information about this error, try `rustc --explain E0277`.

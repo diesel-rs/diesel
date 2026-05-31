@@ -33,7 +33,7 @@ macro_rules! tuple_impls {
                 let mut bytes = value.as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;
 
-                if num_elements != $Tuple {
+                if num_elements != $Tuple as i32 {
                     return Err(format!(
                         "Expected a tuple of {} elements, got {}",
                         $Tuple,
@@ -46,13 +46,18 @@ macro_rules! tuple_impls {
                     // ignores cases like text vs varchar where the
                     // representation is the same and we don't care which we
                     // got.
-                    let oid = NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?).expect("Oid's aren't zero");
+                    let oid = NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?).ok_or("Oid's aren't zero")?;
                     let num_bytes = bytes.read_i32::<NetworkEndian>()?;
 
                     if num_bytes == -1 {
                         $T::from_nullable_sql(None)?
                     } else {
-                        let (elem_bytes, new_bytes) = bytes.split_at(num_bytes.try_into()?);
+                        let (elem_bytes, new_bytes) = bytes.split_at_checked(num_bytes.try_into()?).ok_or_else(|| {
+                            format!(
+                                "Invalid element byte count: Expected at least {num_bytes} bytes, but only {} bytes were received",
+                                bytes.len()
+                            )
+                        })?;
                         bytes = new_bytes;
                         $T::from_sql(PgValue::new_internal(
                             elem_bytes,
@@ -105,7 +110,7 @@ macro_rules! tuple_impls {
         {
             fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result {
                 let mut buffer = Vec::new();
-                out.write_i32::<NetworkEndian>($Tuple)?;
+                out.write_i32::<NetworkEndian>($Tuple as i32)?;
 
                 $(
                     let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
@@ -131,7 +136,7 @@ macro_rules! tuple_impls {
     )+}
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+diesel::for_each_tuple!(tuple_impls);
 
 #[derive(Debug, Clone, Copy, QueryId, ValidGrouping)]
 pub struct PgTuple<T>(T);
@@ -254,5 +259,59 @@ mod tests {
         let sql = sql::<Bool>("(1, 'hi')::my_type = ").bind::<MyType, _>(MyStruct(1, "hi"));
         let res = crate::select(sql).get_result(conn);
         assert_eq!(Ok(true), res);
+    }
+
+    #[diesel_test_helper::test]
+    fn invalid_element_size_for_records() {
+        // check invalid element sizes
+        let mut value = Vec::<u8>::new();
+
+        // num elements
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // oid of the first element
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // element size
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        let value = PgValue::for_test(&value);
+
+        let res = <(i32,) as FromSql<Record<(Integer,)>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element byte count: Expected at least 6 bytes, but only 4 bytes were received",
+        );
+
+        // check for invalid number of elements
+        let mut value = Vec::<u8>::new();
+
+        // num elements
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        let value = PgValue::for_test(&value);
+
+        let res = <(i32,) as FromSql<Record<(Integer,)>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "failed to fill whole buffer",
+        );
+
+        // check for zero oids
+        // check invalid element sizes
+        let mut value = Vec::<u8>::new();
+
+        // num elements
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // oid of the first element
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // size of the first element
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        // the value of the first element
+        value.write_i32::<NetworkEndian>(42).unwrap();
+        let value = PgValue::for_test(&value);
+
+        let res = <(i32,) as FromSql<Record<(Integer,)>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(format!("{}", res.unwrap_err()), "Oid's aren't zero");
     }
 }

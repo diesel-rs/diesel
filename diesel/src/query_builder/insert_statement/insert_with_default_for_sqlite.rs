@@ -1,15 +1,17 @@
 use super::{BatchInsert, InsertStatement};
-use crate::insertable::InsertValues;
-use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
+use crate::insertable::{
+    CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue, InsertValues,
+};
 use crate::prelude::*;
 use crate::query_builder::debug_query::DebugBinds;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
-use crate::query_builder::{AstPass, QueryBuilder, QueryId, ValuesClause};
-use crate::query_builder::{DebugQuery, QueryFragment};
-use crate::query_dsl::{LoadQuery, methods::ExecuteDsl};
+use crate::query_builder::{
+    AstPass, DebugQuery, QueryBuilder, QueryFragment, QueryId, ValuesClause,
+};
+use crate::query_dsl::LoadQuery;
+use crate::query_dsl::methods::ExecuteDsl;
 use crate::sqlite::{Sqlite, SqliteQueryBuilder};
-use alloc::string::String;
-use alloc::string::ToString;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Display};
 
@@ -528,6 +530,12 @@ pub struct SqliteBatchInsertWrapper<V, T, QId, const STATIC_QUERY_ID: bool>(
     BatchInsert<V, T, QId, STATIC_QUERY_ID>,
 );
 
+impl<V, T, QId, const STATIC_QUERY_ID: bool> crate::query_builder::returning::InsertStmtKind
+    for SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>
+{
+    type StmtKind = crate::query_builder::returning::InsertStmtWithoutOnConflictDoUpdate;
+}
+
 impl<V, Tab, QId, const STATIC_QUERY_ID: bool> QueryFragment<Sqlite>
     for SqliteBatchInsertWrapper<Vec<ValuesClause<V, Tab>>, Tab, QId, STATIC_QUERY_ID>
 where
@@ -792,4 +800,4 @@ macro_rules! impl_contains_defaultable_value {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+crate::for_each_tuple!(tuple_impls);

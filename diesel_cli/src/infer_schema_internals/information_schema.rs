@@ -191,7 +191,7 @@ where
             let tpy = SupportedQueryRelationStructures::from_str(&tpy)
                 .expect("This should never happen.");
             let data = TableName {
-                rust_name: inference::rust_name_for_sql_name(&name),
+                rust_name: inference::rust_name_for_sql_name(&name, None),
                 sql_name: name,
                 schema: schema_name
                     .filter(|&schema| schema != default_schema)

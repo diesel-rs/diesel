@@ -42,14 +42,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -105,14 +106,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -138,14 +140,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -172,14 +174,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
  
     
@@ -227,14 +229,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -290,14 +293,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -323,14 +327,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -357,14 +361,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
  
     
@@ -412,14 +416,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -475,14 +480,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
@@ -508,14 +514,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -542,14 +548,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
  
     
@@ -587,14 +593,15 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `pets::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, ..., ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -640,14 +647,15 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `pets::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, ..., ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -673,14 +681,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -707,14 +715,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
  
     
@@ -762,14 +770,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -825,14 +834,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
@@ -858,14 +868,14 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -892,12 +902,12 @@ LL | pub struct Nullable<ST>(ST);
     | ^^^^^^^^^^^^^^^^^^^^^^^
     = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-              `&'__expr NdArray<T>` implements `AsExpression<diesel::sql_types::Array<T>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others

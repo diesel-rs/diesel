@@ -1,15 +1,6 @@
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::quote;
 
-#[cfg(not(feature = "32-column-tables"))]
-pub const MAX_TUPLE_SIZE: i32 = 16;
-#[cfg(all(not(feature = "64-column-tables"), feature = "32-column-tables"))]
-pub const MAX_TUPLE_SIZE: i32 = 32;
-#[cfg(all(not(feature = "128-column-tables"), feature = "64-column-tables"))]
-pub const MAX_TUPLE_SIZE: i32 = 64;
-#[cfg(feature = "128-column-tables")]
-pub const MAX_TUPLE_SIZE: i32 = 128;
-
 pub(crate) fn expand(input: ForEachTupleInput) -> TokenStream {
     let call_side = Span::mixed_site();
 
@@ -56,19 +47,41 @@ pub(crate) fn expand(input: ForEachTupleInput) -> TokenStream {
 
 pub struct ForEachTupleInput {
     inner: Ident,
-    max_size: i32,
+    max_size: u16,
 }
 
 impl syn::parse::Parse for ForEachTupleInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let inner = input.parse()?;
-        let max_size = if input.peek(syn::Token![,]) {
-            let _ = input.parse::<syn::Token![,]>();
-            input.parse::<syn::LitInt>()?.base10_parse()?
-        } else if input.is_empty() {
-            MAX_TUPLE_SIZE
+        input.parse::<syn::Token![,]>()?;
+        let max_size = if input.peek(syn::Ident) {
+            let macro_ident = input.parse::<syn::Ident>()?;
+            if macro_ident != "env" {
+                return Err(syn::Error::new(
+                    macro_ident.span(),
+                    "only the `env!` macro is expected here",
+                ));
+            }
+            let _bang = input.parse::<syn::Token![!]>()?;
+            let name;
+            syn::parenthesized!(name in input);
+            let s = name.parse::<syn::LitStr>()?;
+            std::env::var(s.value())
+                .map_err(|_| {
+                    syn::Error::new(
+                        s.span(),
+                        format!("Expected `{}` to be set as environment variable", s.value()),
+                    )
+                })?
+                .parse::<u16>()
+                .map_err(|_| {
+                    syn::Error::new(
+                        s.span(),
+                        format!("Expected `{}` to be a u16 integer value", s.value()),
+                    )
+                })?
         } else {
-            unreachable!("Invalid syntax")
+            input.parse::<syn::LitInt>()?.base10_parse()?
         };
         Ok(Self { inner, max_size })
     }

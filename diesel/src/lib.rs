@@ -197,6 +197,12 @@
 //!   `32-column-tables` feature. Enabling this feature will increase your compile times.
 //! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
 //!   `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+//! - `custom-count-column-tables`: This feature allows to customize the number of columns
+//!   supported by diesel by setting the `DIESEL_MAX_COLUMN_COUNT` environment variable to the desired
+//!   value. It is meant to be used if the other `*-column-tables` features do not fit your use-case.
+//!   Keep in mind that larger values increase the compile times for Diesel significantly.
+//!   For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
+//!   file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
 //!   private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
 //!   or write a custom [`Connection`] implementation. **Do not use this feature for
@@ -779,7 +785,7 @@ pub mod helper_types {
     /// [`UpdateStatement::returning`] and
     /// [`DeleteStatement::returning`](crate::query_builder::DeleteStatement::returning)
     pub type Returning<Q, S> =
-        <Q as crate::query_builder::returning_clause::ReturningClauseHelper<S>>::WithReturning;
+        <Q as crate::query_builder::returning::ReturningClauseHelper<S>>::WithReturning;
 
     #[doc(hidden)] // used for `QueryDsl::count`
     pub type Count<Q> = Select<Q, CountStar>;

@@ -127,6 +127,9 @@ macro_rules! make_proxy_mod {
             type json_extract_string = ();
             type json_group_array = ();
             type json_group_object = ();
+            type json_insert_0 = ();
+            type json_insert_1 = ();
+            type json_insert_2 = ();
             type json_object_0 = ();
             type json_object_1 = ();
             type json_object_2 = ();
@@ -152,6 +155,9 @@ macro_rules! make_proxy_mod {
             type jsonb_extract_string = ();
             type jsonb_group_array = ();
             type jsonb_group_object = ();
+            type jsonb_insert_0 = ();
+            type jsonb_insert_1 = ();
+            type jsonb_insert_2 = ();
             type jsonb_object_0 = ();
             type jsonb_object_1 = ();
             type jsonb_object_2 = ();

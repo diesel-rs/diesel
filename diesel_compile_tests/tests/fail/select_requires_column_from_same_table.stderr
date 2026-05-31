@@ -12,14 +12,15 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         id -> Integer,
     |         ^^
     = note: `posts::columns::id` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-              `posts::columns::id` implements `SelectableExpression<posts::table>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `posts::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `posts::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
+    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<posts::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `SelectDsl<posts::columns::id>`

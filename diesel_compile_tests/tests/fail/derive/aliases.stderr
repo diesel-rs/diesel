@@ -103,14 +103,15 @@ help: the trait `SelectableExpression<Alias<users2>>` is not implemented for `us
   LL |         id -> Integer,
     |         ^^
     = note: `users::columns::id` is no valid selection for `Alias<users2>`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `users::columns::id` implements `SelectableExpression<Only<users::table>>`
-              `users::columns::id` implements `SelectableExpression<Tablesample<users::table, TSM>>`
-              `users::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-              `users::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-              `users::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-              `users::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
-              `users::columns::id` implements `SelectableExpression<users::table>`
+    = help: `users::columns::id` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<users::table>>
+              SelectableExpression<Tablesample<users::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
+              SelectableExpression<users::table>
     = note: required for `SelectStatement<FromClause<Alias<users2>>>` to implement `SelectDsl<users::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `Alias<users2>` to implement `SelectDsl<users::columns::id>`
@@ -139,14 +140,15 @@ help: the trait `SelectableExpression<Alias<users2>>` is not implemented for `us
    LL |         id -> Integer,
      |         ^^
      = note: `users::columns::id` is no valid selection for `Alias<users2>`
-     = help: the following other types implement trait `SelectableExpression<QS>`:
-               `users::columns::id` implements `SelectableExpression<Only<users::table>>`
-               `users::columns::id` implements `SelectableExpression<Tablesample<users::table, TSM>>`
-               `users::columns::id` implements `SelectableExpression<SelectStatement<...>>`
-               `users::columns::id` implements `SelectableExpression<Join<Left, Right, Inner>>`
-               `users::columns::id` implements `SelectableExpression<Join<Left, Right, LeftOuter>>`
-               `users::columns::id` implements `SelectableExpression<query_source::joins::JoinOn<Join, On>>`
-               `users::columns::id` implements `SelectableExpression<users::table>`
+     = help: `users::columns::id` implements trait `SelectableExpression<QS>`:
+               SelectableExpression<Only<users::table>>
+               SelectableExpression<Tablesample<users::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
+               SelectableExpression<SelectStatement<...>>
+               SelectableExpression<Join<Left, Right, Inner>>
+               SelectableExpression<Join<Left, Right, LeftOuter>>
+               SelectableExpression<query_source::joins::JoinOn<Join, On>>
+               SelectableExpression<users::table>
      = note: required for `SelectClause<id>` to implement `SelectClauseExpression<FromClause<Alias<users2>>>`
      = note: required for `SelectStatement<FromClause<Alias<users2>>, ...>` to implement `Query`
      = note: required for `SelectStatement<FromClause<Alias<users2>>, ...>` to implement `LoadQuery<'_, _, i32>`
@@ -168,7 +170,7 @@ LL |         .inner_join(user_alias)
    |          ^^^^^^^^^^ the trait `JoinTo<pets::table>` is not implemented for `Alias<users2>`
    |
    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
-help: the following other types implement trait `JoinTo<T>`
+help: `Alias<S>` implements trait `JoinTo<T>`
   --> DIESEL/diesel/diesel/src/query_source/aliasing/joins.rs
    |
 LL | / impl<S2, S> JoinTo<Alias<S2>> for Alias<S>
@@ -177,10 +179,10 @@ LL | |     S2: AliasSource,
 LL | |     S: AliasSource + Default,
 LL | |     S::Target: JoinTo<Alias<S2>>,
 LL | |     <S::Target as JoinTo<Alias<S2>>>::OnClause: FieldAliasMapper<S>,
-   | |____________________________________________________________________^ `Alias<S>` implements `JoinTo<Alias<S2>>`
+   | |____________________________________________________________________^ `JoinTo<Alias<S2>>`
 ...
 LL |   impl<S, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Alias<S> {
-   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Alias<S>` implements `JoinTo<query_source::joins::OnClauseWrapper<Rhs, On>>`
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `JoinTo<query_source::joins::OnClauseWrapper<Rhs, On>>`
 ...
 LL | / impl<S, F, Select, D, W, O, L, Of, G>
 LL | |     JoinTo<SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>> for Alias<S>
@@ -188,7 +190,7 @@ LL | | where
 LL | |     F: QuerySource,
 LL | |     S: AliasSource + Default,
 LL | |     SelectStatement<FromClause<F>, Select, D, W, O, L, Of, G>: JoinTo<Alias<S>>,
-   | |________________________________________________________________________________^ `Alias<S>` implements `JoinTo<SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>>`
+   | |________________________________________________________________________________^ `JoinTo<SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>>`
    = note: required for `pets::table` to implement `JoinWithImplicitOnClause<Alias<users2>, Inner>`
 
    

@@ -147,4 +147,4 @@ macro_rules! on_conflict_tuples {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(on_conflict_tuples);
+crate::for_each_tuple!(on_conflict_tuples);

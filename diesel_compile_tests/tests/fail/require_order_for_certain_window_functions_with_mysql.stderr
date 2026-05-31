@@ -7,7 +7,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::rank_utils::rank, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -41,7 +41,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::dense_rank_utils::dense_rank, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -75,7 +75,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::percent_rank_utils::percent_rank, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -109,7 +109,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::cume_dist_utils::cume_dist, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -143,7 +143,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::lag_utils::lag<diesel::sql_types::Integer, columns::id>, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -177,7 +177,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::lag_with_offset_utils::lag_with_offset<diesel::sql_types::Integer, columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -211,7 +211,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::lag_with_offset_and_default_utils::lag_with_offset_and_default<diesel::sql_types::Integer, _, columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, _>, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -245,7 +245,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::lead_utils::lead<diesel::sql_types::Integer, columns::id>, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -279,7 +279,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::lead_with_offset_utils::lead_with_offset<diesel::sql_types::Integer, columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`
@@ -313,7 +313,7 @@ error[E0277]: the trait bound `OverClause<...>: WindowFunctionFragment<..., ...,
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<diesel::expression::functions::window_functions::lead_with_offset_and_default_utils::lead_with_offset_and_default<diesel::sql_types::Integer, _, columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, _>, Mysql, mysql::backend::MysqlRequiresOrderForWindowFunctions>` is not implemented for `OverClause<PartitionBy<id>>`
-     = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::WindowFunctionFragment<Fn, DB, SP>`:
+     = help: the following other types implement trait `WindowFunctionFragment<Fn, DB, SP>`:
                `OverClause<Partition, Order, Frame>` implements `WindowFunctionFragment<CountStar, DB>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<count<T, expr>, ...>`
                `OverClause<__P, __O, __F>` implements `WindowFunctionFragment<avg<ST, expr>, ...>`

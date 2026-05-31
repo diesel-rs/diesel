@@ -101,6 +101,27 @@ impl FromSql<sql_types::Citext, Pg> for String {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
+impl ToSql<crate::pg::sql_types::Bpchar, Pg> for str {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        <str as ToSql<sql_types::Text, Pg>>::to_sql(self, out)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<crate::pg::sql_types::Bpchar, Pg> for String {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        <String as ToSql<sql_types::Text, Pg>>::to_sql(self, out)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl<'a> FromSqlRef<'a, crate::pg::sql_types::Bpchar, Pg> for &'a str {
+    fn from_sql(value: &'a mut PgValue<'_>) -> deserialize::Result<Self> {
+        Ok(core::str::from_utf8(value.as_bytes())?)
+    }
+}
+
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a

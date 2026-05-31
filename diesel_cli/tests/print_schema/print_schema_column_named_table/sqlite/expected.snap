@@ -1,7 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_column_named_table"
-snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -12,5 +11,3 @@ diesel::table! {
         table_ -> Integer,
     }
 }
-
-

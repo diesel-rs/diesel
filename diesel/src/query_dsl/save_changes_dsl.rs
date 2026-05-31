@@ -40,7 +40,13 @@ impl<'b, Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnectio
 where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
     Update<Changes, Changes>: LoadQuery<'b, PgConnection, Output>,
-    <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
+    <Changes::Table as Table>::AllColumns: ValidGrouping<()>
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
+                Changes::Table,
+            >,
+        >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
@@ -60,7 +66,13 @@ where
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<SqliteConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, SqliteConnection, Output>,
-    <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
+    <Changes::Table as Table>::AllColumns: ValidGrouping<()>
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
+                Changes::Table,
+            >,
+        >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
@@ -81,7 +93,13 @@ where
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<MysqlConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
-    <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
+    <Changes::Table as Table>::AllColumns: ValidGrouping<()>
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
+                Changes::Table,
+            >,
+        >,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {

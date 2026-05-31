@@ -47,24 +47,21 @@ fn sqlite_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
         .sqlite_type
         .as_ref()
         .map(|sqlite_type| Ident::new(&sqlite_type.name.value(), Span::mixed_site()))
-        .and_then(|ty| {
-            if cfg!(not(feature = "sqlite")) {
-                return None;
-            }
-
+        .map(|ty| {
             let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
-            Some(quote! {
-                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                    for diesel::sqlite::Sqlite
-                #where_clause
-                {
-                    fn metadata(_: &mut ()) -> diesel::sqlite::SqliteType {
-                        diesel::sqlite::SqliteType::#ty
-                    }
-                }
-            })
+            quote! {
+                diesel::internal::derives::sql_type::expand_sqlite! {
+                    impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                        for diesel::sqlite::Sqlite
+                        #where_clause
+                    {
+                        fn metadata(_: &mut ()) -> diesel::sqlite::SqliteType {
+                            diesel::sqlite::SqliteType::#ty
+                        }
+                    }}
+            }
         })
 }
 
@@ -73,63 +70,59 @@ fn mysql_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
         .mysql_type
         .as_ref()
         .map(|mysql_type| Ident::new(&mysql_type.name.value(), Span::mixed_site()))
-        .and_then(|ty| {
-            if cfg!(not(feature = "mysql")) {
-                return None;
-            }
-
+        .map(|ty| {
             let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
-            Some(quote! {
-                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                    for diesel::mysql::Mysql
-                #where_clause
-                {
-                    fn metadata(_: &mut ()) -> diesel::mysql::MysqlType {
-                        diesel::mysql::MysqlType::#ty
+            quote! {
+                diesel::internal::derives::sql_type::expand_mysql! {
+                    impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                        for diesel::mysql::Mysql
+                        #where_clause
+                    {
+                        fn metadata(_: &mut ()) -> diesel::mysql::MysqlType {
+                            diesel::mysql::MysqlType::#ty
+                        }
                     }
                 }
-            })
+            }
         })
 }
 
 fn pg_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
-    model.postgres_type.as_ref().and_then(|ty| {
-        if cfg!(not(feature = "postgres")) {
-            return None;
-        }
-
+    model.postgres_type.as_ref().map(|ty| {
         let struct_name = &item.ident;
         let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
         let metadata_fn = match ty {
             PostgresType::Fixed(oid, array_oid) => quote!(
-                fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
-                    PgTypeMetadata::new(#oid, #array_oid)
+                fn metadata(_: &mut Self::MetadataLookup) -> diesel::pg::PgTypeMetadata {
+                    diesel::pg::PgTypeMetadata::new(#oid, #array_oid)
                 }
             ),
             PostgresType::Lookup(type_name, Some(type_schema)) => quote!(
-                fn metadata(lookup: &mut Self::MetadataLookup) -> PgTypeMetadata {
+                fn metadata(lookup: &mut Self::MetadataLookup) -> diesel::pg::PgTypeMetadata {
+                    use diesel::pg::PgMetadataLookup;
                     lookup.lookup_type(#type_name, Some(#type_schema))
                 }
             ),
             PostgresType::Lookup(type_name, None) => quote!(
-                fn metadata(lookup: &mut Self::MetadataLookup) -> PgTypeMetadata {
+                fn metadata(lookup: &mut Self::MetadataLookup) -> diesel::pg::PgTypeMetadata {
+                    use diesel::pg::PgMetadataLookup;
                     lookup.lookup_type(#type_name, None)
                 }
             ),
         };
 
-        Some(quote! {
-            use diesel::pg::{PgMetadataLookup, PgTypeMetadata};
-
-            impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                for diesel::pg::Pg
-            #where_clause
-            {
-                #metadata_fn
+        quote! {
+            diesel::internal::derives::sql_type::expand_pg! {
+                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                    for diesel::pg::Pg
+                    #where_clause
+                {
+                    #metadata_fn
+                }
             }
-        })
+        }
     })
 }

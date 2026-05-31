@@ -18,7 +18,7 @@ struct Type2;
 struct Type3;
 
 #[derive(SqlType)]
-//~^ ERROR: no variant or associated item named `foo` found for enum `MysqlType` in the current scope
+//~^ ERROR: no variant, associated function, or constant named `foo` found for enum `MysqlType` in the current scope
 #[mysql_type = "foo"]
 struct Type4;
 
