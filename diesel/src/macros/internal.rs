@@ -34,3 +34,80 @@ macro_rules! impl_selectable_expression {
         }
     };
 }
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "custom-count-column-tables")]
+macro_rules! for_each_tuple {
+    ($callback:ident) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, env!("DIESEL_MAX_COLUMN_COUNT"));
+    };
+    ($callback:ident, $size: expr) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, $size);
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(all(
+    not(feature = "custom-count-column-tables"),
+    feature = "128-column-tables"
+))]
+macro_rules! for_each_tuple {
+    ($callback:ident) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, 128);
+    };
+    ($callback:ident, $size: expr) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, $size);
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(all(
+    not(feature = "custom-count-column-tables"),
+    not(feature = "128-column-tables"),
+    feature = "64-column-tables"
+))]
+macro_rules! for_each_tuple {
+    ($callback:ident) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, 64);
+    };
+    ($callback:ident, $size: expr) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, $size);
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(all(
+    not(feature = "custom-count-column-tables"),
+    not(feature = "128-column-tables"),
+    not(feature = "64-column-tables"),
+    feature = "32-column-tables"
+))]
+macro_rules! for_each_tuple {
+    ($callback:ident) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, 32);
+    };
+    ($callback:ident, $size: expr) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, $size);
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(all(
+    not(feature = "custom-count-column-tables"),
+    not(feature = "128-column-tables"),
+    not(feature = "64-column-tables"),
+    not(feature = "32-column-tables")
+))]
+macro_rules! for_each_tuple {
+    ($callback:ident) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, 16);
+    };
+    ($callback:ident, $size: expr) => {
+        diesel_derives::__diesel_for_each_tuple!($callback, $size);
+    };
+}

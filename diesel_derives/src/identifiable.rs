@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
 use syn::DeriveInput;
 use syn::Result;
+use syn::parse_quote;
 
 use crate::attrs::AttributeSpanWrapper;
 use crate::field::Field;

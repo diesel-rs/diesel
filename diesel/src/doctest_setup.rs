@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use diesel::sql_types::*;
 use dotenvy::dotenv;
 
 cfg_if::cfg_if! {
@@ -314,7 +315,8 @@ mod schema {
         }
     }
 
-    #[cfg(not(feature = "sqlite"))]
+    #[allow(unexpected_cfgs)]
+    #[cfg(not(any(feature = "__sqlite-shared", feature = "sqlite")))]
     table! {
         brands {
             id -> Integer,

@@ -44,13 +44,13 @@ mod impl_deprecated {
     use crate::deprecated::utils::parse_eq_and_lit_str;
     use crate::parsers::{MysqlType, PostgresType, SqliteType};
     use crate::util::{
-        COLUMN_NAME_NOTE, MYSQL_TYPE_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE, TABLE_NAME_NOTE,
+        COLUMN_NAME_NOTE, MYSQL_TYPE_NOTE, SQL_TYPE_NOTE, SQLITE_TYPE_NOTE, TABLE_NAME_NOTE,
     };
     use proc_macro2::Span;
     use syn::Ident;
 
     macro_rules! warn {
-        ($ident: expr, $help: expr) => {
+        ($ident: expr_2021, $help: expr_2021) => {
             warn(
                 $ident.span(),
                 &format!("#[{}] attribute form is deprecated", $ident),
@@ -167,10 +167,10 @@ mod impl_deprecated {
                             array_oid.base10_parse::<u32>()?
                         ),
                         PostgresType::Lookup(name, Some(schema)) => format!(
-                        "use `#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]` instead",
-                        name.value(),
-                        schema.value()
-                    ),
+                            "use `#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]` instead",
+                            name.value(),
+                            schema.value()
+                        ),
                         PostgresType::Lookup(name, None) => format!(
                             "use `#[diesel(postgres_type(name = \"{}\"))]` instead",
                             name.value(),

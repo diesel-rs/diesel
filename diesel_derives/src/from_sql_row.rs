@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
 use syn::DeriveInput;
 use syn::Result;
+use syn::parse_quote;
 
 use crate::model::Model;
 use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};

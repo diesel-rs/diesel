@@ -13,8 +13,12 @@ LL | #[declare_sql_function]
              &'__expr MigrationVersion<'a>
              &'__expr std::string::String
              &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
              MigrationVersion<'a>
-             std::string::String
+           and N others
 
       = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 

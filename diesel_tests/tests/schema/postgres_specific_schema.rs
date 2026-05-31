@@ -11,6 +11,7 @@ pub struct Post {
     pub title: String,
     pub body: Option<String>,
     pub tags: Vec<String>,
+    pub nullable_tags: Option<Vec<String>>,
 }
 
 impl Post {
@@ -21,6 +22,7 @@ impl Post {
             title: title.to_string(),
             body: body.map(|s| s.to_string()),
             tags: Vec::new(),
+            nullable_tags: None,
         }
     }
 }

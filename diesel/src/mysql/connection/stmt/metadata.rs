@@ -1,7 +1,7 @@
 #![allow(unsafe_code)] // module uses ffi
-use std::ffi::CStr;
-use std::ptr::NonNull;
-use std::slice;
+use core::ffi::CStr;
+use core::ptr::NonNull;
+use core::slice;
 
 use super::ffi;
 use crate::mysql::connection::bind::Flags;
@@ -37,7 +37,7 @@ impl Drop for StatementMetadata {
 #[repr(transparent)]
 pub(in crate::mysql::connection) struct MysqlFieldMetadata<'a>(
     ffi::MYSQL_FIELD,
-    std::marker::PhantomData<&'a ()>,
+    core::marker::PhantomData<&'a ()>,
 );
 
 impl MysqlFieldMetadata<'_> {

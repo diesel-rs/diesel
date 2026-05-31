@@ -1,4 +1,4 @@
-use crate::expression::{is_aggregate, MixedAggregates, ValidGrouping};
+use crate::expression::{MixedAggregates, ValidGrouping, is_aggregate};
 
 // Note that these docs are similar to but slightly different than the stable
 // docs below. Make sure if you change these that you also change the docs

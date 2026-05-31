@@ -1,10 +1,10 @@
+use crate::Connection;
 use crate::model::endpoint_type::Endpoint;
 use crate::model::service::{CreateService, Service, UpdateService};
 use crate::schema::smdb::service::dsl::*;
-use crate::Connection;
 use diesel::{
-    insert_into, ExpressionMethods, OptionalExtension, QueryDsl, QueryResult, RunQueryDsl,
-    SelectableHelper,
+    ExpressionMethods, OptionalExtension, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper,
+    insert_into,
 };
 
 impl Service {

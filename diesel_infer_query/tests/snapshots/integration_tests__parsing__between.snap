@@ -1,0 +1,81 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT 1 BETWEEN 0 AND 10, 1 BETWEEN NULL AND 25, 1 NOT BETWEEN 0 AND 10, 1 NOT BETWEEN NULL AND 25"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Between {
+                left: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                negated: false,
+                low: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                high: Literal {
+                    value: None,
+                    is_null: false,
+                },
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Between {
+                left: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                negated: false,
+                low: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                high: Literal {
+                    value: None,
+                    is_null: false,
+                },
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Between {
+                left: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                negated: true,
+                low: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                high: Literal {
+                    value: None,
+                    is_null: false,
+                },
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Between {
+                left: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                negated: true,
+                low: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                high: Literal {
+                    value: None,
+                    is_null: false,
+                },
+            },
+        },
+    ],
+}

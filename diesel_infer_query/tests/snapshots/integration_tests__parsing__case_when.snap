@@ -1,0 +1,135 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT CASE WHEN 1 = 1 THEN 1 WHEN NULL THEN 1 ELSE 1 END,\n              CASE WHEN 1 = 1 THEN 1 WHEN NULL THEN 1 ELSE NULL END,\n              CASE WHEN 1 = 1 THEN NULL WHEN NULL THEN 1 ELSE 1 END"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Case {
+                operand: None,
+                conditions: [
+                    CaseCondition {
+                        condition: BinaryOp {
+                            left: Literal {
+                                value: None,
+                                is_null: false,
+                            },
+                            right: Literal {
+                                value: None,
+                                is_null: false,
+                            },
+                            op: "=",
+                            statically_not_null: false,
+                        },
+                        result: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                    },
+                    CaseCondition {
+                        condition: Literal {
+                            value: None,
+                            is_null: true,
+                        },
+                        result: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                    },
+                ],
+                else_clause: Some(
+                    Literal {
+                        value: None,
+                        is_null: false,
+                    },
+                ),
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Case {
+                operand: None,
+                conditions: [
+                    CaseCondition {
+                        condition: BinaryOp {
+                            left: Literal {
+                                value: None,
+                                is_null: false,
+                            },
+                            right: Literal {
+                                value: None,
+                                is_null: false,
+                            },
+                            op: "=",
+                            statically_not_null: false,
+                        },
+                        result: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                    },
+                    CaseCondition {
+                        condition: Literal {
+                            value: None,
+                            is_null: true,
+                        },
+                        result: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                    },
+                ],
+                else_clause: Some(
+                    Literal {
+                        value: None,
+                        is_null: true,
+                    },
+                ),
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Case {
+                operand: None,
+                conditions: [
+                    CaseCondition {
+                        condition: BinaryOp {
+                            left: Literal {
+                                value: None,
+                                is_null: false,
+                            },
+                            right: Literal {
+                                value: None,
+                                is_null: false,
+                            },
+                            op: "=",
+                            statically_not_null: false,
+                        },
+                        result: Literal {
+                            value: None,
+                            is_null: true,
+                        },
+                    },
+                    CaseCondition {
+                        condition: Literal {
+                            value: None,
+                            is_null: true,
+                        },
+                        result: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                    },
+                ],
+                else_clause: Some(
+                    Literal {
+                        value: None,
+                        is_null: false,
+                    },
+                ),
+            },
+        },
+    ],
+}

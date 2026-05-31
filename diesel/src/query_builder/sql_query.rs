@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use super::Query;
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::connection::Connection;
@@ -8,6 +6,11 @@ use crate::query_dsl::RunQueryDsl;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, Untyped};
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -333,7 +336,7 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
         BoxedSqlQuery {
             query,
             sql: "".to_string(),
-            binds: vec![],
+            binds: alloc::vec![],
         }
     }
 

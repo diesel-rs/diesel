@@ -1,14 +1,14 @@
 use proc_macro2::Span;
 use std::slice::from_ref;
+use syn::Result;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::Result;
 use syn::{
     Data, DataStruct, DeriveInput, Field as SynField, Fields, FieldsNamed, FieldsUnnamed, Ident,
     LitBool, Path, Type,
 };
 
-use crate::attrs::{parse_attributes, StructAttr};
+use crate::attrs::{StructAttr, parse_attributes};
 use crate::field::Field;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::camel_to_snake;

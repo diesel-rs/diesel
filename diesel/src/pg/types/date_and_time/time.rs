@@ -4,8 +4,8 @@
 extern crate time;
 
 use self::time::{
-    macros::{date, datetime},
     Date as NaiveDate, Duration, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+    macros::{date, datetime},
 };
 
 use super::{PgDate, PgTime, PgTimestamp};
@@ -151,8 +151,8 @@ mod tests {
     use crate::test_helpers::connection;
 
     use time::{
-        macros::{date, datetime},
         Date as NaiveDate, Duration, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime,
+        macros::{date, datetime},
     };
 
     fn naive_now() -> PrimitiveDateTime {

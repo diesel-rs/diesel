@@ -18,6 +18,7 @@ mod dsl_impls;
 )]
 pub(crate) use self::boxed::BoxedSelectStatement;
 
+use super::NoFromClause;
 use super::distinct_clause::NoDistinctClause;
 use super::from_clause::AsQuerySource;
 use super::from_clause::FromClause;
@@ -28,9 +29,8 @@ use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::*;
-use super::NoFromClause;
 use super::{AstPass, Query, QueryFragment};
-use crate::backend::{sql_dialect, Backend};
+use crate::backend::{Backend, sql_dialect};
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::having_clause::NoHavingClause;

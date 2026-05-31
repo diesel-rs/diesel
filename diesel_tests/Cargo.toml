@@ -5,13 +5,13 @@ authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 autotests = false
 autobenches = false
-edition = "2021"
+edition.workspace = true
 publish = false
 
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated", "std"] }
 diesel_migrations = { path = "../diesel_migrations" }
 dotenvy = "0.15"
 quickcheck = "1.0.3"
@@ -30,16 +30,15 @@ diesel_test_helper = { path = "../diesel_test_helper" }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
 # Something is dependent on it, so we use feature to override it.
+getrandom = { version = "0.4", features = ["wasm_js"] }
 getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
-getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
-getrandom_04 = { version = "0.4", features = ["wasm_js"], package = "getrandom" }
 wasm-bindgen-test = "0.3.49"
 sqlite-wasm-rs = "0.5.1"
 
 [features]
 default = []
 unstable = ["diesel/unstable"]
-postgres = ["diesel/postgres"]
+postgres = ["diesel/postgres", "diesel/network-address", "diesel/ipnet-address"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
 returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
@@ -48,4 +47,3 @@ returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
-

@@ -29,12 +29,12 @@ LL |         .having(users::id.gt(1))
    = help: the following other types implement trait `Expression`:
              &T
              AliasedField<S, C>
+             Arc<T>
              Box<T>
              CaseWhen<..., ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
-             SqlLiteral<ST, T>
-             UncheckedBind<Query, Value>
+             Collate<T, C>
            and N others
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), ..., _>` to implement `HavingDsl<_>`
 
