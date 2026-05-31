@@ -2347,3 +2347,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6
 [2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7
 [2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8
+[2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9
