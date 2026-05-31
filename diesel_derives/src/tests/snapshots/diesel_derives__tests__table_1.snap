@@ -6,6 +6,12 @@ info:
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
+    const _: () = {
+        assert!(
+            2u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`users` contains 2 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+        );
+    };
     use ::diesel;
     pub use self::columns::*;
     use diesel::sql_types::*;
@@ -395,6 +401,12 @@ pub mod users {
             (__diesel_internal_rhs, __diesel_internal_on_clause)
         }
     }
+
+
+
+
+
+
     #[doc = concat!("Contains all of the columns of this ", "table")]
     pub mod columns {
         use ::diesel;
@@ -682,6 +694,10 @@ pub mod users {
                 )
             }
         }
+
+
+
+
         impl diesel::query_source::Column for id {
             type Table = super::table;
             const NAME: &'static str = "id";
@@ -855,6 +871,10 @@ pub mod users {
                 self.eq(__diesel_internal_rhs)
             }
         }
+
+
+
+
         impl diesel::query_source::Column for name {
             type Table = super::table;
             const NAME: &'static str = "name";

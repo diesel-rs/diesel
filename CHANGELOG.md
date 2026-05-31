@@ -22,11 +22,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for casting to `REAL` in SQLite.
 * Added `ToSql`, `FromSql`, `Queryable`, and `AsExpression` impls for `Rc<T>`, `Arc<T>`, and `Box<T>` (including `Rc/Arc<dyn BoxableExpression>` for cloneable dynamic query fragments and the `<str>` / `<[u8]>` unsized variants).
 * Added `diesel::pg::returning::old` to refer to a column's pre-update value using the `RETURNING old.col` syntax in a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE` statement (requires PostgreSQL >=18).
+* Added a `custom-count-column-tables` feature that allows you to configure the maximal number of supported columns per table via the `DIESEL_MAX_COLUMN_COUNT` environment variable
 
 ### Fixed
 
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
+* `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
 
 ### Changed
 

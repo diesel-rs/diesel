@@ -81,4 +81,74 @@ pub mod multiconnection {
     #[doc(hidden)]
     #[cfg(feature = "numeric")]
     pub use bigdecimal;
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(feature = "r2d2")]
+    macro_rules! expand_r2d2 {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(feature = "r2d2"))]
+    macro_rules! expand_r2d2 {
+        ($($tt:tt)*) => {};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(feature = "numeric")]
+    macro_rules! expand_numeric {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(feature = "numeric"))]
+    macro_rules! expand_numeric {
+        ($($tt:tt)*) => {};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(feature = "chrono")]
+    macro_rules! expand_chrono {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(feature = "chrono"))]
+    macro_rules! expand_chrono {
+        ($($tt:tt)*) => {};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(feature = "time")]
+    macro_rules! expand_time {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(feature = "time"))]
+    macro_rules! expand_time {
+        ($($tt:tt)*) => {};
+    }
+
+    pub use {expand_chrono, expand_numeric, expand_r2d2, expand_time};
+}
+
+#[doc(hidden)]
+pub mod sql_type {
+    #[doc(hidden)]
+    pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+}
+
+#[doc(hidden)]
+pub mod has_query {
+    #[doc(hidden)]
+    pub use crate::{expand_mysql, expand_pg, expand_sqlite};
 }

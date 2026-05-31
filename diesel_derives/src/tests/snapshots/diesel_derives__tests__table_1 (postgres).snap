@@ -6,6 +6,12 @@ info:
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
+    const _: () = {
+        assert!(
+            2u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`users` contains 2 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+        );
+    };
     use ::diesel;
     pub use self::columns::*;
     use diesel::sql_types::*;

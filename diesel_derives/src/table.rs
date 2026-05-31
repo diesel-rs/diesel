@@ -25,41 +25,7 @@ pub fn query_source_macro(
 ) -> proc_macro2::TokenStream {
     // include the input in the error output so that rust-analyzer is happy
     match syn::parse2::<TableDecl>(tokenstream2.clone()) {
-        Ok(input) => {
-            if input.view.column_defs.len() > super::diesel_for_each_tuple::MAX_TUPLE_SIZE as usize
-            {
-                let kind = kind.macro_name();
-                let txt = if input.view.column_defs.len() > 128 {
-                    format!(
-                        "you reached the end. \nhelp: diesel does not support {kind}s with \
-                     more than 128 columns.\nhelp: consider using less columns."
-                    )
-                } else if input.view.column_defs.len() > 64 {
-                    format!(
-                        "{kind} contains more than 64 columns. \n consider enabling the \
-                     `128-column-tables` feature to enable diesels support for \
-                     tables with more than 64 columns."
-                    )
-                } else if input.view.column_defs.len() > 32 {
-                    format!(
-                        "{kind} contains more than 32 columns. \nhelp: consider enabling the \
-                     `64-column-tables` feature to enable diesels support for \
-                     tables with more than 32 columns."
-                    )
-                } else {
-                    format!(
-                        "{kind} contains more than 16 columns. \nhelp: consider enabling the \
-                     `32-column-tables` feature to enable diesels support for \
-                     tables with more than 16 columns."
-                    )
-                };
-                quote::quote! {
-                    compile_error!(#txt);
-                }
-            } else {
-                expand(input, kind)
-            }
-        }
+        Ok(input) => expand(input, kind),
         Err(_) => {
             let kind = kind.macro_name();
             quote::quote! {
@@ -75,7 +41,12 @@ pub fn query_source_macro(
 
 fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
     let kind_name = kind.macro_name();
-
+    let column_count = input.view.column_defs.len() as u16;
+    let too_many_columns_error_message = format!(
+        "`{}` contains {column_count} columns, which is more than the supported maximum number of columns\n\
+        Try enabling a crate level feature to support more columns",
+        input.view.table_name
+    );
     let meta = &input.view.meta;
     let table_name = &input.view.table_name;
     let imports = if input.view.use_statements.is_empty() {
@@ -291,63 +262,68 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         },
     };
 
-    let backend_specific_table_impls = if cfg!(feature = "postgres")
-        && matches!(kind, QuerySourceMacroKind::Table)
-    {
+    let backend_specific_table_impls = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
-            impl<S> diesel::JoinTo<diesel::query_builder::Only<S>> for table
-            where
-                diesel::query_builder::Only<S>: diesel::JoinTo<table>,
-            {
-                type FromClause = diesel::query_builder::Only<S>;
-                type OnClause = <diesel::query_builder::Only<S> as diesel::JoinTo<table>>::OnClause;
+            diesel::internal::table_macro::expand_pg! {
+                impl<S> diesel::JoinTo<diesel::query_builder::Only<S>> for table
+                where
+                    diesel::query_builder::Only<S>: diesel::JoinTo<table>,
+                {
+                    type FromClause = diesel::query_builder::Only<S>;
+                    type OnClause = <diesel::query_builder::Only<S> as diesel::JoinTo<table>>::OnClause;
 
-                fn join_target(__diesel_internal_rhs: diesel::query_builder::Only<S>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Only::<S>::join_target(table);
-                    (__diesel_internal_rhs, __diesel_internal_on_clause)
+                    fn join_target(__diesel_internal_rhs: diesel::query_builder::Only<S>) -> (Self::FromClause, Self::OnClause) {
+                        let (_, __diesel_internal_on_clause) = diesel::query_builder::Only::<S>::join_target(table);
+                        (__diesel_internal_rhs, __diesel_internal_on_clause)
+                    }
                 }
             }
-
-            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<table>>
-                for table
-            {
-                type Count = diesel::query_source::Once;
-            }
-
-            impl diesel::query_source::AppearsInFromClause<table>
-                for diesel::query_builder::Only<table>
-            {
-                type Count = diesel::query_source::Once;
-            }
-
-            impl<S, TSM> diesel::JoinTo<diesel::query_builder::Tablesample<S, TSM>> for table
-            where
-                diesel::query_builder::Tablesample<S, TSM>: diesel::JoinTo<table>,
-                TSM: diesel::internal::table_macro::TablesampleMethod
-            {
-                type FromClause = diesel::query_builder::Tablesample<S, TSM>;
-                type OnClause = <diesel::query_builder::Tablesample<S, TSM> as diesel::JoinTo<table>>::OnClause;
-
-                fn join_target(__diesel_internal_rhs: diesel::query_builder::Tablesample<S, TSM>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<S, TSM>::join_target(table);
-                    (__diesel_internal_rhs, __diesel_internal_on_clause)
+            diesel::internal::table_macro::expand_pg! {
+                impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<table>>
+                    for table
+                {
+                    type Count = diesel::query_source::Once;
                 }
             }
-
-            impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table, TSM>>
-                for table
-                    where
-                TSM: diesel::internal::table_macro::TablesampleMethod
-            {
-                type Count = diesel::query_source::Once;
+            diesel::internal::table_macro::expand_pg! {
+                impl diesel::query_source::AppearsInFromClause<table>
+                    for diesel::query_builder::Only<table>
+                {
+                    type Count = diesel::query_source::Once;
+                }
             }
+            diesel::internal::table_macro::expand_pg! {
+                impl<S, TSM> diesel::JoinTo<diesel::query_builder::Tablesample<S, TSM>> for table
+                where
+                    diesel::query_builder::Tablesample<S, TSM>: diesel::JoinTo<table>,
+                    TSM: diesel::internal::table_macro::TablesampleMethod
+                {
+                    type FromClause = diesel::query_builder::Tablesample<S, TSM>;
+                    type OnClause = <diesel::query_builder::Tablesample<S, TSM> as diesel::JoinTo<table>>::OnClause;
 
-            impl<TSM> diesel::query_source::AppearsInFromClause<table>
-                for diesel::query_builder::Tablesample<table, TSM>
-                    where
-                TSM: diesel::internal::table_macro::TablesampleMethod
-            {
-                type Count = diesel::query_source::Once;
+                    fn join_target(__diesel_internal_rhs: diesel::query_builder::Tablesample<S, TSM>) -> (Self::FromClause, Self::OnClause) {
+                        let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<S, TSM>::join_target(table);
+                        (__diesel_internal_rhs, __diesel_internal_on_clause)
+                    }
+                }
+            }
+            diesel::internal::table_macro::expand_pg! {
+                impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table, TSM>>
+                    for table
+                where
+                    TSM: diesel::internal::table_macro::TablesampleMethod
+                {
+                    type Count = diesel::query_source::Once;
+                }
+            }
+            diesel::internal::table_macro::expand_pg! {
+                impl<TSM> diesel::query_source::AppearsInFromClause<table>
+                    for diesel::query_builder::Tablesample<table, TSM>
+                where
+                    TSM: diesel::internal::table_macro::TablesampleMethod
+                {
+                    type Count = diesel::query_source::Once;
+                }
             }
         })
     } else {
@@ -360,6 +336,13 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         #(#meta)*
         #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
         pub mod #table_name {
+            const _: () = {
+                assert!(
+                    #column_count <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+                    #too_many_columns_error_message
+                );
+            };
+
             use ::diesel;
             pub use self::columns::*;
             #(#imports)*
@@ -786,26 +769,31 @@ fn expand_column_def(
     let sql_name = &column_def.sql_name;
     let sql_type = &column_def.tpe;
 
-    let backend_specific_column_impl = if cfg!(feature = "postgres")
-        && matches!(kind, QuerySourceMacroKind::Table)
-    {
+    let backend_specific_column_impl = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
-            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<super::table>>
-                for #column_name
-            {
-                type Count = diesel::query_source::Once;
+            diesel::internal::table_macro::expand_pg! {
+                impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<super::table>>
+                    for #column_name
+                {
+                    type Count = diesel::query_source::Once;
+                }
             }
-            impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>> for #column_name {}
-
-            impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table, TSM>>
-                for #column_name
-                    where
-                TSM: diesel::internal::table_macro::TablesampleMethod
-            {
-                type Count = diesel::query_source::Once;
+            diesel::internal::table_macro::expand_pg! {
+                impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>> for #column_name {}
             }
-            impl<TSM> diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table, TSM>>
-                for #column_name where TSM: diesel::internal::table_macro::TablesampleMethod {}
+            diesel::internal::table_macro::expand_pg! {
+                impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table, TSM>>
+                    for #column_name
+                where
+                    TSM: diesel::internal::table_macro::TablesampleMethod
+                {
+                    type Count = diesel::query_source::Once;
+                }
+            }
+            diesel::internal::table_macro::expand_pg! {
+                impl<TSM> diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table, TSM>>
+                    for #column_name where TSM: diesel::internal::table_macro::TablesampleMethod {}
+            }
         })
     } else {
         None

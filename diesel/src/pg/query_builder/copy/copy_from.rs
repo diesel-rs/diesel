@@ -184,9 +184,9 @@ impl PgMetadataLookup for Dummy {
 
 trait CopyFromInsertableHelper {
     type Target: CopyTarget;
-    const COLUMN_COUNT: i16;
+    const COLUMN_COUNT: u16;
 
-    fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull>;
+    fn write_to_buffer(&self, idx: u16, out: &mut Vec<u8>) -> QueryResult<IsNull>;
 }
 
 macro_rules! impl_copy_from_insertable_helper_for_values_clause {
@@ -207,12 +207,9 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
             {
                 type Target = ($($ST,)*);
 
-                // statically known to always fit
-                // as we don't support more than 128 columns
-                #[allow(clippy::cast_possible_truncation)]
-                const COLUMN_COUNT: i16 = $Tuple as i16;
+                const COLUMN_COUNT: u16 = $Tuple;
 
-                fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
+                fn write_to_buffer(&self, idx: u16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
                     use crate::query_builder::ByteWrapper;
                     use crate::serialize::Output;
 
@@ -244,10 +241,9 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
 
                 // statically known to always fit
                 // as we don't support more than 128 columns
-                #[allow(clippy::cast_possible_truncation)]
-                const COLUMN_COUNT: i16 = $Tuple as i16;
+                const COLUMN_COUNT: u16 = $Tuple;
 
-                fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
+                fn write_to_buffer(&self, idx: u16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
                     use crate::query_builder::ByteWrapper;
                     use crate::serialize::Output;
 
@@ -269,7 +265,7 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(impl_copy_from_insertable_helper_for_values_clause);
+crate::for_each_tuple!(impl_copy_from_insertable_helper_for_values_clause);
 
 #[derive(Debug)]
 pub struct InsertableWrapper<I>(Option<I>);
@@ -308,7 +304,7 @@ where
         for i in values.values {
             // column count
             buffer
-                .write_i16::<NetworkEndian>(V::COLUMN_COUNT)
+                .write_u16::<NetworkEndian>(V::COLUMN_COUNT)
                 .map_err(io_result_mapper)?;
             for idx in 0..V::COLUMN_COUNT {
                 // first write the null indicator as dummy value

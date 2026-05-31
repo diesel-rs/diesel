@@ -508,7 +508,7 @@ macro_rules! has_table_tuples {
     };
 }
 
-diesel_derives::__diesel_for_each_tuple!(has_table_tuples);
+crate::for_each_tuple!(has_table_tuples);
 
 /// This trait indicates that a struct represents a single row in a database table.
 ///
