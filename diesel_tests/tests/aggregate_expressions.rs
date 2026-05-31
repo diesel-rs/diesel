@@ -356,3 +356,17 @@ fn then_order_by_aggregate() {
         .unwrap();
     assert_eq!(res, Some(2));
 }
+
+#[diesel_test_helper::test]
+fn order_group_by_then_order_by() {
+    let mut conn = connection_with_sean_and_tess_in_users_table();
+
+    let res = users::table
+        .order_by(users::name)
+        .group_by(users::name)
+        .then_order_by(dsl::max(users::id))
+        .select(dsl::max(users::id))
+        .get_result::<Option<i32>>(&mut conn)
+        .unwrap();
+    assert_eq!(res, Some(1));
+}

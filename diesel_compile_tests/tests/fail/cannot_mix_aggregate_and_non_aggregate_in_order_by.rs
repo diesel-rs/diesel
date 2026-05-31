@@ -32,6 +32,8 @@ fn main() {
     use self::users::dsl::*;
     use diesel::dsl::max;
 
+    let conn = &mut SqliteConnection::establish("…").unwrap();
+
     // -------------------------------------------------------------------------
     // Without GROUP BY — mixing aggregate and non-aggregate is always invalid
     // -------------------------------------------------------------------------
@@ -45,10 +47,7 @@ fn main() {
     //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
 
     // aggregate SELECT + aggregate ORDER BY + non-aggregate then_order_by
-    let _ = users
-        .select(max(id))
-        .order_by(max(id))
-        .then_order_by(name);
+    let _ = users.select(max(id)).order_by(max(id)).then_order_by(name);
     //~^ ERROR: mixing aggregate and not aggregate expressions is not allowed in SQL
 
     // non-aggregate ORDER BY first, then aggregate SELECT (issue #3815)
@@ -87,10 +86,7 @@ fn main() {
     // non-grouped column in order_by, select called first
     // When select is first, S::Selection satisfies ValidGrouping, so the error
     // narrows to the specific column's IsContainedInGroupBy constraint
-    let _ = users
-        .group_by(name)
-        .select((name, max(id)))
-        .order_by(id);
+    let _ = users.group_by(name).select((name, max(id))).order_by(id);
     //~^ ERROR: IsContainedInGroupBy
 
     // valid order_by (aggregate), then non-grouped column in then_order_by; select first
@@ -139,4 +135,20 @@ fn main() {
         .order_by(parent::id)
         .then_order_by(child::value);
     //~^ ERROR: IsContainedInGroupBy
+
+    // also check existing order clause
+    let _ = parent::table
+        .left_join(child::table)
+        .order_by(child::value)
+        .group_by(parent::id)
+        .get_result(conn);
+    //~^ ERROR: the trait bound `SkipSelectableExpressionBoundCheckWrapper<...>: ValidGrouping<...>` is not satisfied
+
+    // also check existing order clause
+    let _ = parent::table
+        .left_join(child::table)
+        .order_by(child::value)
+        .group_by(parent::id)
+        .then_order_by(parent::id);
+    //~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: ThenOrderDsl<_>` is not satisfied
 }

@@ -378,7 +378,7 @@ where
     }
 }
 
-// With GROUP BY: only validate that the new ORDER BY term is valid for the group.
+// With GROUP BY: Validate the whole order expression against the given group by expression
 impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> ThenOrderDsl<Expr>
     for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, GroupByClause<GB>, H, LC>
 where
@@ -387,7 +387,7 @@ where
     Self: SelectQuery<SqlType = ST>,
     SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, GroupByClause<GB>, H, LC>:
         SelectQuery<SqlType = ST>,
-    Expr: ValidGrouping<GB>,
+    (O, Expr): ValidGrouping<GB>,
 {
     type Output = SelectStatement<
         FromClause<F>,
