@@ -1,0 +1,12 @@
+[package]
+name = "all_about_updates_sqlite"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+chrono = "0.4.26"
+diesel = { version = "2.1.0", path = "../../../diesel", features = ["sqlite", "chrono"] }
+
+[lib]
+doc = false
