@@ -772,12 +772,9 @@ impl SqliteConnection {
         f(self.raw_connection.internal_connection.as_ptr())
     }
 
-    /// Runs `f` with a borrowed `SqliteConnection` wrapping `db`, without taking
-    /// ownership of the handle.
-    ///
-    /// This gives SQLite callbacks (such as auto-extensions) the full
-    /// connection API. On return, any statements prepared during `f` are
-    /// finalized, but `db` itself is left open, since it is owned by SQLite.
+    /// Runs `f` with a borrowed `SqliteConnection` wrapping `db`, giving SQLite
+    /// callbacks the full connection API. Statements prepared during `f` are
+    /// finalized on return, but `db` is left open, since SQLite owns it.
     ///
     /// # Safety
     ///
@@ -788,28 +785,49 @@ impl SqliteConnection {
         db: core::ptr::NonNull<ffi::sqlite3>,
         f: impl FnOnce(&mut SqliteConnection) -> R,
     ) -> R {
-        let mut conn = core::mem::ManuallyDrop::new(SqliteConnection {
+        // Tears the borrowed connection down on every exit path, including a
+        // panic unwinding out of `f`.
+        struct Borrowed(core::mem::ManuallyDrop<SqliteConnection>);
+
+        impl Drop for Borrowed {
+            fn drop(&mut self) {
+                // SAFETY: `self.0` is not touched again after this take.
+                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
+                let SqliteConnection {
+                    statement_cache,
+                    raw_connection,
+                    ..
+                } = conn;
+                // Finalize prepared statements, but do not run `RawConnection`'s
+                // `Drop`, which would close a handle we do not own.
+                drop(statement_cache);
+                core::mem::forget(raw_connection);
+            }
+        }
+
+        let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
             statement_cache: StatementCache::new(),
             raw_connection: RawConnection {
                 internal_connection: db,
             },
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
-            instrumentation: DynInstrumentation::none(),
+            instrumentation: DynInstrumentation::default_instrumentation(),
             serialized_data: Vec::new(),
-        });
+        }));
 
-        let result = f(&mut conn);
+        let result = f(&mut conn.0);
 
-        // Finalize any statements prepared during `f`, but do not run
-        // `RawConnection`'s `Drop`, which would close a handle we do not own.
-        let SqliteConnection {
-            statement_cache,
-            raw_connection,
-            ..
-        } = core::mem::ManuallyDrop::into_inner(conn);
-        drop(statement_cache);
-        core::mem::forget(raw_connection);
+        // The borrowed connection is discarded without committing or rolling
+        // back, so a transaction left open by `f` would leak onto the handle.
+        debug_assert!(
+            matches!(
+                AnsiTransactionManager::transaction_manager_status_mut(&mut *conn.0)
+                    .transaction_depth(),
+                Ok(None)
+            ),
+            "callback must not leave an open transaction on the borrowed connection"
+        );
 
         result
     }
