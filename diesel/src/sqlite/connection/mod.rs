@@ -772,6 +772,48 @@ impl SqliteConnection {
         f(self.raw_connection.internal_connection.as_ptr())
     }
 
+    /// Runs `f` with a borrowed `SqliteConnection` wrapping `db`, without taking
+    /// ownership of the handle.
+    ///
+    /// This gives SQLite callbacks (such as auto-extensions) the full
+    /// connection API. On return, any statements prepared during `f` are
+    /// finalized, but `db` itself is left open, since it is owned by SQLite.
+    ///
+    /// # Safety
+    ///
+    /// `db` must be a valid `sqlite3` handle that stays open for the duration
+    /// of the call.
+    #[allow(unsafe_code)]
+    pub(crate) unsafe fn with_borrowed_connection<R>(
+        db: core::ptr::NonNull<ffi::sqlite3>,
+        f: impl FnOnce(&mut SqliteConnection) -> R,
+    ) -> R {
+        let mut conn = core::mem::ManuallyDrop::new(SqliteConnection {
+            statement_cache: StatementCache::new(),
+            raw_connection: RawConnection {
+                internal_connection: db,
+            },
+            transaction_state: AnsiTransactionManager::default(),
+            metadata_lookup: (),
+            instrumentation: DynInstrumentation::none(),
+            serialized_data: Vec::new(),
+        });
+
+        let result = f(&mut conn);
+
+        // Finalize any statements prepared during `f`, but do not run
+        // `RawConnection`'s `Drop`, which would close a handle we do not own.
+        let SqliteConnection {
+            statement_cache,
+            raw_connection,
+            ..
+        } = core::mem::ManuallyDrop::into_inner(conn);
+        drop(statement_cache);
+        core::mem::forget(raw_connection);
+
+        result
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
