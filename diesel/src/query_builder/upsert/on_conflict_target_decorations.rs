@@ -10,12 +10,41 @@ pub trait UndecoratedConflictTarget {}
 impl UndecoratedConflictTarget for NoConflictTarget {}
 impl<T> UndecoratedConflictTarget for ConflictTarget<T> {}
 
-/// Interface to add information to conflict targets.
-/// Designed to be open for further additions to conflict targets like constraints
+/// Adds a `WHERE` predicate to an `ON CONFLICT` target.
+///
+/// This enables the `ON CONFLICT (target) WHERE predicate DO ...` SQL syntax
+/// on PostgreSQL. PostgreSQL uses the predicate to select which unique index
+/// to match against. Any unique index whose `WHERE` clause is implied by
+/// the predicate qualifies.
+///
+/// Calling `.filter_target()` multiple times combines the predicates with `AND`.
 pub trait DecoratableTarget<P> {
-    /// Output type of filter_target operation
+    /// The type returned by [`filter_target`](DecoratableTarget::filter_target).
     type FilterOutput;
-    /// equivalent to filter of FilterDsl but aimed at conflict targets
+    /// Adds a `WHERE` predicate to the `ON CONFLICT` target, telling PostgreSQL
+    /// which unique index to check for conflicts (PostgreSQL only).
+    ///
+    /// This generates `ON CONFLICT (target) WHERE predicate DO ...` SQL.
+    /// PostgreSQL selects unique indexes whose `WHERE` clause is implied by
+    /// the predicate; an exact match is not required.
+    ///
+    /// Calling `.filter_target()` multiple times combines predicates with `AND`.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// diesel::insert_into(users)
+    ///     .values(&new_user)
+    ///     .on_conflict(name)
+    ///     .filter_target(id.gt(5))
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    /// ```
+    ///
+    /// For full runnable examples including `do_update` and predicate chaining,
+    /// see [`IncompleteOnConflict`]'s implementation of this trait.
+    ///
+    /// [`IncompleteOnConflict`]: crate::upsert::IncompleteOnConflict
     fn filter_target(self, predicate: P) -> Self::FilterOutput;
 }
 
