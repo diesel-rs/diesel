@@ -772,6 +772,66 @@ impl SqliteConnection {
         f(self.raw_connection.internal_connection.as_ptr())
     }
 
+    /// Runs `f` with a borrowed `SqliteConnection` wrapping `db`, giving SQLite
+    /// callbacks the full connection API. Statements prepared during `f` are
+    /// finalized on return, but `db` is left open, since SQLite owns it.
+    ///
+    /// # Safety
+    ///
+    /// `db` must be a valid `sqlite3` handle that stays open for the duration
+    /// of the call.
+    #[allow(unsafe_code)]
+    pub(crate) unsafe fn with_borrowed_connection<R>(
+        db: core::ptr::NonNull<ffi::sqlite3>,
+        f: impl FnOnce(&mut SqliteConnection) -> R,
+    ) -> R {
+        // Tears the borrowed connection down on every exit path, including a
+        // panic unwinding out of `f`.
+        struct Borrowed(core::mem::ManuallyDrop<SqliteConnection>);
+
+        impl Drop for Borrowed {
+            fn drop(&mut self) {
+                // SAFETY: `self.0` is not touched again after this take.
+                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
+                let SqliteConnection {
+                    statement_cache,
+                    raw_connection,
+                    ..
+                } = conn;
+                // Finalize prepared statements, but do not run `RawConnection`'s
+                // `Drop`, which would close a handle we do not own.
+                drop(statement_cache);
+                core::mem::forget(raw_connection);
+            }
+        }
+
+        let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
+            statement_cache: StatementCache::new(),
+            raw_connection: RawConnection {
+                internal_connection: db,
+            },
+            transaction_state: AnsiTransactionManager::default(),
+            metadata_lookup: (),
+            instrumentation: DynInstrumentation::default_instrumentation(),
+            serialized_data: Vec::new(),
+        }));
+
+        let result = f(&mut conn.0);
+
+        // The borrowed connection is discarded without committing or rolling
+        // back, so a transaction left open by `f` would leak onto the handle.
+        debug_assert!(
+            matches!(
+                AnsiTransactionManager::transaction_manager_status_mut(&mut *conn.0)
+                    .transaction_depth(),
+                Ok(None)
+            ),
+            "callback must not leave an open transaction on the borrowed connection"
+        );
+
+        result
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
