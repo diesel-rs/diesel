@@ -32,17 +32,36 @@ pub trait DecoratableTarget<P> {
     ///
     /// # Example
     ///
-    /// ```rust,ignore
+    /// ```rust
+    /// # include!("../../upsert/on_conflict_docs_setup.rs");
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("CREATE UNIQUE INDEX users_name_idx ON users (name)")
+    /// #         .execute(conn)?;
     /// diesel::insert_into(users)
-    ///     .values(&new_user)
-    ///     .on_conflict(name)
-    ///     .filter_target(id.gt(5))
-    ///     .do_nothing()
+    ///     .values(name.eq("Sam"))
     ///     .execute(conn)?;
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(name.eq("Sam"))
+    ///     .on_conflict(name)
+    ///     .filter_target(name.like("S%"))
+    ///     .do_update()
+    ///     .set(name.eq("Updated"))
+    ///     .execute(conn)?;
+    ///
+    /// let count = users.filter(name.eq("Updated")).count().get_result::<i64>(conn)?;
+    /// assert_eq!(count, 1);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
     /// ```
     ///
-    /// For full runnable examples including `do_update` and predicate chaining,
-    /// see [`IncompleteOnConflict`]'s implementation of this trait.
+    /// For more examples including predicate chaining, see [`IncompleteOnConflict`]'s
+    /// implementation of this trait.
     ///
     /// [`IncompleteOnConflict`]: crate::upsert::IncompleteOnConflict
     fn filter_target(self, predicate: P) -> Self::FilterOutput;
