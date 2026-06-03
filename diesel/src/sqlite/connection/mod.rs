@@ -6,6 +6,7 @@ use sqlite_wasm_rs as ffi;
 
 mod bind_collector;
 mod functions;
+mod limits;
 mod owned_row;
 mod raw;
 mod row;
@@ -17,6 +18,7 @@ mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+pub use self::limits::SqliteLimit;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
@@ -830,6 +832,109 @@ impl SqliteConnection {
         );
 
         result
+    }
+
+    /// Set a runtime limit for this connection, returning its previous value.
+    ///
+    /// Lowering these limits is a way to harden a connection against untrusted
+    /// SQL. See the [SQLite documentation](https://www.sqlite.org/c3ref/limit.html)
+    /// for the meaning of each [`SqliteLimit`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() { run_test(); }
+    /// # fn run_test() {
+    /// use diesel::sqlite::SqliteLimit;
+    ///
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // Cap SQL statement length at 1 KiB, keeping the previous value.
+    /// let previous = conn.set_limit(SqliteLimit::SqlLength, 1024);
+    /// assert!(previous > 0);
+    /// assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 1024);
+    /// # }
+    /// ```
+    pub fn set_limit(&mut self, limit: SqliteLimit, value: i32) -> i32 {
+        self.raw_connection.set_limit(limit, value)
+    }
+
+    /// Get the current value of a runtime limit for this connection.
+    ///
+    /// See the [SQLite documentation](https://www.sqlite.org/c3ref/limit.html)
+    /// for the meaning of each [`SqliteLimit`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() { run_test(); }
+    /// # fn run_test() {
+    /// use diesel::sqlite::SqliteLimit;
+    ///
+    /// let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// assert!(conn.get_limit(SqliteLimit::SqlLength) > 0);
+    /// # }
+    /// ```
+    pub fn get_limit(&self, limit: SqliteLimit) -> i32 {
+        self.raw_connection.get_limit(limit)
+    }
+
+    /// Apply SQLite's recommended limits for hardening against untrusted SQL.
+    ///
+    /// These are the values from the "Untrusted SQL Inputs" table of SQLite's
+    /// [security documentation](https://sqlite.org/security.html). They are
+    /// intentionally restrictive, so call [`set_limit`](Self::set_limit)
+    /// afterwards to relax any that are too aggressive for your application.
+    ///
+    /// | Limit | Value |
+    /// |-------|-------|
+    /// | `Length` | 1,000,000 |
+    /// | `SqlLength` | 100,000 |
+    /// | `ColumnCount` | 100 |
+    /// | `ExprDepth` | 10 |
+    /// | `CompoundSelect` | 3 |
+    /// | `VdbeOp` | 25,000 |
+    /// | `FunctionArg` | 8 |
+    /// | `Attached` | 0 |
+    /// | `LikePatternLength` | 50 |
+    /// | `VariableNumber` | 10 |
+    /// | `TriggerDepth` | 10 |
+    ///
+    /// The table's `PARSER_DEPTH` recommendation is omitted because it is a
+    /// compile-time only setting with no runtime `sqlite3_limit()` category.
+    /// `WorkerThreads` is left untouched (its default of 0 is already safe).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() { run_test(); }
+    /// # fn run_test() {
+    /// use diesel::sqlite::SqliteLimit;
+    ///
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_recommended_security_limits();
+    /// assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 100_000);
+    ///
+    /// // Relax an individual limit that is too strict for this application.
+    /// conn.set_limit(SqliteLimit::VariableNumber, 999);
+    /// assert_eq!(conn.get_limit(SqliteLimit::VariableNumber), 999);
+    /// # }
+    /// ```
+    pub fn set_recommended_security_limits(&mut self) {
+        self.set_limit(SqliteLimit::Length, 1_000_000);
+        self.set_limit(SqliteLimit::SqlLength, 100_000);
+        self.set_limit(SqliteLimit::ColumnCount, 100);
+        self.set_limit(SqliteLimit::ExprDepth, 10);
+        self.set_limit(SqliteLimit::CompoundSelect, 3);
+        self.set_limit(SqliteLimit::VdbeOp, 25_000);
+        self.set_limit(SqliteLimit::FunctionArg, 8);
+        self.set_limit(SqliteLimit::Attached, 0);
+        self.set_limit(SqliteLimit::LikePatternLength, 50);
+        self.set_limit(SqliteLimit::VariableNumber, 10);
+        self.set_limit(SqliteLimit::TriggerDepth, 10);
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -1940,5 +2045,82 @@ mod tests {
             .load::<(Option<i32>, Option<String>)>(&mut conn)
             .unwrap();
         assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_returns_previous_value() {
+        let mut conn = connection();
+        let original = conn.get_limit(SqliteLimit::SqlLength);
+
+        // Setting a new value returns the old one, and a second set returns the
+        // value installed by the first.
+        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 1024), original);
+        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 2048), 1024);
+        assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 2048);
+    }
+
+    #[diesel_test_helper::test]
+    fn get_limit_does_not_mutate() {
+        let conn = connection();
+        let first = conn.get_limit(SqliteLimit::ExprDepth);
+        // Querying is implemented by passing -1 to sqlite3_limit, which must
+        // leave the limit unchanged.
+        assert!(first > 0);
+        assert_eq!(conn.get_limit(SqliteLimit::ExprDepth), first);
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_sql_length() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::SqlLength, 20);
+
+        // A statement longer than 20 bytes is rejected by SQLite.
+        let result =
+            crate::sql_query("SELECT * FROM sqlite_master WHERE type = 'table'").execute(&mut conn);
+        assert!(result.is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_like_pattern_length() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::LikePatternLength, 100);
+
+        assert!(
+            crate::sql_query("SELECT 'test' LIKE 'te%'")
+                .execute(&mut conn)
+                .is_ok()
+        );
+
+        let long_pattern = "%".repeat(200);
+        let query = format!("SELECT 'test' LIKE '{long_pattern}'");
+        assert!(crate::sql_query(&query).execute(&mut conn).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_clamps_above_compile_time_maximum() {
+        let mut conn = connection();
+        // SQLite clamps a requested value to its hard compile-time ceiling
+        // rather than accepting it verbatim.
+        conn.set_limit(SqliteLimit::Length, i32::MAX);
+        let clamped = conn.get_limit(SqliteLimit::Length);
+        assert!(clamped > 0 && clamped < i32::MAX);
+    }
+
+    #[diesel_test_helper::test]
+    fn set_recommended_security_limits_applies_documented_table() {
+        let mut conn = connection();
+        conn.set_recommended_security_limits();
+
+        assert_eq!(conn.get_limit(SqliteLimit::Length), 1_000_000);
+        assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 100_000);
+        assert_eq!(conn.get_limit(SqliteLimit::ColumnCount), 100);
+        assert_eq!(conn.get_limit(SqliteLimit::ExprDepth), 10);
+        assert_eq!(conn.get_limit(SqliteLimit::CompoundSelect), 3);
+        assert_eq!(conn.get_limit(SqliteLimit::VdbeOp), 25_000);
+        assert_eq!(conn.get_limit(SqliteLimit::FunctionArg), 8);
+        assert_eq!(conn.get_limit(SqliteLimit::Attached), 0);
+        assert_eq!(conn.get_limit(SqliteLimit::LikePatternLength), 50);
+        assert_eq!(conn.get_limit(SqliteLimit::VariableNumber), 10);
+        assert_eq!(conn.get_limit(SqliteLimit::TriggerDepth), 10);
     }
 }
