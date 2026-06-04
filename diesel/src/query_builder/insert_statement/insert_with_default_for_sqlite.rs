@@ -3,8 +3,8 @@ use crate::insertable::{
     CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue, InsertValues,
 };
 use crate::prelude::*;
-use crate::query_builder::returning_clause::ReturningClause;
 use crate::query_builder::debug_query::DebugBinds;
+use crate::query_builder::returning::ReturningClause;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{
     AstPass, DebugQuery, QueryBuilder, QueryFragment, QueryId, ValuesClause,
