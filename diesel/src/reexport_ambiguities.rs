@@ -140,6 +140,12 @@ macro_rules! make_proxy_mod {
             type json_remove_0 = ();
             type json_remove_1 = ();
             type json_remove_2 = ();
+            type json_replace_0 = ();
+            type json_replace_1 = ();
+            type json_replace_2 = ();
+            type json_set_0 = ();
+            type json_set_1 = ();
+            type json_set_2 = ();
             type json_type = ();
             type json_type_with_path = ();
             type json_valid = ();
@@ -165,6 +171,12 @@ macro_rules! make_proxy_mod {
             type jsonb_remove_0 = ();
             type jsonb_remove_1 = ();
             type jsonb_remove_2 = ();
+            type jsonb_replace_0 = ();
+            type jsonb_replace_1 = ();
+            type jsonb_replace_2 = ();
+            type jsonb_set_0 = ();
+            type jsonb_set_1 = ();
+            type jsonb_set_2 = ();
         }
     };
 }
