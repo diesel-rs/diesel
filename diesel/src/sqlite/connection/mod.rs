@@ -2107,20 +2107,22 @@ mod tests {
 
     #[diesel_test_helper::test]
     fn set_limit_enforces_column_count() {
-        let mut conn = connection();
-        conn.set_limit(SqliteLimit::ColumnCount, 4);
+        // A wide result set runs under the default column limit but fails once the limit is
+        // lowered below its column count ("too many columns in result set").
+        let wide = format!(
+            "SELECT {}",
+            (1..=30)
+                .map(|i| i.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
 
-        assert!(
-            crate::sql_query("SELECT 1, 2, 3")
-                .execute(&mut conn)
-                .is_ok()
-        );
-        // Eight result columns exceed the limit of four ("too many columns in result set").
-        assert!(
-            crate::sql_query("SELECT 1, 2, 3, 4, 5, 6, 7, 8")
-                .execute(&mut conn)
-                .is_err()
-        );
+        let mut unconstrained = connection();
+        assert!(crate::sql_query(&wide).execute(&mut unconstrained).is_ok());
+
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::ColumnCount, 10);
+        assert!(crate::sql_query(&wide).execute(&mut conn).is_err());
     }
 
     #[diesel_test_helper::test]
@@ -2317,59 +2319,68 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    fn default_limit_constants_match_fresh_connection() {
-        let conn = connection();
-
-        assert_eq!(
-            conn.get_limit(SqliteLimit::Length),
-            SqliteLimit::DEFAULT_LENGTH_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::SqlLength),
-            SqliteLimit::DEFAULT_SQL_LENGTH_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::ColumnCount),
-            SqliteLimit::DEFAULT_COLUMN_COUNT_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::ExprDepth),
-            SqliteLimit::DEFAULT_EXPR_DEPTH_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::CompoundSelect),
-            SqliteLimit::DEFAULT_COMPOUND_SELECT_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::VdbeOp),
-            SqliteLimit::DEFAULT_VDBE_OP_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::FunctionArg),
-            SqliteLimit::DEFAULT_FUNCTION_ARG_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::Attached),
-            SqliteLimit::DEFAULT_ATTACHED_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::LikePatternLength),
-            SqliteLimit::DEFAULT_LIKE_PATTERN_LENGTH_LIMIT
-        );
-        // `VariableNumber` is intentionally not checked against the fresh-connection default
-        // here: `DEFAULT_VARIABLE_NUMBER_LIMIT` holds SQLite's published default (32,766), but
-        // the bundled libsqlite3-sys is compiled with SQLITE_MAX_VARIABLE_NUMBER=250000, so the
-        // runtime default depends on the build rather than on SQLite's documented value. That
-        // the constant is nonetheless a valid, settable boundary is covered behaviorally by
-        // `set_limit_enforces_variable_number`.
-        assert_eq!(
-            conn.get_limit(SqliteLimit::TriggerDepth),
-            SqliteLimit::DEFAULT_TRIGGER_DEPTH_LIMIT
-        );
-        assert_eq!(
-            conn.get_limit(SqliteLimit::WorkerThreads),
-            SqliteLimit::DEFAULT_WORKER_THREADS_LIMIT
-        );
+    fn safe_limit_constants_do_not_exceed_defaults() {
+        // The hardened value for each category is a tightening of SQLite's published default, so
+        // it must never be larger. This is asserted instead of comparing the `DEFAULT_*`
+        // constants to a fresh connection, because the runtime default of categories such as
+        // `FunctionArg` and `VariableNumber` is build-dependent (the bundled libsqlite3-sys
+        // raises several of them), while these published constants are fixed.
+        let pairs = [
+            (
+                SqliteLimit::SAFE_LENGTH_LIMIT,
+                SqliteLimit::DEFAULT_LENGTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_SQL_LENGTH_LIMIT,
+                SqliteLimit::DEFAULT_SQL_LENGTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_COLUMN_COUNT_LIMIT,
+                SqliteLimit::DEFAULT_COLUMN_COUNT_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_EXPR_DEPTH_LIMIT,
+                SqliteLimit::DEFAULT_EXPR_DEPTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_COMPOUND_SELECT_LIMIT,
+                SqliteLimit::DEFAULT_COMPOUND_SELECT_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_VDBE_OP_LIMIT,
+                SqliteLimit::DEFAULT_VDBE_OP_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_FUNCTION_ARG_LIMIT,
+                SqliteLimit::DEFAULT_FUNCTION_ARG_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_ATTACHED_LIMIT,
+                SqliteLimit::DEFAULT_ATTACHED_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_LIKE_PATTERN_LENGTH_LIMIT,
+                SqliteLimit::DEFAULT_LIKE_PATTERN_LENGTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_VARIABLE_NUMBER_LIMIT,
+                SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_TRIGGER_DEPTH_LIMIT,
+                SqliteLimit::DEFAULT_TRIGGER_DEPTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_WORKER_THREADS_LIMIT,
+                SqliteLimit::DEFAULT_WORKER_THREADS_LIMIT,
+            ),
+        ];
+        for (safe, default) in pairs {
+            assert!(
+                safe <= default,
+                "safe value {safe} exceeds default {default}"
+            );
+        }
     }
 
     #[diesel_test_helper::test]

@@ -12,6 +12,9 @@ use sqlite_wasm_rs as ffi;
 /// Each variant exposes two associated constants: `DEFAULT_*_LIMIT` (SQLite's
 /// documented default) and `SAFE_*_LIMIT` (the hardened value applied by
 /// [`SqliteConnection::set_recommended_security_limits`](crate::sqlite::SqliteConnection::set_recommended_security_limits)).
+/// A connection's actual runtime default can differ from `DEFAULT_*_LIMIT`
+/// because some builds raise the compile-time maximum (for example the bundled
+/// `libsqlite3-sys` raises `FunctionArg` and `VariableNumber`).
 ///
 /// See the [SQLite documentation](https://www.sqlite.org/c3ref/limit.html) for details.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
