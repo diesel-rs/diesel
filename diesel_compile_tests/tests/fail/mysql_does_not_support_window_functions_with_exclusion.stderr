@@ -9,19 +9,19 @@ error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
      = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
+help: `ExcludeGroup` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
   LL | /         impl<DB> QueryFragment<DB> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend,
   LL | |             Self: QueryFragment<DB, DB::$option>,
-     | |_________________________________________________^ `ExcludeGroup` implements `QueryFragment<DB>`
+     | |_________________________________________________^ `QueryFragment<DB>`
 ...
   LL | /         impl<DB> QueryFragment<DB, $bound> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend<$option = $bound>,
-     | |__________________________________________________________^ `ExcludeGroup` implements `QueryFragment<DB, FrameExclusionSupport>`
+     | |__________________________________________________________^ `QueryFragment<DB, FrameExclusionSupport>`
 ...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude the current peer group from the window frame
@@ -57,19 +57,19 @@ error[E0277]: `ExcludeCurrentRow` is no valid SQL fragment for the `Mysql` backe
      = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport>` is not implemented for `ExcludeCurrentRow`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
+help: `ExcludeCurrentRow` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
   LL | /         impl<DB> QueryFragment<DB> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend,
   LL | |             Self: QueryFragment<DB, DB::$option>,
-     | |_________________________________________________^ `ExcludeCurrentRow` implements `QueryFragment<DB>`
+     | |_________________________________________________^ `QueryFragment<DB>`
 ...
   LL | /         impl<DB> QueryFragment<DB, $bound> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend<$option = $bound>,
-     | |__________________________________________________________^ `ExcludeCurrentRow` implements `QueryFragment<DB, FrameExclusionSupport>`
+     | |__________________________________________________________^ `QueryFragment<DB, FrameExclusionSupport>`
 ...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude the current row from the window frame
@@ -105,19 +105,19 @@ error[E0277]: `ExcludeTies` is no valid SQL fragment for the `Mysql` backend
      = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport>` is not implemented for `ExcludeTies`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
+help: `ExcludeTies` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
   LL | /         impl<DB> QueryFragment<DB> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend,
   LL | |             Self: QueryFragment<DB, DB::$option>,
-     | |_________________________________________________^ `ExcludeTies` implements `QueryFragment<DB>`
+     | |_________________________________________________^ `QueryFragment<DB>`
 ...
   LL | /         impl<DB> QueryFragment<DB, $bound> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend<$option = $bound>,
-     | |__________________________________________________________^ `ExcludeTies` implements `QueryFragment<DB, FrameExclusionSupport>`
+     | |__________________________________________________________^ `QueryFragment<DB, FrameExclusionSupport>`
 ...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude any peers, but not the current row from the window frame
@@ -153,19 +153,19 @@ error[E0277]: `ExcludeNoOthers` is no valid SQL fragment for the `Mysql` backend
      = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport>` is not implemented for `ExcludeNoOthers`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
+help: `ExcludeNoOthers` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
      |
   LL | /         impl<DB> QueryFragment<DB> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend,
   LL | |             Self: QueryFragment<DB, DB::$option>,
-     | |_________________________________________________^ `ExcludeNoOthers` implements `QueryFragment<DB>`
+     | |_________________________________________________^ `QueryFragment<DB>`
 ...
   LL | /         impl<DB> QueryFragment<DB, $bound> for $name
   LL | |         where
   LL | |             DB: crate::backend::Backend<$option = $bound>,
-     | |__________________________________________________________^ `ExcludeNoOthers` implements `QueryFragment<DB, FrameExclusionSupport>`
+     | |__________________________________________________________^ `QueryFragment<DB, FrameExclusionSupport>`
 ...
  LL | / simple_frame_expr_with_bound!(
  LL | |     /// Exclude no rows from the frame windows

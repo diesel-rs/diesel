@@ -38,13 +38,13 @@ help: the trait `diesel::expression::IsContainedInGroupBy<comments::columns::id>
  LL |         id -> Integer,
    |         ^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-   = help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`:
-             `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
-             `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
-             `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
-             `users::columns::id` implements `IsContainedInGroupBy<hair_color>`
-             `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::id>`
-             `users::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::name>`
+   = help: `users::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`:
+             diesel::expression::IsContainedInGroupBy<posts::columns::id>
+             diesel::expression::IsContainedInGroupBy<posts::columns::title>
+             diesel::expression::IsContainedInGroupBy<posts::columns::user_id>
+             IsContainedInGroupBy<hair_color>
+             diesel::expression::IsContainedInGroupBy<users::columns::id>
+             diesel::expression::IsContainedInGroupBy<users::columns::name>
    = note: required for `(users::columns::id, posts::columns::id)` to implement `diesel::expression::IsContainedInGroupBy<comments::columns::id>`
 note: required for `comments::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
   --> tests/fail/select_requires_valid_grouping2.rs:23:9
@@ -69,13 +69,13 @@ help: the trait `diesel::expression::IsContainedInGroupBy<comments::columns::id>
 LL |         id -> Integer,
    |         ^^
    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
-   = help: the following other types implement trait `diesel::expression::IsContainedInGroupBy<T>`:
-             `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::id>`
-             `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::title>`
-             `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<posts::columns::user_id>`
-             `posts::columns::id` implements `IsContainedInGroupBy<hair_color>`
-             `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::id>`
-             `posts::columns::id` implements `diesel::expression::IsContainedInGroupBy<users::columns::name>`
+   = help: `posts::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`:
+             diesel::expression::IsContainedInGroupBy<posts::columns::id>
+             diesel::expression::IsContainedInGroupBy<posts::columns::title>
+             diesel::expression::IsContainedInGroupBy<posts::columns::user_id>
+             IsContainedInGroupBy<hair_color>
+             diesel::expression::IsContainedInGroupBy<users::columns::id>
+             diesel::expression::IsContainedInGroupBy<users::columns::name>
    = note: required for `(posts::columns::id,)` to implement `diesel::expression::IsContainedInGroupBy<comments::columns::id>`
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::id, posts::columns::id)` to implement `diesel::expression::IsContainedInGroupBy<comments::columns::id>`

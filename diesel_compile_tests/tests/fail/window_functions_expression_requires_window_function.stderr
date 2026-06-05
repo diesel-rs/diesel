@@ -6,7 +6,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -25,7 +25,8 @@ note: required by a bound in `diesel::dsl::lower`
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-
+  
+     
 error[E0277]: `lower<Text, name>` is not a window function
   --> tests/fail/window_functions_expression_requires_window_function.rs:15:44
    |
@@ -34,7 +35,7 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -55,7 +56,7 @@ LL |     users::table.select(lower(users::name).partition_by(users::id));
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -77,7 +78,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -105,7 +106,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -124,7 +125,8 @@ note: required by a bound in `diesel::dsl::lower`
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-
+  
+     
 error[E0277]: `lower<Text, name>` is not a window function
   --> tests/fail/window_functions_expression_requires_window_function.rs:21:44
    |
@@ -133,7 +135,7 @@ LL |     users::table.select(lower(users::name).over());
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -154,7 +156,7 @@ LL |     users::table.select(lower(users::name).over());
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -176,7 +178,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -204,7 +206,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -223,7 +225,8 @@ note: required by a bound in `diesel::dsl::lower`
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-
+  
+     
 error[E0277]: the trait bound `lower<Text, name>: IsAggregateFunction` is not satisfied
   --> tests/fail/window_functions_expression_requires_window_function.rs:27:44
    |
@@ -231,7 +234,7 @@ LL |     users::table.select(lower(users::name).window_filter(users::id.eq(42)))
    |                                            ^^^^^^^^^^^^^ unsatisfied trait bound
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsAggregateFunction` is not implemented for `lower<Text, name>`
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsAggregateFunction`:
+   = help: the following other types implement trait `IsAggregateFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -252,7 +255,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -278,7 +281,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -297,7 +300,8 @@ note: required by a bound in `diesel::dsl::lower`
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-
+  
+     
 error[E0277]: `lower<Text, name>` is not a window function
   --> tests/fail/window_functions_expression_requires_window_function.rs:32:44
    |
@@ -306,7 +310,7 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -327,7 +331,7 @@ LL |     users::table.select(lower(users::name).window_order(users::id));
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -349,7 +353,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -377,7 +381,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
@@ -396,7 +400,8 @@ note: required by a bound in `diesel::dsl::lower`
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-
+  
+     
 error[E0277]: `lower<Text, name>` is not a window function
   --> tests/fail/window_functions_expression_requires_window_function.rs:39:36
    |
@@ -405,7 +410,7 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -426,7 +431,7 @@ LL |         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(fr
    |
    = help: the trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction` is not implemented for `lower<Text, name>`
    = note: try removing any method call to `WindowExpressionMethods` and use it as normal SQL function
-   = help: the following other types implement trait `diesel::expression::functions::aggregate_expressions::IsWindowFunction`:
+   = help: the following other types implement trait `IsWindowFunction`:
              diesel::expression::count::count_utils::count<T, expr>
              avg<ST, expr>
              sum<ST, expr>
@@ -448,7 +453,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      |
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
-help: the following other types implement trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable`
+help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
     --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {

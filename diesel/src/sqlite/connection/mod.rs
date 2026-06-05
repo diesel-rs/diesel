@@ -171,6 +171,15 @@ pub struct SqliteConnection {
     // and avoiding static mut which will be deprecated in 2024 edition
     metadata_lookup: (),
     instrumentation: DynInstrumentation,
+    // We potentially need to store a serialized
+    // database in here to make sure the database bytes
+    // live as long as the connection
+    // This is used by SqliteConnection::deserialize_readonly_database_from_buffer
+    // only
+    // This field needs to come after the RawConnection
+    // as we need to make sure the data are still there until the
+    // connection is dropped
+    serialized_data: Vec<u8>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -215,7 +224,7 @@ impl Connection for SqliteConnection {
     ///
     /// * The database is stored in memory by default.
     /// * Persistent VFS (Virtual File Systems) is optional,
-    ///   see <https://github.com/Spxg/sqlite-wasm-rs/blob/master/sqlite-wasm-rs/src/vfs/README.md> for details
+    ///   see <https://github.com/Spxg/sqlite-wasm-rs> for details
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut instrumentation = DynInstrumentation::default_instrumentation();
         instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
@@ -570,7 +579,10 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
-        self.raw_connection.deserialize(data)
+        // we copy the buffer here
+        // to make sure the underlying buffer lives as long as the connection
+        self.serialized_data = data.to_vec();
+        self.raw_connection.deserialize(&self.serialized_data)
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -600,6 +612,7 @@ impl SqliteConnection {
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::none(),
+            serialized_data: Vec::new(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -664,6 +677,14 @@ mod tests {
             .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
             .unwrap();
 
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+
+        assert_eq!(expected_users, actual_users);
+        // drop the database here
+        // and requery the database to make sure the database owns
+        // required data
+        std::mem::drop(serialized_database);
         let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
         let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
 
@@ -1048,5 +1069,90 @@ mod tests {
         diesel::select(over_aligned_sum(1))
             .execute(&mut conn)
             .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn sum_twice() {
+        #[derive(Default)]
+        struct Sum(i32);
+
+        impl SqliteAggregateFunction<i32> for Sum {
+            type Output = i32;
+
+            fn step(&mut self, value: i32) {
+                self.0 += value;
+            }
+
+            fn finalize(agg: Option<Self>) -> i32 {
+                agg.map(|s| s.0).unwrap_or_default()
+            }
+        }
+
+        #[declare_sql_function]
+        extern "SQL" {
+            #[aggregate]
+            fn my_sum(x: Integer) -> Integer;
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+        my_sum_utils::register_impl::<Sum, _>(&mut conn).unwrap();
+
+        conn.batch_execute(
+            "
+            CREATE TABLE test(key1 INTEGER, key2 INTEGER);
+            INSERT INTO test(key1, key2) VALUES (1, 2), (2, 4), (3, 6);
+",
+        )
+        .unwrap();
+
+        table! {
+            test (key1, key2) {
+                key1 -> Integer,
+                key2 -> Integer,
+            }
+        }
+
+        let (first_res, second_res) = test::table
+            .select((my_sum(test::key1), my_sum(test::key2)))
+            .get_result::<(i32, i32)>(&mut conn)
+            .unwrap();
+
+        assert_eq!(first_res, 6);
+        assert_eq!(second_res, 12);
+
+        conn.batch_execute("DELETE FROM test").unwrap();
+        let (first_res, second_res) = test::table
+            .select((my_sum(test::key1), my_sum(test::key2)))
+            .get_result::<(i32, i32)>(&mut conn)
+            .unwrap();
+
+        assert_eq!(first_res, 0);
+        assert_eq!(second_res, 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn test_injection() {
+        diesel::table! {
+            #[sql_name = "quote'table"]
+            quote_table (id) {
+                id -> Nullable<Integer>,
+                name -> Nullable<Text>,
+            }
+        }
+
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+
+        conn.batch_execute("CREATE TABLE \"quote'table\" (id INTEGER PRIMARY KEY, name TEXT);")
+            .unwrap();
+
+        diesel::insert_into(quote_table::table)
+            .values((quote_table::id.eq(1), quote_table::name.eq("Jane")))
+            .execute(&mut conn)
+            .unwrap();
+
+        let data = quote_table::table
+            .load::<(Option<i32>, Option<String>)>(&mut conn)
+            .unwrap();
+        assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
     }
 }

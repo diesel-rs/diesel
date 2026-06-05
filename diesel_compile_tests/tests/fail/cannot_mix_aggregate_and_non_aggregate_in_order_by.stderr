@@ -1,5 +1,5 @@
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
-   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:17:44
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:42:44
     |
  LL |     let _ = users.select(max(id)).order_by(name);
     |                                   -------- ^^^^ unsatisfied trait bound
@@ -10,15 +10,15 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
 ...
 LL |     impl MixedAggregates<Never> for Yes {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-    = note: required for `SelectStatement<FromClause<table>, ...>` to implement `OrderDsl<columns::name>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `SelectStatement<FromClause<table>, ...>` to implement `OrderDsl<users::columns::name>`
 note: required by a bound in `order_by`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |
@@ -30,7 +30,7 @@ LL |         Self: methods::OrderDsl<Expr>,
  
     
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
-   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:21:39
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:46:39
     |
  LL |     let _ = users.select(id).order_by(max(id));
     |                              -------- ^^^^^^^ unsatisfied trait bound
@@ -41,14 +41,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::No>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
 ...
 LL |     impl MixedAggregates<Never> for No {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::No` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `OrderDsl<max<Integer, id>>`
 note: required by a bound in `order_by`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -61,26 +61,26 @@ LL |         Self: methods::OrderDsl<Expr>,
  
     
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
-   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:28:24
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:50:67
     |
- LL |         .then_order_by(name);
-    |          ------------- ^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+ LL |     let _ = users.select(max(id)).order_by(max(id)).then_order_by(name);
+    |                                                     ------------- ^^^^ unsatisfied trait bound
+    |                                                     |
+    |                                                     required by a bound introduced by this call
     |
     = help: the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
 ...
 LL |     impl MixedAggregates<Never> for Yes {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `ThenOrderDsl<columns::name>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::name>`
 note: required by a bound in `diesel::QueryDsl::then_order_by`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
     |
@@ -92,7 +92,7 @@ LL |         Self: methods::ThenOrderDsl<Order>,
  
     
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
-   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:32:41
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:54:41
     |
  LL |     let _ = users.order_by(name).select(max(id));
     |                                  ------ ^^^^^^^ unsatisfied trait bound
@@ -103,14 +103,14 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
-help: the following other types implement trait `MixedAggregates<Other>`
+help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
    --> DIESEL/diesel/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Yes>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
 ...
 LL |     impl MixedAggregates<Never> for Yes {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::is_aggregate::Yes` implements `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `SelectDsl<max<Integer, id>>`
 note: required by a bound in `diesel::QueryDsl::select`
    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
@@ -123,7 +123,7 @@ LL |         Self: methods::SelectDsl<Selection>,
  
     
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
-   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:36:34
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:58:34
     |
  LL |     let _ = users.order_by(name).count();
     |                                  ^^^^^ unsatisfied trait bound
@@ -150,4 +150,459 @@ LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, 
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
  
-    For more information about this error, try `rustc --explain E0277`.
+    
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:62:28
+    |
+ LL |     let _ = users.order_by(max(id));
+    |                   -------- ^^^^^^^ unsatisfied trait bound
+    |                   |
+    |                   required by a bound introduced by this call
+    |
+    = help: the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `OrderDsl<max<Integer, id>>`
+    = note: 1 redundant requirement hidden
+    = note: required for `users::table` to implement `OrderDsl<max<Integer, id>>`
+note: required by a bound in `order_by`
+   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    |
+LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
+    |        -------- required by a bound in this associated function
+...
+LL |         Self: methods::OrderDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
+ 
+    
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:66:44
+    |
+ LL |     let _ = users.select(id).then_order_by(max(id));
+    |                              ------------- ^^^^^^^ unsatisfied trait bound
+    |                              |
+    |                              required by a bound introduced by this call
+    |
+    = help: the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `SelectStatement<FromClause<table>, ...>` to implement `OrderDsl<max<Integer, id>>`
+    = note: required for `SelectStatement<FromClause<table>, ...>` to implement `ThenOrderDsl<max<Integer, id>>`
+note: required by a bound in `diesel::QueryDsl::then_order_by`
+   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    |
+LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
+    |        ------------- required by a bound in this associated function
+LL |     where
+LL |         Self: methods::ThenOrderDsl<Order>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
+ 
+    
+error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:70:48
+    |
+ LL |     let _ = users.order_by(name).then_order_by(max(id));
+    |                                  ------------- ^^^^^^^ unsatisfied trait bound
+    |                                  |
+    |                                  required by a bound introduced by this call
+    |
+    = help: the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+    = note: you tried to combine expressions that aggregate over a certain column with expressions that don't aggregate over that column
+    = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
+    = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
+help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
+   --> DIESEL/diesel/diesel/src/expression/mod.rs
+    |
+LL |     impl MixedAggregates<No> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
+...
+LL |     impl MixedAggregates<Never> for No {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `ThenOrderDsl<max<Integer, id>>`
+note: required by a bound in `diesel::QueryDsl::then_order_by`
+   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    |
+LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
+    |        ------------- required by a bound in this associated function
+LL |     where
+LL |         Self: methods::ThenOrderDsl<Order>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
+ 
+    
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:78:34
+   |
+LL |     let _ = users.group_by(name).order_by(id);
+   |                                  ^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+LL | | }
+   | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<users::columns::id>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:82:34
+   |
+LL |     let _ = users.group_by(name).order_by(id).select(name);
+   |                                  ^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+LL | | }
+   | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<users::columns::id>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<_>` is not satisfied
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:82:47
+    |
+ LL |     let _ = users.group_by(name).order_by(id).select(name);
+    |                                               ^^^^^^ the trait `SelectDsl<_>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ...>`
+    |
+help: the following other types implement trait `SelectDsl<Selection>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+...   |
+LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
+    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+...
+LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     G: ValidGroupByClause,
+LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
+LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+ 
+    
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:89:58
+   |
+LL |     let _ = users.group_by(name).select((name, max(id))).order_by(id);
+   |                                                          ^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+LL | | }
+   | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<users::columns::id>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:97:10
+   |
+LL |         .then_order_by(id);
+   |          ^^^^^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+LL | | }
+   | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+  --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 2 redundant requirements hidden
+   = note: required for `(max<Integer, id>, id)` to implement `ValidGrouping<users::columns::name>`
+   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:105:10
+    |
+LL |         .then_order_by(id);
+    |          ^^^^^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+...   |
+ LL | | }
+    | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:109:49
+    |
+LL |     let _ = users.group_by(name).order_by(name).then_order_by(id);
+    |                                                 ^^^^^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+...   |
+ LL | | }
+    | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:113:52
+    |
+LL |     let _ = users.group_by(name).order_by(max(id)).then_order_by(id);
+    |                                                    ^^^^^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
+    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:5:1
+    |
+  LL | / table! {
+  LL | |     users {
+  LL | |         id -> Integer,
+  LL | |         name -> Text,
+...   |
+ LL | | }
+    | |_^
+note: required for `users::columns::id` to implement `ValidGrouping<users::columns::name>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: 2 redundant requirements hidden
+    = note: required for `(max<Integer, id>, id)` to implement `ValidGrouping<users::columns::name>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:117:48
+    |
+LL |     let _ = users.group_by((name, hair_color)).order_by(id);
+    |                                                ^^^^^^^^ expected `Yes`, found `No`
+    |
+note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::name, users::columns::hair_color)>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:7:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: associated types for the current `impl` cannot be restricted in `where` clauses
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<users::columns::id>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `id: IsContainedInGroupBy<value>` is not satisfied
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:128:10
+    |
+LL |         .order_by(child::value);
+    |          ^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `diesel::expression::IsContainedInGroupBy<child::columns::value>` is not implemented for `parent::columns::id`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:15:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
+help: `parent::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:13:1
+    |
+ LL | / table! {
+ LL | |     parent {
+ LL | |         id -> Integer,
+    | |         ^^
+    | |_________||
+    |           |`diesel::expression::IsContainedInGroupBy<parent::columns::name>`
+    |           `diesel::expression::IsContainedInGroupBy<parent::columns::id>`
+note: required for `child::columns::value` to implement `ValidGrouping<parent::columns::id>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:24:9
+    |
+ LL |         value -> Text,
+    |         ^^^^^
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<child::columns::value>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `id: IsContainedInGroupBy<value>` is not satisfied
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:136:10
+    |
+LL |         .then_order_by(child::value);
+    |          ^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+help: the trait `diesel::expression::IsContainedInGroupBy<child::columns::value>` is not implemented for `parent::columns::id`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:15:9
+    |
+ LL |         id -> Integer,
+    |         ^^
+    = note: if your query contains columns from several tables in your group by or select clause make sure to call `allow_columns_to_appear_in_same_group_by_clause!` with these columns
+help: `parent::columns::id` implements trait `diesel::expression::IsContainedInGroupBy<T>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:13:1
+    |
+ LL | / table! {
+ LL | |     parent {
+ LL | |         id -> Integer,
+    | |         ^^
+    | |_________||
+    |           |`diesel::expression::IsContainedInGroupBy<parent::columns::name>`
+    |           `diesel::expression::IsContainedInGroupBy<parent::columns::id>`
+note: required for `child::columns::value` to implement `ValidGrouping<parent::columns::id>`
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:24:9
+    |
+ LL |         value -> Text,
+    |         ^^^^^
+    = note: 2 redundant requirements hidden
+    = note: required for `(parent::columns::id, child::columns::value)` to implement `ValidGrouping<parent::columns::id>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<child::columns::value>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `SkipSelectableExpressionBoundCheckWrapper<...>: ValidGrouping<...>` is not satisfied
+    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:144:21
+     |
+ LL |         .get_result(conn);
+     |          ---------- ^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `ValidGrouping<parent::columns::id>` is not implemented for `SkipSelectableExpressionBoundCheckWrapper<...>`
+      but trait `ValidGrouping<()>` is implemented for it
+    --> DIESEL/diesel/diesel/src/query_source/joins.rs
+     |
+ LL |     impl<T> ValidGrouping<()> for SkipSelectableExpressionBoundCheckWrapper<T> {
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `()`, found `parent::columns::id`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `Query`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, _, _>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
+error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: ThenOrderDsl<_>` is not satisfied
+   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:152:10
+    |
+LL |         .then_order_by(parent::id);
+    |          ^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `ThenOrderDsl<_>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ...>`
+help: the following other types implement trait `ThenOrderDsl<Expr>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, H, LC, Expr> ThenOrderDsl<Expr>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, NoGroupByClause, H, LC>
+LL | | where
+LL | |     F: QuerySource,
+...   |
+LL | |     <S::Selection as ValidGrouping<()>>::IsAggregate:
+LL | |         MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
+    | |__________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+...
+LL | / impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> ThenOrderDsl<Expr>
+LL | |     for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, GroupByClause<GB>, H...
+LL | | where
+LL | |     F: QuerySource,
+...   |
+LL | |         SelectQuery<SqlType = ST>,
+LL | |     (O, Expr): ValidGrouping<GB>,
+    | |_________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+...
+LL | / impl<F, S, D, W, LOf, G, LC, Expr> ThenOrderDsl<Expr>
+LL | |     for SelectStatement<F, S, D, W, NoOrderClause, LOf, G, LC>
+LL | | where
+LL | |     Expr: Expression,
+LL | |     Self: OrderDsl<Expr>,
+    | |_________________________^ `SelectStatement<F, S, D, W, ..., ..., ..., ...>`

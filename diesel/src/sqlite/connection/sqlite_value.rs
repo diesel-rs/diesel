@@ -138,7 +138,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         }
     }
 
-    pub(crate) fn as_utf8_str(&mut self) -> Result<&'row str, core::str::Utf8Error> {
+    pub(crate) fn as_utf8_str(&mut self) -> Result<&str, core::str::Utf8Error> {
         str::from_utf8(self.as_byte_string())
     }
 
@@ -181,7 +181,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     /// type of the value.
     ///
     /// See <https://www.sqlite.org/c3ref/value_blob.html> for details
-    pub fn read_blob(&mut self) -> &'row [u8] {
+    pub fn read_blob(&mut self) -> &[u8] {
         unsafe {
             // https://sqlite.org/c3ref/value_blob.html
             // Please pay particular attention to the fact that the pointer returned

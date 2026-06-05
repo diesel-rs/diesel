@@ -17,7 +17,6 @@ LL |     #[derive(AsExpression, FromSqlRow)]
    |              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
    |              `i32` implements `AsExpression<diesel::sql_types::Integer>`
    |              `i32` implements `AsExpression<Nullable<Integer>>`
-   = help: see issue #48214
 
       = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -27,19 +26,18 @@ error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfi
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
    |
-   = help: the following other types implement trait `AppearsOnTable<QS>`:
-             `&'a T` implements `AppearsOnTable<QS>`
-             `(T, T1)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `AppearsOnTable<QS>`
-           and N others
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
    = note: required for `diesel::expression::operators::Eq<columns::name, i32>` to implement `diesel::AsChangeset`
-
-      = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `&i32: AsExpression<Nullable<Text>>` is not satisfied
   --> tests/fail/derive/bad_as_changeset.rs:11:10
@@ -84,20 +82,19 @@ error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfi
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
    |
-   = help: the following other types implement trait `AppearsOnTable<QS>`:
-             `&'a T` implements `AppearsOnTable<QS>`
-             `(T, T1)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `AppearsOnTable<QS>`
-           and N others
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
    = note: required for `&'update i32` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::operators::Eq<columns::name, &'update i32>` to implement `diesel::AsChangeset`
-
-      = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `&i32: AsExpression<Nullable<Text>>` is not satisfied
   --> tests/fail/derive/bad_as_changeset.rs:11:10
@@ -130,22 +127,22 @@ error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfi
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
    |
-   = help: the following other types implement trait `AppearsOnTable<QS>`:
-             `&'a T` implements `AppearsOnTable<QS>`
-             `(T, T1)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `AppearsOnTable<QS>`
-           and N others
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
    = note: required for `&'update i32` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::operators::Eq<columns::name, &'update i32>` to implement `diesel::AsChangeset`
    = note: 1 redundant requirement hidden
    = note: required for `(Grouped<Eq<name, &i32>>, Option<Grouped<...>>)` to implement `diesel::AsChangeset`
 
-      = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
   --> tests/fail/derive/bad_as_changeset.rs:11:10
@@ -153,21 +150,21 @@ error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfi
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
    |
-   = help: the following other types implement trait `AppearsOnTable<QS>`:
-             `&'a T` implements `AppearsOnTable<QS>`
-             `(T, T1)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `AppearsOnTable<QS>`
-           and N others
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
    = note: required for `diesel::expression::operators::Eq<columns::name, i32>` to implement `diesel::AsChangeset`
    = note: 1 redundant requirement hidden
    = note: required for `(Grouped<Eq<name, i32>>, Option<Grouped<...>>)` to implement `diesel::AsChangeset`
 
-      = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
   --> tests/fail/derive/bad_as_changeset.rs:11:10
@@ -175,20 +172,19 @@ error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfi
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
    |
-   = help: the following other types implement trait `AppearsOnTable<QS>`:
-             `&'a T` implements `AppearsOnTable<QS>`
-             `(T, T1)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6)` implements `AppearsOnTable<QS>`
-             `(T, T1, T2, T3, T4, T5, T6, T7)` implements `AppearsOnTable<QS>`
-           and N others
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
    = note: required for `&i32` to implement `AppearsOnTable<users::table>`
    = note: required for `diesel::expression::operators::Eq<columns::name, &i32>` to implement `diesel::AsChangeset`
    = note: 2 redundant requirements hidden
    = note: required for `&'update User` to implement `diesel::AsChangeset`
-
-      = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

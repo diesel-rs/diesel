@@ -139,17 +139,19 @@ bitflags::bitflags! {
         const BINARY_FLAG = 128;
         const ENUM_FLAG = 256;
         const AUTO_INCREMENT_FLAG = 512;
-        const TIMESTAMP_FLAG = 1024;
-        const SET_FLAG = 2048;
-        const NO_DEFAULT_VALUE_FLAG = 4096;
-        const ON_UPDATE_NOW_FLAG = 8192;
-        const NUM_FLAG = 32768;
-        const PART_KEY_FLAG = 16384;
-        const GROUP_FLAG = 32768;
-        const UNIQUE_FLAG = 65536;
-        const BINCMP_FLAG = 130_172;
+        const TIMESTAMP_FLAG = 1_024;
+        const SET_FLAG = 2_048;
+        const NO_DEFAULT_VALUE_FLAG = 4_096;
+        const ON_UPDATE_NOW_FLAG = 8_192;
+        const NUM_FLAG = 32_768;
+        const PART_KEY_FLAG = 16_384;
+        const GROUP_FLAG = (1 << 28);
+        const UNIQUE_FLAG = 65_536;
+        const BINCMP_FLAG = 131_072;
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
+        const EXPLICIT_NULL_FLAG = (1 << 27);
+        const NOT_SECONDARY_FLAG = (1 << 29);
     }
 }
 
@@ -525,7 +527,9 @@ impl BindData {
 
                 let offset = self.capacity;
                 let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
-                let truncated_amount = length - offset;
+                let truncated_amount = length
+                    .checked_sub(offset)
+                    .expect("offset is always smaller than the actual length");
 
                 debug_assert!(
                     truncated_amount > 0,

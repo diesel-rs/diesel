@@ -1,0 +1,31 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_rust_injection"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod sql_types {
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(mysql_type(name = "Enum"))]
+    pub struct Users1XIncludeEnvP1ModYSqlNameZEnum;
+
+    #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
+    #[diesel(mysql_type(name = "Set"))]
+    pub struct Users1XIncludeEnvPModYSqlNameZSet;
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Users1XIncludeEnvP1ModYSqlNameZEnum;
+    use super::sql_types::Users1XIncludeEnvPModYSqlNameZSet;
+
+    users1 (id) {
+        id -> Integer,
+        #[sql_name = r##"x"] } include!(env!("P1")); mod y { #[sql_name="z"##]
+        #[max_length = 8]
+        x_include_env_P1_mod_y_sql_name_z -> Users1XIncludeEnvP1ModYSqlNameZEnum,
+        #[sql_name = r##"x"] } include!(env!("P")); mod y { #[sql_name="z"##]
+        #[max_length = 19]
+        x_include_env_P_mod_y_sql_name_z -> Users1XIncludeEnvPModYSqlNameZSet,
+    }
+}
