@@ -31,13 +31,22 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
 * `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
-* Fix a regression introduced in 2.3.8 where `order_by()` and `then_order_by()` with an aggregate expression incorrectly failed to compile when a `group_by()` clause was present
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+
+## [2.3.10] 2026-06-05
+
+* Fixed a wrong value of a internal MYSQL flag
+* Fixed several possible panics in the PostgreSQL deserialization code for malformed packages in the 
+* Fixed an issue that caused unexpected results while calling custom aggregated SQL functions twice in the SQLite backend
+* Fixed a potential use after free bug in the SQLite backend while deserializing a database from a byte buffer
+* Fixed potential invalid schema generation if column or table names "inject" rust code
+* Fixed potential SQL injections during schema introspection via `diesel print-schema` 
+* Fixed a regression that resulted in rejecting valid combinations of `ORDER BY` and `GROUP BY` clauses
 
 ## [2.3.9] 2026-04-30
 
@@ -2375,3 +2384,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7
 [2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8
 [2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9
+[2.3.10]: https://github.com/diesel-rs/diesel/compare/v2.3.9...v2.3.10
