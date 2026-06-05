@@ -221,22 +221,22 @@ fn generate_connection_impl(
         }
     });
 
-    let impl_migration_connection_save = connection_types.iter().map(|c| {
+    let impl_migration_connection_read = connection_types.iter().map(|c| {
         let ident = c.name;
         quote::quote! {
             Self::#ident(conn) => {
                 use diesel::migration::MigrationConnection;
-                conn.save_search_path()
+                conn.read_search_path()
             }
         }
     });
 
-    let impl_migration_connection_restore = connection_types.iter().map(|c| {
+    let impl_migration_connection_set = connection_types.iter().map(|c| {
         let ident = c.name;
         quote::quote! {
             Self::#ident(conn) => {
                 use diesel::migration::MigrationConnection;
-                conn.restore_search_path(search_path)
+                conn.set_search_path(search_path)
             }
         }
     });
@@ -473,15 +473,15 @@ fn generate_connection_impl(
                 }
             }
 
-            fn save_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
+            fn read_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
                 match self {
-                    #(#impl_migration_connection_save,)*
+                    #(#impl_migration_connection_read,)*
                 }
             }
 
-            fn restore_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
+            fn set_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
                 match self {
-                    #(#impl_migration_connection_restore,)*
+                    #(#impl_migration_connection_set,)*
                 }
             }
         }

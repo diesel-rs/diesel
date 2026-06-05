@@ -638,3 +638,31 @@ fn migration_run_without_transaction() {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout() == "Running migration 2023-05-08-210424_without_transaction\n");
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn reset_search_path_after_migration() {
+    let p: crate::support::Project = project("print_schema_after_search_path_change")
+        .folder("migrations")
+        .build();
+    let _db = database(&p.database_url());
+
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_set_search_path",
+        "CREATE SCHEMA IF NOT EXISTS custom_schema; SET search_path TO custom_schema;",
+        Some("SET search_path TO public; DROP SCHEMA IF EXISTS custom_schema CASCADE;"),
+        None,
+    );
+
+    p.create_migration(
+        "12346_create_users",
+        "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL);",
+        Some("DROP TABLE users;"),
+        None,
+    );
+
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Migration failed: {:?}", result);
+}
