@@ -211,12 +211,32 @@ fn generate_connection_impl(
         }
     });
 
-    let impl_migration_connection = connection_types.iter().map(|c| {
+    let impl_migration_connection_setup = connection_types.iter().map(|c| {
         let ident = c.name;
         quote::quote! {
             Self::#ident(conn) => {
                 use diesel::migration::MigrationConnection;
                 conn.setup()
+            }
+        }
+    });
+
+    let impl_migration_connection_read = connection_types.iter().map(|c| {
+        let ident = c.name;
+        quote::quote! {
+            Self::#ident(conn) => {
+                use diesel::migration::MigrationConnection;
+                conn.read_search_path()
+            }
+        }
+    });
+
+    let impl_migration_connection_set = connection_types.iter().map(|c| {
+        let ident = c.name;
+        quote::quote! {
+            Self::#ident(conn) => {
+                use diesel::migration::MigrationConnection;
+                conn.set_search_path(search_path)
             }
         }
     });
@@ -449,7 +469,19 @@ fn generate_connection_impl(
         impl diesel::migration::MigrationConnection for MultiConnection {
             fn setup(&mut self) -> diesel::QueryResult<usize> {
                 match self {
-                    #(#impl_migration_connection,)*
+                    #(#impl_migration_connection_setup,)*
+                }
+            }
+
+            fn read_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
+                match self {
+                    #(#impl_migration_connection_read,)*
+                }
+            }
+
+            fn set_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
+                match self {
+                    #(#impl_migration_connection_set,)*
                 }
             }
         }
