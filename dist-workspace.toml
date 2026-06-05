@@ -4,7 +4,7 @@ members = ["cargo:."]
 # Config for 'dist'
 [dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.31.0"
+cargo-dist-version = "0.32.0"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -42,3 +42,9 @@ libtirpc-dev = '*'
 x86_64-apple-darwin = "macos-15-intel"
 aarch64-apple-darwin = "macos-15"
 aarch64-unknown-linux-gnu = "ubuntu-22.04-arm"
+
+[dist.github-action-commits]
+"actions/checkout" = "8e8c483db84b4bee98b60c0593521ed34d9990e8"
+"actions/attest-build-provenance" = "96278af6caaf10aea03fd8d33a09a777ca52d62f"
+"actions/upload-artifact" = "b7c566a772e6b6bfb58ed0dc250532a479d7789f"
+"actions/download-artifact" = "37930b1c2abaa49bbe596cd826c3c89aef350131"
