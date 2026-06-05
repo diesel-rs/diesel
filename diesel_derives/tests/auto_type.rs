@@ -630,6 +630,42 @@ fn sqlite_variadic_functions() -> _ {
             sqlite_extras::text,
             sqlite_extras::text,
         ),
+        json_replace_0(sqlite_extras::json),
+        json_replace_1(sqlite_extras::jsonb, sqlite_extras::text, sqlite_extras::id),
+        json_replace_2(
+            sqlite_extras::json,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_replace_0(sqlite_extras::jsonb),
+        jsonb_replace_1(sqlite_extras::json, sqlite_extras::text, sqlite_extras::id),
+        jsonb_replace_2(
+            sqlite_extras::jsonb,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        json_set_0(sqlite_extras::json),
+        json_set_1(sqlite_extras::jsonb, sqlite_extras::text, sqlite_extras::id),
+        json_set_2(
+            sqlite_extras::json,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_set_0(sqlite_extras::jsonb),
+        jsonb_set_1(sqlite_extras::json, sqlite_extras::text, sqlite_extras::id),
+        jsonb_set_2(
+            sqlite_extras::jsonb,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
     )
 }
 
