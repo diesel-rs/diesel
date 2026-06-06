@@ -1928,9 +1928,7 @@ impl SqliteConnection {
 
         let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
             statement_cache: StatementCache::new(),
-            raw_connection: RawConnection {
-                internal_connection: db,
-            },
+            raw_connection: RawConnection::from_ptr(db),
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::default_instrumentation(),

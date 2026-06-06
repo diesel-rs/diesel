@@ -83,7 +83,7 @@ pub(super) struct RawConnection {
 }
 
 impl RawConnection {
-    fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
+    pub(super) fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
         RawConnection {
             internal_connection: conn,
             change_hooks: OnceCell::new(),
