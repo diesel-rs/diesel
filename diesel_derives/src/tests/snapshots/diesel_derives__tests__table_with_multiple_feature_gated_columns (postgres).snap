@@ -6,6 +6,12 @@ info:
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
+    const _: () = {
+        assert!(
+            5u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`users` contains 5 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+        );
+    };
     use ::diesel;
     pub use self::columns::*;
     use diesel::sql_types::*;
@@ -608,6 +614,14 @@ pub mod users {
             }
         }
         impl diesel::SelectableExpression<super::table> for id {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for id {}
         impl<QS> diesel::AppearsOnTable<QS> for id
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -854,6 +868,14 @@ pub mod users {
             }
         }
         impl diesel::SelectableExpression<super::table> for name {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for name {}
         impl<QS> diesel::AppearsOnTable<QS> for name
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -1049,6 +1071,15 @@ pub mod users {
         #[cfg(feature = "chrono")]
         impl diesel::SelectableExpression<super::table> for created_at {}
         #[cfg(feature = "chrono")]
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for created_at {}
+        #[cfg(feature = "chrono")]
         impl<QS> diesel::AppearsOnTable<QS> for created_at
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -1208,16 +1239,13 @@ pub mod users {
                 )
             }
         }
-        #[cfg(feature = "chrono")]
         impl diesel::query_source::AppearsInFromClause<
             diesel::query_builder::Only<super::table>,
         > for created_at {
             type Count = diesel::query_source::Once;
         }
-        #[cfg(feature = "chrono")]
         impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>>
         for created_at {}
-        #[cfg(feature = "chrono")]
         impl<
             TSM,
         > diesel::query_source::AppearsInFromClause<
@@ -1228,7 +1256,6 @@ pub mod users {
         {
             type Count = diesel::query_source::Once;
         }
-        #[cfg(feature = "chrono")]
         impl<
             TSM,
         > diesel::SelectableExpression<
@@ -1286,6 +1313,15 @@ pub mod users {
         }
         #[cfg(feature = "uuid")]
         impl diesel::SelectableExpression<super::table> for user_uuid {}
+        #[cfg(feature = "uuid")]
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for user_uuid {}
         #[cfg(feature = "uuid")]
         impl<QS> diesel::AppearsOnTable<QS> for user_uuid
         where
@@ -1416,16 +1452,13 @@ pub mod users {
                 self.eq(__diesel_internal_rhs)
             }
         }
-        #[cfg(feature = "uuid")]
         impl diesel::query_source::AppearsInFromClause<
             diesel::query_builder::Only<super::table>,
         > for user_uuid {
             type Count = diesel::query_source::Once;
         }
-        #[cfg(feature = "uuid")]
         impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>>
         for user_uuid {}
-        #[cfg(feature = "uuid")]
         impl<
             TSM,
         > diesel::query_source::AppearsInFromClause<
@@ -1436,7 +1469,6 @@ pub mod users {
         {
             type Count = diesel::query_source::Once;
         }
-        #[cfg(feature = "uuid")]
         impl<
             TSM,
         > diesel::SelectableExpression<
@@ -1494,6 +1526,15 @@ pub mod users {
         }
         #[cfg(feature = "chrono")]
         impl diesel::SelectableExpression<super::table> for updated_at {}
+        #[cfg(feature = "chrono")]
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for updated_at {}
         #[cfg(feature = "chrono")]
         impl<QS> diesel::AppearsOnTable<QS> for updated_at
         where
@@ -1654,16 +1695,13 @@ pub mod users {
                 )
             }
         }
-        #[cfg(feature = "chrono")]
         impl diesel::query_source::AppearsInFromClause<
             diesel::query_builder::Only<super::table>,
         > for updated_at {
             type Count = diesel::query_source::Once;
         }
-        #[cfg(feature = "chrono")]
         impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>>
         for updated_at {}
-        #[cfg(feature = "chrono")]
         impl<
             TSM,
         > diesel::query_source::AppearsInFromClause<
@@ -1674,7 +1712,6 @@ pub mod users {
         {
             type Count = diesel::query_source::Once;
         }
-        #[cfg(feature = "chrono")]
         impl<
             TSM,
         > diesel::SelectableExpression<
