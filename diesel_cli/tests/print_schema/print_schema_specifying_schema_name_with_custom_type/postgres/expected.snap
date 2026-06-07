@@ -18,6 +18,7 @@ pub mod custom_schema {
     }
 
     diesel::table! {
+        #[allow(clippy::pedantic)]
         use diesel::sql_types::*;
         use super::sql_types::MyEnum;
 
