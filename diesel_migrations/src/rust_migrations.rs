@@ -40,7 +40,8 @@ use crate::MigrationError;
 ///
 /// # #[cfg(feature = "postgres")]
 /// # let connection_url = database_url_from_env("PG_DATABASE_URL");
-/// # // An in-memory database avoids lock races between concurrently running doctests.
+/// # // An in-memory database avoids lock races between concurrently running doctests
+/// # // and keeps this example's applied migrations out of the shared test database.
 /// # #[cfg(feature = "sqlite")]
 /// # let connection_url = String::from(":memory:");
 /// # #[cfg(feature = "mysql")]
