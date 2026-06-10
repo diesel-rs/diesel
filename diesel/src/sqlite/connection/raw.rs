@@ -24,6 +24,15 @@ use core::ffi as libc;
 use core::ptr::NonNull;
 use core::{mem, ptr, slice, str};
 
+// `sqlite3_db_config()` option codes controlling whether ATTACH may create new
+// database files (ATTACH_CREATE) or open them in write mode (ATTACH_WRITE).
+// Introduced in SQLite 3.49.0 / `libsqlite3-sys` 0.35.0, but Diesel supports
+// `libsqlite3-sys` >= 0.17.2, so we define them here to build against any
+// supported version. On an older linked SQLite the `sqlite3_db_config()` call
+// fails at runtime, which callers already handle.
+pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
+pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
+
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
 macro_rules! assert_fail {
