@@ -5,8 +5,10 @@
 //! This module holds the items needed to type-check `RETURNING` clauses that are not specific
 //! to a particular backend.
 
+use crate::expression::{AppearsOnTable, BoxableExpression, Expression, SelectableExpression};
 use crate::query_source::joins::ToInnerJoin;
-use crate::query_source::{AppearsInFromClause, Once};
+use crate::query_source::{AppearsInFromClause, Never, QueryRelation, QuerySource, TableNotEqual};
+use alloc::boxed::Box;
 use core::marker::PhantomData;
 
 /// Statement-kind marker
@@ -35,10 +37,30 @@ pub struct InsertStmtWithOnConflictDoUpdate;
 #[derive(Debug, Clone, Copy)]
 pub struct ReturningQuerySource<StmtKind, T>(PhantomData<(StmtKind, T)>);
 
-impl<StmtKind, T> AppearsInFromClause<T> for ReturningQuerySource<StmtKind, T> {
-    type Count = Once;
+impl<StmtKind, T> QuerySource for ReturningQuerySource<StmtKind, T>
+where
+    T: QuerySource + Default,
+    T::DefaultSelection: SelectableExpression<Self>,
+{
+    type FromClause = T::FromClause;
+    type DefaultSelection = T::DefaultSelection;
+
+    fn from_clause(&self) -> Self::FromClause {
+        T::default().from_clause()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        T::default().default_selection()
+    }
 }
 
+impl<StmtKind, T1, T2> AppearsInFromClause<T1> for ReturningQuerySource<StmtKind, T2>
+where
+    T1: TableNotEqual<T2> + QueryRelation,
+    T2: QueryRelation,
+{
+    type Count = Never;
+}
 // For typechecking of `old(column).nullable()`
 
 impl<T> ToInnerJoin for ReturningQuerySource<UpdateStmt, T> {
@@ -130,4 +152,28 @@ impl<V, Target, Changeset, Tab, WhereClause> InsertStmtKind
     >
 {
     type StmtKind = InsertStmtWithOnConflictDoUpdate;
+}
+
+/// Make `Box<dyn BoxableExpression<table>>` be `SelectableExpression` in returning clauses.
+/// This is necessary for backwards-compatibility.
+///
+/// Unfortunately we cannot implement this directly for `dyn BoxableExpression`
+/// (and rely on our existing generic impls for `Box<T>`) because the compiler
+/// complains that there is already an automatic implementation of `SelectableExpression` for
+/// `dyn BoxableExpression`, even though the `QS` type is different.
+/// As a workaround, we implement it for `Box<dyn BoxableExpression<table>>`, which should
+/// cover for most users.
+impl<'a, QS, ST, DB, GB, IsAggregate, StmtKind>
+    SelectableExpression<ReturningQuerySource<StmtKind, QS>>
+    for Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>
+where
+    Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>: Expression,
+{
+}
+/// See comment on `SelectableExpression` impl above.
+impl<'a, QS, ST, DB, GB, IsAggregate, StmtKind> AppearsOnTable<ReturningQuerySource<StmtKind, QS>>
+    for Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>
+where
+    Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>: Expression,
+{
 }
