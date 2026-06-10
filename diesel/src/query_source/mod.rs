@@ -119,7 +119,7 @@ where
     }
 }
 
-/// Determines how many times `Self` appears in `QS`
+/// Determines how many times `QS` appears in `Self`
 ///
 /// This trait is primarily used to determine whether or not a column is
 /// selectable from a given from clause. A column can be selected if its table
@@ -134,7 +134,7 @@ where
     note = "double check that any two aliases to the same table in `{QS}` and `{Self}` appear in the same `alias!` call"
 )]
 pub trait AppearsInFromClause<QS> {
-    /// How many times does `Self` appear in `QS`?
+    /// How many times does `QS` appear in `Self`?
     type Count;
 }
 

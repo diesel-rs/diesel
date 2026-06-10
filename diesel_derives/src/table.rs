@@ -460,6 +460,15 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 }
             }
 
+            impl<StmtKind> diesel::query_source::AppearsInFromClause<#query_source_ident> for diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, #query_source_ident>
+            {
+                type Count = diesel::query_source::Once;
+            }
+
+            impl<StmtKind, T> diesel::query_source::AppearsInFromClause<diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, T>> for #query_source_ident {
+                type Count = diesel::query_source::Never;
+            }
+
             impl diesel::query_source::AppearsInFromClause<#query_source_ident> for diesel::internal::table_macro::NoFromClause {
                 type Count = diesel::query_source::Never;
             }
