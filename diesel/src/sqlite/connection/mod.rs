@@ -3033,12 +3033,16 @@ mod tests {
         assert!(disabled.is_err());
     }
 
+    // These ATTACH tests need a real filesystem (temp files), which is not
+    // available on the wasm target, where SQLite is in-memory only.
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn temp_db_path(tag: &str) -> std::path::PathBuf {
         let mut path = std::env::temp_dir();
         path.push(format!("diesel_attach_{}_{}.db", std::process::id(), tag));
         path
     }
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
     fn attach_create_disabled_blocks_new_database_files() {
         let conn = &mut connection();
@@ -3066,6 +3070,7 @@ mod tests {
         let _ = std::fs::remove_file(&path);
     }
 
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
     fn attach_write_disabled_opens_attached_databases_read_only() {
         let conn = &mut connection();

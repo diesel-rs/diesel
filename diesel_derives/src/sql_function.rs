@@ -781,6 +781,9 @@ fn generate_tokens_for_non_aggregate_functions(
                         f,
                     )
                 }
+            }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
                 /// Registers a nondeterministic implementation for this function on the
@@ -810,6 +813,9 @@ fn generate_tokens_for_non_aggregate_functions(
                         f,
                     )
                 }
+            }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
                 /// Registers an implementation for this function on the given connection,
@@ -872,6 +878,9 @@ fn generate_tokens_for_non_aggregate_functions(
                         f,
                     )
                 }
+            }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
                 /// Registers a nondeterministic implementation for this function on the
@@ -899,6 +908,9 @@ fn generate_tokens_for_non_aggregate_functions(
                         f,
                     )
                 }
+            }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
                 /// Registers an implementation for this function on the given connection,
@@ -1023,7 +1035,9 @@ fn generate_tokens_for_aggregate_functions(
                                 diesel::sqlite::SqliteFunctionBehavior::empty(),
                             )
                         }
-
+                    }
+                    diesel::internal::sql_functions::expand_sqlite_function! {
+                        [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
                         /// Registers an implementation for this aggregate function on the
                         /// given connection, with explicit control over the SQLite behavior flags.
@@ -1088,7 +1102,9 @@ fn generate_tokens_for_aggregate_functions(
                                 diesel::sqlite::SqliteFunctionBehavior::empty(),
                             )
                         }
-
+                    }
+                    diesel::internal::sql_functions::expand_sqlite_function! {
+                        [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
                         /// Registers an implementation for this aggregate function on the
                         /// given connection, with explicit control over the SQLite behavior flags.
