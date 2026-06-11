@@ -189,10 +189,17 @@ jobs:
           mkdir "C:\\Program Files\\MySQL\\MySQL Server 8.0\\data\\"
           "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console --initialize --initialize-insecure
           "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console &
-          sleep 15
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test;" -u root
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_unit_test;" -u root
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e 'grant all on `diesel_%`.* to 'root'@'localhost';' -uroot
+          # Wait until the server actually accepts connections instead of a fixed
+          # sleep, which races a slow startup on the Windows runner.
+          for i in $(seq 1 60); do
+            if "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqladmin" ping -u root --silent >/dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for MySQL to accept connections ($i)..."
+            sleep 2
+          done
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqladmin" ping -u root --silent >/dev/null 2>&1 || { echo "MySQL did not become ready in time"; exit 1; }
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
           # remove doxygen because mysqlclient build otherwise breaks?
           rm "C:/Strawberry/c/bin/doxygen.exe"
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
