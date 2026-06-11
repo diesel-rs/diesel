@@ -106,12 +106,9 @@ pub(crate) fn table_with_column_feature_gate_type_check() {
     );
 
     assert!(
-        generated_str.contains("pub type SqlType = (Integer , Text ,) ;"),
-        "Non-gated SqlType should be (Integer, Text)"
-    );
-    assert!(
-        generated_str.contains("pub type SqlType = (Integer , Text , Timestamp ,) ;"),
-        "Gated SqlType should include Timestamp"
+        generated_str
+            .contains("pub type SqlType = < AllColumns as diesel :: Expression > :: SqlType ;"),
+        "SqlType should be a single alias derived from the AllColumns type"
     );
 
     assert!(
@@ -180,21 +177,9 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
     );
 
     assert!(
-        generated_str.contains("pub type SqlType = (Integer , Text ,) ;"),
-        "Neither feature: SqlType should be (Integer, Text)"
-    );
-    assert!(
-        generated_str.contains("pub type SqlType = (Integer , Text , Timestamp , Timestamp ,) ;"),
-        "Only chrono: SqlType should have two Timestamps"
-    );
-    assert!(
-        generated_str.contains("pub type SqlType = (Integer , Text , Uuid ,) ;"),
-        "Only uuid: SqlType should include Uuid"
-    );
-    assert!(
         generated_str
-            .contains("pub type SqlType = (Integer , Text , Timestamp , Timestamp , Uuid ,) ;"),
-        "Both features: SqlType should include all types"
+            .contains("pub type SqlType = < AllColumns as diesel :: Expression > :: SqlType ;"),
+        "SqlType should be a single alias derived from the AllColumns type"
     );
 
     assert!(

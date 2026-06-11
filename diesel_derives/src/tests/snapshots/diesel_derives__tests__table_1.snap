@@ -59,11 +59,11 @@ pub mod users {
             star
         }
     }
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text);
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
     pub type AllColumns = (id, name);
+    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -121,7 +121,7 @@ pub mod users {
             id
         }
         fn all_columns() -> Self::AllColumns {
-            (id, name)
+            all_columns
         }
     }
     impl diesel::associations::HasTable for table {

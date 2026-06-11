@@ -67,12 +67,6 @@ pub mod users {
         }
     }
     #[cfg(all(not(feature = "chrono")))]
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text);
-    #[cfg(all(feature = "chrono"))]
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text, Timestamp);
-    #[cfg(all(not(feature = "chrono")))]
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
     pub type AllColumns = (id, name);
@@ -80,6 +74,8 @@ pub mod users {
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
     pub type AllColumns = (id, name, created_at);
+    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -137,7 +133,7 @@ pub mod users {
             id
         }
         fn all_columns() -> Self::AllColumns {
-            (id, name, #[cfg(feature = "chrono")] created_at)
+            all_columns
         }
     }
     impl diesel::associations::HasTable for table {

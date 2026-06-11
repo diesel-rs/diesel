@@ -75,18 +75,6 @@ pub mod users {
         }
     }
     #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text);
-    #[cfg(all(feature = "chrono", not(feature = "uuid")))]
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text, Timestamp, Timestamp);
-    #[cfg(all(not(feature = "chrono"), feature = "uuid"))]
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text, Uuid);
-    #[cfg(all(feature = "chrono", feature = "uuid"))]
-    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text, Timestamp, Timestamp, Uuid);
-    #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
     pub type AllColumns = (id, name);
@@ -102,6 +90,8 @@ pub mod users {
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
     pub type AllColumns = (id, name, created_at, updated_at, user_uuid);
+    #[doc = concat!("The SQL type of all of the columns on this ", "table")]
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -159,16 +149,7 @@ pub mod users {
             id
         }
         fn all_columns() -> Self::AllColumns {
-            (
-                id,
-                name,
-                #[cfg(feature = "chrono")]
-                created_at,
-                #[cfg(feature = "chrono")]
-                updated_at,
-                #[cfg(feature = "uuid")]
-                user_uuid,
-            )
+            all_columns
         }
     }
     impl diesel::associations::HasTable for table {

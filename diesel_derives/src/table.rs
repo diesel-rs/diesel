@@ -35,19 +35,32 @@ fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[boo
 
     let mut conditions: Vec<TokenStream> = Vec::new();
 
-    for (i, group) in groups.iter().enumerate() {
-        let is_enabled = enabled_flags[i];
+    for (group, &is_enabled) in groups.iter().zip(enabled_flags) {
+        let group_conditions: Vec<&TokenStream> = group
+            .cfg_attrs
+            .iter()
+            .filter_map(|attr| match &attr.meta {
+                syn::Meta::List(list) => Some(&list.tokens),
+                _ => None,
+            })
+            .collect();
 
-        for attr in &group.cfg_attrs {
-            let meta = &attr.meta;
-            if let syn::Meta::List(list) = meta {
-                let tokens = &list.tokens;
-                if is_enabled {
-                    conditions.push(quote::quote! { #tokens });
-                } else {
-                    conditions.push(quote::quote! { not(#tokens) });
-                }
-            }
+        if group_conditions.is_empty() {
+            continue;
+        }
+
+        if is_enabled {
+            conditions.extend(
+                group_conditions
+                    .iter()
+                    .map(|tokens| quote::quote! { #tokens }),
+            );
+        } else if let [tokens] = group_conditions[..] {
+            conditions.push(quote::quote! { not(#tokens) });
+        } else {
+            // Negate the conjunction (`not(all(...))`), not each attribute, so
+            // that mixed combinations such as `x && !y` still match.
+            conditions.push(quote::quote! { not(all(#(#group_conditions),*)) });
         }
     }
 
@@ -62,9 +75,7 @@ fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[boo
 
 struct AggregateTokens {
     all_columns_const: TokenStream,
-    sql_type_variants: TokenStream,
     all_columns_type_variants: TokenStream,
-    valid_grouping_star: TokenStream,
 }
 
 fn all_columns_tuple_expr<'a>(
@@ -86,40 +97,30 @@ fn all_columns_tuple_expr<'a>(
     quote::quote! { (#(#fields)*) }
 }
 
-/// `SqlType` and `AllColumns` need `2^n` cfg-gated variants because Rust does
-/// not allow `#[cfg]` on tuple type fields (rust-lang/rfcs#3532). The other
-/// items reference those aliases and stay as single declarations.
+/// `AllColumns` needs `2^n` cfg-gated variants because Rust does not allow
+/// `#[cfg]` on tuple type fields (rust-lang/rfcs#3532). `SqlType` is derived
+/// from `AllColumns` and the remaining items reference these aliases, so they
+/// stay as single declarations.
 fn generate_aggregate_variants<'a>(
     non_gated_columns: &[&'a ColumnDef],
     cfg_groups: &[CfgGroup<'a>],
     kind_name: &str,
 ) -> AggregateTokens {
     let base_column_names: Vec<_> = non_gated_columns.iter().map(|c| &c.column_name).collect();
-    let base_column_types: Vec<_> = non_gated_columns.iter().map(|c| &c.tpe).collect();
 
-    let mut sql_type_variants = Vec::new();
     let mut all_columns_type_variants = Vec::new();
 
     for flags in cfg_combinations(cfg_groups.len()) {
         let cfg_condition = generate_combined_cfg_condition(cfg_groups, &flags);
 
         let mut column_names = base_column_names.clone();
-        let mut column_types = base_column_types.clone();
-
-        for (i, group) in cfg_groups.iter().enumerate() {
-            if flags[i] {
+        for (group, &enabled) in cfg_groups.iter().zip(&flags) {
+            if enabled {
                 for col in &group.columns {
                     column_names.push(&col.column_name);
-                    column_types.push(&col.tpe);
                 }
             }
         }
-
-        sql_type_variants.push(quote::quote! {
-            #cfg_condition
-            #[doc = concat!("The SQL type of all of the columns on this ", #kind_name)]
-            pub type SqlType = (#(#column_types,)*);
-        });
 
         all_columns_type_variants.push(quote::quote! {
             #cfg_condition
@@ -137,32 +138,16 @@ fn generate_aggregate_variants<'a>(
         pub const all_columns: AllColumns = #tuple_expr;
     };
 
-    let valid_grouping_star = quote::quote! {
-        impl<__GB> diesel::expression::ValidGrouping<__GB> for star
-        where
-            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
-        {
-            type IsAggregate =
-                <super::AllColumns as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
-        }
-    };
-
     AggregateTokens {
         all_columns_const,
-        sql_type_variants: quote::quote! { #(#sql_type_variants)* },
         all_columns_type_variants: quote::quote! { #(#all_columns_type_variants)* },
-        valid_grouping_star,
     }
 }
 
-fn generate_kind_specific_impls<'a>(
-    non_gated_columns: &[&'a ColumnDef],
-    cfg_groups: &[CfgGroup<'a>],
+fn generate_kind_specific_impls(
     primary_key: &Option<TokenStream>,
     kind: QuerySourceMacroKind,
 ) -> TokenStream {
-    let tuple_expr = all_columns_tuple_expr(non_gated_columns, cfg_groups);
-
     match kind {
         QuerySourceMacroKind::Table => quote::quote! {
             impl diesel::Table for table {
@@ -174,7 +159,7 @@ fn generate_kind_specific_impls<'a>(
                 }
 
                 fn all_columns() -> Self::AllColumns {
-                    #tuple_expr
+                    all_columns
                 }
             }
 
@@ -227,7 +212,7 @@ fn generate_kind_specific_impls<'a>(
                 type AllColumns = AllColumns;
 
                 fn all_columns() -> Self::AllColumns {
-                    #tuple_expr
+                    all_columns
                 }
             }
 
@@ -490,13 +475,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 
     let AggregateTokens {
         all_columns_const,
-        sql_type_variants,
         all_columns_type_variants,
-        valid_grouping_star,
     } = generate_aggregate_variants(&non_gated_columns, &cfg_groups, kind_name);
 
-    let kind_specific_impls =
-        generate_kind_specific_impls(&non_gated_columns, &cfg_groups, &primary_key, kind);
+    let kind_specific_impls = generate_kind_specific_impls(&primary_key, kind);
 
     let backend_specific_table_impls = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
@@ -611,9 +593,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 }
             }
 
-            #sql_type_variants
-
             #all_columns_type_variants
+
+            #[doc = concat!("The SQL type of all of the columns on this ", #kind_name)]
+            pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
 
             #[doc = concat!("Helper type for representing a boxed query from this ", #kind_name)]
             pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<'a, ST, diesel::internal::table_macro::FromClause<#query_source_ident>, DB>;
@@ -788,7 +771,13 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 /// being used that way
                 pub struct star;
 
-                #valid_grouping_star
+                impl<__GB> diesel::expression::ValidGrouping<__GB> for star
+                where
+                    super::AllColumns: diesel::expression::ValidGrouping<__GB>,
+                {
+                    type IsAggregate =
+                        <super::AllColumns as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+                }
 
                 impl diesel::Expression for star {
                     type SqlType = diesel::expression::expression_types::NotSelectable;
@@ -1231,5 +1220,75 @@ fn expand_column_def(
         #ops_impls
         #backend_specific_column_impl
         #table_specific_impls
+    }
+}
+
+#[cfg(test)]
+mod helper_tests {
+    use super::*;
+
+    #[test]
+    fn cfg_combinations_zero_groups_yields_single_empty_vector() {
+        let combos: Vec<Vec<bool>> = cfg_combinations(0).collect();
+        assert_eq!(combos, vec![Vec::<bool>::new()]);
+    }
+
+    #[test]
+    fn cfg_combinations_enumerates_every_flag_vector() {
+        let combos: Vec<Vec<bool>> = cfg_combinations(2).collect();
+        assert_eq!(combos.len(), 4);
+        assert!(combos.contains(&vec![false, false]));
+        assert!(combos.contains(&vec![true, false]));
+        assert!(combos.contains(&vec![false, true]));
+        assert!(combos.contains(&vec![true, true]));
+    }
+
+    #[test]
+    fn combined_cfg_condition_is_empty_without_groups() {
+        let condition = generate_combined_cfg_condition(&[], &[]);
+        assert!(condition.is_empty());
+    }
+
+    #[test]
+    fn combined_cfg_condition_negates_disabled_groups() {
+        let attr: syn::Attribute = parse_quote!(#[cfg(feature = "chrono")]);
+        let group = CfgGroup {
+            cfg_attrs: vec![&attr],
+            columns: Vec::new(),
+        };
+
+        let enabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[true]);
+        assert_eq!(
+            enabled.to_string(),
+            quote::quote! { #[cfg(all(feature = "chrono"))] }.to_string()
+        );
+
+        let disabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[false]);
+        assert_eq!(
+            disabled.to_string(),
+            quote::quote! { #[cfg(all(not(feature = "chrono")))] }.to_string()
+        );
+    }
+
+    #[test]
+    fn combined_cfg_condition_negates_the_conjunction_of_multiple_attrs() {
+        let first: syn::Attribute = parse_quote!(#[cfg(feature = "x")]);
+        let second: syn::Attribute = parse_quote!(#[cfg(feature = "y")]);
+        let group = CfgGroup {
+            cfg_attrs: vec![&first, &second],
+            columns: Vec::new(),
+        };
+
+        let enabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[true]);
+        assert_eq!(
+            enabled.to_string(),
+            quote::quote! { #[cfg(all(feature = "x", feature = "y"))] }.to_string()
+        );
+
+        let disabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[false]);
+        assert_eq!(
+            disabled.to_string(),
+            quote::quote! { #[cfg(all(not(all(feature = "x", feature = "y"))))] }.to_string()
+        );
     }
 }

@@ -59,11 +59,11 @@ pub mod view {
             star
         }
     }
-    #[doc = concat!("The SQL type of all of the columns on this ", "view")]
-    pub type SqlType = (Integer, Text);
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "view")]
     pub type AllColumns = (id, name);
+    #[doc = concat!("The SQL type of all of the columns on this ", "view")]
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "view")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -119,7 +119,7 @@ pub mod view {
     impl diesel::query_source::QueryRelation for view {
         type AllColumns = AllColumns;
         fn all_columns() -> Self::AllColumns {
-            (id, name)
+            all_columns
         }
     }
     impl diesel::internal::table_macro::Sealed for view {}
