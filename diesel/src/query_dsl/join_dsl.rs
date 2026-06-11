@@ -23,13 +23,27 @@ where
     }
 }
 
-#[doc(hidden)]
+mod private {
+    #[doc(hidden)]
+    /// Sealed trait for `JoinWithImplicitOnClause`
+    pub trait Sealed<Rhs, Kind> {}
+}
+
 /// `JoinDsl` support trait to emulate associated type constructors and grab
 /// the known on clause from the associations API
-pub trait JoinWithImplicitOnClause<Rhs, Kind> {
+pub trait JoinWithImplicitOnClause<Rhs, Kind>: private::Sealed<Rhs, Kind> {
+    #[doc(hidden)]
     type Output;
 
+    #[doc(hidden)]
     fn join_with_implicit_on_clause(self, rhs: Rhs, kind: Kind) -> Self::Output;
+}
+
+impl<Lhs, Rhs, Kind> private::Sealed<Rhs, Kind> for Lhs
+where
+    Lhs: JoinTo<Rhs>,
+    Lhs: InternalJoinDsl<<Lhs as JoinTo<Rhs>>::FromClause, Kind, <Lhs as JoinTo<Rhs>>::OnClause>,
+{
 }
 
 impl<Lhs, Rhs, Kind> JoinWithImplicitOnClause<Rhs, Kind> for Lhs
