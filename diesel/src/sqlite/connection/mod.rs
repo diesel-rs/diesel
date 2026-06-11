@@ -1029,8 +1029,9 @@ impl SqliteConnection {
     ///
     /// # Panics
     ///
-    /// If `f` panics, extension loading is not disabled again before the panic
-    /// propagates.
+    /// If `f` panics, extension loading is disabled again before the panic
+    /// resumes. no-std builds cannot catch the unwind, so there the flag is
+    /// restored only on a normal return.
     ///
     /// # Example
     ///
@@ -1050,9 +1051,29 @@ impl SqliteConnection {
         E: From<crate::result::Error>,
     {
         self.set_load_extension_enabled(true)?;
-        let r = f(self);
-        self.set_load_extension_enabled(false)?;
-        r
+
+        // On std builds, catch a panic from `f` so extension loading is restored
+        // before the panic is resumed. no-std cannot catch unwinding, so there
+        // the flag is restored only on a normal return.
+        #[cfg(feature = "std")]
+        {
+            match std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| f(self))) {
+                Ok(r) => {
+                    self.set_load_extension_enabled(false)?;
+                    r
+                }
+                Err(panic) => {
+                    let _ = self.set_load_extension_enabled(false);
+                    std::panic::resume_unwind(panic);
+                }
+            }
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            let r = f(self);
+            self.set_load_extension_enabled(false)?;
+            r
+        }
     }
 
     fn set_load_extension_enabled(&mut self, enabled: bool) -> QueryResult<()> {
@@ -2773,6 +2794,25 @@ mod tests {
         .unwrap();
         // Disabled again afterwards.
         assert!(!conn.is_load_extension_enabled().unwrap());
+    }
+
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown"))
+    ))]
+    #[diesel_test_helper::test]
+    fn with_load_extension_enabled_disables_after_panic() {
+        let conn = &mut connection();
+        let outcome = std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| {
+            conn.with_load_extension_enabled(|_conn| -> QueryResult<()> {
+                panic!("boom inside closure");
+            })
+        }));
+        assert!(outcome.is_err(), "panic should propagate");
+        assert!(
+            !conn.is_load_extension_enabled().unwrap(),
+            "extension loading must be disabled again after a panic"
+        );
     }
 
     #[diesel_test_helper::test]
