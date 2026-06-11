@@ -86,14 +86,14 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
           BACKEND: ${{ matrix.backend }}
-          METRICS_ACCESS_KEY: ${{ secrets.METRICS_ACCESS_KEY }}
+          METRIC_ACCESS_KEY: ${{ secrets.METRIC_ACCESS_KEY }}
         run: |
           sudo apt-get -y install git
 
           mkdir ~/.ssh -p
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-keyscan github.com >> ~/.ssh/known_hosts
-          echo "$METRICS_ACCESS_KEY" >> ~/.ssh/id_ed25519
+          echo "$METRIC_ACCESS_KEY" >> ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           df -h
           rm diesel_bench/target/release -rf
