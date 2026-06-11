@@ -235,6 +235,18 @@ pub mod users {
             __diesel_internal_alias.field(__diesel_internal_column)
         }
     }
+    impl<StmtKind> diesel::query_source::AppearsInFromClause<table>
+    for diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, table> {
+        type Count = diesel::query_source::Once;
+    }
+    impl<
+        StmtKind,
+        T,
+    > diesel::query_source::AppearsInFromClause<
+        diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, T>,
+    > for table {
+        type Count = diesel::query_source::Never;
+    }
     impl diesel::query_source::AppearsInFromClause<table>
     for diesel::internal::table_macro::NoFromClause {
         type Count = diesel::query_source::Never;
