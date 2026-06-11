@@ -27,6 +27,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added a `custom-count-column-tables` feature that allows you to configure the maximal number of supported columns per table via the `DIESEL_MAX_COLUMN_COUNT` environment variable
 * Added `register_auto_extension`, `cancel_auto_extension`, and `reset_auto_extension` for the SQLite backend to register statically linked extensions that run for every new connection.
 * Added `SqliteConnection::set_limit`, `SqliteConnection::get_limit`, and `SqliteConnection::set_recommended_security_limits` to configure SQLite's per-connection runtime limits (`sqlite3_limit`) via the new `SqliteLimit` enum.
+* Added support for `#[cfg(...)]` attributes on individual columns inside the `table!` macro, so a schema whose columns vary by enabled crate features can live in a single `table!` block instead of duplicated feature gated modules.
 
 ### Fixed
 

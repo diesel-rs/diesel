@@ -1413,6 +1413,27 @@ fn __diesel_public_if_inner(
 /// }
 /// ```
 ///
+/// Individual columns may be guarded by a `#[cfg(...)]` attribute, so a table
+/// whose columns vary by enabled crate features can live in a single `table!`
+/// block instead of duplicated feature gated modules.
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::table! {
+///     users {
+///         id -> Integer,
+///         name -> Text,
+///         #[cfg(feature = "chrono")]
+///         created_at -> Timestamp,
+///     }
+/// }
+/// ```
+///
+/// The primary key itself cannot be feature gated this way: if a feature flag
+/// changes which columns form the primary key, the whole `table!` block still
+/// needs to be duplicated behind the relevant `#[cfg(...)]` attributes.
+///
 /// This module will also contain several helper types:
 ///
 /// dsl
