@@ -56,7 +56,8 @@ use proc_macro::TokenStream;
 /// #
 /// # #[cfg(feature = "sqlite")]
 /// # fn migration_connection() -> diesel::SqliteConnection {
-/// #    let connection_url = database_url_from_env("SQLITE_DATABASE_URL");
+/// #    // An in-memory database avoids lock races between concurrently running doctests.
+/// #    let connection_url = String::from(":memory:");
 /// #    let mut conn = diesel::SqliteConnection::establish(&connection_url).unwrap();
 /// #    conn.begin_test_transaction().unwrap();
 /// #    conn

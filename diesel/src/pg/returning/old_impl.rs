@@ -8,7 +8,7 @@ use crate::query_builder::returning::{
     InsertStmtWithOnConflictDoUpdate, ReturningQuerySource, UpdateStmt,
 };
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::query_source::Column;
+use crate::query_source::{AppearsInFromClause, Column, Never, Once, QueryRelation};
 use crate::result::QueryResult;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
@@ -114,18 +114,54 @@ where
 // That's how we force users to write `old(col).nullable()` in an
 // `INSERT ... ON CONFLICT ... DO UPDATE RETURNING` and reject `old(col)`
 // alone at compile time.
-impl<C> AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>> for Old<C>
+impl<C, QS> AppearsOnTable<QS> for Old<C>
 where
     C: Column,
     Self: Expression,
+    // Check that we have exactly one `old` identifier in the `RETURNING` clause.
+    QS: AppearsInFromClause<OldIdent, Count = crate::query_source::Once>,
+    // Check that the `old` identifier relates the table of that column.
+    QS: AppearsInFromClause<
+            ReturningQuerySource<OldIdent, C::Table>,
+            Count = crate::query_source::Once,
+        >,
 {
 }
 
-impl<C> AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>> for Old<C>
+/// Represents the identifier `old` in the `RETURNING` clause.
+/// It is independent of the table of the column, and used as QS in marker in AppearsInFromClause.
+///
+/// We use this to typecheck that there is only one `old` identifier when we use `old`, so that
+/// there is no ambiguity, and also as a generic
+/// "any valid OLD statement-kind marker for ReturningQuerySource".
+#[derive(Debug, Clone, Copy)]
+pub struct OldIdent;
+
+/// There is an `old.` in ReturningQuerySource<UpdateStmt, T>
+///
+/// Useful to check non-ambiguity of `old`
+impl<StmtKind, T> AppearsInFromClause<OldIdent> for ReturningQuerySource<StmtKind, T> {
+    type Count = Once;
+}
+/// There isn't one directly on tables
+/// (this is useful for typechecking `old` in subqueries in returning)
+impl<T> AppearsInFromClause<OldIdent> for T
 where
-    C: Column,
-    Self: Expression,
+    T: QueryRelation,
 {
+    type Count = Never;
+}
+/// There is an `old.` for T in ReturningQuerySource<UpdateStmt, T>
+impl<T> AppearsInFromClause<ReturningQuerySource<OldIdent, T>>
+    for ReturningQuerySource<UpdateStmt, T>
+{
+    type Count = Once;
+}
+/// There is an `old.` for T in ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T>
+impl<T> AppearsInFromClause<ReturningQuerySource<OldIdent, T>>
+    for ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T>
+{
+    type Count = Once;
 }
 
 // We intentionally did not add implementations for use of `old(col)` in plain `INSERT`
