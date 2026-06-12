@@ -329,6 +329,16 @@ impl MultiConnectionHelper for SqliteConnection {
     }
 }
 
+/// The decision returned by an [`on_commit`](SqliteConnection::on_commit)
+/// callback, controlling whether a pending commit completes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitDecision {
+    /// Let the commit proceed normally.
+    Proceed,
+    /// Convert the commit into a rollback.
+    Rollback,
+}
+
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///
@@ -678,6 +688,69 @@ impl SqliteConnection {
         self.raw_connection.deserialize(&self.serialized_data)
     }
 
+    /// Registers a callback invoked when a transaction is about to be
+    /// committed.
+    ///
+    /// The callback returns a [`CommitDecision`]: `Proceed` lets the commit
+    /// complete, `Rollback` converts it into a rollback.
+    ///
+    /// Only one commit hook can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// The callback must not use the database connection. Panics in the
+    /// callback abort the process.
+    ///
+    /// See: [`sqlite3_commit_hook`](https://www.sqlite.org/c3ref/commit_hook.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, CommitDecision};
+    /// use std::sync::{Arc, Mutex};
+    ///
+    /// diesel::table! {
+    ///     users (id) {
+    ///         id -> Integer,
+    ///         name -> Text,
+    ///     }
+    /// }
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let commits = Arc::new(Mutex::new(0u32));
+    /// let commits2 = commits.clone();
+    ///
+    /// conn.on_commit(move || {
+    ///     *commits2.lock().unwrap() += 1;
+    ///     CommitDecision::Proceed
+    /// });
+    ///
+    /// conn.immediate_transaction(|conn| {
+    ///     diesel::insert_into(users::table)
+    ///         .values(users::name.eq("Alice"))
+    ///         .execute(conn)?;
+    ///     Ok::<_, diesel::result::Error>(())
+    /// }).unwrap();
+    ///
+    /// assert_eq!(*commits.lock().unwrap(), 1);
+    /// ```
+    pub fn on_commit<F>(&mut self, hook: F)
+    where
+        F: FnMut() -> CommitDecision + Send + 'static,
+    {
+        self.raw_connection.set_commit_hook(hook);
+    }
+
+    /// Removes the commit hook. Subsequent commits will not invoke any
+    /// callback.
+    ///
+    /// See [`on_commit`](Self::on_commit) for usage example.
+    pub fn remove_commit_hook(&mut self) {
+        self.raw_connection.remove_commit_hook();
+    }
+
     /// Provides temporary access to the raw SQLite database connection handle.
     ///
     /// This method provides a way to access the underlying `sqlite3` pointer,
@@ -807,9 +880,7 @@ impl SqliteConnection {
 
         let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
             statement_cache: StatementCache::new(),
-            raw_connection: RawConnection {
-                internal_connection: db,
-            },
+            raw_connection: RawConnection::from_ptr(db),
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::default_instrumentation(),
@@ -3217,5 +3288,129 @@ mod tests {
         // Querying the view should succeed because the function is INNOCUOUS
         let result = crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
         assert!(result.is_ok());
+    }
+
+    #[derive(crate::QueryableByName)]
+    struct CountResult {
+        #[diesel(sql_type = crate::sql_types::BigInt)]
+        c: i64,
+    }
+
+    #[diesel_test_helper::test]
+    fn on_commit_fires_on_commit() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_commit(move || {
+            *c2.lock().unwrap() += 1;
+            CommitDecision::Proceed
+        });
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("CREATE TABLE t1 (id INTEGER PRIMARY KEY)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_commit_returning_true_forces_rollback() {
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_commit (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        conn.on_commit(|| CommitDecision::Rollback);
+
+        // The transaction will attempt to commit, but the hook will convert
+        // it to a rollback. diesel's AnsiTransactionManager will see the
+        // failure from the COMMIT statement (sqlite returns an error when
+        // the commit hook returns non-zero and the commit is aborted).
+        let result = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_commit (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        });
+
+        // The transaction should have been rolled back.
+        assert!(result.is_err());
+
+        // Remove the hook so subsequent queries don't fail.
+        conn.remove_commit_hook();
+
+        // Verify the row was not persisted.
+        let cnt: i64 = crate::sql_query("SELECT COUNT(*) as c FROM t_commit")
+            .get_result::<CountResult>(conn)
+            .unwrap()
+            .c;
+        assert_eq!(cnt, 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn replacing_commit_hook_drops_old() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        let old_count = Arc::new(Mutex::new(0u32));
+        let new_count = Arc::new(Mutex::new(0u32));
+        let oc = old_count.clone();
+        let nc = new_count.clone();
+
+        conn.on_commit(move || {
+            *oc.lock().unwrap() += 1;
+            CommitDecision::Proceed
+        });
+
+        // Replace with a new hook.
+        conn.on_commit(move || {
+            *nc.lock().unwrap() += 1;
+            CommitDecision::Proceed
+        });
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("CREATE TABLE t_replace (id INTEGER PRIMARY KEY)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(*old_count.lock().unwrap(), 0);
+        assert_eq!(*new_count.lock().unwrap(), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_commit_hook_disables_callback() {
+        use std::sync::{Arc, Mutex};
+        let conn = &mut connection();
+
+        let count = Arc::new(Mutex::new(0u32));
+        let c2 = count.clone();
+
+        conn.on_commit(move || {
+            *c2.lock().unwrap() += 1;
+            CommitDecision::Proceed
+        });
+
+        conn.remove_commit_hook();
+
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("CREATE TABLE t_rem (id INTEGER PRIMARY KEY)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(*count.lock().unwrap(), 0);
     }
 }

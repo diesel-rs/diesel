@@ -20,6 +20,7 @@ use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
 use alloc::string::{String, ToString};
+use core::any::Any;
 use core::ffi as libc;
 use core::ptr::NonNull;
 use core::{mem, ptr, slice, str};
@@ -50,9 +51,20 @@ macro_rules! assert_fail {
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
     pub(super) internal_connection: NonNull<ffi::sqlite3>,
+    /// Type-erased boxed closure kept alive while the commit hook is registered.
+    commit_hook: Option<Box<dyn Any + Send>>,
 }
 
 impl RawConnection {
+    /// Wraps a borrowed `sqlite3` pointer this `RawConnection` does not own
+    /// (kept in a `ManuallyDrop` for SQL-function callbacks, so `Drop` never runs).
+    pub(super) fn from_ptr(conn: NonNull<ffi::sqlite3>) -> Self {
+        RawConnection {
+            internal_connection: conn,
+            commit_hook: None,
+        }
+    }
+
     pub(super) fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
 
@@ -71,6 +83,7 @@ impl RawConnection {
                 let conn_pointer = unsafe { NonNull::new_unchecked(conn_pointer) };
                 Ok(RawConnection {
                     internal_connection: conn_pointer,
+                    commit_hook: None,
                 })
             }
             err_code => {
@@ -374,11 +387,41 @@ impl RawConnection {
             _pd: core::marker::PhantomData,
         })
     }
+
+    /// Sets the commit hook, replacing any previous one.
+    pub(super) fn set_commit_hook<F>(&mut self, hook: F)
+    where
+        F: FnMut() -> super::CommitDecision + Send + 'static,
+    {
+        let mut boxed: Box<F> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
+        unsafe {
+            ffi::sqlite3_commit_hook(
+                self.internal_connection.as_ptr(),
+                Some(commit_hook_trampoline::<F>),
+                ptr,
+            );
+        }
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.commit_hook = Some(boxed);
+    }
+
+    /// Removes the commit hook.
+    pub(super) fn remove_commit_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_commit_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.commit_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
+
+        // Unregister before close so the boxed closure drops before sqlite3_close.
+        self.remove_commit_hook();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -447,9 +490,7 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     let conn = match unsafe { NonNull::new(ffi::sqlite3_context_db_handle(ctx)) } {
         // We use `ManuallyDrop` here because we do not want to run the
         // Drop impl of `RawConnection` as this would close the connection
-        Some(conn) => mem::ManuallyDrop::new(RawConnection {
-            internal_connection: conn,
-        }),
+        Some(conn) => mem::ManuallyDrop::new(RawConnection::from_ptr(conn)),
         None => {
             unsafe { context_error_str(ctx, NULL_CONN_ERR) };
             return;
@@ -470,6 +511,9 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     // We need this to move the reference into the catch_unwind part
     // this is sound as `F` itself and the stored string is `UnwindSafe`
     let callback = core::panic::AssertUnwindSafe(&mut data_ptr.callback);
+    // conn holds a `Box<dyn Any + Send>` hook field which is not UnwindSafe.
+    // The ManuallyDrop wrapper ensures we never run RawConnection's Drop.
+    let conn = core::panic::AssertUnwindSafe(conn);
 
     let result = crate::util::std_compat::catch_unwind(move || {
         let _ = &callback;
@@ -746,4 +790,29 @@ where
 extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
     let ptr = data as *mut F;
     unsafe { core::mem::drop(Box::from_raw(ptr)) };
+}
+
+/// C trampoline for `sqlite3_commit_hook`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::commit_hook`.
+unsafe extern "C" fn commit_hook_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
+where
+    F: FnMut() -> super::CommitDecision,
+{
+    use super::CommitDecision;
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::commit_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f()
+    }));
+
+    match result {
+        Ok(CommitDecision::Rollback) => 1,
+        Ok(CommitDecision::Proceed) => 0,
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_commit_hook trampoline. ");
+        }
+    }
 }
