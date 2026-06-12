@@ -19,10 +19,11 @@ use crate::query_builder::limit_offset_clause::LimitOffsetClause;
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderDsl};
 use crate::sql_types::BigInt;
-use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
+use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, Table};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -99,7 +100,7 @@ where
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, O, LOf, Conn> RunQueryDsl<Conn>
+impl<Combinator, Rule, Source, Rhs, O, LOf> RunQueryDslSupport
     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 {
 }

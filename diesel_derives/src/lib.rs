@@ -2210,13 +2210,35 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// On most backends, the implementation of the function is defined in a
 /// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
-/// Rust instead. You must call `register_impl` or
-/// `register_nondeterministic_impl` (in the generated function's `_internals`
-/// module) with every connection before you can use the function.
+/// Rust instead. You must call `register_impl` (in the generated function's
+/// `_utils` module) with every connection before you can use the function.
+///
+/// Three registration functions are generated in the `_utils` module:
+///
+/// - `register_impl`: registers a deterministic function (takes an `Fn`).
+/// - `register_nondeterministic_impl`: registers a function that may return
+///   different results for the same inputs, e.g. `random` (takes an `FnMut`).
+/// - `register_impl_with_behavior`: registers a function with an explicit
+///   [`SqliteFunctionBehavior`] for full control over how SQLite treats the
+///   function:
+///
+///   - `SqliteFunctionBehavior::DETERMINISTIC`: The function always returns the
+///     same result given the same inputs. Allows SQLite to optimize queries.
+///   - `SqliteFunctionBehavior::INNOCUOUS`: The function is safe to call from
+///     schema objects (views, triggers, etc.) when `set_trusted_schema(false)`.
+///   - `SqliteFunctionBehavior::DIRECTONLY`: The function cannot be called from
+///     schema objects. Use for functions with side effects.
+///   - `SqliteFunctionBehavior::empty()`: Non-deterministic function.
+///
+/// To register the implementation automatically for every new SQLite connection
+/// opened in the process, instead of manually per connection, see
+/// [`register_auto_extension`](../diesel/sqlite/fn.register_auto_extension.html).
 ///
 /// These functions will only be generated if the `sqlite` feature is enabled,
 /// and the function is not generic.
 /// SQLite doesn't support generic functions and variadic functions.
+///
+/// [`SqliteFunctionBehavior`]: ../diesel/sqlite/struct.SqliteFunctionBehavior.html
 ///
 /// ```rust
 /// # extern crate diesel;

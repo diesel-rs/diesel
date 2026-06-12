@@ -8,6 +8,7 @@ mod auto_extension;
 pub(crate) mod backend;
 mod connection;
 pub mod expression;
+mod function_behavior;
 
 pub mod query_builder;
 
@@ -23,6 +24,8 @@ pub use self::connection::SqliteConnection;
 pub use self::connection::SqliteLimit;
 pub use self::connection::SqliteValue;
 pub use self::connection::sqlite_blob::SqliteReadOnlyBlob;
+#[cfg(feature = "__sqlite-shared")]
+pub use self::function_behavior::SqliteFunctionBehavior;
 pub use self::query_builder::SqliteQueryBuilder;
 
 /// Trait for the implementation of a SQLite aggregate function

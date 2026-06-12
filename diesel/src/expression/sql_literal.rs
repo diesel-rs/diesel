@@ -1,6 +1,6 @@
 use crate::expression::*;
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sql_types::DieselNumericOps;
 use alloc::string::String;
@@ -184,7 +184,7 @@ where
     type SqlType = ST;
 }
 
-impl<ST, T, Conn> RunQueryDsl<Conn> for SqlLiteral<ST, T> {}
+impl<ST, T> RunQueryDslSupport for SqlLiteral<ST, T> {}
 
 impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
@@ -366,7 +366,7 @@ impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> 
 
 impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value> where Self: Expression {}
 
-impl<Query, Value, Conn> RunQueryDsl<Conn> for UncheckedBind<Query, Value> {}
+impl<Query, Value> RunQueryDslSupport for UncheckedBind<Query, Value> {}
 
 mod private {
     use crate::backend::{Backend, DieselReserveSpecialization};

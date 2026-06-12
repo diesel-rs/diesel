@@ -12,7 +12,7 @@ use crate::query_builder::returning::{
 };
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
@@ -248,7 +248,7 @@ where
     type SqlType = <Ret as Expression>::SqlType;
 }
 
-impl<T: QuerySource, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}
+impl<T: QuerySource, U, V, Ret> RunQueryDslSupport for UpdateStatement<T, U, V, Ret> {}
 
 impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// Specify what expression is returned after execution of the `update`.

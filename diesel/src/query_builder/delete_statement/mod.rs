@@ -6,7 +6,7 @@ use crate::query_builder::returning::{
 };
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_source::{QuerySource, Table};
 
@@ -290,7 +290,7 @@ where
     type SqlType = <Ret as Expression>::SqlType;
 }
 
-impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> where T: QuerySource {}
+impl<T, U, Ret> RunQueryDslSupport for DeleteStatement<T, U, Ret> where T: QuerySource {}
 
 impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// Specify what expression is returned after execution of the `delete`.
