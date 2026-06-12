@@ -147,10 +147,9 @@ bitflags::bitflags! {
 }
 
 impl Default for SqliteFunctionBehavior {
-    /// Returns [`DETERMINISTIC`][Self::DETERMINISTIC], matching the previous
-    /// behavior of `register_impl`.
+    /// Returns `Self::empty()`
     fn default() -> Self {
-        Self::DETERMINISTIC
+        Self::empty()
     }
 }
 
