@@ -1,21 +1,24 @@
 pub(crate) mod changeset;
 pub(super) mod target;
 
+use crate::QuerySource;
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{
-    is_aggregate, AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping,
+    AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
 };
-use crate::query_builder::returning_clause::*;
+use crate::query_builder::returning::{
+    NoReturningClause, ReturningClause, ReturningQuerySource, UpdateStmt,
+};
 use crate::query_builder::where_clause::*;
+use crate::query_builder::*;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
-use crate::query_dsl::{RunQueryDsl, RunQueryDslSupport};
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
-use crate::{query_builder::*, QuerySource};
 
-pub(crate) use self::private::UpdateAutoTypeHelper;
+pub(crate) use self::private::SetAutoTypeHelper;
 
 impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
@@ -32,7 +35,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     /// See [`update`](crate::update()) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
-    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+    pub fn set<V>(self, values: V) -> crate::dsl::Set<Self, V>
     where
         T: Table,
         V: changeset::AsChangeset<Target = T>,
@@ -224,7 +227,7 @@ impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
 where
     T: Table,
     UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>: Query,
-    T::AllColumns: ValidGrouping<()>,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<UpdateStmt, T>> + ValidGrouping<()>,
     <T::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
@@ -239,10 +242,10 @@ where
 impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: Expression + SelectableExpression<T> + ValidGrouping<()>,
+    Ret: SelectableExpression<ReturningQuerySource<UpdateStmt, T>> + ValidGrouping<()>,
     Ret::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
 impl<T: QuerySource, U, V, Ret> RunQueryDslSupport for UpdateStatement<T, U, V, Ret> {}
@@ -269,6 +272,35 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
+    ///
+    /// ### Returning the pre-update value (PostgreSQL 18+):
+    ///
+    /// `RETURNING old.col` — exposed via [`diesel::pg::returning::old()`] —
+    /// returns the value of the column **before** the update was applied.
+    /// This requires PostgreSQL 18 or newer.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     use diesel::pg::returning::old;
+    /// #     let connection = &mut establish_connection();
+    /// #     // `RETURNING old.col` requires PostgreSQL 18+
+    /// #     let pg_version: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
+    /// #         "SELECT current_setting('server_version_num')::int",
+    /// #     ).get_result(connection).unwrap();
+    /// #     if pg_version < 180000 { return; }
+    /// let was_and_now = diesel::update(users.filter(id.eq(1)))
+    ///     .set(name.eq("Dean"))
+    ///     .returning((old(name), name))
+    ///     .get_result::<(String, String)>(connection);
+    /// assert_eq!(Ok(("Sean".to_string(), "Dean".to_string())), was_and_now);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     where
         T: Table,
@@ -288,18 +320,21 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 pub struct SetNotCalled;
 
 mod private {
-    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    /// Helper trait for `#[auto_type]`
+    ///
+    /// This trait allows inferring the return type of `UpdateStatement::set` and
+    /// `IncompleteDoUpdate::set` (via `IntoUpdateTarget`). It is used to define the
+    /// `Set` type alias in `diesel::dsl`.
     #[allow(unreachable_pub)]
-    pub trait UpdateAutoTypeHelper {
-        type Table;
-        type Where;
+    pub trait SetAutoTypeHelper<Changes> {
+        type Out;
     }
 
-    impl<T, W> UpdateAutoTypeHelper for crate::query_builder::UpdateStatement<T, W>
+    impl<T, W, Changes> SetAutoTypeHelper<Changes> for crate::query_builder::UpdateStatement<T, W>
     where
         T: crate::QuerySource,
+        Changes: crate::AsChangeset,
     {
-        type Table = T;
-        type Where = W;
+        type Out = crate::query_builder::UpdateStatement<T, W, Changes::Changeset>;
     }
 }

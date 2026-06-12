@@ -1,18 +1,18 @@
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::io::Write;
-use std::ops::Bound;
-
 use crate::deserialize::{self, Defaultable, FromSql};
-use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound as SqlBound;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use core::ops::Bound;
+use core::ops::RangeBounds;
+use std::io::Write;
 
 // from `SELECT oid, typname FROM pg_catalog.pg_type where typname LIKE '%multirange'`;
 macro_rules! multirange_has_sql_type {
-    ($ty:ty, $oid:expr, $array_oid:expr) => {
+    ($ty:ty, $oid:expr_2021, $array_oid:expr_2021) => {
         #[cfg(feature = "postgres_backend")]
         impl HasSqlType<$ty> for Pg {
             fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
@@ -59,11 +59,11 @@ macro_rules! multirange_as_expressions {
 }
 
 multirange_as_expressions!((Bound<T>, Bound<T>));
-multirange_as_expressions!(std::ops::Range<T>);
-multirange_as_expressions!(std::ops::RangeInclusive<T>);
-multirange_as_expressions!(std::ops::RangeToInclusive<T>);
-multirange_as_expressions!(std::ops::RangeFrom<T>);
-multirange_as_expressions!(std::ops::RangeTo<T>);
+multirange_as_expressions!(core::ops::Range<T>);
+multirange_as_expressions!(core::ops::RangeInclusive<T>);
+multirange_as_expressions!(core::ops::RangeToInclusive<T>);
+multirange_as_expressions!(core::ops::RangeFrom<T>);
+multirange_as_expressions!(core::ops::RangeTo<T>);
 
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Multirange<ST>, Pg> for Vec<(Bound<T>, Bound<T>)>
@@ -77,7 +77,13 @@ where
         (0..len)
             .map(|_| {
                 let range_size: usize = bytes.read_i32::<NetworkEndian>()?.try_into()?;
-                let (range_bytes, new_bytes) = bytes.split_at(range_size);
+                let (range_bytes, new_bytes) =
+                    bytes.split_at_checked(range_size).ok_or_else(|| {
+                        format!(
+                            "Invalid element byte count: Expected at least {range_size} bytes, but only {} bytes were received",
+                            bytes.len()
+                        )
+                    })?;
                 bytes = new_bytes;
                 FromSql::from_sql(PgValue::new_internal(range_bytes, &value))
             })
@@ -129,7 +135,6 @@ where
     }
 }
 
-use std::ops::RangeBounds;
 macro_rules! multirange_std_to_sql {
     ($ty:ty) => {
         #[cfg(feature = "postgres_backend")]
@@ -159,11 +164,11 @@ macro_rules! multirange_std_to_sql {
     };
 }
 
-multirange_std_to_sql!(std::ops::Range<T>);
-multirange_std_to_sql!(std::ops::RangeInclusive<T>);
-multirange_std_to_sql!(std::ops::RangeFrom<T>);
-multirange_std_to_sql!(std::ops::RangeTo<T>);
-multirange_std_to_sql!(std::ops::RangeToInclusive<T>);
+multirange_std_to_sql!(core::ops::Range<T>);
+multirange_std_to_sql!(core::ops::RangeInclusive<T>);
+multirange_std_to_sql!(core::ops::RangeFrom<T>);
+multirange_std_to_sql!(core::ops::RangeTo<T>);
+multirange_std_to_sql!(core::ops::RangeToInclusive<T>);
 
 macro_rules! multirange_to_sql_nullable {
     ($ty:ty) => {
@@ -192,8 +197,52 @@ macro_rules! multirange_to_sql_nullable {
 }
 
 multirange_to_sql_nullable!((Bound<T>, Bound<T>));
-multirange_to_sql_nullable!(std::ops::Range<T>);
-multirange_to_sql_nullable!(std::ops::RangeInclusive<T>);
-multirange_to_sql_nullable!(std::ops::RangeFrom<T>);
-multirange_to_sql_nullable!(std::ops::RangeTo<T>);
-multirange_to_sql_nullable!(std::ops::RangeToInclusive<T>);
+multirange_to_sql_nullable!(core::ops::Range<T>);
+multirange_to_sql_nullable!(core::ops::RangeInclusive<T>);
+multirange_to_sql_nullable!(core::ops::RangeFrom<T>);
+multirange_to_sql_nullable!(core::ops::RangeTo<T>);
+multirange_to_sql_nullable!(core::ops::RangeToInclusive<T>);
+
+#[cfg(test)]
+mod tests {
+    use crate::deserialize::FromSql;
+    use crate::pg::Pg;
+    use crate::pg::PgValue;
+    use crate::sql_types::{Integer, Multirange};
+    use byteorder::{NetworkEndian, WriteBytesExt};
+    use std::ops::Bound;
+
+    #[test]
+    fn check_invalid_element_size_for_multirange() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+        // size
+        value.write_u32::<NetworkEndian>(1).unwrap();
+        // range size
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        // just too less bytes
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res =
+            <Vec<(Bound<i32>, Bound<i32>)> as FromSql<Multirange<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element byte count: Expected at least 6 bytes, but only 4 bytes were received",
+        );
+        // invalid size
+        let mut value = Vec::<u8>::new();
+        // size
+        value.write_u32::<NetworkEndian>(1).unwrap();
+        let value = PgValue::for_test(&value);
+        // we don't need anything else, it should already fail here
+        let res =
+            <Vec<(Bound<i32>, Bound<i32>)> as FromSql<Multirange<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "failed to fill whole buffer"
+        );
+    }
+}

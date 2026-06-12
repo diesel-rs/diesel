@@ -104,7 +104,7 @@ extern "SQL" {
     /// #     }
     /// # }
     /// #
-    /// # #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite"))))]
+    /// # #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "__sqlite-shared"))))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use bigdecimal::BigDecimal;
     /// #     use self::numbers::dsl::*;
@@ -119,7 +119,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite")))))]
+    /// # #[cfg(not(all(feature = "numeric", any(feature = "postgres", not(feature = "__sqlite-shared")))))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }

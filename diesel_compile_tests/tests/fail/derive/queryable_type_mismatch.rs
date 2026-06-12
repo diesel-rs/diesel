@@ -56,19 +56,19 @@ fn test(conn: &mut PgConnection) {
     // check that this works fine
     let _ = users::table.load::<User>(conn);
     let _ = users::table.load::<UserWithToFewFields>(conn);
-    //~^ ERROR: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<..., _>` is not satisfied
+    //~^ ERROR: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
 
     let _ = users::table.load::<UserWithToManyFields>(conn);
-    //~^ ERROR: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<..., _>` is not satisfied
+    //~^ ERROR: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
 
     let _ = users::table.load::<UserWrongOrder>(conn);
-    //~^ ERROR: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<UserWrongOrder, _>` is not satisfied
+    //~^ ERROR: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
 
     let _ = users::table.load::<UserTypeMismatch>(conn);
-    //~^ ERROR: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<UserTypeMismatch, _>` is not satisfied
+    //~^ ERROR: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
 
     let _ = users::table.load::<UserNullableTypeMismatch>(conn);
-    //~^ ERROR: the trait bound `(Integer, Text, Nullable<Text>): CompatibleType<..., _>` is not satisfied
+    //~^ ERROR: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
 }
 
 fn main() {}

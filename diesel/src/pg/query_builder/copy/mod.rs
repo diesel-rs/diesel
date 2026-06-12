@@ -1,9 +1,9 @@
+use crate::Expression;
 use crate::pg::Pg;
-use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::ColumnList;
 use crate::query_builder::QueryFragment;
+use crate::query_builder::nodes::StaticQueryFragment;
 use crate::sql_types::SqlType;
-use crate::Expression;
 use crate::{Column, Table};
 
 pub(crate) mod copy_from;
@@ -85,22 +85,43 @@ impl CommonOptions {
             *comma = ", ";
         }
         if let Some(delimiter) = self.delimiter {
+            // we need to take care for the quoting character here
+            let delimiter = if delimiter == '\'' {
+                "''".into()
+            } else {
+                String::from(delimiter)
+            };
             pass.push_sql(&format!("{comma}DELIMITER '{delimiter}'"));
             *comma = ", ";
         }
         if let Some(ref null) = self.null {
             pass.push_sql(comma);
             *comma = ", ";
+            // we cannot use binds here
+            // so we need to make sure quotes in
+            // the input are handled correctly
+            let null = null.replace('\'', "''");
             pass.push_sql("NULL '");
-            // we cannot use binds here :(
-            pass.push_sql(null);
+            pass.push_sql(&null);
             pass.push_sql("'");
         }
         if let Some(quote) = self.quote {
+            // we need to take care for the quoting character here
+            let quote = if quote == '\'' {
+                "''".into()
+            } else {
+                String::from(quote)
+            };
             pass.push_sql(&format!("{comma}QUOTE '{quote}'"));
             *comma = ", ";
         }
         if let Some(escape) = self.escape {
+            // we need to take care for the quoting character here
+            let escape = if escape == '\'' {
+                "''".into()
+            } else {
+                String::from(escape)
+            };
             pass.push_sql(&format!("{comma}ESCAPE '{escape}'"));
             *comma = ", ";
         }
@@ -171,4 +192,4 @@ macro_rules! copy_target_for_columns {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(copy_target_for_columns);
+crate::for_each_tuple!(copy_target_for_columns);

@@ -58,7 +58,7 @@ struct PostWithWrongField {
 #[derive(Selectable)]
 // wrong table name here
 #[diesel(table_name = post)]
-//~^ ERROR: failed to resolve: use of unresolved module or unlinked crate `post`
+//~^ ERROR: cannot find module or crate `post` in this scope
 struct PostWithWrongTableName {
     id: i32,
     title: String,
@@ -177,8 +177,8 @@ fn main() {
         .inner_join(posts::table)
         .group_by(posts::id)
         .select(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
-        //~| ERROR: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
+        //~^ ERROR: the trait bound `id: IsContainedInGroupBy<id>` is not satisfied
+        //~| ERROR: the trait bound `id: IsContainedInGroupBy<name>` is not satisfied
         .load(&mut conn)
         .unwrap();
 
@@ -195,13 +195,13 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .unwrap();
 
     // cannot load results from more than one table via
@@ -209,26 +209,26 @@ fn main() {
     let _ = diesel::update(users::table)
         .set(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .unwrap();
 
     // cannot load results from more than one table via
     // returning clauses
     let _ = diesel::delete(users::table)
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .unwrap();
 
     // cannot use this method without deriving selectable
@@ -255,14 +255,14 @@ fn main() {
     let _ = posts::table
         .select((Post::as_select(), posts::title))
         .load::<((i32, String), String)>(&mut conn)
-        //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<((i32, String), String), _>` is not satisfied
+        //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<..., _>` is not satisfied
         .unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())
         .load::<(i32, String, i32)>(&mut conn)
         //~^ ERROR: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-        //~| ERROR: the trait bound `(i32, String, i32): Queryable<SelectBy<Post, _>, _>` is not satisfied
+        //~| ERROR: the trait bound `(i32, String, i32): Queryable<SelectBy<..., _>, _>` is not satisfied
         .unwrap();
 
     // cannot use backend specific selectable with other backend

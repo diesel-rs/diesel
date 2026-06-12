@@ -7,7 +7,7 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
     not(any(
         feature = "postgres_backend",
         feature = "mysql_backend",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )),
     allow(unused_imports)
@@ -146,7 +146,7 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        doc = "implementation for [`ReturningClause`](crate::query_builder::ReturningClause)"
+        doc = "implementation for [`ReturningClause`](crate::query_builder::returning::ReturningClause)"
     )]
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),

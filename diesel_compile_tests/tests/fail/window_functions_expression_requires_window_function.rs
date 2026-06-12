@@ -13,15 +13,15 @@ fn main() {
     use diesel::dsl::*;
 
     users::table.select(lower(users::name).partition_by(users::id));
-    //~^ ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~^ ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
-    //~| ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~| ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
 
     users::table.select(lower(users::name).over());
-    //~^ ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~^ ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
-    //~| ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~| ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
 
     users::table.select(lower(users::name).window_filter(users::id.eq(42)));
@@ -30,15 +30,15 @@ fn main() {
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
 
     users::table.select(lower(users::name).window_order(users::id));
-    //~^ ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~^ ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
-    //~| ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~| ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
 
     users::table
         .select(lower(users::name).frame_by(frame::Rows.frame_start_with(frame::CurrentRow)));
-    //~^ ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~^ ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
-    //~| ERROR: diesel::pg::expression::functions::lower_utils::lower<diesel::sql_types::Text, columns::name> is not a window function
+    //~| ERROR: `lower<Text, name>` is not a window function
     //~| ERROR: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>` nor `diesel::sql_types::Multirange<_>`
 }

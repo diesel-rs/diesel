@@ -115,7 +115,7 @@ mod private {
     #[allow(missing_debug_implementations)]
     pub struct LoadIter<U, C, ST, DB> {
         pub(super) cursor: C,
-        pub(super) _marker: std::marker::PhantomData<(ST, U, DB)>,
+        pub(super) _marker: core::marker::PhantomData<(ST, U, DB)>,
     }
 
     impl<'a, C, U, ST, DB, R> LoadIter<U, C, ST, DB>

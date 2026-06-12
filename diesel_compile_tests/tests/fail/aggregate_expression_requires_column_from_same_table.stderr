@@ -10,16 +10,17 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         id -> Integer,
    |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `sum<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<sum<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<sum<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -38,7 +39,7 @@ LL |         id -> Integer,
    = note: 1 redundant requirement hidden
    = note: required for `sum<Integer, id>` to implement `AppearsOnTable<users::table>`
    = note: required for `sum<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<sum<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<sum<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -54,16 +55,17 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         id -> Integer,
    |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `avg<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<avg<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<avg<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -82,7 +84,7 @@ LL |         id -> Integer,
    = note: 1 redundant requirement hidden
    = note: required for `avg<Integer, id>` to implement `AppearsOnTable<users::table>`
    = note: required for `avg<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<avg<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<avg<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -98,16 +100,17 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         id -> Integer,
    |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `max<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<max<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<max<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -126,7 +129,7 @@ LL |         id -> Integer,
    = note: 1 redundant requirement hidden
    = note: required for `max<Integer, id>` to implement `AppearsOnTable<users::table>`
    = note: required for `max<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<max<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<max<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -142,16 +145,17 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         id -> Integer,
    |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `min<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<min<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<min<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -170,6 +174,6 @@ LL |         id -> Integer,
    = note: 1 redundant requirement hidden
    = note: required for `min<Integer, id>` to implement `AppearsOnTable<users::table>`
    = note: required for `min<Integer, id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<min<Integer, id>>`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<min<Integer, id>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

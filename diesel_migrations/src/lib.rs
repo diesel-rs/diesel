@@ -32,15 +32,38 @@
 //! Migrations can either be run with the CLI or embedded into the compiled application
 //! and executed with code, for example right after establishing a database connection.
 //! For more information, consult the [`embed_migrations!`] macro.
+//!
+//! You can also define migrations in your rust code by using the [`RustMigrationSource`].
+//! The [`CombinedMigrationSource`] allows you to combine migrations from different sources
+//! to execute them together
+//!
+//! ## Transactions
+//!
+//! By default, each migration runs inside its own transaction. This means a failing
+//! migration is automatically rolled back, leaving the database in the state it was
+//! in before the migration started.
+//!
+//! You can disable this behaviour on a per-migration basis. For file-based migrations,
+//! add a `metadata.toml` file to the migration folder with `run_in_transaction = false`.
+//! See [`FileBasedMigrations`] for a full example and an explanation of the
+//! "cannot run inside a transaction block" error that certain database operations produce.
+//!
+//! For Rust-based migrations, call [`RustMigration::without_transaction`] on the builder,
+//! or return `false` from [`TypedMigration::run_in_transaction`] when implementing the
+//! trait directly.
 
+mod combined_migrations;
 mod embedded_migrations;
 mod errors;
 mod file_based_migrations;
 mod migration_harness;
+mod rust_migrations;
 
-pub use crate::embedded_migrations::EmbeddedMigrations;
-pub use crate::file_based_migrations::FileBasedMigrations;
-pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
+pub use self::embedded_migrations::EmbeddedMigrations;
+pub use self::file_based_migrations::FileBasedMigrations;
+pub use self::migration_harness::{HarnessWithOutput, MigrationHarness};
+pub use self::rust_migrations::{RustMigration, RustMigrationSource, TypedMigration};
+pub use combined_migrations::CombinedMigrationSource;
 pub use migrations_macros::embed_migrations;
 
 #[doc(hidden)]

@@ -1,0 +1,190 @@
+error[E0277]: the trait bound `i32: AsExpression<Nullable<Text>>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:23:5
+   |
+LL | #[derive(AsChangeset)]
+   |          ----------- in this derive macro expansion
+...
+LL |     hair_color: Option<i32>,
+   |     ^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::sql_types::Nullable<diesel::sql_types::Text>>` is not implemented for `i32`
+help: the following other types implement trait `AsExpression<T>`
+  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+   |
+LL |     #[derive(AsExpression, FromSqlRow)]
+   |              ^^^^^^^^^^^^
+   |              |
+   |              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<Nullable<Integer>>`
+
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
+   |
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
+   = note: required for `diesel::expression::operators::Eq<columns::name, i32>` to implement `diesel::AsChangeset`
+   = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `&i32: AsExpression<Nullable<Text>>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::sql_types::Nullable<diesel::sql_types::Text>>` is not implemented for `&'update i32`
+help: the following other types implement trait `AsExpression<T>`
+  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+   |
+LL |     #[derive(AsExpression, FromSqlRow)]
+   |              ^^^^^^^^^^^^
+   |              |
+   |              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<Nullable<Integer>>`
+
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `&'update i32: AsExpression<diesel::sql_types::Text>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `&'update i32`
+   |
+help: the following other types implement trait `AsExpression<T>`
+  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+   |
+LL |     #[derive(AsExpression, FromSqlRow)]
+   |              ^^^^^^^^^^^^
+   |              |
+   |              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<Nullable<Integer>>`
+
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
+   |
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
+   = note: required for `&'update i32` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::operators::Eq<columns::name, &'update i32>` to implement `diesel::AsChangeset`
+   = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `&i32: AsExpression<Nullable<Text>>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::sql_types::Nullable<diesel::sql_types::Text>>` is not implemented for `&i32`
+help: the following other types implement trait `AsExpression<T>`
+  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+   |
+LL |     #[derive(AsExpression, FromSqlRow)]
+   |              ^^^^^^^^^^^^
+   |              |
+   |              `&i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<diesel::sql_types::Integer>`
+   |              `i32` implements `AsExpression<Nullable<Integer>>`
+note: required for `&'update User` to implement `diesel::AsChangeset`
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ type parameter would need to implement `diesel::AsChangeset`
+   = help: consider manually implementing `diesel::AsChangeset` to avoid undesired bounds
+
+      = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
+   |
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
+   = note: required for `&'update i32` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::operators::Eq<columns::name, &'update i32>` to implement `diesel::AsChangeset`
+   = note: 1 redundant requirement hidden
+   = note: required for `(Grouped<Eq<name, &i32>>, Option<Grouped<...>>)` to implement `diesel::AsChangeset`
+
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
+   |
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
+   = note: required for `diesel::expression::operators::Eq<columns::name, i32>` to implement `diesel::AsChangeset`
+   = note: 1 redundant requirement hidden
+   = note: required for `(Grouped<Eq<name, i32>>, Option<Grouped<...>>)` to implement `diesel::AsChangeset`
+
+      = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
+  --> tests/fail/derive/bad_as_changeset.rs:11:10
+   |
+LL | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^ the trait `AppearsOnTable<users::table>` is not implemented for `i32`
+   |
+help: the trait `AppearsOnTable<users::table>` is implemented for `columns::star`
+  --> tests/fail/derive/bad_as_changeset.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users(id) {
+ LL | |         id -> Integer,
+ LL | |         name -> Text,
+...  |
+ LL | | }
+   | |_^
+   = note: required for `&i32` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::operators::Eq<columns::name, &i32>` to implement `diesel::AsChangeset`
+   = note: 2 redundant requirements hidden
+   = note: required for `&'update User` to implement `diesel::AsChangeset`
+   = note: this error originates in the derive macro `AsChangeset` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.

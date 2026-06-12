@@ -100,9 +100,6 @@ pub(crate) mod lower_utils {
             input,
         > as ValidGrouping<__DieselInternal>>::IsAggregate;
     }
-    use diesel::sqlite::{Sqlite, SqliteConnection};
-    use diesel::serialize::ToSql;
-    use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
     #[allow(dead_code)]
     /// Registers an implementation for this function on the given connection
     ///
@@ -112,13 +109,16 @@ pub(crate) mod lower_utils {
     /// the function is nondeterministic, call
     /// `register_nondeterministic_impl` instead.
     pub fn register_impl<F, Ret, input>(
-        conn: &mut SqliteConnection,
+        conn: &mut diesel::sqlite::SqliteConnection,
         f: F,
-    ) -> QueryResult<()>
+    ) -> diesel::result::QueryResult<()>
     where
-        F: Fn(input) -> Ret + std::panic::UnwindSafe + Send + 'static,
-        (input,): FromSqlRow<(Text,), Sqlite> + StaticallySizedRow<(Text,), Sqlite>,
-        Ret: ToSql<Text, Sqlite>,
+        F: Fn(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+        (
+            input,
+        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
+            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
+        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
     {
         conn.register_sql_function::<
                 (Text,),
@@ -138,13 +138,16 @@ pub(crate) mod lower_utils {
     /// `random`). If your function is deterministic, you should call
     /// `register_impl` instead.
     pub fn register_nondeterministic_impl<F, Ret, input>(
-        conn: &mut SqliteConnection,
+        conn: &mut diesel::sqlite::SqliteConnection,
         mut f: F,
-    ) -> QueryResult<()>
+    ) -> diesel::result::QueryResult<()>
     where
-        F: FnMut(input) -> Ret + std::panic::UnwindSafe + Send + 'static,
-        (input,): FromSqlRow<(Text,), Sqlite> + StaticallySizedRow<(Text,), Sqlite>,
-        Ret: ToSql<Text, Sqlite>,
+        F: FnMut(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+        (
+            input,
+        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
+            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
+        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
     {
         conn.register_sql_function::<
                 (Text,),

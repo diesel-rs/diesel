@@ -1,0 +1,38 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW ops AS SELECT count(*), sum(foo) FROM bar"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Function {
+                name: "count",
+                schema: None,
+                arguments: [
+                    Wildcard {
+                        schema: None,
+                        relation: "bar",
+                        is_left_joined: false,
+                    },
+                ],
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Function {
+                name: "sum",
+                schema: None,
+                arguments: [
+                    Field {
+                        schema: None,
+                        query_source: "bar",
+                        field_name: "foo",
+                        via_left_join: false,
+                    },
+                ],
+            },
+        },
+    ],
+}

@@ -183,6 +183,7 @@ fn copy_from_from_insertable_struct() {
     assert_eq!(user_count, 2);
     let users = users::table
         .select((users::name, users::hair_color))
+        .order(users::id)
         .load::<(String, Option<String>)>(conn)
         .unwrap();
 
@@ -211,6 +212,7 @@ fn copy_from_from_insertable_tuple() {
     assert_eq!(user_count, 2);
     let users = users::table
         .select((users::name, users::hair_color))
+        .order(users::id)
         .load::<(String, Option<String>)>(conn)
         .unwrap();
 
@@ -239,6 +241,7 @@ fn copy_from_from_insertable_vec() {
     assert_eq!(user_count, 2);
     let users = users::table
         .select((users::name, users::hair_color))
+        .order(users::id)
         .load::<(String, Option<String>)>(conn)
         .unwrap();
 
@@ -335,4 +338,71 @@ fn copy_to_queryable() {
         .get_result::<String>(conn)
         .unwrap();
     assert_eq!(name, "Sean");
+}
+
+#[diesel_test_helper::test]
+fn copy_with_null_injection() {
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    let mut buf = diesel::copy_to(users::table)
+        .with_format(CopyFormat::Csv)
+        .with_null("abc ' efg")
+        .load_raw(conn)
+        .unwrap();
+    let mut out = String::new();
+    buf.read_to_string(&mut out).unwrap();
+    assert_eq!(out, "1,Sean,abc ' efg\n2,Tess,abc ' efg\n");
+}
+
+#[diesel_test_helper::test]
+fn copy_with_delimiter_injection() {
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let mut buf = diesel::copy_to(users::table)
+        .with_format(CopyFormat::Csv)
+        .with_delimiter('\'')
+        .load_raw(conn)
+        .unwrap();
+    let mut out = String::new();
+    buf.read_to_string(&mut out).unwrap();
+    assert_eq!(out, "1'Sean'\n2'Tess'\n");
+}
+
+#[diesel_test_helper::test]
+fn copy_with_delimiter_injection2() {
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let mut buf = diesel::copy_to(users::table)
+        .with_format(CopyFormat::Csv)
+        .with_delimiter('\\')
+        .load_raw(conn)
+        .unwrap();
+    let mut out = String::new();
+    buf.read_to_string(&mut out).unwrap();
+    assert_eq!(out, "1\\Sean\\\n2\\Tess\\\n");
+}
+
+#[diesel_test_helper::test]
+fn copy_with_escape_injection() {
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    let mut buf = diesel::copy_to(users::table)
+        .with_format(CopyFormat::Csv)
+        .with_escape('\'')
+        .load_raw(conn)
+        .unwrap();
+    let mut out = String::new();
+    buf.read_to_string(&mut out).unwrap();
+    assert_eq!(out, "1,Sean,\n2,Tess,\n");
+}
+
+#[diesel_test_helper::test]
+fn copy_with_quote_injection() {
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let mut buf = diesel::copy_to(users::table)
+        .with_format(CopyFormat::Csv)
+        .with_quote('\'')
+        .load_raw(conn)
+        .unwrap();
+    let mut out = String::new();
+    buf.read_to_string(&mut out).unwrap();
+    assert_eq!(out, "1,Sean,\n2,Tess,\n");
 }

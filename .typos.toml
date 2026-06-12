@@ -1,6 +1,8 @@
 [files]
 extend-exclude = [
     ".git/",
+    "diesel_compile_tests/**/*.stderr",
+    "diesel_cli/tests/**/*.snap",
 ]
 ignore-hidden = false
 
@@ -26,6 +28,9 @@ extend-ignore-re = [
     # we use this often in place of the reserved type identifier
     "tpe",
 ]
+
+[default.extend-identifiers]
+NdArray = "NdArray"
 
 [type.md]
 extend-ignore-re = [

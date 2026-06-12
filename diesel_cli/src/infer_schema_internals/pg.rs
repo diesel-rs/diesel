@@ -1,6 +1,6 @@
+use super::TableName;
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
-use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
 use diesel::dsl::AsExprOf;
@@ -50,8 +50,7 @@ pub fn determine_column_type(
         tracing::info!("Cannot coerce varchar[] into text[]");
         eprintln!(
             "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.",
-            attr.column_name,
-            tpe
+            attr.column_name, tpe
         );
     }
 
@@ -230,7 +229,7 @@ pub fn load_foreign_key_constraints(
             let foreign_key_columns_rust = f
                 .self_columns
                 .iter()
-                .map(|s| super::inference::rust_name_for_sql_name(s))
+                .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
                 .collect();
             Ok(ForeignKeyConstraint {
                 child_table,

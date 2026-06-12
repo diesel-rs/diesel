@@ -1,12 +1,12 @@
 [package]
 name = "diesel_migrations"
-version = "2.3.1"
+version = "2.3.2"
 license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
-edition = "2021"
+edition.workspace = true
 include.workspace = true
 rust-version.workspace = true
 categories = ["database"]
@@ -30,7 +30,10 @@ path = "../diesel"
 default-features = false
 
 [features]
-default = []
+default = ["diesel/std"]
 sqlite = []
 postgres = []
 mysql = []
+
+[lints]
+workspace = true

@@ -1,10 +1,11 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::cmp;
+use core::ffi as libc;
+use core::mem::MaybeUninit;
+use core::mem::{self, ManuallyDrop};
+use core::ops::Index;
+use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
-use std::mem::MaybeUninit;
-use std::mem::{self, ManuallyDrop};
-use std::ops::Index;
-use std::os::raw as libc;
-use std::ptr::NonNull;
 
 use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql::connection::stmt::StatementMetadata;
@@ -66,7 +67,7 @@ impl OutputBinds {
         let data = metadata
             .fields()
             .iter()
-            .zip(types.iter().copied().chain(std::iter::repeat(None)))
+            .zip(types.iter().copied().chain(core::iter::repeat(None)))
             .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect();
 
@@ -138,17 +139,19 @@ bitflags::bitflags! {
         const BINARY_FLAG = 128;
         const ENUM_FLAG = 256;
         const AUTO_INCREMENT_FLAG = 512;
-        const TIMESTAMP_FLAG = 1024;
-        const SET_FLAG = 2048;
-        const NO_DEFAULT_VALUE_FLAG = 4096;
-        const ON_UPDATE_NOW_FLAG = 8192;
-        const NUM_FLAG = 32768;
-        const PART_KEY_FLAG = 16384;
-        const GROUP_FLAG = 32768;
-        const UNIQUE_FLAG = 65536;
-        const BINCMP_FLAG = 130_172;
+        const TIMESTAMP_FLAG = 1_024;
+        const SET_FLAG = 2_048;
+        const NO_DEFAULT_VALUE_FLAG = 4_096;
+        const ON_UPDATE_NOW_FLAG = 8_192;
+        const NUM_FLAG = 32_768;
+        const PART_KEY_FLAG = 16_384;
+        const GROUP_FLAG = (1 << 28);
+        const UNIQUE_FLAG = 65_536;
+        const BINCMP_FLAG = 131_072;
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
+        const EXPLICIT_NULL_FLAG = (1 << 27);
+        const NOT_SECONDARY_FLAG = (1 << 29);
     }
 }
 
@@ -178,6 +181,13 @@ pub(super) struct BindData {
 // instead of just copying the pointer
 impl Clone for BindData {
     fn clone(&self) -> Self {
+        // we just make sure here that we never create a
+        // slice larger than the allocation
+        let length = cmp::min(
+            self.capacity,
+            self.length.try_into().expect("usize fits the length"),
+        );
+
         let (ptr, len, capacity) = if let Some(ptr) = self.bytes {
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
@@ -187,10 +197,7 @@ impl Clone for BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(
-                    ptr.as_ptr(),
-                    self.length.try_into().expect("usize is at least 32bit"),
-                )
+                core::slice::from_raw_parts(ptr.as_ptr(), length)
             };
             bind_buffer(slice.to_owned())
         } else {
@@ -211,7 +218,7 @@ impl Clone for BindData {
 impl Drop for BindData {
     fn drop(&mut self) {
         if let Some(bytes) = self.bytes {
-            std::mem::drop(unsafe {
+            core::mem::drop(unsafe {
                 // We know that this buffer was allocated by a vector, so constructing a vector from it is fine
                 // We know the correct capacity here
                 // We use 0 as length to prevent situations where the length is already updated but
@@ -429,11 +436,16 @@ impl BindData {
             let length = if let Some(length) = known_buffer_size_for_ffi_type(self.tpe) {
                 debug_assert!(
                     length <= self.capacity
-                    && <usize as TryFrom<_>>::try_from(self.length).expect("32bit integer fits in a usize")  <= self.capacity,
+                        && <usize as TryFrom<_>>::try_from(self.length)
+                            .expect("32bit integer fits in a usize")
+                            <= self.capacity,
                     "Libmysqlclient reported a larger size for a fixed size buffer without setting the truncated flag. \n\
                      This is a bug somewhere. Please open an issue with reproduction steps at \
                      https://github.com/diesel-rs/diesel/issues/new \n\
-                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}", self.capacity, self.length, self.tpe
+                     Calculated Length: {length}, Buffer Capacity: {}, Reported Length {}, Type: {:?}",
+                    self.capacity,
+                    self.length,
+                    self.tpe
                 );
                 length
             } else {
@@ -444,7 +456,9 @@ impl BindData {
                 "Got a buffer size larger than the underlying allocation. \n\
                  If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n\
                  Such an issue should contain exact reproduction steps how to trigger this message\n\
-                 Length: {length}, Capacity: {}, Type: {:?}", self.capacity, self.tpe
+                 Length: {length}, Capacity: {}, Type: {:?}",
+                self.capacity,
+                self.tpe
             );
 
             let slice = unsafe {
@@ -455,7 +469,7 @@ impl BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                std::slice::from_raw_parts(data.as_ptr(), length)
+                core::slice::from_raw_parts(data.as_ptr(), length)
             };
             Some(MysqlValue::new_internal(slice, tpe))
         }
@@ -466,7 +480,7 @@ impl BindData {
     }
 
     fn update_buffer_length(&mut self) {
-        use std::cmp::min;
+        use core::cmp::min;
 
         let actual_bytes_in_buffer = min(
             self.capacity,
@@ -489,7 +503,7 @@ impl BindData {
             addr_of_mut!((*ptr).buffer).write(
                 self.bytes
                     .map(|p| p.as_ptr())
-                    .unwrap_or(std::ptr::null_mut()) as *mut libc::c_void,
+                    .unwrap_or(core::ptr::null_mut()) as *mut libc::c_void,
             );
             addr_of_mut!((*ptr).buffer_length).write(self.capacity as libc::c_ulong);
             addr_of_mut!((*ptr).length).write(&mut self.length);
@@ -514,14 +528,15 @@ impl BindData {
     /// this function is unsafe unless the binds are immediately rebound.
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
-            if let Some(bytes) = self.bytes {
+            if let Some(bytes) = self.bytes.take() {
                 let mut bytes =
                     unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
-                self.bytes = None;
 
                 let offset = self.capacity;
                 let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
-                let truncated_amount = length - offset;
+                let truncated_amount = length
+                    .checked_sub(offset)
+                    .expect("offset is always smaller than the actual length");
 
                 debug_assert!(
                     truncated_amount > 0,
@@ -779,7 +794,7 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
 
 fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
     use self::ffi::enum_field_types as t;
-    use std::mem::size_of;
+    use core::mem::size_of;
 
     match tpe {
         t::MYSQL_TYPE_TINY => Some(1),
@@ -812,12 +827,11 @@ mod tests {
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
         let meta = (bind.tpe, bind.flags).into();
-        dbg!(meta);
 
         let value = bind.value().expect("Is not null");
         let value = MysqlValue::new_internal(value.as_bytes(), meta);
 
-        dbg!(T::from_sql(value))
+        T::from_sql(value)
     }
 
     #[cfg(feature = "extras")]
@@ -1247,9 +1261,9 @@ mod tests {
         assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
         assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(
-                to_value::<Text, String>(polygon_col).unwrap(),
-                "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
-            );
+            to_value::<Text, String>(polygon_col).unwrap(),
+            "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
+        );
 
         let geometry_collection = &results[32].0;
         assert_eq!(

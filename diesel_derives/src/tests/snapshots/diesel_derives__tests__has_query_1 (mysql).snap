@@ -22,7 +22,9 @@ const _: () = {
             (users::r#id, users::r#name)
         }
     }
-    fn _check_field_compatibility()
+
+
+    fn _check_field_compatibility_mysql()
     where
         i32: diesel::deserialize::FromSqlRow<
             diesel::dsl::SqlTypeOf<users::r#id>,

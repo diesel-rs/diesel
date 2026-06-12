@@ -14,7 +14,7 @@ LL | |         title -> Text,
 ...  |
 LL | | }
    | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
@@ -25,8 +25,8 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
-   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -42,22 +42,23 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
    |         ^^^^^
    = note: 1 redundant requirement hidden
-   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -77,7 +78,7 @@ LL | |         title -> Text,
 ...  |
 LL | | }
    | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
@@ -88,8 +89,8 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
-   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -105,70 +106,85 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
    |         ^^^^^
    = note: 2 redundant requirements hidden
-   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, table, LeftOuter>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:31
-   |
-LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
-   |
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
-           and N others
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:31
+    |
+ LL |     let _ = join.select(lower(posts::title.nullable()));
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
+    = help: the following other types implement trait `AsExpression<T>`:
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
+            and N others
 note: required by a bound in `lower`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
-   |
-LL | #[declare_sql_function]
-   | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-LL | extern "SQL" {
-LL |     fn lower(x: Text) -> Text;
-   |        ----- required by a bound in this function
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+    |
+ LL | #[declare_sql_function]
+    | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+ LL | extern "SQL" {
+ LL |     fn lower(x: Text) -> Text;
+    |        ----- required by a bound in this function
+ 
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:25
-   |
-LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
-   |
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
-           and N others
-
-   
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:56:25
+    |
+ LL |     let _ = join.select(lower(posts::title.nullable()));
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
+    = help: the following other types implement trait `AsExpression<T>`:
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
+            and N others
+ 
+    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:67:18
    |
@@ -185,7 +201,7 @@ LL | |         title -> Text,
 ...  |
 LL | | }
    | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
@@ -196,8 +212,8 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
-   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -213,22 +229,23 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
    |         ^^^^^
    = note: 3 redundant requirements hidden
-   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -248,7 +265,7 @@ LL | |         title -> Text,
 ...  |
 LL | | }
    | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
@@ -259,8 +276,8 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 4 redundant requirements hidden
-   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -276,70 +293,85 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
    |         ^^^^^
    = note: 4 redundant requirements hidden
-   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:31
-   |
-LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
-   |
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
-           and N others
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:31
+    |
+ LL |     let _ = join.select(lower(posts::title.nullable()));
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
+    = help: the following other types implement trait `AsExpression<T>`:
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
+            and N others
 note: required by a bound in `lower`
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
-   |
-LL | #[declare_sql_function]
-   | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-LL | extern "SQL" {
-LL |     fn lower(x: Text) -> Text;
-   |        ----- required by a bound in this function
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
+    |
+ LL | #[declare_sql_function]
+    | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
+ LL | extern "SQL" {
+ LL |     fn lower(x: Text) -> Text;
+    |        ----- required by a bound in this function
+ 
+        = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-      = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
-  --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:25
-   |
-LL |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
-   |
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-             `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
-           and N others
-
-   
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
+   --> tests/fail/right_side_of_left_join_requires_nullable.rs:79:25
+    |
+ LL |     let _ = join.select(lower(posts::title.nullable()));
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
+    = help: the following other types implement trait `AsExpression<T>`:
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
+            and N others
+ 
+    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:90:18
    |
@@ -356,7 +388,7 @@ LL | |         title -> Text,
 ...  |
 LL | | }
    | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
@@ -367,8 +399,8 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 3 redundant requirements hidden
-   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -384,22 +416,23 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
    |         ^^^^^
    = note: 3 redundant requirements hidden
-   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+   = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -419,7 +452,7 @@ LL | |         title -> Text,
 ...  |
 LL | | }
    | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
@@ -430,8 +463,8 @@ LL |         title -> Text,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 4 redundant requirements hidden
-   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -447,40 +480,48 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         title -> Text,
    |         ^^^^^
    = note: `posts::columns::title` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::title` implements `SelectableExpression<posts::table>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+   = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
    |
 LL |         title -> Text,
    |         ^^^^^
    = note: 4 redundant requirements hidden
-   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<JoinOn<..., ...>, ..., ...>, ...>>`
-   = note: required for `SelectStatement<FromClause<JoinOn<Join<..., ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+   = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+   = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:102:31
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -493,21 +534,28 @@ note: required by a bound in `lower`
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:102:25
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
  
     
@@ -517,7 +565,7 @@ error[E0271]: type mismatch resolving `<SelectStatement<...> as AppearsInFromCla
 LL |     let _ = join.select(posts::title);
     |                  ^^^^^^ expected `Never`, found `Once`
     |
-note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, SelectStatement<...>, ...>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, ..., ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
@@ -528,8 +576,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<Jo
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -545,22 +593,23 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `pets::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, SelectStatement<...>, ...>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, ..., ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
     |         ^^^^^
     = note: 1 redundant requirement hidden
-    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -570,7 +619,7 @@ error[E0271]: type mismatch resolving `<SelectStatement<...> as AppearsInFromCla
 LL |     let _ = join.select(lower(posts::title));
     |                  ^^^^^^ expected `Never`, found `Once`
     |
-note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, SelectStatement<...>, ...>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, ..., ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
@@ -581,8 +630,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<Jo
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 2 redundant requirements hidden
-    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -598,40 +647,48 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `pets::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, SelectStatement<...>, ...>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, ..., ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
     |         ^^^^^
     = note: 2 redundant requirements hidden
-    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:123:31
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -644,21 +701,28 @@ note: required by a bound in `lower`
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:123:25
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
  
     
@@ -678,7 +742,7 @@ note: expected this to be `diesel::query_source::Never`
 ...   |
  LL | | }
     | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
@@ -689,8 +753,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 4 redundant requirements hidden
-    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -706,22 +770,23 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
     |         ^^^^^
     = note: 4 redundant requirements hidden
-    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
+    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<posts::columns::title>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -741,7 +806,7 @@ note: expected this to be `diesel::query_source::Never`
 ...   |
  LL | | }
     | |_^
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
@@ -752,8 +817,8 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 5 redundant requirements hidden
-    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -769,40 +834,48 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
  LL |         title -> Text,
     |         ^^^^^
     = note: `posts::columns::title` is no valid selection for `users::table`
-    = help: the following other types implement trait `SelectableExpression<QS>`:
-              `posts::columns::title` implements `SelectableExpression<JoinOn<Join, On>>`
-              `posts::columns::title` implements `SelectableExpression<Only<posts::table>>`
-              `posts::columns::title` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-              `posts::columns::title` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-              `posts::columns::title` implements `SelectableExpression<posts::table>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-              `posts::columns::title` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
-note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
+    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
+              SelectableExpression<Only<posts::table>>
+              SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
+              SelectableExpression<SelectStatement<...>>
+              SelectableExpression<posts::table>
+              SelectableExpression<Join<Left, Right, Inner>>
+              SelectableExpression<Join<Left, Right, LeftOuter>>
+              SelectableExpression<query_source::joins::JoinOn<Join, On>>
+note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, ...>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
     |
  LL |         title -> Text,
     |         ^^^^^
     = note: 5 redundant requirements hidden
-    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<Join<table, ..., ...>, ...>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, ..., ...>, ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
+    = note: required for `lower_utils::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<..., ...>>`
+    = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<lower_utils::lower<posts::columns::title>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:144:31
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                               ^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
@@ -815,19 +888,26 @@ note: required by a bound in `lower`
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `NullableExpression<posts::columns::title>: AsExpression<diesel::sql_types::Text>` is not satisfied
+error[E0277]: the trait bound `Nullable<title>: AsExpression<Text>` is not satisfied
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:144:25
     |
 LL |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `NullableExpression<posts::columns::title>`
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
+    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::expression::nullable::Nullable<posts::columns::title>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
+    |
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
     = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr BigDecimal` implements `AsExpression<Nullable<diesel::sql_types::Numeric>>`
-              `&'__expr BigDecimal` implements `AsExpression<diesel::sql_types::Numeric>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr Cents` implements `AsExpression<Nullable<Money>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<Nullable<diesel::sql_types::Text>>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<Nullable<Datetime>>`
+              &'__expr MigrationVersion<'a>
+              &'__expr std::string::String
+              &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
+              MigrationVersion<'a>
             and N others

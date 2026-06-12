@@ -166,7 +166,7 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
 #[diesel_test_helper::test]
 fn selecting_multiple_aggregate_expressions_without_group_by() {
     use self::users::dsl::*;
-    use diesel::dsl::{count_star, max, CountStar};
+    use diesel::dsl::{CountStar, count_star, max};
     use diesel::helper_types::max;
 
     #[derive(Queryable)]

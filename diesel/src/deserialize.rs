@@ -1,13 +1,13 @@
 //! Types and traits related to deserializing values from the database
 
-use std::error::Error;
-use std::result;
-
+use crate::Selectable;
 use crate::backend::Backend;
 use crate::expression::select_by::SelectBy;
 use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
-use crate::Selectable;
+use alloc::boxed::Box;
+use core::error::Error;
+use core::result;
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
@@ -472,6 +472,17 @@ pub trait FromSql<A, DB: Backend>: Sized {
             None => Err(Box::new(crate::result::UnexpectedNullError)),
         }
     }
+}
+
+/// A helper trait for deserializing data in a borrowed variant
+///
+/// This is mostly useful for getting a `&str` or `&[u8]` in your code
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) trait FromSqlRef<'a, A, DB: Backend>: Sized {
+    /// See the trait documentation
+    fn from_sql(bytes: &'a mut DB::RawValue<'_>) -> Result<Self>;
 }
 
 /// Deserialize a database row into a rust data structure

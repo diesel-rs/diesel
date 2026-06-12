@@ -1,0 +1,8 @@
+error[E0433]: cannot find module or crate `foos` in this scope
+ --> tests/fail/derive/queryable_by_name_requires_table_name_or_sql_type_annotation2.rs:5:8
+  |
+LL | struct Foo {
+  |        ^^^ use of unresolved module or unlinked crate `foos`
+  |
+  = help: you might be missing a crate named `foos`
+For more information about this error, try `rustc --explain E0433`.

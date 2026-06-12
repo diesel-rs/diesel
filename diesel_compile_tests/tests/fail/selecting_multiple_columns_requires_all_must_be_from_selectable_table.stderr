@@ -10,17 +10,19 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         id -> Integer,
    |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::user_id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
@@ -34,17 +36,19 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         user_id -> Integer,
    |         ^^^^^^^
    = note: `posts::columns::user_id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::user_id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::user_id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::user_id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::user_id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::user_id` implements `SelectableExpression<posts::table>`
-             `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::user_id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::user_id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:23:30
@@ -61,8 +65,9 @@ LL |         id -> Integer,
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `users::table`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
@@ -76,17 +81,19 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
 LL |         id -> Integer,
    |         ^^
    = note: `posts::columns::id` is no valid selection for `users::table`
-   = help: the following other types implement trait `SelectableExpression<QS>`:
-             `posts::columns::id` implements `SelectableExpression<JoinOn<Join, On>>`
-             `posts::columns::id` implements `SelectableExpression<Only<posts::table>>`
-             `posts::columns::id` implements `SelectableExpression<SelectStatement<FromClause<From>>>`
-             `posts::columns::id` implements `SelectableExpression<Tablesample<posts::table, TSM>>`
-             `posts::columns::id` implements `SelectableExpression<posts::table>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, Inner>>`
-             `posts::columns::id` implements `SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>`
+   = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<posts::table>>
+             SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
+             SelectableExpression<SelectStatement<...>>
+             SelectableExpression<posts::table>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<query_source::joins::JoinOn<Join, On>>
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:27:30
@@ -103,5 +110,6 @@ LL |         id -> Integer,
    = note: 1 redundant requirement hidden
    = note: required for `(posts::columns::id, users::columns::name)` to implement `AppearsOnTable<users::table>`
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

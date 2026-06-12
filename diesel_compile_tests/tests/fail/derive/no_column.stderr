@@ -1,4 +1,4 @@
-error[E0412]: cannot find type `name` in module `users`
+error[E0425]: cannot find type `name` in module `users`
   --> tests/fail/derive/no_column.rs:13:5
    |
 LL |     name: String,
@@ -10,7 +10,7 @@ error[E0425]: cannot find value `name` in module `users`
 LL |     name: String,
    |     ^^^^ not found in `users`
 
-error[E0412]: cannot find type `name` in module `users`
+error[E0425]: cannot find type `name` in module `users`
   --> tests/fail/derive/no_column.rs:21:28
    |
 LL |     #[diesel(column_name = name)]
@@ -22,7 +22,7 @@ error[E0425]: cannot find value `name` in module `users`
 LL |     #[diesel(column_name = name)]
    |                            ^^^^ not found in `users`
 
-error[E0412]: cannot find type `name` in module `users`
+error[E0425]: cannot find type `name` in module `users`
   --> tests/fail/derive/no_column.rs:29:41
    |
 LL | struct UserTuple(#[diesel(column_name = name)] String);
@@ -33,3 +33,4 @@ error[E0425]: cannot find value `name` in module `users`
    |
 LL | struct UserTuple(#[diesel(column_name = name)] String);
    |                                         ^^^^ not found in `users`
+For more information about this error, try `rustc --explain E0425`.

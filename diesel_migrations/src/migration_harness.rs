@@ -118,7 +118,6 @@ pub trait MigrationHarness<DB: Backend> {
             .into_iter()
             .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
-
         for applied_version in applied_versions {
             migrations.remove(&applied_version);
         }
@@ -134,13 +133,23 @@ pub trait MigrationHarness<DB: Backend> {
     ///
     /// Types implementing this trait should call [`Migration::run`] internally and record
     /// that a specific migration version was executed afterwards.
+    ///
+    /// The default implementation wraps the migration in a transaction when the migration
+    /// metadata reports `run_in_transaction = true` (the default). See
+    /// [`FileBasedMigrations`](crate::FileBasedMigrations) to learn how to configure
+    /// this for a specific migration.
     fn run_migration(&mut self, migration: &dyn Migration<DB>)
-        -> Result<MigrationVersion<'static>>;
+    -> Result<MigrationVersion<'static>>;
 
     /// Revert a single migration
     ///
     /// Types implementing this trait should call [`Migration::revert`] internally
     /// and record that a specific migration version was reverted afterwards.
+    ///
+    /// The default implementation wraps the revert in a transaction when the migration
+    /// metadata reports `run_in_transaction = true` (the default). See
+    /// [`FileBasedMigrations`](crate::FileBasedMigrations) to learn how to configure
+    /// this for a specific migration.
     fn revert_migration(
         &mut self,
         migration: &dyn Migration<DB>,
@@ -154,11 +163,7 @@ impl<C, DB> MigrationHarness<DB> for C
 where
     DB: Backend + diesel::internal::migrations::DieselReserveSpecialization,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
-    __diesel_schema_migrations::table: methods::BoxedDsl<
-        'static,
-        DB,
-        Output = __diesel_schema_migrations::BoxedQuery<'static, DB>,
-    >,
+    __diesel_schema_migrations::table: methods::BoxedDsl<'static, DB, Output = __diesel_schema_migrations::BoxedQuery<'static, DB>>,
     __diesel_schema_migrations::BoxedQuery<'static, DB, VarChar>:
         methods::LoadQuery<'static, C, MigrationVersion<'static>>,
     diesel::internal::migrations::DefaultValues: QueryFragment<DB>,
@@ -168,8 +173,13 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
+        let saved_search_path = self.read_search_path()?;
+
         let apply_migration = |conn: &mut C| -> Result<()> {
             migration.run(conn)?;
+            if let Some(ref path) = saved_search_path {
+                conn.set_search_path(path)?;
+            }
             diesel::insert_into(__diesel_schema_migrations::table)
                 .values(
                     __diesel_schema_migrations::version.eq(migration.name().version().as_owned()),
@@ -183,6 +193,11 @@ where
         } else {
             apply_migration(self)?;
         }
+
+        if let Some(ref path) = saved_search_path {
+            self.set_search_path(path)?;
+        }
+
         Ok(migration.name().version().as_owned())
     }
 
@@ -190,8 +205,13 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
+        let saved_search_path = self.read_search_path()?;
+
         let revert_migration = |conn: &mut C| -> Result<()> {
             migration.revert(conn)?;
+            if let Some(ref path) = saved_search_path {
+                conn.set_search_path(path)?;
+            }
             diesel::delete(
                 __diesel_schema_migrations::table.find(migration.name().version().as_owned()),
             )
@@ -204,6 +224,11 @@ where
         } else {
             revert_migration(self)?;
         }
+
+        if let Some(ref path) = saved_search_path {
+            self.set_search_path(path)?;
+        }
+
         Ok(migration.name().version().as_owned())
     }
 

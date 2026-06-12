@@ -1,11 +1,13 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
-use crate::expression::{AppearsOnTable, SelectableExpression};
-use crate::query_builder::returning_clause::*;
+use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
+use crate::query_builder::returning::{
+    DeleteStmt, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_dsl::RunQueryDslSupport;
+use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_source::{QuerySource, Table};
 
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -41,14 +43,14 @@ where
     }
 }
 
-impl<T, U, Ret> std::fmt::Debug for DeleteStatement<T, U, Ret>
+impl<T, U, Ret> core::fmt::Debug for DeleteStatement<T, U, Ret>
 where
     T: QuerySource,
-    FromClause<T>: std::fmt::Debug,
-    U: std::fmt::Debug,
-    Ret: std::fmt::Debug,
+    FromClause<T>: core::fmt::Debug,
+    U: core::fmt::Debug,
+    Ret: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("DeleteStatement")
             .field("from_clause", &self.from_clause)
             .field("where_clause", &self.where_clause)
@@ -269,8 +271,8 @@ where
 impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
 where
     T: Table,
-    T::AllColumns: SelectableExpression<T>,
     DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<DeleteStmt, T>>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = DeleteStatement<T, U, ReturningClause<T::AllColumns>>;
@@ -283,9 +285,9 @@ where
 impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: SelectableExpression<T>,
+    Ret: SelectableExpression<ReturningQuerySource<DeleteStmt, T>>,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
 impl<T, U, Ret> RunQueryDslSupport for DeleteStatement<T, U, Ret> where T: QuerySource {}
@@ -314,7 +316,6 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// ```
     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     where
-        E: SelectableExpression<T>,
         DeleteStatement<T, U, ReturningClause<E>>: Query,
     {
         DeleteStatement {

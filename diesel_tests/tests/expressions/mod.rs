@@ -6,7 +6,7 @@ mod ops;
 use self::bigdecimal::BigDecimal;
 use crate::schema::users::dsl::*;
 use crate::schema::{
-    connection, connection_with_sean_and_tess_in_users_table, NewUser, TestBackend,
+    NewUser, TestBackend, connection, connection_with_sean_and_tess_in_users_table,
 };
 use diesel::backend::Backend;
 use diesel::dsl::*;
@@ -55,9 +55,11 @@ fn test_count_star() {
     assert_eq!(Ok(1), source.first(connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
-    assert!(debug_query::<TestBackend, _>(&source)
-        .to_string()
-        .starts_with("SELECT COUNT(*) FROM"));
+    assert!(
+        debug_query::<TestBackend, _>(&source)
+            .to_string()
+            .starts_with("SELECT COUNT(*) FROM")
+    );
 }
 
 table! {

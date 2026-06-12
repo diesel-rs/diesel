@@ -27,6 +27,6 @@ fn main() {
         .inner_join(posts::table)
         .group_by((users::id, posts::user_id))
         .select((users::id, posts::user_id, diesel::dsl::count_star()));
-    //~^ ERROR: the trait bound `posts::columns::user_id: IsContainedInGroupBy<users::columns::id>` is not satisfied
-    //~| ERROR: he trait bound `users::columns::id: IsContainedInGroupBy<posts::columns::user_id>` is not satisfied
+    //~^ ERROR: the trait bound `user_id: IsContainedInGroupBy<id>` is not satisfied
+    //~| ERROR: the trait bound `id: IsContainedInGroupBy<user_id>` is not satisfied
 }

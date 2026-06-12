@@ -17,11 +17,25 @@ use crate::errors::{MigrationError, RunMigrationsError};
 /// A valid migration directory contains a sub folder per migration.
 /// Each migration folder contains a `up.sql` file containing the migration itself
 /// and a `down.sql` file containing the necessary SQL to revert the migration.
-/// Additionally each folder can contain a `metadata.toml` file controlling how the
-/// individual migration should be handled by the migration harness.
 ///
 /// To embed an existing migration folder into the final binary see
 /// [`embed_migrations!`](crate::embed_migrations!).
+///
+/// ## Transactions
+///
+/// Each migration folder can additionally contain a `metadata.toml` file,
+/// controlling how the individual migration should be handled by the migration
+/// harness.
+///
+/// By default, each migration is run inside a dedicated transaction block.
+/// If the metadata file contains `run_in_transaction = false`, then this
+/// behavior will be disabled.
+///
+/// **Important:** If you see "cannot run inside a transaction block" errors
+/// despite having set `run_in_transaction = false`, then your migration likely
+/// contains multiple instructions, which some databases automatically wrap in
+/// a transaction block. In this case we recommend splitting the migration into
+/// multiple migrations.
 ///
 /// ## Example
 ///
@@ -364,6 +378,24 @@ mod tests {
 
         fs::create_dir(migrations_path.as_path()).unwrap();
         fs::create_dir(dot_path.as_path()).unwrap();
+
+        let migrations = migrations_in_directory(&migrations_path)
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(0, migrations.len());
+    }
+
+    #[test]
+    fn migration_paths_in_directory_ignores_empty_directories() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let empty_path = migrations_path.join("an_empty_migration_dir");
+
+        fs::create_dir(migrations_path.as_path()).unwrap();
+        fs::create_dir(empty_path.as_path()).unwrap();
 
         let migrations = migrations_in_directory(&migrations_path)
             .unwrap()

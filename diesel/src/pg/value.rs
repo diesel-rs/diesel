@@ -1,5 +1,5 @@
-use std::num::NonZeroU32;
-use std::ops::Range;
+use core::num::NonZeroU32;
+use core::ops::Range;
 
 /// Raw postgres value as received from the database
 #[derive(Clone, Copy)]
@@ -81,7 +81,7 @@ impl<'a> PgValue<'a> {
     }
 
     /// Get the underlying raw byte representation
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &'a [u8] {
         self.raw_value
     }
 

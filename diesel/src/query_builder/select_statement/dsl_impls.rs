@@ -5,6 +5,7 @@ use crate::dsl::AsExprOf;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
+use crate::query_builder::NoFromClause;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::*;
 use crate::query_builder::from_clause::AsQuerySource;
@@ -19,7 +20,6 @@ use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::target::*;
 use crate::query_builder::where_clause::*;
-use crate::query_builder::NoFromClause;
 use crate::query_builder::{
     AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
 };
@@ -27,9 +27,10 @@ use crate::query_dsl::group_by_dsl::ValidDistinctForGroupBy;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;
-use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
+use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::sql_types::{BigInt, BoolOrNullableBool};
+use alloc::boxed::Box;
 
 impl<F, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, D, W, O, LOf, G, H, LC>
@@ -130,6 +131,9 @@ where
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    O: ValidGrouping<G::Expressions>,
+    <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+        MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
 {
     type Output = SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 
@@ -264,17 +268,25 @@ where
 }
 
 // no impls for `NoFromClause` here because order is not really supported there yet
-impl<ST, F, S, D, W, O, LOf, G, H, LC, Expr> OrderDsl<Expr>
-    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+
+// Without GROUP BY: validate that SELECT and ORDER BY have matching aggregate nature.
+impl<ST, F, S, D, W, O, LOf, H, LC, Expr> OrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, NoGroupByClause, H, LC>
 where
     F: QuerySource,
     Expr: AppearsOnTable<F>,
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>:
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, NoGroupByClause, H, LC>:
         SelectQuery<SqlType = ST>,
     OrderClause<Expr>: ValidOrderingForDistinct<D>,
+    S: SelectClauseExpression<FromClause<F>>,
+    Expr: ValidGrouping<()>,
+    S::Selection: ValidGrouping<()>,
+    <S::Selection as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
 {
-    type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>;
+    type Output =
+        SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, NoGroupByClause, H, LC>;
 
     fn order(self, expr: Expr) -> Self::Output {
         let order = OrderClause(expr);
@@ -292,13 +304,102 @@ where
     }
 }
 
-impl<F, S, D, W, O, LOf, G, H, LC, Expr> ThenOrderDsl<Expr>
-    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, G, H, LC>
+// With GROUP BY: only validate that the ORDER BY expression is valid for the group
+// (grouped column or aggregate). SELECT validity is enforced by the Query impl at
+// execution time, so checking it here would reject valid queries where order_by()
+// is called before select() with a non-trivial GROUP BY.
+impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> OrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<GB>, H, LC>
 where
     F: QuerySource,
     Expr: AppearsOnTable<F>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, GroupByClause<GB>, H, LC>:
+        SelectQuery<SqlType = ST>,
+    OrderClause<Expr>: ValidOrderingForDistinct<D>,
+    Expr: ValidGrouping<GB>,
 {
-    type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, G, H, LC>;
+    type Output =
+        SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, GroupByClause<GB>, H, LC>;
+
+    fn order(self, expr: Expr) -> Self::Output {
+        let order = OrderClause(expr);
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            order,
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
+}
+
+// Without GROUP BY: validate that SELECT and the new ORDER BY term have matching
+// aggregate nature.
+impl<F, S, D, W, O, LOf, H, LC, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, NoGroupByClause, H, LC>
+where
+    F: QuerySource,
+    Expr: AppearsOnTable<F>,
+    S: SelectClauseExpression<FromClause<F>>,
+    Expr: ValidGrouping<()>,
+    S::Selection: ValidGrouping<()>,
+    <S::Selection as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
+{
+    type Output = SelectStatement<
+        FromClause<F>,
+        S,
+        D,
+        W,
+        OrderClause<(O, Expr)>,
+        LOf,
+        NoGroupByClause,
+        H,
+        LC,
+    >;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            OrderClause((self.order.0, expr)),
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
+}
+
+// With GROUP BY: Validate the whole order expression against the given group by expression
+impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, GroupByClause<GB>, H, LC>
+where
+    F: QuerySource,
+    Expr: AppearsOnTable<F>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, GroupByClause<GB>, H, LC>:
+        SelectQuery<SqlType = ST>,
+    (O, Expr): ValidGrouping<GB>,
+{
+    type Output = SelectStatement<
+        FromClause<F>,
+        S,
+        D,
+        W,
+        OrderClause<(O, Expr)>,
+        LOf,
+        GroupByClause<GB>,
+        H,
+        LC,
+    >;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
         SelectStatement::new(

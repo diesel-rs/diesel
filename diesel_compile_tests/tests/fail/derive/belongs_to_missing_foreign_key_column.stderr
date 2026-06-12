@@ -1,4 +1,4 @@
-error[E0412]: cannot find type `bar_id` in module `foo`
+error[E0425]: cannot find type `bar_id` in module `foo`
   --> tests/fail/derive/belongs_to_missing_foreign_key_column.rs:13:21
    |
 LL | #[diesel(belongs_to(Bar))]
@@ -10,7 +10,7 @@ error[E0425]: cannot find value `bar_id` in module `foo`
 LL | #[diesel(belongs_to(Bar))]
    |                     ^^^ not found in `foo`
 
-error[E0412]: cannot find type `bar_id` in module `foo`
+error[E0425]: cannot find type `bar_id` in module `foo`
   --> tests/fail/derive/belongs_to_missing_foreign_key_column.rs:22:40
    |
 LL | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
@@ -22,7 +22,7 @@ error[E0425]: cannot find value `bar_id` in module `foo`
 LL | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
    |                                        ^^^^^^ not found in `foo`
 
-error[E0412]: cannot find type `bar_id` in module `foo`
+error[E0425]: cannot find type `bar_id` in module `foo`
   --> tests/fail/derive/belongs_to_missing_foreign_key_column.rs:31:21
    |
 LL | #[diesel(belongs_to(Bar))]
@@ -34,7 +34,7 @@ error[E0425]: cannot find value `bar_id` in module `foo`
 LL | #[diesel(belongs_to(Bar))]
    |                     ^^^ not found in `foo`
 
-error[E0412]: cannot find type `bar_id` in module `foo`
+error[E0425]: cannot find type `bar_id` in module `foo`
   --> tests/fail/derive/belongs_to_missing_foreign_key_column.rs:41:40
    |
 LL | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
@@ -45,3 +45,4 @@ error[E0425]: cannot find value `bar_id` in module `foo`
    |
 LL | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
    |                                        ^^^^^^ not found in `foo`
+For more information about this error, try `rustc --explain E0425`.

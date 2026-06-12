@@ -16,6 +16,9 @@ use crate::print_schema::ColumnSorting;
 table! {
     sqlite_master (name) {
         name -> VarChar,
+        sql -> VarChar,
+        #[sql_name = "type"]
+        tpe -> VarChar,
     }
 }
 
@@ -32,26 +35,49 @@ table! {
     }
 }
 
+fn escape_identifier(identifier: &str) -> String {
+    identifier.replace('\'', "''")
+}
+
 pub fn load_table_names(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, crate::errors::Error> {
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
         return Err(crate::errors::Error::InvalidSqliteSchema);
     }
-
-    Ok(sqlite_master
+    let tables = sqlite_master
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
-        .filter(sql::<sql_types::Bool>("type='table'"))
+        .filter(tpe.eq("table"))
         .order(name)
         .load::<String>(connection)?
         .into_iter()
-        .map(TableName::from_name)
-        .collect())
+        .map(|table| {
+            (
+                SupportedQueryRelationStructures::Table,
+                TableName::from_name(table),
+            )
+        });
+    let view = sqlite_master
+        .select(name)
+        .filter(name.not_like("\\_\\_%").escape('\\'))
+        .filter(name.not_like("sqlite%"))
+        .filter(tpe.eq("view"))
+        .order(name)
+        .load::<String>(connection)?
+        .into_iter()
+        .map(|table| {
+            (
+                SupportedQueryRelationStructures::View,
+                TableName::from_name(table),
+            )
+        });
+
+    Ok(tables.chain(view).collect())
 }
 
 pub fn load_foreign_key_constraints(
@@ -61,8 +87,11 @@ pub fn load_foreign_key_constraints(
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
-        .map(|child_table| {
-            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.sql_name);
+        .map(|(_, child_table)| {
+            let query = format!(
+                "PRAGMA FOREIGN_KEY_LIST('{}')",
+                escape_identifier(&child_table.sql_name)
+            );
             sql::<pragma_foreign_key_list::SqlType>(&query)
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
@@ -135,6 +164,7 @@ pub fn get_table_data(
     conn: &mut SqliteConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
+    kind: SupportedQueryRelationStructures,
 ) -> QueryResult<Vec<ColumnInformation>> {
     let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
@@ -143,9 +173,15 @@ pub fn get_table_data(
          * This would return hidden columns as well, but those would need to be created at runtime
          * therefore they aren't an issue.
          */
-        format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_XINFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     } else {
-        format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_INFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     };
 
     // See: https://github.com/diesel-rs/diesel/issues/3579 as to why we use a direct
@@ -153,7 +189,10 @@ pub fn get_table_data(
     let mut result = sql_query(query).load::<ColumnInformation>(conn)?;
     // Add implicit rowid primary key column if the only primary key is rowid
     // and ensure that the rowid column uses the right type.
-    let primary_key = get_primary_keys(conn, table)?;
+    let primary_key = match kind {
+        SupportedQueryRelationStructures::Table => get_primary_keys(conn, table)?,
+        SupportedQueryRelationStructures::View => Vec::new(),
+    };
     if primary_key.len() == 1 {
         let primary_key = primary_key.first().expect("guaranteed to have one element");
         if !result.iter_mut().any(|x| &x.column_name == primary_key) {
@@ -231,7 +270,7 @@ impl QueryableByName<Sqlite> for WithoutRowIdInformation {
 pub fn column_is_row_id(
     conn: &mut SqliteConnection,
     table: &TableName,
-    primary_keys: &[String],
+    primary_keys: Option<&[String]>,
     column_name: &str,
     type_name: &str,
 ) -> Result<bool, crate::errors::Error> {
@@ -247,11 +286,14 @@ pub fn column_is_row_id(
         return Ok(false);
     }
 
-    if !matches!(primary_keys, [pk] if pk == column_name) {
+    if !matches!(primary_keys, Some([pk]) if pk == column_name) {
         return Ok(false);
     }
 
-    let table_list_query = format!("PRAGMA TABLE_LIST('{}')", &table.sql_name);
+    let table_list_query = format!(
+        "PRAGMA TABLE_LIST('{}')",
+        escape_identifier(&table.sql_name)
+    );
     let table_list_results = sql_query(table_list_query).load::<WithoutRowIdInformation>(conn)?;
 
     let res = table_list_results
@@ -286,9 +328,15 @@ pub fn get_primary_keys(
 ) -> QueryResult<Vec<String>> {
     let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
-        format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_XINFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     } else {
-        format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
+        format!(
+            "PRAGMA TABLE_INFO('{}')",
+            escape_identifier(&table.sql_name)
+        )
     };
     let results = sql_query(query).load::<PrimaryKeyInformation>(conn)?;
     let mut collected: Vec<String> = results
@@ -324,7 +372,7 @@ pub fn determine_column_type(
     conn: &mut SqliteConnection,
     attr: &ColumnInformation,
     table: &TableName,
-    primary_keys: &[String],
+    primary_keys: Option<&[String]>,
     foreign_keys: &HashMap<String, ForeignKeyConstraint>,
     config: &PrintSchema,
 ) -> Result<ColumnType, crate::errors::Error> {
@@ -392,7 +440,7 @@ fn column_references_row_id(
             column_is_row_id(
                 conn,
                 &foreign_constraint.parent_table,
-                &parent_primary_keys,
+                Some(&parent_primary_keys),
                 id,
                 "integer",
             )
@@ -434,12 +482,27 @@ fn is_double(type_name: &str) -> bool {
     type_name.contains("double") || type_name.contains("num") || type_name.contains("dec")
 }
 
+pub(crate) fn load_view_sql_definition(
+    sqlite_connection: &mut SqliteConnection,
+    name: &TableName,
+) -> Result<String, crate::errors::Error> {
+    sqlite_master::table
+        .filter(sqlite_master::name.eq(&name.sql_name))
+        .select(sqlite_master::sql)
+        .get_result::<String>(sqlite_connection)
+        .map_err(crate::errors::Error::from)
+}
+
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     assert_eq!(
         Vec::<TableName>::new(),
-        load_table_names(&mut conn, None).unwrap()
+        load_table_names(&mut conn, None)
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>()
     );
 }
 
@@ -449,7 +512,11 @@ fn load_table_names_includes_tables_that_exist() {
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None).unwrap();
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
     assert!(table_names.contains(&TableName::from_name("users")));
 }
 
@@ -459,7 +526,11 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     diesel::sql_query("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None).unwrap();
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
     assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
 }
 
@@ -472,12 +543,16 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None);
-    assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
+    assert_eq!(vec![TableName::from_name("users")], table_names);
 }
 
 #[test]
-fn load_table_names_excludes_views() {
+fn load_table_names_includes_views() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
@@ -485,8 +560,18 @@ fn load_table_names_excludes_views() {
     diesel::sql_query("CREATE VIEW answer AS SELECT 42")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None);
-    assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
+    let table_names = load_table_names(&mut conn, None)
+        .unwrap()
+        .into_iter()
+        .map(|(_, table)| table)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        vec![
+            TableName::from_name("users"),
+            TableName::from_name("answer")
+        ],
+        table_names
+    );
 }
 
 #[test]
@@ -520,7 +605,7 @@ fn load_table_names_output_is_ordered() {
     let table_names = load_table_names(&mut conn, None)
         .unwrap()
         .iter()
-        .map(|table| table.to_string())
+        .map(|(_, table)| table.to_string())
         .collect::<Vec<_>>();
     assert_eq!(vec!["aaa", "bbb", "ccc"], table_names);
 }
@@ -631,7 +716,13 @@ fn integer_primary_key_sqlite_3_37() {
         diesel::sql_query(sql_query).execute(&mut conn).unwrap();
 
         let table = TableName::from_name(table_name);
-        let column_infos = get_table_data(&mut conn, &table, &Default::default()).unwrap();
+        let column_infos = get_table_data(
+            &mut conn,
+            &table,
+            &Default::default(),
+            SupportedQueryRelationStructures::Table,
+        )
+        .unwrap();
 
         let primary_keys = get_primary_keys(&mut conn, &table).unwrap();
 
@@ -644,7 +735,7 @@ fn integer_primary_key_sqlite_3_37() {
                         &mut conn,
                         column_info,
                         &table,
-                        &primary_keys,
+                        Some(&primary_keys),
                         &HashMap::new(),
                         &Default::default(),
                     )
@@ -663,7 +754,7 @@ fn integer_primary_key_sqlite_3_37() {
                         &mut conn,
                         column_info,
                         &table,
-                        &primary_keys,
+                        Some(&primary_keys),
                         &HashMap::new(),
                         &PrintSchema {
                             sqlite_integer_primary_key_is_bigint: Some(true),

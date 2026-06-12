@@ -1,11 +1,11 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::collections::Bound;
-use std::error::Error;
+use core::error::Error;
+use core::ops::Bound;
 use std::io::Write;
 
 use crate::deserialize::{self, Defaultable, FromSql, Queryable};
-use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound as SqlBound;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -46,30 +46,30 @@ range_as_expression!(&'a (Bound<T>, Bound<T>); Range<ST>);
 range_as_expression!((Bound<T>, Bound<T>); Nullable<Range<ST>>);
 range_as_expression!(&'a (Bound<T>, Bound<T>); Nullable<Range<ST>>);
 
-range_as_expression!(std::ops::Range<T>; Range<ST>);
-range_as_expression!(&'a std::ops::Range<T>; Range<ST>);
-range_as_expression!(std::ops::Range<T>; Nullable<Range<ST>>);
-range_as_expression!(&'a std::ops::Range<T>; Nullable<Range<ST>>);
+range_as_expression!(core::ops::Range<T>; Range<ST>);
+range_as_expression!(&'a core::ops::Range<T>; Range<ST>);
+range_as_expression!(core::ops::Range<T>; Nullable<Range<ST>>);
+range_as_expression!(&'a core::ops::Range<T>; Nullable<Range<ST>>);
 
-range_as_expression!(std::ops::RangeInclusive<T>; Range<ST>);
-range_as_expression!(&'a std::ops::RangeInclusive<T>; Range<ST>);
-range_as_expression!(std::ops::RangeInclusive<T>; Nullable<Range<ST>>);
-range_as_expression!(&'a std::ops::RangeInclusive<T>; Nullable<Range<ST>>);
+range_as_expression!(core::ops::RangeInclusive<T>; Range<ST>);
+range_as_expression!(&'a core::ops::RangeInclusive<T>; Range<ST>);
+range_as_expression!(core::ops::RangeInclusive<T>; Nullable<Range<ST>>);
+range_as_expression!(&'a core::ops::RangeInclusive<T>; Nullable<Range<ST>>);
 
-range_as_expression!(std::ops::RangeToInclusive<T>; Range<ST>);
-range_as_expression!(&'a std::ops::RangeToInclusive<T>; Range<ST>);
-range_as_expression!(std::ops::RangeToInclusive<T>; Nullable<Range<ST>>);
-range_as_expression!(&'a std::ops::RangeToInclusive<T>; Nullable<Range<ST>>);
+range_as_expression!(core::ops::RangeToInclusive<T>; Range<ST>);
+range_as_expression!(&'a core::ops::RangeToInclusive<T>; Range<ST>);
+range_as_expression!(core::ops::RangeToInclusive<T>; Nullable<Range<ST>>);
+range_as_expression!(&'a core::ops::RangeToInclusive<T>; Nullable<Range<ST>>);
 
-range_as_expression!(std::ops::RangeFrom<T>; Range<ST>);
-range_as_expression!(&'a std::ops::RangeFrom<T>; Range<ST>);
-range_as_expression!(std::ops::RangeFrom<T>; Nullable<Range<ST>>);
-range_as_expression!(&'a std::ops::RangeFrom<T>; Nullable<Range<ST>>);
+range_as_expression!(core::ops::RangeFrom<T>; Range<ST>);
+range_as_expression!(&'a core::ops::RangeFrom<T>; Range<ST>);
+range_as_expression!(core::ops::RangeFrom<T>; Nullable<Range<ST>>);
+range_as_expression!(&'a core::ops::RangeFrom<T>; Nullable<Range<ST>>);
 
-range_as_expression!(std::ops::RangeTo<T>; Range<ST>);
-range_as_expression!(&'a std::ops::RangeTo<T>; Range<ST>);
-range_as_expression!(std::ops::RangeTo<T>; Nullable<Range<ST>>);
-range_as_expression!(&'a std::ops::RangeTo<T>; Nullable<Range<ST>>);
+range_as_expression!(core::ops::RangeTo<T>; Range<ST>);
+range_as_expression!(&'a core::ops::RangeTo<T>; Range<ST>);
+range_as_expression!(core::ops::RangeTo<T>; Nullable<Range<ST>>);
+range_as_expression!(&'a core::ops::RangeTo<T>; Nullable<Range<ST>>);
 
 #[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
@@ -86,7 +86,15 @@ where
             lower_bound = Bound::Excluded(T::default_value());
         } else if !flags.contains(RangeFlags::LB_INF) {
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
-            let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
+
+            let (elem_bytes, new_bytes) = bytes
+                .split_at_checked(elem_size.try_into()?)
+                .ok_or_else(|| {
+                    format!(
+                        "Invalid element size: Got {elem_size} elements, but only {} bytes",
+                        bytes.len()
+                    )
+                })?;
             bytes = new_bytes;
             let value = T::from_sql(PgValue::new_internal(elem_bytes, &value))?;
 
@@ -189,7 +197,7 @@ where
     }
 }
 
-use std::ops::RangeBounds;
+use core::ops::RangeBounds;
 macro_rules! range_std_to_sql {
     ($ty:ty) => {
         #[cfg(feature = "postgres_backend")]
@@ -205,11 +213,11 @@ macro_rules! range_std_to_sql {
     };
 }
 
-range_std_to_sql!(std::ops::Range<T>);
-range_std_to_sql!(std::ops::RangeInclusive<T>);
-range_std_to_sql!(std::ops::RangeFrom<T>);
-range_std_to_sql!(std::ops::RangeTo<T>);
-range_std_to_sql!(std::ops::RangeToInclusive<T>);
+range_std_to_sql!(core::ops::Range<T>);
+range_std_to_sql!(core::ops::RangeInclusive<T>);
+range_std_to_sql!(core::ops::RangeFrom<T>);
+range_std_to_sql!(core::ops::RangeTo<T>);
+range_std_to_sql!(core::ops::RangeToInclusive<T>);
 
 macro_rules! range_to_sql_nullable {
     ($ty:ty) => {
@@ -226,11 +234,11 @@ macro_rules! range_to_sql_nullable {
     };
 }
 range_to_sql_nullable!((Bound<T>, Bound<T>));
-range_to_sql_nullable!(std::ops::Range<T>);
-range_to_sql_nullable!(std::ops::RangeInclusive<T>);
-range_to_sql_nullable!(std::ops::RangeFrom<T>);
-range_to_sql_nullable!(std::ops::RangeTo<T>);
-range_to_sql_nullable!(std::ops::RangeToInclusive<T>);
+range_to_sql_nullable!(core::ops::Range<T>);
+range_to_sql_nullable!(core::ops::RangeInclusive<T>);
+range_to_sql_nullable!(core::ops::RangeFrom<T>);
+range_to_sql_nullable!(core::ops::RangeTo<T>);
+range_to_sql_nullable!(core::ops::RangeToInclusive<T>);
 
 #[cfg(feature = "postgres_backend")]
 impl HasSqlType<Int4range> for Pg {
@@ -285,5 +293,36 @@ impl ToSql<RangeBoundEnum, Pg> for RangeBound {
         out.write_all(literal.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::deserialize::FromSql;
+    use crate::pg::Pg;
+    use crate::pg::PgValue;
+    use crate::pg::types::ranges::RangeFlags;
+    use crate::sql_types::{Integer, Range};
+    use byteorder::{NetworkEndian, WriteBytesExt};
+    use std::ops::Bound;
+
+    #[test]
+    fn check_invalid_element_size_for_range() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+
+        // flags
+        value.write_u8(RangeFlags::empty().bits()).unwrap();
+        // elem size
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <(Bound<i32>, Bound<i32>) as FromSql<Range<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element size: Got 6 elements, but only 4 bytes"
+        );
     }
 }

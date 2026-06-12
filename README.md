@@ -2,10 +2,10 @@
 
 # A safe, extensible ORM and Query Builder for Rust
 
-[![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
+[![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amain)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
-API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs/master/diesel/index.html)
+API Documentation: [latest release](https://docs.rs/diesel) – [main branch](https://docs.diesel.rs/main/diesel/index.html)
 
 [Homepage](https://diesel.rs)
 
@@ -15,9 +15,9 @@ Rust's type system to create a low overhead query builder that "feels like
 Rust."
 
 Supported databases:
-1. [PostgreSQL](https://docs.diesel.rs/master/diesel/pg/index.html)
-2. [MySQL](https://docs.diesel.rs/master/diesel/mysql/index.html)
-3. [SQLite](https://docs.diesel.rs/master/diesel/sqlite/index.html)
+1. [PostgreSQL](https://docs.diesel.rs/main/diesel/pg/index.html)
+2. [MySQL](https://docs.diesel.rs/main/diesel/mysql/index.html)
+3. [SQLite](https://docs.diesel.rs/main/diesel/sqlite/index.html)
 
 You can configure the database backend in `Cargo.toml`:
 
@@ -243,7 +243,7 @@ sql_query(include_str!("complex_users_by_organization.sql"))
 ## Code of conduct
 
 Anyone who interacts with Diesel in any space, including but not limited to
-this GitHub repository, must follow our [code of conduct](https://github.com/diesel-rs/diesel/blob/master/code_of_conduct.md).
+this GitHub repository, must follow our [code of conduct](https://github.com/diesel-rs/diesel/blob/main/code_of_conduct.md).
 
 ## License
 
@@ -256,7 +256,7 @@ Licensed under either of these:
 
 ### Contributing
 
-Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/master/CONTRIBUTING.md)
+Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/main/CONTRIBUTING.md)
 for useful information about setting up Diesel locally, coding style and common abbreviations.
 
 Unless you explicitly state otherwise, any contribution you intentionally submit
@@ -268,51 +268,62 @@ dual-licensed as above, without any additional terms or conditions.
 We would like to thank all of the sponsors supporting the work on Diesel. Notable large sponsors are:
 
 
-<p align="center">
-    <a href="https://nlnet.nl/project/Diesel/">
-        <img src="https://diesel.rs/assets/images/nl_net_foundation_logo.svg" width="50%"/>
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/nl_net_foundation_logo.svg" />
         <br/>
-        NLNet Foundation
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://nlnet.nl/project/Diesel/">
-        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" width="50%"/>
+        <sub><b>NLNet Foundation</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/PrototypeFund_logo_dark.png" />
         <br/>
-        NGI Zero Core
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
-        <img src="https://diesel.rs/assets/images/PrototypeFund_logo_dark.png" width="50%"/>
+        <sub><b>Prototype Fund</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
+        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" />
         <br/>
-        Prototype Fund
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
-        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" width="50%"/>
+        <sub><b>GitHub Secure Open Source Fund</b></sub>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://nlnet.nl/project/Diesel/">
+        <img src="https://diesel.rs/assets/images/NGI0Core_tag.svg" />
         <br/>
-        Federal Ministry of Research, Technology and Space (Germany)
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://github.blog/open-source/maintainers/securing-the-supply-chain-at-scale-starting-with-71-important-open-source-projects/">
-        <img src="https://diesel.rs/assets/images/GitHub_Logo.png" width="50%"/>
-        GitHub Secure Open Source Fund
-    </a>
-</p>
-
-<p align="center">
-    <a href="https://giga-infosystems.com/">
-        <img src="https://diesel.rs/assets/images/logo_giga.svg" width="35%"/>
+        <sub><b>NGI Zero Core</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://www.prototypefund.de/projects/diesel-databaseviews">
+        <img src="https://diesel.rs/assets/images/bmbf_logo.jpg" />
         <br/>
-        GiGa Infosystems GmbH
-    </a>
-</p>
+        <sub><b>Federal Ministry of Research, Technology and Space (Germany)</b></sub>
+      </a>
+    </td>
+    <td align="center" width="33%">
+      <a href="https://giga-infosystems.com/">
+        <img src="https://diesel.rs/assets/images/logo_giga.svg" />
+        <br/>
+        <sub><b>GiGa Infosystems GmbH</b></sub>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://bytebase.com/?utm_source=diesel">
+        <img src="https://diesel.rs/assets/images/logo-bytebase.png" />
+        <br/>
+        <sub><b>Bytebase - Open-source Database DevSecOps</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 Additionally we would like to thank all persons sponsoring the project on [GitHub](https://github.com/sponsors/weiznich#sponsors). Without them developing Diesel wouldn't be possible.

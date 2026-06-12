@@ -11,7 +11,7 @@ use crate::query_builder::{
     AstPass, BoxedSelectStatement, QueryFragment, QueryId, SelectQuery, SelectStatement,
 };
 use crate::sql_types::{self, SqlType};
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// Creates an `ARRAY[e1, e2, ...]` or `ARRAY(subselect)` expression.
 ///
@@ -118,7 +118,7 @@ macro_rules! tuple_impls {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+crate::for_each_tuple!(tuple_impls);
 
 /// An ARRAY[...] literal.
 #[derive(Debug, Clone, Copy, QueryId)]

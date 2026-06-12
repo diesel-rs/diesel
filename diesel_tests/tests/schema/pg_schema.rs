@@ -129,6 +129,7 @@ table! {
         title -> Varchar,
         body -> Nullable<Text>,
         tags -> Array<Text>,
+        nullable_tags -> Nullable<Array<Text>>,
     }
 }
 
