@@ -8,8 +8,13 @@ use crate::model::Model;
 use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
-    let model = Model::from_item(&item, true, false)?;
+    let tokens = derive_inner(item)?;
 
+    Ok(wrap_in_dummy_mod(tokens))
+}
+
+pub fn derive_inner(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, true, false)?;
     if model.sql_types.is_empty() {
         return Err(syn::Error::new(
             proc_macro2::Span::mixed_site(),
@@ -24,7 +29,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     let mut generics = item.generics.clone();
     generics.params.push(parse_quote!('__expr));
-
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     let mut generics2 = generics.clone();
@@ -197,8 +201,5 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             )
         }
     });
-
-    Ok(wrap_in_dummy_mod(quote! {
-        #(#tokens)*
-    }))
+    Ok(quote! {#(#tokens)*})
 }

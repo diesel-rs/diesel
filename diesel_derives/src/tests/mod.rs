@@ -218,6 +218,7 @@ mod define_sql_function;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
+mod enum_;
 mod from_sql_row;
 mod has_query;
 mod identifiable;
