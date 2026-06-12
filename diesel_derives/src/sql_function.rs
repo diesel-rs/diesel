@@ -756,13 +756,15 @@ fn generate_tokens_for_non_aggregate_functions(
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
-                /// Registers an implementation for this function on the given connection
+                /// Registers an implementation for this function on the given connection.
                 ///
                 /// This function must be called for every `SqliteConnection` before
                 /// this SQL function can be used on SQLite. The implementation must be
                 /// deterministic (returns the same result given the same arguments). If
                 /// the function is nondeterministic, call
-                /// `register_nondeterministic_impl` instead.
+                /// [`register_nondeterministic_impl`](self::register_nondeterministic_impl)
+                /// instead, or [`register_impl_with_behavior`](self::register_impl_with_behavior)
+                /// for full control over the SQLite behavior flags.
                 pub fn register_impl<F, Ret, #(#arg_name,)*>(
                     conn: &mut diesel::sqlite::SqliteConnection,
                     f: F,
@@ -773,10 +775,10 @@ fn generate_tokens_for_non_aggregate_functions(
                     diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
                     Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
                 {
-                    conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
-                        #sql_name,
-                        true,
-                        move |(#(#arg_name,)*)| f(#(#arg_name,)*),
+                    register_impl_with_behavior(
+                        conn,
+                        diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
+                        f,
                     )
                 }
             }
@@ -784,16 +786,50 @@ fn generate_tokens_for_non_aggregate_functions(
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
-                /// Registers an implementation for this function on the given connection
+                /// Registers a nondeterministic implementation for this function on the
+                /// given connection.
                 ///
                 /// This function must be called for every `SqliteConnection` before
                 /// this SQL function can be used on SQLite.
                 /// `register_nondeterministic_impl` should only be used if your
                 /// function can return different results with the same arguments (e.g.
                 /// `random`). If your function is deterministic, you should call
-                /// `register_impl` instead.
+                /// [`register_impl`](self::register_impl) instead. For full control over
+                /// the SQLite behavior flags, use
+                /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                 pub fn register_nondeterministic_impl<F, Ret, #(#arg_name,)*>(
                     conn: &mut diesel::sqlite::SqliteConnection,
+                    f: F,
+                ) -> diesel::result::QueryResult<()>
+                where
+                    F: FnMut(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+                (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                    diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
+                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                {
+                    register_impl_with_behavior(
+                        conn,
+                        diesel::sqlite::SqliteFunctionBehavior::empty(),
+                        f,
+                    )
+                }
+            }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
+
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection,
+                /// with explicit control over the SQLite behavior flags.
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite. Prefer
+                /// [`register_impl`](self::register_impl) (deterministic) or
+                /// [`register_nondeterministic_impl`](self::register_nondeterministic_impl)
+                /// unless you need to set behavior flags explicitly. See
+                /// [`SqliteFunctionBehavior`] for the available flags.
+                pub fn register_impl_with_behavior<F, Ret, #(#arg_name,)*>(
+                    conn: &mut diesel::sqlite::SqliteConnection,
+                    behavior: diesel::sqlite::SqliteFunctionBehavior,
                     mut f: F,
                 ) -> diesel::result::QueryResult<()>
                 where
@@ -804,7 +840,7 @@ fn generate_tokens_for_non_aggregate_functions(
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
                         #sql_name,
-                        false,
+                        behavior,
                         move |(#(#arg_name,)*)| f(#(#arg_name,)*),
                     )
                 }
@@ -819,43 +855,77 @@ fn generate_tokens_for_non_aggregate_functions(
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
-                /// Registers an implementation for this function on the given connection
+                /// Registers an implementation for this function on the given connection.
                 ///
                 /// This function must be called for every `SqliteConnection` before
                 /// this SQL function can be used on SQLite. The implementation must be
                 /// deterministic (returns the same result given the same arguments). If
                 /// the function is nondeterministic, call
-                /// `register_nondeterministic_impl` instead.
+                /// [`register_nondeterministic_impl`](self::register_nondeterministic_impl)
+                /// instead, or [`register_impl_with_behavior`](self::register_impl_with_behavior)
+                /// for full control over the SQLite behavior flags.
                 pub fn register_impl<F, Ret>(
-                    conn: &diesel::sqlite::SqliteConnection,
+                    conn: &mut diesel::sqlite::SqliteConnection,
                     f: F,
-                ) -> QueryResult<()>
+                ) -> diesel::result::QueryResult<()>
                 where
                     F: Fn() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
                     Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
                 {
-                    conn.register_noarg_sql_function::<#return_type, _, _>(
-                        #sql_name,
-                        true,
+                    register_impl_with_behavior(
+                        conn,
+                        diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
                         f,
                     )
                 }
-
             }
             diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
+
                 #[allow(dead_code)]
-                /// Registers an implementation for this function on the given connection
+                /// Registers a nondeterministic implementation for this function on the
+                /// given connection.
                 ///
                 /// This function must be called for every `SqliteConnection` before
                 /// this SQL function can be used on SQLite.
                 /// `register_nondeterministic_impl` should only be used if your
                 /// function can return different results with the same arguments (e.g.
                 /// `random`). If your function is deterministic, you should call
-                /// `register_impl` instead.
+                /// [`register_impl`](self::register_impl) instead. For full control over
+                /// the SQLite behavior flags, use
+                /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                 pub fn register_nondeterministic_impl<F, Ret>(
-                    conn: &diesel::sqlite::SqliteConnection,
-                    mut f: F,
+                    conn: &mut diesel::sqlite::SqliteConnection,
+                    f: F,
+                ) -> diesel::result::QueryResult<()>
+                where
+                    F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                {
+                    register_impl_with_behavior(
+                        conn,
+                        diesel::sqlite::SqliteFunctionBehavior::empty(),
+                        f,
+                    )
+                }
+            }
+            diesel::internal::sql_functions::expand_sqlite_function!{
+                [#(#types_for_sqlite_impl,)*],
+
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection,
+                /// with explicit control over the SQLite behavior flags.
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite. Prefer
+                /// [`register_impl`](self::register_impl) (deterministic) or
+                /// [`register_nondeterministic_impl`](self::register_nondeterministic_impl)
+                /// unless you need to set behavior flags explicitly. See
+                /// [`SqliteFunctionBehavior`] for the available flags.
+                pub fn register_impl_with_behavior<F, Ret>(
+                    conn: &mut diesel::sqlite::SqliteConnection,
+                    behavior: diesel::sqlite::SqliteFunctionBehavior,
+                    f: F,
                 ) -> diesel::result::QueryResult<()>
                 where
                     F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
@@ -863,7 +933,7 @@ fn generate_tokens_for_non_aggregate_functions(
                 {
                     conn.register_noarg_sql_function::<#return_type, _, _>(
                         #sql_name,
-                        false,
+                        behavior,
                         f,
                     )
                 }
@@ -940,13 +1010,14 @@ fn generate_tokens_for_aggregate_functions(
                     diesel::internal::sql_functions::expand_sqlite_function! {
                         [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
-                        /// Registers an implementation for this aggregate function on the given connection
+                        /// Registers an implementation for this aggregate function on the given connection.
                         ///
                         /// This function must be called for every `SqliteConnection` before
-                        /// this SQL function can be used on SQLite. The implementation must be
-                        /// deterministic (returns the same result given the same arguments).
+                        /// this SQL function can be used on SQLite. For full control over
+                        /// the SQLite behavior flags, use
+                        /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                         pub fn register_impl<A, #(#arg_name,)*>(
-                            conn: &mut diesel::sqlite::SqliteConnection
+                            conn: &mut diesel::sqlite::SqliteConnection,
                         ) -> diesel::result::QueryResult<()>
                         where
                             A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
@@ -959,7 +1030,39 @@ fn generate_tokens_for_aggregate_functions(
                             diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
-                            conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
+                            register_impl_with_behavior::<A, #(#arg_name,)*>(
+                                conn,
+                                diesel::sqlite::SqliteFunctionBehavior::empty(),
+                            )
+                        }
+                    }
+                    diesel::internal::sql_functions::expand_sqlite_function! {
+                        [#(#types_for_sqlite_impl,)*],
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the
+                        /// given connection, with explicit control over the SQLite behavior flags.
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. Prefer
+                        /// [`register_impl`](self::register_impl) unless you need to set
+                        /// behavior flags explicitly. See [`SqliteFunctionBehavior`] for the
+                        /// available flags.
+                        pub fn register_impl_with_behavior<A, #(#arg_name,)*>(
+                            conn: &mut diesel::sqlite::SqliteConnection,
+                            behavior: diesel::sqlite::SqliteFunctionBehavior,
+                        ) -> diesel::result::QueryResult<()>
+                        where
+                            A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
+                            + Send
+                            + 'static
+                            + ::core::panic::UnwindSafe
+                            + ::core::panic::RefUnwindSafe,
+                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                        (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                            diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                            ::core::panic::UnwindSafe,
+                        {
+                            conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name, behavior)
                         }
                     }
                 };
@@ -974,13 +1077,14 @@ fn generate_tokens_for_aggregate_functions(
                     diesel::internal::sql_functions::expand_sqlite_function! {
                         [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
-                        /// Registers an implementation for this aggregate function on the given connection
+                        /// Registers an implementation for this aggregate function on the given connection.
                         ///
                         /// This function must be called for every `SqliteConnection` before
-                        /// this SQL function can be used on SQLite. The implementation must be
-                        /// deterministic (returns the same result given the same arguments).
+                        /// this SQL function can be used on SQLite. For full control over
+                        /// the SQLite behavior flags, use
+                        /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                         pub fn register_impl<A, #arg_name>(
-                            conn: &mut diesel::sqlite::SqliteConnection
+                            conn: &mut diesel::sqlite::SqliteConnection,
                         ) -> diesel::result::QueryResult<()>
                         where
                             A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
@@ -993,7 +1097,39 @@ fn generate_tokens_for_aggregate_functions(
                             diesel::deserialize::StaticallySizedRow<#arg_type, diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
-                            conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
+                            register_impl_with_behavior::<A, #arg_name>(
+                                conn,
+                                diesel::sqlite::SqliteFunctionBehavior::empty(),
+                            )
+                        }
+                    }
+                    diesel::internal::sql_functions::expand_sqlite_function! {
+                        [#(#types_for_sqlite_impl,)*],
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the
+                        /// given connection, with explicit control over the SQLite behavior flags.
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. Prefer
+                        /// [`register_impl`](self::register_impl) unless you need to set
+                        /// behavior flags explicitly. See [`SqliteFunctionBehavior`] for the
+                        /// available flags.
+                        pub fn register_impl_with_behavior<A, #arg_name>(
+                            conn: &mut diesel::sqlite::SqliteConnection,
+                            behavior: diesel::sqlite::SqliteFunctionBehavior,
+                        ) -> diesel::result::QueryResult<()>
+                        where
+                            A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
+                            + Send
+                            + 'static
+                            + ::core::panic::UnwindSafe
+                            + ::core::panic::RefUnwindSafe,
+                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                        #arg_name: diesel::deserialize::FromSqlRow<#arg_type, diesel::sqlite::Sqlite> +
+                            diesel::deserialize::StaticallySizedRow<#arg_type, diesel::sqlite::Sqlite> +
+                            ::core::panic::UnwindSafe,
+                        {
+                            conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name, behavior)
                         }
                     }
                 };

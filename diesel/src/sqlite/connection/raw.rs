@@ -15,6 +15,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
+use crate::sqlite::SqliteFunctionBehavior;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
@@ -22,6 +23,15 @@ use alloc::string::{String, ToString};
 use core::ffi as libc;
 use core::ptr::NonNull;
 use core::{mem, ptr, slice, str};
+
+// `sqlite3_db_config()` option codes controlling whether ATTACH may create new
+// database files (ATTACH_CREATE) or open them in write mode (ATTACH_WRITE).
+// Introduced in SQLite 3.49.0 / `libsqlite3-sys` 0.35.0, but Diesel supports
+// `libsqlite3-sys` >= 0.17.2, so we define them here to build against any
+// supported version. On an older linked SQLite the `sqlite3_db_config()` call
+// fails at runtime, which callers already handle.
+pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
+pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
 
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
@@ -109,7 +119,7 @@ impl RawConnection {
         &self,
         fn_name: &str,
         num_args: usize,
-        deterministic: bool,
+        behavior: SqliteFunctionBehavior,
         f: F,
     ) -> QueryResult<()>
     where
@@ -121,7 +131,7 @@ impl RawConnection {
         Sqlite: HasSqlType<RetSqlType>,
     {
         let c_fn_name = Self::get_fn_name(fn_name)?;
-        let flags = Self::get_flags(deterministic);
+        let flags = behavior.to_flags();
         let num_args = num_args
             .try_into()
             .map_err(|e| Error::SerializationError(Box::new(e)))?;
@@ -153,6 +163,7 @@ impl RawConnection {
         &self,
         fn_name: &str,
         num_args: usize,
+        behavior: SqliteFunctionBehavior,
     ) -> QueryResult<()>
     where
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
@@ -161,7 +172,7 @@ impl RawConnection {
         Sqlite: HasSqlType<RetSqlType>,
     {
         let fn_name = Self::get_fn_name(fn_name)?;
-        let flags = Self::get_flags(false);
+        let flags = behavior.to_flags();
         let num_args = num_args
             .try_into()
             .map_err(|e| Error::SerializationError(Box::new(e)))?;
@@ -265,16 +276,42 @@ impl RawConnection {
         }
     }
 
-    fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {
-        CString::new(fn_name)
+    /// Set a boolean db_config option.
+    pub(super) fn set_db_config_bool(&self, op: i32, value: bool) -> QueryResult<()> {
+        let mut result_value: libc::c_int = 0;
+        let new_value: libc::c_int = if value { 1 } else { 0 };
+
+        let result = unsafe {
+            ffi::sqlite3_db_config(
+                self.internal_connection.as_ptr(),
+                op,
+                new_value,
+                &mut result_value as *mut libc::c_int,
+            )
+        };
+
+        ensure_sqlite_ok(result, self.internal_connection.as_ptr())
     }
 
-    fn get_flags(deterministic: bool) -> i32 {
-        let mut flags = ffi::SQLITE_UTF8;
-        if deterministic {
-            flags |= ffi::SQLITE_DETERMINISTIC;
-        }
-        flags
+    /// Get a boolean db_config option.
+    pub(super) fn get_db_config_bool(&self, op: i32) -> QueryResult<bool> {
+        let mut current_value: libc::c_int = 0;
+
+        let result = unsafe {
+            ffi::sqlite3_db_config(
+                self.internal_connection.as_ptr(),
+                op,
+                -1_i32, // -1 queries without changing
+                &mut current_value as *mut libc::c_int,
+            )
+        };
+
+        ensure_sqlite_ok(result, self.internal_connection.as_ptr())?;
+        Ok(current_value != 0)
+    }
+
+    fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {
+        CString::new(fn_name)
     }
 
     fn process_sql_function_result(result: i32) -> Result<(), Error> {
