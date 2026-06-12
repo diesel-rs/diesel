@@ -79,7 +79,8 @@ jobs:
         run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rand_chacha rust_postgres tokio_postgres futures futures-util sea-orm sea-orm/sqlx-postgres criterion/async_tokio serde diesel-async diesel-async/postgres wtx wtx/postgres zero-postgres"
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
-        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio diesel-async diesel-async/sqlite"
+        run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite fast_run"
+        #run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio diesel-async diesel-async/sqlite"
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
         run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rand_chacha rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio serde diesel-async diesel-async/mysql zero-mysql"
@@ -97,6 +98,7 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           echo "$METRIC_ACCESS_KEY" >> ~/.ssh/id_ed25519
           ls -lh ~/.ssh/id_ed25519
+          file ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           df -h
           rm diesel_bench/target/release -rf
