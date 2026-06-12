@@ -22,7 +22,6 @@ table! {
     }
 }
 //~^^^^^^^^^^^^^^^^^^^^^ ERROR: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`
-//~| ERROR: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): ValidGrouping<()>` is not satisfied
 //~| ERROR: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): Expression` is not satisfied
 //~| ERROR: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): ValidGrouping<()>` is not satisfied
 //~| ERROR: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`

@@ -29,7 +29,7 @@ pub mod view {
     }
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "view")]
-    pub const all_columns: (id, name) = (id, name);
+    pub const all_columns: AllColumns = (id, name);
     #[allow(non_camel_case_types)]
     #[derive(
         Debug,
@@ -59,8 +59,11 @@ pub mod view {
             star
         }
     }
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "view")]
+    pub type AllColumns = (id, name);
     #[doc = concat!("The SQL type of all of the columns on this ", "view")]
-    pub type SqlType = (Integer, Text);
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "view")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -114,9 +117,9 @@ pub mod view {
     #[doc(hidden)]
     pub use self::view as table;
     impl diesel::query_source::QueryRelation for view {
-        type AllColumns = (id, name);
+        type AllColumns = AllColumns;
         fn all_columns() -> Self::AllColumns {
-            (id, name)
+            all_columns
         }
     }
     impl diesel::internal::table_macro::Sealed for view {}
@@ -397,12 +400,11 @@ pub mod view {
         pub struct star;
         impl<__GB> diesel::expression::ValidGrouping<__GB> for star
         where
-            (id, name): diesel::expression::ValidGrouping<__GB>,
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
         {
-            type IsAggregate = <(
-                id,
-                name,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+            type IsAggregate = <super::AllColumns as diesel::expression::ValidGrouping<
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::Expression for star {
             type SqlType = diesel::expression::expression_types::NotSelectable;

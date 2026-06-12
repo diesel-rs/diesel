@@ -2,14 +2,14 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "table! {\n    users { id -> Integer, name -> Text, }\n}\n"
+  input: "table! {\n    users { id -> Integer, name -> Text, #[cfg(feature = \"chrono\")] created_at ->\n    Timestamp, #[cfg(feature = \"uuid\")] user_uuid -> Uuid, #[cfg(feature = \"chrono\")]\n    updated_at -> Timestamp, }\n}\n"
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
     const _: () = {
         assert!(
-            2u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
-            "`users` contains 2 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+            5u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`users` contains 5 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
         );
     };
     use ::diesel;
@@ -25,11 +25,26 @@ pub mod users {
     pub mod dsl {
         pub use super::columns::id;
         pub use super::columns::name;
+        #[cfg(feature = "chrono")]
+        pub use super::columns::created_at;
+        #[cfg(feature = "uuid")]
+        pub use super::columns::user_uuid;
+        #[cfg(feature = "chrono")]
+        pub use super::columns::updated_at;
         pub use super::table as users;
     }
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: AllColumns = (id, name);
+    pub const all_columns: AllColumns = (
+        id,
+        name,
+        #[cfg(feature = "chrono")]
+        created_at,
+        #[cfg(feature = "chrono")]
+        updated_at,
+        #[cfg(feature = "uuid")]
+        user_uuid,
+    );
     #[allow(non_camel_case_types)]
     #[derive(
         Debug,
@@ -59,9 +74,22 @@ pub mod users {
             star
         }
     }
+    #[cfg(all(not(feature = "chrono"), not(feature = "uuid")))]
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
     pub type AllColumns = (id, name);
+    #[cfg(all(feature = "chrono", not(feature = "uuid")))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, created_at, updated_at);
+    #[cfg(all(not(feature = "chrono"), feature = "uuid"))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, user_uuid);
+    #[cfg(all(feature = "chrono", feature = "uuid"))]
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name, created_at, updated_at, user_uuid);
     #[doc = concat!("The SQL type of all of the columns on this ", "table")]
     pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
@@ -893,11 +921,725 @@ pub mod users {
             type Table = super::table;
             const NAME: &'static str = "name";
         }
+        #[cfg(feature = "chrono")]
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
+        pub struct created_at;
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::Expression for created_at {
+            type SqlType = Timestamp;
+        }
+        #[cfg(feature = "chrono")]
+        impl<DB> diesel::query_builder::QueryFragment<DB> for created_at
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                table,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        table,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("created_at")
+            }
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::SelectableExpression<super::table> for created_at {}
+        #[cfg(feature = "chrono")]
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for created_at {}
+        #[cfg(feature = "chrono")]
+        impl<QS> diesel::AppearsOnTable<QS> for created_at
+        where
+            QS: diesel::query_source::AppearsInFromClause<
+                super::table,
+                Count = diesel::query_source::Once,
+            >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            >,
+        > for created_at
+        where
+            created_at: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                >,
+            >,
+            Self: diesel::SelectableExpression<Left>,
+            Right: diesel::query_source::AppearsInFromClause<
+                    super::table,
+                    Count = diesel::query_source::Never,
+                > + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            >,
+        > for created_at
+        where
+            created_at: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                >,
+            >,
+            Left: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick<Left, Right>,
+            Self: diesel::SelectableExpression<
+                <(
+                    Left::Count,
+                    Right::Count,
+                ) as diesel::internal::table_macro::Pick<Left, Right>>::Selection,
+            >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            Join,
+            On,
+        > diesel::SelectableExpression<diesel::internal::table_macro::JoinOn<Join, On>>
+        for created_at
+        where
+            created_at: diesel::SelectableExpression<Join>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::JoinOn<Join, On>,
+                >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            From,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<From>,
+            >,
+        > for created_at
+        where
+            From: diesel::query_source::QuerySource,
+            created_at: diesel::SelectableExpression<From>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::SelectStatement<
+                        diesel::internal::table_macro::FromClause<From>,
+                    >,
+                >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for created_at
+        where
+            __GB: diesel::expression::IsContainedInGroupBy<
+                created_at,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            >,
+        {
+            type IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::ValidGrouping<()> for created_at {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<created_at> for created_at {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl<T> diesel::EqAll<T> for created_at
+        where
+            T: diesel::expression::AsExpression<Timestamp>,
+            diesel::dsl::Eq<
+                created_at,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        #[cfg(feature = "chrono")]
+        impl<Rhs> ::core::ops::Add<Rhs> for created_at
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<created_at as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Add<Self, Rhs::Expression>;
+            fn add(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Add::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        #[cfg(feature = "chrono")]
+        impl<Rhs> ::core::ops::Sub<Rhs> for created_at
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<created_at as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Sub<Self, Rhs::Expression>;
+            fn sub(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Sub::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+
+
+
+
+        #[cfg(feature = "chrono")]
+        impl diesel::query_source::Column for created_at {
+            type Table = super::table;
+            const NAME: &'static str = "created_at";
+        }
+        #[cfg(feature = "uuid")]
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
+        pub struct user_uuid;
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::Expression for user_uuid {
+            type SqlType = Uuid;
+        }
+        #[cfg(feature = "uuid")]
+        impl<DB> diesel::query_builder::QueryFragment<DB> for user_uuid
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                table,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        table,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("user_uuid")
+            }
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::SelectableExpression<super::table> for user_uuid {}
+        #[cfg(feature = "uuid")]
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for user_uuid {}
+        #[cfg(feature = "uuid")]
+        impl<QS> diesel::AppearsOnTable<QS> for user_uuid
+        where
+            QS: diesel::query_source::AppearsInFromClause<
+                super::table,
+                Count = diesel::query_source::Once,
+            >,
+        {}
+        #[cfg(feature = "uuid")]
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            >,
+        > for user_uuid
+        where
+            user_uuid: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                >,
+            >,
+            Self: diesel::SelectableExpression<Left>,
+            Right: diesel::query_source::AppearsInFromClause<
+                    super::table,
+                    Count = diesel::query_source::Never,
+                > + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        #[cfg(feature = "uuid")]
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            >,
+        > for user_uuid
+        where
+            user_uuid: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                >,
+            >,
+            Left: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick<Left, Right>,
+            Self: diesel::SelectableExpression<
+                <(
+                    Left::Count,
+                    Right::Count,
+                ) as diesel::internal::table_macro::Pick<Left, Right>>::Selection,
+            >,
+        {}
+        #[cfg(feature = "uuid")]
+        impl<
+            Join,
+            On,
+        > diesel::SelectableExpression<diesel::internal::table_macro::JoinOn<Join, On>>
+        for user_uuid
+        where
+            user_uuid: diesel::SelectableExpression<Join>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::JoinOn<Join, On>,
+                >,
+        {}
+        #[cfg(feature = "uuid")]
+        impl<
+            From,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<From>,
+            >,
+        > for user_uuid
+        where
+            From: diesel::query_source::QuerySource,
+            user_uuid: diesel::SelectableExpression<From>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::SelectStatement<
+                        diesel::internal::table_macro::FromClause<From>,
+                    >,
+                >,
+        {}
+        #[cfg(feature = "uuid")]
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for user_uuid
+        where
+            __GB: diesel::expression::IsContainedInGroupBy<
+                user_uuid,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            >,
+        {
+            type IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::ValidGrouping<()> for user_uuid {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<user_uuid> for user_uuid {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "uuid")]
+        impl<T> diesel::EqAll<T> for user_uuid
+        where
+            T: diesel::expression::AsExpression<Uuid>,
+            diesel::dsl::Eq<
+                user_uuid,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+
+
+
+
+        #[cfg(feature = "uuid")]
+        impl diesel::query_source::Column for user_uuid {
+            type Table = super::table;
+            const NAME: &'static str = "user_uuid";
+        }
+        #[cfg(feature = "chrono")]
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
+        pub struct updated_at;
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::Expression for updated_at {
+            type SqlType = Timestamp;
+        }
+        #[cfg(feature = "chrono")]
+        impl<DB> diesel::query_builder::QueryFragment<DB> for updated_at
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                table,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        table,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("updated_at")
+            }
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::SelectableExpression<super::table> for updated_at {}
+        #[cfg(feature = "chrono")]
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for updated_at {}
+        #[cfg(feature = "chrono")]
+        impl<QS> diesel::AppearsOnTable<QS> for updated_at
+        where
+            QS: diesel::query_source::AppearsInFromClause<
+                super::table,
+                Count = diesel::query_source::Once,
+            >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::LeftOuter,
+            >,
+        > for updated_at
+        where
+            updated_at: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::LeftOuter,
+                >,
+            >,
+            Self: diesel::SelectableExpression<Left>,
+            Right: diesel::query_source::AppearsInFromClause<
+                    super::table,
+                    Count = diesel::query_source::Never,
+                > + diesel::query_source::QuerySource,
+            Left: diesel::query_source::QuerySource,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            Left,
+            Right,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::Join<
+                Left,
+                Right,
+                diesel::internal::table_macro::Inner,
+            >,
+        > for updated_at
+        where
+            updated_at: diesel::AppearsOnTable<
+                diesel::internal::table_macro::Join<
+                    Left,
+                    Right,
+                    diesel::internal::table_macro::Inner,
+                >,
+            >,
+            Left: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            Right: diesel::query_source::AppearsInFromClause<super::table>
+                + diesel::query_source::QuerySource,
+            (
+                Left::Count,
+                Right::Count,
+            ): diesel::internal::table_macro::Pick<Left, Right>,
+            Self: diesel::SelectableExpression<
+                <(
+                    Left::Count,
+                    Right::Count,
+                ) as diesel::internal::table_macro::Pick<Left, Right>>::Selection,
+            >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            Join,
+            On,
+        > diesel::SelectableExpression<diesel::internal::table_macro::JoinOn<Join, On>>
+        for updated_at
+        where
+            updated_at: diesel::SelectableExpression<Join>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::JoinOn<Join, On>,
+                >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<
+            From,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::SelectStatement<
+                diesel::internal::table_macro::FromClause<From>,
+            >,
+        > for updated_at
+        where
+            From: diesel::query_source::QuerySource,
+            updated_at: diesel::SelectableExpression<From>
+                + diesel::AppearsOnTable<
+                    diesel::internal::table_macro::SelectStatement<
+                        diesel::internal::table_macro::FromClause<From>,
+                    >,
+                >,
+        {}
+        #[cfg(feature = "chrono")]
+        impl<__GB> diesel::expression::ValidGrouping<__GB> for updated_at
+        where
+            __GB: diesel::expression::IsContainedInGroupBy<
+                updated_at,
+                Output = diesel::expression::is_contained_in_group_by::Yes,
+            >,
+        {
+            type IsAggregate = diesel::expression::is_aggregate::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::ValidGrouping<()> for updated_at {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<updated_at> for updated_at {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl<T> diesel::EqAll<T> for updated_at
+        where
+            T: diesel::expression::AsExpression<Timestamp>,
+            diesel::dsl::Eq<
+                updated_at,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        #[cfg(feature = "chrono")]
+        impl<Rhs> ::core::ops::Add<Rhs> for updated_at
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<updated_at as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Add<Self, Rhs::Expression>;
+            fn add(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Add::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        #[cfg(feature = "chrono")]
+        impl<Rhs> ::core::ops::Sub<Rhs> for updated_at
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<updated_at as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Sub<Self, Rhs::Expression>;
+            fn sub(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Sub::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+
+
+
+
+        #[cfg(feature = "chrono")]
+        impl diesel::query_source::Column for updated_at {
+            type Table = super::table;
+            const NAME: &'static str = "updated_at";
+        }
         impl diesel::expression::IsContainedInGroupBy<id> for name {
             type Output = diesel::expression::is_contained_in_group_by::No;
         }
         impl diesel::expression::IsContainedInGroupBy<name> for id {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<id> for created_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<created_at> for id {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<id> for user_uuid {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<user_uuid> for id {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<id> for updated_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<updated_at> for id {
+            type Output = diesel::expression::is_contained_in_group_by::Yes;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<name> for created_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<created_at> for name {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<name> for user_uuid {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<user_uuid> for name {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<name> for updated_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<updated_at> for name {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "uuid")]
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<created_at> for user_uuid {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "uuid")]
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<user_uuid> for created_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<created_at> for updated_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        #[cfg(feature = "chrono")]
+        impl diesel::expression::IsContainedInGroupBy<updated_at> for created_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<user_uuid> for updated_at {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        #[cfg(feature = "chrono")]
+        #[cfg(feature = "uuid")]
+        impl diesel::expression::IsContainedInGroupBy<updated_at> for user_uuid {
+            type Output = diesel::expression::is_contained_in_group_by::No;
         }
     }
 }

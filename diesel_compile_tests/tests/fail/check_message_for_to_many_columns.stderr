@@ -29,66 +29,30 @@ LL |     type DefaultSelection: SelectableExpression<Self>;
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): ValidGrouping<()>` is not satisfied
-   --> tests/fail/check_message_for_to_many_columns.rs:3:1
-    |
-  LL | / table! {
-  LL | |     test_table(column_1) {
-  LL | |         column_1 -> Integer,
-  LL | |         column_2 -> Integer,
-...   |
- LL | | }
-    | |_^ unsatisfied trait bound
-    |
-    = help: the trait `ValidGrouping<()>` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
-    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-              `()` implements `ValidGrouping<GB>`
-              `(T, T1)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
-              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
-            and N others
-    = note: required for `SelectStatement<FromClause<table>>` to implement `Query`
-note: required by a bound in `diesel::query_builder::AsQuery::Query`
-   --> DIESEL/diesel/diesel/src/query_builder/mod.rs
-    |
-LL |     type Query: Query<SqlType = Self::SqlType>;
-    |                       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `AsQuery::Query`
- 
-        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error[E0277]: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): Expression` is not satisfied
-   --> tests/fail/check_message_for_to_many_columns.rs:3:1
-    |
-  LL | / table! {
-  LL | |     test_table(column_1) {
-  LL | |         column_1 -> Integer,
-  LL | |         column_2 -> Integer,
-...   |
- LL | | }
-    | |_^ unsatisfied trait bound
-    |
-    = help: the trait `Expression` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
-    = help: the following other types implement trait `Expression`:
-              &T
-              AliasedField<S, C>
-              Arc<T>
-              Box<T>
-              CaseWhen<..., ...>
-              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
-              CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
-              Collate<T, C>
-            and N others
-note: required by a bound in `diesel::query_builder::AsQuery::Query`
-   --> DIESEL/diesel/diesel/src/query_builder/mod.rs
-    |
-LL |     type Query: Query<SqlType = Self::SqlType>;
-    |                       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `AsQuery::Query`
- 
-        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+  --> tests/fail/check_message_for_to_many_columns.rs:3:1
+   |
+ LL | / table! {
+ LL | |     test_table(column_1) {
+ LL | |         column_1 -> Integer,
+ LL | |         column_2 -> Integer,
+...  |
+LL | | }
+   | |_^ unsatisfied trait bound
+   |
+   = help: the trait `Expression` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
+   = help: the following other types implement trait `Expression`:
+             &T
+             AliasedField<S, C>
+             Arc<T>
+             Box<T>
+             CaseWhen<..., ...>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             Collate<T, C>
+           and N others
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): ValidGrouping<()>` is not satisfied
    --> tests/fail/check_message_for_to_many_columns.rs:3:1

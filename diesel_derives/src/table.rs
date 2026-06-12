@@ -4,6 +4,283 @@ use syn::{Ident, parse_quote};
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
+fn cfg_attributes(attrs: &[syn::Attribute]) -> Vec<&syn::Attribute> {
+    attrs
+        .iter()
+        .filter(|attr| attr.path().is_ident("cfg"))
+        .collect()
+}
+
+fn has_cfg_attributes(column: &ColumnDef) -> bool {
+    column.meta.iter().any(|attr| attr.path().is_ident("cfg"))
+}
+
+struct CfgGroup<'a> {
+    cfg_attrs: Vec<&'a syn::Attribute>,
+    columns: Vec<&'a ColumnDef>,
+}
+
+/// Yields `2^n` flag vectors of length `n`. `n == 0` yields one empty vector,
+/// so callers can handle the no-cfg-groups case without a special branch.
+fn cfg_combinations(n: usize) -> impl Iterator<Item = Vec<bool>> {
+    (0..1usize << n).map(move |mask| (0..n).map(|i| (mask >> i) & 1 == 1).collect())
+}
+
+fn generate_combined_cfg_condition(groups: &[CfgGroup<'_>], enabled_flags: &[bool]) -> TokenStream {
+    debug_assert_eq!(groups.len(), enabled_flags.len());
+
+    if groups.is_empty() {
+        return TokenStream::new();
+    }
+
+    let mut conditions: Vec<TokenStream> = Vec::new();
+
+    for (group, &is_enabled) in groups.iter().zip(enabled_flags) {
+        let group_conditions: Vec<&TokenStream> = group
+            .cfg_attrs
+            .iter()
+            .filter_map(|attr| match &attr.meta {
+                syn::Meta::List(list) => Some(&list.tokens),
+                _ => None,
+            })
+            .collect();
+
+        if group_conditions.is_empty() {
+            continue;
+        }
+
+        if is_enabled {
+            conditions.extend(
+                group_conditions
+                    .iter()
+                    .map(|tokens| quote::quote! { #tokens }),
+            );
+        } else if let [tokens] = group_conditions[..] {
+            conditions.push(quote::quote! { not(#tokens) });
+        } else {
+            // Negate the conjunction (`not(all(...))`), not each attribute, so
+            // that mixed combinations such as `x && !y` still match.
+            conditions.push(quote::quote! { not(all(#(#group_conditions),*)) });
+        }
+    }
+
+    if conditions.is_empty() {
+        TokenStream::new()
+    } else {
+        quote::quote! {
+            #[cfg(all(#(#conditions),*))]
+        }
+    }
+}
+
+struct AggregateTokens {
+    all_columns_const: TokenStream,
+    all_columns_type_variants: TokenStream,
+}
+
+fn all_columns_tuple_expr<'a>(
+    non_gated_columns: &[&'a ColumnDef],
+    cfg_groups: &[CfgGroup<'a>],
+) -> TokenStream {
+    let mut fields: Vec<TokenStream> = Vec::new();
+    for col in non_gated_columns {
+        let name = &col.column_name;
+        fields.push(quote::quote! { #name, });
+    }
+    for group in cfg_groups {
+        let attrs = &group.cfg_attrs;
+        for col in &group.columns {
+            let name = &col.column_name;
+            fields.push(quote::quote! { #(#attrs)* #name, });
+        }
+    }
+    quote::quote! { (#(#fields)*) }
+}
+
+/// `AllColumns` needs `2^n` cfg-gated variants because Rust does not allow
+/// `#[cfg]` on tuple type fields (rust-lang/rfcs#3532). `SqlType` is derived
+/// from `AllColumns` and the remaining items reference these aliases, so they
+/// stay as single declarations.
+fn generate_aggregate_variants<'a>(
+    non_gated_columns: &[&'a ColumnDef],
+    cfg_groups: &[CfgGroup<'a>],
+    kind_name: &str,
+) -> AggregateTokens {
+    let base_column_names: Vec<_> = non_gated_columns.iter().map(|c| &c.column_name).collect();
+
+    let mut all_columns_type_variants = Vec::new();
+
+    for flags in cfg_combinations(cfg_groups.len()) {
+        let cfg_condition = generate_combined_cfg_condition(cfg_groups, &flags);
+
+        let mut column_names = base_column_names.clone();
+        for (group, &enabled) in cfg_groups.iter().zip(&flags) {
+            if enabled {
+                for col in &group.columns {
+                    column_names.push(&col.column_name);
+                }
+            }
+        }
+
+        all_columns_type_variants.push(quote::quote! {
+            #cfg_condition
+            #[allow(non_camel_case_types, dead_code)]
+            #[doc = concat!("The tuple of all column structs on this ", #kind_name)]
+            pub type AllColumns = (#(#column_names,)*);
+        });
+    }
+
+    let tuple_expr = all_columns_tuple_expr(non_gated_columns, cfg_groups);
+
+    let all_columns_const = quote::quote! {
+        #[allow(non_upper_case_globals, dead_code)]
+        #[doc = concat!("A tuple of all of the columns on this", #kind_name)]
+        pub const all_columns: AllColumns = #tuple_expr;
+    };
+
+    AggregateTokens {
+        all_columns_const,
+        all_columns_type_variants: quote::quote! { #(#all_columns_type_variants)* },
+    }
+}
+
+fn generate_kind_specific_impls(
+    primary_key: &Option<TokenStream>,
+    kind: QuerySourceMacroKind,
+) -> TokenStream {
+    match kind {
+        QuerySourceMacroKind::Table => quote::quote! {
+            impl diesel::Table for table {
+                type PrimaryKey = #primary_key;
+                type AllColumns = AllColumns;
+
+                fn primary_key(&self) -> Self::PrimaryKey {
+                    #primary_key
+                }
+
+                fn all_columns() -> Self::AllColumns {
+                    all_columns
+                }
+            }
+
+            impl diesel::associations::HasTable for table {
+                type Table = Self;
+
+                fn table() -> Self::Table {
+                    table
+                }
+            }
+
+            impl diesel::query_builder::IntoUpdateTarget for table {
+                type WhereClause = <<Self as diesel::query_builder::AsQuery>::Query as diesel::query_builder::IntoUpdateTarget>::WhereClause;
+
+                fn into_update_target(self) -> diesel::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
+                    use diesel::query_builder::AsQuery;
+                    let q: diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<table>> = self.as_query();
+                    q.into_update_target()
+                }
+            }
+
+            impl<T> diesel::insertable::Insertable<T> for table
+            where
+                <table as diesel::query_builder::AsQuery>::Query: diesel::insertable::Insertable<T>,
+            {
+                type Values = <<table as diesel::query_builder::AsQuery>::Query as diesel::insertable::Insertable<T>>::Values;
+
+                fn values(self) -> Self::Values {
+                    use diesel::query_builder::AsQuery;
+                    self.as_query().values()
+                }
+            }
+
+            impl<'a, T> diesel::insertable::Insertable<T> for &'a table
+            where
+                table: diesel::insertable::Insertable<T>,
+            {
+                type Values = <table as diesel::insertable::Insertable<T>>::Values;
+
+                fn values(self) -> Self::Values {
+                    (*self).values()
+                }
+            }
+        },
+        QuerySourceMacroKind::View => quote::quote! {
+            #[doc(hidden)]
+            pub use self::view as table;
+
+            impl diesel::query_source::QueryRelation for view {
+                type AllColumns = AllColumns;
+
+                fn all_columns() -> Self::AllColumns {
+                    all_columns
+                }
+            }
+
+            impl diesel::internal::table_macro::Sealed for view {}
+            impl diesel::query_source::View for view {}
+        },
+    }
+}
+
+fn collect_cfg_groups<'a>(
+    columns: impl IntoIterator<Item = &'a ColumnDef> + Clone,
+) -> Vec<CfgGroup<'a>> {
+    use std::collections::HashMap;
+
+    // syn::Attribute does not implement Hash, so we key by its token-stream
+    // string representation.
+    let mut groups_map: HashMap<String, CfgGroup<'a>> = HashMap::new();
+
+    for col in columns.clone() {
+        let cfg_attrs = cfg_attributes(&col.meta);
+        if cfg_attrs.is_empty() {
+            continue;
+        }
+
+        let key = cfg_attrs
+            .iter()
+            .map(|a| quote::quote!(#a).to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        groups_map
+            .entry(key)
+            .or_insert_with(|| CfgGroup {
+                cfg_attrs: cfg_attrs.clone(),
+                columns: Vec::new(),
+            })
+            .columns
+            .push(col);
+    }
+
+    // Order groups by first occurrence in the original column list so that
+    // generated cfg-combination output is deterministic.
+    let mut groups: Vec<CfgGroup<'a>> = Vec::new();
+    let mut seen_keys = std::collections::HashSet::new();
+
+    for col in columns {
+        let cfg_attrs = cfg_attributes(&col.meta);
+        if cfg_attrs.is_empty() {
+            continue;
+        }
+
+        let key = cfg_attrs
+            .iter()
+            .map(|a| quote::quote!(#a).to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        if !seen_keys.contains(&key) {
+            seen_keys.insert(key.clone());
+            if let Some(group) = groups_map.remove(&key) {
+                groups.push(group);
+            }
+        }
+    }
+
+    groups
+}
+
 #[derive(Clone, Copy)]
 pub enum QuerySourceMacroKind {
     Table,
@@ -56,6 +333,15 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
     } else {
         input.view.use_statements.clone()
     };
+
+    let non_gated_columns: Vec<_> = input
+        .view
+        .column_defs
+        .iter()
+        .filter(|c| !has_cfg_attributes(c))
+        .collect();
+    let cfg_groups = collect_cfg_groups(&input.view.column_defs);
+
     let column_names = input
         .view
         .column_defs
@@ -133,7 +419,6 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
         .column_defs
         .iter()
         .map(|c| expand_column_def(c, &query_source_ident, kind));
-    let column_ty = input.view.column_defs.iter().map(|c| &c.tpe);
     let valid_grouping_for_table_columns = generate_valid_grouping_for_table_columns(&input);
 
     let sql_name = &input.view.sql_name;
@@ -164,6 +449,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 
     let reexport_column_from_dsl = input.view.column_defs.iter().map(|c| {
         let column_name = &c.column_name;
+        let cfg_attrs = cfg_attributes(&c.meta);
         if c.column_name == *table_name {
             let span = Span::mixed_site().located_at(c.column_name.span());
             let message = format!(
@@ -181,86 +467,18 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
             }
         } else {
             quote::quote! {
+                #(#cfg_attrs)*
                 pub use super::columns::#column_name;
             }
         }
     });
-    let kind_specific_impls = match kind {
-        QuerySourceMacroKind::Table => quote::quote! {
-            impl diesel::Table for table {
-                type PrimaryKey = #primary_key;
-                type AllColumns = (#(#column_names,)*);
 
-                fn primary_key(&self) -> Self::PrimaryKey {
-                    #primary_key
-                }
+    let AggregateTokens {
+        all_columns_const,
+        all_columns_type_variants,
+    } = generate_aggregate_variants(&non_gated_columns, &cfg_groups, kind_name);
 
-                fn all_columns() -> Self::AllColumns {
-                    (#(#column_names,)*)
-                }
-            }
-
-            impl diesel::associations::HasTable for table {
-                type Table = Self;
-
-                fn table() -> Self::Table {
-                    table
-                }
-            }
-
-            impl diesel::query_builder::IntoUpdateTarget for table {
-                type WhereClause = <<Self as diesel::query_builder::AsQuery>::Query as diesel::query_builder::IntoUpdateTarget>::WhereClause;
-
-                fn into_update_target(self) -> diesel::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
-                    use diesel::query_builder::AsQuery;
-                    let q: diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<table>> = self.as_query();
-                    q.into_update_target()
-                }
-            }
-
-            // This impl should be able to live in Diesel,
-            // but Rust tries to recurse for no reason
-            // todo: also check if we can move this to diesel
-            impl<T> diesel::insertable::Insertable<T> for table
-            where
-                <table as diesel::query_builder::AsQuery>::Query: diesel::insertable::Insertable<T>,
-            {
-                type Values = <<table as diesel::query_builder::AsQuery>::Query as diesel::insertable::Insertable<T>>::Values;
-
-                fn values(self) -> Self::Values {
-                    use diesel::query_builder::AsQuery;
-                    self.as_query().values()
-                }
-            }
-
-            impl<'a, T> diesel::insertable::Insertable<T> for &'a table
-            where
-                table: diesel::insertable::Insertable<T>,
-            {
-                type Values = <table as diesel::insertable::Insertable<T>>::Values;
-
-                fn values(self) -> Self::Values {
-                    (*self).values()
-                }
-            }
-        },
-        QuerySourceMacroKind::View => quote::quote! {
-            // compatibility hack for other macros
-            #[doc(hidden)]
-            pub use self::view as table;
-
-            impl diesel::query_source::QueryRelation for view {
-                type AllColumns = (#(#column_names,)*);
-
-                fn all_columns() -> Self::AllColumns {
-                    (#(#column_names,)*)
-                }
-            }
-
-            impl diesel::internal::table_macro::Sealed for view {}
-            impl diesel::query_source::View for view {}
-        },
-    };
+    let kind_specific_impls = generate_kind_specific_impls(&primary_key, kind);
 
     let backend_specific_table_impls = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
@@ -355,9 +573,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 pub use super::#query_source_ident as #table_name;
             }
 
-            #[allow(non_upper_case_globals, dead_code)]
-            #[doc = concat!("A tuple of all of the columns on this", #kind_name)]
-            pub const all_columns: (#(#column_names,)*) = (#(#column_names,)*);
+            #all_columns_const
 
             #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -377,8 +593,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 }
             }
 
+            #all_columns_type_variants
+
             #[doc = concat!("The SQL type of all of the columns on this ", #kind_name)]
-            pub type SqlType = (#(#column_ty,)*);
+            pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
 
             #[doc = concat!("Helper type for representing a boxed query from this ", #kind_name)]
             pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<'a, ST, diesel::internal::table_macro::FromClause<#query_source_ident>, DB>;
@@ -555,9 +773,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 
                 impl<__GB> diesel::expression::ValidGrouping<__GB> for star
                 where
-                    (#(#column_names,)*): diesel::expression::ValidGrouping<__GB>,
+                    super::AllColumns: diesel::expression::ValidGrouping<__GB>,
                 {
-                    type IsAggregate = <(#(#column_names,)*) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+                    type IsAggregate =
+                        <super::AllColumns as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
                 }
 
                 impl diesel::Expression for star {
@@ -608,29 +827,36 @@ fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStre
         Some(DEFAULT_PRIMARY_KEY_NAME.into())
     };
 
-    for (id, right_col) in table.view.column_defs.iter().enumerate() {
-        for left_col in table.view.column_defs.iter().skip(id) {
-            let right_to_left = if Some(left_col.column_name.to_string()) == primary_key {
+    for (id, right_col_def) in table.view.column_defs.iter().enumerate() {
+        for left_col_def in table.view.column_defs.iter().skip(id) {
+            let right_to_left = if Some(left_col_def.column_name.to_string()) == primary_key {
                 Ident::new("Yes", proc_macro2::Span::mixed_site())
             } else {
                 Ident::new("No", proc_macro2::Span::mixed_site())
             };
 
-            let left_to_right = if Some(right_col.column_name.to_string()) == primary_key {
+            let left_to_right = if Some(right_col_def.column_name.to_string()) == primary_key {
                 Ident::new("Yes", proc_macro2::Span::mixed_site())
             } else {
                 Ident::new("No", proc_macro2::Span::mixed_site())
             };
 
-            let left_col = &left_col.column_name;
-            let right_col = &right_col.column_name;
+            let left_col = &left_col_def.column_name;
+            let right_col = &right_col_def.column_name;
+
+            let left_cfg_attrs = cfg_attributes(&left_col_def.meta);
+            let right_cfg_attrs = cfg_attributes(&right_col_def.meta);
 
             if left_col != right_col {
                 ret.push(quote::quote! {
+                    #(#left_cfg_attrs)*
+                    #(#right_cfg_attrs)*
                     impl diesel::expression::IsContainedInGroupBy<#right_col> for #left_col {
                         type Output = diesel::expression::is_contained_in_group_by::#right_to_left;
                     }
 
+                    #(#left_cfg_attrs)*
+                    #(#right_cfg_attrs)*
                     impl diesel::expression::IsContainedInGroupBy<#left_col> for #right_col {
                         type Output = diesel::expression::is_contained_in_group_by::#left_to_right;
                     }
@@ -641,17 +867,17 @@ fn generate_valid_grouping_for_table_columns(table: &TableDecl) -> Vec<TokenStre
     ret
 }
 
+/// Imports inside the nested `columns` submodule see `super::` as the table
+/// module rather than its parent, so any `use super::...` needs another
+/// `super::` prepended to resolve correctly.
 fn fix_import_for_submodule(import: &syn::ItemUse) -> syn::ItemUse {
     let mut ret = import.clone();
 
-    if let syn::UseTree::Path(ref mut path) = ret.tree {
-        // prepend another `super` to the any import
-        // that starts with `super` so that it now refers to the correct
-        // module
-        if path.ident == "super" {
-            let inner = path.clone();
-            *path.tree = syn::UseTree::Path(inner);
-        }
+    if let syn::UseTree::Path(ref mut path) = ret.tree
+        && path.ident == "super"
+    {
+        let inner = path.clone();
+        *path.tree = syn::UseTree::Path(inner);
     }
 
     ret
@@ -746,10 +972,11 @@ fn is_network(ty: &syn::TypePath) -> bool {
     }
 }
 
-fn generate_op_impl(op: &str, tpe: &syn::Ident) -> TokenStream {
+fn generate_op_impl(op: &str, tpe: &syn::Ident, cfg_attrs: &[&syn::Attribute]) -> TokenStream {
     let fn_name = syn::Ident::new(&op.to_lowercase(), tpe.span());
     let op = syn::Ident::new(op, tpe.span());
     quote::quote! {
+        #(#cfg_attrs)*
         impl<Rhs> ::core::ops::#op<Rhs> for #tpe
         where
             Rhs: diesel::expression::AsExpression<
@@ -774,12 +1001,14 @@ fn expand_column_def(
     // possible using stable rust
     let span = Span::mixed_site().located_at(column_def.column_name.span());
     let meta = &column_def.meta;
+    let cfg_attrs = cfg_attributes(&column_def.meta);
     let column_name = &column_def.column_name;
     let sql_name = &column_def.sql_name;
     let sql_type = &column_def.tpe;
 
     let backend_specific_column_impl = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
+            #(#cfg_attrs)*
             diesel::internal::table_macro::expand_pg! {
                 impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Only<super::table>>
                     for #column_name
@@ -787,9 +1016,11 @@ fn expand_column_def(
                     type Count = diesel::query_source::Once;
                 }
             }
+            #(#cfg_attrs)*
             diesel::internal::table_macro::expand_pg! {
                 impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>> for #column_name {}
             }
+            #(#cfg_attrs)*
             diesel::internal::table_macro::expand_pg! {
                 impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table, TSM>>
                     for #column_name
@@ -799,6 +1030,7 @@ fn expand_column_def(
                     type Count = diesel::query_source::Once;
                 }
             }
+            #(#cfg_attrs)*
             diesel::internal::table_macro::expand_pg! {
                 impl<TSM> diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table, TSM>>
                     for #column_name where TSM: diesel::internal::table_macro::TablesampleMethod {}
@@ -809,10 +1041,10 @@ fn expand_column_def(
     };
 
     let ops_impls = if is_numeric(&column_def.tpe) {
-        let add = generate_op_impl("Add", column_name);
-        let sub = generate_op_impl("Sub", column_name);
-        let div = generate_op_impl("Div", column_name);
-        let mul = generate_op_impl("Mul", column_name);
+        let add = generate_op_impl("Add", column_name, &cfg_attrs);
+        let sub = generate_op_impl("Sub", column_name, &cfg_attrs);
+        let div = generate_op_impl("Div", column_name, &cfg_attrs);
+        let mul = generate_op_impl("Mul", column_name, &cfg_attrs);
         Some(quote::quote! {
             #add
             #sub
@@ -820,8 +1052,8 @@ fn expand_column_def(
             #mul
         })
     } else if is_date_time(&column_def.tpe) || is_network(&column_def.tpe) {
-        let add = generate_op_impl("Add", column_name);
-        let sub = generate_op_impl("Sub", column_name);
+        let add = generate_op_impl("Add", column_name, &cfg_attrs);
+        let sub = generate_op_impl("Sub", column_name, &cfg_attrs);
         Some(quote::quote! {
             #add
             #sub
@@ -832,6 +1064,7 @@ fn expand_column_def(
 
     let max_length = column_def.max_length.as_ref().map(|column_max_length| {
         quote::quote! {
+            #(#cfg_attrs)*
             impl self::diesel::query_source::SizeRestrictedColumn for #column_name {
                 const MAX_LENGTH: usize = #column_max_length;
             }
@@ -840,6 +1073,7 @@ fn expand_column_def(
 
     let table_specific_impls = if matches!(kind, QuerySourceMacroKind::Table) {
         quote::quote! {
+            #(#cfg_attrs)*
             impl diesel::query_source::Column for #column_name {
                 type Table = super::table;
 
@@ -848,6 +1082,7 @@ fn expand_column_def(
         }
     } else {
         quote::quote! {
+            #(#cfg_attrs)*
             impl diesel::query_source::QueryRelationField for #column_name {
                 type QueryRelation = super::view;
 
@@ -862,10 +1097,12 @@ fn expand_column_def(
         #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct #column_name;
 
+        #(#cfg_attrs)*
         impl diesel::expression::Expression for #column_name {
             type SqlType = #sql_type;
         }
 
+        #(#cfg_attrs)*
         impl<DB> diesel::query_builder::QueryFragment<DB> for #column_name where
             DB: diesel::backend::Backend,
             diesel::internal::table_macro::StaticQueryFragmentInstance<#query_source_ident>: diesel::query_builder::QueryFragment<DB>,
@@ -883,9 +1120,11 @@ fn expand_column_def(
             }
         }
 
+        #(#cfg_attrs)*
         impl diesel::SelectableExpression<super::#query_source_ident> for #column_name {
         }
 
+        #(#cfg_attrs)*
         impl<__StmtKind>
             diesel::SelectableExpression<
                 diesel::internal::table_macro::returning::ReturningQuerySource<
@@ -896,11 +1135,13 @@ fn expand_column_def(
         {
         }
 
+        #(#cfg_attrs)*
         impl<QS> diesel::AppearsOnTable<QS> for #column_name where
             QS: diesel::query_source::AppearsInFromClause<super::#query_source_ident, Count=diesel::query_source::Once>,
         {
         }
 
+        #(#cfg_attrs)*
         impl<Left, Right> diesel::SelectableExpression<
                 diesel::internal::table_macro::Join<Left, Right, diesel::internal::table_macro::LeftOuter>,
             > for #column_name where
@@ -913,6 +1154,7 @@ fn expand_column_def(
         {
         }
 
+        #(#cfg_attrs)*
         impl<Left, Right> diesel::SelectableExpression<
                 diesel::internal::table_macro::Join<Left, Right, diesel::internal::table_macro::Inner>,
             > for #column_name where
@@ -927,34 +1169,40 @@ fn expand_column_def(
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
+        #(#cfg_attrs)*
         impl<Join, On> diesel::SelectableExpression<diesel::internal::table_macro::JoinOn<Join, On>> for #column_name where
             #column_name: diesel::SelectableExpression<Join> + diesel::AppearsOnTable<diesel::internal::table_macro::JoinOn<Join, On>>,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
+        #(#cfg_attrs)*
         impl<From> diesel::SelectableExpression<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<From>>> for #column_name where
             From: diesel::query_source::QuerySource,
             #column_name: diesel::SelectableExpression<From> + diesel::AppearsOnTable<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<From>>>,
         {
         }
 
+        #(#cfg_attrs)*
         impl<__GB> diesel::expression::ValidGrouping<__GB> for #column_name
         where __GB: diesel::expression::IsContainedInGroupBy<#column_name, Output = diesel::expression::is_contained_in_group_by::Yes>,
         {
             type IsAggregate = diesel::expression::is_aggregate::Yes;
         }
 
+        #(#cfg_attrs)*
         impl diesel::expression::ValidGrouping<()> for #column_name {
             type IsAggregate = diesel::expression::is_aggregate::No;
         }
 
+        #(#cfg_attrs)*
         impl diesel::expression::IsContainedInGroupBy<#column_name> for #column_name {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
         }
 
 
 
+        #(#cfg_attrs)*
         impl<T> diesel::EqAll<T> for #column_name where
             T: diesel::expression::AsExpression<#sql_type>,
             diesel::dsl::Eq<#column_name, T::Expression>: diesel::Expression<SqlType=diesel::sql_types::Bool>,
@@ -972,5 +1220,75 @@ fn expand_column_def(
         #ops_impls
         #backend_specific_column_impl
         #table_specific_impls
+    }
+}
+
+#[cfg(test)]
+mod helper_tests {
+    use super::*;
+
+    #[test]
+    fn cfg_combinations_zero_groups_yields_single_empty_vector() {
+        let combos: Vec<Vec<bool>> = cfg_combinations(0).collect();
+        assert_eq!(combos, vec![Vec::<bool>::new()]);
+    }
+
+    #[test]
+    fn cfg_combinations_enumerates_every_flag_vector() {
+        let combos: Vec<Vec<bool>> = cfg_combinations(2).collect();
+        assert_eq!(combos.len(), 4);
+        assert!(combos.contains(&vec![false, false]));
+        assert!(combos.contains(&vec![true, false]));
+        assert!(combos.contains(&vec![false, true]));
+        assert!(combos.contains(&vec![true, true]));
+    }
+
+    #[test]
+    fn combined_cfg_condition_is_empty_without_groups() {
+        let condition = generate_combined_cfg_condition(&[], &[]);
+        assert!(condition.is_empty());
+    }
+
+    #[test]
+    fn combined_cfg_condition_negates_disabled_groups() {
+        let attr: syn::Attribute = parse_quote!(#[cfg(feature = "chrono")]);
+        let group = CfgGroup {
+            cfg_attrs: vec![&attr],
+            columns: Vec::new(),
+        };
+
+        let enabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[true]);
+        assert_eq!(
+            enabled.to_string(),
+            quote::quote! { #[cfg(all(feature = "chrono"))] }.to_string()
+        );
+
+        let disabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[false]);
+        assert_eq!(
+            disabled.to_string(),
+            quote::quote! { #[cfg(all(not(feature = "chrono")))] }.to_string()
+        );
+    }
+
+    #[test]
+    fn combined_cfg_condition_negates_the_conjunction_of_multiple_attrs() {
+        let first: syn::Attribute = parse_quote!(#[cfg(feature = "x")]);
+        let second: syn::Attribute = parse_quote!(#[cfg(feature = "y")]);
+        let group = CfgGroup {
+            cfg_attrs: vec![&first, &second],
+            columns: Vec::new(),
+        };
+
+        let enabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[true]);
+        assert_eq!(
+            enabled.to_string(),
+            quote::quote! { #[cfg(all(feature = "x", feature = "y"))] }.to_string()
+        );
+
+        let disabled = generate_combined_cfg_condition(std::slice::from_ref(&group), &[false]);
+        assert_eq!(
+            disabled.to_string(),
+            quote::quote! { #[cfg(all(not(all(feature = "x", feature = "y"))))] }.to_string()
+        );
     }
 }
