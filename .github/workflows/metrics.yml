@@ -3,7 +3,7 @@ on:
     - cron: "23 03 * * *"
   push:
     branches:
-      - try_to_fix_metrics_job
+      - weiznich/metrics_fix
 name: Metrics
 permissions:
   contents: "read"
@@ -23,7 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        backend: ["postgres", "sqlite", "mysql"]
+        backend: ["sqlite"]
+        #backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -87,6 +88,7 @@ jobs:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
           BACKEND: ${{ matrix.backend }}
           METRIC_ACCESS_KEY: ${{ secrets.METRIC_ACCESS_KEY }}
+          GIT_SSH_COMMAND: "ssh -vvv"
         run: |
           sudo apt-get -y install git
 
@@ -94,6 +96,7 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           echo "$METRIC_ACCESS_KEY" >> ~/.ssh/id_ed25519
+          ls -lh ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           df -h
           rm diesel_bench/target/release -rf
