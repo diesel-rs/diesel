@@ -53,9 +53,6 @@ cfg_if! {
                 type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
-            sql_query("CREATE TYPE color as enum (\
-                'Blue',
-                'Red')").execute(&mut conn).unwrap();
             sql_query("CREATE TABLE cars (\
                 id SERIAL PRIMARY KEY,
                 paint_color color not null)").execute(&mut conn).unwrap();

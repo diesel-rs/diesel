@@ -280,10 +280,10 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
         .expect("DATABASE_URL must be set in order to run tests")
 }
 
+#[allow(unexpected_cfgs)]
 mod schema {
     use diesel::prelude::*;
 
-    #[cfg(any(feature = "postgres", feature = "mysql"))]
     pub mod sql_types {
         #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
         #[cfg_attr(feature = "postgres", diesel(postgres_type(name = "color")))]
@@ -323,7 +323,6 @@ mod schema {
         }
     }
 
-    #[allow(unexpected_cfgs)]
     #[cfg(not(any(feature = "__sqlite-shared", feature = "sqlite")))]
     table! {
         brands {

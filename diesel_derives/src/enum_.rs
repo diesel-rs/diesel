@@ -31,14 +31,14 @@ fn from_bytes_method_body(enum_variant: &Variant) -> TokenStream {
     let variant_as_byte_string = enum_variant_to_byte_string_literal(enum_variant);
     let variant_name = &enum_variant.ident;
 
-    quote! {#variant_as_byte_string => Some(Self::#variant_name)}
+    quote! {#variant_as_byte_string => Ok(Self::#variant_name)}
 }
 
 fn as_bytes_method_body(enum_variant: &Variant) -> TokenStream {
     let variant_as_byte_string = enum_variant_to_byte_string_literal(enum_variant);
     let variant_name = &enum_variant.ident;
 
-    quote! {Self::#variant_name => #variant_as_byte_string}
+    quote! {Self::#variant_name => #variant_as_byte_string.as_slice()}
 }
 
 fn impl_from_sql(
@@ -47,15 +47,17 @@ fn impl_from_sql(
     from_sql_types: &[TokenStream],
     backend: &TokenStream,
     value_type: &TokenStream,
+    from_bytes_arms: &[TokenStream],
 ) -> TokenStream {
     let enum_name_as_str = enum_name.to_string();
 
     quote! {
-        impl #impl_generics ::diesel::deserialize::FromSql<#(#from_sql_types)*, #backend> for #enum_name #ty_generics #where_clause {
-            fn from_sql(value: #value_type) -> ::diesel::deserialize::Result<Self> {
-                let raw_bytes = value.as_bytes();
-
-                Self::from_bytes(raw_bytes).ok_or_else(|| format!("unable to convert bytes {:?} to {}", raw_bytes, #enum_name_as_str).into())
+        impl #impl_generics diesel::deserialize::FromSql<#(#from_sql_types)*, #backend> for #enum_name #ty_generics #where_clause {
+            fn from_sql(value: #value_type) -> diesel::deserialize::Result<Self> {
+                match value.as_bytes() {
+                    #(#from_bytes_arms),*,
+                    raw_bytes => Err(format!("unable to convert bytes {:?} to {}", raw_bytes, #enum_name_as_str).into())
+                }
             }
         }
     }
@@ -66,14 +68,18 @@ fn impl_to_sql(
     (impl_generics, ty_generics, where_clause): &(ImplGenerics, TypeGenerics, Option<&WhereClause>),
     to_sql_types: &[TokenStream],
     backend: &TokenStream,
+    to_bytes_arms: &[TokenStream],
 ) -> TokenStream {
     quote! {
-        impl #impl_generics ::diesel::serialize::ToSql<#(#to_sql_types)*, #backend> for #enum_name #ty_generics #where_clause {
-            fn to_sql<'b>(&'b self, out: &mut ::diesel::serialize::Output<'b, '_, #backend>) -> ::diesel::serialize::Result {
+        impl #impl_generics diesel::serialize::ToSql<#(#to_sql_types)*, #backend> for #enum_name #ty_generics #where_clause {
+            fn to_sql<'b>(&'b self, out: &mut diesel::serialize::Output<'b, '_, #backend>) -> diesel::serialize::Result {
                 use ::std::io::Write;
+                let bytes = match self {
+                    #(#to_bytes_arms),*
+                };
 
-                out.write_all(self.as_bytes())?;
-                Ok(::diesel::serialize::IsNull::No)
+                out.write_all(bytes)?;
+                Ok(diesel::serialize::IsNull::No)
             }
         }
     }
@@ -105,67 +111,55 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     let generics = item.generics.split_for_impl();
 
-    let mut impls = Vec::new();
     let sql_types: Vec<_> = model
         .sql_types
         .iter()
         .map(syn::Type::to_token_stream)
         .collect();
 
-    if cfg!(feature = "postgres") {
-        let backend = quote! { ::diesel::pg::Pg };
-        let value_type = quote! { ::diesel::pg::PgValue<'_> };
+    let pg_from_impl = impl_from_sql(
+        &item.ident,
+        &generics,
+        &sql_types,
+        &quote! { diesel::pg::Pg },
+        &quote! { diesel::pg::PgValue<'_> },
+        &from_bytes_arms,
+    );
 
-        impls.push(impl_from_sql(
-            &item.ident,
-            &generics,
-            &sql_types,
-            &backend,
-            &value_type,
-        ));
-        impls.push(impl_to_sql(&item.ident, &generics, &sql_types, &backend));
-    }
+    let mysql_from_impl = impl_from_sql(
+        &item.ident,
+        &generics,
+        &sql_types,
+        &quote! { diesel::mysql::Mysql },
+        &quote! { diesel::mysql::MysqlValue<'_> },
+        &from_bytes_arms,
+    );
 
-    if cfg!(feature = "mysql") {
-        let backend = quote! { ::diesel::mysql::Mysql };
-        let value_type = quote! { ::diesel::mysql::MysqlValue<'_> };
+    let pg_to_impl = impl_to_sql(
+        &item.ident,
+        &generics,
+        &sql_types,
+        &quote! { diesel::pg::Pg },
+        &as_bytes_arms,
+    );
 
-        impls.push(impl_from_sql(
-            &item.ident,
-            &generics,
-            &sql_types,
-            &backend,
-            &value_type,
-        ));
-        impls.push(impl_to_sql(&item.ident, &generics, &sql_types, &backend));
-    }
+    let mysql_to_impl = impl_to_sql(
+        &item.ident,
+        &generics,
+        &sql_types,
+        &quote! { diesel::mysql::Mysql },
+        &as_bytes_arms,
+    );
 
-    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
-
-    let enum_name = &item.ident;
-    let impl_from_and_to_bytes = quote! {
-        impl #impl_generics #enum_name #ty_generics #where_clause {
-            pub fn from_bytes(bytes: &[u8]) -> Option<Self> {
-                match bytes {
-                    #(#from_bytes_arms),*,
-                    _ => None
-                }
-            }
-
-            pub fn as_bytes(&self) -> &[u8] {
-                match self {
-                    #(#as_bytes_arms),*
-                }
-            }
-        }
-    };
-
-    let as_expression_impl = super::as_expression::derive(item.clone())?;
-    let from_sql_row_impl = super::from_sql_row::derive(item)?;
+    let as_expression_impl = super::as_expression::derive_inner(item.clone())?;
+    let from_sql_row_impl = super::from_sql_row::derive_inner(item)?;
 
     Ok(wrap_in_dummy_mod(quote! {
-        #impl_from_and_to_bytes
-        #(#impls)*
+        diesel::internal::derives::enum_::expand_pg! { #pg_from_impl }
+        diesel::internal::derives::enum_::expand_mysql! { #mysql_from_impl }
+        diesel::internal::derives::enum_::expand_pg! { #pg_to_impl }
+        diesel::internal::derives::enum_::expand_mysql! { #mysql_to_impl }
+
         #as_expression_impl
         #from_sql_row_impl
     }))

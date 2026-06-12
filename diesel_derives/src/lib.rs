@@ -40,7 +40,6 @@ mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
-#[cfg(any(feature = "postgres", feature = "mysql"))]
 mod enum_;
 mod from_sql_row;
 mod has_query;
@@ -2835,7 +2834,14 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 
 /// Implements `FromSql` and `ToSql` for enum types
 ///
-/// This derive enables an enum (with unit-variants only) to be serialized to the database as a byte-string and deserialized from the same representation from the database. It requires one or more backends to be supplied so as to implement the required traits, as well as an SQL type.
+/// This derive enables an enum (with unit-variants only) to be serialized to the database as
+/// a byte-string and deserialized from the same representation from the database.
+///
+/// This derive generates `FromSql` and `ToSql` implementations for the `diesel::pg::Pg` and
+/// `diesel::mysql::Mysql` backend if these are enabled at compile time.
+///
+/// Additional it internally generates the same implementations as `#[derive(FromSqlRow)]`
+/// and `#[derive(AsExpression)]`
 ///
 /// # Attributes
 ///
@@ -2850,25 +2856,29 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 /// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 ///
-/// # #[cfg(any(feature = "postgres", feature = "mysql"))]
-/// #[derive(Debug, diesel::sql_types::Enum)]
+/// #[derive(Debug, diesel::Enum, PartialEq)]
 /// #[diesel(sql_type = schema::sql_types::Color)]
 /// enum Color {
 ///     Red,
 ///     Green,
 ///     Blue
 /// }
-///
+/// # #[cfg(feature = "postgres")]
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select(Color::Red.into_sql::<schema::sql_types::Color>()).get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-#[cfg(any(feature = "postgres", feature = "mysql"))]
 #[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
 #[proc_macro_derive(Enum, attributes(diesel))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     derive_enum_inner(input.into()).into()
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
 fn derive_enum_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
         .and_then(enum_::derive)

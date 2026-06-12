@@ -4,26 +4,11 @@ use diesel::prelude::*;
 use diesel_derives::Enum;
 
 #[derive(Debug, Clone, Copy, Enum, PartialEq)]
-#[cfg_attr(feature = "postgres", diesel(check_for_backend(diesel::pg::Pg), sql_type = schema::sql_types::Color))]
-#[cfg_attr(feature = "mysql", diesel(check_for_backend(diesel::mysql::Mysql), sql_type = schema::sql_types::CarsPaintColorEnum))]
+#[cfg_attr(feature = "postgres", diesel(sql_type = schema::sql_types::Color))]
+#[cfg_attr(feature = "mysql", diesel(sql_type = schema::sql_types::CarsPaintColorEnum))]
 enum Color {
     Blue,
     Red,
-}
-
-#[test]
-fn as_bytes() {
-    assert_eq!(b"Blue", Color::Blue.as_bytes());
-}
-
-#[test]
-fn from_bytes() {
-    assert_eq!(Color::from_bytes(b"Red").unwrap(), Color::Red);
-}
-
-#[test]
-fn from_bytes_error() {
-    assert_eq!(Color::from_bytes(b"foo"), None);
 }
 
 #[test]
@@ -48,4 +33,23 @@ fn insert_and_select() {
     let saved = Car::query().load(conn).unwrap();
     let expected = vec![new_car];
     assert_eq!(expected, saved);
+}
+
+#[test]
+fn raw_sql_equal() {
+    let v = Color::Red;
+    let conn = &mut connection();
+
+    #[cfg(feature = "postgres")]
+    let r = diesel::select(diesel::dsl::sql::<schema::sql_types::Color>("'Red'::color").eq(v))
+        .get_result::<bool>(conn)
+        .unwrap();
+
+    #[cfg(feature = "mysql")]
+    let r =
+        diesel::select(diesel::dsl::sql::<schema::sql_types::CarsPaintColorEnum>("'Red'").eq(v))
+            .get_result::<bool>(conn)
+            .unwrap();
+
+    assert!(r);
 }

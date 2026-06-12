@@ -659,9 +659,6 @@ impl<T: SqlType + SingleValue> SingleValue for Nullable<T> {}
 
 #[doc(inline)]
 pub use diesel_derives::DieselNumericOps;
-#[cfg(any(feature = "postgres", feature = "mysql"))]
-#[doc(inline)]
-pub use diesel_derives::Enum;
 #[doc(inline)]
 pub use diesel_derives::SqlType;
 

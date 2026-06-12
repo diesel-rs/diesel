@@ -152,3 +152,9 @@ pub mod has_query {
     #[doc(hidden)]
     pub use crate::{expand_mysql, expand_pg, expand_sqlite};
 }
+
+#[doc(hidden)]
+pub mod enum_ {
+    #[doc(hidden)]
+    pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+}
