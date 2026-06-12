@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This Rust crate implements IDNA per the WHATWG URL Standard."><meta name="keywords" content="rust, rustlang, rust-lang, idna"><title>idna - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../idna/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><h2 class="location">Crate idna</h2><div class="block version"><div class="narrow-helper"></div><p>Version 0.1.5</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all idna's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#functions">Functions</a></li></ul></div><div id="sidebar-vars" data-name="idna" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">idna</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/idna/lib.rs.html#9-73" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This Rust crate implements IDNA
+<a href="https://url.spec.whatwg.org/#idna">per the WHATWG URL Standard</a>.</p>
+<p>It also exposes the underlying algorithms from <a href="http://www.unicode.org/reports/tr46/"><em>Unicode IDNA Compatibility Processing</em>
+(Unicode Technical Standard #46)</a>
+and <a href="https://tools.ietf.org/html/rfc3492">Punycode (RFC 3492)</a>.</p>
+<p>Quoting from <a href="http://www.unicode.org/reports/tr46/#Introduction">UTS #46’s introduction</a>:</p>
+<blockquote>
+<p>Initially, domain names were restricted to ASCII characters.
+A system was introduced in 2003 for internationalized domain names (IDN).
+This system is called Internationalizing Domain Names for Applications,
+or IDNA2003 for short.
+This mechanism supports IDNs by means of a client software transformation
+into a format known as Punycode.
+A revision of IDNA was approved in 2010 (IDNA2008).
+This revision has a number of incompatibilities with IDNA2003.</p>
+<p>The incompatibilities force implementers of client software,
+such as browsers and emailers,
+to face difficult choices during the transition period
+as registries shift from IDNA2003 to IDNA2008.
+This document specifies a mechanism
+that minimizes the impact of this transition for client software,
+allowing client software to access domains that are valid under either system.</p>
+</blockquote>
+</div></details><h2 id="modules" class="section-header"><a href="#modules">Modules</a></h2>
+<div class="item-table"><div class="item-left module-item"><a class="mod" href="punycode/index.html" title="idna::punycode mod">punycode</a></div><div class="item-right docblock-short"><p>Punycode (<a href="http://tools.ietf.org/html/rfc3492">RFC 3492</a>) implementation.</p>
+</div><div class="item-left module-item"><a class="mod" href="uts46/index.html" title="idna::uts46 mod">uts46</a></div><div class="item-right docblock-short"><p><a href="http://www.unicode.org/reports/tr46/"><em>Unicode IDNA Compatibility Processing</em>
+(Unicode Technical Standard #46)</a></p>
+</div></div><h2 id="functions" class="section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-left module-item"><a class="fn" href="fn.domain_to_ascii.html" title="idna::domain_to_ascii fn">domain_to_ascii</a></div><div class="item-right docblock-short"><p>The <a href="https://url.spec.whatwg.org/#concept-domain-to-ascii">domain to ASCII</a> algorithm.</p>
+</div><div class="item-left module-item"><a class="fn" href="fn.domain_to_unicode.html" title="idna::domain_to_unicode fn">domain_to_unicode</a></div><div class="item-right docblock-short"><p>The <a href="https://url.spec.whatwg.org/#concept-domain-to-unicode">domain to Unicode</a> algorithm.</p>
+</div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="idna" data-search-index-js="../search-index.js" data-search-js="../search.js"></div>
+    <script src="../main.js"></script>
+</body></html>

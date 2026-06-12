@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SqliteQueryBuilder","Constructs SQL queries for use with the SQLite backend"]]});

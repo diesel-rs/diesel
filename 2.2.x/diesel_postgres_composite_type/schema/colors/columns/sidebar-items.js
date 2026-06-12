@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["blue","color_id","color_name","green","red","star"]};

@@ -1,0 +1,718 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-0.3.48/src/format_description/component.rs`."><title>component.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="time" data-themes="" data-resource-suffix="" data-rustdoc-version="1.98.0-nightly (b30f3df3b 2026-06-11)" data-channel="nightly" data-search-js="search-fd9372ac.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-fcd733ba.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="icon" href="https://avatars0.githubusercontent.com/u/55999857"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">time/format_description/</div>component.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Part of a format description.
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><a href="mod.rs.html#13"><span class="kw">crate</span>::format_description::modifier</a>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="doccomment">/// A component of a larger format description.
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="attr">#[non_exhaustive]
+<a href=#7 id=7 data-nosnippet>7</a>#[allow(deprecated)]
+<a href=#8 id=8 data-nosnippet>8</a></span><span class="expansion"><input id=expand-8 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Component {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            Component::Day(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Day"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::MonthShort(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"MonthShort"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::MonthLong(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"MonthLong"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::MonthNumerical(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"MonthNumerical"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::Ordinal(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"Ordinal"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekdayShort(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekdayShort"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekdayLong(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekdayLong"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekdaySunday(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekdaySunday"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekdayMonday(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekdayMonday"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekNumberIso(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekNumberIso"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekNumberSunday(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekNumberSunday"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekNumberMonday(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekNumberMonday"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::CalendarYearFullExtendedRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"CalendarYearFullExtendedRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::CalendarYearFullStandardRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"CalendarYearFullStandardRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::IsoYearFullExtendedRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"IsoYearFullExtendedRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::IsoYearFullStandardRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"IsoYearFullStandardRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::CalendarYearCenturyExtendedRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"CalendarYearCenturyExtendedRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::CalendarYearCenturyStandardRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"CalendarYearCenturyStandardRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::IsoYearCenturyExtendedRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"IsoYearCenturyExtendedRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::IsoYearCenturyStandardRange(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"IsoYearCenturyStandardRange"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::CalendarYearLastTwo(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"CalendarYearLastTwo"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::IsoYearLastTwo(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"IsoYearLastTwo"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::Hour12(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Hour12"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Hour24(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Hour24"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Minute(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Minute"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Period(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Period"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Second(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Second"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Subsecond(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"Subsecond"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::OffsetHour(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"OffsetHour"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::OffsetMinute(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"OffsetMinute"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::OffsetSecond(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"OffsetSecond"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::Ignore(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Ignore"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::UnixTimestampSecond(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"UnixTimestampSecond"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::UnixTimestampMillisecond(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"UnixTimestampMillisecond"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::UnixTimestampMicrosecond(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"UnixTimestampMicrosecond"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::UnixTimestampNanosecond(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"UnixTimestampNanosecond"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::End(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"End"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Month(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Month"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::Weekday(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"Weekday"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::WeekNumber(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"WeekNumber"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::Hour(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Hour"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            Component::UnixTimestamp(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+                    <span class="string">"UnixTimestamp"</span>, <span class="kw-2">&amp;</span>__self_0),
+            Component::Year(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"Year"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Component {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Component {
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Day&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::MonthShort&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::MonthLong&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::MonthNumerical&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Ordinal&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekdayShort&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekdayLong&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekdaySunday&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekdayMonday&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekNumberIso&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekNumberSunday&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekNumberMonday&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::CalendarYearFullExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::CalendarYearFullStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::IsoYearFullExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::IsoYearFullStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::CalendarYearCenturyExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::CalendarYearCenturyStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::IsoYearCenturyExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::IsoYearCenturyStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::CalendarYearLastTwo&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::IsoYearLastTwo&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Hour12&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Hour24&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Minute&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Period&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Second&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Subsecond&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::OffsetHour&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::OffsetMinute&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::OffsetSecond&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Ignore&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::UnixTimestampSecond&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::UnixTimestampMillisecond&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::UnixTimestampMicrosecond&gt;;
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;modifier::UnixTimestampNanosecond&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::End&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Month&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Weekday&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::WeekNumber&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Hour&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::UnixTimestamp&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;modifier::Year&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Component { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Component {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>Component) -&gt; bool {
+        <span class="kw">let </span>__self_discr = ::core::intrinsics::discriminant_value(<span class="self">self</span>);
+        <span class="kw">let </span>__arg1_discr = ::core::intrinsics::discriminant_value(other);
+        __self_discr == __arg1_discr &amp;&amp;
+            <span class="kw">match </span>(<span class="self">self</span>, other) {
+                (Component::Day(__self_0), Component::Day(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::MonthShort(__self_0),
+                    Component::MonthShort(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::MonthLong(__self_0),
+                    Component::MonthLong(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::MonthNumerical(__self_0),
+                    Component::MonthNumerical(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Ordinal(__self_0), Component::Ordinal(__arg1_0))
+                    =&gt; __self_0 == __arg1_0,
+                (Component::WeekdayShort(__self_0),
+                    Component::WeekdayShort(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::WeekdayLong(__self_0),
+                    Component::WeekdayLong(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::WeekdaySunday(__self_0),
+                    Component::WeekdaySunday(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::WeekdayMonday(__self_0),
+                    Component::WeekdayMonday(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::WeekNumberIso(__self_0),
+                    Component::WeekNumberIso(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::WeekNumberSunday(__self_0),
+                    Component::WeekNumberSunday(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::WeekNumberMonday(__self_0),
+                    Component::WeekNumberMonday(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::CalendarYearFullExtendedRange(__self_0),
+                    Component::CalendarYearFullExtendedRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::CalendarYearFullStandardRange(__self_0),
+                    Component::CalendarYearFullStandardRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::IsoYearFullExtendedRange(__self_0),
+                    Component::IsoYearFullExtendedRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::IsoYearFullStandardRange(__self_0),
+                    Component::IsoYearFullStandardRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::CalendarYearCenturyExtendedRange(__self_0),
+                    Component::CalendarYearCenturyExtendedRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::CalendarYearCenturyStandardRange(__self_0),
+                    Component::CalendarYearCenturyStandardRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::IsoYearCenturyExtendedRange(__self_0),
+                    Component::IsoYearCenturyExtendedRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::IsoYearCenturyStandardRange(__self_0),
+                    Component::IsoYearCenturyStandardRange(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::CalendarYearLastTwo(__self_0),
+                    Component::CalendarYearLastTwo(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::IsoYearLastTwo(__self_0),
+                    Component::IsoYearLastTwo(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Hour12(__self_0), Component::Hour12(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Hour24(__self_0), Component::Hour24(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Minute(__self_0), Component::Minute(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Period(__self_0), Component::Period(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Second(__self_0), Component::Second(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Subsecond(__self_0),
+                    Component::Subsecond(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::OffsetHour(__self_0),
+                    Component::OffsetHour(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::OffsetMinute(__self_0),
+                    Component::OffsetMinute(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::OffsetSecond(__self_0),
+                    Component::OffsetSecond(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::Ignore(__self_0), Component::Ignore(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::UnixTimestampSecond(__self_0),
+                    Component::UnixTimestampSecond(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::UnixTimestampMillisecond(__self_0),
+                    Component::UnixTimestampMillisecond(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::UnixTimestampMicrosecond(__self_0),
+                    Component::UnixTimestampMicrosecond(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::UnixTimestampNanosecond(__self_0),
+                    Component::UnixTimestampNanosecond(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::End(__self_0), Component::End(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Month(__self_0), Component::Month(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::Weekday(__self_0), Component::Weekday(__arg1_0))
+                    =&gt; __self_0 == __arg1_0,
+                (Component::WeekNumber(__self_0),
+                    Component::WeekNumber(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::Hour(__self_0), Component::Hour(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (Component::UnixTimestamp(__self_0),
+                    Component::UnixTimestamp(__arg1_0)) =&gt; __self_0 == __arg1_0,
+                (Component::Year(__self_0), Component::Year(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                <span class="kw">_ </span>=&gt; <span class="kw">unsafe </span>{ ::core::intrinsics::unreachable() }
+            }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[allow(deprecated)]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>Component {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Day&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::MonthShort&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::MonthLong&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::MonthNumerical&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Ordinal&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekdayShort&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekdayLong&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekdaySunday&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekdayMonday&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekNumberIso&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekNumberSunday&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekNumberMonday&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::CalendarYearFullExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::CalendarYearFullStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::IsoYearFullExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::IsoYearFullStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::CalendarYearCenturyExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::CalendarYearCenturyStandardRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::IsoYearCenturyExtendedRange&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::IsoYearCenturyStandardRange&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::CalendarYearLastTwo&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::IsoYearLastTwo&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Hour12&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Hour24&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Minute&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Period&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Second&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Subsecond&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::OffsetHour&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::OffsetMinute&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::OffsetSecond&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Ignore&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::UnixTimestampSecond&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::UnixTimestampMillisecond&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::UnixTimestampMicrosecond&gt;;
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;modifier::UnixTimestampNanosecond&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::End&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Month&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Weekday&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::WeekNumber&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Hour&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::UnixTimestamp&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;modifier::Year&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">pub enum </span><a href="#9-124">Component</a> {
+<a href=#10 id=10 data-nosnippet>10</a>    <span class="doccomment">/// Day of the month.
+<a href=#11 id=11 data-nosnippet>11</a>    </span>Day(modifier::<a href="modifier.rs.html#242-245">Day</a>),
+<a href=#12 id=12 data-nosnippet>12</a>    <span class="doccomment">/// Month of the year in the abbreviated form (e.g. "Jan").
+<a href=#13 id=13 data-nosnippet>13</a>    </span>MonthShort(modifier::<a href="modifier.rs.html#272-275">MonthShort</a>),
+<a href=#14 id=14 data-nosnippet>14</a>    <span class="doccomment">/// Month of the year in the full form (e.g. "January").
+<a href=#15 id=15 data-nosnippet>15</a>    </span>MonthLong(modifier::<a href="modifier.rs.html#286-289">MonthLong</a>),
+<a href=#16 id=16 data-nosnippet>16</a>    <span class="doccomment">/// Month of the year in the numerical form (e.g. "1" for January).
+<a href=#17 id=17 data-nosnippet>17</a>    </span>MonthNumerical(modifier::<a href="modifier.rs.html#300-303">MonthNumerical</a>),
+<a href=#18 id=18 data-nosnippet>18</a>    <span class="doccomment">/// Ordinal day of the year.
+<a href=#19 id=19 data-nosnippet>19</a>    </span>Ordinal(modifier::<a href="modifier.rs.html#344-347">Ordinal</a>),
+<a href=#20 id=20 data-nosnippet>20</a>    <span class="doccomment">/// Weekday in the abbreviated form (e.g. "Mon").
+<a href=#21 id=21 data-nosnippet>21</a>    </span>WeekdayShort(modifier::<a href="modifier.rs.html#380-383">WeekdayShort</a>),
+<a href=#22 id=22 data-nosnippet>22</a>    <span class="doccomment">/// Weekday in the full form (e.g. "Monday").
+<a href=#23 id=23 data-nosnippet>23</a>    </span>WeekdayLong(modifier::<a href="modifier.rs.html#394-397">WeekdayLong</a>),
+<a href=#24 id=24 data-nosnippet>24</a>    <span class="doccomment">/// Weekday number where Sunday is either 0 or 1 depending on the modifier.
+<a href=#25 id=25 data-nosnippet>25</a>    </span>WeekdaySunday(modifier::<a href="modifier.rs.html#408-411">WeekdaySunday</a>),
+<a href=#26 id=26 data-nosnippet>26</a>    <span class="doccomment">/// Weekday number where Monday is either 0 or 1 depending on the modifier.
+<a href=#27 id=27 data-nosnippet>27</a>    </span>WeekdayMonday(modifier::<a href="modifier.rs.html#422-425">WeekdayMonday</a>),
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="doccomment">/// Week number of the year, where week 1 starts is the week beginning on Monday that contains
+<a href=#29 id=29 data-nosnippet>29</a>    /// January 4.
+<a href=#30 id=30 data-nosnippet>30</a>    </span>WeekNumberIso(modifier::<a href="modifier.rs.html#483-486">WeekNumberIso</a>),
+<a href=#31 id=31 data-nosnippet>31</a>    <span class="doccomment">/// Week number of the year, where week 1 starts on the first Sunday of the calendar year.
+<a href=#32 id=32 data-nosnippet>32</a>    </span>WeekNumberSunday(modifier::<a href="modifier.rs.html#499-502">WeekNumberSunday</a>),
+<a href=#33 id=33 data-nosnippet>33</a>    <span class="doccomment">/// Week number of the year, where week 1 starts on the first Monday of the calendar year.
+<a href=#34 id=34 data-nosnippet>34</a>    </span>WeekNumberMonday(modifier::<a href="modifier.rs.html#515-518">WeekNumberMonday</a>),
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="doccomment">/// The calendar year. Supports the extended range.
+<a href=#36 id=36 data-nosnippet>36</a>    </span>CalendarYearFullExtendedRange(modifier::<a href="modifier.rs.html#590-596">CalendarYearFullExtendedRange</a>),
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="doccomment">/// The calendar year. Does not support the extended range.
+<a href=#38 id=38 data-nosnippet>38</a>    </span>CalendarYearFullStandardRange(modifier::<a href="modifier.rs.html#610-616">CalendarYearFullStandardRange</a>),
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="doccomment">/// The ISO week-based year. Supports the extended range.
+<a href=#40 id=40 data-nosnippet>40</a>    </span>IsoYearFullExtendedRange(modifier::<a href="modifier.rs.html#630-636">IsoYearFullExtendedRange</a>),
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="doccomment">/// The ISO week-based year. Does not support the extended range.
+<a href=#42 id=42 data-nosnippet>42</a>    </span>IsoYearFullStandardRange(modifier::<a href="modifier.rs.html#650-656">IsoYearFullStandardRange</a>),
+<a href=#43 id=43 data-nosnippet>43</a>    <span class="doccomment">/// The century of the calendar year. Supports the extended range.
+<a href=#44 id=44 data-nosnippet>44</a>    </span>CalendarYearCenturyExtendedRange(modifier::<a href="modifier.rs.html#670-676">CalendarYearCenturyExtendedRange</a>),
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="doccomment">/// The century of the calendar year. Does not support the extended range.
+<a href=#46 id=46 data-nosnippet>46</a>    </span>CalendarYearCenturyStandardRange(modifier::<a href="modifier.rs.html#690-696">CalendarYearCenturyStandardRange</a>),
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="doccomment">/// The century of the ISO week-based year. Supports the extended range.
+<a href=#48 id=48 data-nosnippet>48</a>    </span>IsoYearCenturyExtendedRange(modifier::<a href="modifier.rs.html#710-716">IsoYearCenturyExtendedRange</a>),
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="doccomment">/// The century of the ISO week-based year. Does not support the extended range.
+<a href=#50 id=50 data-nosnippet>50</a>    </span>IsoYearCenturyStandardRange(modifier::<a href="modifier.rs.html#730-736">IsoYearCenturyStandardRange</a>),
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="doccomment">/// The last two digits of the calendar year.
+<a href=#52 id=52 data-nosnippet>52</a>    </span>CalendarYearLastTwo(modifier::<a href="modifier.rs.html#750-753">CalendarYearLastTwo</a>),
+<a href=#53 id=53 data-nosnippet>53</a>    <span class="doccomment">/// The last two digits of the ISO week-based year.
+<a href=#54 id=54 data-nosnippet>54</a>    </span>IsoYearLastTwo(modifier::<a href="modifier.rs.html#766-769">IsoYearLastTwo</a>),
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="doccomment">/// Hour of the day using the 12-hour clock.
+<a href=#56 id=56 data-nosnippet>56</a>    </span>Hour12(modifier::<a href="modifier.rs.html#818-821">Hour12</a>),
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="doccomment">/// Hour of the day using the 24-hour clock.
+<a href=#58 id=58 data-nosnippet>58</a>    </span>Hour24(modifier::<a href="modifier.rs.html#832-835">Hour24</a>),
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="doccomment">/// Minute within the hour.
+<a href=#60 id=60 data-nosnippet>60</a>    </span>Minute(modifier::<a href="modifier.rs.html#868-871">Minute</a>),
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="doccomment">/// AM/PM part of the time.
+<a href=#62 id=62 data-nosnippet>62</a>    </span>Period(modifier::<a href="modifier.rs.html#883-890">Period</a>),
+<a href=#63 id=63 data-nosnippet>63</a>    <span class="doccomment">/// Second within the minute.
+<a href=#64 id=64 data-nosnippet>64</a>    </span>Second(modifier::<a href="modifier.rs.html#904-907">Second</a>),
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="doccomment">/// Subsecond within the second.
+<a href=#66 id=66 data-nosnippet>66</a>    </span>Subsecond(modifier::<a href="modifier.rs.html#946-949">Subsecond</a>),
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="doccomment">/// Hour of the UTC offset.
+<a href=#68 id=68 data-nosnippet>68</a>    </span>OffsetHour(modifier::<a href="modifier.rs.html#961-966">OffsetHour</a>),
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="doccomment">/// Minute within the hour of the UTC offset.
+<a href=#70 id=70 data-nosnippet>70</a>    </span>OffsetMinute(modifier::<a href="modifier.rs.html#980-983">OffsetMinute</a>),
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="doccomment">/// Second within the minute of the UTC offset.
+<a href=#72 id=72 data-nosnippet>72</a>    </span>OffsetSecond(modifier::<a href="modifier.rs.html#995-998">OffsetSecond</a>),
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="doccomment">/// A number of bytes to ignore when parsing. This has no effect on formatting.
+<a href=#74 id=74 data-nosnippet>74</a>    </span>Ignore(modifier::<a href="modifier.rs.html#1025-1028">Ignore</a>),
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="doccomment">/// A Unix timestamp in seconds.
+<a href=#76 id=76 data-nosnippet>76</a>    </span>UnixTimestampSecond(modifier::<a href="modifier.rs.html#1065-1068">UnixTimestampSecond</a>),
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="doccomment">/// A Unix timestamp in milliseconds.
+<a href=#78 id=78 data-nosnippet>78</a>    </span>UnixTimestampMillisecond(modifier::<a href="modifier.rs.html#1079-1082">UnixTimestampMillisecond</a>),
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="doccomment">/// A Unix timestamp in microseconds.
+<a href=#80 id=80 data-nosnippet>80</a>    </span>UnixTimestampMicrosecond(modifier::<a href="modifier.rs.html#1093-1096">UnixTimestampMicrosecond</a>),
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="doccomment">/// A Unix timestamp in nanoseconds.
+<a href=#82 id=82 data-nosnippet>82</a>    </span>UnixTimestampNanosecond(modifier::<a href="modifier.rs.html#1107-1110">UnixTimestampNanosecond</a>),
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="doccomment">/// The end of input. Parsing this component will fail if there is any input remaining. This
+<a href=#84 id=84 data-nosnippet>84</a>    /// component neither affects formatting nor consumes any input when parsing.
+<a href=#85 id=85 data-nosnippet>85</a>    </span>End(modifier::<a href="modifier.rs.html#1157-1160">End</a>),
+<a href=#86 id=86 data-nosnippet>86</a>
+<a href=#87 id=87 data-nosnippet>87</a>    <span class="comment">// Start of deprecated components that are no longer emitted by macros or parsers. They must
+<a href=#88 id=88 data-nosnippet>88</a>    // be maintained for backward compatibility, as downstream users could have constructed them
+<a href=#89 id=89 data-nosnippet>89</a>    // manually.
+<a href=#90 id=90 data-nosnippet>90</a>    </span><span class="doccomment">/// Month of the year.
+<a href=#91 id=91 data-nosnippet>91</a>    </span><span class="attr">#[deprecated(
+<a href=#92 id=92 data-nosnippet>92</a>        since = <span class="string">"0.3.48"</span>,
+<a href=#93 id=93 data-nosnippet>93</a>        note = <span class="string">"use `MonthShort`, `MonthLong`, or `MonthNumeric` instead"
+<a href=#94 id=94 data-nosnippet>94</a>    </span>)]
+<a href=#95 id=95 data-nosnippet>95</a>    </span>Month(modifier::<a href="modifier.rs.html#320-327">Month</a>),
+<a href=#96 id=96 data-nosnippet>96</a>    <span class="doccomment">/// Day of the week.
+<a href=#97 id=97 data-nosnippet>97</a>    </span><span class="attr">#[deprecated(
+<a href=#98 id=98 data-nosnippet>98</a>        since = <span class="string">"0.3.48"</span>,
+<a href=#99 id=99 data-nosnippet>99</a>        note = <span class="string">"use `WeekdayShort`, `WeekdayLong`, or `WeekdaySunday`, or `WeekdayMonday` instead"
+<a href=#100 id=100 data-nosnippet>100</a>    </span>)]
+<a href=#101 id=101 data-nosnippet>101</a>    </span>Weekday(modifier::<a href="modifier.rs.html#442-449">Weekday</a>),
+<a href=#102 id=102 data-nosnippet>102</a>    <span class="doccomment">/// Week within the year.
+<a href=#103 id=103 data-nosnippet>103</a>    </span><span class="attr">#[deprecated(
+<a href=#104 id=104 data-nosnippet>104</a>        since = <span class="string">"0.3.48"</span>,
+<a href=#105 id=105 data-nosnippet>105</a>        note = <span class="string">"use `WeekNumberIso`, `WeekNumberSunday`, or `WeekNumberMonday` instead"
+<a href=#106 id=106 data-nosnippet>106</a>    </span>)]
+<a href=#107 id=107 data-nosnippet>107</a>    </span>WeekNumber(modifier::<a href="modifier.rs.html#535-540">WeekNumber</a>),
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="doccomment">/// Hour of the day.
+<a href=#109 id=109 data-nosnippet>109</a>    </span><span class="attr">#[deprecated(since = <span class="string">"0.3.48"</span>, note = <span class="string">"use `Hour12` or `Hour24` instead"</span>)]
+<a href=#110 id=110 data-nosnippet>110</a>    </span>Hour(modifier::<a href="modifier.rs.html#848-853">Hour</a>),
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="doccomment">/// A Unix timestamp.
+<a href=#112 id=112 data-nosnippet>112</a>    </span><span class="attr">#[deprecated(
+<a href=#113 id=113 data-nosnippet>113</a>        since = <span class="string">"0.3.48"</span>,
+<a href=#114 id=114 data-nosnippet>114</a>        note = <span class="string">"use `UnixTimestampSeconds`, `UnixTimestampMilliseconds`, \
+<a href=#115 id=115 data-nosnippet>115</a>                `UnixTimestampMicroseconds`, or `UnixTimestampNanoseconds` instead"
+<a href=#116 id=116 data-nosnippet>116</a>    </span>)]
+<a href=#117 id=117 data-nosnippet>117</a>    </span>UnixTimestamp(modifier::<a href="modifier.rs.html#1128-1133">UnixTimestamp</a>),
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="doccomment">/// Year of the date.
+<a href=#119 id=119 data-nosnippet>119</a>    </span><span class="attr">#[deprecated(
+<a href=#120 id=120 data-nosnippet>120</a>        since = <span class="string">"0.3.48"</span>,
+<a href=#121 id=121 data-nosnippet>121</a>        note = <span class="string">"use one of the various `Year*` components instead"
+<a href=#122 id=122 data-nosnippet>122</a>    </span>)]
+<a href=#123 id=123 data-nosnippet>123</a>    </span>Year(modifier::<a href="modifier.rs.html#786-798">Year</a>),
+<a href=#124 id=124 data-nosnippet>124</a>}
+<a href=#125 id=125 data-nosnippet>125</a>
+<a href=#126 id=126 data-nosnippet>126</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="#9-124">Component</a>&gt; <span class="kw">for </span><span class="kw">super</span>::format_description_v3::<a href="format_description_v3.rs.html#53-164">FormatDescriptionV3Inner</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#127 id=127 data-nosnippet>127</a>    <span class="attr">#[inline]
+<a href=#128 id=128 data-nosnippet>128</a>    </span><span class="kw">fn </span>from(component: <a href="#9-124">Component</a>) -&gt; <span class="self">Self </span>{
+<a href=#129 id=129 data-nosnippet>129</a>        <span class="kw">match </span><a href="#128">component</a> {
+<a href=#130 id=130 data-nosnippet>130</a>            Component::<a href="#11">Day</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#55">Day</a>(<a href="#130">modifier</a>),
+<a href=#131 id=131 data-nosnippet>131</a>            Component::<a href="#13">MonthShort</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#57">MonthShort</a>(<a href="#131">modifier</a>),
+<a href=#132 id=132 data-nosnippet>132</a>            Component::<a href="#15">MonthLong</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#59">MonthLong</a>(<a href="#132">modifier</a>),
+<a href=#133 id=133 data-nosnippet>133</a>            Component::<a href="#17">MonthNumerical</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#61">MonthNumerical</a>(<a href="#133">modifier</a>),
+<a href=#134 id=134 data-nosnippet>134</a>            Component::<a href="#19">Ordinal</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#63">Ordinal</a>(<a href="#134">modifier</a>),
+<a href=#135 id=135 data-nosnippet>135</a>            Component::<a href="#21">WeekdayShort</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#65">WeekdayShort</a>(<a href="#135">modifier</a>),
+<a href=#136 id=136 data-nosnippet>136</a>            Component::<a href="#23">WeekdayLong</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#67">WeekdayLong</a>(<a href="#136">modifier</a>),
+<a href=#137 id=137 data-nosnippet>137</a>            Component::<a href="#25">WeekdaySunday</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#69">WeekdaySunday</a>(<a href="#137">modifier</a>),
+<a href=#138 id=138 data-nosnippet>138</a>            Component::<a href="#27">WeekdayMonday</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#71">WeekdayMonday</a>(<a href="#138">modifier</a>),
+<a href=#139 id=139 data-nosnippet>139</a>            Component::<a href="#30">WeekNumberIso</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#74">WeekNumberIso</a>(<a href="#139">modifier</a>),
+<a href=#140 id=140 data-nosnippet>140</a>            Component::<a href="#32">WeekNumberSunday</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#76">WeekNumberSunday</a>(<a href="#140">modifier</a>),
+<a href=#141 id=141 data-nosnippet>141</a>            Component::<a href="#34">WeekNumberMonday</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#78">WeekNumberMonday</a>(<a href="#141">modifier</a>),
+<a href=#142 id=142 data-nosnippet>142</a>            Component::<a href="#36">CalendarYearFullExtendedRange</a>(modifier) =&gt; {
+<a href=#143 id=143 data-nosnippet>143</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#80">CalendarYearFullExtendedRange</a>(<a href="#142">modifier</a>)
+<a href=#144 id=144 data-nosnippet>144</a>            }
+<a href=#145 id=145 data-nosnippet>145</a>            Component::<a href="#38">CalendarYearFullStandardRange</a>(modifier) =&gt; {
+<a href=#146 id=146 data-nosnippet>146</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#82">CalendarYearFullStandardRange</a>(<a href="#145">modifier</a>)
+<a href=#147 id=147 data-nosnippet>147</a>            }
+<a href=#148 id=148 data-nosnippet>148</a>            Component::<a href="#40">IsoYearFullExtendedRange</a>(modifier) =&gt; {
+<a href=#149 id=149 data-nosnippet>149</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#84">IsoYearFullExtendedRange</a>(<a href="#148">modifier</a>)
+<a href=#150 id=150 data-nosnippet>150</a>            }
+<a href=#151 id=151 data-nosnippet>151</a>            Component::<a href="#42">IsoYearFullStandardRange</a>(modifier) =&gt; {
+<a href=#152 id=152 data-nosnippet>152</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#86">IsoYearFullStandardRange</a>(<a href="#151">modifier</a>)
+<a href=#153 id=153 data-nosnippet>153</a>            }
+<a href=#154 id=154 data-nosnippet>154</a>            Component::<a href="#44">CalendarYearCenturyExtendedRange</a>(modifier) =&gt; {
+<a href=#155 id=155 data-nosnippet>155</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#88">CalendarYearCenturyExtendedRange</a>(<a href="#154">modifier</a>)
+<a href=#156 id=156 data-nosnippet>156</a>            }
+<a href=#157 id=157 data-nosnippet>157</a>            Component::<a href="#46">CalendarYearCenturyStandardRange</a>(modifier) =&gt; {
+<a href=#158 id=158 data-nosnippet>158</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#90">CalendarYearCenturyStandardRange</a>(<a href="#157">modifier</a>)
+<a href=#159 id=159 data-nosnippet>159</a>            }
+<a href=#160 id=160 data-nosnippet>160</a>            Component::<a href="#48">IsoYearCenturyExtendedRange</a>(modifier) =&gt; {
+<a href=#161 id=161 data-nosnippet>161</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#92">IsoYearCenturyExtendedRange</a>(<a href="#160">modifier</a>)
+<a href=#162 id=162 data-nosnippet>162</a>            }
+<a href=#163 id=163 data-nosnippet>163</a>            Component::<a href="#50">IsoYearCenturyStandardRange</a>(modifier) =&gt; {
+<a href=#164 id=164 data-nosnippet>164</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#94">IsoYearCenturyStandardRange</a>(<a href="#163">modifier</a>)
+<a href=#165 id=165 data-nosnippet>165</a>            }
+<a href=#166 id=166 data-nosnippet>166</a>            Component::<a href="#52">CalendarYearLastTwo</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#96">CalendarYearLastTwo</a>(<a href="#166">modifier</a>),
+<a href=#167 id=167 data-nosnippet>167</a>            Component::<a href="#54">IsoYearLastTwo</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#98">IsoYearLastTwo</a>(<a href="#167">modifier</a>),
+<a href=#168 id=168 data-nosnippet>168</a>            Component::<a href="#56">Hour12</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#100">Hour12</a>(<a href="#168">modifier</a>),
+<a href=#169 id=169 data-nosnippet>169</a>            Component::<a href="#58">Hour24</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#102">Hour24</a>(<a href="#169">modifier</a>),
+<a href=#170 id=170 data-nosnippet>170</a>            Component::<a href="#60">Minute</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#104">Minute</a>(<a href="#170">modifier</a>),
+<a href=#171 id=171 data-nosnippet>171</a>            Component::<a href="#62">Period</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#106">Period</a>(<a href="#171">modifier</a>),
+<a href=#172 id=172 data-nosnippet>172</a>            Component::<a href="#64">Second</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#108">Second</a>(<a href="#172">modifier</a>),
+<a href=#173 id=173 data-nosnippet>173</a>            Component::<a href="#66">Subsecond</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#110">Subsecond</a>(<a href="#173">modifier</a>),
+<a href=#174 id=174 data-nosnippet>174</a>            Component::<a href="#68">OffsetHour</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#112">OffsetHour</a>(<a href="#174">modifier</a>),
+<a href=#175 id=175 data-nosnippet>175</a>            Component::<a href="#70">OffsetMinute</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#114">OffsetMinute</a>(<a href="#175">modifier</a>),
+<a href=#176 id=176 data-nosnippet>176</a>            Component::<a href="#72">OffsetSecond</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#116">OffsetSecond</a>(<a href="#176">modifier</a>),
+<a href=#177 id=177 data-nosnippet>177</a>            Component::<a href="#74">Ignore</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#118">Ignore</a>(<a href="#177">modifier</a>),
+<a href=#178 id=178 data-nosnippet>178</a>            Component::<a href="#76">UnixTimestampSecond</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#120">UnixTimestampSecond</a>(<a href="#178">modifier</a>),
+<a href=#179 id=179 data-nosnippet>179</a>            Component::<a href="#78">UnixTimestampMillisecond</a>(modifier) =&gt; {
+<a href=#180 id=180 data-nosnippet>180</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#122">UnixTimestampMillisecond</a>(<a href="#179">modifier</a>)
+<a href=#181 id=181 data-nosnippet>181</a>            }
+<a href=#182 id=182 data-nosnippet>182</a>            Component::<a href="#80">UnixTimestampMicrosecond</a>(modifier) =&gt; {
+<a href=#183 id=183 data-nosnippet>183</a>                <span class="self">Self</span>::<a href="format_description_v3.rs.html#124">UnixTimestampMicrosecond</a>(<a href="#182">modifier</a>)
+<a href=#184 id=184 data-nosnippet>184</a>            }
+<a href=#185 id=185 data-nosnippet>185</a>            Component::<a href="#82">UnixTimestampNanosecond</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#126">UnixTimestampNanosecond</a>(<a href="#185">modifier</a>),
+<a href=#186 id=186 data-nosnippet>186</a>            Component::<a href="#85">End</a>(modifier) =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#129">End</a>(<a href="#186">modifier</a>),
+<a href=#187 id=187 data-nosnippet>187</a>
+<a href=#188 id=188 data-nosnippet>188</a>            <span class="comment">// Start of deprecated components.
+<a href=#189 id=189 data-nosnippet>189</a>            </span><span class="attr">#[expect(deprecated)]
+<a href=#190 id=190 data-nosnippet>190</a>            </span>Component::<a href="#95">Month</a>(modifier) =&gt; <span class="kw">match </span><a href="#190">modifier</a>.repr {
+<a href=#191 id=191 data-nosnippet>191</a>                modifier::MonthRepr::<a href="modifier.rs.html#267">Short</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#57">MonthShort</a>(
+<a href=#192 id=192 data-nosnippet>192</a>                    modifier::<a href="modifier.rs.html#272-275">MonthShort</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#278-281">with_case_sensitive</a>(<a href="#190">modifier</a>.case_sensitive),
+<a href=#193 id=193 data-nosnippet>193</a>                ),
+<a href=#194 id=194 data-nosnippet>194</a>                modifier::MonthRepr::<a href="modifier.rs.html#265">Long</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#59">MonthLong</a>(
+<a href=#195 id=195 data-nosnippet>195</a>                    modifier::<a href="modifier.rs.html#286-289">MonthLong</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#292-295">with_case_sensitive</a>(<a href="#190">modifier</a>.case_sensitive),
+<a href=#196 id=196 data-nosnippet>196</a>                ),
+<a href=#197 id=197 data-nosnippet>197</a>                modifier::MonthRepr::<a href="modifier.rs.html#263">Numerical</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#61">MonthNumerical</a>(
+<a href=#198 id=198 data-nosnippet>198</a>                    modifier::<a href="modifier.rs.html#300-303">MonthNumerical</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#306-309">with_padding</a>(<a href="#190">modifier</a>.padding),
+<a href=#199 id=199 data-nosnippet>199</a>                ),
+<a href=#200 id=200 data-nosnippet>200</a>            },
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="attr">#[expect(deprecated)]
+<a href=#202 id=202 data-nosnippet>202</a>            </span>Component::<a href="#101">Weekday</a>(modifier) =&gt; <span class="kw">match </span><a href="#202">modifier</a>.repr {
+<a href=#203 id=203 data-nosnippet>203</a>                modifier::WeekdayRepr::<a href="modifier.rs.html#365">Short</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#65">WeekdayShort</a>(
+<a href=#204 id=204 data-nosnippet>204</a>                    modifier::<a href="modifier.rs.html#380-383">WeekdayShort</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#386-389">with_case_sensitive</a>(<a href="#202">modifier</a>.case_sensitive),
+<a href=#205 id=205 data-nosnippet>205</a>                ),
+<a href=#206 id=206 data-nosnippet>206</a>                modifier::WeekdayRepr::<a href="modifier.rs.html#367">Long</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#67">WeekdayLong</a>(
+<a href=#207 id=207 data-nosnippet>207</a>                    modifier::<a href="modifier.rs.html#394-397">WeekdayLong</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#400-403">with_case_sensitive</a>(<a href="#202">modifier</a>.case_sensitive),
+<a href=#208 id=208 data-nosnippet>208</a>                ),
+<a href=#209 id=209 data-nosnippet>209</a>                modifier::WeekdayRepr::<a href="modifier.rs.html#371">Sunday</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#69">WeekdaySunday</a>(
+<a href=#210 id=210 data-nosnippet>210</a>                    modifier::<a href="modifier.rs.html#408-411">WeekdaySunday</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#414-417">with_one_indexed</a>(<a href="#202">modifier</a>.one_indexed),
+<a href=#211 id=211 data-nosnippet>211</a>                ),
+<a href=#212 id=212 data-nosnippet>212</a>                modifier::WeekdayRepr::<a href="modifier.rs.html#375">Monday</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#71">WeekdayMonday</a>(
+<a href=#213 id=213 data-nosnippet>213</a>                    modifier::<a href="modifier.rs.html#422-425">WeekdayMonday</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#428-431">with_one_indexed</a>(<a href="#202">modifier</a>.one_indexed),
+<a href=#214 id=214 data-nosnippet>214</a>                ),
+<a href=#215 id=215 data-nosnippet>215</a>            },
+<a href=#216 id=216 data-nosnippet>216</a>            <span class="attr">#[expect(deprecated)]
+<a href=#217 id=217 data-nosnippet>217</a>            </span>Component::<a href="#107">WeekNumber</a>(modifier) =&gt; <span class="kw">match </span><a href="#217">modifier</a>.repr {
+<a href=#218 id=218 data-nosnippet>218</a>                modifier::WeekNumberRepr::<a href="modifier.rs.html#472">Iso</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#74">WeekNumberIso</a>(
+<a href=#219 id=219 data-nosnippet>219</a>                    modifier::<a href="modifier.rs.html#483-486">WeekNumberIso</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#489-492">with_padding</a>(<a href="#217">modifier</a>.padding),
+<a href=#220 id=220 data-nosnippet>220</a>                ),
+<a href=#221 id=221 data-nosnippet>221</a>                modifier::WeekNumberRepr::<a href="modifier.rs.html#474">Sunday</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#76">WeekNumberSunday</a>(
+<a href=#222 id=222 data-nosnippet>222</a>                    modifier::<a href="modifier.rs.html#499-502">WeekNumberSunday</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#505-508">with_padding</a>(<a href="#217">modifier</a>.padding),
+<a href=#223 id=223 data-nosnippet>223</a>                ),
+<a href=#224 id=224 data-nosnippet>224</a>                modifier::WeekNumberRepr::<a href="modifier.rs.html#476">Monday</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#78">WeekNumberMonday</a>(
+<a href=#225 id=225 data-nosnippet>225</a>                    modifier::<a href="modifier.rs.html#515-518">WeekNumberMonday</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#521-524">with_padding</a>(<a href="#217">modifier</a>.padding),
+<a href=#226 id=226 data-nosnippet>226</a>                ),
+<a href=#227 id=227 data-nosnippet>227</a>            },
+<a href=#228 id=228 data-nosnippet>228</a>            <span class="attr">#[expect(deprecated)]
+<a href=#229 id=229 data-nosnippet>229</a>            </span>Component::<a href="#110">Hour</a>(modifier) =&gt; {
+<a href=#230 id=230 data-nosnippet>230</a>                <span class="kw">if </span><a href="#229">modifier</a>.is_12_hour_clock {
+<a href=#231 id=231 data-nosnippet>231</a>                    <span class="self">Self</span>::<a href="format_description_v3.rs.html#100">Hour12</a>(modifier::<a href="modifier.rs.html#818-821">Hour12</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#824-827">with_padding</a>(<a href="#229">modifier</a>.padding))
+<a href=#232 id=232 data-nosnippet>232</a>                } <span class="kw">else </span>{
+<a href=#233 id=233 data-nosnippet>233</a>                    <span class="self">Self</span>::<a href="format_description_v3.rs.html#102">Hour24</a>(modifier::<a href="modifier.rs.html#832-835">Hour24</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#838-841">with_padding</a>(<a href="#229">modifier</a>.padding))
+<a href=#234 id=234 data-nosnippet>234</a>                }
+<a href=#235 id=235 data-nosnippet>235</a>            }
+<a href=#236 id=236 data-nosnippet>236</a>            <span class="attr">#[expect(deprecated)]
+<a href=#237 id=237 data-nosnippet>237</a>            </span>Component::<a href="#117">UnixTimestamp</a>(modifier) =&gt; <span class="kw">match </span><a href="#237">modifier</a>.precision {
+<a href=#238 id=238 data-nosnippet>238</a>                modifier::UnixTimestampPrecision::<a href="modifier.rs.html#1054">Second</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#120">UnixTimestampSecond</a>(
+<a href=#239 id=239 data-nosnippet>239</a>                    modifier::<a href="modifier.rs.html#1065-1068">UnixTimestampSecond</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#240 id=240 data-nosnippet>240</a>                        .<a href="modifier.rs.html#1071-1074">with_sign_is_mandatory</a>(<a href="#237">modifier</a>.sign_is_mandatory),
+<a href=#241 id=241 data-nosnippet>241</a>                ),
+<a href=#242 id=242 data-nosnippet>242</a>                modifier::UnixTimestampPrecision::<a href="modifier.rs.html#1056">Millisecond</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#122">UnixTimestampMillisecond</a>(
+<a href=#243 id=243 data-nosnippet>243</a>                    modifier::<a href="modifier.rs.html#1079-1082">UnixTimestampMillisecond</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#244 id=244 data-nosnippet>244</a>                        .<a href="modifier.rs.html#1085-1088">with_sign_is_mandatory</a>(<a href="#237">modifier</a>.sign_is_mandatory),
+<a href=#245 id=245 data-nosnippet>245</a>                ),
+<a href=#246 id=246 data-nosnippet>246</a>                modifier::UnixTimestampPrecision::<a href="modifier.rs.html#1058">Microsecond</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#124">UnixTimestampMicrosecond</a>(
+<a href=#247 id=247 data-nosnippet>247</a>                    modifier::<a href="modifier.rs.html#1093-1096">UnixTimestampMicrosecond</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#248 id=248 data-nosnippet>248</a>                        .<a href="modifier.rs.html#1099-1102">with_sign_is_mandatory</a>(<a href="#237">modifier</a>.sign_is_mandatory),
+<a href=#249 id=249 data-nosnippet>249</a>                ),
+<a href=#250 id=250 data-nosnippet>250</a>                modifier::UnixTimestampPrecision::<a href="modifier.rs.html#1060">Nanosecond</a> =&gt; <span class="self">Self</span>::<a href="format_description_v3.rs.html#126">UnixTimestampNanosecond</a>(
+<a href=#251 id=251 data-nosnippet>251</a>                    modifier::<a href="modifier.rs.html#1107-1110">UnixTimestampNanosecond</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#252 id=252 data-nosnippet>252</a>                        .<a href="modifier.rs.html#1113-1116">with_sign_is_mandatory</a>(<a href="#237">modifier</a>.sign_is_mandatory),
+<a href=#253 id=253 data-nosnippet>253</a>                ),
+<a href=#254 id=254 data-nosnippet>254</a>            },
+<a href=#255 id=255 data-nosnippet>255</a>            <span class="attr">#[expect(deprecated)]
+<a href=#256 id=256 data-nosnippet>256</a>            </span>Component::<a href="#123">Year</a>(modifier) =&gt; {
+<a href=#257 id=257 data-nosnippet>257</a>                <span class="kw">match </span>(<a href="#256">modifier</a>.iso_week_based, <a href="#256">modifier</a>.repr, <a href="#256">modifier</a>.range) {
+<a href=#258 id=258 data-nosnippet>258</a>                    (<span class="bool-val">true</span>, modifier::YearRepr::<a href="modifier.rs.html#561">Full</a>, modifier::YearRange::<a href="modifier.rs.html#579">Standard</a>) =&gt; {
+<a href=#259 id=259 data-nosnippet>259</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#86">IsoYearFullStandardRange</a>(
+<a href=#260 id=260 data-nosnippet>260</a>                            modifier::<a href="modifier.rs.html#650-656">IsoYearFullStandardRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#261 id=261 data-nosnippet>261</a>                                .<a href="modifier.rs.html#659-664">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#262 id=262 data-nosnippet>262</a>                                .<a href="modifier.rs.html#659-664">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#263 id=263 data-nosnippet>263</a>                        )
+<a href=#264 id=264 data-nosnippet>264</a>                    }
+<a href=#265 id=265 data-nosnippet>265</a>                    (<span class="bool-val">true</span>, modifier::YearRepr::<a href="modifier.rs.html#561">Full</a>, modifier::YearRange::<a href="modifier.rs.html#584">Extended</a>) =&gt; {
+<a href=#266 id=266 data-nosnippet>266</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#84">IsoYearFullExtendedRange</a>(
+<a href=#267 id=267 data-nosnippet>267</a>                            modifier::<a href="modifier.rs.html#630-636">IsoYearFullExtendedRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#268 id=268 data-nosnippet>268</a>                                .<a href="modifier.rs.html#639-644">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#269 id=269 data-nosnippet>269</a>                                .<a href="modifier.rs.html#639-644">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#270 id=270 data-nosnippet>270</a>                        )
+<a href=#271 id=271 data-nosnippet>271</a>                    }
+<a href=#272 id=272 data-nosnippet>272</a>                    (<span class="bool-val">false</span>, modifier::YearRepr::<a href="modifier.rs.html#561">Full</a>, modifier::YearRange::<a href="modifier.rs.html#579">Standard</a>) =&gt; {
+<a href=#273 id=273 data-nosnippet>273</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#82">CalendarYearFullStandardRange</a>(
+<a href=#274 id=274 data-nosnippet>274</a>                            modifier::<a href="modifier.rs.html#610-616">CalendarYearFullStandardRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#275 id=275 data-nosnippet>275</a>                                .<a href="modifier.rs.html#619-624">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#276 id=276 data-nosnippet>276</a>                                .<a href="modifier.rs.html#619-624">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#277 id=277 data-nosnippet>277</a>                        )
+<a href=#278 id=278 data-nosnippet>278</a>                    }
+<a href=#279 id=279 data-nosnippet>279</a>                    (<span class="bool-val">false</span>, modifier::YearRepr::<a href="modifier.rs.html#561">Full</a>, modifier::YearRange::<a href="modifier.rs.html#584">Extended</a>) =&gt; {
+<a href=#280 id=280 data-nosnippet>280</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#80">CalendarYearFullExtendedRange</a>(
+<a href=#281 id=281 data-nosnippet>281</a>                            modifier::<a href="modifier.rs.html#590-596">CalendarYearFullExtendedRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#282 id=282 data-nosnippet>282</a>                                .<a href="modifier.rs.html#599-604">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#283 id=283 data-nosnippet>283</a>                                .<a href="modifier.rs.html#599-604">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#284 id=284 data-nosnippet>284</a>                        )
+<a href=#285 id=285 data-nosnippet>285</a>                    }
+<a href=#286 id=286 data-nosnippet>286</a>                    (<span class="bool-val">true</span>, modifier::YearRepr::<a href="modifier.rs.html#563">Century</a>, modifier::YearRange::<a href="modifier.rs.html#579">Standard</a>) =&gt; {
+<a href=#287 id=287 data-nosnippet>287</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#94">IsoYearCenturyStandardRange</a>(
+<a href=#288 id=288 data-nosnippet>288</a>                            modifier::<a href="modifier.rs.html#730-736">IsoYearCenturyStandardRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#289 id=289 data-nosnippet>289</a>                                .<a href="modifier.rs.html#739-744">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#290 id=290 data-nosnippet>290</a>                                .<a href="modifier.rs.html#739-744">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#291 id=291 data-nosnippet>291</a>                        )
+<a href=#292 id=292 data-nosnippet>292</a>                    }
+<a href=#293 id=293 data-nosnippet>293</a>                    (<span class="bool-val">true</span>, modifier::YearRepr::<a href="modifier.rs.html#563">Century</a>, modifier::YearRange::<a href="modifier.rs.html#584">Extended</a>) =&gt; {
+<a href=#294 id=294 data-nosnippet>294</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#92">IsoYearCenturyExtendedRange</a>(
+<a href=#295 id=295 data-nosnippet>295</a>                            modifier::<a href="modifier.rs.html#710-716">IsoYearCenturyExtendedRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#296 id=296 data-nosnippet>296</a>                                .<a href="modifier.rs.html#719-724">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#297 id=297 data-nosnippet>297</a>                                .<a href="modifier.rs.html#719-724">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#298 id=298 data-nosnippet>298</a>                        )
+<a href=#299 id=299 data-nosnippet>299</a>                    }
+<a href=#300 id=300 data-nosnippet>300</a>                    (<span class="bool-val">false</span>, modifier::YearRepr::<a href="modifier.rs.html#563">Century</a>, modifier::YearRange::<a href="modifier.rs.html#579">Standard</a>) =&gt; {
+<a href=#301 id=301 data-nosnippet>301</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#90">CalendarYearCenturyStandardRange</a>(
+<a href=#302 id=302 data-nosnippet>302</a>                            modifier::<a href="modifier.rs.html#690-696">CalendarYearCenturyStandardRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#303 id=303 data-nosnippet>303</a>                                .<a href="modifier.rs.html#699-704">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#304 id=304 data-nosnippet>304</a>                                .<a href="modifier.rs.html#699-704">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#305 id=305 data-nosnippet>305</a>                        )
+<a href=#306 id=306 data-nosnippet>306</a>                    }
+<a href=#307 id=307 data-nosnippet>307</a>                    (<span class="bool-val">false</span>, modifier::YearRepr::<a href="modifier.rs.html#563">Century</a>, modifier::YearRange::<a href="modifier.rs.html#584">Extended</a>) =&gt; {
+<a href=#308 id=308 data-nosnippet>308</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#88">CalendarYearCenturyExtendedRange</a>(
+<a href=#309 id=309 data-nosnippet>309</a>                            modifier::<a href="modifier.rs.html#670-676">CalendarYearCenturyExtendedRange</a>::<a href="modifier.rs.html#56-222">default</a>()
+<a href=#310 id=310 data-nosnippet>310</a>                                .<a href="modifier.rs.html#679-684">with_padding</a>(<a href="#256">modifier</a>.padding)
+<a href=#311 id=311 data-nosnippet>311</a>                                .<a href="modifier.rs.html#679-684">with_sign_is_mandatory</a>(<a href="#256">modifier</a>.sign_is_mandatory),
+<a href=#312 id=312 data-nosnippet>312</a>                        )
+<a href=#313 id=313 data-nosnippet>313</a>                    }
+<a href=#314 id=314 data-nosnippet>314</a>                    (<span class="bool-val">true</span>, modifier::YearRepr::<a href="modifier.rs.html#565">LastTwo</a>, modifier::YearRange::<a href="modifier.rs.html#579">Standard</a>) =&gt; {
+<a href=#315 id=315 data-nosnippet>315</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#98">IsoYearLastTwo</a>(
+<a href=#316 id=316 data-nosnippet>316</a>                            modifier::<a href="modifier.rs.html#766-769">IsoYearLastTwo</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#772-775">with_padding</a>(<a href="#256">modifier</a>.padding),
+<a href=#317 id=317 data-nosnippet>317</a>                        )
+<a href=#318 id=318 data-nosnippet>318</a>                    }
+<a href=#319 id=319 data-nosnippet>319</a>                    (<span class="bool-val">true</span>, modifier::YearRepr::<a href="modifier.rs.html#565">LastTwo</a>, modifier::YearRange::<a href="modifier.rs.html#584">Extended</a>) =&gt; {
+<a href=#320 id=320 data-nosnippet>320</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#98">IsoYearLastTwo</a>(
+<a href=#321 id=321 data-nosnippet>321</a>                            modifier::<a href="modifier.rs.html#766-769">IsoYearLastTwo</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#772-775">with_padding</a>(<a href="#256">modifier</a>.padding),
+<a href=#322 id=322 data-nosnippet>322</a>                        )
+<a href=#323 id=323 data-nosnippet>323</a>                    }
+<a href=#324 id=324 data-nosnippet>324</a>                    (<span class="bool-val">false</span>, modifier::YearRepr::<a href="modifier.rs.html#565">LastTwo</a>, modifier::YearRange::<a href="modifier.rs.html#579">Standard</a>) =&gt; {
+<a href=#325 id=325 data-nosnippet>325</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#96">CalendarYearLastTwo</a>(
+<a href=#326 id=326 data-nosnippet>326</a>                            modifier::<a href="modifier.rs.html#750-753">CalendarYearLastTwo</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#756-759">with_padding</a>(<a href="#256">modifier</a>.padding),
+<a href=#327 id=327 data-nosnippet>327</a>                        )
+<a href=#328 id=328 data-nosnippet>328</a>                    }
+<a href=#329 id=329 data-nosnippet>329</a>                    (<span class="bool-val">false</span>, modifier::YearRepr::<a href="modifier.rs.html#565">LastTwo</a>, modifier::YearRange::<a href="modifier.rs.html#584">Extended</a>) =&gt; {
+<a href=#330 id=330 data-nosnippet>330</a>                        <span class="self">Self</span>::<a href="format_description_v3.rs.html#96">CalendarYearLastTwo</a>(
+<a href=#331 id=331 data-nosnippet>331</a>                            modifier::<a href="modifier.rs.html#750-753">CalendarYearLastTwo</a>::<a href="modifier.rs.html#56-222">default</a>().<a href="modifier.rs.html#756-759">with_padding</a>(<a href="#256">modifier</a>.padding),
+<a href=#332 id=332 data-nosnippet>332</a>                        )
+<a href=#333 id=333 data-nosnippet>333</a>                    }
+<a href=#334 id=334 data-nosnippet>334</a>                }
+<a href=#335 id=335 data-nosnippet>335</a>            }
+<a href=#336 id=336 data-nosnippet>336</a>        }
+<a href=#337 id=337 data-nosnippet>337</a>    }
+<a href=#338 id=338 data-nosnippet>338</a>}
+</code></pre></div></section></main></body></html>

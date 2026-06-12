@@ -1,0 +1,511 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-macros-0.2.28/src/format_description/public/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-1ed95124.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="time_macros" data-themes="" data-resource-suffix="" data-rustdoc-version="1.98.0-nightly (b30f3df3b 2026-06-11)" data-channel="nightly" data-search-js="search-fd9372ac.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-fcd733ba.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">time_macros/format_description/public/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">mod </span><a href="component.rs.html#1-77">component</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">mod </span><a href="modifier.rs.html#1-352">modifier</a>;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">mod </span><a href="optimizing.rs.html#1-252">optimizing</a>;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/proc_macro/struct.TokenStream.html">proc_macro::TokenStream</a>;
+<a href=#6 id=6 data-nosnippet>6</a>
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><a href="component.rs.html#35-77"><span class="self">self</span>::component::Component</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><a href="../../lib.rs.html#77-81"><span class="kw">crate</span>::FormatDescriptionVersion</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><a href="../../to_tokens.rs.html#6-13"><span class="kw">crate</span>::to_tokens::ToTokenStream</a>;
+<a href=#10 id=10 data-nosnippet>10</a>
+<a href=#11 id=11 data-nosnippet>11</a><span class="expansion"><input id=expand-11 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>OwnedFormatItem {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; OwnedFormatItem {
+        OwnedFormatItem {
+            version: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.version),
+            inner: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.inner),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span></span></span><span class="attr">)]
+<a href=#12 id=12 data-nosnippet>12</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span><a href="#12-15">OwnedFormatItem</a> {
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) version: <a href="../../lib.rs.html#77-81">FormatDescriptionVersion</a>,
+<a href=#14 id=14 data-nosnippet>14</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) inner: <a href="#18-25">OwnedFormatItemInner</a>,
+<a href=#15 id=15 data-nosnippet>15</a>}
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="expansion"><input id=expand-17 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>OwnedFormatItemInner {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; OwnedFormatItemInner {
+        <span class="kw">match </span><span class="self">self </span>{
+            OwnedFormatItemInner::Literal(__self_0) =&gt;
+                OwnedFormatItemInner::Literal(::core::clone::Clone::clone(__self_0)),
+            OwnedFormatItemInner::StringLiteral(__self_0) =&gt;
+                OwnedFormatItemInner::StringLiteral(::core::clone::Clone::clone(__self_0)),
+            OwnedFormatItemInner::Component(__self_0) =&gt;
+                OwnedFormatItemInner::Component(::core::clone::Clone::clone(__self_0)),
+            OwnedFormatItemInner::Compound(__self_0) =&gt;
+                OwnedFormatItemInner::Compound(::core::clone::Clone::clone(__self_0)),
+            OwnedFormatItemInner::Optional { format: __self_0, item: __self_1
+                } =&gt;
+                OwnedFormatItemInner::Optional {
+                    format: ::core::clone::Clone::clone(__self_0),
+                    item: ::core::clone::Clone::clone(__self_1),
+                },
+            OwnedFormatItemInner::First(__self_0) =&gt;
+                OwnedFormatItemInner::First(::core::clone::Clone::clone(__self_0)),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span></span></span><span class="attr">)]
+<a href=#18 id=18 data-nosnippet>18</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum </span><a href="#18-25">OwnedFormatItemInner</a> {
+<a href=#19 id=19 data-nosnippet>19</a>    Literal(<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;),
+<a href=#20 id=20 data-nosnippet>20</a>    StringLiteral(<a href="https://doc.rust-lang.org/nightly/alloc/string/struct.String.html">String</a>),
+<a href=#21 id=21 data-nosnippet>21</a>    Component(<a href="component.rs.html#35-77">Component</a>),
+<a href=#22 id=22 data-nosnippet>22</a>    Compound(<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="self">Self</span>&gt;),
+<a href=#23 id=23 data-nosnippet>23</a>    Optional { format: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>, item: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="self">Self</span>&gt; },
+<a href=#24 id=24 data-nosnippet>24</a>    First(<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="self">Self</span>&gt;),
+<a href=#25 id=25 data-nosnippet>25</a>}
+<a href=#26 id=26 data-nosnippet>26</a>
+<a href=#27 id=27 data-nosnippet>27</a><span class="kw">impl </span><a href="../../to_tokens.rs.html#6-13">ToTokenStream</a> <span class="kw">for </span><a href="#12-15">OwnedFormatItem</a> {
+<a href=#28 id=28 data-nosnippet>28</a>    <span class="kw">fn </span>append_to(<span class="self">self</span>, ts: <span class="kw-2">&amp;mut </span><a href="https://doc.rust-lang.org/nightly/proc_macro/struct.TokenStream.html">TokenStream</a>) {
+<a href=#29 id=29 data-nosnippet>29</a>        <span class="kw">match </span><a class="self" href="#28">self</a>.version {
+<a href=#30 id=30 data-nosnippet>30</a>            FormatDescriptionVersion::<a href="../../lib.rs.html#78">V1</a> | FormatDescriptionVersion::<a href="../../lib.rs.html#79">V2</a> =&gt; <span class="kw">match </span><a class="self" href="#28">self</a>.inner {
+<a href=#31 id=31 data-nosnippet>31</a><span class="expansion"><input id=expand-31 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                OwnedFormatItemInner::<a href="#19">Literal</a>(bytes) =&gt; <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFormatItem"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"Literal"</span>, Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([<span class="kw">crate</span>::to_tokens::ToTokenTree::into_token_tree(Literal::byte_string(bytes.as_ref()))]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#32 id=32 data-nosnippet>32</a>                    BorrowedFormatItem::Literal(#(Literal::byte_string(bytes.as_ref())))
+<a href=#33 id=33 data-nosnippet>33</a>                }</span></span>,
+<a href=#34 id=34 data-nosnippet>34</a><span class="expansion"><input id=expand-34 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                OwnedFormatItemInner::<a href="#20">StringLiteral</a>(string) =&gt; <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFormatItem"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"StringLiteral"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([<span class="kw">crate</span>::to_tokens::ToTokenTree::into_token_tree(string.as_ref())]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#35 id=35 data-nosnippet>35</a>                    BorrowedFormatItem::StringLiteral(#(string.as_ref()))
+<a href=#36 id=36 data-nosnippet>36</a>                }</span></span>,
+<a href=#37 id=37 data-nosnippet>37</a><span class="expansion"><input id=expand-37 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                OwnedFormatItemInner::<a href="#21">Component</a>(component) =&gt; <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFormatItem"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"Component"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Literal::usize_unsuffixed(<span class="number">0</span>))]);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">':'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(component,
+                                ts_mut);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#38 id=38 data-nosnippet>38</a>                    BorrowedFormatItem::Component { <span class="number">0</span>: #S(component) }
+<a href=#39 id=39 data-nosnippet>39</a>                }</span></span>,
+<a href=#40 id=40 data-nosnippet>40</a>                OwnedFormatItemInner::<a href="#22">Compound</a>(items) =&gt; {
+<a href=#41 id=41 data-nosnippet>41</a>                    <span class="kw">let </span>items = <a href="#40">items</a>
+<a href=#42 id=42 data-nosnippet>42</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#43 id=43 data-nosnippet>43</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|item| {
+<a href=#44 id=44 data-nosnippet>44</a><span class="expansion"><input id=expand-44 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                            <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+    <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(<span class="self">Self </span>{
+            version: <span class="self">self</span>.version,
+            inner: item,
+        }, ts_mut);
+    ts_mut.extend([TokenTree::from(Punct::new(<span class="string">','</span>, Spacing::Alone))]);
+    ;
+    ;
+    ts
+}</span><span class="original"><a href="../../quote.rs.html#1-10">quote_!</a> { #S(<span class="self">Self </span>{ version: <span class="self">self</span>.version, inner: item }), }</span></span>
+<a href=#45 id=45 data-nosnippet>45</a>                        })
+<a href=#46 id=46 data-nosnippet>46</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.TokenStream.html">TokenStream</a>&gt;();
+<a href=#47 id=47 data-nosnippet>47</a><span class="expansion"><input id=expand-47 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFormatItem"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"Compound"</span>, Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Literal::usize_unsuffixed(<span class="number">0</span>))]);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">':'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">'&amp;'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::Group(Group::new(Delimiter::Bracket,
+                                                {
+                                                    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                                                    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                                                    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                                                    <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(items, ts_mut);
+                                                    ;
+                                                    ts
+                                                }))]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#48 id=48 data-nosnippet>48</a>                        BorrowedFormatItem::Compound { <span class="number">0</span>: <span class="kw-2">&amp;</span>[#S(items)] }
+<a href=#49 id=49 data-nosnippet>49</a>                    }</span></span>
+<a href=#50 id=50 data-nosnippet>50</a>                }
+<a href=#51 id=51 data-nosnippet>51</a>                OwnedFormatItemInner::<a href="#23">Optional</a> { format, item } =&gt; {
+<a href=#52 id=52 data-nosnippet>52</a>                    <span class="kw">if </span>!<a href="#51">format</a> {
+<a href=#53 id=53 data-nosnippet>53</a><span class="expansion"><input id=expand-53 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                        <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"internal error: entered unreachable code: {0}"</span>,
+            <span class="macro">format_args!</span>(<span class="string">"internal error: v1 and v2 format descriptions must format optional items"</span>)));
+}</span><span class="original"><a href="../../lib.rs.html#18-23">bug!</a>(<span class="string">"v1 and v2 format descriptions must format optional items"</span>)</span></span>
+<a href=#54 id=54 data-nosnippet>54</a>                    }
+<a href=#55 id=55 data-nosnippet>55</a><span class="expansion"><input id=expand-55 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFormatItem"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"Optional"</span>, Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Literal::usize_unsuffixed(<span class="number">0</span>))]);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">':'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">'&amp;'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(<span class="self">Self </span>{
+                                    version: <span class="self">self</span>.version,
+                                    inner: <span class="kw-2">*</span>item,
+                                }, ts_mut);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#56 id=56 data-nosnippet>56</a>                        BorrowedFormatItem::Optional {
+<a href=#57 id=57 data-nosnippet>57</a>                            <span class="number">0</span>: <span class="kw-2">&amp;</span>#S(<span class="self">Self </span>{ version: <span class="self">self</span>.version, inner: <span class="kw-2">*</span>item })
+<a href=#58 id=58 data-nosnippet>58</a>                        }
+<a href=#59 id=59 data-nosnippet>59</a>                    }</span></span>
+<a href=#60 id=60 data-nosnippet>60</a>                }
+<a href=#61 id=61 data-nosnippet>61</a>                OwnedFormatItemInner::<a href="#24">First</a>(items) =&gt; {
+<a href=#62 id=62 data-nosnippet>62</a>                    <span class="kw">let </span>items = <a href="#61">items</a>
+<a href=#63 id=63 data-nosnippet>63</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#64 id=64 data-nosnippet>64</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|item| {
+<a href=#65 id=65 data-nosnippet>65</a><span class="expansion"><input id=expand-65 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                            <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+    <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(<span class="self">Self </span>{
+            version: <span class="self">self</span>.version,
+            inner: item,
+        }, ts_mut);
+    ts_mut.extend([TokenTree::from(Punct::new(<span class="string">','</span>, Spacing::Alone))]);
+    ;
+    ;
+    ts
+}</span><span class="original"><a href="../../quote.rs.html#1-10">quote_!</a> { #S(<span class="self">Self </span>{ version: <span class="self">self</span>.version, inner: item }), }</span></span>
+<a href=#66 id=66 data-nosnippet>66</a>                        })
+<a href=#67 id=67 data-nosnippet>67</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.TokenStream.html">TokenStream</a>&gt;();
+<a href=#68 id=68 data-nosnippet>68</a><span class="expansion"><input id=expand-68 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFormatItem"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"First"</span>, Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Literal::usize_unsuffixed(<span class="number">0</span>))]);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">':'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">'&amp;'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::Group(Group::new(Delimiter::Bracket,
+                                                {
+                                                    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                                                    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                                                    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                                                    <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(items, ts_mut);
+                                                    ;
+                                                    ts
+                                                }))]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#69 id=69 data-nosnippet>69</a>                        BorrowedFormatItem::First { <span class="number">0</span>: <span class="kw-2">&amp;</span>[#S(items)] }
+<a href=#70 id=70 data-nosnippet>70</a>                    }</span></span>
+<a href=#71 id=71 data-nosnippet>71</a>                }
+<a href=#72 id=72 data-nosnippet>72</a>            },
+<a href=#73 id=73 data-nosnippet>73</a>            FormatDescriptionVersion::<a href="../../lib.rs.html#80">V3</a> =&gt; <span class="kw">match </span><a class="self" href="#28">self</a>.inner {
+<a href=#74 id=74 data-nosnippet>74</a>                OwnedFormatItemInner::<a href="#19">Literal</a>(<span class="kw">_</span>) =&gt; {
+<a href=#75 id=75 data-nosnippet>75</a><span class="expansion"><input id=expand-75 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"internal error: entered unreachable code: {0}"</span>,
+            <span class="macro">format_args!</span>(<span class="string">"internal error: v3 format descriptions should never have non-UTF8 literals"</span>)));
+}</span><span class="original"><a href="../../lib.rs.html#18-23">bug!</a>(<span class="string">"v3 format descriptions should never have non-UTF8 literals"</span>)</span></span>
+<a href=#76 id=76 data-nosnippet>76</a>                }
+<a href=#77 id=77 data-nosnippet>77</a><span class="expansion"><input id=expand-77 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                OwnedFormatItemInner::<a href="#20">StringLiteral</a>(string) =&gt; <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"FormatDescriptionV3Inner"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedLiteral"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([<span class="kw">crate</span>::to_tokens::ToTokenTree::into_token_tree(string.as_ref())]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#78 id=78 data-nosnippet>78</a>                    FormatDescriptionV3Inner::BorrowedLiteral(#(string.as_ref()))
+<a href=#79 id=79 data-nosnippet>79</a>                }</span></span>,
+<a href=#80 id=80 data-nosnippet>80</a>                OwnedFormatItemInner::<a href="#21">Component</a>(component) =&gt; {
+<a href=#81 id=81 data-nosnippet>81</a>                    <span class="comment">// v3 format descriptions have components directly on the item, not as a
+<a href=#82 id=82 data-nosnippet>82</a>                    // sub-enum. Swap out the name of the enum that is being constructed.
+<a href=#83 id=83 data-nosnippet>83</a>                    </span><span class="kw">let </span>tokens = <a href="#80">component</a>.<a href="../../to_tokens.rs.html#8-12">into_token_stream</a>();
+<a href=#84 id=84 data-nosnippet>84</a>                    <span class="kw">let </span><span class="kw-2">mut </span>iter = <a href="#83">tokens</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.peekable">peekable</a>();
+<a href=#85 id=85 data-nosnippet>85</a>                    <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(first) = <a href="#84">iter</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/adapters/peekable/struct.Peekable.html#method.peek_mut">peek_mut</a>() {
+<a href=#86 id=86 data-nosnippet>86</a>                        <span class="kw-2">*</span><a href="#85">first</a> = proc_macro::TokenTree::<a href="https://doc.rust-lang.org/nightly/proc_macro/enum.TokenTree.html#variant.Ident">Ident</a>(proc_macro::<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.Ident.html">Ident</a>::<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.Ident.html#method.new">new</a>(
+<a href=#87 id=87 data-nosnippet>87</a>                            <span class="string">"FormatDescriptionV3Inner"</span>,
+<a href=#88 id=88 data-nosnippet>88</a>                            proc_macro::<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.Span.html">Span</a>::<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.Span.html#method.mixed_site">mixed_site</a>(),
+<a href=#89 id=89 data-nosnippet>89</a>                        ));
+<a href=#90 id=90 data-nosnippet>90</a>                    } <span class="kw">else </span>{
+<a href=#91 id=91 data-nosnippet>91</a><span class="expansion"><input id=expand-91 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                        <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"internal error: entered unreachable code: {0}"</span>,
+            <span class="macro">format_args!</span>(<span class="string">"internal error: component should have at least one token"</span>)));
+}</span><span class="original"><a href="../../lib.rs.html#18-23">bug!</a>(<span class="string">"component should have at least one token"</span>)</span></span>
+<a href=#92 id=92 data-nosnippet>92</a>                    }
+<a href=#93 id=93 data-nosnippet>93</a>                    <a href="#28">ts</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.Extend.html#tymethod.extend">extend</a>(<a href="#84">iter</a>);
+<a href=#94 id=94 data-nosnippet>94</a>                }
+<a href=#95 id=95 data-nosnippet>95</a>                OwnedFormatItemInner::<a href="#22">Compound</a>(items) =&gt; {
+<a href=#96 id=96 data-nosnippet>96</a>                    <span class="kw">let </span>items = <a href="#95">items</a>
+<a href=#97 id=97 data-nosnippet>97</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#98 id=98 data-nosnippet>98</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|item| {
+<a href=#99 id=99 data-nosnippet>99</a><span class="expansion"><input id=expand-99 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                            <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+    <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(<span class="self">Self </span>{
+            version: <span class="self">self</span>.version,
+            inner: item,
+        }, ts_mut);
+    ts_mut.extend([TokenTree::from(Punct::new(<span class="string">','</span>, Spacing::Alone))]);
+    ;
+    ;
+    ts
+}</span><span class="original"><a href="../../quote.rs.html#1-10">quote_!</a> { #S(<span class="self">Self </span>{ version: <span class="self">self</span>.version, inner: item }), }</span></span>
+<a href=#100 id=100 data-nosnippet>100</a>                        })
+<a href=#101 id=101 data-nosnippet>101</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.TokenStream.html">TokenStream</a>&gt;();
+<a href=#102 id=102 data-nosnippet>102</a><span class="expansion"><input id=expand-102 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"FormatDescriptionV3Inner"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedCompound"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"const"</span>,
+                                                Span::mixed_site()))]);
+                            ts_mut.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                                                {
+                                                    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                                                    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                                                    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                                                    ts_mut.extend([TokenTree::from(Punct::new(<span class="string">'&amp;'</span>,
+                                                                        Spacing::Alone))]);
+                                                    ;
+                                                    ts_mut.extend([TokenTree::Group(Group::new(Delimiter::Bracket,
+                                                                        {
+                                                                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                                                                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                                                                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                                                                            <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(items, ts_mut);
+                                                                            ;
+                                                                            ts
+                                                                        }))]);
+                                                    ;
+                                                    ts
+                                                }))]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#103 id=103 data-nosnippet>103</a>                        FormatDescriptionV3Inner::BorrowedCompound(<span class="kw">const </span>{ <span class="kw-2">&amp;</span>[#S(items)] })
+<a href=#104 id=104 data-nosnippet>104</a>                    }</span></span>
+<a href=#105 id=105 data-nosnippet>105</a>                }
+<a href=#106 id=106 data-nosnippet>106</a>                OwnedFormatItemInner::<a href="#23">Optional</a> { format, item } =&gt; {
+<a href=#107 id=107 data-nosnippet>107</a><span class="expansion"><input id=expand-107 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"FormatDescriptionV3Inner"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedOptional"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"format"</span>,
+                                                Span::mixed_site()))]);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">':'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(format, ts_mut);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">','</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"item"</span>,
+                                                Span::mixed_site()))]);
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">':'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            ts_mut.extend([TokenTree::from(Punct::new(<span class="string">'&amp;'</span>,
+                                                Spacing::Alone))]);
+                            ;
+                            <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(<span class="self">Self </span>{
+                                    version: <span class="self">self</span>.version,
+                                    inner: <span class="kw-2">*</span>item,
+                                }, ts_mut);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#108 id=108 data-nosnippet>108</a>                        FormatDescriptionV3Inner::BorrowedOptional {
+<a href=#109 id=109 data-nosnippet>109</a>                            format: #S(format),
+<a href=#110 id=110 data-nosnippet>110</a>                            item: <span class="kw-2">&amp;</span>#S(<span class="self">Self </span>{ version: <span class="self">self</span>.version, inner: <span class="kw-2">*</span>item })
+<a href=#111 id=111 data-nosnippet>111</a>                        }
+<a href=#112 id=112 data-nosnippet>112</a>                    }</span></span>
+<a href=#113 id=113 data-nosnippet>113</a>                }
+<a href=#114 id=114 data-nosnippet>114</a>                OwnedFormatItemInner::<a href="#24">First</a>(items) =&gt; {
+<a href=#115 id=115 data-nosnippet>115</a>                    <span class="kw">let </span>items = <a href="#114">items</a>
+<a href=#116 id=116 data-nosnippet>116</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#117 id=117 data-nosnippet>117</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|item| {
+<a href=#118 id=118 data-nosnippet>118</a><span class="expansion"><input id=expand-118 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                            <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+    <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(<span class="self">Self </span>{
+            version: <span class="self">self</span>.version,
+            inner: item,
+        }, ts_mut);
+    ts_mut.extend([TokenTree::from(Punct::new(<span class="string">','</span>, Spacing::Alone))]);
+    ;
+    ;
+    ts
+}</span><span class="original"><a href="../../quote.rs.html#1-10">quote_!</a> { #S(<span class="self">Self </span>{ version: <span class="self">self</span>.version, inner: item }), }</span></span>
+<a href=#119 id=119 data-nosnippet>119</a>                        })
+<a href=#120 id=120 data-nosnippet>120</a>                        .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/proc_macro/struct.TokenStream.html">TokenStream</a>&gt;();
+<a href=#121 id=121 data-nosnippet>121</a><span class="expansion"><input id=expand-121 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                    <span class=expanded>{
+    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"FormatDescriptionV3Inner"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Joint)),
+                TokenTree::from(Punct::new(<span class="string">':'</span>, Spacing::Alone))]);
+    ;
+    ts.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"BorrowedFirst"</span>,
+                        Span::mixed_site()))]);
+    ts.extend([TokenTree::Group(Group::new(Delimiter::Parenthesis,
+                        {
+                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                            ts_mut.extend([TokenTree::from(Ident::new(<span class="kw-2">&amp;</span><span class="string">"const"</span>,
+                                                Span::mixed_site()))]);
+                            ts_mut.extend([TokenTree::Group(Group::new(Delimiter::Brace,
+                                                {
+                                                    <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                                                    <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                                                    <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                                                    ts_mut.extend([TokenTree::from(Punct::new(<span class="string">'&amp;'</span>,
+                                                                        Spacing::Alone))]);
+                                                    ;
+                                                    ts_mut.extend([TokenTree::Group(Group::new(Delimiter::Bracket,
+                                                                        {
+                                                                            <span class="kw">use </span>proc_macro::<span class="kw-2">*</span>;
+                                                                            <span class="kw">let </span><span class="kw-2">mut </span>ts = TokenStream::new();
+                                                                            <span class="kw">let </span>ts_mut = <span class="kw-2">&amp;mut </span>ts;
+                                                                            <span class="kw">crate</span>::to_tokens::ToTokenStream::append_to(items, ts_mut);
+                                                                            ;
+                                                                            ts
+                                                                        }))]);
+                                                    ;
+                                                    ts
+                                                }))]);
+                            ;
+                            ts
+                        }))]);
+    ;
+}</span><span class="original"><a href="../../quote.rs.html#12-17">quote_append!</a> { ts
+<a href=#122 id=122 data-nosnippet>122</a>                        FormatDescriptionV3Inner::BorrowedFirst(<span class="kw">const </span>{ <span class="kw-2">&amp;</span>[#S(items)] })
+<a href=#123 id=123 data-nosnippet>123</a>                    }</span></span>
+<a href=#124 id=124 data-nosnippet>124</a>                }
+<a href=#125 id=125 data-nosnippet>125</a>            },
+<a href=#126 id=126 data-nosnippet>126</a>        }
+<a href=#127 id=127 data-nosnippet>127</a>    }
+<a href=#128 id=128 data-nosnippet>128</a>}
+</code></pre></div></section></main></body></html>

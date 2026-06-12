@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Useful for libraries adding support for new SQL types. Apps should never need to call this."><title>infix_operator in diesel - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">diesel</a>::<wbr><a class="macro" href="#">infix_operator</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel/expression/operators.rs.html#234-263">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><span class="macro">macro_rules!</span> infix_operator {
+    (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$operator</span>:expr) =&gt; { ... };
+    (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$operator</span>:expr, backend: <span class="macro-nonterminal">$backend</span>:ty) =&gt; { ... };
+    (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$operator</span>:expr, $(<span class="macro-nonterminal">$return_ty</span>:tt)::<span class="kw-2">*</span>) =&gt; { ... };
+    (<span class="macro-nonterminal">$name</span>:ident, <span class="macro-nonterminal">$operator</span>:expr, $(<span class="macro-nonterminal">$return_ty</span>:tt)::<span class="kw-2">*</span>, backend: <span class="macro-nonterminal">$backend</span>:ty) =&gt; { ... };
+}</pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Useful for libraries adding support for new SQL types. Apps should never
+need to call this.</p>
+<p>This will create a new type with the given name. It will implement all
+methods needed to be used as an expression in Diesel, placing the given
+SQL between the two elements. The third argument specifies the SQL type
+that the operator returns. If it is not given, the type will be assumed
+to be <code>Bool</code>.</p>
+<p>If the operator is specific to a single backend, you can specify this by
+adding <code>backend: Pg</code> or similar as the last argument.</p>
+<p>It should be noted that the generated impls will not constrain the SQL
+types of the arguments. You should ensure that they are of the right
+type in your function which constructs the operator.</p>
+<p>Typically you would not expose the type that this generates directly. You’d
+expose a function (or trait) used to construct the expression, and a helper
+type which represents the return type of that function. See the source of
+<code>diesel::expression::expression_methods</code> and
+<code>diesel::expression::helper_types</code> for real world examples of this.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h2 id="possible-invocations"><a class="doc-anchor" href="#possible-invocations">§</a>Possible invocations</h2>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="comment">// The SQL type will be boolean. The backend will not be constrained
+</span><span class="macro">infix_operator!</span>(Matches, <span class="string">" @@ "</span>);
+
+<span class="comment">// Queries which try to execute `Contains` on a backend other than Pg
+// will fail to compile
+</span><span class="macro">infix_operator!</span>(Contains, <span class="string">" @&gt; "</span>, backend: Pg);
+
+<span class="comment">// The type of `Concat` will be `TsVector` rather than Bool
+</span><span class="macro">infix_operator!</span>(Concat, <span class="string">" || "</span>, TsVector);
+
+<span class="comment">// It is perfectly fine to have multiple operators with the same SQL.
+// Diesel will ensure that the queries are always unambiguous in which
+// operator applies
+</span><span class="macro">infix_operator!</span>(Or, <span class="string">" || "</span>, TsQuery);
+
+<span class="comment">// Specifying both the return types and the backend
+</span><span class="macro">infix_operator!</span>(And, <span class="string">" &amp;&amp; "</span>, TsQuery, backend: Pg);</code></pre></div>
+<h3 id="example-usage"><a class="doc-anchor" href="#example-usage">§</a>Example usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">diesel::infix_operator!</span>(MyEq, <span class="string">" = "</span>);
+
+<span class="kw">use </span>diesel::expression::AsExpression;
+
+<span class="comment">// Normally you would put this on a trait instead
+</span><span class="kw">fn </span>my_eq&lt;T, U, ST&gt;(left: T, right: U) -&gt; MyEq&lt;T, U::Expression&gt; <span class="kw">where
+    </span>T: Expression&lt;SqlType = ST&gt;,
+    U: AsExpression&lt;ST&gt;,
+    ST: SqlType + TypedExpressionType,
+{
+    MyEq::new(left, right.as_expression())
+}
+
+<span class="kw">let </span>users_with_name = users.select(id).filter(my_eq(name, <span class="string">"Sean"</span>));
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), users_with_name.first(connection));</code></pre></div>
+</div></details></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["JsonValidFlag","SqliteLimit","SqliteType"],"fn":["cancel_auto_extension","register_auto_extension","reset_auto_extension"],"mod":["expression","query_builder","sql_types"],"struct":["SerializedDatabase","Sqlite","SqliteBindValue","SqliteConnection","SqliteFunctionBehavior","SqliteReadOnlyBlob","SqliteValue"],"trait":["SqliteAggregateFunction"]};
