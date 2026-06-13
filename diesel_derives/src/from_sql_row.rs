@@ -7,10 +7,13 @@ use syn::parse_quote;
 use crate::model::Model;
 use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
-pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    Ok(wrap_in_dummy_mod(derive_inner(item)?))
+}
+
+pub fn derive_inner(mut item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
     let struct_ty = ty_for_foreign_derive(&item, &model)?;
-
     {
         item.generics.params.push(parse_quote!(__DB));
         item.generics.params.push(parse_quote!(__ST));
@@ -26,8 +29,7 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
             .push(parse_quote!(Self: diesel::deserialize::FromSql<__ST, __DB>));
     }
     let (impl_generics, _, where_clause) = item.generics.split_for_impl();
-
-    Ok(wrap_in_dummy_mod(quote! {
+    let implementation = quote! {
         // Need to put __ST and __DB after lifetimes but before const params
         impl #impl_generics diesel::deserialize::Queryable<__ST, __DB> for #struct_ty
         #where_clause
@@ -38,5 +40,6 @@ pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
                 diesel::deserialize::Result::Ok(row)
             }
         }
-    }))
+    };
+    Ok(implementation)
 }

@@ -1,0 +1,166 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Enum)]\n#[derive(Debug, diesel::Enum)]\n#[diesel(sql_type = schema::sql_types::Color)]\nenum Color {\n    Red,\n    Green,\n    Blue,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::deserialize::FromSql<schema::sql_types::Color, diesel::pg::Pg>
+    for Color {
+        fn from_sql(
+            value: diesel::pg::PgValue<'_>,
+        ) -> diesel::deserialize::Result<Self> {
+            match value.as_bytes() {
+                b"Red" => Ok(Self::Red),
+                b"Green" => Ok(Self::Green),
+                b"Blue" => Ok(Self::Blue),
+                raw_bytes => {
+                    Err(
+                        format!("unable to convert bytes {:?} to {}", raw_bytes, "Color")
+                            .into(),
+                    )
+                }
+            }
+        }
+    }
+
+    impl diesel::serialize::ToSql<schema::sql_types::Color, diesel::pg::Pg> for Color {
+        fn to_sql<'b>(
+            &'b self,
+            out: &mut diesel::serialize::Output<'b, '_, diesel::pg::Pg>,
+        ) -> diesel::serialize::Result {
+            use ::std::io::Write;
+            let bytes = match self {
+                Self::Red => b"Red".as_slice(),
+                Self::Green => b"Green".as_slice(),
+                Self::Blue => b"Blue".as_slice(),
+            };
+            out.write_all(bytes)?;
+            Ok(diesel::serialize::IsNull::No)
+        }
+    }
+
+    impl<'__expr> diesel::expression::AsExpression<schema::sql_types::Color>
+    for &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            schema::sql_types::Color,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            schema::sql_types::Color,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    #[diagnostic::do_not_recommend]
+    impl<
+        '__expr,
+    > diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<schema::sql_types::Color>,
+    > for &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<schema::sql_types::Color>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<schema::sql_types::Color>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    #[diagnostic::do_not_recommend]
+    impl<'__expr, '__expr2> diesel::expression::AsExpression<schema::sql_types::Color>
+    for &'__expr2 &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            schema::sql_types::Color,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            schema::sql_types::Color,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    #[diagnostic::do_not_recommend]
+    impl<
+        '__expr,
+        '__expr2,
+    > diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<schema::sql_types::Color>,
+    > for &'__expr2 &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<schema::sql_types::Color>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<schema::sql_types::Color>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<
+        __DB,
+    > diesel::serialize::ToSql<
+        diesel::sql_types::Nullable<schema::sql_types::Color>,
+        __DB,
+    > for Color
+    where
+        __DB: diesel::backend::Backend,
+        Self: diesel::serialize::ToSql<schema::sql_types::Color, __DB>,
+    {
+        fn to_sql<'__b>(
+            &'__b self,
+            out: &mut diesel::serialize::Output<'__b, '_, __DB>,
+        ) -> diesel::serialize::Result {
+            diesel::serialize::ToSql::<schema::sql_types::Color, __DB>::to_sql(self, out)
+        }
+    }
+    impl diesel::expression::AsExpression<schema::sql_types::Color> for Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            schema::sql_types::Color,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            schema::sql_types::Color,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<schema::sql_types::Color>,
+    > for Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<schema::sql_types::Color>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<schema::sql_types::Color>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<__DB, __ST> diesel::deserialize::Queryable<__ST, __DB> for Color
+    where
+        __DB: diesel::backend::Backend,
+        __ST: diesel::sql_types::SingleValue,
+        Self: diesel::deserialize::FromSql<__ST, __DB>,
+    {
+        type Row = Self;
+        fn build(row: Self) -> diesel::deserialize::Result<Self> {
+            diesel::deserialize::Result::Ok(row)
+        }
+    }
+};

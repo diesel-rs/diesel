@@ -14,6 +14,14 @@ name: CI Tests
 permissions:
   contents: "read"
 
+env:
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+  # Force HTTP/1.1 for crates.io downloads: HTTP/2 multiplexing against the
+  # CDN intermittently drops connections mid-stream (SSL "unexpected eof"),
+  # and cargo does not retry those, so CARGO_NET_RETRY alone cannot recover.
+  CARGO_HTTP_MULTIPLEXING: "false"
+
 # See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
 # This will ensure that only one commit will be running tests at a time on each PR.
 concurrency:

@@ -218,6 +218,16 @@ fn main() {
             })],
         ),
         (
+            "enum",
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__enum_1_(postgres).snap",
+                    "PostgreSQL Enum",
+                ),
+                Example::with_heading("diesel_derives__tests__enum_1_(mysql).snap", "MySQL Enum"),
+            ],
+        ),
+        (
             "from_sql_row",
             vec![Example::new("diesel_derives__tests__from_sql_row_1.snap")],
         ),
