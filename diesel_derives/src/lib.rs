@@ -183,6 +183,7 @@ fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///   that the type is `Sized`
+/// * `#[diesel(enum_type)]`, to indicate that the type represents a SQL side enum
 ///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/as_expression.md")))]
 #[cfg_attr(
@@ -2837,8 +2838,14 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 /// This derive enables an enum (with unit-variants only) to be serialized to the database as
 /// a byte-string and deserialized from the same representation from the database.
 ///
-/// This derive generates `FromSql` and `ToSql` implementations for the `diesel::pg::Pg` and
-/// `diesel::mysql::Mysql` backend if these are enabled at compile time.
+/// This derive generates `FromSql` and `ToSql` implementations for all backends based on the provided
+/// SQL type. It currently supports the following SQL types:
+///
+/// * `diesel::sql_types::Integer`, `diesel::sql_types::SmallInt`, `diesel::sql_types::BigInt`, `diesel::sql_types::TinyInt`
+///   and their unsigned variants for all backends to (de)serialize a Rust enum as integer values.
+///   This requires annotating every variant with an explicit discriminant value
+/// * `diesel::sql_types::Text` for all backend to (de)serialize a Rust enum as text values.
+/// * Any custom SQL type marked with `#[diesel(enum_type)]`
 ///
 /// Additional it internally generates the same implementations as `#[derive(FromSqlRow)]`
 /// and `#[derive(AsExpression)]`
@@ -2847,16 +2854,34 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 ///
 /// ## Required container attributes
 ///
-/// * `#[diesel(sql_type = path::to::MyEnumType)]`, specifies the database type this enum represents
+/// * `#[diesel(sql_type = path::to::MyEnumType)]`, specifies the database type this enum represents, can appear several times
+///
+/// ## Optional container attributes
+///
+/// * `#[diesel(rename_all = "case")]` to rename all enum variants according the provided scheme. The following schemes are supported:
+///      + `"lowercase"` to rename all variants to lower-case
+///      + `"UPPERCASE"` to rename all variants to upper-case
+///      + `"PascalCase"` to keep the provided Rust variant name
+///      + `"camelCase"` to rename all variants to camel-case
+///      + `"snake_case"` to rename all variants to snake-case
+///      + `"SCREAMING_SNAKE_CASE"` to rename all variants to screaming snake case
+///      + `"kebab-case"` to rename all variants to kebab-case
+///      + `"SCREAMING-KEBAB-CASE"` to rename all variants to screaming kebab case
+///
+/// ## Optional variant attributes
+///
+/// * `#[diesel(rename = "newSqlName")]` to provide an explicit name for the SQL side variant
 ///
 /// # Examples
+///
+/// ## Usage with database side Enums
 ///
 /// ```rust
 /// # extern crate diesel;
 /// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
-///
-/// #[derive(Debug, diesel::Enum, PartialEq)]
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
 /// #[diesel(sql_type = schema::sql_types::Color)]
 /// enum Color {
 ///     Red,
@@ -2866,14 +2891,63 @@ fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 /// # #[cfg(feature = "postgres")]
 /// # fn main() -> QueryResult<()> {
 /// # let connection = &mut connection_no_data();
-/// let r = diesel::select(Color::Red.into_sql::<schema::sql_types::Color>()).get_result::<Color>(connection)?;
+/// let r = diesel::select(Color::Red.into_sql::<schema::sql_types::Color>())
+///     .get_result::<Color>(connection)?;
 /// assert_eq!(r, Color::Red);
 /// Ok(())
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-#[cfg_attr(docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
+///
+/// ## Usage with a database side integer column
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = diesel::sql_types::Integer)]
+/// enum Color {
+///     // Explicit discriminants are required here
+///     Red = 1,
+///     Green = 2,
+///     Blue = 3
+/// }
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select(1.into_sql::<diesel::sql_types::Integer>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// ```
+///
+/// ## Usage with a database side text column
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = diesel::sql_types::Text)]
+/// #[diesel(rename_all = "SCREAMING_SNAKE_CASE")]
+/// enum Color {
+///     Red,
+///     Green,
+///     Blue,
+/// }
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select("RED".into_sql::<diesel::sql_types::Text>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// ```
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
 #[proc_macro_derive(Enum, attributes(diesel))]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
     derive_enum_inner(input.into()).into()

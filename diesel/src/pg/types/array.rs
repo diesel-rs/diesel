@@ -13,16 +13,16 @@ use crate::sql_types::{Array, HasSqlType, Nullable};
 #[diesel(sql_type = Array<T>)]
 /// Postgres allows multi-dimensional arrays of at most 6 dimensions. Internally they are stored as a flattened
 /// representation with the dimension information encoded in the header. This struct represents a
-/// multi-dimensional array with elements of type `T` as opposed to Vec<T> which can be used for 1d-arrays.
+/// multi-dimensional array with elements of type `T` as opposed to `Vec<T>` which can be used for 1d-arrays.
 pub struct NdArray<T> {
     /// A list that describes how many values for each dimension are returned
     pub dims: Vec<usize>,
     /// The actual data flattened to a single array
     ///
     /// This array contains values ordered by the left most dimension
-    /// which means there will be dim[0] values for the first element of the second dimension
-    /// followed by dim[0] values for the second element of the second dimensions
-    /// and so up to dim[1] times. Afterwards that number of values is repeated for dim[2],
+    /// which means there will be dim\[0\] values for the first element of the second dimension
+    /// followed by dim\[0\] values for the second element of the second dimensions
+    /// and so up to dim\[1\] times. Afterwards that number of values is repeated for dim\[2\],
     /// and so for all dimensions in the dimension field above
     pub data: Vec<T>,
 }

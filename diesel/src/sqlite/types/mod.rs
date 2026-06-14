@@ -1,4 +1,5 @@
 mod date_and_time;
+mod enum_;
 #[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 mod json;
 mod numeric;

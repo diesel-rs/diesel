@@ -8,12 +8,6 @@ use crate::model::Model;
 use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
-    let tokens = derive_inner(item)?;
-
-    Ok(wrap_in_dummy_mod(tokens))
-}
-
-pub fn derive_inner(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
     if model.sql_types.is_empty() {
         return Err(syn::Error::new(
@@ -24,14 +18,34 @@ pub fn derive_inner(item: DeriveInput) -> Result<TokenStream> {
 
     let struct_ty = ty_for_foreign_derive(&item, &model)?;
 
+    let sql_types = model.sql_types;
+
+    let tokens = derive_inner(
+        sql_types,
+        item.generics.clone(),
+        struct_ty,
+        model.foreign_derive,
+        model.not_sized,
+    )?;
+
+    Ok(wrap_in_dummy_mod(tokens))
+}
+
+pub fn derive_inner(
+    sql_types: Vec<syn::Type>,
+    generics: syn::Generics,
+    struct_ty: syn::Type,
+    foreign_derive: bool,
+    not_sized: bool,
+) -> Result<TokenStream> {
     // type generics are already handled by `ty_for_foreign_derive`
-    let (impl_generics_plain, _, where_clause_plain) = item.generics.split_for_impl();
+    let (impl_generics_plain, _, where_clause_plain) = generics.split_for_impl();
 
-    let mut generics = item.generics.clone();
-    generics.params.push(parse_quote!('__expr));
-    let (impl_generics, _, where_clause) = generics.split_for_impl();
+    let mut generics1 = generics.clone();
+    generics1.params.push(parse_quote!('__expr));
+    let (impl_generics, _, where_clause) = generics1.split_for_impl();
 
-    let mut generics2 = generics.clone();
+    let mut generics2 = generics1.clone();
     generics2.params.push(parse_quote!('__expr2));
     let (impl_generics2, _, where_clause2) = generics2.split_for_impl();
 
@@ -43,7 +57,7 @@ pub fn derive_inner(item: DeriveInput) -> Result<TokenStream> {
     // Expression` as downstream-extensible. Diesel's own `foreign_impls` cover the
     // standard-library primitives (`String`, `i32`, `bool`, ...) so users get
     // `Rc<String>`/`Arc<String>` field support automatically.
-    let wrappers: Vec<syn::Path> = if model.foreign_derive {
+    let wrappers: Vec<syn::Path> = if foreign_derive {
         vec![
             parse_quote!(alloc::rc::Rc),
             parse_quote!(alloc::sync::Arc),
@@ -53,9 +67,9 @@ pub fn derive_inner(item: DeriveInput) -> Result<TokenStream> {
         Vec::new()
     };
 
-    let tokens = model.sql_types.iter().map(|sql_type| {
+    let tokens = sql_types.iter().map(|sql_type| {
 
-        let mut to_sql_generics = item.generics.clone();
+        let mut to_sql_generics = generics.clone();
         to_sql_generics.params.push(parse_quote!(__DB));
         to_sql_generics.make_where_clause().predicates.push(parse_quote!(__DB: diesel::backend::Backend));
         to_sql_generics.make_where_clause().predicates.push(parse_quote!(Self: diesel::serialize::ToSql<#sql_type, __DB>));
@@ -169,7 +183,7 @@ pub fn derive_inner(item: DeriveInput) -> Result<TokenStream> {
         ));
         let wrapper_owned = quote!( #( #wrapper_owned )* );
 
-        if model.not_sized {
+        if not_sized {
             quote!(
                 #tokens
 

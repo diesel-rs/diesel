@@ -288,6 +288,7 @@ mod schema {
         #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
         #[cfg_attr(feature = "postgres", diesel(postgres_type(name = "color")))]
         #[cfg_attr(feature = "mysql", diesel(mysql_type(name = "Enum")))]
+        #[diesel(enum_type)]
         pub struct Color;
     }
 

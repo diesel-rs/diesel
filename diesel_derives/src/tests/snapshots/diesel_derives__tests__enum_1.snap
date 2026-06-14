@@ -6,41 +6,93 @@ info:
 ---
 const _: () = {
     use diesel;
-    impl diesel::deserialize::FromSql<schema::sql_types::Color, diesel::pg::Pg>
-    for Color {
+    impl<__DB> diesel::deserialize::FromSql<schema::sql_types::Color, __DB> for Color
+    where
+        __DB: diesel::backend::Backend,
+        schema::sql_types::Color: diesel::sql_types::EnumSqlType<false, __DB>,
+        <schema::sql_types::Color as diesel::sql_types::EnumSqlType<
+            false,
+            __DB,
+        >>::Strategy: diesel::internal::derives::enum_::EnumMapping<__DB>,
+    {
         fn from_sql(
-            value: diesel::pg::PgValue<'_>,
+            value: <__DB as diesel::backend::Backend>::RawValue<'_>,
         ) -> diesel::deserialize::Result<Self> {
-            match value.as_bytes() {
-                b"Red" => Ok(Self::Red),
-                b"Green" => Ok(Self::Green),
-                b"Blue" => Ok(Self::Blue),
-                raw_bytes => {
-                    Err(
-                        format!("unable to convert bytes {:?} to {}", raw_bytes, "Color")
-                            .into(),
-                    )
-                }
+            const VARIANTS: &[diesel::internal::derives::enum_::EnumVariant] = &[
+                diesel::internal::derives::enum_::EnumVariant {
+                    discriminant: 0i128,
+                    rust_name: stringify!(Red),
+                    sql_name: "Red",
+                },
+                diesel::internal::derives::enum_::EnumVariant {
+                    discriminant: 1i128,
+                    rust_name: stringify!(Green),
+                    sql_name: "Green",
+                },
+                diesel::internal::derives::enum_::EnumVariant {
+                    discriminant: 2i128,
+                    rust_name: stringify!(Blue),
+                    sql_name: "Blue",
+                },
+            ];
+            let idx = <<schema::sql_types::Color as diesel::sql_types::EnumSqlType<
+                false,
+                __DB,
+            >>::Strategy as diesel::internal::derives::enum_::EnumMapping<
+                __DB,
+            >>::map_from_database_value(value, stringify!(Color), VARIANTS)?;
+            match idx {
+                0usize => Ok(Self::Red),
+                1usize => Ok(Self::Green),
+                2usize => Ok(Self::Blue),
+                _ => unreachable!("We construct all relevant variants"),
             }
         }
     }
-
-    impl diesel::serialize::ToSql<schema::sql_types::Color, diesel::pg::Pg> for Color {
+    impl<__DB> diesel::serialize::ToSql<schema::sql_types::Color, __DB> for Color
+    where
+        __DB: diesel::backend::Backend,
+        schema::sql_types::Color: diesel::sql_types::EnumSqlType<false, __DB>,
+        <schema::sql_types::Color as diesel::sql_types::EnumSqlType<
+            false,
+            __DB,
+        >>::Strategy: diesel::internal::derives::enum_::EnumMapping<__DB>,
+    {
         fn to_sql<'b>(
             &'b self,
-            out: &mut diesel::serialize::Output<'b, '_, diesel::pg::Pg>,
+            output: &mut diesel::serialize::Output<'b, '_, __DB>,
         ) -> diesel::serialize::Result {
-            use ::std::io::Write;
-            let bytes = match self {
-                Self::Red => b"Red".as_slice(),
-                Self::Green => b"Green".as_slice(),
-                Self::Blue => b"Blue".as_slice(),
+            let variant = match self {
+                Self::Red => {
+                    &diesel::internal::derives::enum_::EnumVariant {
+                        discriminant: 0i128,
+                        rust_name: stringify!(Red),
+                        sql_name: "Red",
+                    }
+                }
+                Self::Green => {
+                    &diesel::internal::derives::enum_::EnumVariant {
+                        discriminant: 1i128,
+                        rust_name: stringify!(Green),
+                        sql_name: "Green",
+                    }
+                }
+                Self::Blue => {
+                    &diesel::internal::derives::enum_::EnumVariant {
+                        discriminant: 2i128,
+                        rust_name: stringify!(Blue),
+                        sql_name: "Blue",
+                    }
+                }
             };
-            out.write_all(bytes)?;
-            Ok(diesel::serialize::IsNull::No)
+            <<schema::sql_types::Color as diesel::sql_types::EnumSqlType<
+                false,
+                __DB,
+            >>::Strategy as diesel::internal::derives::enum_::EnumMapping<
+                __DB,
+            >>::map_to_database_value(output, variant)
         }
     }
-
     impl<'__expr> diesel::expression::AsExpression<schema::sql_types::Color>
     for &'__expr Color {
         type Expression = diesel::internal::derives::as_expression::Bound<

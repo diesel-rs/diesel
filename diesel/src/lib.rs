@@ -344,6 +344,7 @@ pub mod sqlite;
 #[macro_use]
 mod reexport_ambiguities;
 mod type_impls;
+pub mod types;
 mod util;
 
 #[doc(hidden)]
@@ -844,8 +845,6 @@ pub mod prelude {
         ConnectionError, ConnectionResult, OptionalEmptyChangesetExtension, OptionalExtension,
         QueryResult,
     };
-    #[doc(inline)]
-    pub use diesel_derives::Enum;
     #[doc(inline)]
     pub use diesel_derives::allow_tables_to_appear_in_same_query;
     #[doc(inline)]
