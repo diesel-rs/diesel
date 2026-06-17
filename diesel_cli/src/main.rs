@@ -272,6 +272,15 @@ fn regenerate_schema_if_file_specified(
     tracing::debug!("Regenerate schema if required");
 
     let config = Config::read(config_file)?.print_schema;
+    let multi_schema_safe_tables = if config.has_multiple_schema() {
+        let mut connection = InferConnection::from_maybe_url(database_url.clone())?;
+        Some(print_schema::all_safe_tables_for_multi_schema(
+            &mut connection,
+            &config,
+        )?)
+    } else {
+        None
+    };
     for config in config.all_configs.values() {
         if let Some(ref path) = config.file {
             let mut connection = InferConnection::from_maybe_url(database_url.clone())?;
@@ -280,7 +289,11 @@ fn regenerate_schema_if_file_specified(
                     .map_err(|e| crate::errors::Error::IoError(e, Some(parent.to_owned())))?;
             }
 
-            let schema = print_schema::output_schema(&mut connection, config)?;
+            let schema = print_schema::output_schema(
+                &mut connection,
+                config,
+                multi_schema_safe_tables.as_deref(),
+            )?;
             if locked_schema {
                 let old_buf = std::fs::read_to_string(path)
                     .map_err(|e| crate::errors::Error::IoError(e, Some(path.to_owned())))?;

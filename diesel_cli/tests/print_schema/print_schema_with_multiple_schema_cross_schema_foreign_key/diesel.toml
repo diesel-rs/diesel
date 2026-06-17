@@ -1,0 +1,9 @@
+[print_schema.game]
+file = "src/schema1.rs"
+with_docs = true
+schema = "game"
+
+[print_schema.people]
+file = "src/schema2.rs"
+with_docs = true
+schema = "people"

@@ -474,6 +474,34 @@ fn print_schema_with_multiple_schema() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
+    let test_name = "print_schema_with_multiple_schema_cross_schema_foreign_key";
+    let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("print_schema")
+        .join(test_name);
+    let config = read_file(&test_path.join("diesel.toml"));
+    let p = project(test_name).file("diesel.toml", &config).build();
+
+    p.command("setup").run();
+
+    let schema = read_file(&backend_file_path(test_name, "schema.sql"));
+    p.create_migration("12345_create_schema", &schema, None, None);
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let schema = p.file_contents("src/schema1.rs").replace("\r\n", "\n");
+    assert!(
+        schema.contains("diesel::joinable!(game_session -> api_token (api_token_id));"),
+        "expected schema1.rs to contain a joinable! for the cross-schema foreign key, got:\n{schema}"
+    );
+    assert!(
+        schema.contains("diesel::allow_tables_to_appear_in_same_query!(api_token, game_session,);"),
+        "expected schema1.rs to contain allow_tables_to_appear_in_same_query! for the cross-schema foreign key, got:\n{schema}"
+    );
+}
+#[test]
 #[cfg(feature = "sqlite")]
 fn print_schema_sqlite_primary_key_as_bigint() {
     test_print_schema(

@@ -339,8 +339,18 @@ pub fn run_infer_schema(
         .set_filter(&args)?
         .update_config(args)?
         .print_schema;
+    let multi_schema_safe_tables = if root_config.has_multiple_schema() {
+        Some(all_safe_tables_for_multi_schema(&mut conn, &root_config)?)
+    } else {
+        None
+    };
     for config in root_config.all_configs.values() {
-        run_print_schema(&mut conn, config, &mut stdout())?;
+        run_print_schema(
+            &mut conn,
+            config,
+            &mut stdout(),
+            multi_schema_safe_tables.as_deref(),
+        )?;
     }
 
     Ok(())
@@ -387,8 +397,9 @@ pub fn run_print_schema<W: IoWrite>(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
     output: &mut W,
+    multi_schema_safe_tables: Option<&[TableName]>,
 ) -> Result<(), crate::errors::Error> {
-    let schema = output_schema(connection, config)?;
+    let schema = output_schema(connection, config, multi_schema_safe_tables)?;
 
     output
         .write_all(schema.as_bytes())
@@ -625,10 +636,40 @@ fn load_custom_types(
     })
 }
 
+fn safe_tables_for_config(
+    connection: &mut InferConnection,
+    config: &config::PrintSchema,
+) -> Result<Vec<TableName>, crate::errors::Error> {
+    let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
+    let table_names = filter_table_names(
+        &unfiltered_table_names,
+        &config.filter,
+        config.include_views,
+    );
+    Ok(filter_column_structure(
+        &table_names,
+        SupportedQueryRelationStructures::Table,
+    ))
+}
+
+pub(crate) fn all_safe_tables_for_multi_schema(
+    connection: &mut InferConnection,
+    root_config: &config::RootPrintSchema,
+) -> Result<Vec<TableName>, crate::errors::Error> {
+    let mut tables = Vec::new();
+    for config in root_config.all_configs.values() {
+        tables.extend(safe_tables_for_config(connection, config)?);
+    }
+    tables.sort();
+    tables.dedup();
+    Ok(tables)
+}
+
 #[tracing::instrument(skip(connection))]
 pub fn output_schema(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
+    multi_schema_safe_tables: Option<&[TableName]>,
 ) -> Result<String, crate::errors::Error> {
     let backend = Backend::for_connection(connection);
     let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
@@ -639,13 +680,17 @@ pub fn output_schema(
     );
 
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
-    let safe_tables =
-        &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table);
+    let current_schema_safe_tables =
+        filter_column_structure(&table_names, SupportedQueryRelationStructures::Table);
+    let fk_safe_tables = multi_schema_safe_tables.unwrap_or(&current_schema_safe_tables);
     let foreign_keys_for_allow_tables =
-        filter_foreign_keys_for_grouping(&foreign_keys, safe_tables);
+        filter_foreign_keys_for_grouping(&foreign_keys, fk_safe_tables);
     let duplicate_foreign_keys = duplicated_foreign_keys(&foreign_keys);
     let foreign_keys_for_joinable =
-        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, safe_tables);
+        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, fk_safe_tables)
+            .into_iter()
+            .filter(|fk| current_schema_safe_tables.contains(&fk.child_table))
+            .collect::<Vec<_>>();
     let foreign_keys_for_joinable =
         remove_duplicated_foreign_keys(&foreign_keys_for_joinable, &duplicate_foreign_keys);
 
@@ -1154,7 +1199,22 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
                 &self.fk_constraints_for_allow_tables,
             ),
             AllowTablesToAppearInSameQueryConfig::AllTables => {
-                vec![self.data.iter().map(|table| table.table_name()).collect()]
+                let all_local_tables: Vec<_> =
+                    self.data.iter().map(|table| table.table_name()).collect();
+                if all_local_tables.len() >= 2 {
+                    vec![all_local_tables]
+                } else {
+                    foreign_key_table_groups(
+                        self.data
+                            .iter()
+                            .filter_map(|t| match t {
+                                QueryRelationData::View(_) => None,
+                                QueryRelationData::Table(table_data) => Some(table_data),
+                            })
+                            .collect(),
+                        &self.fk_constraints_for_allow_tables,
+                    )
+                }
             }
             AllowTablesToAppearInSameQueryConfig::None => vec![],
         };
