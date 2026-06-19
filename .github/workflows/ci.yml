@@ -92,8 +92,8 @@ jobs:
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev postgresql
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libpq-dev postgresql
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
@@ -103,15 +103,15 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libsqlite3-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libsqlite3-dev
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'mysql'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libtirpc-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libtirpc-dev
           sudo systemctl start mysql.service
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo "MYSQL_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
@@ -305,8 +305,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev
 
       - name: Run compile tests
         shell: bash
@@ -341,8 +341,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
 
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
@@ -450,8 +450,8 @@ jobs:
 
       - name: Install postgres (Linux)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev postgresql valgrind
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libpq-dev postgresql valgrind
           echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
@@ -497,8 +497,8 @@ jobs:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Mysql (Linux)
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libmysqlclient-dev llvm libtirpc-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libmysqlclient-dev llvm libtirpc-dev
           sudo systemctl start mysql.service
           sleep 5
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
@@ -557,8 +557,8 @@ jobs:
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       - name: Check diesel_derives
         run: cargo +1.88.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
       - name: Check diesel
