@@ -6,6 +6,7 @@ use sqlite_wasm_rs as ffi;
 
 mod bind_collector;
 mod functions;
+mod hooks;
 mod limits;
 mod owned_row;
 mod raw;
@@ -327,6 +328,16 @@ impl MultiConnectionHelper for SqliteConnection {
     ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
         lookup.downcast_mut()
     }
+}
+
+/// The decision returned by an [`on_commit`](SqliteConnection::on_commit)
+/// callback, controlling whether a pending commit completes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitDecision {
+    /// Let the commit proceed normally.
+    Proceed,
+    /// Convert the commit into a rollback.
+    Rollback,
 }
 
 impl SqliteConnection {
@@ -807,9 +818,7 @@ impl SqliteConnection {
 
         let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
             statement_cache: StatementCache::new(),
-            raw_connection: RawConnection {
-                internal_connection: db,
-            },
+            raw_connection: RawConnection::from_ptr(db),
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::default_instrumentation(),
