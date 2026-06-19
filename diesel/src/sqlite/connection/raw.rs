@@ -11,6 +11,7 @@ use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
+use super::trace::{SqliteTraceEvent, SqliteTraceFlags, TRACE_PROFILE, TRACE_ROW, TRACE_STMT};
 use super::{BusyDecision, CommitDecision, ProgressDecision};
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
@@ -67,6 +68,8 @@ pub(super) struct RawConnection {
     busy_handler: Option<Box<dyn FnMut(i32) -> BusyDecision + Send>>,
     /// Boxed closure kept alive while the authorizer is registered.
     authorizer_hook: Option<Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send>>,
+    /// Boxed closure kept alive while the trace callback is registered.
+    trace_hook: Option<Box<dyn FnMut(SqliteTraceEvent<'_>) + Send>>,
 }
 
 impl RawConnection {
@@ -81,6 +84,7 @@ impl RawConnection {
             wal_hook: None,
             busy_handler: None,
             authorizer_hook: None,
+            trace_hook: None,
         }
     }
 
@@ -108,6 +112,7 @@ impl RawConnection {
                     wal_hook: None,
                     busy_handler: None,
                     authorizer_hook: None,
+                    trace_hook: None,
                 })
             }
             err_code => {
@@ -724,6 +729,55 @@ impl RawConnection {
         }
         self.authorizer_hook = None;
     }
+
+    /// Sets a trace callback, replacing any previous one.
+    ///
+    /// The callback is invoked for SQL execution tracing based on the
+    /// provided event mask.
+    ///
+    /// # Safety
+    ///
+    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
+    /// allocation of the closure. The `trace_trampoline` function matches the
+    /// signature expected by `sqlite3_trace_v2`. The pointer remains valid
+    /// because we store `boxed` in `self.trace_hook` below, keeping it alive
+    /// for the lifetime of this `RawConnection`.
+    pub(super) fn set_trace<F>(&mut self, mask: SqliteTraceFlags, hook: F)
+    where
+        F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
+    {
+        let mut boxed: Box<dyn FnMut(SqliteTraceEvent<'_>) + Send> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
+
+        unsafe {
+            ffi::sqlite3_trace_v2(
+                self.internal_connection.as_ptr(),
+                mask.bits(),
+                Some(trace_trampoline::<F>),
+                ptr,
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.trace_hook = Some(boxed);
+    }
+
+    /// Removes the trace callback.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. Passing a mask of `0`, `None` as the callback, and
+    /// `null_mut()` as the user data unregisters any existing trace callback.
+    /// The callback is unregistered before dropping `self.trace_hook` to
+    /// prevent callbacks from firing during cleanup.
+    pub(super) fn remove_trace(&mut self) {
+        unsafe {
+            ffi::sqlite3_trace_v2(self.internal_connection.as_ptr(), 0, None, ptr::null_mut());
+        }
+        self.trace_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
@@ -737,6 +791,7 @@ impl Drop for RawConnection {
         self.remove_wal_hook();
         self.remove_busy_handler();
         self.remove_authorizer();
+        self.remove_trace();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -1304,4 +1359,87 @@ where
             assert_fail!("Panic in sqlite3_set_authorizer trampoline. ");
         }
     }
+}
+
+/// C trampoline for `sqlite3_trace_v2`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::trace_hook`.
+unsafe extern "C" fn trace_trampoline<F>(
+    event_code: libc::c_uint,
+    user_data: *mut libc::c_void,
+    p: *mut libc::c_void,
+    x: *mut libc::c_void,
+) -> libc::c_int
+where
+    F: FnMut(SqliteTraceEvent<'_>) + Send + 'static,
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::trace_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+
+        // The callback is invoked inside each arm so the lossy `Cow` holding the
+        // SQL text outlives the `&str` borrow handed to it. `TRACE_STMT`,
+        // `TRACE_PROFILE`, and `TRACE_ROW` are the `u32`-normalized event codes
+        // from the `trace` module, so they match `event_code` directly.
+        match event_code {
+            TRACE_STMT => {
+                // p = sqlite3_stmt*, x = const char* (unexpanded SQL).
+                let stmt_ptr = p as *mut ffi::sqlite3_stmt;
+                let sql_ptr = x as *const libc::c_char;
+                if sql_ptr.is_null() {
+                    return;
+                }
+                // SAFETY: a non-null `x` is a valid C string from SQLite. Use a
+                // lossy conversion so non-UTF-8 SQL cannot abort the process.
+                let sql = unsafe { CStr::from_ptr(sql_ptr) }.to_string_lossy();
+                let readonly =
+                    !stmt_ptr.is_null() && unsafe { ffi::sqlite3_stmt_readonly(stmt_ptr) != 0 };
+                f(SqliteTraceEvent::Statement {
+                    sql: &sql,
+                    readonly,
+                });
+            }
+            TRACE_PROFILE => {
+                // p = sqlite3_stmt*, x = sqlite3_int64* (nanoseconds).
+                let stmt_ptr = p as *mut ffi::sqlite3_stmt;
+                let duration_ns = if x.is_null() {
+                    0
+                } else {
+                    // x points to a sqlite3_int64. The duration is non-negative.
+                    unsafe { (*(x as *const ffi::sqlite3_int64)).cast_unsigned() }
+                };
+                let readonly =
+                    !stmt_ptr.is_null() && unsafe { ffi::sqlite3_stmt_readonly(stmt_ptr) != 0 };
+                let sql_ptr = if stmt_ptr.is_null() {
+                    core::ptr::null()
+                } else {
+                    unsafe { ffi::sqlite3_sql(stmt_ptr) }
+                };
+                // SAFETY: when non-null, `sqlite3_sql` returns a valid C string.
+                let sql = if sql_ptr.is_null() {
+                    Cow::Borrowed("")
+                } else {
+                    unsafe { CStr::from_ptr(sql_ptr) }.to_string_lossy()
+                };
+                f(SqliteTraceEvent::Profile {
+                    sql: &sql,
+                    duration_ns,
+                    readonly,
+                });
+            }
+            TRACE_ROW => f(SqliteTraceEvent::Row),
+            // Unknown or unhandled events are ignored. CLOSE is intentionally
+            // not handled: diesel removes the trace before closing the
+            // connection, so it never fires.
+            _ => {}
+        }
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_trace_v2 trampoline. ");
+    }
+
+    0 // Return value is currently unused by SQLite
 }
