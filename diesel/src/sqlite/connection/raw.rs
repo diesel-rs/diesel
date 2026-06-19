@@ -529,7 +529,7 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     // We need this to move the reference into the catch_unwind part
     // this is sound as `F` itself and the stored string is `UnwindSafe`
     let callback = core::panic::AssertUnwindSafe(&mut data_ptr.callback);
-    // conn holds a `Box<dyn Any + Send>` hook field which is not UnwindSafe.
+    // conn holds a `Box<dyn FnMut() -> CommitDecision + Send>` hook field which is not UnwindSafe.
     // The ManuallyDrop wrapper ensures we never run RawConnection's Drop.
     let conn = core::panic::AssertUnwindSafe(conn);
 
