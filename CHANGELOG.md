@@ -44,6 +44,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
+* `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 
 ### Changed
 

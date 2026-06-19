@@ -680,14 +680,27 @@ pub fn output_schema(
     );
 
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
-    let current_schema_safe_tables =
-        filter_column_structure(&table_names, SupportedQueryRelationStructures::Table);
-    let fk_safe_tables = multi_schema_safe_tables.unwrap_or(&current_schema_safe_tables);
+    let fk_safe_tables: Cow<'_, [TableName]> = multi_schema_safe_tables
+        .map(Cow::Borrowed)
+        .unwrap_or_else(|| {
+            Cow::Owned(filter_column_structure(
+                &table_names,
+                SupportedQueryRelationStructures::Table,
+            ))
+        });
+    let current_schema_safe_tables: Cow<'_, [TableName]> = if multi_schema_safe_tables.is_some() {
+        Cow::Owned(filter_column_structure(
+            &table_names,
+            SupportedQueryRelationStructures::Table,
+        ))
+    } else {
+        Cow::Borrowed(fk_safe_tables.as_ref())
+    };
     let foreign_keys_for_allow_tables =
-        filter_foreign_keys_for_grouping(&foreign_keys, fk_safe_tables);
+        filter_foreign_keys_for_grouping(&foreign_keys, &fk_safe_tables);
     let duplicate_foreign_keys = duplicated_foreign_keys(&foreign_keys);
     let foreign_keys_for_joinable =
-        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, fk_safe_tables)
+        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &fk_safe_tables)
             .into_iter()
             .filter(|fk| current_schema_safe_tables.contains(&fk.child_table))
             .collect::<Vec<_>>();
