@@ -48,18 +48,11 @@ macro_rules! assert_fail {
     };
 }
 
-/// Wrapper around a boxed commit hook closure.
-/// Holds the fat pointer (`dyn FnMut() -> CommitDecision + Send`) in a
-/// single-sized struct so it can be safely passed across the FFI boundary.
-struct CommitHookBox {
-    hook: Box<dyn FnMut() -> CommitDecision + Send>,
-}
-
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
     pub(super) internal_connection: NonNull<ffi::sqlite3>,
     /// Boxed closure kept alive while the commit hook is registered.
-    commit_hook: Option<Box<CommitHookBox>>,
+    commit_hook: Option<Box<dyn FnMut() -> CommitDecision + Send>>,
 }
 
 impl RawConnection {
@@ -399,31 +392,29 @@ impl RawConnection {
     ///
     /// # Safety
     ///
-    /// `ptr` is derived from `Box::into_raw` and points to a valid
-    /// `CommitHookBox` on the heap. The `commit_hook_trampoline` function
+    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
+    /// allocation of the closure. The `commit_hook_trampoline` function
     /// matches the signature expected by `sqlite3_commit_hook`. The pointer
-    /// remains valid because we restore ownership into `self.commit_hook`
-    /// below, keeping it alive for the lifetime of this `RawConnection`.
+    /// remains valid because we store `boxed` in `self.commit_hook` below,
+    /// keeping it alive for the lifetime of this `RawConnection`.
     pub(super) fn set_commit_hook<F>(&mut self, hook: F)
     where
         F: FnMut() -> CommitDecision + Send + 'static,
     {
-        let boxed = Box::new(CommitHookBox {
-            hook: Box::new(hook),
-        });
-        let ptr = Box::into_raw(boxed) as *mut libc::c_void;
+        let mut boxed: Box<dyn FnMut() -> CommitDecision + Send> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
 
         unsafe {
             ffi::sqlite3_commit_hook(
                 self.internal_connection.as_ptr(),
-                Some(commit_hook_trampoline),
+                Some(commit_hook_trampoline::<F>),
                 ptr,
             );
         }
 
         // The old Box (if any) is dropped here after SQLite has already
         // switched to the new callback, preventing use-after-free.
-        self.commit_hook = Some(unsafe { Box::from_raw(ptr as *mut CommitHookBox) });
+        self.commit_hook = Some(boxed);
     }
 
     /// Removes the commit hook.
@@ -823,14 +814,15 @@ extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
 ///
 /// # Safety
 ///
-/// `user_data` must point to a live `CommitHookBox` allocated by
-/// `set_commit_hook` and kept alive in `RawConnection::commit_hook`.
-unsafe extern "C" fn commit_hook_trampoline(user_data: *mut libc::c_void) -> libc::c_int {
+/// `user_data` must point to a live `F` stored in `RawConnection::commit_hook`.
+unsafe extern "C" fn commit_hook_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
+where
+    F: FnMut() -> CommitDecision,
+{
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a valid `CommitHookBox` on the heap,
-        // created by `set_commit_hook` and kept alive in `RawConnection::commit_hook`.
-        let hook_box: &mut CommitHookBox = unsafe { &mut *(user_data as *mut CommitHookBox) };
-        (hook_box.hook)()
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::commit_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f()
     }));
 
     match result {
