@@ -53,6 +53,8 @@ pub(super) struct RawConnection {
     pub(super) internal_connection: NonNull<ffi::sqlite3>,
     /// Boxed closure kept alive while the commit hook is registered.
     commit_hook: Option<Box<dyn FnMut() -> CommitDecision + Send>>,
+    /// Boxed closure kept alive while the rollback hook is registered.
+    rollback_hook: Option<Box<dyn FnMut() + Send>>,
 }
 
 impl RawConnection {
@@ -62,6 +64,7 @@ impl RawConnection {
         RawConnection {
             internal_connection: conn,
             commit_hook: None,
+            rollback_hook: None,
         }
     }
 
@@ -84,6 +87,7 @@ impl RawConnection {
                 Ok(RawConnection {
                     internal_connection: conn_pointer,
                     commit_hook: None,
+                    rollback_hook: None,
                 })
             }
             err_code => {
@@ -432,6 +436,51 @@ impl RawConnection {
         }
         self.commit_hook = None;
     }
+
+    /// Sets the rollback hook, replacing any previous one.
+    ///
+    /// # Safety
+    ///
+    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
+    /// allocation of the closure. The `rollback_hook_trampoline` function
+    /// matches the signature expected by `sqlite3_rollback_hook`. The pointer
+    /// remains valid because we store `boxed` in `self.rollback_hook` below,
+    /// keeping it alive for the lifetime of this `RawConnection`.
+    pub(super) fn set_rollback_hook<F>(&mut self, hook: F)
+    where
+        F: FnMut() + Send + 'static,
+    {
+        let mut boxed: Box<dyn FnMut() + Send> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
+
+        unsafe {
+            ffi::sqlite3_rollback_hook(
+                self.internal_connection.as_ptr(),
+                Some(rollback_hook_trampoline::<F>),
+                ptr,
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.rollback_hook = Some(boxed);
+    }
+
+    /// Removes the rollback hook.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. Passing `None` as the hook and `null_mut()` as the user
+    /// data unregisters any existing rollback hook. The hook is unregistered
+    /// before dropping `self.rollback_hook` to prevent callbacks from firing
+    /// during cleanup.
+    pub(super) fn remove_rollback_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_rollback_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.rollback_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
@@ -440,6 +489,7 @@ impl Drop for RawConnection {
 
         // Unregister before close so the boxed closure drops before sqlite3_close.
         self.remove_commit_hook();
+        self.remove_rollback_hook();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -831,5 +881,25 @@ where
         Err(_) => {
             assert_fail!("Panic in sqlite3_commit_hook trampoline. ");
         }
+    }
+}
+
+/// C trampoline for `sqlite3_rollback_hook`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::rollback_hook`.
+unsafe extern "C" fn rollback_hook_trampoline<F>(user_data: *mut libc::c_void)
+where
+    F: FnMut(),
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::rollback_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f();
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_rollback_hook trampoline. ");
     }
 }
