@@ -12,8 +12,12 @@ impl SqliteConnection {
     /// Only one commit hook can be active at a time per connection.
     /// Registering a new one replaces the previous.
     ///
-    /// The callback must not use the database connection. Panics in the
-    /// callback abort the process.
+    /// The callback runs synchronously as part of the committing
+    /// `sqlite3_step()` call, on the thread performing the commit, so it is
+    /// never invoked concurrently. Per SQLite, the callback must not use the
+    /// connection that triggered it (running any SQL, including a `SELECT`,
+    /// counts as use) and is not reentrant. A panic in the callback aborts the
+    /// process.
     ///
     /// See: [`sqlite3_commit_hook`](https://www.sqlite.org/c3ref/commit_hook.html)
     ///
