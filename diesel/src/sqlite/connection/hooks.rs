@@ -1,6 +1,7 @@
 use super::SqliteConnection;
+use core::num::NonZeroU32;
 
-pub(super) use super::CommitDecision;
+pub(super) use super::{CommitDecision, ProgressDecision};
 
 impl SqliteConnection {
     /// Registers a callback invoked when a transaction is about to be
@@ -124,6 +125,66 @@ impl SqliteConnection {
     /// See [`on_rollback`](Self::on_rollback) for usage example.
     pub fn remove_rollback_hook(&mut self) {
         self.raw_connection.remove_rollback_hook();
+    }
+
+    /// Registers a progress handler that can interrupt long-running queries.
+    ///
+    /// The callback is invoked periodically while a query runs. `n` is the
+    /// approximate number of virtual-machine instructions between callbacks. It
+    /// is a [`NonZeroU32`] so the handler cannot be disabled implicitly by
+    /// passing zero. Use [`remove_progress_handler`](Self::remove_progress_handler)
+    /// to disable it. Since SQLite 3.41.0 the callback may also fire during
+    /// statement preparation.
+    ///
+    /// The callback returns a [`ProgressDecision`]: `Continue` lets the query
+    /// keep executing, `Interrupt` aborts it (causes `SQLITE_INTERRUPT`).
+    ///
+    /// Only one progress handler can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// The callback must not use the database connection. It is invoked
+    /// synchronously on the thread driving the connection, so it is never
+    /// called concurrently. Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_progress_handler`](https://www.sqlite.org/c3ref/progress_handler.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, ProgressDecision};
+    /// use std::num::NonZeroU32;
+    /// use std::sync::Arc;
+    /// use std::sync::atomic::{AtomicBool, Ordering};
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// let cancelled = Arc::new(AtomicBool::new(false));
+    /// let cancelled2 = cancelled.clone();
+    ///
+    /// conn.on_progress(NonZeroU32::new(1000).unwrap(), move || {
+    ///     if cancelled2.load(Ordering::Relaxed) {
+    ///         ProgressDecision::Interrupt
+    ///     } else {
+    ///         ProgressDecision::Continue
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the handler.
+    /// conn.remove_progress_handler();
+    /// ```
+    pub fn on_progress<F>(&mut self, n: NonZeroU32, hook: F)
+    where
+        F: FnMut() -> ProgressDecision + Send + 'static,
+    {
+        self.raw_connection.set_progress_handler(n, hook);
+    }
+
+    /// Removes the progress handler. Subsequent queries will not invoke any
+    /// callback.
+    ///
+    /// See [`on_progress`](Self::on_progress) for usage example.
+    pub fn remove_progress_handler(&mut self) {
+        self.raw_connection.remove_progress_handler();
     }
 }
 
@@ -364,5 +425,37 @@ mod tests {
         });
 
         assert_eq!(count.load(Ordering::Relaxed), 0);
+    }
+
+    // A recursive CTE heavy enough that the progress handler fires while it runs.
+    const HEAVY_QUERY: &str = "WITH RECURSIVE c(x) AS \
+        (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < 100000) SELECT count(*) FROM c";
+
+    #[diesel_test_helper::test]
+    fn on_progress_interrupts_query() {
+        let conn = &mut connection();
+
+        conn.on_progress(NonZeroU32::new(1).unwrap(), || ProgressDecision::Interrupt);
+
+        let result = crate::sql_query(HEAVY_QUERY).execute(conn);
+        assert!(
+            result.is_err(),
+            "the query should be interrupted by the progress handler"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_progress_handler_stops_interruption() {
+        let conn = &mut connection();
+
+        conn.on_progress(NonZeroU32::new(1).unwrap(), || ProgressDecision::Interrupt);
+        conn.remove_progress_handler();
+
+        // With the handler removed the same query runs to completion.
+        let result = crate::sql_query(HEAVY_QUERY).execute(conn);
+        assert!(
+            result.is_ok(),
+            "the query should complete after the handler is removed"
+        );
     }
 }
