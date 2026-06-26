@@ -33,6 +33,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteFunctionBehavior` and a `register_impl_with_behavior` function (generated next to `register_impl`/`register_nondeterministic_impl` by `#[declare_sql_function]`) to register custom SQLite functions with explicit behavior flags (`DETERMINISTIC`, `INNOCUOUS`, `DIRECTONLY`, `SUBTYPE`).
 * Added a `RunQueryDslSupport` trait to indicate types that should implement `RunQueryDsl` in a sync/async agnostic way
 * Added a `#[derive(diesel::Enum)]` proc-macro to easily map Rust enums to database enums.
+* Added support for generating matching Rust enums for database enums in Diesel-CLI
 
 ### Fixed
 

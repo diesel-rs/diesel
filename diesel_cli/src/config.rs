@@ -4,8 +4,8 @@ use crate::print_schema::{self, ColumnSorting, DocConfig, PrintSchemaArgs};
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_regex::Serde as RegexWrapper;
-use std::collections::BTreeMap;
 use std::collections::btree_map::Entry;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Bound;
 use std::path::{Path, PathBuf};
 use std::{env, fmt, fs, iter};
@@ -183,6 +183,10 @@ impl Config {
                     args.custom_type_derives_indices.as_deref(),
                     &args.inner.custom_type_derives,
                 );
+                let custom_rust_enum_type_derives_with_indices = get_values_with_indices(
+                    args.custom_rust_enum_type_derives_indices.as_deref(),
+                    &args.inner.custom_rust_enum_type_derives,
+                );
                 let sqlite_integer_primary_key_is_bigint_with_indices = get_values_with_indices(
                     args.sqlite_integer_primary_key_is_bigint_indices.as_deref(),
                     &args.inner.sqlite_integer_primary_key_is_bigint,
@@ -291,6 +295,9 @@ impl Config {
                     if args.inner.no_generate_missing_sql_type_definitions {
                         print_schema.generate_missing_sql_type_definitions = Some(false)
                     }
+                    if args.inner.no_generate_rust_enum_types {
+                        print_schema.generate_rust_enum_definitions = Some(false);
+                    }
 
                     if let Some(excepts) = &except_custom_type_definitions_with_indices {
                         let rules = excepts
@@ -306,10 +313,25 @@ impl Config {
 
                     let custom_type_derives = custom_type_derives_with_indices
                         .as_ref()
-                        .map(|v| v.range(boundary).map(|v| v.1.as_str().to_owned()).collect())
-                        .unwrap_or(vec![]);
+                        .map(|v| {
+                            v.range(boundary)
+                                .map(|v| v.1.as_str().to_owned())
+                                .collect::<BTreeSet<_>>()
+                        })
+                        .unwrap_or_default();
                     if !custom_type_derives.is_empty() {
                         print_schema.custom_type_derives = Some(custom_type_derives);
+                    }
+                    let custom_rust_enum_type_derives = custom_rust_enum_type_derives_with_indices
+                        .as_ref()
+                        .map(|v| {
+                            v.range(boundary)
+                                .map(|v| v.1.as_str().to_owned())
+                                .collect::<BTreeSet<_>>()
+                        })
+                        .unwrap_or_default();
+                    if !custom_rust_enum_type_derives.is_empty() {
+                        print_schema.custom_enum_derives = Some(custom_rust_enum_type_derives);
                     }
                     if let Some(sqlite_integer_primary_key_is_bigint) =
                         sqlite_integer_primary_key_is_bigint_with_indices
@@ -379,9 +401,16 @@ impl Config {
             if args.no_generate_missing_sql_type_definitions {
                 config.generate_missing_sql_type_definitions = Some(false);
             }
+            if args.no_generate_rust_enum_types {
+                config.generate_rust_enum_definitions = Some(false);
+            }
 
             if !args.custom_type_derives.is_empty() {
-                config.custom_type_derives = Some(args.custom_type_derives);
+                config.custom_type_derives = Some(args.custom_type_derives.into_iter().collect());
+            }
+            if !args.custom_rust_enum_type_derives.is_empty() {
+                config.custom_enum_derives =
+                    Some(args.custom_rust_enum_type_derives.into_iter().collect());
             }
 
             if !args.pg_domains_as_custom_types.is_empty() {
@@ -475,7 +504,7 @@ pub struct PrintSchema {
     #[serde(default)]
     pub except_custom_type_definitions: Vec<Regex>,
     #[serde(default)]
-    pub custom_type_derives: Option<Vec<String>>,
+    pub custom_type_derives: Option<BTreeSet<String>>,
     #[serde(default)]
     pub sqlite_integer_primary_key_is_bigint: Option<bool>,
     #[serde(default)]
@@ -484,11 +513,19 @@ pub struct PrintSchema {
     pub include_views: bool,
     #[serde(default)]
     pub experimental_infer_nullable_for_views: bool,
+    #[serde(default)]
+    pub custom_enum_derives: Option<BTreeSet<String>>,
+    #[serde(default)]
+    pub generate_rust_enum_definitions: Option<bool>,
 }
 
 impl PrintSchema {
     pub fn generate_missing_sql_type_definitions(&self) -> bool {
         self.generate_missing_sql_type_definitions.unwrap_or(true)
+    }
+
+    pub fn generate_rust_enum_definitions(&self) -> bool {
+        self.generate_rust_enum_definitions.unwrap_or(true)
     }
 
     pub fn schema_name(&self) -> Option<&str> {
@@ -516,21 +553,17 @@ impl PrintSchema {
         }
     }
 
-    #[cfg(any(feature = "postgres", feature = "mysql"))]
-    pub fn custom_type_derives(&self) -> Vec<String> {
-        let mut derives = self
-            .custom_type_derives
-            .as_ref()
-            .map_or(Vec::new(), |derives| derives.to_vec());
-        if derives
-            .iter()
-            .any(|item| item == "diesel::sql_types::SqlType")
-        {
-            derives
-        } else {
-            derives.push("diesel::sql_types::SqlType".to_owned());
-            derives
-        }
+    pub fn custom_type_derives(&self) -> BTreeSet<String> {
+        let mut derives = self.custom_type_derives.clone().unwrap_or_default();
+        derives.insert("diesel::sql_types::SqlType".to_owned());
+        derives
+    }
+
+    pub fn custom_rust_types_derives(&self) -> BTreeSet<String> {
+        let mut derives = self.custom_enum_derives.clone().unwrap_or_default();
+        derives.insert("diesel::types::Enum".into());
+        derives.insert("Debug".into());
+        derives
     }
 
     pub fn set_filter(
