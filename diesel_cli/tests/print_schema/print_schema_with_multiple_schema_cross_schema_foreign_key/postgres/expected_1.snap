@@ -1,6 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-description: "Test: print_schema_multi_schema_foreign_key"
+description: "Test: print_schema_with_multiple_schema_cross_schema_foreign_key"
 ---
 // @generated automatically by Diesel CLI.
 
@@ -25,7 +25,7 @@ pub mod game {
         }
     }
 
-    diesel::joinable!(game_session -> api_token (api_token_id));
+    diesel::joinable!(game_session -> crate::schema2::people::api_token (api_token_id));
 
-    diesel::allow_tables_to_appear_in_same_query!(api_token, game_session,);
+    diesel::allow_tables_to_appear_in_same_query!(crate::schema2::people::api_token, game_session,);
 }

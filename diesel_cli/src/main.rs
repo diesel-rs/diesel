@@ -281,6 +281,11 @@ fn regenerate_schema_if_file_specified(
     } else {
         None
     };
+    let multi_schema_module_prefixes = if config.has_multiple_schema() {
+        Some(print_schema::multi_schema_module_prefixes(&config))
+    } else {
+        None
+    };
     for config in config.all_configs.values() {
         if let Some(ref path) = config.file {
             let mut connection = InferConnection::from_maybe_url(database_url.clone())?;
@@ -293,6 +298,8 @@ fn regenerate_schema_if_file_specified(
                 &mut connection,
                 config,
                 multi_schema_safe_tables.as_deref(),
+                multi_schema_module_prefixes.as_ref(),
+                true,
             )?;
             if locked_schema {
                 let old_buf = std::fs::read_to_string(path)

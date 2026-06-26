@@ -1,6 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-description: "Test: print_schema_multi_schema_foreign_key"
+description: "Test: print_schema_with_multiple_schema_cross_schema_foreign_key"
 ---
 // @generated automatically by Diesel CLI.
 
@@ -18,6 +18,4 @@ pub mod people {
             id -> Int4,
         }
     }
-
-    diesel::allow_tables_to_appear_in_same_query!(api_token, game_session,);
 }

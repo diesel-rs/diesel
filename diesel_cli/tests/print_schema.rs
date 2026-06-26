@@ -475,9 +475,9 @@ fn print_schema_with_multiple_schema() {
 
 #[test]
 #[cfg(feature = "postgres")]
-fn print_schema_multi_schema_foreign_key() {
+fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
     test_multiple_print_schema(
-        "print_schema_multi_schema_foreign_key",
+        "print_schema_with_multiple_schema_cross_schema_foreign_key",
         vec![
             "--schema-key",
             "user1",
@@ -771,7 +771,13 @@ fn assert_schema_compiles(test_name: &str, schema: String) {
 
 fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let config = read_file(&test_path.join("diesel.toml"));
-    let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
+    let config_project_name = format!(
+        "{}_config",
+        test_name
+            .strip_prefix("print_schema_with_")
+            .unwrap_or(test_name)
+    );
+    let mut p = project(&config_project_name).file("diesel.toml", &config);
 
     let patch_file = backend_file_path(test_name, "schema.patch");
     if patch_file.exists() {

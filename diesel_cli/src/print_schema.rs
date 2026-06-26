@@ -5,7 +5,7 @@ use clap::{ArgAction, ArgMatches, Args, FromArgMatches};
 use diesel::QueryResult;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::{Write as IoWrite, stdout};
 use std::{process, str};
@@ -344,12 +344,18 @@ pub fn run_infer_schema(
     } else {
         None
     };
+    let multi_schema_module_prefixes = if root_config.has_multiple_schema() {
+        Some(multi_schema_module_prefixes(&root_config))
+    } else {
+        None
+    };
     for config in root_config.all_configs.values() {
         run_print_schema(
             &mut conn,
             config,
             &mut stdout(),
             multi_schema_safe_tables.as_deref(),
+            multi_schema_module_prefixes.as_ref(),
         )?;
     }
 
@@ -398,8 +404,15 @@ pub fn run_print_schema<W: IoWrite>(
     config: &config::PrintSchema,
     output: &mut W,
     multi_schema_safe_tables: Option<&[TableName]>,
+    multi_schema_module_prefixes: Option<&BTreeMap<String, String>>,
 ) -> Result<(), crate::errors::Error> {
-    let schema = output_schema(connection, config, multi_schema_safe_tables)?;
+    let schema = output_schema(
+        connection,
+        config,
+        multi_schema_safe_tables,
+        multi_schema_module_prefixes,
+        false,
+    )?;
 
     output
         .write_all(schema.as_bytes())
@@ -665,11 +678,60 @@ pub(crate) fn all_safe_tables_for_multi_schema(
     Ok(tables)
 }
 
+pub(crate) fn multi_schema_module_prefixes(
+    root_config: &config::RootPrintSchema,
+) -> BTreeMap<String, String> {
+    let mut prefixes = BTreeMap::new();
+    for config in root_config.all_configs.values() {
+        let Some(pg_schema) = config.schema_name() else {
+            continue;
+        };
+        let prefix = if let Some(file) = config.file.as_ref() {
+            let Some(stem) = file.file_stem().and_then(|s| s.to_str()) else {
+                continue;
+            };
+            format!("crate::{stem}::{pg_schema}")
+        } else {
+            format!("crate::{pg_schema}")
+        };
+        prefixes.insert(pg_schema.to_owned(), prefix);
+    }
+    prefixes
+}
+
+fn table_codegen_path<'a>(
+    table: &'a TableName,
+    current_pg_schema: Option<&'a str>,
+    module_prefixes: Option<&'a BTreeMap<String, String>>,
+    use_file_module_paths: bool,
+) -> Cow<'a, str> {
+    match (current_pg_schema, module_prefixes) {
+        (Some(current), Some(prefixes)) if table.schema.as_deref() != Some(current) => {
+            if let Some(schema) = table.schema.as_deref() {
+                let qualified = if use_file_module_paths {
+                    prefixes
+                        .get(schema)
+                        .map(|prefix| format!("{prefix}::{}", table.rust_name))
+                } else {
+                    Some(format!("crate::{schema}::{}", table.rust_name))
+                };
+                if let Some(path) = qualified {
+                    return Cow::Owned(path);
+                }
+            }
+            Cow::Borrowed(&table.rust_name)
+        }
+        _ => Cow::Borrowed(&table.rust_name),
+    }
+}
+
 #[tracing::instrument(skip(connection))]
 pub fn output_schema(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
     multi_schema_safe_tables: Option<&[TableName]>,
+    multi_schema_module_prefixes: Option<&BTreeMap<String, String>>,
+    use_file_module_paths: bool,
 ) -> Result<String, crate::errors::Error> {
     let backend = Backend::for_connection(connection);
     let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
@@ -736,6 +798,9 @@ pub fn output_schema(
             generate_rust_enums: config.generate_rust_enum_definitions(),
         }),
         import_types: config.import_types(),
+        current_pg_schema: config.schema_name(),
+        multi_schema_module_prefixes,
+        use_file_module_paths,
     };
 
     let mut out = String::new();
@@ -1166,6 +1231,9 @@ struct QueryRelationDefinitions<'a> {
     allow_tables_to_appear_in_same_query_config: AllowTablesToAppearInSameQueryConfig,
     import_types: Option<&'a [String]>,
     custom_types_for_tables: Option<CustomTypesForTables>,
+    current_pg_schema: Option<&'a str>,
+    multi_schema_module_prefixes: Option<&'a BTreeMap<String, String>>,
+    use_file_module_paths: bool,
 }
 
 impl<'a> Display for QueryRelationDefinitions<'a> {
@@ -1197,7 +1265,16 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
         }
 
         for foreign_key in &self.fk_constraints_for_joinable {
-            writeln!(f, "{}", Joinable(foreign_key))?;
+            writeln!(
+                f,
+                "{}",
+                Joinable {
+                    constraint: foreign_key,
+                    current_pg_schema: self.current_pg_schema,
+                    module_prefixes: self.multi_schema_module_prefixes,
+                    use_file_module_paths: self.use_file_module_paths,
+                }
+            )?;
         }
 
         let table_groups = match self.allow_tables_to_appear_in_same_query_config {
@@ -1231,6 +1308,23 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
             }
             AllowTablesToAppearInSameQueryConfig::None => vec![],
         };
+        let table_groups = if self.multi_schema_module_prefixes.is_some() {
+            table_groups
+                .into_iter()
+                .filter(|table_group| {
+                    let all_local = table_group
+                        .iter()
+                        .all(|table| table.schema.as_deref() == self.current_pg_schema);
+                    let has_local_joinable_child = self
+                        .fk_constraints_for_joinable
+                        .iter()
+                        .any(|fk| table_group.iter().any(|table| **table == fk.child_table));
+                    all_local || has_local_joinable_child
+                })
+                .collect()
+        } else {
+            table_groups
+        };
         for (table_group_index, table_group) in table_groups
             .into_iter()
             .filter(|table_group| table_group.len() >= 2)
@@ -1244,7 +1338,16 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in table_group {
-                    write!(out, "{},", table.rust_name)?;
+                    write!(
+                        out,
+                        "{},",
+                        table_codegen_path(
+                            table,
+                            self.current_pg_schema,
+                            self.multi_schema_module_prefixes,
+                            self.use_file_module_paths,
+                        )
+                    )?;
                 }
             }
             writeln!(f, ");")?;
@@ -1512,18 +1615,32 @@ impl Display for ColumnDefinitions<'_> {
     }
 }
 
-struct Joinable<'a>(&'a ForeignKeyConstraint);
+struct Joinable<'a> {
+    constraint: &'a ForeignKeyConstraint,
+    current_pg_schema: Option<&'a str>,
+    module_prefixes: Option<&'a BTreeMap<String, String>>,
+    use_file_module_paths: bool,
+}
 
 impl Display for Joinable<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let child_table_name = &self.0.child_table.rust_name;
-
-        let parent_table_name = &self.0.parent_table.rust_name;
+        let child_table_name = table_codegen_path(
+            &self.constraint.child_table,
+            self.current_pg_schema,
+            self.module_prefixes,
+            self.use_file_module_paths,
+        );
+        let parent_table_name = table_codegen_path(
+            &self.constraint.parent_table,
+            self.current_pg_schema,
+            self.module_prefixes,
+            self.use_file_module_paths,
+        );
 
         write!(
             f,
             "diesel::joinable!({} -> {} ({}));",
-            child_table_name, parent_table_name, self.0.foreign_key_columns_rust[0],
+            child_table_name, parent_table_name, self.constraint.foreign_key_columns_rust[0],
         )
     }
 }
