@@ -352,6 +352,16 @@ pub enum ProgressDecision {
     Interrupt,
 }
 
+/// The decision returned by an [`on_busy`](SqliteConnection::on_busy)
+/// callback when the database is locked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BusyDecision {
+    /// Retry the locked operation.
+    Retry,
+    /// Give up, returning `SQLITE_BUSY` to the caller.
+    GiveUp,
+}
+
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///

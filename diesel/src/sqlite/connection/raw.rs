@@ -10,7 +10,7 @@ use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
-use super::{CommitDecision, ProgressDecision};
+use super::{BusyDecision, CommitDecision, ProgressDecision};
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
@@ -62,6 +62,8 @@ pub(super) struct RawConnection {
     progress_hook: Option<Box<dyn FnMut() -> ProgressDecision + Send>>,
     /// Boxed closure kept alive while the WAL hook is registered.
     wal_hook: Option<Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send>>,
+    /// Boxed closure kept alive while the busy handler is registered.
+    busy_handler: Option<Box<dyn FnMut(i32) -> BusyDecision + Send>>,
 }
 
 impl RawConnection {
@@ -74,6 +76,7 @@ impl RawConnection {
             rollback_hook: None,
             progress_hook: None,
             wal_hook: None,
+            busy_handler: None,
         }
     }
 
@@ -99,6 +102,7 @@ impl RawConnection {
                     rollback_hook: None,
                     progress_hook: None,
                     wal_hook: None,
+                    busy_handler: None,
                 })
             }
             err_code => {
@@ -602,6 +606,72 @@ impl RawConnection {
         }
         self.wal_hook = None;
     }
+
+    /// Sets the busy handler, replacing any previous one.
+    ///
+    /// Only one busy handler can be active at a time. Setting this clears any
+    /// busy timeout previously set with `set_busy_timeout`.
+    ///
+    /// # Safety
+    ///
+    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
+    /// allocation of the closure. The `busy_handler_trampoline` function
+    /// matches the signature expected by `sqlite3_busy_handler`. The pointer
+    /// remains valid because we store `boxed` in `self.busy_handler` below,
+    /// keeping it alive for the lifetime of this `RawConnection`.
+    pub(super) fn set_busy_handler<F>(&mut self, hook: F)
+    where
+        F: FnMut(i32) -> BusyDecision + Send + 'static,
+    {
+        let mut boxed: Box<dyn FnMut(i32) -> BusyDecision + Send> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
+
+        unsafe {
+            ffi::sqlite3_busy_handler(
+                self.internal_connection.as_ptr(),
+                Some(busy_handler_trampoline::<F>),
+                ptr,
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.busy_handler = Some(boxed);
+    }
+
+    /// Removes the busy handler.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. Passing `None` as the hook and `null_mut()` as the user
+    /// data unregisters any existing busy handler. The hook is unregistered
+    /// before dropping `self.busy_handler` to prevent callbacks from firing
+    /// during cleanup.
+    pub(super) fn remove_busy_handler(&mut self) {
+        unsafe {
+            ffi::sqlite3_busy_handler(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.busy_handler = None;
+    }
+
+    /// Sets a simple timeout-based busy handler.
+    ///
+    /// SQLite will sleep and retry until `ms` milliseconds have elapsed.
+    /// Setting this clears any custom busy handler.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. `sqlite3_busy_timeout` installs its own internal busy
+    /// handler, so the stored `busy_handler` is dropped afterwards to release
+    /// the now-unused closure.
+    pub(super) fn set_busy_timeout(&mut self, ms: i32) {
+        unsafe {
+            ffi::sqlite3_busy_timeout(self.internal_connection.as_ptr(), ms);
+        }
+        self.busy_handler = None;
+    }
 }
 
 impl Drop for RawConnection {
@@ -613,6 +683,7 @@ impl Drop for RawConnection {
         self.remove_rollback_hook();
         self.remove_progress_handler();
         self.remove_wal_hook();
+        self.remove_busy_handler();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -1100,4 +1171,31 @@ where
     }
 
     ffi::SQLITE_OK
+}
+
+/// C trampoline for `sqlite3_busy_handler`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::busy_handler`.
+unsafe extern "C" fn busy_handler_trampoline<F>(
+    user_data: *mut libc::c_void,
+    retry_count: libc::c_int,
+) -> libc::c_int
+where
+    F: FnMut(i32) -> BusyDecision,
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::busy_handler`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f(retry_count)
+    }));
+
+    match result {
+        Ok(BusyDecision::Retry) => 1,
+        Ok(BusyDecision::GiveUp) => 0,
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_busy_handler trampoline. ");
+        }
+    }
 }
