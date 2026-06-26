@@ -186,6 +186,55 @@ impl SqliteConnection {
     pub fn remove_progress_handler(&mut self) {
         self.raw_connection.remove_progress_handler();
     }
+
+    /// Registers a callback invoked after each commit of a transaction in
+    /// [WAL mode](https://www.sqlite.org/wal.html). It receives a borrowed
+    /// connection, the database name (`"main"`, `"temp"`, or an `ATTACH`
+    /// alias), and the current WAL page count.
+    ///
+    /// The hook fires after the commit completes and the write-lock is
+    /// released, so the callback may read, write, or
+    /// [checkpoint](https://www.sqlite.org/wal.html#ckpt) through `conn`,
+    /// provided it leaves no open transaction. A write that commits inside the
+    /// callback re-fires the hook re-entrantly, so a callback that writes
+    /// unconditionally will recurse until the stack overflows. Guard against
+    /// that yourself if the callback writes.
+    ///
+    /// Only one WAL hook is active at a time, and re-registering replaces it.
+    /// `PRAGMA wal_autocheckpoint` installs its own WAL hook and overwrites
+    /// this one. A panic in the callback aborts the process.
+    ///
+    /// See: [`sqlite3_wal_hook`](https://www.sqlite.org/c3ref/wal_hook.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// # use diesel::prelude::*;
+    /// # use diesel::connection::SimpleConnection;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
+    /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
+    /// conn.on_wal(|conn, db_name, n_pages| {
+    ///     println!("WAL for {db_name}: {n_pages} pages");
+    ///     if n_pages > 1000 {
+    ///         // The connection may be used here, e.g. to force a checkpoint.
+    ///         let _ = conn.batch_execute("PRAGMA wal_checkpoint(TRUNCATE);");
+    ///     }
+    /// });
+    /// ```
+    pub fn on_wal<F>(&mut self, hook: F)
+    where
+        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+    {
+        self.raw_connection.set_wal_hook(hook);
+    }
+
+    /// Removes the WAL hook. Subsequent commits will not invoke any callback.
+    ///
+    /// See [`on_wal`](Self::on_wal) for usage example.
+    pub fn remove_wal_hook(&mut self) {
+        self.raw_connection.remove_wal_hook();
+    }
 }
 
 #[cfg(test)]
@@ -456,6 +505,281 @@ mod tests {
         assert!(
             result.is_ok(),
             "the query should complete after the handler is removed"
+        );
+    }
+
+    // WAL hook tests
+    //
+    // Gated out on WASM because these tests need a file-backed database
+    // (WAL mode does not work with `:memory:`), and `tempfile::tempdir()`
+    // panics on WASM due to the lack of a filesystem.
+    //
+    // The WAL API itself (`on_wal`, `remove_wal_hook`) is available on all
+    // platforms, including WASM. The file-backed databases used here cannot
+    // be created on WASM, so only the tests are gated out.
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    /// Helper: create a file-backed connection in WAL mode (WAL requires a real
+    /// file, and every WAL test below wants the connection already in WAL mode).
+    fn wal_connection() -> (SqliteConnection, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        let mut conn = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+        crate::sql_query("PRAGMA journal_mode=WAL")
+            .execute(&mut conn)
+            .unwrap();
+        (conn, dir)
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn on_wal_fires_in_wal_mode() {
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("CREATE TABLE t_wal (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let events: Arc<std::sync::Mutex<Vec<(String, u32)>>> =
+            Arc::new(std::sync::Mutex::new(Vec::new()));
+        let events2 = events.clone();
+
+        conn.on_wal(move |_, db_name, n_pages| {
+            events2.lock().unwrap().push((db_name.to_owned(), n_pages));
+        });
+
+        crate::sql_query("INSERT INTO t_wal (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        let events = events.lock().unwrap();
+        assert!(
+            !events.is_empty(),
+            "WAL hook should have fired at least once"
+        );
+        assert!(
+            events.iter().all(|(db_name, _)| db_name == "main"),
+            "db_name should always be \"main\""
+        );
+        assert!(
+            events.iter().any(|(_, n_pages)| *n_pages > 0),
+            "n_pages should be positive"
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn replacing_wal_hook_drops_old() {
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("CREATE TABLE t_wal2 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let old_count = Arc::new(AtomicU32::new(0));
+        let new_count = Arc::new(AtomicU32::new(0));
+
+        let c_old = old_count.clone();
+        conn.on_wal(move |_, _, _| {
+            c_old.fetch_add(1, Ordering::Relaxed);
+        });
+
+        // Replace with a new hook.
+        let c_new = new_count.clone();
+        conn.on_wal(move |_, _, _| {
+            c_new.fetch_add(1, Ordering::Relaxed);
+        });
+
+        crate::sql_query("INSERT INTO t_wal2 (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        // Old hook should NOT have fired after replacement.
+        let old_before = old_count.load(Ordering::Relaxed);
+        crate::sql_query("INSERT INTO t_wal2 (id) VALUES (2)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            old_count.load(Ordering::Relaxed),
+            old_before,
+            "old WAL hook should not fire after replacement"
+        );
+        assert!(
+            new_count.load(Ordering::Relaxed) > 0,
+            "new WAL hook should fire"
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn remove_wal_hook_disables_callback() {
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("CREATE TABLE t_wal3 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(AtomicU32::new(0));
+        let c2 = count.clone();
+
+        conn.on_wal(move |_, _, _| {
+            c2.fetch_add(1, Ordering::Relaxed);
+        });
+
+        conn.remove_wal_hook();
+
+        crate::sql_query("INSERT INTO t_wal3 (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(count.load(Ordering::Relaxed), 0);
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_hook_does_not_fire_in_default_journal_mode() {
+        // A plain file connection left in the default journal mode ("delete"),
+        // not WAL, so `wal_connection()` (which enables WAL) is not used here.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        let conn = &mut SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+
+        crate::sql_query("CREATE TABLE t_wal4 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(AtomicU32::new(0));
+        let c2 = count.clone();
+
+        conn.on_wal(move |_, _, _| {
+            c2.fetch_add(1, Ordering::Relaxed);
+        });
+
+        crate::sql_query("INSERT INTO t_wal4 (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        assert_eq!(
+            count.load(Ordering::Relaxed),
+            0,
+            "WAL hook should not fire when not in WAL mode"
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn on_wal_can_use_borrowed_connection() {
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("CREATE TABLE t_wal_use (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let counts: Arc<std::sync::Mutex<Vec<i64>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let counts2 = counts.clone();
+
+        conn.on_wal(move |conn, _db_name, _n_pages| {
+            // Read through the borrowed connection, a fresh implicit read
+            // transaction that finalizes on return.
+            let c = crate::sql_query("SELECT COUNT(*) AS c FROM t_wal_use")
+                .get_result::<CountResult>(conn)
+                .unwrap()
+                .c;
+            counts2.lock().unwrap().push(c);
+        });
+
+        crate::sql_query("INSERT INTO t_wal_use (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        let observed = counts.lock().unwrap();
+        assert!(!observed.is_empty(), "WAL hook should have fired");
+        assert!(
+            observed.contains(&1),
+            "callback should observe the committed row through the connection"
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn on_wal_callback_write_re_enters_hook() {
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("CREATE TABLE t_wal_re (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("CREATE TABLE t_wal_log (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+            .execute(conn)
+            .unwrap();
+
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls2 = calls.clone();
+
+        conn.on_wal(move |conn, _db_name, _n_pages| {
+            let n = calls2.fetch_add(1, Ordering::Relaxed);
+            // Write on the first invocation only. The write commits in WAL mode
+            // and re-fires the hook re-entrantly. Gating on `n == 0` bounds the
+            // recursion to a single nested call instead of overflowing the stack.
+            if n == 0 {
+                crate::sql_query("INSERT INTO t_wal_log DEFAULT VALUES")
+                    .execute(conn)
+                    .unwrap();
+            }
+        });
+
+        crate::sql_query("INSERT INTO t_wal_re (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+
+        // The outer commit fired the hook, and the write inside it re-fired the
+        // hook once more, so the `Fn` callback ran twice.
+        assert_eq!(
+            calls.load(Ordering::Relaxed),
+            2,
+            "a committing write inside the callback re-enters the hook"
+        );
+
+        // The write performed inside the callback took effect.
+        let logged: i64 = crate::sql_query("SELECT COUNT(*) AS c FROM t_wal_log")
+            .get_result::<CountResult>(conn)
+            .unwrap()
+            .c;
+        assert_eq!(
+            logged, 1,
+            "the write performed inside the callback should persist"
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn on_wal_fires_once_per_transaction_commit() {
+        let (conn, _dir) = &mut wal_connection();
+
+        crate::sql_query("CREATE TABLE t_wal_txn (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(AtomicU32::new(0));
+        let c2 = count.clone();
+
+        conn.on_wal(move |_, _, _| {
+            c2.fetch_add(1, Ordering::Relaxed);
+        });
+
+        // Several writes inside one explicit transaction commit together, so the
+        // WAL hook fires once for the single commit, not once per statement.
+        conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_wal_txn (id) VALUES (1)").execute(conn)?;
+            crate::sql_query("INSERT INTO t_wal_txn (id) VALUES (2)").execute(conn)?;
+            crate::sql_query("INSERT INTO t_wal_txn (id) VALUES (3)").execute(conn)?;
+            Ok::<_, crate::result::Error>(())
+        })
+        .unwrap();
+
+        assert_eq!(
+            count.load(Ordering::Relaxed),
+            1,
+            "the WAL hook should fire once per transaction commit, not per statement"
         );
     }
 }
