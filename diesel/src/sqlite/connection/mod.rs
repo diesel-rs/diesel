@@ -1718,7 +1718,7 @@ mod tests {
             .execute(conn);
 
         let db = conn.serialize_database_to_buffer();
-        // only get a valid header, but append grabage
+        // only get a valid header, but append garbage
         let mut bad_buffer = db[..100].to_vec();
         bad_buffer.extend(b"whatever");
         conn.deserialize_readonly_database_from_buffer(&bad_buffer)
@@ -1732,7 +1732,7 @@ mod tests {
             "database disk image is malformed"
         );
 
-        // only get a valid header, but append grabage
+        // only get a valid header, but append garbage
         let mut size_fitting_bad_buffer = db[..100].to_vec();
         size_fitting_bad_buffer.extend(
             core::iter::repeat(b"abcdefghij")
