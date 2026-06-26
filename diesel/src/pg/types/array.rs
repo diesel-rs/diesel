@@ -66,6 +66,7 @@ where
 }
 
 use crate::expression::bound::Bound;
+use crate::expression::bound::Bound;
 use crate::expression::AsExpression;
 
 macro_rules! array_as_expression {

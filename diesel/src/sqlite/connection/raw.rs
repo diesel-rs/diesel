@@ -226,7 +226,11 @@ impl RawConnection {
         }
     }
 
-    pub(super) fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
+    // SAFETY:
+    // Any caller must ensure that the provided data buffer is valid and not modified until the database connection is closed
+    // Sqlite's documentation states:
+    // Applications must not modify the buffer P or invalidate it before the database connection D is closed.
+    pub(super) unsafe fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
         let db_size = data
             .len()
             .try_into()

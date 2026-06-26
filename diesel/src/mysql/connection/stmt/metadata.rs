@@ -58,7 +58,9 @@ impl MysqlFieldMetadata<'_> {
         self.0.type_
     }
 
-    pub(in crate::mysql::connection) fn flags(&self) -> Flags {
-        Flags::from(self.0.flags)
+    pub(in crate::mysql::connection) fn flags(
+        &self,
+    ) -> Result<Flags, Box<dyn core::error::Error + Send + Sync>> {
+        Flags::try_from(self.0.flags)
     }
 }
