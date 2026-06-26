@@ -69,6 +69,62 @@ impl SqliteConnection {
     pub fn remove_commit_hook(&mut self) {
         self.raw_connection.remove_commit_hook();
     }
+
+    /// Registers a callback invoked after a transaction is rolled back.
+    ///
+    /// This is **not** invoked for the implicit rollback that occurs when
+    /// the connection is closed. It **is** invoked when a commit hook forces
+    /// a rollback by returning [`CommitDecision::Rollback`].
+    ///
+    /// Only one rollback hook can be active at a time per connection.
+    /// Registering a new one replaces the previous.
+    ///
+    /// The callback must not use the database connection. It is invoked
+    /// synchronously on the thread driving the connection, so it is never
+    /// called concurrently, and like the commit hook it is not reentrant.
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_rollback_hook`](https://www.sqlite.org/c3ref/commit_hook.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    /// use std::sync::Arc;
+    /// use std::sync::atomic::{AtomicU32, Ordering};
+    ///
+    /// # use diesel::connection::SimpleConnection;
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// # conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)").unwrap();
+    /// let rollbacks = Arc::new(AtomicU32::new(0));
+    /// let rb2 = rollbacks.clone();
+    ///
+    /// conn.on_rollback(move || {
+    ///     rb2.fetch_add(1, Ordering::Relaxed);
+    /// });
+    ///
+    /// // Force a rollback by returning an error.
+    /// let _ = conn.immediate_transaction(|_conn| {
+    ///     Err::<(), _>(diesel::result::Error::RollbackTransaction)
+    /// });
+    ///
+    /// assert_eq!(rollbacks.load(Ordering::Relaxed), 1);
+    /// ```
+    pub fn on_rollback<F>(&mut self, hook: F)
+    where
+        F: FnMut() + Send + 'static,
+    {
+        self.raw_connection.set_rollback_hook(hook);
+    }
+
+    /// Removes the rollback hook. Subsequent rollbacks will not invoke any
+    /// callback.
+    ///
+    /// See [`on_rollback`](Self::on_rollback) for usage example.
+    pub fn remove_rollback_hook(&mut self) {
+        self.raw_connection.remove_rollback_hook();
+    }
 }
 
 #[cfg(test)]
@@ -200,6 +256,112 @@ mod tests {
             Ok::<_, crate::result::Error>(())
         })
         .unwrap();
+
+        assert_eq!(count.load(Ordering::Relaxed), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_rollback_fires_on_explicit_rollback() {
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_rb (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(AtomicU32::new(0));
+        let c2 = count.clone();
+
+        conn.on_rollback(move || {
+            c2.fetch_add(1, Ordering::Relaxed);
+        });
+
+        // Force a rollback by returning Err from the transaction closure.
+        let _ = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_rb (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Err::<(), _>(crate::result::Error::RollbackTransaction)
+        });
+
+        assert_eq!(count.load(Ordering::Relaxed), 1);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_rollback_fires_when_commit_hook_forces_rollback() {
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_rb2 (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let rb_count = Arc::new(AtomicU32::new(0));
+        let rb2 = rb_count.clone();
+
+        conn.on_commit(|| CommitDecision::Rollback);
+        conn.on_rollback(move || {
+            rb2.fetch_add(1, Ordering::Relaxed);
+        });
+
+        let _ = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_rb2 (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Ok::<_, crate::result::Error>(())
+        });
+
+        // Rollback hook should have fired.
+        assert_eq!(rb_count.load(Ordering::Relaxed), 1);
+
+        conn.remove_commit_hook();
+        conn.remove_rollback_hook();
+
+        // Verify the row was not persisted.
+        let cnt: i64 = crate::sql_query("SELECT COUNT(*) as c FROM t_rb2")
+            .get_result::<CountResult>(conn)
+            .unwrap()
+            .c;
+        assert_eq!(cnt, 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn on_rollback_does_not_fire_on_connection_close() {
+        let count = Arc::new(AtomicU32::new(0));
+        let c2 = count.clone();
+
+        {
+            let conn = &mut connection();
+            conn.on_rollback(move || {
+                c2.fetch_add(1, Ordering::Relaxed);
+            });
+            // conn is dropped here: implicit close, not a rollback.
+        }
+
+        assert_eq!(count.load(Ordering::Relaxed), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_rollback_hook_disables_callback() {
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE t_rem_rb (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let count = Arc::new(AtomicU32::new(0));
+        let c2 = count.clone();
+
+        conn.on_rollback(move || {
+            c2.fetch_add(1, Ordering::Relaxed);
+        });
+
+        conn.remove_rollback_hook();
+
+        let _ = conn.immediate_transaction(|conn| {
+            crate::sql_query("INSERT INTO t_rem_rb (id) VALUES (1)")
+                .execute(conn)
+                .unwrap();
+            Err::<(), _>(crate::result::Error::RollbackTransaction)
+        });
 
         assert_eq!(count.load(Ordering::Relaxed), 0);
     }
