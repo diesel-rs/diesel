@@ -5,11 +5,11 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use super::CommitDecision;
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
+use super::{CommitDecision, ProgressDecision};
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
@@ -22,6 +22,7 @@ use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
 use alloc::string::{String, ToString};
 use core::ffi as libc;
+use core::num::NonZeroU32;
 use core::ptr::NonNull;
 use core::{mem, ptr, slice, str};
 
@@ -55,6 +56,8 @@ pub(super) struct RawConnection {
     commit_hook: Option<Box<dyn FnMut() -> CommitDecision + Send>>,
     /// Boxed closure kept alive while the rollback hook is registered.
     rollback_hook: Option<Box<dyn FnMut() + Send>>,
+    /// Boxed closure kept alive while the progress handler is registered.
+    progress_hook: Option<Box<dyn FnMut() -> ProgressDecision + Send>>,
 }
 
 impl RawConnection {
@@ -65,6 +68,7 @@ impl RawConnection {
             internal_connection: conn,
             commit_hook: None,
             rollback_hook: None,
+            progress_hook: None,
         }
     }
 
@@ -88,6 +92,7 @@ impl RawConnection {
                     internal_connection: conn_pointer,
                     commit_hook: None,
                     rollback_hook: None,
+                    progress_hook: None,
                 })
             }
             err_code => {
@@ -485,6 +490,64 @@ impl RawConnection {
         }
         self.rollback_hook = None;
     }
+
+    /// Sets the progress handler, replacing any previous one.
+    ///
+    /// `n` is the approximate number of VM instructions between callbacks.
+    ///
+    /// # Safety
+    ///
+    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
+    /// allocation of the closure. The `progress_handler_trampoline` function
+    /// matches the signature expected by `sqlite3_progress_handler`. The
+    /// pointer remains valid because we store `boxed` in `self.progress_hook`
+    /// below, keeping it alive for the lifetime of this `RawConnection`.
+    pub(super) fn set_progress_handler<F>(&mut self, n: NonZeroU32, hook: F)
+    where
+        F: FnMut() -> ProgressDecision + Send + 'static,
+    {
+        let mut boxed: Box<dyn FnMut() -> ProgressDecision + Send> = Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
+
+        // `sqlite3_progress_handler` takes a c_int. A value above `i32::MAX`
+        // would wrap to a non-positive number and disable the handler, so clamp
+        // it to `i32::MAX` instead.
+        let n = i32::try_from(n.get()).unwrap_or(i32::MAX);
+
+        unsafe {
+            ffi::sqlite3_progress_handler(
+                self.internal_connection.as_ptr(),
+                n,
+                Some(progress_handler_trampoline::<F>),
+                ptr,
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.progress_hook = Some(boxed);
+    }
+
+    /// Removes the progress handler.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. Passing `None` as the handler and `null_mut()` as the user
+    /// data unregisters any existing progress handler. The handler is
+    /// unregistered before dropping `self.progress_hook` to prevent callbacks
+    /// from firing during cleanup.
+    pub(super) fn remove_progress_handler(&mut self) {
+        unsafe {
+            ffi::sqlite3_progress_handler(
+                self.internal_connection.as_ptr(),
+                0,
+                None,
+                ptr::null_mut(),
+            );
+        }
+        self.progress_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
@@ -494,6 +557,7 @@ impl Drop for RawConnection {
         // Unregister before close so the boxed closure drops before sqlite3_close.
         self.remove_commit_hook();
         self.remove_rollback_hook();
+        self.remove_progress_handler();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -905,5 +969,29 @@ where
 
     if result.is_err() {
         assert_fail!("Panic in sqlite3_rollback_hook trampoline. ");
+    }
+}
+
+/// C trampoline for `sqlite3_progress_handler`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::progress_hook`.
+unsafe extern "C" fn progress_handler_trampoline<F>(user_data: *mut libc::c_void) -> libc::c_int
+where
+    F: FnMut() -> ProgressDecision,
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::progress_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+        f()
+    }));
+
+    match result {
+        Ok(ProgressDecision::Interrupt) => 1,
+        Ok(ProgressDecision::Continue) => 0,
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_progress_handler trampoline. ");
+        }
     }
 }

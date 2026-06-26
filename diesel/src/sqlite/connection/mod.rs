@@ -342,6 +342,16 @@ pub enum CommitDecision {
     Rollback,
 }
 
+/// The decision returned by an [`on_progress`](SqliteConnection::on_progress)
+/// callback, controlling whether a long-running query keeps executing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProgressDecision {
+    /// Let the query continue executing.
+    Continue,
+    /// Interrupt the query (causes `SQLITE_INTERRUPT`).
+    Interrupt,
+}
+
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///
