@@ -1,0 +1,29 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(SqlType)]\n#[diesel(sqlite_type(name = \"Integer\"))]\n#[diesel(enum_type)]\nstruct Integer;\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::sql_types::SqlType for Integer {
+        type IsNull = diesel::sql_types::is_nullable::NotNull;
+        const IS_ARRAY: bool = false;
+    }
+    impl diesel::sql_types::SingleValue for Integer {}
+    impl<__DB, const __ANYWAY: bool> diesel::sql_types::EnumSqlType<__ANYWAY, __DB>
+    for Integer
+    where
+        __DB: diesel::backend::Backend,
+        diesel::internal::derives::sql_type::EnumTypeMapping: diesel::internal::derives::sql_type::EnumMapping<
+            __DB,
+        >,
+    {
+        type Strategy = diesel::internal::derives::sql_type::EnumTypeMapping;
+    }
+    impl diesel::sql_types::HasSqlType<Integer> for diesel::sqlite::Sqlite {
+        fn metadata(_: &mut ()) -> diesel::sqlite::SqliteType {
+            diesel::sqlite::SqliteType::Integer
+        }
+    }
+};

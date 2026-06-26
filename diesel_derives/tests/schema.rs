@@ -20,11 +20,13 @@ pub mod sql_types {
     #[cfg(feature = "postgres")]
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "color"))]
+    #[diesel(enum_type)]
     pub struct Color;
 
     #[cfg(feature = "mysql")]
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(mysql_type(name = "Enum"))]
+    #[diesel(enum_type)]
     pub struct CarsPaintColorEnum;
 }
 

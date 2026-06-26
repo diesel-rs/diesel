@@ -478,3 +478,43 @@ fn contains_binds() {
         .unwrap();
     assert_eq!(res, 1);
 }
+
+#[test]
+// mysql struggles with selects without from
+#[cfg(not(feature = "mysql"))]
+fn check_enum_works() {
+    #[derive(Debug, Clone, Copy, diesel::types::Enum, PartialEq)]
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    enum Color {
+        Blue = 0,
+        Red = 1,
+    }
+
+    let mut conn = establish_connection();
+    let v = Color::Red;
+
+    let r = diesel::select(v.into_sql::<diesel::sql_types::Integer>())
+        .get_result::<i32>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, 1);
+
+    let r = diesel::select(v.into_sql::<diesel::sql_types::Text>())
+        .get_result::<String>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, "Red");
+
+    let r = diesel::select(1_i32.into_sql::<diesel::sql_types::Integer>())
+        .get_result::<Color>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, v);
+
+    let r = diesel::select("Red".into_sql::<diesel::sql_types::Text>())
+        .get_result::<Color>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, v);
+}

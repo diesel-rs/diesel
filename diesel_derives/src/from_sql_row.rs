@@ -8,16 +8,16 @@ use crate::model::Model;
 use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
-    Ok(wrap_in_dummy_mod(derive_inner(item)?))
-}
-
-pub fn derive_inner(mut item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
     let struct_ty = ty_for_foreign_derive(&item, &model)?;
+    Ok(wrap_in_dummy_mod(derive_inner(struct_ty, item.generics)?))
+}
+
+pub fn derive_inner(struct_ty: syn::Type, mut generics: syn::Generics) -> Result<TokenStream> {
     {
-        item.generics.params.push(parse_quote!(__DB));
-        item.generics.params.push(parse_quote!(__ST));
-        let where_clause = item.generics.make_where_clause();
+        generics.params.push(parse_quote!(__DB));
+        generics.params.push(parse_quote!(__ST));
+        let where_clause = generics.make_where_clause();
         where_clause
             .predicates
             .push(parse_quote!(__DB: diesel::backend::Backend));
@@ -28,7 +28,7 @@ pub fn derive_inner(mut item: DeriveInput) -> Result<TokenStream> {
             .predicates
             .push(parse_quote!(Self: diesel::deserialize::FromSql<__ST, __DB>));
     }
-    let (impl_generics, _, where_clause) = item.generics.split_for_impl();
+    let (impl_generics, _, where_clause) = generics.split_for_impl();
     let implementation = quote! {
         // Need to put __ST and __DB after lifetimes but before const params
         impl #impl_generics diesel::deserialize::Queryable<__ST, __DB> for #struct_ty

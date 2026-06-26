@@ -1517,6 +1517,63 @@ mod multi_connection_impl {
                 bytes.from_sql::<Self, diesel::sql_types::Date>()
             }
         }
+        impl<
+            T,
+            ST,
+        > diesel::internal::derives::multiconnection::EnumMapping<super::MultiBackend>
+        for diesel::internal::derives::multiconnection::IntMapping<T, ST>
+        where
+            ST: Default,
+            T: diesel::deserialize::FromSql<ST, super::MultiBackend> + 'static
+                + diesel::internal::derives::multiconnection::IntegerMappingHelper,
+            for<'a> BindValue<'a>: From<(ST, &'a T)>,
+            i128: TryFrom<T, Error: core::fmt::Display>,
+        {
+            fn map_to_database_value<'b>(
+                output: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+                variant: &'static diesel::internal::derives::multiconnection::EnumVariant,
+            ) -> diesel::serialize::Result {
+                let v = <T as diesel::internal::derives::multiconnection::IntegerMappingHelper>::as_ref(
+                    &variant.discriminant,
+                )?;
+                output.set_value((ST::default(), v));
+                Ok(diesel::serialize::IsNull::No)
+            }
+            fn map_from_database_value(
+                raw: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+                type_name: &'static str,
+                variants: &'static [diesel::internal::derives::multiconnection::EnumVariant],
+            ) -> diesel::deserialize::Result<usize> {
+                let i = <T as diesel::deserialize::FromSql<
+                    ST,
+                    super::MultiBackend,
+                >>::from_sql(raw)?;
+                Self::from_discriminant(type_name, variants, i)
+            }
+        }
+        impl diesel::internal::derives::multiconnection::EnumMapping<super::MultiBackend>
+        for diesel::internal::derives::multiconnection::StringMapping {
+            fn map_to_database_value<'b>(
+                output: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+                variant: &'static diesel::internal::derives::multiconnection::EnumVariant,
+            ) -> diesel::serialize::Result {
+                <&str as diesel::serialize::ToSql<
+                    diesel::sql_types::Text,
+                    super::MultiBackend,
+                >>::to_sql(&variant.sql_name, output)
+            }
+            fn map_from_database_value(
+                raw: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+                type_name: &'static str,
+                variants: &'static [diesel::internal::derives::multiconnection::EnumVariant],
+            ) -> diesel::deserialize::Result<usize> {
+                let s = <String as diesel::deserialize::FromSql<
+                    diesel::sql_types::Text,
+                    super::MultiBackend,
+                >>::from_sql(raw)?;
+                Self::from_variant_name(type_name, variants, &s)
+            }
+        }
     }
     mod row {
         use super::*;

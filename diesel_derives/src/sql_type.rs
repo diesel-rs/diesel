@@ -20,6 +20,33 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     let is_array = struct_name == "Array" && generic_count == 1;
 
+    let enum_sql_type = if model.enum_type {
+        let mut generics = item.generics.clone();
+        generics.params.push(syn::parse_quote!(__DB));
+        generics
+            .params
+            .push(syn::parse_quote!(const __ANYWAY: bool));
+        generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote!(__DB: diesel::backend::Backend));
+        generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote!(diesel::internal::derives::sql_type::EnumTypeMapping: diesel::internal::derives::sql_type::EnumMapping<__DB>));
+        let (impl_generics, _, where_clause) = generics.split_for_impl();
+        Some(quote::quote! {
+
+            impl #impl_generics diesel::sql_types::EnumSqlType<__ANYWAY, __DB> for #struct_name #ty_generics
+                #where_clause
+            {
+                type Strategy = diesel::internal::derives::sql_type::EnumTypeMapping;
+            }
+        })
+    } else {
+        None
+    };
+
     Ok(wrap_in_dummy_mod(quote! {
         impl #impl_generics diesel::sql_types::SqlType
             for #struct_name #ty_generics
@@ -36,6 +63,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         {
         }
 
+        #enum_sql_type
         #sqlite_tokens
         #mysql_tokens
         #pg_tokens

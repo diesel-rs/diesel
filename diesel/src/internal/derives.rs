@@ -139,10 +139,17 @@ pub mod multiconnection {
     }
 
     pub use {expand_chrono, expand_numeric, expand_r2d2, expand_time};
+
+    #[doc(hidden)]
+    pub use crate::types::enum_::{
+        EnumMapping, EnumVariant, IntMapping, IntegerMappingHelper, StringMapping,
+    };
 }
 
 #[doc(hidden)]
 pub mod sql_type {
+    #[doc(hidden)]
+    pub use crate::types::enum_::{EnumMapping, EnumTypeMapping};
     #[doc(hidden)]
     pub use crate::{expand_mysql, expand_pg, expand_sqlite};
 }
@@ -157,4 +164,7 @@ pub mod has_query {
 pub mod enum_ {
     #[doc(hidden)]
     pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+
+    #[doc(hidden)]
+    pub use crate::types::enum_::{EnumMapping, EnumVariant};
 }

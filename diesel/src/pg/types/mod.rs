@@ -4,6 +4,7 @@
 pub(in crate::pg) mod array;
 #[doc(hidden)]
 pub(in crate::pg) mod date_and_time;
+mod enum_;
 #[doc(hidden)]
 pub(in crate::pg) mod floats;
 mod integers;
