@@ -118,7 +118,12 @@ where
             })
             .collect::<deserialize::Result<Vec<_>>>()?;
 
-        let data = (0..dims.iter().product::<usize>())
+        let max_dim = dims
+            .iter()
+            .try_fold(1_usize, |a, b| a.checked_mul(*b))
+            .ok_or("Overflow while deserializing package size")?;
+
+        let data = (0..max_dim)
             .map(|_| -> deserialize::Result<T> {
                 let elem_size = bytes.read_i32::<NetworkEndian>()?;
                 if has_null && elem_size == -1 {

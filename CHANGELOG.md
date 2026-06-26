@@ -39,6 +39,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
 * `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
+* Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
+* Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 
 ### Changed
 
