@@ -168,7 +168,8 @@ impl TryFrom<u32> for Flags {
         Flags::from_bits(flags).ok_or_else(|| {
             "We encountered an unknown type flag while parsing \
              Mysql's type information. If you see this error message \
-             please open an issue at diesels github page."
+             please open an issue at diesels github page.\
+             https://github.com/diesel-rs/diesel/issues"
                 .into()
         })
     }
