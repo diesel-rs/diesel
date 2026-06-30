@@ -18,6 +18,7 @@ mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 mod trace;
+mod update_hook;
 
 pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
@@ -26,6 +27,9 @@ pub use self::limits::SqliteLimit;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
+pub use self::update_hook::{
+    DynamicChangeTable, SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
+};
 
 use self::raw::RawConnection;
 use self::statement_iterator::*;

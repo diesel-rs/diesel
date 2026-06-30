@@ -41,6 +41,12 @@ name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
 
+[[test]]
+name = "change_hooks"
+path = "tests/change_hooks.rs"
+harness = true
+required-features = ["sqlite"]
+
 [features]
 default = []
 postgres = ["diesel/postgres_backend"]

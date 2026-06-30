@@ -4,6 +4,8 @@ use diesel::internal::table_macro::{FromClause, SelectStatement};
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use std::borrow::Borrow;
+#[cfg(feature = "sqlite")]
+use std::borrow::Cow;
 
 use crate::column::Column;
 use crate::dummy_expression::*;
@@ -149,4 +151,20 @@ where
 impl<T, U> QueryId for Table<T, U> {
     type QueryId = ();
     const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+#[cfg(feature = "sqlite")]
+impl<T, U> diesel::sqlite::DynamicChangeTable for Table<T, U>
+where
+    T: Borrow<str>,
+    U: Borrow<str>,
+{
+    fn change_database(&self) -> Option<Cow<'static, str>> {
+        self.schema()
+            .map(|schema| Cow::Owned(schema.borrow().to_owned()))
+    }
+
+    fn change_table(&self) -> Cow<'static, str> {
+        Cow::Owned(self.name().borrow().to_owned())
+    }
 }
