@@ -5,6 +5,7 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+use super::SqliteConnection;
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
@@ -17,11 +18,12 @@ use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 use crate::sqlite::SqliteFunctionBehavior;
-use alloc::borrow::ToOwned;
+use alloc::borrow::{Cow, ToOwned};
 use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
 use alloc::string::{String, ToString};
 use core::ffi as libc;
+use core::ffi::CStr;
 use core::num::NonZeroU32;
 use core::ptr::NonNull;
 use core::{mem, ptr, slice, str};
@@ -58,6 +60,8 @@ pub(super) struct RawConnection {
     rollback_hook: Option<Box<dyn FnMut() + Send>>,
     /// Boxed closure kept alive while the progress handler is registered.
     progress_hook: Option<Box<dyn FnMut() -> ProgressDecision + Send>>,
+    /// Boxed closure kept alive while the WAL hook is registered.
+    wal_hook: Option<Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send>>,
 }
 
 impl RawConnection {
@@ -69,6 +73,7 @@ impl RawConnection {
             commit_hook: None,
             rollback_hook: None,
             progress_hook: None,
+            wal_hook: None,
         }
     }
 
@@ -93,6 +98,7 @@ impl RawConnection {
                     commit_hook: None,
                     rollback_hook: None,
                     progress_hook: None,
+                    wal_hook: None,
                 })
             }
             err_code => {
@@ -548,16 +554,65 @@ impl RawConnection {
         }
         self.progress_hook = None;
     }
+
+    /// Sets the WAL hook, replacing any previous one.
+    ///
+    /// The callback receives a borrowed `&mut SqliteConnection`, the database
+    /// name (e.g. `"main"`) and the number of pages currently in the WAL file.
+    ///
+    /// # Safety
+    ///
+    /// The `ptr` is derived from `&raw const *boxed` and points to the heap
+    /// allocation of the closure. The `wal_hook_trampoline` function matches the
+    /// signature expected by `sqlite3_wal_hook`. The pointer remains valid
+    /// because we store `boxed` in `self.wal_hook` below, keeping it alive for
+    /// the lifetime of this `RawConnection`.
+    pub(super) fn set_wal_hook<F>(&mut self, hook: F)
+    where
+        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+    {
+        let boxed: Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send> = Box::new(hook);
+        let ptr = &raw const *boxed as *mut libc::c_void;
+
+        unsafe {
+            ffi::sqlite3_wal_hook(
+                self.internal_connection.as_ptr(),
+                Some(wal_hook_trampoline::<F>),
+                ptr,
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.wal_hook = Some(boxed);
+    }
+
+    /// Removes the WAL hook.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. Passing `None` as the hook and `null_mut()` as the user
+    /// data unregisters any existing WAL hook. The hook is unregistered before
+    /// dropping `self.wal_hook` to prevent callbacks from firing during
+    /// cleanup.
+    pub(super) fn remove_wal_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_wal_hook(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.wal_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
 
-        // Unregister before close so the boxed closure drops before sqlite3_close.
+        // Unregister before close so the boxed closures drop before sqlite3_close.
         self.remove_commit_hook();
         self.remove_rollback_hook();
         self.remove_progress_handler();
+        self.remove_wal_hook();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -994,4 +1049,55 @@ where
             assert_fail!("Panic in sqlite3_progress_handler trampoline. ");
         }
     }
+}
+
+/// C trampoline for `sqlite3_wal_hook`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` in `RawConnection::wal_hook`. `db` is
+/// the `sqlite3` handle that fired the hook, open and unlocked for the duration
+/// of the call.
+unsafe extern "C" fn wal_hook_trampoline<F>(
+    user_data: *mut libc::c_void,
+    db: *mut ffi::sqlite3,
+    db_name: *const libc::c_char,
+    n_pages: libc::c_int,
+) -> libc::c_int
+where
+    F: Fn(&mut SqliteConnection, &str, u32),
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::wal_hook`.
+        let f = unsafe { &*(user_data as *const F) };
+
+        // SAFETY: when non-null, `db_name` is a valid C string from SQLite. Use
+        // a lossy conversion so a pathological name cannot abort, and map null
+        // to "".
+        let db_name: Cow<'_, str> = if db_name.is_null() {
+            Cow::Borrowed("")
+        } else {
+            unsafe { CStr::from_ptr(db_name) }.to_string_lossy()
+        };
+        // SQLite always reports a non-negative page count. Clamp defensively.
+        let n_pages = u32::try_from(n_pages).unwrap_or(0);
+
+        let Some(db) = NonNull::new(db) else {
+            return;
+        };
+
+        // SAFETY: per the `sqlite3_wal_hook` docs the commit is complete and the
+        // write-lock released, so `db` may be used. `with_borrowed_connection`
+        // finalizes statements on return and never closes `db`. The callback is
+        // `Fn`, so a re-entrant call (a committing write inside it) is sound.
+        unsafe {
+            SqliteConnection::with_borrowed_connection(db, |conn| f(conn, &db_name, n_pages));
+        }
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_wal_hook trampoline. ");
+    }
+
+    ffi::SQLITE_OK
 }
