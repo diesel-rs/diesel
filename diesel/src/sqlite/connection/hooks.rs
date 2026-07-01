@@ -1,7 +1,7 @@
 use super::SqliteConnection;
 use core::num::NonZeroU32;
 
-pub(super) use super::{CommitDecision, ProgressDecision};
+pub(super) use super::{BusyDecision, CommitDecision, ProgressDecision};
 
 impl SqliteConnection {
     /// Registers a callback invoked when a transaction is about to be
@@ -234,6 +234,90 @@ impl SqliteConnection {
     /// See [`on_wal`](Self::on_wal) for usage example.
     pub fn remove_wal_hook(&mut self) {
         self.raw_connection.remove_wal_hook();
+    }
+
+    /// Registers a custom busy handler for lock contention.
+    ///
+    /// The callback receives the retry count (starting from 0) and returns a
+    /// [`BusyDecision`]: `Retry` retries the locked operation, `GiveUp` aborts
+    /// and returns `SQLITE_BUSY` to the caller.
+    ///
+    /// Setting this clears any timeout previously set with
+    /// [`set_busy_timeout`](Self::set_busy_timeout). Conversely, calling
+    /// `set_busy_timeout` clears this handler. Only one busy handler can be
+    /// active at a time per connection.
+    ///
+    /// The callback must not use the database connection. If the callback
+    /// modifies the database, behavior is undefined. SQLite may return
+    /// `SQLITE_BUSY` instead of calling the handler to prevent deadlocks.
+    ///
+    /// The callback is invoked synchronously on the thread driving the
+    /// connection, so it is never called concurrently, and per SQLite it is
+    /// not reentrant.
+    ///
+    /// Panics in the callback abort the process.
+    ///
+    /// See: [`sqlite3_busy_handler`](https://www.sqlite.org/c3ref/busy_handler.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, BusyDecision};
+    /// use std::thread;
+    /// use std::time::Duration;
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_busy(|retry_count| {
+    ///     if retry_count < 5 {
+    ///         thread::sleep(Duration::from_millis(100));
+    ///         BusyDecision::Retry
+    ///     } else {
+    ///         BusyDecision::GiveUp
+    ///     }
+    /// });
+    ///
+    /// // Later: remove the handler
+    /// conn.remove_busy_handler();
+    /// ```
+    pub fn on_busy<F>(&mut self, hook: F)
+    where
+        F: FnMut(i32) -> BusyDecision + Send + 'static,
+    {
+        self.raw_connection.set_busy_handler(hook);
+    }
+
+    /// Removes the custom busy handler.
+    ///
+    /// See [`on_busy`](Self::on_busy) for usage example.
+    pub fn remove_busy_handler(&mut self) {
+        self.raw_connection.remove_busy_handler();
+    }
+
+    /// Sets a simple timeout-based busy handler.
+    ///
+    /// When a table is locked, SQLite will sleep and retry until `ms`
+    /// milliseconds have elapsed. Pass 0 to disable (return `SQLITE_BUSY`
+    /// immediately).
+    ///
+    /// Setting this clears any custom [`on_busy`](Self::on_busy) handler.
+    /// Conversely, calling `on_busy` clears this timeout. For most use cases,
+    /// this is simpler than a custom busy handler.
+    ///
+    /// See: [`sqlite3_busy_timeout`](https://www.sqlite.org/c3ref/busy_timeout.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::prelude::*;
+    /// use diesel::sqlite::SqliteConnection;
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// // Wait up to 5 seconds for locked tables
+    /// conn.set_busy_timeout(5000);
+    /// ```
+    pub fn set_busy_timeout(&mut self, ms: i32) {
+        self.raw_connection.set_busy_timeout(ms);
     }
 }
 
@@ -780,6 +864,51 @@ mod tests {
             count.load(Ordering::Relaxed),
             1,
             "the WAL hook should fire once per transaction commit, not per statement"
+        );
+    }
+
+    // Busy handler test.
+    //
+    // Gated out on WASM: it needs two connections to a shared file-backed
+    // database (`:memory:` connections do not share a lock), and
+    // `tempfile::tempdir()` panics on WASM due to the lack of a filesystem.
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn on_busy_handler_is_invoked_on_lock_contention() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("busy.db");
+        let url = path.to_str().unwrap();
+
+        // One connection acquires and holds a write lock.
+        let mut holder = SqliteConnection::establish(url).unwrap();
+        crate::sql_query("CREATE TABLE t_busy (id INTEGER PRIMARY KEY)")
+            .execute(&mut holder)
+            .unwrap();
+        crate::sql_query("BEGIN IMMEDIATE")
+            .execute(&mut holder)
+            .unwrap();
+
+        // A second connection registers a busy handler that records the call
+        // and gives up.
+        let mut contender = SqliteConnection::establish(url).unwrap();
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls2 = calls.clone();
+        contender.on_busy(move |_retry_count| {
+            calls2.fetch_add(1, Ordering::Relaxed);
+            BusyDecision::GiveUp
+        });
+
+        // The write contends with the held lock, so the busy handler fires.
+        // Because it gives up, the write fails instead of blocking.
+        let result = crate::sql_query("INSERT INTO t_busy (id) VALUES (1)").execute(&mut contender);
+
+        assert!(
+            result.is_err(),
+            "the contended write should fail once the busy handler gives up"
+        );
+        assert!(
+            calls.load(Ordering::Relaxed) >= 1,
+            "the busy handler should have been invoked at least once"
         );
     }
 }

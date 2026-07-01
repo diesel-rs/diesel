@@ -18,6 +18,7 @@ pub use self::auto_extension::cancel_auto_extension;
 pub use self::auto_extension::register_auto_extension;
 pub use self::auto_extension::reset_auto_extension;
 pub use self::backend::{Sqlite, SqliteType};
+pub use self::connection::BusyDecision;
 pub use self::connection::CommitDecision;
 pub use self::connection::ProgressDecision;
 pub use self::connection::SerializedDatabase;
