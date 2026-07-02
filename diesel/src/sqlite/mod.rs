@@ -26,7 +26,9 @@ pub use self::connection::SqliteBindValue;
 pub use self::connection::SqliteConnection;
 pub use self::connection::SqliteLimit;
 pub use self::connection::SqliteValue;
+pub use self::connection::authorizer;
 pub use self::connection::sqlite_blob::SqliteReadOnlyBlob;
+pub use self::connection::{AuthorizerContext, AuthorizerDecision};
 #[cfg(feature = "__sqlite-shared")]
 pub use self::function_behavior::SqliteFunctionBehavior;
 pub use self::query_builder::SqliteQueryBuilder;

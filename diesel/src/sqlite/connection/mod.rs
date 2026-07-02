@@ -4,6 +4,7 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+pub mod authorizer;
 mod bind_collector;
 mod functions;
 mod hooks;
@@ -17,6 +18,7 @@ mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
+pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
 pub use self::limits::SqliteLimit;

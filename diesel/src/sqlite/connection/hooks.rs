@@ -1,6 +1,7 @@
 use super::SqliteConnection;
 use core::num::NonZeroU32;
 
+pub(super) use super::authorizer::{AuthorizerContext, AuthorizerDecision};
 pub(super) use super::{BusyDecision, CommitDecision, ProgressDecision};
 
 impl SqliteConnection {
@@ -318,6 +319,77 @@ impl SqliteConnection {
     /// ```
     pub fn set_busy_timeout(&mut self, ms: i32) {
         self.raw_connection.set_busy_timeout(ms);
+    }
+
+    /// Registers an authorizer callback for SQL compilation access control.
+    /// Added in SQLite 3.0.0 (June 2004).
+    ///
+    /// The callback is invoked during `sqlite3_prepare()` (statement
+    /// compilation) to control access to database objects. It receives
+    /// an [`AuthorizerContext`] describing the operation and returns an
+    /// [`AuthorizerDecision`].
+    ///
+    /// The authorizer is consulted only at statement preparation, so treat it
+    /// as defense-in-depth rather than a complete sandbox. SQLite re-checks
+    /// already-prepared statements when an authorizer is installed. Removing the
+    /// authorizer clears diesel's statement cache so statements prepared while
+    /// it was active are re-prepared without it.
+    ///
+    /// The authorizer may be re-invoked during `sqlite3_step()` if a schema
+    /// change triggers statement recompilation.
+    ///
+    /// The callback must not modify the database connection. It is invoked
+    /// synchronously on the thread driving the connection, so it is never
+    /// called concurrently.
+    ///
+    /// Only one authorizer can be active at a time per connection.
+    /// Registering a new one replaces the previous. Panics in the callback
+    /// abort the process.
+    ///
+    /// See: [`sqlite3_set_authorizer`](https://sqlite.org/c3ref/set_authorizer.html)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use diesel::prelude::*;
+    /// use diesel::sqlite::{SqliteConnection, AuthorizerContext, AuthorizerDecision};
+    ///
+    /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.on_authorize(|ctx| match ctx {
+    ///     AuthorizerContext::Delete(_) => AuthorizerDecision::Deny,
+    ///     AuthorizerContext::DropTable(_) | AuthorizerContext::DropIndex(_) => {
+    ///         AuthorizerDecision::Deny
+    ///     }
+    ///     _ => AuthorizerDecision::Allow,
+    /// });
+    ///
+    /// // Later: remove the authorizer
+    /// conn.remove_authorizer();
+    /// ```
+    pub fn on_authorize<F>(&mut self, hook: F)
+    where
+        F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
+    {
+        // No cache clear is needed here. Installing a non-null authorizer makes
+        // SQLite expire every prepared statement on the connection, and because
+        // diesel prepares with `sqlite3_prepare_v3` those statements are
+        // transparently re-prepared under the new authorizer on their next step.
+        self.raw_connection.set_authorizer(hook);
+    }
+
+    /// Removes the authorizer callback.
+    ///
+    /// See [`on_authorize`](Self::on_authorize) for usage example.
+    pub fn remove_authorizer(&mut self) {
+        self.raw_connection.remove_authorizer();
+        // Removing an authorizer does not expire prepared statements: SQLite
+        // expires them only when a non-null authorizer is installed. A statement
+        // prepared while the authorizer was active can have its decisions
+        // compiled in (an `Ignore` on a column read, for example, bakes a `NULL`
+        // into the statement), and nothing invalidates that cached statement on
+        // removal, so it keeps returning the old result. Clear the cache to force
+        // the next query to re-prepare without the authorizer.
+        self.statement_cache.clear();
     }
 }
 
@@ -909,6 +981,140 @@ mod tests {
         assert!(
             calls.load(Ordering::Relaxed) >= 1,
             "the busy handler should have been invoked at least once"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn on_authorize_deny_rejects_statement() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE auth_basic (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let calls = Arc::new(AtomicU32::new(0));
+        let calls2 = calls.clone();
+
+        conn.on_authorize(move |_ctx| {
+            calls2.fetch_add(1, Ordering::Relaxed);
+            AuthorizerDecision::Deny
+        });
+
+        // The authorizer is consulted while the statement is prepared, denies
+        // it, and the statement is rejected.
+        let denied = crate::sql_query("SELECT id FROM auth_basic").execute(conn);
+        assert!(denied.is_err(), "a denied statement should fail to prepare");
+        assert!(
+            calls.load(Ordering::Relaxed) > 0,
+            "the authorizer callback should have been invoked"
+        );
+
+        // Removing the authorizer restores access.
+        conn.remove_authorizer();
+        crate::sql_query("SELECT id FROM auth_basic")
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn remove_authorizer_re_prepares_cached_statements() {
+        use crate::prelude::*;
+        use crate::sqlite::AuthorizerContext;
+
+        crate::table! {
+            auth_ignore_items (id) {
+                id -> Integer,
+            }
+        }
+
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE auth_ignore_items (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO auth_ignore_items (id) VALUES (42)")
+            .execute(conn)
+            .unwrap();
+
+        // An authorizer that ignores column reads. SQLite bakes a NULL
+        // substitution for the column into the prepared (and cached) statement.
+        // A typed query is used because raw `sql_query` is never cached.
+        conn.on_authorize(|ctx| match ctx {
+            AuthorizerContext::Read(_) => AuthorizerDecision::Ignore,
+            _ => AuthorizerDecision::Allow,
+        });
+        let ignored = auth_ignore_items::table
+            .select(auth_ignore_items::id.nullable())
+            .load::<Option<i32>>(conn)
+            .unwrap();
+        assert_eq!(
+            ignored,
+            vec![None],
+            "Ignore substitutes NULL for the column"
+        );
+
+        // SQLite does not expire prepared statements when an authorizer is
+        // removed, so `remove_authorizer` clears diesel's statement cache to
+        // force the cached statement (with its baked-in NULL) to be re-prepared.
+        conn.remove_authorizer();
+        let restored = auth_ignore_items::table
+            .select(auth_ignore_items::id.nullable())
+            .load::<Option<i32>>(conn)
+            .unwrap();
+        assert_eq!(
+            restored,
+            vec![Some(42)],
+            "after removing the authorizer the real value is returned"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn on_authorize_re_prepares_cached_statements() {
+        use crate::prelude::*;
+        use crate::sqlite::AuthorizerContext;
+
+        crate::table! {
+            auth_replace_items (id) {
+                id -> Integer,
+            }
+        }
+
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE auth_replace_items (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO auth_replace_items (id) VALUES (42)")
+            .execute(conn)
+            .unwrap();
+
+        // A first authorizer that allows everything. The typed query is
+        // prepared and cached while it is active, returning the real value.
+        conn.on_authorize(|_ctx| AuthorizerDecision::Allow);
+        let allowed = auth_replace_items::table
+            .select(auth_replace_items::id.nullable())
+            .load::<Option<i32>>(conn)
+            .unwrap();
+        assert_eq!(
+            allowed,
+            vec![Some(42)],
+            "the allow-all authorizer returns the real value"
+        );
+
+        // Installing the replacement authorizer expires the cached statement
+        // (SQLite expires all prepared statements when a non-null authorizer is
+        // set), so `sqlite3_prepare_v3` re-prepares it under the new authorizer
+        // and it now yields NULL. This documents that no diesel-side cache clear
+        // is required on the install path.
+        conn.on_authorize(|ctx| match ctx {
+            AuthorizerContext::Read(_) => AuthorizerDecision::Ignore,
+            _ => AuthorizerDecision::Allow,
+        });
+        let ignored = auth_replace_items::table
+            .select(auth_replace_items::id.nullable())
+            .load::<Option<i32>>(conn)
+            .unwrap();
+        assert_eq!(
+            ignored,
+            vec![None],
+            "after replacing the authorizer the new decision takes effect"
         );
     }
 }
