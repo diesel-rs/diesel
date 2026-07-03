@@ -3,7 +3,7 @@ use crate::insertable::InsertValues;
 use crate::insertable::{CanInsertInSingleQuery, ColumnInsertValue, DefaultableColumnInsertValue};
 use crate::prelude::*;
 use crate::query_builder::debug_query::DebugBinds;
-use crate::query_builder::returning::ReturningClause;
+use crate::query_builder::returning_clause::ReturningClause;
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::{AstPass, QueryBuilder, QueryId, ValuesClause};
 use crate::query_builder::{DebugQuery, QueryFragment};
@@ -580,7 +580,7 @@ where
         LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
-    type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
+    type RowIter<'conn> = std::vec::IntoIter<QueryResult<U>>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
         let (Yes, query) = self;
@@ -710,7 +710,7 @@ where
     >: LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
-    type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
+    type RowIter<'conn> = std::vec::IntoIter<QueryResult<U>>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
         let (Yes, query) = self;
