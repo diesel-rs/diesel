@@ -494,6 +494,50 @@ fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_same_schema_cross_file_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_same_schema_cross_file_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "--schema",
+            "inventory",
+            "-o",
+            "orders",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "--schema",
+            "inventory",
+            "-o",
+            "customers",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_default_schema_cross_file_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_default_schema_cross_file_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "-o",
+            "orders",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "-o",
+            "customers",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn print_schema_sqlite_primary_key_as_bigint() {
     test_print_schema(
