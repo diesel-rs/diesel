@@ -1404,12 +1404,14 @@ where
             TRACE_PROFILE => {
                 // p = sqlite3_stmt*, x = sqlite3_int64* (nanoseconds).
                 let stmt_ptr = p as *mut ffi::sqlite3_stmt;
-                let duration_ns = if x.is_null() {
-                    0
-                } else {
+                let duration_ns = unsafe {
                     // x points to a sqlite3_int64. The duration is non-negative.
-                    unsafe { (*(x as *const ffi::sqlite3_int64)).cast_unsigned() }
-                };
+                    (x as *const ffi::sqlite3_int64).as_ref()
+                }
+                .copied()
+                .unwrap_or_default()
+                .cast_unsigned();
+
                 let readonly =
                     !stmt_ptr.is_null() && unsafe { ffi::sqlite3_stmt_readonly(stmt_ptr) != 0 };
                 let sql_ptr = if stmt_ptr.is_null() {
