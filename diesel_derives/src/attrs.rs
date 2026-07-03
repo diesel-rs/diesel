@@ -13,13 +13,14 @@ use crate::deprecated::ParseDeprecated;
 use crate::model::CheckForBackend;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::{
-    parse_eq, parse_paren, unknown_attribute, BASE_QUERY_NOTE, BASE_QUERY_TYPE_NOTE,
-    BELONGS_TO_NOTE, COLUMN_NAME_NOTE, DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE,
-    SELECT_EXPRESSION_NOTE, SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE,
-    SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
+    BASE_QUERY_NOTE, BASE_QUERY_TYPE_NOTE, BELONGS_TO_NOTE, COLUMN_NAME_NOTE, DESERIALIZE_AS_NOTE,
+    MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, RENAME_ALL_NOTE, RENAME_NOTE, SELECT_EXPRESSION_NOTE,
+    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQL_TYPE_NOTE, SQLITE_TYPE_NOTE,
+    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE, parse_eq,
+    parse_eq_type, parse_paren, unknown_attribute,
 };
 
-use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
+use crate::util::{CHECK_FOR_BACKEND_NOTE, parse_paren_list};
 
 pub trait MySpanned {
     fn span(&self) -> Span;
@@ -42,10 +43,11 @@ pub enum FieldAttr {
     TreatNoneAsDefaultValue(Ident, LitBool),
     TreatNoneAsNull(Ident, LitBool),
 
-    SerializeAs(Ident, TypePath),
-    DeserializeAs(Ident, TypePath),
+    SerializeAs(Ident, Type),
+    DeserializeAs(Ident, Type),
     SelectExpression(Ident, Expr),
     SelectExpressionType(Ident, Type),
+    Rename(Ident, LitStr),
 }
 
 #[derive(Clone)]
@@ -165,11 +167,11 @@ impl Parse for FieldAttr {
             )),
             "serialize_as" => Ok(FieldAttr::SerializeAs(
                 name,
-                parse_eq(input, SERIALIZE_AS_NOTE)?,
+                parse_eq_type(input, SERIALIZE_AS_NOTE)?,
             )),
             "deserialize_as" => Ok(FieldAttr::DeserializeAs(
                 name,
-                parse_eq(input, DESERIALIZE_AS_NOTE)?,
+                parse_eq_type(input, DESERIALIZE_AS_NOTE)?,
             )),
             "select_expression" => Ok(FieldAttr::SelectExpression(
                 name,
@@ -179,6 +181,7 @@ impl Parse for FieldAttr {
                 name,
                 parse_eq(input, SELECT_EXPRESSION_TYPE_NOTE)?,
             )),
+            "rename" => Ok(FieldAttr::Rename(name, parse_eq(input, RENAME_NOTE)?)),
             _ => Err(unknown_attribute(
                 &name,
                 &[
@@ -192,6 +195,7 @@ impl Parse for FieldAttr {
                     "deserialize_as",
                     "select_expression",
                     "select_expression_type",
+                    "rename",
                 ],
             )),
         }
@@ -211,7 +215,8 @@ impl MySpanned for FieldAttr {
             | FieldAttr::SerializeAs(ident, _)
             | FieldAttr::DeserializeAs(ident, _)
             | FieldAttr::SelectExpression(ident, _)
-            | FieldAttr::SelectExpressionType(ident, _) => ident.span(),
+            | FieldAttr::SelectExpressionType(ident, _)
+            | FieldAttr::Rename(ident, _) => ident.span(),
         }
     }
 }
@@ -221,6 +226,7 @@ pub enum StructAttr {
     Aggregate(Ident),
     NotSized(Ident),
     ForeignDerive(Ident),
+    EnumType(Ident),
 
     TableName(Ident, Path),
     SqlType(Ident, TypePath),
@@ -235,6 +241,7 @@ pub enum StructAttr {
     CheckForBackend(Ident, CheckForBackend),
     BaseQuery(Ident, Expr),
     BaseQueryType(Ident, Type),
+    RenameAll(Ident, RenameVariants),
 }
 
 impl Parse for StructAttr {
@@ -246,6 +253,7 @@ impl Parse for StructAttr {
             "aggregate" => Ok(StructAttr::Aggregate(name)),
             "not_sized" => Ok(StructAttr::NotSized(name)),
             "foreign_derive" => Ok(StructAttr::ForeignDerive(name)),
+            "enum_type" => Ok(StructAttr::EnumType(name)),
 
             "table_name" => Ok(StructAttr::TableName(
                 name,
@@ -303,6 +311,10 @@ impl Parse for StructAttr {
                 name,
                 parse_eq(input, BASE_QUERY_TYPE_NOTE)?,
             )),
+            "rename_all" => Ok(StructAttr::RenameAll(
+                name,
+                parse_eq(input, RENAME_ALL_NOTE)?,
+            )),
             _ => Err(unknown_attribute(
                 &name,
                 &[
@@ -321,6 +333,8 @@ impl Parse for StructAttr {
                     "check_for_backend",
                     "base_query",
                     "base_query_type",
+                    "enum_type",
+                    "rename_all",
                 ],
             )),
         }
@@ -333,6 +347,7 @@ impl MySpanned for StructAttr {
             StructAttr::Aggregate(ident)
             | StructAttr::NotSized(ident)
             | StructAttr::ForeignDerive(ident)
+            | StructAttr::EnumType(ident)
             | StructAttr::TableName(ident, _)
             | StructAttr::SqlType(ident, _)
             | StructAttr::TreatNoneAsDefaultValue(ident, _)
@@ -344,7 +359,8 @@ impl MySpanned for StructAttr {
             | StructAttr::CheckForBackend(ident, _)
             | StructAttr::BaseQuery(ident, _)
             | StructAttr::BaseQueryType(ident, _)
-            | StructAttr::PrimaryKey(ident, _) => ident.span(),
+            | StructAttr::PrimaryKey(ident, _)
+            | StructAttr::RenameAll(ident, _) => ident.span(),
         }
     }
 }
@@ -415,5 +431,78 @@ impl syn::parse::Parse for DisabledCheckForBackend {
             ));
         }
         Ok(Self { value: lit })
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[allow(clippy::enum_variant_names)]
+pub enum RenameVariants {
+    LowerCase,
+    UpperCase,
+    PascalCase,
+    CamelCase,
+    SnakeCase,
+    ScreamingSnakeCase,
+    KebabCase,
+    ScreamingKebabCase,
+}
+
+impl syn::parse::Parse for RenameVariants {
+    fn parse(input: syn::parse::ParseStream) -> Result<Self> {
+        let lit = input.parse::<syn::LitStr>()?;
+        let v = lit.value();
+        let v = match v.as_str() {
+            "lowercase" => Self::LowerCase,
+            "UPPERCASE" => Self::UpperCase,
+            "PascalCase" => Self::PascalCase,
+            "camelCase" => Self::CamelCase,
+            "snake_case" => Self::SnakeCase,
+            "SCREAMING_SNAKE_CASE" => Self::ScreamingSnakeCase,
+            "kebab-case" => Self::KebabCase,
+            "SCREAMING-KEBAB-CASE" => Self::ScreamingKebabCase,
+            s => {
+                return Err(syn::Error::new(
+                    lit.span(),
+                    format!(
+                        "got invalid case identifier: `{s}`\n\
+                         only: `lowercase`, `UPPERCASE`, `PascalCase`, `camelCase`, \
+                         `snake_case`, `SCREAMING_SNAKE_CASE`, `kebab-case` \
+                         and `SCREAMING-KEBAB-CASE` are supported"
+                    ),
+                ));
+            }
+        };
+        Ok(v)
+    }
+}
+
+impl RenameVariants {
+    pub fn apply_case_to_enum_variant(&self, input: String) -> String {
+        match self {
+            // Rust enum variants are already pascal case
+            Self::PascalCase => input,
+            Self::LowerCase => input.to_ascii_lowercase(),
+            Self::UpperCase => input.to_ascii_uppercase(),
+            Self::CamelCase => input[..1].to_ascii_lowercase() + &input[1..],
+            Self::SnakeCase => {
+                let mut snake = String::new();
+                for (i, ch) in input.char_indices() {
+                    if i > 0 && ch.is_uppercase() {
+                        snake.push('_');
+                    }
+                    snake.push(ch.to_ascii_lowercase());
+                }
+                snake
+            }
+            Self::ScreamingSnakeCase => Self::SnakeCase
+                .apply_case_to_enum_variant(input)
+                .to_ascii_uppercase(),
+            Self::KebabCase => Self::SnakeCase
+                .apply_case_to_enum_variant(input)
+                .replace('_', "-"),
+            Self::ScreamingKebabCase => Self::ScreamingSnakeCase
+                .apply_case_to_enum_variant(input)
+                .replace('_', "-"),
+        }
     }
 }

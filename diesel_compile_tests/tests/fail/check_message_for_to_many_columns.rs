@@ -21,6 +21,10 @@ table! {
         column_18 -> Integer,
     }
 }
-//~^^^^^^^^^^^^^^^^^^^^^ ERROR: table contains more than 16 columns.
+//~^^^^^^^^^^^^^^^^^^^^^ ERROR: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`
+//~| ERROR: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): Expression` is not satisfied
+//~| ERROR: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): ValidGrouping<()>` is not satisfied
+//~| ERROR: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`
+//~| ERROR: evaluation panicked: `test_table` contains 17 columns, which is more than the supported maximum number of columns
 
 fn main() {}

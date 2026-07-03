@@ -1,0 +1,91 @@
+---
+source: diesel_cli/tests/help_snapshots.rs
+expression: res.stdout()
+---
+Print table definitions for database schema
+
+Usage: diesel print-schema [OPTIONS] [TABLE_NAME]...
+
+Arguments:
+  [TABLE_NAME]...
+          Table names to filter
+
+Options:
+      --database-url <DATABASE_URL>
+          Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified
+
+  -s, --schema <SCHEMA>
+          The name of the schema
+
+      --config-file <CONFIG_FILE>
+          The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file
+
+      --include-views
+          Include views in the generated schema
+
+      --experimental-infer-nullable-for-views
+          UNSTABLE: Infer nullability for view fields
+
+      --locked-schema
+          Require that the schema file is up to date.
+          
+          When `print_schema.file` is specified in your config file, this flag will cause Diesel CLI to error if any command would result in changes to that file. It is recommended that you use this flag when running migrations in CI or production.
+
+      --migration-dir <MIGRATION_DIRECTORY>
+          The location of your migration directory. By default this will look for a directory called `migrations` in the current directory and its parents
+
+  -o, --only-tables
+          Only include tables from table-name that matches regexp
+
+  -e, --except-tables
+          Exclude tables from table-name that matches regex
+
+      --with-docs
+          Render documentation comments for tables and columns
+
+      --with-docs-config <WITH_DOCS_CONFIG>
+          Render documentation comments for tables and columns
+
+      --allow-tables-to-appear-in-same-query-config <ALLOW_TABLES_TO_APPEAR_IN_SAME_QUERY_CONFIG>
+          Group tables in allow_tables_to_appear_in_same_query!()
+
+          Possible values:
+          - fk_related_tables: Group by foreign key relations
+          - all_tables:        List all tables in invocation
+          - none:              Don't generate any invocation
+
+      --column-sorting <COLUMN_SORTING>
+          Sort order for table columns
+
+          Possible values:
+          - ordinal_position: Order by ordinal position
+          - name:             Order by column name
+
+      --patch-file <PATCH_FILE>
+          A unified diff file to be applied to the final schema
+
+      --import-types <IMPORT_TYPES>
+          A list of types to import for every table, separated by commas
+
+      --no-generate-missing-sql-type-definitions
+          Generate SQL type definitions for types not provided by diesel
+
+      --except-custom-type-definitions <EXCEPT_CUSTOM_TYPE_DEFINITIONS>...
+          A list of regexes to filter the custom types definitions generated
+
+      --custom-type-derives <CUSTOM_TYPE_DERIVES>...
+          A list of derives to implement for every automatically generated SqlType in the schema, separated by commas
+
+      --pg-domains-as-custom-types <PG_DOMAINS_AS_CUSTOM_TYPES>...
+          A regex to distinguish domain names to generate custom types for instead of relying on underlying type
+
+      --schema-key <SCHEMA_KEY>
+          Select schema key from diesel.toml, use 'default' for print_schema without key
+          
+          [default: default]
+
+      --sqlite-integer-primary-key-is-bigint
+          For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, when the table isn't declared with `WITHOUT ROWID`. See https://www.sqlite.org/lang_createtable.html#rowid for more information
+
+  -h, --help
+          Print help (see a summary with '-h')

@@ -1,0 +1,27 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Identifiable)]\n#[diesel(primary_key(id, short_code))]\nstruct User {\n    id: i32,\n    short_code: String,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::associations::HasTable for User {
+        type Table = users::table;
+        fn table() -> <Self as diesel::associations::HasTable>::Table {
+            users::table
+        }
+    }
+    impl<'ident> diesel::associations::Identifiable for &'ident User {
+        type Id = (&'ident i32, &'ident String);
+        fn id(self) -> <Self as diesel::associations::Identifiable>::Id {
+            (&self.id, &self.short_code)
+        }
+    }
+    impl<'ident> diesel::associations::Identifiable for &'_ &'ident User {
+        type Id = (&'ident i32, &'ident String);
+        fn id(self) -> <Self as diesel::associations::Identifiable>::Id {
+            (&self.id, &self.short_code)
+        }
+    }
+};

@@ -178,8 +178,8 @@ pub use r2d2::*;
 /// [`r2d2::Pool`]: r2d2::Pool
 pub type PoolError = r2d2::Error;
 
-use std::fmt;
-use std::marker::PhantomData;
+use alloc::fmt;
+use core::marker::PhantomData;
 
 use crate::backend::Backend;
 use crate::connection::{
@@ -189,6 +189,7 @@ use crate::connection::{
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
 use crate::query_builder::{Query, QueryFragment, QueryId};
+use crate::query_dsl::RunQueryDslSupport;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -201,7 +202,7 @@ pub struct ConnectionManager<T> {
 
 impl<T> fmt::Debug for ConnectionManager<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ConnectionManager<{}>", std::any::type_name::<T>())
+        write!(f, "ConnectionManager<{}>", core::any::type_name::<T>())
     }
 }
 
@@ -246,7 +247,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl ::std::error::Error for Error {}
+impl ::core::error::Error for Error {}
 
 impl From<crate::result::Error> for Error {
     fn from(other: crate::result::Error) -> Self {
@@ -381,7 +382,7 @@ where
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
-pub struct PoolTransactionManager<T>(std::marker::PhantomData<T>);
+pub struct PoolTransactionManager<T>(core::marker::PhantomData<T>);
 
 impl<M, T> TransactionManager<PooledConnection<M>> for PoolTransactionManager<T>
 where
@@ -453,7 +454,7 @@ impl Query for CheckConnectionQuery {
     type SqlType = crate::sql_types::Integer;
 }
 
-impl<C> RunQueryDsl<C> for CheckConnectionQuery {}
+impl RunQueryDslSupport for CheckConnectionQuery {}
 
 /// A connection customizer designed for use in tests. Implements
 /// [CustomizeConnection] in a way that ensures transactions
@@ -468,10 +469,10 @@ impl<C: Connection> CustomizeConnection<C, crate::r2d2::Error> for TestCustomize
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(all(target_family = "wasm", target_os = "unknown"))))]
 mod tests {
-    use std::sync::mpsc;
     use std::sync::Arc;
+    use std::sync::mpsc;
     use std::thread;
     use std::time::Duration;
 

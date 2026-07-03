@@ -1,0 +1,59 @@
+---
+source: diesel_cli/tests/print_schema.rs
+assertion_line: 503
+description: "Test: print_schema_fk_related_tables"
+snapshot_kind: text
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    bikes (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    cars (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    comments (id) {
+        id -> Nullable<Integer>,
+        post_id -> Integer,
+        post_id_2 -> Integer,
+    }
+}
+
+diesel::table! {
+    posts (id) {
+        id -> Nullable<Integer>,
+        user_id -> Integer,
+    }
+}
+
+diesel::table! {
+    sessions (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    transactions (id) {
+        id -> Nullable<Integer>,
+        session_id -> Integer,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+diesel::joinable!(posts -> users (user_id));
+diesel::joinable!(transactions -> sessions (session_id));
+
+diesel::allow_tables_to_appear_in_same_query!(comments, posts, users,);
+diesel::allow_tables_to_appear_in_same_query!(sessions, transactions,);

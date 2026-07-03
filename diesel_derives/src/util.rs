@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream, Peek, Result};
 use syn::token::Eq;
-use syn::{parenthesized, parse_quote, Data, DeriveInput, GenericArgument, Ident, Type};
+use syn::{Data, DeriveInput, GenericArgument, Ident, Type, parenthesized, parse_quote};
 
 use crate::model::Model;
 
@@ -27,6 +27,8 @@ pub const BASE_QUERY_NOTE: &str =
     "base_query = schema::table_name::table.order_by(schema::table_name::id)";
 pub const BASE_QUERY_TYPE_NOTE: &str =
     "base_query_type = dsl::OrderBy<schema::table_name::table, schema::table_name::id>";
+pub const RENAME_ALL_NOTE: &str = "rename_all = \"camelCase\"";
+pub const RENAME_NOTE: &str = "rename = \"your_name\"";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> syn::Error {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
@@ -53,6 +55,25 @@ pub fn parse_eq<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
 
     input.parse::<Eq>()?;
     input.parse()
+}
+
+/// Specialized version of `parse_eq` for `syn::Type` with a customized error message for readability.
+/// This is useful because a great variety of tokens would be valid to parse as a `syn::Type`.
+pub fn parse_eq_type(input: ParseStream, help: &str) -> Result<Type> {
+    if input.is_empty() {
+        return Err(syn::Error::new(
+            input.span(),
+            format!(
+                "unexpected end of input, expected `=`\n\
+                 help: the correct format looks like `#[diesel({help})]`",
+            ),
+        ));
+    }
+
+    input.parse::<Eq>()?;
+    input
+        .parse::<Type>()
+        .map_err(|e| syn::Error::new(e.span(), "expected type"))
 }
 
 pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {

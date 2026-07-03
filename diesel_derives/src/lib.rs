@@ -26,6 +26,7 @@ use proc_macro::TokenStream;
 use sql_function::ExternSqlBlock;
 use syn::parse_quote;
 
+mod allow_tables_to_appear_in_same_query;
 mod attrs;
 mod deprecated;
 mod field;
@@ -39,6 +40,7 @@ mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
+mod enum_;
 mod from_sql_row;
 mod has_query;
 mod identifiable;
@@ -154,6 +156,19 @@ fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 /// you can specify this by adding the annotation `#[diesel(not_sized)]`
 /// as attribute on the type. This will skip the impls for non-reference types.
 ///
+/// `Rc<T>`, `Arc<T>`, and `Box<T>` wrappers around Diesel's built-in primitive
+/// types (`String`, `i32`, `bool`, `Vec<u8>`, etc.) are supported as
+/// `AsExpression` values through Diesel's internal `foreign_derive`
+/// implementations, so fields like `Rc<String>` work transparently with
+/// `#[derive(Insertable)]` and `#[derive(Queryable)]`. The unsized variants
+/// `Rc<str>` / `Arc<str>` / `Box<str>` and the `[u8]` equivalents are supported
+/// as well (one heap allocation instead of two compared to `Rc<String>`).
+/// Wrapping a *user-defined* `AsExpression` type in `Rc`/`Arc`/`Box` is not
+/// currently supported because of coherence and orphan-rule conflicts between
+/// the wildcard
+/// `impl<T, ST> AsExpression<ST> for T where T: Expression<SqlType = ST>` and
+/// the smart-pointer `Expression` impls.
+///
 /// Using this derive requires implementing the `ToSql` trait for your type.
 ///
 /// # Attributes:
@@ -168,6 +183,7 @@ fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///   that the type is `Sized`
+/// * `#[diesel(enum_type)]`, to indicate that the type represents a SQL side enum
 ///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/as_expression.md")))]
 #[cfg_attr(
@@ -1399,6 +1415,27 @@ fn __diesel_public_if_inner(
 /// }
 /// ```
 ///
+/// Individual columns may be guarded by a `#[cfg(...)]` attribute, so a table
+/// whose columns vary by enabled crate features can live in a single `table!`
+/// block instead of duplicated feature gated modules.
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::table! {
+///     users {
+///         id -> Integer,
+///         name -> Text,
+///         #[cfg(feature = "chrono")]
+///         created_at -> Timestamp,
+///     }
+/// }
+/// ```
+///
+/// The primary key itself cannot be feature gated this way: if a feature flag
+/// changes which columns form the primary key, the whole `table!` block still
+/// needs to be duplicated behind the relevant `#[cfg(...)]` attributes.
+///
 /// This module will also contain several helper types:
 ///
 /// dsl
@@ -1447,19 +1484,230 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
     table_proc_inner(input.into()).into()
 }
 
+/// Allow two or more tables which are otherwise unrelated to be used together
+/// in a query.
+///
+/// This macro must be invoked any time two tables need to appear in the same
+/// query either because they are being joined together, or because one appears
+/// in a subselect. When this macro is invoked with more than 2 tables, every
+/// combination of those tables will be allowed to appear together.
+///
+/// If you are using `diesel print-schema`, an invocation of
+/// this macro will be generated for you for all tables in your schema.
+///
+/// # Example
+///
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// #
+/// // This would be required to do `users.inner_join(posts.inner_join(comments))`
+/// allow_tables_to_appear_in_same_query!(comments, posts, users);
+///
+/// table! {
+///     comments {
+///         id -> Integer,
+///         post_id -> Integer,
+///         body -> VarChar,
+///     }
+/// }
+///
+/// table! {
+///    posts {
+///        id -> Integer,
+///        user_id -> Integer,
+///        title -> VarChar,
+///    }
+/// }
+///
+/// table! {
+///     users {
+///        id -> Integer,
+///        name -> VarChar,
+///     }
+/// }
+/// ```
+///
+/// When more than two tables are passed, the relevant code is generated for
+/// every combination of those tables. This code would be equivalent to the
+/// previous example.
+///
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// # table! {
+/// #    comments {
+/// #        id -> Integer,
+/// #        post_id -> Integer,
+/// #        body -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #    posts {
+/// #        id -> Integer,
+/// #        user_id -> Integer,
+/// #        title -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #     users {
+/// #        id -> Integer,
+/// #        name -> VarChar,
+/// #     }
+/// # }
+/// #
+/// allow_tables_to_appear_in_same_query!(comments, posts);
+/// allow_tables_to_appear_in_same_query!(comments, users);
+/// allow_tables_to_appear_in_same_query!(posts, users);
+/// #
+/// # fn main() {}
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/allow_tables_to_appear_in_same_query.md")))]
+#[proc_macro]
+pub fn allow_tables_to_appear_in_same_query(input: TokenStream) -> TokenStream {
+    allow_tables_to_appear_in_same_query::expand(input.into()).into()
+}
+
 fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    // include the input in the error output so that rust-analyzer is happy
-    let tokenstream2 = input.clone();
-    match syn::parse2(input) {
-        Ok(input) => table::expand(input),
-        Err(_) => quote::quote! {
-            compile_error!(
-                "invalid `table!` syntax \nhelp: please see the `table!` macro docs for more info\n\
-                 help: docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
-            );
-            #tokenstream2
-        },
-    }
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::Table)
+}
+
+/// Specifies that a view exists, and what fields it has. This will create a
+/// new public module, with the same name, as the name of the view. In this
+/// module, you will find a unit struct named `view`, and a unit struct with the
+/// name of each field.
+///
+/// The macro and the generated code closely mirror the [`table!`](table_proc) macro.
+///
+/// By default, this allows a maximum of 32 columns per view.
+/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
+/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can decrease it to 16 columns,
+/// which improves compilation time,
+/// by disabling the default features of Diesel.
+/// Note that enabling 64 column tables or larger will substantially increase
+/// the compile time of Diesel.
+///
+/// Example usage
+/// -------------
+///
+/// ```rust
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     users {
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     }
+/// }
+/// ```
+///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import.
+///
+/// ```
+/// # extern crate diesel;
+/// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
+/// #     pub struct TsVector;
+/// # }
+///
+/// diesel::view! {
+///     use diesel::sql_types::*;
+/// #    use crate::diesel_full_text_search::*;
+/// # /*
+///     use diesel_full_text_search::*;
+/// # */
+///
+///     posts {
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// If you want to add documentation to the generated code, you can use the
+/// following syntax:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     /// The table containing all blog posts
+///     posts {
+///         /// The post's title
+///         title -> Text,
+///     }
+/// }
+/// ```
+///
+/// If you have a column with the same name as a Rust reserved keyword, you can use
+/// the `sql_name` attribute like this:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::view! {
+///     posts {
+///         /// This column is named `mytype` but references the table `type` column.
+///         #[sql_name = "type"]
+///         mytype -> Text,
+///     }
+/// }
+/// ```
+///
+/// This module will also contain several helper types:
+///
+/// dsl
+/// ---
+///
+/// This simply re-exports the view, renamed to the same name as the module,
+/// and each of the columns. This is useful to glob import when you're dealing
+/// primarily with one table, to allow writing `users.filter(name.eq("Sean"))`
+/// instead of `users::table.filter(users::name.eq("Sean"))`.
+///
+/// `all_columns`
+/// -----------
+///
+/// A constant will be assigned called `all_columns`. This is what will be
+/// selected if you don't otherwise specify a select clause. It's type will be
+/// `view::AllColumns`. You can also get this value from the
+/// `QueryRelation::all_columns` function.
+///
+/// star
+/// ----
+///
+/// This will be the qualified "star" expression for this view (e.g.
+/// `users.*`). Internally, we read columns by index, not by name, so this
+/// column is not safe to read data out of, and it has had its SQL type set to
+/// `()` to prevent accidentally using it as such. It is sometimes useful for
+/// counting statements, however. It can also be accessed through the `Table.star()`
+/// method.
+///
+/// `SqlType`
+/// -------
+///
+/// A type alias called `SqlType` will be created. It will be the SQL type of
+/// `all_columns`. The SQL type is needed for things like returning boxed
+/// queries.
+///
+/// `BoxedQuery`
+/// ----------
+///
+/// ```ignore
+/// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, view, DB>;
+/// ```
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/view.md")))]
+#[proc_macro]
+pub fn view_proc(input: TokenStream) -> TokenStream {
+    view_proc_inner(input.into()).into()
+}
+
+fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::View)
 }
 
 /// This derives implements `diesel::Connection` and related traits for an enum of
@@ -1518,7 +1766,7 @@ fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream
 ///     // the inner connection. This allows us then to use
 ///     // backend specific methods.
 /// #    #[cfg(feature = "postgres")]
-///     if let AnyConnection::Postgresql(ref mut conn) = conn {
+///     if let AnyConnection::Postgresql(conn) = conn {
 ///         // perform a postgresql specific query here
 ///         let users = users::table.load::<(i32, String)>(conn)?;
 ///     }
@@ -1964,13 +2212,35 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// On most backends, the implementation of the function is defined in a
 /// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
-/// Rust instead. You must call `register_impl` or
-/// `register_nondeterministic_impl` (in the generated function's `_internals`
-/// module) with every connection before you can use the function.
+/// Rust instead. You must call `register_impl` (in the generated function's
+/// `_utils` module) with every connection before you can use the function.
+///
+/// Three registration functions are generated in the `_utils` module:
+///
+/// - `register_impl`: registers a deterministic function (takes an `Fn`).
+/// - `register_nondeterministic_impl`: registers a function that may return
+///   different results for the same inputs, e.g. `random` (takes an `FnMut`).
+/// - `register_impl_with_behavior`: registers a function with an explicit
+///   [`SqliteFunctionBehavior`] for full control over how SQLite treats the
+///   function:
+///
+///   - `SqliteFunctionBehavior::DETERMINISTIC`: The function always returns the
+///     same result given the same inputs. Allows SQLite to optimize queries.
+///   - `SqliteFunctionBehavior::INNOCUOUS`: The function is safe to call from
+///     schema objects (views, triggers, etc.) when `set_trusted_schema(false)`.
+///   - `SqliteFunctionBehavior::DIRECTONLY`: The function cannot be called from
+///     schema objects. Use for functions with side effects.
+///   - `SqliteFunctionBehavior::empty()`: Non-deterministic function.
+///
+/// To register the implementation automatically for every new SQLite connection
+/// opened in the process, instead of manually per connection, see
+/// [`register_auto_extension`](../diesel/sqlite/fn.register_auto_extension.html).
 ///
 /// These functions will only be generated if the `sqlite` feature is enabled,
 /// and the function is not generic.
 /// SQLite doesn't support generic functions and variadic functions.
+///
+/// [`SqliteFunctionBehavior`]: ../diesel/sqlite/struct.SqliteFunctionBehavior.html
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -2260,11 +2530,45 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// }
 /// ```
 ///
+/// Optionally, a second named boolean argument `skip_zero_argument_variant` can be provided to
+/// control whether the 0-argument variant is generated. By default, (omitted or `false`),
+/// the 0-argument variant is included. Set it to `true` to skip generating the 0-argument
+/// variant for functions that require at least one variadic argument. If you specify the boolean
+/// argument, the first argument has to be named `last_arguments` for clarity.
+///
+/// Example:
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[variadic(last_arguments = 2, skip_zero_argument_variant = true)]
+///     fn foo<A, B, C>(a: A, b: B, c: C) -> Text;
+/// }
+/// ```
+///
+/// Which will be equivalent to
+///
+/// ```ignore
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[sql_name = "foo"]
+///     fn foo_1<A, B1, C1>(a: A, b_1: B1, c_1: C1) -> Text;
+///
+///     #[sql_name = "foo"]
+///     fn foo_2<A, B1, C1, B2, C2>(a: A, b_1: B1, c_1: C1, b_2: B2, c_2: C2) -> Text;
+///
+///     ...
+/// }
+/// ```
+///
 /// ### Controlling the generation of variadic function variants
 ///
 /// By default, only variants with 0, 1, and 2 repetitions of variadic arguments are generated. To
 /// generate more variants, set the `DIESEL_VARIADIC_FUNCTION_ARGS` environment variable to the
 /// desired number of variants.
+///
+/// • The boolean only affects whether the 0 variant is generated; the total number of variants
+/// (e.g., up to N) still follows DIESEL_VARIADIC_FUNCTION_ARGS or the default.
 ///
 /// For a greater convenience this environment variable can also be set in a `.cargo/config.toml`
 /// file as described in the [cargo documentation](https://doc.rust-lang.org/cargo/reference/config.html#env).
@@ -2526,5 +2830,131 @@ pub fn derive_has_query(input: TokenStream) -> TokenStream {
 fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
         .and_then(has_query::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
+}
+
+/// Implements `FromSql` and `ToSql` for enum types
+///
+/// This derive enables an enum (with unit-variants only) to be serialized to the database as
+/// a byte-string and deserialized from the same representation from the database.
+///
+/// This derive generates `FromSql` and `ToSql` implementations for all backends based on the provided
+/// SQL type. It currently supports the following SQL types:
+///
+/// * `diesel::sql_types::Integer`, `diesel::sql_types::SmallInt`, `diesel::sql_types::BigInt`, `diesel::sql_types::TinyInt`
+///   and their unsigned variants for all backends to (de)serialize a Rust enum as integer values.
+///   This requires annotating every variant with an explicit discriminant value
+/// * `diesel::sql_types::Text` for all backend to (de)serialize a Rust enum as text values.
+/// * Any custom SQL type marked with `#[diesel(enum_type)]`
+///
+/// Additional it internally generates the same implementations as `#[derive(FromSqlRow)]`
+/// and `#[derive(AsExpression)]`
+///
+/// # Attributes
+///
+/// ## Required container attributes
+///
+/// * `#[diesel(sql_type = path::to::MyEnumType)]`, specifies the database type this enum represents, can appear several times
+///
+/// ## Optional container attributes
+///
+/// * `#[diesel(rename_all = "case")]` to rename all enum variants according the provided scheme. The following schemes are supported:
+///      + `"lowercase"` to rename all variants to lower-case
+///      + `"UPPERCASE"` to rename all variants to upper-case
+///      + `"PascalCase"` to keep the provided Rust variant name
+///      + `"camelCase"` to rename all variants to camel-case
+///      + `"snake_case"` to rename all variants to snake-case
+///      + `"SCREAMING_SNAKE_CASE"` to rename all variants to screaming snake case
+///      + `"kebab-case"` to rename all variants to kebab-case
+///      + `"SCREAMING-KEBAB-CASE"` to rename all variants to screaming kebab case
+///
+/// ## Optional variant attributes
+///
+/// * `#[diesel(rename = "newSqlName")]` to provide an explicit name for the SQL side variant
+///
+/// # Examples
+///
+/// ## Usage with database side Enums
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = schema::sql_types::Color)]
+/// enum Color {
+///     Red,
+///     Green,
+///     Blue
+/// }
+/// # #[cfg(feature = "postgres")]
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select(Color::Red.into_sql::<schema::sql_types::Color>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
+///
+/// ## Usage with a database side integer column
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = diesel::sql_types::Integer)]
+/// enum Color {
+///     // Explicit discriminants are required here
+///     Red = 1,
+///     Green = 2,
+///     Blue = 3
+/// }
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select(1.into_sql::<diesel::sql_types::Integer>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// ```
+///
+/// ## Usage with a database side text column
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = diesel::sql_types::Text)]
+/// #[diesel(rename_all = "SCREAMING_SNAKE_CASE")]
+/// enum Color {
+///     Red,
+///     Green,
+///     Blue,
+/// }
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select("RED".into_sql::<diesel::sql_types::Text>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// ```
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
+#[proc_macro_derive(Enum, attributes(diesel))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    derive_enum_inner(input.into()).into()
+}
+
+fn derive_enum_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(enum_::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
 }

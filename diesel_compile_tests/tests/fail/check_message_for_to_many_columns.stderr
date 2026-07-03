@@ -1,5 +1,4 @@
-error: table contains more than 16 columns. 
-       help: consider enabling the `32-column-tables` feature to enable diesels support for tables with more than 16 columns.
+error[E0277]: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`
   --> tests/fail/check_message_for_to_many_columns.rs:3:1
    |
  LL | / table! {
@@ -8,6 +7,122 @@ error: table contains more than 16 columns.
  LL | |         column_2 -> Integer,
 ...  |
 LL | | }
-   | |_^
+   | |_^ unsatisfied trait bound
    |
-   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = help: the trait `SelectableExpression<table>` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
+   = note: `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` is no valid selection for `table`
+   = help: the following other types implement trait `SelectableExpression<QS>`:
+             (T, T1)
+             (T, T1, T2)
+             (T, T1, T2, T3)
+             (T, T1, T2, T3, T4)
+             (T, T1, T2, T3, T4, T5)
+             (T, T1, T2, T3, T4, T5, T6)
+             (T, T1, T2, T3, T4, T5, T6, T7)
+             (T, T1, T2, T3, T4, T5, T6, T7, T8)
+           and N others
+note: required by a bound in `diesel::QuerySource::DefaultSelection`
+  --> DIESEL/diesel/diesel/src/query_source/mod.rs
+   |
+LL |     type DefaultSelection: SelectableExpression<Self>;
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QuerySource::DefaultSelection`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): Expression` is not satisfied
+  --> tests/fail/check_message_for_to_many_columns.rs:3:1
+   |
+ LL | / table! {
+ LL | |     test_table(column_1) {
+ LL | |         column_1 -> Integer,
+ LL | |         column_2 -> Integer,
+...  |
+LL | | }
+   | |_^ unsatisfied trait bound
+   |
+   = help: the trait `Expression` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
+   = help: the following other types implement trait `Expression`:
+             &T
+             AliasedField<S, C>
+             Arc<T>
+             Box<T>
+             CaseWhen<..., ...>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             Collate<T, C>
+           and N others
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...): ValidGrouping<()>` is not satisfied
+   --> tests/fail/check_message_for_to_many_columns.rs:3:1
+    |
+  LL | / table! {
+  LL | |     test_table(column_1) {
+  LL | |         column_1 -> Integer,
+  LL | |         column_2 -> Integer,
+...   |
+ LL | | }
+    | |_^ unsatisfied trait bound
+    |
+    = help: the trait `ValidGrouping<()>` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
+    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+              `()` implements `ValidGrouping<GB>`
+              `(T, T1)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
+              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `ValidGrouping<__GroupByClause>`
+            and N others
+note: required by a bound in `diesel::Table::AllColumns`
+   --> DIESEL/diesel/diesel/src/query_source/mod.rs
+    |
+LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
+    |                                                   ^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`
+   --> tests/fail/check_message_for_to_many_columns.rs:3:1
+    |
+  LL | / table! {
+  LL | |     test_table(column_1) {
+  LL | |         column_1 -> Integer,
+  LL | |         column_2 -> Integer,
+...   |
+ LL | | }
+    | |_^ unsatisfied trait bound
+    |
+    = help: the trait `SelectableExpression<table>` is not implemented for `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)`
+    = note: `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` is no valid selection for `table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              (T, T1)
+              (T, T1, T2)
+              (T, T1, T2, T3)
+              (T, T1, T2, T3, T4)
+              (T, T1, T2, T3, T4, T5)
+              (T, T1, T2, T3, T4, T5, T6)
+              (T, T1, T2, T3, T4, T5, T6, T7)
+              (T, T1, T2, T3, T4, T5, T6, T7, T8)
+            and N others
+note: required by a bound in `diesel::Table::AllColumns`
+   --> DIESEL/diesel/diesel/src/query_source/mod.rs
+    |
+LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0080]: evaluation panicked: `test_table` contains 17 columns, which is more than the supported maximum number of columns
+              Try enabling a crate level feature to support more columns
+  --> tests/fail/check_message_for_to_many_columns.rs:3:1
+   |
+ LL | / table! {
+ LL | |     test_table(column_1) {
+ LL | |         column_1 -> Integer,
+ LL | |         column_2 -> Integer,
+...  |
+LL | | }
+   | |_^ evaluation of `test_table::_` failed here

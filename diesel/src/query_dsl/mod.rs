@@ -13,12 +13,13 @@
 
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::expression::count::CountStar;
 use crate::expression::Expression;
+use crate::expression::count::CountStar;
 use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
-use crate::query_source::{joins, Table};
+use crate::query_source::{QueryRelation, joins};
 use crate::result::QueryResult;
+use alloc::vec::Vec;
 
 mod belonging_to_dsl;
 #[doc(hidden)]
@@ -1094,7 +1095,7 @@ pub trait QueryDsl: Sized {
     /// # let u: Vec<(i32, String)> = users_for_update;
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "sqlite")]
+    /// # #[cfg(feature = "__sqlite-shared")]
     /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_update(self) -> ForUpdate<Self>
@@ -1167,7 +1168,7 @@ pub trait QueryDsl: Sized {
     /// # let u: Vec<(i32, String)> = users_for_share;
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "sqlite")]
+    /// # #[cfg(feature = "__sqlite-shared")]
     /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_share(self) -> ForShare<Self>
@@ -1235,7 +1236,7 @@ pub trait QueryDsl: Sized {
     /// # let u: Vec<(i32, String)> = user_skipped_locked;
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "sqlite")]
+    /// # #[cfg(feature = "__sqlite-shared")]
     /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn skip_locked(self) -> SkipLocked<Self>
@@ -1266,7 +1267,7 @@ pub trait QueryDsl: Sized {
     /// # let u: Vec<(i32, String)> = users_no_wait;
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "sqlite")]
+    /// # #[cfg(feature = "__sqlite-shared")]
     /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn no_wait(self) -> NoWait<Self>
@@ -1437,7 +1438,7 @@ pub trait QueryDsl: Sized {
 }
 
 #[diagnostic::do_not_recommend]
-impl<T: Table> QueryDsl for T {}
+impl<T: QueryRelation> QueryDsl for T {}
 
 /// Methods used to execute queries.
 pub trait RunQueryDsl<Conn>: Sized {
@@ -1836,10 +1837,16 @@ pub trait RunQueryDsl<Conn>: Sized {
     }
 }
 
-// Note: We could have a blanket `AsQuery` impl here, which would apply to
-// everything we want it to. However, when a query is invalid, we specifically
+/// Marker trait for notating what types should implement RunQueryDsl
+/// Primarily used to simplify diesel_async implementing the async version of RunQueryDsl
+pub trait RunQueryDslSupport {}
+
+impl<T> RunQueryDslSupport for T where T: QueryRelation {}
+
+// We can now use a blanket implementation against RunQueryDslSupport which
+// preserves the exiting functionality where we specifically
 // want the error to happen on the where clause of the method instead of trait
 // resolution. Otherwise our users will get an error saying `<3 page long type>:
 // ExecuteDsl is not satisfied` instead of a specific error telling them what
 // part of their query is wrong.
-impl<T, Conn> RunQueryDsl<Conn> for T where T: Table {}
+impl<T, Conn> RunQueryDsl<Conn> for T where T: RunQueryDslSupport {}

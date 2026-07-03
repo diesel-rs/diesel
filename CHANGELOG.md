@@ -12,6 +12,43 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+
+* Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
+* Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
+* Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
+* Added `SqliteConnection::on_commit` and `SqliteConnection::remove_commit_hook` to register a callback invoked when a transaction is about to be committed, wrapping `sqlite3_commit_hook`
+* Added `SqliteConnection::on_authorize` and `SqliteConnection::remove_authorizer` to register an authorizer callback that allows, denies, or ignores SQL actions during statement compilation, wrapping `sqlite3_set_authorizer`, along with the `AuthorizerContext` and `AuthorizerDecision` types
+* Added `json_extract` and `jsonb_extract` SQL function support for the SQLite backend
+* Added `json_insert` and `jsonb_insert` SQL function support for the SQLite backend
+* Added `json_replace`, `jsonb_replace`, `json_set`, and `jsonb_set` SQL function support for the SQLite backend
+* Added `SqliteConnection::get_read_only_blob` method to stream blob's from a SQLite database to Rust via `std::io::Read`
+* Added support for casting to `REAL` in SQLite.
+* Added `ToSql`, `FromSql`, `Queryable`, and `AsExpression` impls for `Rc<T>`, `Arc<T>`, and `Box<T>` (including `Rc/Arc<dyn BoxableExpression>` for cloneable dynamic query fragments and the `<str>` / `<[u8]>` unsized variants).
+* Added `diesel::pg::returning::old` to refer to a column's pre-update value using the `RETURNING old.col` syntax in a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE` statement (requires PostgreSQL >=18).
+* Added a `custom-count-column-tables` feature that allows you to configure the maximal number of supported columns per table via the `DIESEL_MAX_COLUMN_COUNT` environment variable
+* Added `register_auto_extension`, `cancel_auto_extension`, and `reset_auto_extension` for the SQLite backend to register statically linked extensions that run for every new connection.
+* Added `SqliteConnection::set_limit`, `SqliteConnection::get_limit`, and `SqliteConnection::set_recommended_security_limits` to configure SQLite's per-connection runtime limits (`sqlite3_limit`) via the new `SqliteLimit` enum.
+* Added support for `#[cfg(...)]` attributes on individual columns inside the `table!` macro, so a schema whose columns vary by enabled crate features can live in a single `table!` block instead of duplicated feature gated modules.
+* Added `SqliteConnection` methods to configure SQLite's per-connection `sqlite3_db_config` options: `set_defensive`/`is_defensive`, `set_trusted_schema`/`is_trusted_schema`, `with_load_extension_enabled`, `set_fts3_tokenizer_enabled`/`is_fts3_tokenizer_enabled`, `set_writable_schema`/`is_writable_schema`, `set_attach_create_enabled`/`is_attach_create_enabled`, `set_attach_write_enabled`/`is_attach_write_enabled`, `set_triggers_enabled`/`are_triggers_enabled`, `set_views_enabled`/`are_views_enabled`, `set_foreign_keys_enabled`/`are_foreign_keys_enabled`, and `set_double_quoted_strings_dml`/`are_double_quoted_strings_dml_enabled` (plus the `_ddl` variants).
+* Added `SqliteFunctionBehavior` and a `register_impl_with_behavior` function (generated next to `register_impl`/`register_nondeterministic_impl` by `#[declare_sql_function]`) to register custom SQLite functions with explicit behavior flags (`DETERMINISTIC`, `INNOCUOUS`, `DIRECTONLY`, `SUBTYPE`).
+* Added a `RunQueryDslSupport` trait to indicate types that should implement `RunQueryDsl` in a sync/async agnostic way
+* Added a `#[derive(diesel::Enum)]` proc-macro to easily map Rust enums to database enums.
+
+### Fixed
+
+* `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
+* Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
+* `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
+* Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
+* Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
+
+### Changed
+
+* The minimal supported Rust version is now 1.88.0
+* Add support for no-std environments using the SQLite backend
+* Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+
 ## [2.3.11] 2026-07-10
 
 * Fixed several potential panics in PostgreSQL (de)serialization code

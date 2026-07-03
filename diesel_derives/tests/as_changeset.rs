@@ -280,7 +280,7 @@ fn with_lifetime_constraints() {
 #[test]
 fn with_type_and_const_generics() {
     #[derive(FromSqlRow, AsExpression)]
-    #[diesel(sql_type = sql_types::Text)]
+    #[diesel(sql_type = diesel::sql_types::Text)]
     struct Wrapper<T: 'static>(String, std::marker::PhantomData<T>);
 
     impl<T: 'static> Wrapper<T> {
@@ -295,10 +295,10 @@ fn with_type_and_const_generics() {
         }
     }
 
-    impl<DB, T: 'static> serialize::ToSql<sql_types::Text, DB> for Wrapper<T>
+    impl<DB, T: 'static> serialize::ToSql<diesel::sql_types::Text, DB> for Wrapper<T>
     where
         DB: backend::Backend,
-        String: serialize::ToSql<sql_types::Text, DB>,
+        String: serialize::ToSql<diesel::sql_types::Text, DB>,
     {
         fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, DB>) -> serialize::Result {
             self.0.to_sql(out)
@@ -447,7 +447,7 @@ fn with_explicit_column_names_raw_type() {
 #[test]
 fn with_serialize_as() {
     #[derive(Debug, FromSqlRow, AsExpression)]
-    #[diesel(sql_type = sql_types::Text)]
+    #[diesel(sql_type = diesel::sql_types::Text)]
     struct UppercaseString(pub String);
 
     impl From<String> for UppercaseString {
@@ -456,10 +456,10 @@ fn with_serialize_as() {
         }
     }
 
-    impl<DB> serialize::ToSql<sql_types::Text, DB> for UppercaseString
+    impl<DB> serialize::ToSql<diesel::sql_types::Text, DB> for UppercaseString
     where
         DB: backend::Backend,
-        String: serialize::ToSql<sql_types::Text, DB>,
+        String: serialize::ToSql<diesel::sql_types::Text, DB>,
     {
         fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, DB>) -> serialize::Result {
             self.0.to_sql(out)

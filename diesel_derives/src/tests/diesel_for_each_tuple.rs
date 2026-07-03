@@ -5,7 +5,7 @@ use super::expand_with;
 #[test]
 pub(crate) fn diesel_for_each_tuple_1() {
     let input = quote::quote! {
-        tuple_impls
+        tuple_impls, 16
     };
 
     expand_with(

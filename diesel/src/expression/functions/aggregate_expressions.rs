@@ -297,7 +297,7 @@ pub trait AggregateExpressionMethods: Sized {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(feature = "sqlite")]
+    /// #     #[cfg(feature = "__sqlite-shared")]
     /// #     assert_version!(connection, 3, 44, 0);
     /// // This example is not meaningful yet,
     /// // modify it as soon as we support more

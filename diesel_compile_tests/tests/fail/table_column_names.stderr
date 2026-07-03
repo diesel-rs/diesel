@@ -1,6 +1,6 @@
 error: column `users` cannot be named the same as it's table.
        you may use `#[sql_name = "users"]` to reference the table's `users` column 
-       docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
+       docs available at: `https://docs.diesel.rs/2.3.x/diesel/macro.table.html`
        
  --> tests/fail/table_column_names.rs:7:9
   |

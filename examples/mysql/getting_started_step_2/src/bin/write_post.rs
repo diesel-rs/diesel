@@ -1,5 +1,5 @@
 use getting_started_step_2_mysql::*;
-use std::io::{stdin, Read};
+use std::io::{Read, stdin};
 
 fn main() {
     let connection = &mut establish_connection();

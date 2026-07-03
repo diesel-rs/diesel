@@ -1,5 +1,5 @@
 use syn::parse::{ParseStream, Result};
-use syn::{parenthesized, Ident, LitBool};
+use syn::{Ident, LitBool, parenthesized};
 
 use crate::deprecated::utils::parse_eq_and_lit_str;
 use crate::util::TREAT_NONE_AS_NULL_NOTE;

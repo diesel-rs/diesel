@@ -6,9 +6,9 @@ use crate::dsl;
 use crate::expression::SelectableExpression;
 use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
 use crate::expression_methods::EqAll;
-use crate::query_builder::{combination_clause, AsQuery, FromClause, Query, SelectStatement};
+use crate::query_builder::{AsQuery, FromClause, Query, SelectStatement, combination_clause};
 use crate::query_dsl::methods::*;
-use crate::query_dsl::{CombineDsl, QueryDsl, RunQueryDsl};
+use crate::query_dsl::{CombineDsl, QueryDsl, RunQueryDslSupport};
 use crate::query_source::{QuerySource, Table};
 
 impl<S: AliasSource> QueryDsl for Alias<S> {}
@@ -228,7 +228,7 @@ where
     }
 }
 
-impl<S: AliasSource, Conn> RunQueryDsl<Conn> for Alias<S> {}
+impl<S: AliasSource> RunQueryDslSupport for Alias<S> {}
 
 impl<S> OffsetDsl for Alias<S>
 where

@@ -13,6 +13,7 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -38,6 +39,7 @@ LL |         user_id -> Integer,
    = help: `posts::columns::user_id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -82,6 +84,7 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>

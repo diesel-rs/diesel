@@ -4,19 +4,33 @@
 //! However, if you are writing code specifically to extend Diesel on
 //! SQLite, you may need to work with this module directly.
 
+mod auto_extension;
 pub(crate) mod backend;
 mod connection;
 pub mod expression;
+mod function_behavior;
 
 pub mod query_builder;
 
 mod types;
 
+pub use self::auto_extension::cancel_auto_extension;
+pub use self::auto_extension::register_auto_extension;
+pub use self::auto_extension::reset_auto_extension;
 pub use self::backend::{Sqlite, SqliteType};
+pub use self::connection::BusyDecision;
+pub use self::connection::CommitDecision;
+pub use self::connection::ProgressDecision;
 pub use self::connection::SerializedDatabase;
 pub use self::connection::SqliteBindValue;
 pub use self::connection::SqliteConnection;
+pub use self::connection::SqliteLimit;
 pub use self::connection::SqliteValue;
+pub use self::connection::authorizer;
+pub use self::connection::sqlite_blob::SqliteReadOnlyBlob;
+pub use self::connection::{AuthorizerContext, AuthorizerDecision};
+#[cfg(feature = "__sqlite-shared")]
+pub use self::function_behavior::SqliteFunctionBehavior;
 pub use self::query_builder::SqliteQueryBuilder;
 
 /// Trait for the implementation of a SQLite aggregate function
@@ -49,4 +63,11 @@ pub trait SqliteAggregateFunction<Args>: Default {
 pub mod sql_types {
     #[doc(inline)]
     pub use super::types::Timestamptz;
+
+    #[cfg(feature = "__sqlite-shared")]
+    #[doc(inline)]
+    pub use super::types::JsonValidFlags;
 }
+
+#[cfg(feature = "__sqlite-shared")]
+pub use self::types::JsonValidFlag;

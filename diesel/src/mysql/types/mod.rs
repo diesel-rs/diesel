@@ -1,6 +1,7 @@
 //! MySQL specific types
 
 pub(super) mod date_and_time;
+mod enum_;
 #[cfg(feature = "serde_json")]
 mod json;
 mod numeric;

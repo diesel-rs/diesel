@@ -1,3 +1,5 @@
+#[cfg(any(feature = "mysql", feature = "postgres"))]
+use super::consts;
 use super::Bencher;
 use diesel::*;
 
@@ -116,21 +118,9 @@ fn connection() -> TestConnection {
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = MysqlConnection::establish(&connection_url).unwrap();
-    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
-        .execute(&mut conn)
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE comments")
-        .execute(&mut conn)
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE posts")
-        .execute(&mut conn)
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE users")
-        .execute(&mut conn)
-        .unwrap();
-    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 1")
-        .execute(&mut conn)
-        .unwrap();
+    for query in consts::mysql::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).unwrap();
+    }
     conn
 }
 
@@ -141,15 +131,9 @@ fn connection() -> TestConnection {
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = PgConnection::establish(&connection_url).unwrap();
-    diesel::sql_query("TRUNCATE TABLE comments CASCADE")
-        .execute(&mut conn)
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE posts CASCADE")
-        .execute(&mut conn)
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE users CASCADE")
-        .execute(&mut conn)
-        .unwrap();
+    for query in consts::postgres::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).unwrap();
+    }
     conn
 }
 

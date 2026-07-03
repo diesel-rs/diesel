@@ -5,6 +5,8 @@ use crate::result::Error::SerializationError;
 use crate::result::QueryResult;
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::{HasSqlType, TypeMetadata};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(
@@ -64,7 +66,7 @@ pub trait MoveableBindCollector<DB: TypeMetadata> {
     /// Push bind data as debug representation
     fn push_debug_binds<'a, 'b>(
         bind_data: &Self::BindData,
-        f: &'a mut Vec<Box<dyn std::fmt::Debug + 'b>>,
+        f: &'a mut Vec<Box<dyn core::fmt::Debug + 'b>>,
     );
 }
 
@@ -150,7 +152,7 @@ where
 impl<DB> MoveableBindCollector<DB> for RawBytesBindCollector<DB>
 where
     for<'a> DB: Backend<BindCollector<'a> = Self> + TypeMetadata + 'static,
-    <DB as TypeMetadata>::TypeMetadata: std::fmt::Debug + Clone + Send,
+    <DB as TypeMetadata>::TypeMetadata: core::fmt::Debug + Clone + Send,
 {
     type BindData = Self;
 
@@ -168,13 +170,13 @@ where
 
     fn push_debug_binds<'a, 'b>(
         bind_data: &Self::BindData,
-        f: &'a mut Vec<Box<dyn std::fmt::Debug + 'b>>,
+        f: &'a mut Vec<Box<dyn core::fmt::Debug + 'b>>,
     ) {
         f.extend(
             bind_data
                 .metadata
                 .iter()
-                .map(|m| Box::new(m.clone()) as Box<dyn std::fmt::Debug>),
+                .map(|m| Box::new(m.clone()) as Box<dyn core::fmt::Debug>),
         );
     }
 }
@@ -182,6 +184,8 @@ where
 // This is private for now as we may want to add `Into` impls for the wrapper type
 // later on
 mod private {
+    use alloc::vec::Vec;
+
     /// A type wrapper for raw bytes
     #[derive(Debug)]
     pub struct ByteWrapper<'a>(pub(crate) &'a mut Vec<u8>);

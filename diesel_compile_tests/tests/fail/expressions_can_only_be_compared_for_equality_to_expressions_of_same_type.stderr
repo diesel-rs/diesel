@@ -6,6 +6,7 @@ LL |     let pred = id.eq("string");
    |
    = help: `&str` implements trait `AsExpression<T>`:
              AsExpression<Citext>
+             AsExpression<diesel::sql_types::Bpchar>
              AsExpression<diesel::sql_types::Date>
              AsExpression<diesel::sql_types::Text>
              AsExpression<diesel::sql_types::Time>
@@ -22,13 +23,11 @@ help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented fo
    |
  LL |         name -> VarChar,
    |         ^^^^
-help: the following other types implement trait `AsExpression<T>`
-  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
-   |
-LL |     #[derive(AsExpression, FromSqlRow)]
-   |              ^^^^^^^^^^^^
-   |              |
-   |              `&'__expr i32`
-   |              `i32`
-   = note: this error originates in the macro `table` which comes from the expansion of the derive macro `AsExpression` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = help: the following other types implement trait `AsExpression<T>`:
+             &'__expr i32
+             Arc<i32>
+             Box<i32>
+             Rc<i32>
+             i32
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

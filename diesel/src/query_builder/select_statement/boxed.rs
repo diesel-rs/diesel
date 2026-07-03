@@ -1,6 +1,6 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
-use crate::backend::{sql_dialect, DieselReserveSpecialization};
+use crate::backend::{DieselReserveSpecialization, sql_dialect};
 use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
@@ -453,7 +453,7 @@ where
 
 impl<ST, QS, DB, GB> QueryDsl for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
 
-impl<ST, QS, DB, Conn, GB> RunQueryDsl<Conn> for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
+impl<ST, QS, DB, GB> RunQueryDslSupport for BoxedSelectStatement<'_, ST, QS, DB, GB> {}
 
 impl<ST, QS, DB, T, GB> Insertable<T> for BoxedSelectStatement<'_, ST, QS, DB, GB>
 where
@@ -603,7 +603,7 @@ mod tests {
         #[cfg(feature = "postgres")]
         assert_boxed_query_send!(crate::pg::Pg);
 
-        #[cfg(feature = "sqlite")]
+        #[cfg(feature = "__sqlite-shared")]
         assert_boxed_query_send!(crate::sqlite::Sqlite);
 
         #[cfg(feature = "mysql")]

@@ -1,8 +1,10 @@
 //! PostgreSQL specific types
 
-mod array;
+#[doc(hidden)]
+pub(in crate::pg) mod array;
 #[doc(hidden)]
 pub(in crate::pg) mod date_and_time;
+mod enum_;
 #[doc(hidden)]
 pub(in crate::pg) mod floats;
 mod integers;
@@ -336,7 +338,10 @@ pub mod sql_types {
     pub type Bytea = crate::sql_types::Binary;
 
     #[doc(hidden)]
-    pub type Bpchar = crate::sql_types::VarChar;
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 1042, array_oid = 1014))]
+    pub struct Bpchar;
 
     /// The PostgreSQL [Money](https://www.postgresql.org/docs/current/static/datatype-money.html) type.
     ///

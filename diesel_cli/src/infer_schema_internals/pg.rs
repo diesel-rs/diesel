@@ -1,6 +1,6 @@
+use super::TableName;
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
-use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
 use diesel::dsl::AsExprOf;
@@ -50,8 +50,7 @@ pub fn determine_column_type(
         tracing::info!("Cannot coerce varchar[] into text[]");
         eprintln!(
             "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.",
-            attr.column_name,
-            tpe
+            attr.column_name, tpe
         );
     }
 

@@ -1,0 +1,27 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Identifiable)]\n#[diesel(table_name = crate::schema::admin_users)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl diesel::associations::HasTable for User {
+        type Table = crate::schema::admin_users::table;
+        fn table() -> <Self as diesel::associations::HasTable>::Table {
+            crate::schema::admin_users::table
+        }
+    }
+    impl<'ident> diesel::associations::Identifiable for &'ident User {
+        type Id = (&'ident i32);
+        fn id(self) -> <Self as diesel::associations::Identifiable>::Id {
+            (&self.id)
+        }
+    }
+    impl<'ident> diesel::associations::Identifiable for &'_ &'ident User {
+        type Id = (&'ident i32);
+        fn id(self) -> <Self as diesel::associations::Identifiable>::Id {
+            (&self.id)
+        }
+    }
+};

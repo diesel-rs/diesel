@@ -52,6 +52,7 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
               pg::metadata_lookup::pg_type::columns::typname
               pg::metadata_lookup::pg_type::columns::typnamespace
               SkipSelectableExpressionBoundCheckWrapper<T>
+              returning::old_impl::Old<C>
     = note: required for `(f64, f64)` to implement `ValidGrouping<()>`
     = note: 1 redundant requirement hidden
     = note: required for `ArrayLiteral<(f64, f64), Integer>` to implement `ValidGrouping<()>`
@@ -121,6 +122,7 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
                pg::metadata_lookup::pg_type::columns::typname
                pg::metadata_lookup::pg_type::columns::typnamespace
                SkipSelectableExpressionBoundCheckWrapper<T>
+               returning::old_impl::Old<C>
      = note: required for `(f64, f64)` to implement `ValidGrouping<()>`
      = note: 1 redundant requirement hidden
      = note: required for `ArrayLiteral<(f64, f64), Integer>` to implement `ValidGrouping<()>`
@@ -179,14 +181,14 @@ error[E0277]: `f64` is no valid SQL fragment for the `Pg` backend
      = note: this usually means that the `Pg` database system does not support 
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
+               C
                DistinctOnClause<T>
                Only<S>
+               Posix
                Tablesample<S, TSM>
                TransactionBuilder<'_, C>
                diesel::pg::expression::array::ArrayLiteral<T, ST>
                diesel::pg::expression::array::ArraySubselect<T, ST>
-               diesel::pg::expression::array_comparison::All<Expr>
-               diesel::pg::expression::array_comparison::Any<Expr>
              and N others
      = note: required for `(f64, f64)` to implement `QueryFragment<Pg>`
      = note: 4 redundant requirements hidden
