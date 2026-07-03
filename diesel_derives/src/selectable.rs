@@ -5,8 +5,9 @@ use syn::spanned::Spanned;
 use syn::{DeriveInput, Ident, Result, parse_quote};
 
 use crate::field::Field;
-use crate::model::{CheckForBackend, Model};
+use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;
+use diesel_attribute_parser::CheckForBackend;
 
 type DefaultCheckCallback = fn(
     &Model,

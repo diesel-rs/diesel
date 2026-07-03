@@ -3,7 +3,8 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitStr};
 
-use crate::util::{MYSQL_TYPE_NOTE, parse_eq, unknown_attribute};
+use crate::notes::MYSQL_TYPE_NOTE;
+use crate::util::{parse_eq, unknown_attribute};
 
 enum Attr {
     Name(LitStr),
@@ -22,6 +23,7 @@ impl Parse for Attr {
     }
 }
 
+#[derive(Debug)]
 pub struct MysqlType {
     pub name: LitStr,
 }

@@ -18,7 +18,7 @@ pub trait ParseDeprecated: Sized {
 #[cfg(any(feature = "without-deprecated", not(feature = "with-deprecated")))]
 mod not_deprecated {
     use super::{ParseDeprecated, ParseStream, Result};
-    use crate::attrs::{FieldAttr, StructAttr};
+    use crate::{FieldAttr, StructAttr};
 
     impl ParseDeprecated for StructAttr {
         fn parse_deprecated(_input: ParseStream) -> Result<Option<Self>> {

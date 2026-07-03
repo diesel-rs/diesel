@@ -5,8 +5,9 @@ use syn::{DeriveInput, Ident, LitStr, Result, Type, parse_quote, parse_quote_spa
 
 use crate::attrs::AttributeSpanWrapper;
 use crate::field::{Field, FieldName};
-use crate::model::{CheckForBackend, Model};
+use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;
+use diesel_attribute_parser::CheckForBackend;
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;

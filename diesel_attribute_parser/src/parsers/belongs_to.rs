@@ -1,9 +1,10 @@
+use crate::notes::BELONGS_TO_NOTE;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, TypePath};
 
-use crate::util::{BELONGS_TO_NOTE, parse_eq, unknown_attribute};
+use crate::util::{parse_eq, unknown_attribute};
 
 enum Attr {
     ForeignKey(Ident),
@@ -22,6 +23,7 @@ impl Parse for Attr {
     }
 }
 
+#[derive(Debug)]
 pub struct BelongsTo {
     pub parent: TypePath,
     pub foreign_key: Option<Ident>,

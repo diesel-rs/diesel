@@ -27,11 +27,13 @@ use sql_function::ExternSqlBlock;
 use syn::parse_quote;
 
 mod allow_tables_to_appear_in_same_query;
-mod attrs;
-mod deprecated;
+mod attrs {
+    pub use diesel_attribute_parser::*;
+}
+//mod deprecated;
 mod field;
 mod model;
-mod parsers;
+//mod parsers;
 mod util;
 
 mod as_changeset;
