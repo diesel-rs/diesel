@@ -40,10 +40,8 @@ diesel::table! {
     users1 (id) {
         id -> Integer,
         #[sql_name = r##"x"] } include!(env!("P1")); mod y { #[sql_name="z"##]
-        #[max_length = 8]
         x_include_env_P1_mod_y_sql_name_z -> Users1XIncludeEnvP1ModYSqlNameZEnum,
         #[sql_name = r##"x"] } include!(env!("P")); mod y { #[sql_name="z"##]
-        #[max_length = 19]
         x_include_env_P_mod_y_sql_name_z -> Users1XIncludeEnvPModYSqlNameZSet,
     }
 }

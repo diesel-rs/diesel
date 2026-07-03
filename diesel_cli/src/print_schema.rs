@@ -550,12 +550,13 @@ fn join_string(mut acc: String, el: &String) -> String {
     acc
 }
 
-struct CustomTypeInfos {
-    custom_type_list: Vec<Vec<Option<ColumnType>>>,
-    enum_variant_list: HashMap<(String, Option<String>), Vec<EnumVariant>>,
+#[derive(Debug)]
+pub(crate) struct CustomTypeInfos {
+    pub(crate) custom_type_list: Vec<Vec<Option<ColumnType>>>,
+    pub(crate) enum_variant_list: HashMap<(String, Option<String>), Vec<EnumVariant>>,
 }
 
-fn load_custom_types(
+pub(crate) fn load_custom_types(
     connection: &mut InferConnection,
     data: &[QueryRelationData],
     config: &config::PrintSchema,
@@ -603,16 +604,13 @@ fn load_custom_types(
                             Backend::Mysql => {
                                 // For MySQL we generate custom types for unknown types that
                                 // are dedicated to the column
-                                use heck::ToUpperCamelCase;
-
                                 ColumnType {
-                                    rust_name: format!(
-                                        "{} {} {}",
-                                        cd.table_name().rust_name,
-                                        c.rust_name,
-                                        ty.rust_name
-                                    )
-                                    .to_upper_camel_case(),
+                                    rust_name: mysql_enum_name(
+                                        &cd.table_name().rust_name,
+                                        &c.rust_name,
+                                        ty,
+                                    ),
+                                    max_length: None,
                                     ..ty.clone()
                                 }
                             }
@@ -646,6 +644,12 @@ fn load_custom_types(
         custom_type_list: custom_types,
         enum_variant_list: enum_variants,
     })
+}
+
+#[cfg(feature = "mysql")]
+pub(crate) fn mysql_enum_name(table_name: &str, column_name: &str, ty: &ColumnType) -> String {
+    use heck::ToUpperCamelCase;
+    format!("{} {} {}", table_name, column_name, ty.rust_name).to_upper_camel_case()
 }
 
 fn safe_tables_for_config(
@@ -1606,7 +1610,7 @@ impl Display for ColumnDefinitions<'_> {
                         escape_rust_string(&column.sql_name)
                     )?;
                 }
-                if let Some(max_length) = column.ty.max_length {
+                if let Some(max_length) = column_type.max_length {
                     writeln!(out, r#"#[max_length = {max_length}]"#)?;
                 }
 

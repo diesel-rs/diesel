@@ -90,7 +90,7 @@ impl FromStr for TableName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableData {
     pub name: TableName,
     pub primary_key: Vec<String>,
@@ -98,7 +98,7 @@ pub struct TableData {
     pub comment: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ViewData {
     pub name: TableName,
     pub column_data: Vec<ColumnDefinition>,

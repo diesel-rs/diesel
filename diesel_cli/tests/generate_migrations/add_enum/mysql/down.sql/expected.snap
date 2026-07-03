@@ -1,0 +1,6 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: add_enum"
+---
+-- This file should undo anything in `up.sql`
+DROP TABLE IF EXISTS `resource`;

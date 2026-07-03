@@ -1,0 +1,7 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: add_enum_variant"
+---
+-- Your SQL goes here
+ALTER TYPE "some_enum" ADD VALUE 'd''d';
+ALTER TYPE "some_enum2" ADD VALUE 'BAZZ';
