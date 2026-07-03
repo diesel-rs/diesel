@@ -4,8 +4,9 @@ use syn::token::Comma;
 use syn::{Ident, LitInt, LitStr, parenthesized};
 
 use crate::deprecated::utils::parse_eq_and_lit_str;
+use crate::notes::POSTGRES_TYPE_NOTE;
 use crate::parsers::PostgresType;
-use crate::util::{POSTGRES_TYPE_NOTE, unknown_attribute};
+use crate::util::unknown_attribute;
 
 enum Attr {
     Oid(Ident, LitInt),

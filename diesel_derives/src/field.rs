@@ -1,8 +1,7 @@
+use diesel_attribute_parser::{AttributeSpanWrapper, FieldAttr, SqlIdentifier, parse_attributes};
 use proc_macro2::{Span, TokenStream};
 use syn::spanned::Spanned;
 use syn::{Expr, Field as SynField, Ident, Index, Result, Type};
-
-use crate::attrs::{AttributeSpanWrapper, FieldAttr, SqlIdentifier, parse_attributes};
 
 pub struct Field {
     pub ty: Type,

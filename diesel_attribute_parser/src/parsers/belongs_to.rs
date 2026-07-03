@@ -3,7 +3,8 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, TypePath};
 
-use crate::util::{BELONGS_TO_NOTE, parse_eq, unknown_attribute};
+use crate::notes::BELONGS_TO_NOTE;
+use crate::util::{parse_eq, unknown_attribute};
 
 enum Attr {
     ForeignKey(Ident),

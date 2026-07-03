@@ -3,7 +3,8 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitStr};
 
-use crate::util::{MYSQL_TYPE_NOTE, parse_eq, unknown_attribute};
+use crate::notes::SQLITE_TYPE_NOTE;
+use crate::util::{parse_eq, unknown_attribute};
 
 enum Attr {
     Name(LitStr),
@@ -15,18 +16,18 @@ impl Parse for Attr {
         let name_str = name.to_string();
 
         match &*name_str {
-            "name" => Ok(Attr::Name(parse_eq(input, MYSQL_TYPE_NOTE)?)),
+            "name" => Ok(Attr::Name(parse_eq(input, SQLITE_TYPE_NOTE)?)),
 
             _ => Err(unknown_attribute(&name, &["name"])),
         }
     }
 }
 
-pub struct MysqlType {
+pub struct SqliteType {
     pub name: LitStr,
 }
 
-impl Parse for MysqlType {
+impl Parse for SqliteType {
     fn parse(input: ParseStream) -> Result<Self> {
         let mut name = None;
 
@@ -37,13 +38,13 @@ impl Parse for MysqlType {
         }
 
         if let Some(name) = name {
-            Ok(MysqlType { name })
+            Ok(SqliteType { name })
         } else {
             Err(syn::Error::new(
                 input.span(),
                 format!(
                     "expected attribute `name`\n\
-                     help: the correct format looks like #[diesel({MYSQL_TYPE_NOTE})]"
+                     help: the correct format looks like #[diesel({SQLITE_TYPE_NOTE})]"
                 ),
             ))
         }
