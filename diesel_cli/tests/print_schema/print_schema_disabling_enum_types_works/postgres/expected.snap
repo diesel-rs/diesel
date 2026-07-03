@@ -1,0 +1,22 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_disabling_enum_types_works"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod sql_types {
+    #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "my_type"))]
+    #[diesel(enum_type)]
+    pub struct MyType;
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::MyType;
+
+    custom_types (id) {
+        id -> Int4,
+        custom_enum -> MyType,
+    }
+}

@@ -199,6 +199,20 @@ fn print_schema_custom_types_custom_schema() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_custom_enum_derives() {
+    test_print_schema(
+        "print_schema_custom_enum_derives",
+        vec![
+            "--custom-enum-derives",
+            "Clone",
+            "--custom-enum-derives",
+            "Copy",
+        ],
+    );
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
@@ -237,6 +251,15 @@ fn print_schema_disabling_custom_type_works() {
         "print_schema_disabling_custom_type_works",
         vec!["--no-generate-missing-sql-type-definitions"],
         false, // explicitly exclude required types
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_disabling_enum_types_works() {
+    test_print_schema(
+        "print_schema_disabling_enum_types_works",
+        vec!["--no-generate-rust-enum-types"],
     )
 }
 
