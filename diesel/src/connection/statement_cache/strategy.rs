@@ -47,7 +47,7 @@ where
     // Only reached through `StatementCache::clear`, which is currently used only
     // by the SQLite authorizer, so it is dead code for backends compiled without
     // that caller.
-    #[allow(dead_code)]
+    #[cfg(feature = "__sqlite-shared")]
     fn clear(&mut self);
 }
 
@@ -90,6 +90,7 @@ where
         CacheSize::Unbounded
     }
 
+    #[cfg(feature = "__sqlite-shared")]
     fn clear(&mut self) {
         self.cache.clear();
     }
@@ -119,6 +120,7 @@ where
         CacheSize::Disabled
     }
 
+    #[cfg(feature = "__sqlite-shared")]
     fn clear(&mut self) {}
 }
 

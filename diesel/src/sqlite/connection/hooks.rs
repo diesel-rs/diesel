@@ -375,6 +375,10 @@ impl SqliteConnection {
         // diesel prepares with `sqlite3_prepare_v3` those statements are
         // transparently re-prepared under the new authorizer on their next step.
         self.raw_connection.set_authorizer(hook);
+        // The public documentation doesn't explicitly state what happens with existing
+        // prepared statements, so rather be safe and nuke them. We don't
+        // expect that people change the authorizer all the time, so this should be fine
+        self.statement_cache.clear();
     }
 
     /// Removes the authorizer callback.
