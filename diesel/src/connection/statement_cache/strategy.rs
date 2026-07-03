@@ -42,6 +42,13 @@ where
         &mut self,
         key: StatementCacheKey<DB>,
     ) -> LookupStatementResult<'_, DB, Statement>;
+
+    /// Removes all cached statements so that subsequent queries are re-prepared.
+    // Only reached through `StatementCache::clear`, which is currently used only
+    // by the SQLite authorizer, so it is dead code for backends compiled without
+    // that caller.
+    #[cfg(feature = "__sqlite-shared")]
+    fn clear(&mut self);
 }
 
 /// Cache all (safe) statements for as long as connection is alive.
@@ -82,6 +89,11 @@ where
     fn cache_size(&self) -> CacheSize {
         CacheSize::Unbounded
     }
+
+    #[cfg(feature = "__sqlite-shared")]
+    fn clear(&mut self) {
+        self.cache.clear();
+    }
 }
 
 /// No statements will be cached,
@@ -107,6 +119,9 @@ where
     fn cache_size(&self) -> CacheSize {
         CacheSize::Disabled
     }
+
+    #[cfg(feature = "__sqlite-shared")]
+    fn clear(&mut self) {}
 }
 
 #[allow(dead_code)]

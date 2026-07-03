@@ -6,6 +6,7 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use super::SqliteConnection;
+use super::authorizer::{AuthorizerContext, AuthorizerDecision};
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
@@ -64,6 +65,8 @@ pub(super) struct RawConnection {
     wal_hook: Option<Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send>>,
     /// Boxed closure kept alive while the busy handler is registered.
     busy_handler: Option<Box<dyn FnMut(i32) -> BusyDecision + Send>>,
+    /// Boxed closure kept alive while the authorizer is registered.
+    authorizer_hook: Option<Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send>>,
 }
 
 impl RawConnection {
@@ -77,6 +80,7 @@ impl RawConnection {
             progress_hook: None,
             wal_hook: None,
             busy_handler: None,
+            authorizer_hook: None,
         }
     }
 
@@ -103,6 +107,7 @@ impl RawConnection {
                     progress_hook: None,
                     wal_hook: None,
                     busy_handler: None,
+                    authorizer_hook: None,
                 })
             }
             err_code => {
@@ -672,6 +677,53 @@ impl RawConnection {
         }
         self.busy_handler = None;
     }
+
+    /// Sets the authorizer callback, replacing any previous one. Only one
+    /// can be active at a time per connection.
+    ///
+    /// # Safety
+    ///
+    /// The `ptr` is derived from `&raw mut *boxed` and points to the heap
+    /// allocation of the closure. The `authorizer_trampoline` function
+    /// matches the signature expected by `sqlite3_set_authorizer`. The pointer
+    /// remains valid because we store `boxed` in `self.authorizer_hook` below,
+    /// keeping it alive for the lifetime of this `RawConnection`.
+    pub(super) fn set_authorizer<F>(&mut self, hook: F)
+    where
+        F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send + 'static,
+    {
+        let mut boxed: Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send> =
+            Box::new(hook);
+        let ptr = &raw mut *boxed as *mut libc::c_void;
+
+        unsafe {
+            ffi::sqlite3_set_authorizer(
+                self.internal_connection.as_ptr(),
+                Some(authorizer_trampoline::<F>),
+                ptr,
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.authorizer_hook = Some(boxed);
+    }
+
+    /// Removes the authorizer callback.
+    ///
+    /// # Safety
+    ///
+    /// `self.internal_connection` is a valid pointer to an open SQLite
+    /// connection. Passing `None` as the callback and `null_mut()` as the
+    /// user data unregisters any existing authorizer. The authorizer is
+    /// unregistered before dropping `self.authorizer_hook` to prevent
+    /// callbacks from firing during cleanup.
+    pub(super) fn remove_authorizer(&mut self) {
+        unsafe {
+            ffi::sqlite3_set_authorizer(self.internal_connection.as_ptr(), None, ptr::null_mut());
+        }
+        self.authorizer_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
@@ -684,6 +736,7 @@ impl Drop for RawConnection {
         self.remove_progress_handler();
         self.remove_wal_hook();
         self.remove_busy_handler();
+        self.remove_authorizer();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -1196,6 +1249,59 @@ where
         Ok(BusyDecision::GiveUp) => 0,
         Err(_) => {
             assert_fail!("Panic in sqlite3_busy_handler trampoline. ");
+        }
+    }
+}
+
+/// C trampoline for `sqlite3_set_authorizer`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` stored in `RawConnection::authorizer_hook`.
+unsafe extern "C" fn authorizer_trampoline<F>(
+    user_data: *mut libc::c_void,
+    action_code: libc::c_int,
+    arg1: *const libc::c_char,
+    arg2: *const libc::c_char,
+    db_name: *const libc::c_char,
+    accessor: *const libc::c_char,
+) -> libc::c_int
+where
+    F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision,
+{
+    // Convert a nullable C string argument to `Option<&str>`. A null pointer or
+    // a non-UTF-8 string both map to `None`. The borrow is tied to this call via
+    // the generic lifetime, and the resulting `&str` only lives inside the
+    // `AuthorizerContext` passed to the callback, which cannot escape the call.
+    fn to_str<'a>(ptr: *const libc::c_char) -> Option<&'a str> {
+        if ptr.is_null() {
+            None
+        } else {
+            // SAFETY: per the `sqlite3_set_authorizer` contract a non-null
+            // pointer is a valid C string for the duration of the call.
+            unsafe { CStr::from_ptr(ptr) }.to_str().ok()
+        }
+    }
+
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+
+        let ctx = AuthorizerContext::from_ffi(
+            action_code,
+            to_str(arg1),
+            to_str(arg2),
+            to_str(db_name),
+            to_str(accessor),
+        );
+
+        f(ctx)
+    }));
+
+    match result {
+        Ok(decision) => decision.to_ffi(),
+        Err(_) => {
+            assert_fail!("Panic in sqlite3_set_authorizer trampoline. ");
         }
     }
 }
