@@ -24,16 +24,15 @@ pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
 pub use self::limits::SqliteLimit;
+use self::raw::RawConnection;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
-pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
-pub use self::update_hook::{
-    DynamicChangeTable, SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
-};
-
-use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
+pub use self::update_hook::{
+    SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
+};
 use super::SqliteAggregateFunction;
 use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
@@ -41,6 +40,7 @@ use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
 use crate::query_builder::*;
+use crate::query_source::{ColumnHasTable, NamedTable};
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
@@ -503,17 +503,14 @@ impl SqliteConnection {
     ) -> Result<sqlite_blob::SqliteReadOnlyBlob<'conn>, Error>
     where
         'query: 'conn,
-        U: crate::Column,
-        U::Table: nodes::StaticQueryFragment,
-        <U::Table as nodes::StaticQueryFragment>::Component: HasDatabaseAndTableName,
+        U: ColumnHasTable,
+        U::Table: NamedTable,
     {
-        use crate::query_builder::nodes::StaticQueryFragment;
-        // this mostly exists for a more natural way to call this function
-        let _ = blob_column;
+        let table = blob_column.table();
 
-        let database_name = U::Table::STATIC_COMPONENT.database_name().unwrap_or("main");
-        let column_name = U::NAME;
-        let table_name = U::Table::STATIC_COMPONENT.table_name();
+        let database_name = table.schema().unwrap_or("main");
+        let column_name = blob_column.name();
+        let table_name = table.table();
 
         self.raw_connection
             .blob_open(database_name, table_name, column_name, row_id)
@@ -1354,41 +1351,6 @@ impl SqliteConnection {
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
 }
-
-mod private {
-    #[doc(hidden)]
-    pub trait HasDatabaseAndTableName {
-        fn database_name(&self) -> Option<&'static str>;
-        fn table_name(&self) -> &'static str;
-    }
-
-    impl HasDatabaseAndTableName for crate::query_builder::nodes::Identifier<'static> {
-        fn database_name(&self) -> Option<&'static str> {
-            None
-        }
-
-        fn table_name(&self) -> &'static str {
-            self.0
-        }
-    }
-
-    impl<M> HasDatabaseAndTableName
-        for crate::query_builder::nodes::InfixNode<
-            crate::query_builder::nodes::Identifier<'static>,
-            crate::query_builder::nodes::Identifier<'static>,
-            M,
-        >
-    {
-        fn database_name(&self) -> Option<&'static str> {
-            Some(self.lhs.0)
-        }
-
-        fn table_name(&self) -> &'static str {
-            self.rhs.0
-        }
-    }
-}
-pub(crate) use self::private::HasDatabaseAndTableName;
 
 #[cfg(test)]
 mod tests {

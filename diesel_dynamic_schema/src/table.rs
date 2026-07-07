@@ -3,9 +3,8 @@ use diesel::expression::expression_types;
 use diesel::internal::table_macro::{FromClause, SelectStatement};
 use diesel::prelude::*;
 use diesel::query_builder::*;
+use diesel::query_source::NamedTable;
 use std::borrow::Borrow;
-#[cfg(feature = "sqlite")]
-use std::borrow::Cow;
 
 use crate::column::Column;
 use crate::dummy_expression::*;
@@ -153,18 +152,17 @@ impl<T, U> QueryId for Table<T, U> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-#[cfg(feature = "sqlite")]
-impl<T, U> diesel::sqlite::DynamicChangeTable for Table<T, U>
+impl<T, U> NamedTable for Table<T, U>
 where
     T: Borrow<str>,
     U: Borrow<str>,
+    Self: diesel::Table,
 {
-    fn change_database(&self) -> Option<Cow<'static, str>> {
-        self.schema()
-            .map(|schema| Cow::Owned(schema.borrow().to_owned()))
+    fn schema(&self) -> Option<&str> {
+        self.schema().map(|u| u.borrow())
     }
 
-    fn change_table(&self) -> Cow<'static, str> {
-        Cow::Owned(self.name().borrow().to_owned())
+    fn table(&self) -> &str {
+        self.name().borrow()
     }
 }

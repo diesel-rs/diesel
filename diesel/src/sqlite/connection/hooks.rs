@@ -949,7 +949,7 @@ mod tests {
 
         conn.on_update(
             SqliteUpdateRouter::new().on_any(SqliteChangeOps::ALL, move |change| {
-                if let Some(rowid) = change.rowid_in::<hook_users::table>() {
+                if let Some(rowid) = change.rowid_in(hook_users::table) {
                     c2.lock().unwrap().push(rowid);
                 }
             }),
@@ -978,8 +978,8 @@ mod tests {
         conn.on_update(
             SqliteUpdateRouter::new().on_any(SqliteChangeOps::ALL, move |change| {
                 c2.lock().unwrap().push((
-                    change.is_from::<hook_users::table>(),
-                    change.is_from::<hook_posts::table>(),
+                    change.is_from(hook_users::table),
+                    change.is_from(hook_posts::table),
                 ));
             }),
         );

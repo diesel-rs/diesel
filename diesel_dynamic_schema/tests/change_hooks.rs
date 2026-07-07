@@ -141,7 +141,7 @@ fn on_dynamic_routes_to_a_dynamic_schema_table() {
     let events_hook = events.clone();
 
     conn.on_update(
-        SqliteUpdateRouter::new().on_dynamic(items, SqliteChangeOps::ALL, move |ev| {
+        SqliteUpdateRouter::new().on(items, SqliteChangeOps::ALL, move |ev| {
             events_hook.lock().unwrap().push(ev.rowid);
         }),
     );

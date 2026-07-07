@@ -6,7 +6,7 @@
 
 mod auto_extension;
 pub(crate) mod backend;
-mod connection;
+pub(crate) mod connection;
 pub mod expression;
 mod function_behavior;
 
@@ -32,7 +32,7 @@ pub use self::connection::authorizer;
 pub use self::connection::sqlite_blob::SqliteReadOnlyBlob;
 pub use self::connection::{AuthorizerContext, AuthorizerDecision};
 pub use self::connection::{
-    DynamicChangeTable, SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
+    SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
 };
 #[cfg(feature = "__sqlite-shared")]
 pub use self::function_behavior::SqliteFunctionBehavior;
