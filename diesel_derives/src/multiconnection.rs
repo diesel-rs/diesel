@@ -7,6 +7,7 @@ struct ConnectionVariant<'a> {
 }
 
 pub fn derive(item: DeriveInput) -> TokenStream {
+    let helper = MultiHelper::from_derive_input(&item);
     if let syn::Data::Enum(e) = item.data {
         let connection_types = e
             .variants
@@ -19,11 +20,11 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 _ => panic!("Only enums with one field per variant are supported"),
             })
             .collect::<Vec<_>>();
-        let backend = generate_backend(&connection_types);
-        let query_builder = generate_querybuilder(&connection_types);
-        let bind_collector = generate_bind_collector(&connection_types);
-        let row = generate_row(&connection_types);
-        let connection = generate_connection_impl(&connection_types, &item.ident);
+        let backend = generate_backend(&connection_types, &helper);
+        let query_builder = generate_querybuilder(&connection_types, &helper);
+        let bind_collector = generate_bind_collector(&connection_types, &helper);
+        let row = generate_row(&connection_types, &helper);
+        let connection = generate_connection_impl(&connection_types, &item.ident, &helper);
 
         quote::quote! {
             mod multi_connection_impl {
@@ -65,20 +66,139 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     }
 }
 
+/// A helper struct containing common tokens used in the sync and async in similar.
+struct MultiHelper {
+    is_async: bool,
+    /// Type of Connection trait.
+    conn: TokenStream,
+    /// Trait with the Backend Type.
+    conn_backend: TokenStream,
+    /// Trait implementing the load function.
+    conn_load: TokenStream,
+    /// The multi connection helper trait, used to cast to Any.
+    multi_conn_helper: TokenStream,
+    /// Type of the SimpleConnection trait.
+    simple_connection: TokenStream,
+    /// Type of the TransactionManager trait.
+    transaction_manager: TokenStream,
+    /// `.await` or empty
+    await_token: Option<TokenStream>,
+    /// `async` or empty
+    async_token: Option<TokenStream>,
+}
+
+impl MultiHelper {
+    fn new(is_async: bool) -> Self {
+        let conn = if is_async {
+            quote::quote! { diesel_async::AsyncConnection }
+        } else {
+            quote::quote! { diesel::connection::Connection }
+        };
+
+        let conn_backend = if is_async {
+            quote::quote! { diesel_async::AsyncConnectionCore }
+        } else {
+            quote::quote! { diesel::connection::Connection }
+        };
+
+        let conn_load = if is_async {
+            quote::quote! { diesel_async::AsyncConnectionCore }
+        } else {
+            quote::quote! { diesel::connection::LoadConnection }
+        };
+
+        let multi_conn_helper = if is_async {
+            quote::quote! { diesel_async::AsyncMultiConnectionHelper }
+        } else {
+            quote::quote! { diesel::internal::derives::multiconnection::MultiConnectionHelper }
+        };
+
+        let await_token = if is_async {
+            Some(quote::quote! { .await })
+        } else {
+            None
+        };
+
+        let async_token = if is_async {
+            Some(quote::quote! { async })
+        } else {
+            None
+        };
+
+        let simple_connection = if is_async {
+            quote::quote! { diesel_async::SimpleAsyncConnection }
+        } else {
+            quote::quote! { diesel::connection::SimpleConnection }
+        };
+
+        let transaction_manager = if is_async {
+            quote::quote! { diesel_async::TransactionManager }
+        } else {
+            quote::quote! { diesel::connection::TransactionManager }
+        };
+
+        Self {
+            is_async,
+            conn,
+            conn_load,
+            conn_backend,
+            multi_conn_helper,
+            await_token,
+            async_token,
+            simple_connection,
+            transaction_manager,
+        }
+    }
+
+    fn from_derive_input(item: &DeriveInput) -> MultiHelper {
+        let is_async = item
+            .attrs
+            .iter()
+            .any(|a| matches!(&a.meta, syn::Meta::Path(ident) if ident.is_ident("diesel_async")));
+        Self::new(is_async)
+    }
+}
+
 fn generate_connection_impl(
     connection_types: &[ConnectionVariant],
     ident: &syn::Ident,
+    helper: &MultiHelper,
 ) -> TokenStream {
+    let MultiHelper {
+        is_async,
+        conn,
+        conn_backend,
+        multi_conn_helper,
+        await_token,
+        async_token,
+        conn_load,
+        simple_connection,
+        transaction_manager,
+        ..
+    } = helper;
+    let is_async = *is_async;
+
     let batch_execute_impl = connection_types.iter().map(|c| {
         let ident = c.name;
         quote::quote! {
-            Self::#ident(conn) => conn.batch_execute(query)
+            Self::#ident(conn) => conn.batch_execute(query)#await_token
         }
     });
 
-    let execute_returning_count_impl = connection_types.iter().map(|c| {
+    let conn_backend_impl = if is_async {
+        None
+    } else {
+        Some(quote::quote! { type Backend = super::MultiBackend; })
+    };
+
+    let execute_returning_count_var = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
+        let ref_token = if is_async {
+            quote::quote! { }
+        } else {
+            quote::quote! { & }
+        };
         quote::quote! {
             Self::#ident(conn) => {
                 let query = SerializedQuery {
@@ -87,33 +207,134 @@ fn generate_connection_impl(
                     query_builder: super::query_builder::MultiQueryBuilder::#ident(Default::default()),
                     p: std::marker::PhantomData::<#ty>,
                 };
-                conn.execute_returning_count(&query)
+                conn.execute_returning_count(#ref_token query)
             }
         }
-    });
+    }).collect::<Vec<_>>();
 
-    let load_impl = connection_types.iter().map(|c| {
-        let variant_ident = c.name;
-        let ty = &c.ty;
+    let impl_execute_returning_count_async = if is_async {
+        Some(quote::quote! {
+            fn execute_returning_count<'conn, 'query, T>(
+                &'conn mut self,
+                source: T,
+            ) -> Self::ExecuteFuture<'conn, 'query>
+            where
+                T: diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + 'query,
+            {
+                match self {
+                    #(#execute_returning_count_var,)*
+                }
+            }
+        })
+    } else {
+        None
+    };
+
+    let impl_execute_returning_count = if is_async {
+        None
+    } else {
+        Some(quote::quote! {
+            fn execute_returning_count<T>(&mut self, source: &T) -> diesel::result::QueryResult<usize>
+            where
+                T: diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId,
+            {
+                match self {
+                    #(#execute_returning_count_var,)*
+                }
+            }
+        })
+    };
+
+    let load_impl = if is_async {
+        let load_var_impl = connection_types.iter().map(|c| {
+            let variant_ident = c.name;
+            let ty = &c.ty;
+            quote::quote! {
+                Self::#variant_ident(conn) => {
+                    let query = SerializedQuery {
+                        inner: source.as_query(),
+                        backend: MultiBackend::#variant_ident(Default::default()),
+                        query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
+                        p: std::marker::PhantomData::<#ty>,
+                    };
+                    let r = <#ty as #conn_load>::load(conn, query);
+                    Box::pin(async move {
+                        Ok(Box::pin(
+                            futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
+                        ) as Self::Stream<'conn, 'query>)
+                    })
+                }
+            }
+        });
         quote::quote! {
-            #ident::#variant_ident(conn) => {
-                let query = SerializedQuery {
-                    inner: source,
-                    backend: MultiBackend::#variant_ident(Default::default()),
-                    query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
-                    p: std::marker::PhantomData::<#ty>,
-                };
-                let r = <#ty as diesel::connection::LoadConnection>::load(conn, query)?;
-                Ok(super::row::MultiCursor::#variant_ident(r))
+            impl #conn_load for MultiConnection {
+                type LoadFuture<'conn, 'query> = futures_util::future::BoxFuture<'conn, diesel::QueryResult<Self::Stream<'conn, 'query>>>;
+                type ExecuteFuture<'conn, 'query> = futures_util::future::BoxFuture<'conn, diesel::QueryResult<usize>>;
+                type Stream<'conn, 'query> = futures_util::stream::BoxStream<'conn, diesel::QueryResult<Self::Row<'conn, 'query>>>;
+                type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
+
+                type Backend = super::MultiBackend;
+
+                fn load<'conn, 'query, T>(
+                    &'conn mut self,
+                    source: T,
+                ) -> Self::LoadFuture<'conn, 'query>
+                where
+                    T: diesel::query_builder::AsQuery + 'query,
+                    T::Query: diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + 'query,
+                {
+                    match self {
+                        #(#load_var_impl,)*
+                    }
+                }
+
+                #impl_execute_returning_count_async
             }
         }
-    });
+    } else {
+        let load_var_impl = connection_types.iter().map(|c| {
+            let variant_ident = c.name;
+            let ty = &c.ty;
+            quote::quote! {
+                Self::#variant_ident(conn) => {
+                    let query = SerializedQuery {
+                        inner: source,
+                        backend: MultiBackend::#variant_ident(Default::default()),
+                        query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
+                        p: std::marker::PhantomData::<#ty>,
+                    };
+                    let r = <#ty as #conn_load>::load(conn, query)?;
+                    Ok(super::row::MultiCursor::#variant_ident(r))
+                }
+            }
+        });
+        quote::quote! {
+            impl #conn_load for MultiConnection
+            {
+                type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
+                type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
+
+                fn load<'conn, 'query, T>(
+                    &'conn mut self,
+                    source: T,
+                ) -> diesel::result::QueryResult<Self::Cursor<'conn, 'query>>
+                where
+                    T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + 'query,
+                    Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
+                {
+                    match self {
+                        #(#load_var_impl,)*
+                    }
+                }
+            }
+        }
+    };
 
     let instrumentation_impl = connection_types.iter().map(|c| {
         let variant_ident = c.name;
         quote::quote! {
-            #ident::#variant_ident(conn) => {
-                diesel::connection::Connection::set_instrumentation(conn, instrumentation);
+            Self::#variant_ident(conn) => {
+                #conn::set_instrumentation(conn, instrumentation);
             }
         }
     });
@@ -121,8 +342,8 @@ fn generate_connection_impl(
     let set_cache_impl = connection_types.iter().map(|c| {
         let variant_ident = c.name;
         quote::quote! {
-            #ident::#variant_ident(conn) => {
-                diesel::connection::Connection::set_prepared_statement_cache_size(conn, size);
+            Self::#variant_ident(conn) => {
+                #conn::set_prepared_statement_cache_size(conn, size);
             }
         }
     });
@@ -130,8 +351,8 @@ fn generate_connection_impl(
     let get_instrumentation_impl = connection_types.iter().map(|c| {
         let variant_ident = c.name;
         quote::quote! {
-            #ident::#variant_ident(conn) => {
-                diesel::connection::Connection::instrumentation(conn)
+            Self::#variant_ident(conn) => {
+                #conn::instrumentation(conn)
             }
         }
     });
@@ -140,7 +361,7 @@ fn generate_connection_impl(
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            if let Ok(conn) = #ty::establish(database_url) {
+            if let Ok(conn) = #ty::establish(database_url)#await_token {
                 return Ok(Self::#ident(conn));
             }
         }
@@ -150,7 +371,7 @@ fn generate_connection_impl(
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            Self::#ident(conn) => <#ty as Connection>::TransactionManager::begin_transaction(conn)
+            Self::#ident(conn) => <#ty as #conn>::TransactionManager::begin_transaction(conn)#await_token
         }
     });
 
@@ -158,7 +379,7 @@ fn generate_connection_impl(
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            Self::#ident(conn) => <#ty as Connection>::TransactionManager::commit_transaction(conn)
+            Self::#ident(conn) => <#ty as #conn>::TransactionManager::commit_transaction(conn)#await_token
         }
     });
 
@@ -166,7 +387,7 @@ fn generate_connection_impl(
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            Self::#ident(conn) => <#ty as Connection>::TransactionManager::rollback_transaction(conn)
+            Self::#ident(conn) => <#ty as #conn>::TransactionManager::rollback_transaction(conn)#await_token
         }
     });
 
@@ -174,7 +395,7 @@ fn generate_connection_impl(
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            Self::#ident(conn) => <#ty as Connection>::TransactionManager::is_broken_transaction_manager(conn)
+            Self::#ident(conn) => <#ty as #conn>::TransactionManager::is_broken_transaction_manager(conn)
         }
     });
 
@@ -182,7 +403,7 @@ fn generate_connection_impl(
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            Self::#ident(conn) => <#ty as Connection>::TransactionManager::transaction_manager_status_mut(conn)
+            Self::#ident(conn) => <#ty as #conn>::TransactionManager::transaction_manager_status_mut(conn)
         }
     });
 
@@ -197,7 +418,7 @@ fn generate_connection_impl(
                     backend: &'b MultiBackend,
                     q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
                 ) -> diesel::QueryResult<()> {
-                    use diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                    use #multi_conn_helper;
 
                     let mut collector = super::bind_collector::MultiBindCollector::#ident(Default::default());
                     let lookup = Self::to_any(lookup);
@@ -211,44 +432,69 @@ fn generate_connection_impl(
         }
     });
 
-    let impl_migration_connection_setup = connection_types.iter().map(|c| {
-        let ident = c.name;
-        quote::quote! {
-            Self::#ident(conn) => {
-                use diesel::migration::MigrationConnection;
-                conn.setup()
+    let migration_connection_impl = if is_async {
+        None
+    } else {
+        let impl_migration_connection_setup = connection_types.iter().map(|c| {
+            let ident = c.name;
+            quote::quote! {
+                Self::#ident(conn) => {
+                    use diesel::migration::MigrationConnection;
+                    conn.setup()
+                }
             }
-        }
-    });
+        });
+        let impl_migration_connection_read = connection_types.iter().map(|c| {
+            let ident = c.name;
+            quote::quote! {
+                Self::#ident(conn) => {
+                    use diesel::migration::MigrationConnection;
+                    conn.read_search_path()
+                }
+            }
+        });
 
-    let impl_migration_connection_read = connection_types.iter().map(|c| {
-        let ident = c.name;
-        quote::quote! {
-            Self::#ident(conn) => {
-                use diesel::migration::MigrationConnection;
-                conn.read_search_path()
+        let impl_migration_connection_set = connection_types.iter().map(|c| {
+            let ident = c.name;
+            quote::quote! {
+                Self::#ident(conn) => {
+                    use diesel::migration::MigrationConnection;
+                    conn.set_search_path(search_path)
+                }
             }
-        }
-    });
+        });
+        Some(quote::quote! {
+            impl diesel::migration::MigrationConnection for MultiConnection {
+                fn setup(&mut self) -> diesel::QueryResult<usize> {
+                    match self {
+                        #(#impl_migration_connection_setup,)*
+                    }
+                }
+                fn read_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
+                    match self {
+                        #(#impl_migration_connection_read,)*
+                    }
+                }
 
-    let impl_migration_connection_set = connection_types.iter().map(|c| {
-        let ident = c.name;
-        quote::quote! {
-            Self::#ident(conn) => {
-                use diesel::migration::MigrationConnection;
-                conn.set_search_path(search_path)
+                fn set_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
+                    match self {
+                        #(#impl_migration_connection_set,)*
+                    }
+                }
             }
-        }
-    });
+        })
+    };
 
     let impl_begin_test_transaction = connection_types.iter().map(|c| {
         let ident = c.name;
         quote::quote! {
-            Self::#ident(conn) => conn.begin_test_transaction()
+            Self::#ident(conn) => conn.begin_test_transaction()#await_token
         }
     });
 
-    let r2d2_impl = {
+    let r2d2_impl = if is_async {
+        None
+    } else {
         let impl_ping_r2d2 = connection_types.iter().map(|c| {
             let ident = c.name;
             quote::quote! {
@@ -262,7 +508,7 @@ fn generate_connection_impl(
                 Self::#ident(conn) => conn.is_broken()
             }
         });
-        quote::quote! {
+        Some(quote::quote! {
             diesel::internal::derives::multiconnection::expand_r2d2! {
                 impl diesel::r2d2::R2D2Connection for MultiConnection {
                     fn ping(&mut self) -> diesel::QueryResult<()> {
@@ -280,22 +526,27 @@ fn generate_connection_impl(
                     }
                 }
             }
-        }
+        })
+    };
+
+    let simple_impls = if is_async {
+        quote::quote! { diesel_async::expand_pool! { impl diesel_async::pooled_connection::PoolableConnection for MultiConnection {} } }
+    } else {
+        quote::quote! { impl diesel::internal::derives::multiconnection::ConnectionSealed for MultiConnection {} }
     };
 
     quote::quote! {
-        use diesel::connection::*;
         pub(super) use super::#ident as MultiConnection;
 
-        impl SimpleConnection for MultiConnection {
-            fn batch_execute(&mut self, query: &str) -> diesel::result::QueryResult<()> {
+        impl #simple_connection for MultiConnection {
+            #async_token fn batch_execute(&mut self, query: &str) -> diesel::result::QueryResult<()> {
                 match self {
                     #(#batch_execute_impl,)*
                 }
             }
         }
 
-        impl diesel::internal::derives::multiconnection::ConnectionSealed for MultiConnection {}
+        #simple_impls
 
         struct SerializedQuery<T, C> {
             inner: T,
@@ -304,7 +555,7 @@ fn generate_connection_impl(
             p: std::marker::PhantomData<C>,
         }
 
-        trait BindParamHelper: Connection {
+        trait BindParamHelper: #conn {
             fn handle_inner_pass<'a, 'b: 'a>(
                 collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<'a>,
                 lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
@@ -319,7 +570,7 @@ fn generate_connection_impl(
         where
             DB: diesel::backend::Backend + 'static,
             T: diesel::query_builder::QueryFragment<MultiBackend>,
-            C: diesel::connection::Connection<Backend = DB> + BindParamHelper + diesel::internal::derives::multiconnection::MultiConnectionHelper,
+            C: #conn_backend<Backend = DB> + BindParamHelper + #multi_conn_helper,
         {
             fn walk_ast<'b>(
                 &'b self,
@@ -363,28 +614,20 @@ fn generate_connection_impl(
             type SqlType = diesel::sql_types::Untyped;
         }
 
-        impl Connection for MultiConnection {
-            type Backend = super::MultiBackend;
+        impl #conn for MultiConnection {
+            #conn_backend_impl
 
             type TransactionManager = Self;
 
-            fn establish(database_url: &str) -> diesel::ConnectionResult<Self> {
+            #async_token fn establish(database_url: &str) -> diesel::ConnectionResult<Self> {
                 #(#establish_impls)*
                 Err(diesel::ConnectionError::BadConnection("Invalid connection url for multiconnection".into()))
             }
-
-            fn execute_returning_count<T>(&mut self, source: &T) -> diesel::result::QueryResult<usize>
-            where
-                T: diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId,
-            {
-                match self {
-                    #(#execute_returning_count_impl,)*
-                }
-            }
+            #impl_execute_returning_count
 
             fn transaction_state(
                 &mut self,
-            ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
+            ) -> &mut <Self::TransactionManager as #transaction_manager<Self>>::TransactionStateData {
                 self
             }
 
@@ -406,48 +649,31 @@ fn generate_connection_impl(
                 }
             }
 
-            fn begin_test_transaction(&mut self) -> diesel::QueryResult<()> {
+            #async_token fn begin_test_transaction(&mut self) -> diesel::QueryResult<()> {
                 match self {
                     #(#impl_begin_test_transaction,)*
                 }
             }
         }
 
-        impl LoadConnection for MultiConnection
-        {
-            type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
-            type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
+        #load_impl
 
-            fn load<'conn, 'query, T>(
-                &'conn mut self,
-                source: T,
-            ) -> diesel::result::QueryResult<Self::Cursor<'conn, 'query>>
-            where
-                T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + 'query,
-                Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
-            {
-                match self {
-                    #(#load_impl,)*
-                }
-            }
-        }
-
-        impl TransactionManager<MultiConnection> for MultiConnection {
+        impl #transaction_manager<MultiConnection> for MultiConnection {
             type TransactionStateData = Self;
 
-            fn begin_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
+            #async_token fn begin_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
                 match conn {
                     #(#begin_transaction_impl,)*
                 }
             }
 
-            fn rollback_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
+            #async_token fn rollback_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
                 match conn {
                     #(#rollback_transaction_impl,)*
                 }
             }
 
-            fn commit_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
+            #async_token fn commit_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
                 match conn {
                     #(#commit_transaction_impl,)*
                 }
@@ -466,36 +692,25 @@ fn generate_connection_impl(
             }
         }
 
-        impl diesel::migration::MigrationConnection for MultiConnection {
-            fn setup(&mut self) -> diesel::QueryResult<usize> {
-                match self {
-                    #(#impl_migration_connection_setup,)*
-                }
-            }
-
-            fn read_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
-                match self {
-                    #(#impl_migration_connection_read,)*
-                }
-            }
-
-            fn set_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
-                match self {
-                    #(#impl_migration_connection_set,)*
-                }
-            }
-        }
+        #migration_connection_impl
 
         #r2d2_impl
     }
 }
 
-fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
+fn generate_row(connection_types: &[ConnectionVariant], helper: &MultiHelper) -> TokenStream {
+    let MultiHelper {
+        is_async,
+        conn_load,
+        conn_backend,
+        ..
+    } = helper;
+    let is_async = *is_async;
     let row_variants = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<#ty as diesel::connection::LoadConnection>::Row<'conn, 'query>)
+            #ident(<#ty as #conn_load>::Row<'conn, 'query>)
         }
     });
 
@@ -503,7 +718,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<<#ty as diesel::connection::LoadConnection>::Row<'conn, 'query> as diesel::row::Row<'conn, <#ty as diesel::connection::Connection>::Backend>>::Field<'query>)
+            #ident(<<#ty as #conn_load>::Row<'conn, 'query> as diesel::row::Row<'conn, <#ty as #conn_backend>::Backend>>::Field<'query>)
         }
     });
 
@@ -532,20 +747,39 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
         .collect::<Vec<_>>();
     let row_index_impl = &row_index_impl;
 
-    let cursor_variants = connection_types.iter().map(|c| {
-        let ident = c.name;
-        let ty = c.ty;
-        quote::quote! {
-            #ident(<#ty as diesel::connection::LoadConnection>::Cursor<'conn, 'query>)
-        }
-    });
+    let cursor_impl = if is_async {
+        None
+    } else {
+        let cursor_variants = connection_types.iter().map(|c| {
+            let ident = c.name;
+            let ty = c.ty;
+            quote::quote! {
+                #ident(<#ty as #conn_load>::Cursor<'conn, 'query>)
+            }
+        });
+        let iterator_impl = connection_types.iter().map(|c| {
+            let ident = c.name;
+            quote::quote! {
+                Self::#ident(r) => Some(r.next()?.map(MultiRow::#ident))
+            }
+        });
 
-    let iterator_impl = connection_types.iter().map(|c| {
-        let ident = c.name;
-        quote::quote! {
-            Self::#ident(r) => Some(r.next()?.map(MultiRow::#ident))
-        }
-    });
+        Some(quote::quote! {
+            pub enum MultiCursor<'conn, 'query> {
+                #(#cursor_variants,)*
+            }
+
+            impl<'conn, 'query> Iterator for MultiCursor<'conn, 'query> {
+                type Item = diesel::QueryResult<MultiRow<'conn, 'query>>;
+
+                fn next(&mut self) -> Option<Self::Item> {
+                    match self {
+                        #(#iterator_impl,)*
+                    }
+                }
+            }
+        })
+    };
 
     let field_count_impl = connection_types.iter().map(|c| {
         let ident = c.name;
@@ -643,25 +877,21 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
                 diesel::internal::derives::multiconnection::PartialRow::new(self, range)
             }
         }
-
-        pub enum MultiCursor<'conn, 'query> {
-            #(#cursor_variants,)*
-        }
-
-        impl<'conn, 'query> Iterator for MultiCursor<'conn, 'query> {
-            type Item = diesel::QueryResult<MultiRow<'conn, 'query>>;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    #(#iterator_impl,)*
-                }
-            }
-        }
+        #cursor_impl
 
     }
 }
 
-fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStream {
+fn generate_bind_collector(
+    connection_types: &[ConnectionVariant],
+    helper: &MultiHelper,
+) -> TokenStream {
+    let MultiHelper {
+        multi_conn_helper,
+        conn_backend,
+        ..
+    } = helper;
+
     let mut to_sql_impls = [
         (
             quote::quote!(diesel::sql_types::SmallInt),
@@ -816,14 +1046,14 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
     let into_bind_value_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
-            diesel::serialize::ToSql<ST, <#ty as diesel::connection::Connection>::Backend>
+            diesel::serialize::ToSql<ST, <#ty as #conn_backend>::Backend>
         }
     });
 
     let has_sql_type_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
-            <#ty as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<ST>
+            <#ty as #conn_backend>::Backend: diesel::sql_types::HasSqlType<ST>
         }
     });
 
@@ -831,7 +1061,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<<#ty as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<'a>)
+            #ident(<<#ty as #conn_backend>::Backend as diesel::backend::Backend>::BindCollector<'a>)
         }
     });
 
@@ -842,7 +1072,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         quote::quote! {
             pub(super) fn #lower_ident(
                 &mut self,
-            ) -> &mut <<#ty as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<'a> {
+            ) -> &mut <<#ty as #conn_backend>::Backend as diesel::backend::Backend>::BindCollector<'a> {
                 match self {
                     Self::#ident(bc) => bc,
                     _ => unreachable!(),
@@ -861,11 +1091,11 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
                 let out = out.inner.expect("This inner value is set via our custom `ToSql` impls");
                 let callback = out.push_bound_value_to_collector;
                 let value = out.value;
-                <_ as PushBoundValueToCollectorDB<<#ty as diesel::Connection>::Backend>>::push_bound_value(
+                <_ as PushBoundValueToCollectorDB<<#ty as #conn_backend>::Backend>>::push_bound_value(
                      callback,
                      value,
                      bc,
-                     <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(metadata_lookup)
+                     <#ty as #multi_conn_helper>::from_any(metadata_lookup)
                         .expect("We can downcast the metadata lookup to the right type")
                  )?
             }
@@ -889,7 +1119,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         .map(|c| {
             let ty = c.ty;
             quote::quote! {
-                PushBoundValueToCollectorDB<<#ty as diesel::Connection>::Backend>
+                PushBoundValueToCollectorDB<<#ty as #conn_backend>::Backend>
             }
         })
         .collect::<Vec<_>>();
@@ -1215,12 +1445,20 @@ fn generate_queryfragment_impls(
     }
 }
 
-fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream {
+fn generate_querybuilder(
+    connection_types: &[ConnectionVariant],
+    helper: &MultiHelper,
+) -> TokenStream {
+    let MultiHelper {
+        multi_conn_helper,
+        conn_backend,
+        ..
+    } = helper;
     let variants = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<<#ty as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder)
+            #ident(<<#ty as #conn_backend>::Backend as diesel::backend::Backend>::QueryBuilder)
         }
     });
 
@@ -1257,7 +1495,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         let ident = c.name;
         let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
         quote::quote! {
-            pub(super) fn #lower_ident(&mut self) -> &mut <<#ty as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+            pub(super) fn #lower_ident(&mut self) -> &mut <<#ty as #conn_backend>::Backend as diesel::backend::Backend>::QueryBuilder {
                 match self {
                     Self::#ident(qb) => qb,
                     _ => unreachable!(),
@@ -1266,12 +1504,15 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         }
     });
 
-    let query_fragment_bounds = connection_types.iter().map(|c| {
-        let ty = c.ty;
-        quote::quote! {
-            diesel::query_builder::QueryFragment<<#ty as diesel::connection::Connection>::Backend>
-        }
-    }).collect::<Vec<_>>();
+    let query_fragment_bounds = connection_types
+        .iter()
+        .map(|c| {
+            let ty = c.ty;
+            quote::quote! {
+                diesel::query_builder::QueryFragment<<#ty as #conn_backend>::Backend>
+            }
+        })
+        .collect::<Vec<_>>();
 
     let duplicate_query_builder = connection_types.iter().map(|c| {
         let ident = c.name;
@@ -1341,14 +1582,14 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         let ty = c.ty;
         quote::quote! {
             super::backend::MultiBackend::#ident(_) => {
-                <Self as diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>>::column_names(
+                <Self as diesel::insertable::InsertValues<<#ty as #conn_backend>::Backend, Col::Table>>::column_names(
                     &self,
                     out.cast_database(
                         super::bind_collector::MultiBindCollector::#lower_ident,
                         super::query_builder::MultiQueryBuilder::#lower_ident,
                         super::backend::MultiBackend::#lower_ident,
                         |l| {
-                            <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(l)
+                            <#ty as #multi_conn_helper>::from_any(l)
                                 .expect("It's possible to downcast the metadata lookup type to the correct type")
                         },
                     ),
@@ -1360,7 +1601,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
     let insert_values_backend_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
-            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<<#ty as diesel::connection::Connection>::Backend, Col::Table>
+            diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<Col, Expr>>: diesel::insertable::InsertValues<<#ty as #conn_backend>::Backend, Col::Table>
         }
     });
 
@@ -1574,12 +1815,17 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
     }
 }
 
-fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
+fn generate_backend(connection_types: &[ConnectionVariant], helper: &MultiHelper) -> TokenStream {
+    let MultiHelper {
+        multi_conn_helper,
+        conn_backend,
+        ..
+    } = helper;
     let backend_variants = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<#ty as diesel::Connection>::Backend)
+            #ident(<#ty as #conn_backend>::Backend)
         }
     });
 
@@ -1587,7 +1833,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<<#ty as diesel::Connection>::Backend as diesel::backend::Backend>::RawValue<'a>)
+            #ident(<<#ty as #conn_backend>::Backend as diesel::backend::Backend>::RawValue<'a>)
         }
     });
 
@@ -1595,7 +1841,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            pub(super) #ident: Option<<<#ty as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata>
+            pub(super) #ident: Option<<<#ty as #conn_backend>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata>
         }
     });
 
@@ -1621,7 +1867,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
         quote::quote! {
-            pub(super) fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
+            pub(super) fn #lower_ident(&self) -> &<#ty as #conn_backend>::Backend {
                 match self {
                     Self::#ident(b) => b,
                     _ => unreachable!(),
@@ -1635,7 +1881,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ty = v.ty;
         quote::quote!{
             Self::#ident(b) => {
-                <T as diesel::deserialize::FromSql<ST, <#ty as diesel::Connection>::Backend>>::from_sql(b)
+                <T as diesel::deserialize::FromSql<ST, <#ty as #conn_backend>::Backend>>::from_sql(b)
             }
         }
     });
@@ -1643,7 +1889,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
     let backend_from_sql_bounds = connection_types.iter().map(|v| {
         let ty = v.ty;
         quote::quote! {
-            T: diesel::deserialize::FromSql<ST, <#ty as diesel::Connection>::Backend>
+            T: diesel::deserialize::FromSql<ST, <#ty as #conn_backend>::Backend>
         }
     });
 
@@ -1653,14 +1899,14 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ty = c.ty;
         quote::quote! {
             super::backend::MultiBackend::#ident(_) => {
-                <T as diesel::query_builder::QueryFragment<<#ty as diesel::connection::Connection>::Backend>>::walk_ast(
+                <T as diesel::query_builder::QueryFragment<<#ty as #conn_backend>::Backend>>::walk_ast(
                     ast_node,
                     pass.cast_database(
                         super::bind_collector::MultiBindCollector::#lower_ident,
                         super::query_builder::MultiQueryBuilder::#lower_ident,
                         super::backend::MultiBackend::#lower_ident,
                         |l| {
-                            <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(l)
+                            <#ty as #multi_conn_helper>::from_any(l)
                                 .expect("It's possible to downcast the metadata lookup type to the correct type")
                         },
                     ),
@@ -1673,7 +1919,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ty = c.ty;
 
         quote::quote! {
-            T: diesel::query_builder::QueryFragment<<#ty as diesel::Connection>::Backend>
+            T: diesel::query_builder::QueryFragment<<#ty as #conn_backend>::Backend>
         }
     });
 
@@ -1682,8 +1928,8 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ty = v.ty;
 
         quote::quote!{
-            if let Some(lookup) = <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(lookup) {
-                ret.#name = Some(<<#ty as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<ST>>::metadata(lookup));
+            if let Some(lookup) = <#ty as #multi_conn_helper>::from_any(lookup) {
+                ret.#name = Some(<<#ty as #conn_backend>::Backend as diesel::sql_types::HasSqlType<ST>>::metadata(lookup));
             }
         }
 
@@ -1692,7 +1938,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
     let lookup_sql_type_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
-            <#ty as diesel::Connection>::Backend: diesel::sql_types::HasSqlType<ST>
+            <#ty as #conn_backend>::Backend: diesel::sql_types::HasSqlType<ST>
         }
     });
 

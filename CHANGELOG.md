@@ -36,6 +36,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added a `RunQueryDslSupport` trait to indicate types that should implement `RunQueryDsl` in a sync/async agnostic way
 * Added a `#[derive(diesel::Enum)]` proc-macro to easily map Rust enums to database enums.
 * Added support for generating matching Rust enums for database enums in Diesel-CLI
+* Added `#[diesel_async]` attribute to `#[derive(MultiConnection)]` to support async MultiConnections. 
 
 ### Fixed
 

@@ -274,6 +274,7 @@ fn main() {
             "multiconnection",
             vec![Example::new(
                 "diesel_derives__tests__multiconnection_1.snap",
+                "diesel_derives__tests__multiconnection_2.snap",
             )],
         ),
         (
