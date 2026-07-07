@@ -32,6 +32,10 @@ pub use self::connection::authorizer;
 pub use self::connection::sqlite_blob::SqliteReadOnlyBlob;
 pub use self::connection::{AuthorizerContext, AuthorizerDecision};
 pub use self::connection::{CollationNeededContext, SqliteTextRep};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::connection::{
+    OwnedSqliteBindValue, SqliteBindCollector, SqliteBindCollectorData, SqliteBindValueRef,
+};
 pub use self::connection::{
     SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
 };

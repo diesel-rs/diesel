@@ -22,8 +22,13 @@ mod trace;
 mod update_hook;
 
 pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::bind_collector::{OwnedSqliteBindValue, SqliteBindCollectorData, SqliteBindValueRef};
 pub use self::collation_needed::{CollationNeededContext, SqliteTextRep};
 pub use self::limits::SqliteLimit;
 use self::raw::RawConnection;

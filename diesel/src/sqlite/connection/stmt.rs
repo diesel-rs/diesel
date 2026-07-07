@@ -1,5 +1,5 @@
 #![allow(unsafe_code)] // fii code
-use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
+use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::Instrumentation;
@@ -79,15 +79,15 @@ impl Statement {
     unsafe fn bind(
         &mut self,
         tpe: SqliteType,
-        value: InternalSqliteBindValue<'_>,
+        value: SqliteBindValueRef<'_>,
         bind_index: i32,
     ) -> QueryResult<Option<NonNull<[u8]>>> {
         let mut ret_ptr = None;
         let result = match (tpe, value) {
-            (_, InternalSqliteBindValue::Null) => unsafe {
+            (_, SqliteBindValueRef::Null) => unsafe {
                 ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), bind_index)
             },
-            (SqliteType::Binary, InternalSqliteBindValue::BorrowedBinary(bytes)) => {
+            (SqliteType::Binary, SqliteBindValueRef::BorrowedBinary(bytes)) => {
                 let n = bytes
                     .len()
                     .try_into()
@@ -102,7 +102,7 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Binary, InternalSqliteBindValue::Binary(mut bytes)) => {
+            (SqliteType::Binary, SqliteBindValueRef::Binary(mut bytes)) => {
                 let len = bytes
                     .len()
                     .try_into()
@@ -122,7 +122,7 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Text, InternalSqliteBindValue::BorrowedString(bytes)) => {
+            (SqliteType::Text, SqliteBindValueRef::BorrowedString(bytes)) => {
                 let len = bytes
                     .len()
                     .try_into()
@@ -137,7 +137,7 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Text, InternalSqliteBindValue::String(bytes)) => {
+            (SqliteType::Text, SqliteBindValueRef::String(bytes)) => {
                 let mut bytes = Box::<[u8]>::from(bytes);
                 let len = bytes
                     .len()
@@ -158,19 +158,19 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Float, InternalSqliteBindValue::F64(value))
-            | (SqliteType::Double, InternalSqliteBindValue::F64(value)) => unsafe {
+            (SqliteType::Float, SqliteBindValueRef::F64(value))
+            | (SqliteType::Double, SqliteBindValueRef::F64(value)) => unsafe {
                 ffi::sqlite3_bind_double(
                     self.inner_statement.as_ptr(),
                     bind_index,
                     value as libc::c_double,
                 )
             },
-            (SqliteType::SmallInt, InternalSqliteBindValue::I32(value))
-            | (SqliteType::Integer, InternalSqliteBindValue::I32(value)) => unsafe {
+            (SqliteType::SmallInt, SqliteBindValueRef::I32(value))
+            | (SqliteType::Integer, SqliteBindValueRef::I32(value)) => unsafe {
                 ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), bind_index, value)
             },
-            (SqliteType::Long, InternalSqliteBindValue::I64(value)) => unsafe {
+            (SqliteType::Long, SqliteBindValueRef::I64(value)) => unsafe {
                 ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), bind_index, value)
             },
             (t, b) => {
@@ -328,7 +328,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     // This hopefully prevents binary bloat.
     fn bind_buffers(
         &mut self,
-        binds: Vec<(InternalSqliteBindValue<'_>, SqliteType)>,
+        binds: Vec<(SqliteBindValueRef<'_>, SqliteType)>,
     ) -> QueryResult<()> {
         // It is useful to preallocate `binds_to_free` because it
         // - Guarantees that pushing inside it cannot panic, which guarantees the `Drop`
@@ -340,10 +340,10 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
                 .filter(|&(b, _)| {
                     matches!(
                         b,
-                        InternalSqliteBindValue::BorrowedBinary(_)
-                            | InternalSqliteBindValue::BorrowedString(_)
-                            | InternalSqliteBindValue::String(_)
-                            | InternalSqliteBindValue::Binary(_)
+                        SqliteBindValueRef::BorrowedBinary(_)
+                            | SqliteBindValueRef::BorrowedString(_)
+                            | SqliteBindValueRef::String(_)
+                            | SqliteBindValueRef::Binary(_)
                     )
                 })
                 .count(),
@@ -351,8 +351,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         for (bind_idx, (bind, tpe)) in (1..).zip(binds) {
             let is_borrowed_bind = matches!(
                 bind,
-                InternalSqliteBindValue::BorrowedString(_)
-                    | InternalSqliteBindValue::BorrowedBinary(_)
+                SqliteBindValueRef::BorrowedString(_) | SqliteBindValueRef::BorrowedBinary(_)
             );
 
             // It's safe to call bind here as:
@@ -402,7 +401,7 @@ impl Drop for BoundStatement<'_, '_> {
             unsafe {
                 // It's always safe to bind null values, as there is no buffer that needs to outlife something
                 self.statement
-                    .bind(SqliteType::Text, InternalSqliteBindValue::Null, idx)
+                    .bind(SqliteType::Text, SqliteBindValueRef::Null, idx)
                     .expect(
                         "Binding a null value should never fail. \
                              If you ever see this error message please open \
