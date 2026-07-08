@@ -7,6 +7,7 @@ use sqlite_wasm_rs as ffi;
 
 use super::SqliteConnection;
 use super::authorizer::{AuthorizerContext, AuthorizerDecision};
+use super::collation_needed::{CollationNeededContext, SqliteTextRep};
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
@@ -79,6 +80,9 @@ pub(super) struct RawConnection {
     authorizer_hook: Option<Box<dyn FnMut(AuthorizerContext<'_>) -> AuthorizerDecision + Send>>,
     /// Boxed closure kept alive while the trace callback is registered.
     trace_hook: Option<Box<dyn FnMut(SqliteTraceEvent<'_>) + Send>>,
+    /// Boxed closure kept alive while the collation-needed callback is registered.
+    collation_needed_hook:
+        Option<Box<dyn Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send>>,
 }
 
 impl RawConnection {
@@ -95,6 +99,7 @@ impl RawConnection {
             busy_handler: None,
             authorizer_hook: None,
             trace_hook: None,
+            collation_needed_hook: None,
         }
     }
 
@@ -124,6 +129,7 @@ impl RawConnection {
                     busy_handler: None,
                     authorizer_hook: None,
                     trace_hook: None,
+                    collation_needed_hook: None,
                 })
             }
             err_code => {
@@ -835,6 +841,48 @@ impl RawConnection {
         }
         self.trace_hook = None;
     }
+
+    /// Sets the collation-needed callback, replacing any previous one.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` points to the heap allocation of `boxed`, stored in
+    /// `self.collation_needed_hook` below so it outlives the C-side
+    /// registration.
+    pub(super) fn set_collation_needed_hook<F>(&mut self, hook: F)
+    where
+        F: Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send + 'static,
+    {
+        let boxed: Box<dyn Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send> =
+            Box::new(hook);
+        let ptr = &raw const *boxed as *mut libc::c_void;
+
+        unsafe {
+            ffi::sqlite3_collation_needed(
+                self.internal_connection.as_ptr(),
+                ptr,
+                Some(collation_needed_trampoline::<F>),
+            );
+        }
+
+        // The old Box (if any) is dropped here after SQLite has already
+        // switched to the new callback, preventing use-after-free.
+        self.collation_needed_hook = Some(boxed);
+    }
+
+    /// Removes the collation-needed callback.
+    ///
+    /// # Safety
+    ///
+    /// Unregisters via `sqlite3_collation_needed(db, null, None)` before
+    /// dropping `self.collation_needed_hook`, so no callback can fire during
+    /// cleanup.
+    pub(super) fn remove_collation_needed_hook(&mut self) {
+        unsafe {
+            ffi::sqlite3_collation_needed(self.internal_connection.as_ptr(), ptr::null_mut(), None);
+        }
+        self.collation_needed_hook = None;
+    }
 }
 
 impl Drop for RawConnection {
@@ -850,6 +898,7 @@ impl Drop for RawConnection {
         self.remove_busy_handler();
         self.remove_authorizer();
         self.remove_trace();
+        self.remove_collation_needed_hook();
 
         let close_result = unsafe { ffi::sqlite3_close(self.internal_connection.as_ptr()) };
         if close_result != ffi::SQLITE_OK {
@@ -1543,6 +1592,59 @@ where
     }
 
     0 // Return value is currently unused by SQLite
+}
+
+/// C trampoline for `sqlite3_collation_needed`.
+///
+/// # Safety
+///
+/// `user_data` must point to a live `F` in
+/// `RawConnection::collation_needed_hook`. `db` is the connection that fired
+/// the callback and is open for the duration of the call. SQLite may
+/// re-enter this trampoline if the callback registers a collation that is
+/// itself missing, so the closure is stored as `Fn` and borrowed shared.
+unsafe extern "C" fn collation_needed_trampoline<F>(
+    user_data: *mut libc::c_void,
+    db: *mut ffi::sqlite3,
+    e_text_rep: libc::c_int,
+    name: *const libc::c_char,
+) where
+    F: Fn(&mut SqliteConnection, CollationNeededContext<'_>),
+{
+    let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
+        // SAFETY: `user_data` points to a live `F` in
+        // `RawConnection::collation_needed_hook`.
+        let f = unsafe { &*(user_data as *const F) };
+
+        // SAFETY: when non-null, `name` is a valid C string from SQLite. Use a
+        // lossy conversion so a pathological name cannot abort the process, and
+        // map null to "".
+        let name: Cow<'_, str> = if name.is_null() {
+            Cow::Borrowed("")
+        } else {
+            unsafe { CStr::from_ptr(name) }.to_string_lossy()
+        };
+
+        let Some(db) = NonNull::new(db) else {
+            return;
+        };
+
+        let ctx = CollationNeededContext {
+            name: &name,
+            text_rep: SqliteTextRep::from_ffi(e_text_rep),
+        };
+
+        // SAFETY: `db` is the connection that fired the callback (per
+        // `sqlite3_collation_needed` contract). The closure is `Fn`, so
+        // SQLite re-entering via a nested unresolved lookup is sound.
+        unsafe {
+            SqliteConnection::with_borrowed_connection(db, |conn| f(conn, ctx));
+        }
+    }));
+
+    if result.is_err() {
+        assert_fail!("Panic in sqlite3_collation_needed trampoline. ");
+    }
 }
 
 #[cfg(test)]
