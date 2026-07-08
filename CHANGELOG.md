@@ -48,6 +48,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
+* The minimum supported version of `libsqlite3-sys` is now `0.24.0`, up from `0.17.2`. `0.24.0` is the first release whose bundled SQLite amalgamation (3.38.0) exposes `sqlite3_autovacuum_pages`, which future hook wrappers rely on. Users who pinned to an older `libsqlite3-sys` will need to update.
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 
