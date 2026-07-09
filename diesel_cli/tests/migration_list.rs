@@ -72,7 +72,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    assert!(result.stdout().contains(&format!("[ ] {}", &tag1)));
+    assert!(result.stdout().contains(&format!("[ ] {tag1}")));
 
     sleep(Duration::from_millis(1100));
 

@@ -293,7 +293,9 @@ jobs:
 
       - name: Run compile tests
         shell: bash
-        run: cargo +stable  test --manifest-path diesel_compile_tests/Cargo.toml
+        run: |
+          rustc +stable --version
+          cargo +stable test --manifest-path diesel_compile_tests/Cargo.toml
 
   rustfmt_and_clippy:
     name: Check rustfmt style && run clippy

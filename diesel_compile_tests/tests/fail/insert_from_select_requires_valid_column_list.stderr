@@ -62,10 +62,10 @@ LL |         C2: ColumnList<Table = T> + Expression,
     = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<title as Expression>::SqlType == Integer`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:69:41
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:69:5
    |
 LL |     users.select(id).insert_into(posts).into_columns(title);
-   |                                         ^^^^^^^^^^^^ type mismatch resolving `<title as Expression>::SqlType == Integer`
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ type mismatch resolving `<title as Expression>::SqlType == Integer`
    |
 note: expected this to be `diesel::sql_types::Integer`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:17:18
@@ -183,19 +183,27 @@ LL |         C2: ColumnList<Table = T> + Expression,
     = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<(user_id, body) as Expression>::SqlType == (Integer, Text)`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:91:10
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:88:5
    |
-LL |         .into_columns((user_id, body));
-   |          ^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Integer, Nullable<Text>)`
+LL | /     users
+LL | |
+LL | |         .select((id, name))
+LL | |         .insert_into(posts)
+LL | |         .into_columns((user_id, body));
+   | |______________________________________^ expected `(Integer, Text)`, found `(Integer, Nullable<Text>)`
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
 
 error[E0271]: type mismatch resolving `<(title, body) as Expression>::SqlType == (Integer, Text)`
-  --> tests/fail/insert_from_select_requires_valid_column_list.rs:98:10
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:95:5
    |
-LL |         .into_columns((title, body));
-   |          ^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Text, Nullable<Text>)`
+LL | /     users
+LL | |
+LL | |         .select((id, name))
+LL | |         .insert_into(posts)
+LL | |         .into_columns((title, body));
+   | |____________________________________^ expected `(Integer, Text)`, found `(Text, Nullable<Text>)`
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
               found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
