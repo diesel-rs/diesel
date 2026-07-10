@@ -39,6 +39,12 @@ use core::{mem, ptr, slice, str};
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
 
+// Runtime extension loading (`sqlite3_load_extension`) is deliberately unsupported.
+// Platforms that build SQLite with `-DSQLITE_OMIT_LOAD_EXTENSION` (see #2180) drop
+// the symbol from the ABI, and the runtime `dlsym` workaround in #4954 proved too
+// fragile to ship. Use `declare_sql_function`, `register_auto_extension`, or
+// `SqliteConnection::with_raw_connection` instead.
+
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
 macro_rules! assert_fail {
