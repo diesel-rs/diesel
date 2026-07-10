@@ -109,7 +109,7 @@ impl Project {
 
         let var_os = env::var(var).or_else(|_| env::var("DATABASE_URL")).unwrap();
         let mut db_url = url::Url::parse(&var_os).unwrap();
-        db_url.set_path(&format!("/diesel_{}", &self.name));
+        db_url.set_path(&format!("/diesel_{}", self.name));
         db_url
     }
 

@@ -244,7 +244,7 @@ pub fn output_schema(
                                         ColumnType {
                                             rust_name: format!(
                                                 "{} {} {}",
-                                                &t.name.rust_name, &c.rust_name, &ty.rust_name
+                                                t.name.rust_name, c.rust_name, ty.rust_name
                                             )
                                             .to_upper_camel_case(),
                                             ..ty.clone()

@@ -64,7 +64,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
                 key = column_names[0],
                 table = input.table_name,
             );
-            message += &format!("\t{table_name} ({}) {{\n", &column_names[0]);
+            message += &format!("\t{table_name} ({}) {{\n", column_names[0]);
             for c in &input.column_defs {
                 let tpe = c
                     .tpe

@@ -179,7 +179,9 @@ pub struct SqliteConnection {
     // This field needs to come after the RawConnection
     // as we need to make sure the data are still there until the
     // connection is dropped
-    serialized_data: Vec<u8>,
+    //
+    // We are not allowed to modify the inner buffer until the database connection is dropped
+    serialized_data: Vec<Vec<u8>>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -578,11 +580,23 @@ impl SqliteConnection {
     /// #
     /// # }
     /// ```
+    // TODO: Diesel 3.0 This signature needs to change, we want to expose more options (schema name, readonly)
+    // and also ensure that this is not as unsafe as the current construct anymore. Maybe just accept a owned buffer or static pointer
+    // only instead? (So `Cow<'static, [u8]>`?)
+    #[allow(unsafe_code)]
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
         // we copy the buffer here
         // to make sure the underlying buffer lives as long as the connection
-        self.serialized_data = data.to_vec();
-        self.raw_connection.deserialize(&self.serialized_data)
+        self.serialized_data.push(data.to_vec());
+        let last = self
+            .serialized_data
+            .last()
+            .expect("We literally pushed it above, so it's there");
+        unsafe {
+            // SAFETY: We store the buffer inside of the connection and we never touch it until
+            // we drop the connection
+            self.raw_connection.deserialize(last)
+        }
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -670,25 +684,80 @@ mod tests {
         let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
             .execute(conn1);
 
-        let serialized_database = conn1.serialize_database_to_buffer();
+        for _i in 0..2 {
+            let serialized_database = conn1.serialize_database_to_buffer();
+            let conn2 = &mut connection();
+            conn2
+                .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
+                .unwrap();
 
-        let conn2 = &mut connection();
-        conn2
-            .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
+            let query =
+                sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+            let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+
+            assert_eq!(expected_users, actual_users);
+            // drop the database here
+            // and requery the database to make sure the database owns
+            // required data
+            std::mem::drop(serialized_database);
+            let query =
+                sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+            let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+
+            assert_eq!(expected_users, actual_users);
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn database_deserialize_random_bytes() {
+        let buffer = vec![0, 1, 2, 3, 4];
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+
+        conn.deserialize_readonly_database_from_buffer(&buffer)
             .unwrap();
 
-        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
-        let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+        let r = sql::<Integer>("SELECT id FROM users").load::<i32>(conn);
 
-        assert_eq!(expected_users, actual_users);
-        // drop the database here
-        // and requery the database to make sure the database owns
-        // required data
-        std::mem::drop(serialized_database);
-        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
-        let actual_users = query.load::<(i32, String, String)>(conn2).unwrap();
+        assert!(r.is_err());
+        assert_eq!(r.unwrap_err().to_string(), "file is not a database");
 
-        assert_eq!(expected_users, actual_users);
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+
+        let _ =
+            crate::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+                .execute(conn);
+        let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+            .execute(conn);
+
+        let db = conn.serialize_database_to_buffer();
+        // only get a valid header, but append garbage
+        let mut bad_buffer = db[..100].to_vec();
+        bad_buffer.extend(b"whatever");
+        conn.deserialize_readonly_database_from_buffer(&bad_buffer)
+            .unwrap();
+
+        let r = sql::<Integer>("SELECT id FROM users").load::<i32>(conn);
+
+        assert!(r.is_err());
+        assert_eq!(
+            r.unwrap_err().to_string(),
+            "database disk image is malformed"
+        );
+
+        // only get a valid header, but append garbage
+        let mut size_fitting_bad_buffer = db[..100].to_vec();
+        size_fitting_bad_buffer.extend(
+            core::iter::repeat(b"abcdefghij")
+                .flatten()
+                .take(db.len() - 100),
+        );
+        let r = conn.deserialize_readonly_database_from_buffer(&size_fitting_bad_buffer);
+
+        assert!(r.is_err());
+        assert_eq!(
+            r.unwrap_err().to_string(),
+            "database disk image is malformed"
+        );
     }
 
     #[diesel_test_helper::test]
