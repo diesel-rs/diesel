@@ -12,6 +12,7 @@ use crate::print_schema::{ColumnSorting, DocConfig};
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract",
+    "async",
     "alignof",
     "as",
     "become",
@@ -69,7 +70,7 @@ static RESERVED_NAMES: &[&str] = &[
     "is_nullable",
 ];
 
-fn is_reserved_name(name: &str) -> bool {
+pub(super) fn is_reserved_name(name: &str) -> bool {
     RESERVED_NAMES.contains(&name)
         || (
             // Names ending in an underscore are not considered reserved so that we

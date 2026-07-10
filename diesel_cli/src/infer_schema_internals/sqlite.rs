@@ -427,6 +427,7 @@ pub fn determine_column_type(
         is_unsigned: false,
         record: None,
         max_length: attr.max_length,
+        unmodified_type: attr.type_name.to_owned(),
     })
 }
 

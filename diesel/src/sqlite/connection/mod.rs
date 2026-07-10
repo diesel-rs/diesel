@@ -17,6 +17,7 @@ pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+mod trace;
 
 pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
@@ -24,6 +25,7 @@ pub use self::bind_collector::SqliteBindValue;
 pub use self::limits::SqliteLimit;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
+pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
 
 use self::raw::RawConnection;
 use self::statement_iterator::*;
