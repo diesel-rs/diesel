@@ -474,6 +474,70 @@ fn print_schema_with_multiple_schema() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_multiple_schema_cross_schema_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "--schema",
+            "game",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "--schema",
+            "people",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_same_schema_cross_file_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_same_schema_cross_file_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "--schema",
+            "inventory",
+            "-o",
+            "orders",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "--schema",
+            "inventory",
+            "-o",
+            "customers",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_default_schema_cross_file_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_default_schema_cross_file_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "-o",
+            "orders",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "-o",
+            "customers",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn print_schema_sqlite_primary_key_as_bigint() {
     test_print_schema(
@@ -751,6 +815,15 @@ fn assert_schema_compiles(test_name: &str, schema: String) {
 
 fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let config = read_file(&test_path.join("diesel.toml"));
+    // prevent name collisions by shorting the original name
+    // Postgres allows database names up to 63 bytes, "_config` is 7 bytes
+    // The project builder also appends another 7 bytes by adding "diesel_"
+    // which gives us a max name length of 49
+    let test_name = if test_name.len() >= 49 {
+        &test_name[..49]
+    } else {
+        test_name
+    };
     let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
 
     let patch_file = backend_file_path(test_name, "schema.patch");
