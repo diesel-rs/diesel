@@ -7,8 +7,8 @@
 pub(crate) mod aliasing;
 pub(crate) mod joins;
 mod peano_numbers;
-
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
+use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::*;
 
 pub use self::aliasing::{Alias, AliasSource, AliasedField};
@@ -265,4 +265,99 @@ mod impls_which_are_only_here_to_improve_error_messages {
 pub trait SizeRestrictedColumn: Column {
     /// Max length of that column
     const MAX_LENGTH: usize;
+}
+
+/// A helper trait to access the name of a table
+/// and the optionally the name of the schema the table belongs to
+///
+/// Usually you would like to use the `QueryFragment` implementation
+/// for the table type instead to correctly construct the relevant SQL
+/// fragment including correctly quoting all involved names
+pub trait NamedTable
+where
+    Self: Table,
+{
+    /// The schema name
+    fn schema(&self) -> Option<&str>;
+    /// The table name
+    fn table(&self) -> &str;
+}
+
+impl<T> NamedTable for T
+where
+    T: Table + StaticQueryFragment,
+    T::Component: NamedTableHelper,
+{
+    fn schema(&self) -> Option<&'static str> {
+        T::STATIC_COMPONENT.schema()
+    }
+
+    fn table(&self) -> &'static str {
+        T::STATIC_COMPONENT.table()
+    }
+}
+
+// an internal helper trait that doesn't require table as super trait
+trait NamedTableHelper {
+    fn schema(&self) -> Option<&str>;
+    fn table(&self) -> &str;
+}
+
+impl NamedTableHelper for crate::query_builder::nodes::Identifier<'static> {
+    fn schema(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn table(&self) -> &'static str {
+        self.0
+    }
+}
+
+impl<M> NamedTableHelper
+    for crate::query_builder::nodes::InfixNode<
+        crate::query_builder::nodes::Identifier<'static>,
+        crate::query_builder::nodes::Identifier<'static>,
+        M,
+    >
+{
+    fn schema(&self) -> Option<&'static str> {
+        Some(self.lhs.0)
+    }
+
+    fn table(&self) -> &'static str {
+        self.rhs.0
+    }
+}
+
+/// A helper trait to access associated information for a given column
+///
+/// Usually you want to use the [`QueryFragment`] implementation for
+/// your column type to construct a correctly quoted query
+/// fragment containing the fully qualified identifier
+// This is not bound to Column as super trait as `diesel-dynamic-schema`
+// doesn't implement the Column trait for it's column type
+pub trait ColumnHasTable {
+    /// The table type of this column
+    type Table;
+
+    /// The table the column belongs to
+    fn table(&self) -> Self::Table;
+    /// The name of the table
+    fn name(&self) -> &str;
+}
+
+impl<C> ColumnHasTable for C
+where
+    C: Column,
+    C::Table: Default,
+{
+    type Table = C::Table;
+
+    fn table(&self) -> Self::Table {
+        Default::default()
+    }
+
+    fn name(&self) -> &str {
+        C::NAME
+    }
 }
