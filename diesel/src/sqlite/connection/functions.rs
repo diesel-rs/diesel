@@ -14,7 +14,7 @@ use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::SqliteFunctionBehavior;
 use crate::sqlite::SqliteValue;
-use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
+use crate::sqlite::connection::bind_collector::SqliteBindValueRef;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
 use alloc::boxed::Box;
 use alloc::string::ToString;
@@ -105,20 +105,20 @@ where
 #[allow(clippy::let_unit_value)]
 pub(super) fn process_sql_function_result<RetSqlType, Ret>(
     result: &'_ Ret,
-) -> QueryResult<InternalSqliteBindValue<'_>>
+) -> QueryResult<SqliteBindValueRef<'_>>
 where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     let mut metadata_lookup = ();
     let value = SqliteBindValue {
-        inner: InternalSqliteBindValue::Null,
+        inner: SqliteBindValueRef::Null,
     };
     let mut buf = Output::new(value, &mut metadata_lookup);
     let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
 
     if let IsNull::Yes = is_null {
-        Ok(InternalSqliteBindValue::Null)
+        Ok(SqliteBindValueRef::Null)
     } else {
         Ok(buf.into_inner().inner)
     }
