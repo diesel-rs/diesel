@@ -2,22 +2,24 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(MultiConnection)]\nenum DbConnection {\n    Pg(PgConnection),\n    Sqlite(diesel::SqliteConnection),\n}\n"
+  input: "#[derive(MultiConnection)]\n#[diesel_async]\nenum DbConnection {\n    Pg(diesel_async::AsyncPgConnection),\n    Sqlite(diesel_async::AsyncMysqlConnection),\n}\n"
 ---
 mod multi_connection_impl {
     use super::*;
     mod backend {
         use super::*;
         pub enum MultiBackend {
-            Pg(<PgConnection as diesel::connection::Connection>::Backend),
+            Pg(
+                <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
+            ),
             Sqlite(
-                <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
             ),
         }
         impl MultiBackend {
             pub(super) fn pg(
                 &self,
-            ) -> &<PgConnection as diesel::connection::Connection>::Backend {
+            ) -> &<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend {
                 match self {
                     Self::Pg(b) => b,
                     _ => unreachable!(),
@@ -25,7 +27,7 @@ mod multi_connection_impl {
             }
             pub(super) fn sqlite(
                 &self,
-            ) -> &<diesel::SqliteConnection as diesel::connection::Connection>::Backend {
+            ) -> &<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend {
                 match self {
                     Self::Sqlite(b) => b,
                     _ => unreachable!(),
@@ -35,28 +37,28 @@ mod multi_connection_impl {
                 lookup: &mut dyn std::any::Any,
             ) -> MultiTypeMetadata
             where
-                <PgConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
+                <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend: diesel::sql_types::HasSqlType<
                     ST,
                 >,
-                <diesel::SqliteConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
+                <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend: diesel::sql_types::HasSqlType<
                     ST,
                 >,
             {
                 let mut ret = MultiTypeMetadata::default();
-                if let Some(lookup) = <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                if let Some(lookup) = <diesel_async::AsyncPgConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                     lookup,
                 ) {
                     ret.Pg = Some(
-                        <<PgConnection as diesel::connection::Connection>::Backend as diesel::sql_types::HasSqlType<
+                        <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::sql_types::HasSqlType<
                             ST,
                         >>::metadata(lookup),
                     );
                 }
-                if let Some(lookup) = <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                if let Some(lookup) = <diesel_async::AsyncMysqlConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                     lookup,
                 ) {
                     ret.Sqlite = Some(
-                        <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::sql_types::HasSqlType<
+                        <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::sql_types::HasSqlType<
                             ST,
                         >>::metadata(lookup),
                     );
@@ -71,17 +73,17 @@ mod multi_connection_impl {
             ) -> diesel::QueryResult<()>
             where
                 T: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
                 T: diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
             {
                 use diesel::internal::derives::multiconnection::AstPassHelper;
                 match pass.backend() {
                     super::backend::MultiBackend::Pg(_) => {
                         <T as diesel::query_builder::QueryFragment<
-                            <PgConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                         >>::walk_ast(
                             ast_node,
                             pass
@@ -90,7 +92,7 @@ mod multi_connection_impl {
                                     super::query_builder::MultiQueryBuilder::pg,
                                     super::backend::MultiBackend::pg,
                                     |l| {
-                                        <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                        <diesel_async::AsyncPgConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                                                 l,
                                             )
                                             .expect(
@@ -102,7 +104,7 @@ mod multi_connection_impl {
                     }
                     super::backend::MultiBackend::Sqlite(_) => {
                         <T as diesel::query_builder::QueryFragment<
-                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                         >>::walk_ast(
                             ast_node,
                             pass
@@ -111,7 +113,7 @@ mod multi_connection_impl {
                                     super::query_builder::MultiQueryBuilder::sqlite,
                                     super::backend::MultiBackend::sqlite,
                                     |l| {
-                                        <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                                                 l,
                                             )
                                             .expect(
@@ -126,12 +128,12 @@ mod multi_connection_impl {
         }
         pub enum MultiRawValue<'a> {
             Pg(
-                <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::RawValue<
+                <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::RawValue<
                     'a,
                 >,
             ),
             Sqlite(
-                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::RawValue<
+                <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::RawValue<
                     'a,
                 >,
             ),
@@ -141,24 +143,24 @@ mod multi_connection_impl {
             where
                 T: diesel::deserialize::FromSql<
                     ST,
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
                 T: diesel::deserialize::FromSql<
                     ST,
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
             {
                 match self {
                     Self::Pg(b) => {
                         <T as diesel::deserialize::FromSql<
                             ST,
-                            <PgConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                         >>::from_sql(b)
                     }
                     Self::Sqlite(b) => {
                         <T as diesel::deserialize::FromSql<
                             ST,
-                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                         >>::from_sql(b)
                     }
                 }
@@ -173,10 +175,10 @@ mod multi_connection_impl {
         #[allow(non_snake_case)]
         pub struct MultiTypeMetadata {
             pub(super) Pg: Option<
-                <<PgConnection as diesel::connection::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
+                <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
             >,
             pub(super) Sqlite: Option<
-                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
+                <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
             >,
         }
         impl diesel::sql_types::TypeMetadata for MultiBackend {
@@ -295,10 +297,10 @@ mod multi_connection_impl {
         use super::*;
         pub enum MultiQueryBuilder {
             Pg(
-                <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
+                <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::QueryBuilder,
             ),
             Sqlite(
-                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
+                <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::QueryBuilder,
             ),
         }
         impl MultiQueryBuilder {
@@ -312,7 +314,7 @@ mod multi_connection_impl {
         impl MultiQueryBuilder {
             pub(super) fn pg(
                 &mut self,
-            ) -> &mut <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+            ) -> &mut <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::QueryBuilder {
                 match self {
                     Self::Pg(qb) => qb,
                     _ => unreachable!(),
@@ -320,7 +322,7 @@ mod multi_connection_impl {
             }
             pub(super) fn sqlite(
                 &mut self,
-            ) -> &mut <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+            ) -> &mut <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::QueryBuilder {
                 match self {
                     Self::Sqlite(qb) => qb,
                     _ => unreachable!(),
@@ -358,10 +360,10 @@ mod multi_connection_impl {
         for diesel::internal::derives::multiconnection::LimitOffsetClause<L, O>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -380,10 +382,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::Concat<L, R>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -402,10 +404,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::array_comparison::In<T, U>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -424,10 +426,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::array_comparison::NotIn<T, U>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -446,10 +448,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::array_comparison::Many<ST, I>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -467,10 +469,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::Exists<T>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -486,10 +488,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::NoFromClause
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -505,10 +507,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::DefaultValues
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -526,10 +528,10 @@ mod multi_connection_impl {
         > for diesel::internal::derives::multiconnection::ReturningClause<Expr>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -547,10 +549,10 @@ mod multi_connection_impl {
         > for diesel::insertable::DefaultableColumnInsertValue<Expr>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -577,10 +579,10 @@ mod multi_connection_impl {
         >
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -598,10 +600,10 @@ mod multi_connection_impl {
         > for diesel::query_source::Alias<S>
         where
             Self: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {
             fn walk_ast<'b>(
@@ -842,13 +844,13 @@ mod multi_connection_impl {
             diesel::insertable::DefaultableColumnInsertValue<
                 diesel::insertable::ColumnInsertValue<Col, Expr>,
             >: diesel::insertable::InsertValues<
-                <PgConnection as diesel::connection::Connection>::Backend,
+                <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 Col::Table,
             >,
             diesel::insertable::DefaultableColumnInsertValue<
                 diesel::insertable::ColumnInsertValue<Col, Expr>,
             >: diesel::insertable::InsertValues<
-                <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 Col::Table,
             >,
         {
@@ -864,7 +866,7 @@ mod multi_connection_impl {
                 match out.backend() {
                     super::backend::MultiBackend::Pg(_) => {
                         <Self as diesel::insertable::InsertValues<
-                            <PgConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                             Col::Table,
                         >>::column_names(
                             &self,
@@ -874,7 +876,7 @@ mod multi_connection_impl {
                                     super::query_builder::MultiQueryBuilder::pg,
                                     super::backend::MultiBackend::pg,
                                     |l| {
-                                        <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                        <diesel_async::AsyncPgConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                                                 l,
                                             )
                                             .expect(
@@ -886,7 +888,7 @@ mod multi_connection_impl {
                     }
                     super::backend::MultiBackend::Sqlite(_) => {
                         <Self as diesel::insertable::InsertValues<
-                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                             Col::Table,
                         >>::column_names(
                             &self,
@@ -896,7 +898,7 @@ mod multi_connection_impl {
                                     super::query_builder::MultiQueryBuilder::sqlite,
                                     super::backend::MultiBackend::sqlite,
                                     |l| {
-                                        <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                                                 l,
                                             )
                                             .expect(
@@ -914,12 +916,12 @@ mod multi_connection_impl {
         use super::*;
         pub enum MultiBindCollector<'a> {
             Pg(
-                <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+                <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::BindCollector<
                     'a,
                 >,
             ),
             Sqlite(
-                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+                <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::BindCollector<
                     'a,
                 >,
             ),
@@ -927,7 +929,7 @@ mod multi_connection_impl {
         impl<'a> MultiBindCollector<'a> {
             pub(super) fn pg(
                 &mut self,
-            ) -> &mut <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+            ) -> &mut <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::BindCollector<
                 'a,
             > {
                 match self {
@@ -937,7 +939,7 @@ mod multi_connection_impl {
             }
             pub(super) fn sqlite(
                 &mut self,
-            ) -> &mut <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<
+            ) -> &mut <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend as diesel::backend::Backend>::BindCollector<
                 'a,
             > {
                 match self {
@@ -1040,17 +1042,17 @@ mod multi_connection_impl {
             }
         }
         trait PushBoundValueToCollector: PushBoundValueToCollectorDB<
-                <PgConnection as diesel::connection::Connection>::Backend,
+                <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
             > + PushBoundValueToCollectorDB<
-                <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
             > {}
         impl<T> PushBoundValueToCollector for T
         where
             T: PushBoundValueToCollectorDB<
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + PushBoundValueToCollectorDB<
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >,
         {}
         #[derive(Default)]
@@ -1098,20 +1100,20 @@ mod multi_connection_impl {
             T: std::any::Any
                 + diesel::serialize::ToSql<
                     ST,
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >
                 + diesel::serialize::ToSql<
                     ST,
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 > + Send + Sync + 'static,
             ST: Send
                 + diesel::sql_types::SqlType<
                     IsNull = diesel::sql_types::is_nullable::NotNull,
                 > + 'static,
-            <PgConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
+            <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend: diesel::sql_types::HasSqlType<
                 ST,
             >,
-            <diesel::SqliteConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
+            <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend: diesel::sql_types::HasSqlType<
                 ST,
             >,
         {
@@ -1183,12 +1185,12 @@ mod multi_connection_impl {
                         let callback = out.push_bound_value_to_collector;
                         let value = out.value;
                         <_ as PushBoundValueToCollectorDB<
-                            <PgConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                         >>::push_bound_value(
                             callback,
                             value,
                             bc,
-                            <PgConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                            <diesel_async::AsyncPgConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                                     metadata_lookup,
                                 )
                                 .expect(
@@ -1205,12 +1207,12 @@ mod multi_connection_impl {
                         let callback = out.push_bound_value_to_collector;
                         let value = out.value;
                         <_ as PushBoundValueToCollectorDB<
-                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                            <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                         >>::push_bound_value(
                             callback,
                             value,
                             bc,
-                            <diesel::SqliteConnection as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(
+                            <diesel_async::AsyncMysqlConnection as diesel_async::AsyncMultiConnectionHelper>::from_any(
                                     metadata_lookup,
                                 )
                                 .expect(
@@ -1584,9 +1586,14 @@ mod multi_connection_impl {
     mod row {
         use super::*;
         pub enum MultiRow<'conn, 'query> {
-            Pg(<PgConnection as diesel::connection::LoadConnection>::Row<'conn, 'query>),
+            Pg(
+                <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Row<
+                    'conn,
+                    'query,
+                >,
+            ),
             Sqlite(
-                <diesel::SqliteConnection as diesel::connection::LoadConnection>::Row<
+                <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Row<
                     'conn,
                     'query,
                 >,
@@ -1596,21 +1603,21 @@ mod multi_connection_impl {
         for MultiRow<'conn, 'query> {}
         pub enum MultiField<'conn: 'query, 'query> {
             Pg(
-                <<PgConnection as diesel::connection::LoadConnection>::Row<
+                <<diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Row<
                     'conn,
                     'query,
                 > as diesel::row::Row<
                     'conn,
-                    <PgConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >>::Field<'query>,
             ),
             Sqlite(
-                <<diesel::SqliteConnection as diesel::connection::LoadConnection>::Row<
+                <<diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Row<
                     'conn,
                     'query,
                 > as diesel::row::Row<
                     'conn,
-                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                    <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::Backend,
                 >>::Field<'query>,
             ),
         }
@@ -1687,50 +1694,32 @@ mod multi_connection_impl {
                 diesel::internal::derives::multiconnection::PartialRow::new(self, range)
             }
         }
-        pub enum MultiCursor<'conn, 'query> {
-            Pg(
-                <PgConnection as diesel::connection::LoadConnection>::Cursor<
-                    'conn,
-                    'query,
-                >,
-            ),
-            Sqlite(
-                <diesel::SqliteConnection as diesel::connection::LoadConnection>::Cursor<
-                    'conn,
-                    'query,
-                >,
-            ),
-        }
-        impl<'conn, 'query> Iterator for MultiCursor<'conn, 'query> {
-            type Item = diesel::QueryResult<MultiRow<'conn, 'query>>;
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    Self::Pg(r) => Some(r.next()?.map(MultiRow::Pg)),
-                    Self::Sqlite(r) => Some(r.next()?.map(MultiRow::Sqlite)),
-                }
-            }
-        }
     }
     mod connection {
         use super::*;
         pub(super) use super::DbConnection as MultiConnection;
-        impl diesel::connection::SimpleConnection for MultiConnection {
-            fn batch_execute(&mut self, query: &str) -> diesel::result::QueryResult<()> {
+        impl diesel_async::SimpleAsyncConnection for MultiConnection {
+            async fn batch_execute(
+                &mut self,
+                query: &str,
+            ) -> diesel::result::QueryResult<()> {
                 match self {
-                    Self::Pg(conn) => conn.batch_execute(query),
-                    Self::Sqlite(conn) => conn.batch_execute(query),
+                    Self::Pg(conn) => conn.batch_execute(query).await,
+                    Self::Sqlite(conn) => conn.batch_execute(query).await,
                 }
             }
         }
-        impl diesel::internal::derives::multiconnection::ConnectionSealed
-        for MultiConnection {}
+        diesel_async::expand_pool! {
+            impl diesel_async::pooled_connection::PoolableConnection for MultiConnection
+            {}
+        }
         struct SerializedQuery<T, C> {
             inner: T,
             backend: MultiBackend,
             query_builder: super::query_builder::MultiQueryBuilder,
             p: std::marker::PhantomData<C>,
         }
-        trait BindParamHelper: diesel::connection::Connection {
+        trait BindParamHelper: diesel_async::AsyncConnection {
             fn handle_inner_pass<'a, 'b: 'a>(
                 collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
                     'a,
@@ -1740,7 +1729,7 @@ mod multi_connection_impl {
                 q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
             ) -> diesel::QueryResult<()>;
         }
-        impl BindParamHelper for PgConnection {
+        impl BindParamHelper for diesel_async::AsyncPgConnection {
             fn handle_inner_pass<'a, 'b: 'a>(
                 outer_collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
                     'a,
@@ -1749,7 +1738,7 @@ mod multi_connection_impl {
                 backend: &'b MultiBackend,
                 q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
             ) -> diesel::QueryResult<()> {
-                use diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                use diesel_async::AsyncMultiConnectionHelper;
                 let mut collector = super::bind_collector::MultiBindCollector::Pg(
                     Default::default(),
                 );
@@ -1761,7 +1750,7 @@ mod multi_connection_impl {
                 Ok(())
             }
         }
-        impl BindParamHelper for diesel::SqliteConnection {
+        impl BindParamHelper for diesel_async::AsyncMysqlConnection {
             fn handle_inner_pass<'a, 'b: 'a>(
                 outer_collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
                     'a,
@@ -1770,7 +1759,7 @@ mod multi_connection_impl {
                 backend: &'b MultiBackend,
                 q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
             ) -> diesel::QueryResult<()> {
-                use diesel::internal::derives::multiconnection::MultiConnectionHelper;
+                use diesel_async::AsyncMultiConnectionHelper;
                 let mut collector = super::bind_collector::MultiBindCollector::Sqlite(
                     Default::default(),
                 );
@@ -1786,8 +1775,8 @@ mod multi_connection_impl {
         where
             DB: diesel::backend::Backend + 'static,
             T: diesel::query_builder::QueryFragment<MultiBackend>,
-            C: diesel::connection::Connection<Backend = DB> + BindParamHelper
-                + diesel::internal::derives::multiconnection::MultiConnectionHelper,
+            C: diesel_async::AsyncConnectionCore<Backend = DB> + BindParamHelper
+                + diesel_async::AsyncMultiConnectionHelper,
         {
             fn walk_ast<'b>(
                 &'b self,
@@ -1831,14 +1820,21 @@ mod multi_connection_impl {
         {
             type SqlType = diesel::sql_types::Untyped;
         }
-        impl diesel::connection::Connection for MultiConnection {
-            type Backend = super::MultiBackend;
+        impl diesel_async::AsyncConnection for MultiConnection {
             type TransactionManager = Self;
-            fn establish(database_url: &str) -> diesel::ConnectionResult<Self> {
-                if let Ok(conn) = PgConnection::establish(database_url) {
+            async fn establish(database_url: &str) -> diesel::ConnectionResult<Self> {
+                if let Ok(conn) = diesel_async::AsyncPgConnection::establish(
+                        database_url,
+                    )
+                    .await
+                {
                     return Ok(Self::Pg(conn));
                 }
-                if let Ok(conn) = diesel::SqliteConnection::establish(database_url) {
+                if let Ok(conn) = diesel_async::AsyncMysqlConnection::establish(
+                        database_url,
+                    )
+                    .await
+                {
                     return Ok(Self::Sqlite(conn));
                 }
                 Err(
@@ -1847,42 +1843,9 @@ mod multi_connection_impl {
                     ),
                 )
             }
-            fn execute_returning_count<T>(
-                &mut self,
-                source: &T,
-            ) -> diesel::result::QueryResult<usize>
-            where
-                T: diesel::query_builder::QueryFragment<Self::Backend>
-                    + diesel::query_builder::QueryId,
-            {
-                match self {
-                    Self::Pg(conn) => {
-                        let query = SerializedQuery {
-                            inner: source,
-                            backend: MultiBackend::Pg(Default::default()),
-                            query_builder: super::query_builder::MultiQueryBuilder::Pg(
-                                Default::default(),
-                            ),
-                            p: std::marker::PhantomData::<PgConnection>,
-                        };
-                        conn.execute_returning_count(&query)
-                    }
-                    Self::Sqlite(conn) => {
-                        let query = SerializedQuery {
-                            inner: source,
-                            backend: MultiBackend::Sqlite(Default::default()),
-                            query_builder: super::query_builder::MultiQueryBuilder::Sqlite(
-                                Default::default(),
-                            ),
-                            p: std::marker::PhantomData::<diesel::SqliteConnection>,
-                        };
-                        conn.execute_returning_count(&query)
-                    }
-                }
-            }
             fn transaction_state(
                 &mut self,
-            ) -> &mut <Self::TransactionManager as diesel::connection::TransactionManager<
+            ) -> &mut <Self::TransactionManager as diesel_async::TransactionManager<
                 Self,
             >>::TransactionStateData {
                 self
@@ -1892,10 +1855,10 @@ mod multi_connection_impl {
             ) -> &mut dyn diesel::connection::Instrumentation {
                 match self {
                     Self::Pg(conn) => {
-                        diesel::connection::Connection::instrumentation(conn)
+                        diesel_async::AsyncConnection::instrumentation(conn)
                     }
                     Self::Sqlite(conn) => {
-                        diesel::connection::Connection::instrumentation(conn)
+                        diesel_async::AsyncConnection::instrumentation(conn)
                     }
                 }
             }
@@ -1905,13 +1868,13 @@ mod multi_connection_impl {
             ) {
                 match self {
                     Self::Pg(conn) => {
-                        diesel::connection::Connection::set_instrumentation(
+                        diesel_async::AsyncConnection::set_instrumentation(
                             conn,
                             instrumentation,
                         );
                     }
                     Self::Sqlite(conn) => {
-                        diesel::connection::Connection::set_instrumentation(
+                        diesel_async::AsyncConnection::set_instrumentation(
                             conn,
                             instrumentation,
                         );
@@ -1924,38 +1887,114 @@ mod multi_connection_impl {
             ) {
                 match self {
                     Self::Pg(conn) => {
-                        diesel::connection::Connection::set_prepared_statement_cache_size(
+                        diesel_async::AsyncConnection::set_prepared_statement_cache_size(
                             conn,
                             size,
                         );
                     }
                     Self::Sqlite(conn) => {
-                        diesel::connection::Connection::set_prepared_statement_cache_size(
+                        diesel_async::AsyncConnection::set_prepared_statement_cache_size(
                             conn,
                             size,
                         );
                     }
                 }
             }
-            fn begin_test_transaction(&mut self) -> diesel::QueryResult<()> {
+            async fn begin_test_transaction(&mut self) -> diesel::QueryResult<()> {
                 match self {
-                    Self::Pg(conn) => conn.begin_test_transaction(),
-                    Self::Sqlite(conn) => conn.begin_test_transaction(),
+                    Self::Pg(conn) => conn.begin_test_transaction().await,
+                    Self::Sqlite(conn) => conn.begin_test_transaction().await,
                 }
             }
         }
-        impl diesel::connection::LoadConnection for MultiConnection {
-            type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
+        impl diesel_async::AsyncConnectionCore for MultiConnection {
+            type LoadFuture<'conn, 'query> = futures_util::future::BoxFuture<
+                'conn,
+                diesel::QueryResult<Self::Stream<'conn, 'query>>,
+            >;
+            type ExecuteFuture<'conn, 'query> = futures_util::future::BoxFuture<
+                'conn,
+                diesel::QueryResult<usize>,
+            >;
+            type Stream<'conn, 'query> = futures_util::stream::BoxStream<
+                'conn,
+                diesel::QueryResult<Self::Row<'conn, 'query>>,
+            >;
             type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
+            type Backend = super::MultiBackend;
             fn load<'conn, 'query, T>(
                 &'conn mut self,
                 source: T,
-            ) -> diesel::result::QueryResult<Self::Cursor<'conn, 'query>>
+            ) -> Self::LoadFuture<'conn, 'query>
             where
-                T: diesel::query_builder::Query
-                    + diesel::query_builder::QueryFragment<Self::Backend>
+                T: diesel::query_builder::AsQuery + 'query,
+                T::Query: diesel::query_builder::QueryFragment<Self::Backend>
                     + diesel::query_builder::QueryId + 'query,
-                Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
+            {
+                match self {
+                    Self::Pg(conn) => {
+                        let query = SerializedQuery {
+                            inner: source.as_query(),
+                            backend: MultiBackend::Pg(Default::default()),
+                            query_builder: super::query_builder::MultiQueryBuilder::Pg(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::<
+                                diesel_async::AsyncPgConnection,
+                            >,
+                        };
+                        let r = <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::load(
+                                conn,
+                                query,
+                            )
+                            .await?;
+                        Box::pin(async move {
+                            Ok(
+                                Box::pin(
+                                    futures_util::StreamExt::map(
+                                        r,
+                                        |result| result.map(super::row::MultiRow::Pg),
+                                    ),
+                                ) as Self::Stream<'conn, 'query>,
+                            )
+                        })
+                    }
+                    Self::Sqlite(conn) => {
+                        let query = SerializedQuery {
+                            inner: source.as_query(),
+                            backend: MultiBackend::Sqlite(Default::default()),
+                            query_builder: super::query_builder::MultiQueryBuilder::Sqlite(
+                                Default::default(),
+                            ),
+                            p: std::marker::PhantomData::<
+                                diesel_async::AsyncMysqlConnection,
+                            >,
+                        };
+                        let r = <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::load(
+                                conn,
+                                query,
+                            )
+                            .await?;
+                        Box::pin(async move {
+                            Ok(
+                                Box::pin(
+                                    futures_util::StreamExt::map(
+                                        r,
+                                        |result| result.map(super::row::MultiRow::Sqlite),
+                                    ),
+                                ) as Self::Stream<'conn, 'query>,
+                            )
+                        })
+                    }
+                }
+            }
+            fn execute_returning_count<'conn, 'query, T>(
+                &'conn mut self,
+                source: T,
+            ) -> Self::ExecuteFuture<'conn, 'query>
+            where
+                T: diesel::query_builder::QueryFragment<Self::Backend>
+                    + diesel::query_builder::QueryId + 'query,
             {
                 match self {
                     Self::Pg(conn) => {
@@ -1965,13 +2004,11 @@ mod multi_connection_impl {
                             query_builder: super::query_builder::MultiQueryBuilder::Pg(
                                 Default::default(),
                             ),
-                            p: std::marker::PhantomData::<PgConnection>,
+                            p: std::marker::PhantomData::<
+                                diesel_async::AsyncPgConnection,
+                            >,
                         };
-                        let r = <PgConnection as diesel::connection::LoadConnection>::load(
-                            conn,
-                            query,
-                        )?;
-                        Ok(super::row::MultiCursor::Pg(r))
+                        conn.execute_returning_count(query)
                     }
                     Self::Sqlite(conn) => {
                         let query = SerializedQuery {
@@ -1980,63 +2017,68 @@ mod multi_connection_impl {
                             query_builder: super::query_builder::MultiQueryBuilder::Sqlite(
                                 Default::default(),
                             ),
-                            p: std::marker::PhantomData::<diesel::SqliteConnection>,
+                            p: std::marker::PhantomData::<
+                                diesel_async::AsyncMysqlConnection,
+                            >,
                         };
-                        let r = <diesel::SqliteConnection as diesel::connection::LoadConnection>::load(
-                            conn,
-                            query,
-                        )?;
-                        Ok(super::row::MultiCursor::Sqlite(r))
+                        conn.execute_returning_count(query)
                     }
                 }
             }
         }
-        impl diesel::connection::TransactionManager<MultiConnection>
-        for MultiConnection {
+        impl diesel_async::TransactionManager<MultiConnection> for MultiConnection {
             type TransactionStateData = Self;
-            fn begin_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
-                match conn {
-                    Self::Pg(conn) => {
-                        <PgConnection as diesel::connection::Connection>::TransactionManager::begin_transaction(
-                            conn,
-                        )
-                    }
-                    Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::begin_transaction(
-                            conn,
-                        )
-                    }
-                }
-            }
-            fn rollback_transaction(
+            async fn begin_transaction(
                 conn: &mut MultiConnection,
             ) -> diesel::QueryResult<()> {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as diesel::connection::Connection>::TransactionManager::rollback_transaction(
-                            conn,
-                        )
+                        <diesel_async::AsyncPgConnection as diesel_async::AsyncConnection>::TransactionManager::begin_transaction(
+                                conn,
+                            )
+                            .await
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::rollback_transaction(
-                            conn,
-                        )
+                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnection>::TransactionManager::begin_transaction(
+                                conn,
+                            )
+                            .await
                     }
                 }
             }
-            fn commit_transaction(
+            async fn rollback_transaction(
                 conn: &mut MultiConnection,
             ) -> diesel::QueryResult<()> {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as diesel::connection::Connection>::TransactionManager::commit_transaction(
-                            conn,
-                        )
+                        <diesel_async::AsyncPgConnection as diesel_async::AsyncConnection>::TransactionManager::rollback_transaction(
+                                conn,
+                            )
+                            .await
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::commit_transaction(
-                            conn,
-                        )
+                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnection>::TransactionManager::rollback_transaction(
+                                conn,
+                            )
+                            .await
+                    }
+                }
+            }
+            async fn commit_transaction(
+                conn: &mut MultiConnection,
+            ) -> diesel::QueryResult<()> {
+                match conn {
+                    Self::Pg(conn) => {
+                        <diesel_async::AsyncPgConnection as diesel_async::AsyncConnection>::TransactionManager::commit_transaction(
+                                conn,
+                            )
+                            .await
+                    }
+                    Self::Sqlite(conn) => {
+                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnection>::TransactionManager::commit_transaction(
+                                conn,
+                            )
+                            .await
                     }
                 }
             }
@@ -2045,12 +2087,12 @@ mod multi_connection_impl {
             ) -> &mut diesel::connection::TransactionManagerStatus {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as diesel::connection::Connection>::TransactionManager::transaction_manager_status_mut(
+                        <diesel_async::AsyncPgConnection as diesel_async::AsyncConnection>::TransactionManager::transaction_manager_status_mut(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::transaction_manager_status_mut(
+                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnection>::TransactionManager::transaction_manager_status_mut(
                             conn,
                         )
                     }
@@ -2059,69 +2101,15 @@ mod multi_connection_impl {
             fn is_broken_transaction_manager(conn: &mut MultiConnection) -> bool {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as diesel::connection::Connection>::TransactionManager::is_broken_transaction_manager(
+                        <diesel_async::AsyncPgConnection as diesel_async::AsyncConnection>::TransactionManager::is_broken_transaction_manager(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::is_broken_transaction_manager(
+                        <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnection>::TransactionManager::is_broken_transaction_manager(
                             conn,
                         )
                     }
-                }
-            }
-        }
-        impl diesel::migration::MigrationConnection for MultiConnection {
-            fn setup(&mut self) -> diesel::QueryResult<usize> {
-                match self {
-                    Self::Pg(conn) => {
-                        use diesel::migration::MigrationConnection;
-                        conn.setup()
-                    }
-                    Self::Sqlite(conn) => {
-                        use diesel::migration::MigrationConnection;
-                        conn.setup()
-                    }
-                }
-            }
-            fn read_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
-                match self {
-                    Self::Pg(conn) => {
-                        use diesel::migration::MigrationConnection;
-                        conn.read_search_path()
-                    }
-                    Self::Sqlite(conn) => {
-                        use diesel::migration::MigrationConnection;
-                        conn.read_search_path()
-                    }
-                }
-            }
-            fn set_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
-                match self {
-                    Self::Pg(conn) => {
-                        use diesel::migration::MigrationConnection;
-                        conn.set_search_path(search_path)
-                    }
-                    Self::Sqlite(conn) => {
-                        use diesel::migration::MigrationConnection;
-                        conn.set_search_path(search_path)
-                    }
-                }
-            }
-        }
-        impl diesel::r2d2::R2D2Connection for MultiConnection {
-            fn ping(&mut self) -> diesel::QueryResult<()> {
-                use diesel::r2d2::R2D2Connection;
-                match self {
-                    Self::Pg(conn) => conn.ping(),
-                    Self::Sqlite(conn) => conn.ping(),
-                }
-            }
-            fn is_broken(&mut self) -> bool {
-                use diesel::r2d2::R2D2Connection;
-                match self {
-                    Self::Pg(conn) => conn.is_broken(),
-                    Self::Sqlite(conn) => conn.is_broken(),
                 }
             }
         }

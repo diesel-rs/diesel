@@ -1730,6 +1730,25 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// corresponding enum manually by first establishing the connection via the inner type and then
 /// wrap the result into the enum.
 ///
+/// ## Optional Container Attributes
+///
+/// This macro supports generating code for [`diesel-async`](https://docs.rs/diesel-async/latest/diesel_async/).
+/// By adding the `#[diesel_async]` attribute, the macro instead derives
+/// implements `diesel_async::AsyncConnection` and related traits
+/// for an enum of connections to different databases.
+/// This way each tuple field type must implement `diesel_async::AsyncConnection`.
+/// It is possible to use `diesel-async`'s `SyncConnectionWrapper` as connection type.
+/// The implementation of `diesel_async::AsyncConnection::establish` works similar to the sync variant.
+///
+/// The usual stability guarantees of `diesel` do not apply here.
+/// When this attribute is used the generated code is only compatible to the `diesel-async` version supported,
+/// by this `diesel` version.
+///
+/// Note: The associated types `LoadFuture` and `ExecuteFuture` in the implementation
+/// of the trait [`AsyncConnectionCore`](https://docs.rs/diesel-async/latest/diesel_async/trait.AsyncConnectionCore.html)
+/// must be bound by `'conn`.
+///
+///
 /// # Example
 /// ```
 /// # extern crate diesel;
@@ -1890,7 +1909,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// ```
 ///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/multiconnection.md")))]
-#[proc_macro_derive(MultiConnection)]
+#[proc_macro_derive(MultiConnection, attributes(diesel_async))]
 pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
     derive_multiconnection_inner(input.into()).into()
 }
