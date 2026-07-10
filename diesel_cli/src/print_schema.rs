@@ -585,9 +585,9 @@ fn load_custom_types(
                                 ColumnType {
                                     rust_name: format!(
                                         "{} {} {}",
-                                        &cd.table_name().rust_name,
-                                        &c.rust_name,
-                                        &ty.rust_name
+                                        cd.table_name().rust_name,
+                                        c.rust_name,
+                                        ty.rust_name
                                     )
                                     .to_upper_camel_case(),
                                     ..ty.clone()

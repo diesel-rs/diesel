@@ -80,6 +80,7 @@ impl SqliteReadOnlyBlob<'_> {
 }
 
 #[cfg(feature = "std")]
+#[allow(clippy::std_instead_of_core)] // needs a newer rust version
 fn to_io_error(error: core::num::TryFromIntError) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, Box::new(error))
 }

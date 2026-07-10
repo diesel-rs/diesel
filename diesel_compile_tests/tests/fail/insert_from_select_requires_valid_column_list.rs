@@ -86,15 +86,15 @@ fn main() {
 
     // Multiple columns, one wrong type
     users
+        //~^ ERROR: type mismatch resolving `<(user_id, body) as Expression>::SqlType == (Integer, Text)`
         .select((id, name))
         .insert_into(posts)
         .into_columns((user_id, body));
-    //~^ ERROR: type mismatch resolving `<(user_id, body) as Expression>::SqlType == (Integer, Text)`
 
     // Multiple columns, both wrong types
     users
+        //~^ ERROR: type mismatch resolving `<(title, body) as Expression>::SqlType == (Integer, Text)`
         .select((id, name))
         .insert_into(posts)
         .into_columns((title, body));
-    //~^ ERROR: type mismatch resolving `<(title, body) as Expression>::SqlType == (Integer, Text)`
 }

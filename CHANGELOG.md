@@ -51,6 +51,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 
+## [2.3.11] 2026-07-10
+
+* Fixed several potential panics in PostgreSQL (de)serialization code
+* Fixed using `.load()` batch inserts and returning clauses on the SQLite backend
+* Harden usage of `SqliteConnection::deserialize_read_only_database()`
+
 ## [2.3.10] 2026-06-05
 
 * Fixed a wrong value of a internal MYSQL flag
@@ -2398,3 +2404,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8
 [2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9
 [2.3.10]: https://github.com/diesel-rs/diesel/compare/v2.3.9...v2.3.10
+[2.3.11]: https://github.com/diesel-rs/diesel/compare/v2.3.10...v2.3.11

@@ -389,9 +389,8 @@ impl Display for Error {
             } => {
                 write!(
                     f,
-                    "Transaction rollback failed: {} \
-                        (rollback attempted because of failure to commit: {})",
-                    &**rollback_error, &**commit_error
+                    "Transaction rollback failed: {rollback_error} \
+                        (rollback attempted because of failure to commit: {commit_error})",
                 )?;
                 Ok(())
             }

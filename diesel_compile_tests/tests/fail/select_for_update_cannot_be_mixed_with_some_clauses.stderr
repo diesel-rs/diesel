@@ -144,10 +144,10 @@ LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
  
     
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>: DistinctOnDsl<_>` is not satisfied
-   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:22:36
+   --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:22:24
     |
  LL |     users.for_update().distinct_on(id);
-    |                                    ^^ unsatisfied trait bound
+    |                        ^^^^^^^^^^^ unsatisfied trait bound
     |
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
@@ -483,10 +483,10 @@ LL | |     H: QueryFragment<DB> + Send + 'a,
  
     
 error[E0277]: cannot box `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` for backend `_`
-    --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:43:5
+    --> tests/fail/select_for_update_cannot_be_mixed_with_some_clauses.rs:43:24
      |
   LL |     users.for_update().into_boxed();
-     |     ^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |                        ^^^^^^^^^^ unsatisfied trait bound
      |
      = help: the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
      = note: this either means `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>` is no valid SQL for `_`

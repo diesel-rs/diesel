@@ -371,7 +371,7 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                     key = column_names[0],
                     table = input.view.table_name,
                 );
-                message += &format!("\t{table_name} ({}) {{\n", &column_names[0]);
+                message += &format!("\t{table_name} ({}) {{\n", column_names[0]);
                 for c in &input.view.column_defs {
                     let tpe = c
                         .tpe
