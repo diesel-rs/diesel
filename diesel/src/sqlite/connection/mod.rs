@@ -6,6 +6,7 @@ use sqlite_wasm_rs as ffi;
 
 pub mod authorizer;
 mod bind_collector;
+mod collation_needed;
 mod functions;
 mod hooks;
 mod limits;
@@ -23,6 +24,7 @@ mod update_hook;
 pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+pub use self::collation_needed::{CollationNeededContext, SqliteTextRep};
 pub use self::limits::SqliteLimit;
 use self::raw::RawConnection;
 pub use self::serialized_database::SerializedDatabase;
