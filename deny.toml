@@ -11,8 +11,8 @@ allow = [
     "Unicode-3.0",
     "BSD-3-Clause",
     "GPL-2.0-only",
-    "MPL-2.0",
     "Zlib",
+    "MPL-2.0",
 ]
 # ignore private packages
 private = { ignore = true }
