@@ -1944,14 +1944,15 @@ mod multi_connection_impl {
                             >,
                         };
                         let r = <diesel_async::AsyncPgConnection as diesel_async::AsyncConnectionCore>::load(
-                            conn,
-                            query,
-                        );
+                                conn,
+                                query,
+                            )
+                            .await?;
                         Box::pin(async move {
                             Ok(
                                 Box::pin(
                                     futures_util::StreamExt::map(
-                                        r.await?,
+                                        r,
                                         |result| result.map(super::row::MultiRow::Pg),
                                     ),
                                 ) as Self::Stream<'conn, 'query>,
@@ -1970,14 +1971,15 @@ mod multi_connection_impl {
                             >,
                         };
                         let r = <diesel_async::AsyncMysqlConnection as diesel_async::AsyncConnectionCore>::load(
-                            conn,
-                            query,
-                        );
+                                conn,
+                                query,
+                            )
+                            .await?;
                         Box::pin(async move {
                             Ok(
                                 Box::pin(
                                     futures_util::StreamExt::map(
-                                        r.await?,
+                                        r,
                                         |result| result.map(super::row::MultiRow::Sqlite),
                                     ),
                                 ) as Self::Stream<'conn, 'query>,

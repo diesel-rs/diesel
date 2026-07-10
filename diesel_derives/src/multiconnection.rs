@@ -194,11 +194,7 @@ fn generate_connection_impl(
     let execute_returning_count_var = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
-        let ref_token = if is_async {
-            quote::quote! { }
-        } else {
-            quote::quote! { & }
-        };
+        let ref_token = (!is_async).then_some(quote::quote! { & });
         quote::quote! {
             Self::#ident(conn) => {
                 let query = SerializedQuery {
@@ -229,6 +225,23 @@ fn generate_connection_impl(
     } else {
         None
     };
+    let inner_query = if is_async {
+        quote::quote!(source.as_query())
+    } else {
+        quote::quote!(source)
+    };
+
+    let load_query = |ty, variant_ident| {
+        quote::quote! {
+            let query = SerializedQuery {
+                inner: #inner_query,
+                backend: MultiBackend::#variant_ident(Default::default()),
+                query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
+                p: std::marker::PhantomData::<#ty>,
+            };
+            let r = <#ty as #conn_load>::load(conn, query)#await_token?;
+        }
+    };
 
     let impl_execute_returning_count = if is_async {
         None
@@ -249,18 +262,13 @@ fn generate_connection_impl(
         let load_var_impl = connection_types.iter().map(|c| {
             let variant_ident = c.name;
             let ty = &c.ty;
+            let load_query = load_query(ty, variant_ident);
             quote::quote! {
                 Self::#variant_ident(conn) => {
-                    let query = SerializedQuery {
-                        inner: source.as_query(),
-                        backend: MultiBackend::#variant_ident(Default::default()),
-                        query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
-                        p: std::marker::PhantomData::<#ty>,
-                    };
-                    let r = <#ty as #conn_load>::load(conn, query);
+                    #load_query
                     Box::pin(async move {
                         Ok(Box::pin(
-                            futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
+                            futures_util::StreamExt::map(r, |result| result.map(super::row::MultiRow::#variant_ident))
                         ) as Self::Stream<'conn, 'query>)
                     })
                 }
@@ -295,15 +303,10 @@ fn generate_connection_impl(
         let load_var_impl = connection_types.iter().map(|c| {
             let variant_ident = c.name;
             let ty = &c.ty;
+            let load_query = load_query(ty, variant_ident);
             quote::quote! {
                 Self::#variant_ident(conn) => {
-                    let query = SerializedQuery {
-                        inner: source,
-                        backend: MultiBackend::#variant_ident(Default::default()),
-                        query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
-                        p: std::marker::PhantomData::<#ty>,
-                    };
-                    let r = <#ty as #conn_load>::load(conn, query)?;
+                    #load_query
                     Ok(super::row::MultiCursor::#variant_ident(r))
                 }
             }

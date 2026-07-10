@@ -1730,7 +1730,8 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// corresponding enum manually by first establishing the connection via the inner type and then
 /// wrap the result into the enum.
 ///
-/// ## Required Container Attributes
+/// ## Optional Container Attributes
+///
 /// This macro supports generating code for [`diesel-async`](https://docs.rs/diesel-async/latest/diesel_async/).
 /// By adding the `#[diesel_async]` attribute, the macro instead derives
 /// implements `diesel_async::AsyncConnection` and related traits
