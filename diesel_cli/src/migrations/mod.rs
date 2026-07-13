@@ -33,7 +33,11 @@ pub enum MigrationFormat {
 #[derive(Debug, Subcommand)]
 pub enum MigrationCommand {
     /// Runs all pending migrations.
-    Run,
+    Run {
+        /// Do not regenerate `schema.rs` during migration.
+        #[arg(long = "no-schema", action = ArgAction::SetTrue)]
+        no_schema: bool,
+    },
 
     /// Reverts the specified migrations.
     Revert {
@@ -200,12 +204,16 @@ pub(super) fn run_migration_command(
     migration_dir: Option<PathBuf>,
 ) -> Result<(), crate::errors::Error> {
     match args.command {
-        MigrationCommand::Run => {
+        MigrationCommand::Run { no_schema } => {
             let (mut conn, dir) =
                 conn_and_migration_dir(migration_dir, database_url.clone(), config_file.clone())?;
 
             run_migrations_with_output(&mut conn, dir)?;
-            regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
+            if no_schema {
+                // No schema generated
+            } else {
+                regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
+            }
         }
         MigrationCommand::Revert { all, number } => {
             let (mut conn, dir) =
