@@ -209,9 +209,7 @@ pub(super) fn run_migration_command(
                 conn_and_migration_dir(migration_dir, database_url.clone(), config_file.clone())?;
 
             run_migrations_with_output(&mut conn, dir)?;
-            if no_schema {
-                // No schema generated
-            } else {
+            if !no_schema {
                 regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
             }
         }
