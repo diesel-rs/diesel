@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.3.7"
+version = "2.3.11"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -79,6 +79,7 @@ huge-tables = ["64-column-tables"]
 32-column-tables = ["diesel_derives/32-column-tables"]
 64-column-tables = ["32-column-tables", "diesel_derives/64-column-tables"]
 128-column-tables = ["64-column-tables", "diesel_derives/128-column-tables"]
+custom-count-column-tables = []
 postgres = ["dep:pq-sys", "postgres_backend"]
 sqlite-no-std = ["__sqlite-shared", "hashbrown"]
 sqlite = ["__sqlite-shared", "std"]
@@ -97,7 +98,7 @@ chrono = ["diesel_derives/chrono", "dep:chrono"]
 time = ["diesel_derives/time", "dep:time"]
 uuid = ["dep:uuid"]
 serde_json = ["dep:serde_json"]
-__sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
+__sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing", "dep:bitflags"]
 __with_asan_tests = [
     "libsqlite3-sys?/bundled",
     "libsqlite3-sys?/with-asan",

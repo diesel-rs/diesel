@@ -212,7 +212,7 @@ impl Connection for PgConnection {
                 &mut |query, params, conn, _source| {
                     let res = query
                         .execute(&mut conn.raw_connection, &params, false)
-                        .map(|r| r.rows_affected());
+                        .and_then(|r| r.rows_affected());
                     // according to https://www.postgresql.org/docs/current/libpq-async.html
                     // `PQgetResult` needs to be called till a null pointer is returned
                     while conn.raw_connection.get_next_result()?.is_some() {}
@@ -468,7 +468,7 @@ impl PgConnection {
                     let rows = next_res.rows_affected();
                     while let Some(_r) = conn.raw_connection.get_next_result()? {}
                     r?;
-                    Ok(rows)
+                    rows.map_err(Into::into)
                 }
 
                 let rows = inner_copy_in::<S, T>(stmt, conn, binds, &*source);

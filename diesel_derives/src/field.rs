@@ -122,6 +122,7 @@ impl Field {
                         ident_span,
                     })
                 }
+                FieldAttr::Rename(_, _) => { /*ignore here as only relevant for enums*/ }
             }
         }
 

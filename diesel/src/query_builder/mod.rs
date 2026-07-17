@@ -27,7 +27,6 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-pub(crate) mod returning_clause;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -103,9 +102,10 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 #[doc(inline)]
 pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod returning;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-#[doc(inline)]
-pub use self::returning_clause::ReturningClause;
+pub mod returning;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(
@@ -310,6 +310,26 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for Box<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
+    }
+}
+
+impl<T: ?Sized, DB> QueryFragment<DB> for alloc::rc::Rc<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
+    }
+}
+
+impl<T: ?Sized, DB> QueryFragment<DB> for alloc::sync::Arc<T>
 where
     DB: Backend,
     T: QueryFragment<DB>,

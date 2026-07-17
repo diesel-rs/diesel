@@ -1,0 +1,149 @@
+error[E0277]: the trait bound `diesel::sql_types::Integer: EnumSqlType<false, _>` is not satisfied
+    --> tests/fail/derive/enum2_.rs:37:30
+     |
+  LL |         .get_result::<Test2>(conn)
+     |          ----------          ^^^^ the trait `EnumSqlType<false, _>` is not implemented for `diesel::sql_types::Integer`
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `EnumSqlType<false, _>` is not implemented for `diesel::sql_types::Integer`
+      but trait `EnumSqlType<true, _>` is implemented for it
+    --> DIESEL/diesel/diesel/src/types/enum_.rs
+     |
+  LL | / impl<DB> EnumSqlType<true, DB> for crate::sql_types::Integer
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     crate::types::enum_::IntMapping<i32, Self>: crate::types::enum_::EnumMapping<DB>,
+     | |_____________________________________________________________________________________^
+note: required for `Test2` to implement `FromSql<diesel::sql_types::Integer, _>`
+    --> tests/fail/derive/enum2_.rs:9:6
+     |
+   LL | #[derive(Debug, Enum)]
+     |                 ---- type parameter would need to implement `FromSql<diesel::sql_types::Integer, _>`
+   LL | #[diesel(sql_type = diesel::sql_types::Integer)]
+   LL | enum Test2 {
+     |      ^^^^^
+     = help: consider manually implementing `FromSql<diesel::sql_types::Integer, _>` to avoid undesired bounds
+note: required for `Test2` to implement `Queryable<diesel::sql_types::Integer, _>`
+    --> tests/fail/derive/enum2_.rs:9:6
+     |
+   LL | #[derive(Debug, Enum)]
+     |                 ---- type parameter would need to implement `Queryable<diesel::sql_types::Integer, _>`
+   LL | #[diesel(sql_type = diesel::sql_types::Integer)]
+   LL | enum Test2 {
+     |      ^^^^^
+     = help: consider manually implementing `Queryable<diesel::sql_types::Integer, _>` to avoid undesired bounds
+     = note: required for `Test2` to implement `FromSqlRow<diesel::sql_types::Integer, _>`
+     = note: required for `diesel::sql_types::Integer` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<Test2, _>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Test2>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
+error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Binary` as `Test2`
+    --> tests/fail/derive/enum2_.rs:42:30
+     |
+  LL |         .get_result::<Test2>(conn)
+     |          ----------          ^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `FromSql<diesel::sql_types::Binary, _>` is not implemented for `Test2`
+    --> tests/fail/derive/enum2_.rs:9:1
+     |
+   LL | enum Test2 {
+     | ^^^^^^^^^^
+     = note: double check your type mappings via the documentation of `diesel::sql_types::Binary`
+help: the trait `FromSql<diesel::sql_types::Integer, __DB>` is implemented for `Test2`
+    --> tests/fail/derive/enum2_.rs:7:17
+     |
+   LL | #[derive(Debug, Enum)]
+     |                 ^^^^
+note: required for `Test2` to implement `Queryable<diesel::sql_types::Binary, _>`
+    --> tests/fail/derive/enum2_.rs:9:6
+     |
+   LL | #[derive(Debug, Enum)]
+     |                 ---- type parameter would need to implement `Queryable<diesel::sql_types::Binary, _>`
+   LL | #[diesel(sql_type = diesel::sql_types::Integer)]
+   LL | enum Test2 {
+     |      ^^^^^
+     = help: consider manually implementing `Queryable<diesel::sql_types::Binary, _>` to avoid undesired bounds
+     = note: required for `Test2` to implement `FromSqlRow<diesel::sql_types::Binary, _>`
+     = note: required for `diesel::sql_types::Binary` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<Test2, _>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, _, Test2>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+          = note: this error originates in the derive macro `Enum` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `types::enum_::EnumTypeMapping` is no valid strategy to map an enum for backend `Sqlite`
+    --> tests/fail/derive/enum2_.rs:49:82
+     |
+  LL |     let r = diesel::select(diesel::dsl::sql::<SqlEnum>("_")).get_result::<Test4>(conn);
+     |                                                              ----------          ^^^^ the trait `types::enum_::EnumMapping<Sqlite>` is not implemented for `types::enum_::EnumTypeMapping`
+     |                                                              |
+     |                                                              required by a bound introduced by this call
+     |
+     = note: the `Sqlite` backend only support mapping to `Text` and `Integer` fields
+help: `types::enum_::EnumTypeMapping` implements trait `types::enum_::EnumMapping<DB>`
+    --> DIESEL/diesel/diesel/src/pg/types/enum_.rs
+     |
+   LL | impl EnumMapping<crate::pg::Pg> for EnumTypeMapping {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `types::enum_::EnumMapping<Pg>`
+     |
+    ::: DIESEL/diesel/diesel/src/mysql/types/enum_.rs
+     |
+   LL | impl EnumMapping<crate::mysql::Mysql> for EnumTypeMapping {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `types::enum_::EnumMapping<Mysql>`
+note: required for `SqlEnum` to implement `EnumSqlType<false, Sqlite>`
+    --> tests/fail/derive/enum2_.rs:24:8
+     |
+  LL | #[derive(SqlType, QueryId, Clone)]
+     |          ------- type parameter would need to implement `EnumSqlType<false, Sqlite>`
+...
+  LL | struct SqlEnum;
+     |        ^^^^^^^
+     = help: consider manually implementing `EnumSqlType<false, Sqlite>` to avoid undesired bounds
+note: required for `Test4` to implement `FromSql<SqlEnum, Sqlite>`
+    --> tests/fail/derive/enum2_.rs:28:6
+     |
+  LL | #[derive(Debug, Enum)]
+     |                 ---- type parameter would need to implement `FromSql<SqlEnum, Sqlite>`
+  LL | #[diesel(sql_type = SqlEnum)]
+  LL | enum Test4 {
+     |      ^^^^^
+     = help: consider manually implementing `FromSql<SqlEnum, Sqlite>` to avoid undesired bounds
+note: required for `Test4` to implement `Queryable<SqlEnum, Sqlite>`
+    --> tests/fail/derive/enum2_.rs:28:6
+     |
+  LL | #[derive(Debug, Enum)]
+     |                 ---- type parameter would need to implement `Queryable<SqlEnum, Sqlite>`
+  LL | #[diesel(sql_type = SqlEnum)]
+  LL | enum Test4 {
+     |      ^^^^^
+     = help: consider manually implementing `Queryable<SqlEnum, Sqlite>` to avoid undesired bounds
+     = note: required for `Test4` to implement `FromSqlRow<SqlEnum, Sqlite>`
+     = note: required for `SqlEnum` to implement `CompatibleType<Test4, Sqlite>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, diesel::SqliteConnection, Test4>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     For more information about this error, try `rustc --explain E0277`.

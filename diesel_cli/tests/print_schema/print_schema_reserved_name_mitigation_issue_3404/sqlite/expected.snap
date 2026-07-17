@@ -11,4 +11,3 @@ diesel::table! {
         is_nullable_ -> Nullable<Bool>,
     }
 }
-

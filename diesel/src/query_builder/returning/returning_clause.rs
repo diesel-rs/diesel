@@ -1,12 +1,16 @@
-use super::DeleteStatement;
-use super::InsertStatement;
-use super::UpdateStatement;
-use super::{AstPass, QueryFragment};
 use crate::QuerySource;
 use crate::backend::{Backend, DieselReserveSpecialization};
-use crate::query_builder::QueryId;
+use crate::query_builder::{
+    AstPass, DeleteStatement, InsertStatement, QueryFragment, QueryId, UpdateStatement,
+};
 use crate::result::QueryResult;
 
+/// Marker type for `INSERT`/`UPDATE`/`DELETE` ASTs that do not have a
+/// `RETURNING` clause attached yet.
+///
+/// This is the default `Ret` parameter of [`InsertStatement`],
+/// [`UpdateStatement`] and [`DeleteStatement`]. Calling `.returning(...)` on
+/// such a statement swaps it out for a [`ReturningClause`].
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoReturningClause;
 
@@ -57,7 +61,13 @@ where
     }
 }
 
+/// Helper trait that maps an `INSERT`/`UPDATE`/`DELETE` statement type to
+/// the same statement type with an explicit [`ReturningClause<S>`] attached.
+///
+/// This is used to spell the return type of `.returning(...)` in the `dsl`
+/// module without naming each individual statement type.
 pub trait ReturningClauseHelper<S> {
+    /// `Self` with a `RETURNING S` clause attached.
     type WithReturning;
 }
 

@@ -297,11 +297,12 @@ where
     /// fn run_test() -> diesel::QueryResult<()> {Ok(())}
     /// ```
     ///
-    /// See the documentation for [`on_constraint`] and [`do_update`] for
-    /// more examples.
+    /// See the documentation for [`on_constraint`], [`do_update`], and
+    /// [`filter_target`] for more examples.
     ///
     /// [`on_constraint`]: ../upsert/fn.on_constraint.html
     /// [`do_update`]: crate::upsert::IncompleteOnConflict::do_update()
+    /// [`filter_target`]: crate::upsert::DecoratableTarget::filter_target()
     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConflict<Self, Target>
     where
         ConflictTarget<Target>: OnConflictTarget<T>,
@@ -320,6 +321,129 @@ where
     T: DecoratableTarget<P>,
 {
     type FilterOutput = IncompleteOnConflict<Stmt, <T as DecoratableTarget<P>>::FilterOutput>;
+
+    /// Adds a `WHERE` predicate to the `ON CONFLICT` target, telling PostgreSQL
+    /// which unique index to check for conflicts.
+    ///
+    /// This generates `ON CONFLICT (target) WHERE predicate DO ...` SQL.
+    /// PostgreSQL selects unique indexes whose `WHERE` clause is implied by
+    /// the predicate. The predicate does not need to exactly match the index's
+    /// `WHERE` clause; implication is sufficient.
+    ///
+    /// Calling `.filter_target()` multiple times combines the predicates with
+    /// `AND`. PostgreSQL only.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    ///
+    /// diesel::sql_query(
+    ///     "CREATE UNIQUE INDEX users_name_active ON users (name) WHERE id > 5",
+    /// )
+    /// .execute(conn)?;
+    ///
+    /// let user = User { id: 10, name: "Sean" };
+    /// diesel::insert_into(users).values(&user).execute(conn)?;
+    ///
+    /// // id=11 satisfies the partial index predicate, so uniqueness is violated: does nothing.
+    /// let count = diesel::insert_into(users)
+    ///     .values(User { id: 11, name: "Sean" })
+    ///     .on_conflict(name)
+    ///     .filter_target(id.gt(5))
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    /// assert_eq!(count, 0);
+    ///
+    /// // id=3 does not satisfy the partial index predicate, so it is not covered by the index:
+    /// // no uniqueness violation, inserts normally.
+    /// let count = diesel::insert_into(users)
+    ///     .values(User { id: 3, name: "Sean" })
+    ///     .on_conflict(name)
+    ///     .filter_target(id.gt(5))
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    /// assert_eq!(count, 1);
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    ///
+    /// ## Do update
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    ///
+    /// diesel::sql_query(
+    ///     "CREATE UNIQUE INDEX users_name_do_update ON users (name) WHERE id > 5",
+    /// )
+    /// .execute(conn)?;
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(User { id: 10, name: "Sean" })
+    ///     .execute(conn)?;
+    ///
+    /// // id=11 satisfies the partial index predicate, so uniqueness is violated: name updated.
+    /// diesel::insert_into(users)
+    ///     .values(User { id: 11, name: "Sean" })
+    ///     .on_conflict(name)
+    ///     .filter_target(id.gt(5))
+    ///     .do_update()
+    ///     .set(name.eq("Updated"))
+    ///     .execute(conn)?;
+    ///
+    /// let names = users.filter(id.gt(5)).select(name).load::<String>(conn)?;
+    /// assert_eq!(names, vec!["Updated"]);
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    ///
+    /// ## Chaining filter_target
+    ///
+    /// Calling `.filter_target()` multiple times combines the predicates with `AND`,
+    /// which is useful when the unique index `WHERE` clause has multiple conditions.
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    ///
+    /// diesel::sql_query(
+    ///     "CREATE UNIQUE INDEX users_name_range ON users (name) WHERE id > 5 AND id < 100",
+    /// )
+    /// .execute(conn)?;
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(User { id: 10, name: "Sean" })
+    ///     .execute(conn)?;
+    ///
+    /// // Combined predicate matches the partial index, conflict detected: do nothing.
+    /// let count = diesel::insert_into(users)
+    ///     .values(User { id: 11, name: "Sean" })
+    ///     .on_conflict(name)
+    ///     .filter_target(id.gt(5))
+    ///     .filter_target(id.lt(100))
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    /// assert_eq!(count, 0);
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
     fn filter_target(self, predicate: P) -> Self::FilterOutput {
         IncompleteOnConflict {
             stmt: self.stmt,

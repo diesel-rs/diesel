@@ -2,15 +2,22 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use std::borrow::Cow;
 use syn::spanned::Spanned;
-use syn::{DeriveInput, Result, parse_quote};
+use syn::{DeriveInput, Ident, Result, parse_quote};
 
 use crate::field::Field;
 use crate::model::{CheckForBackend, Model};
 use crate::util::wrap_in_dummy_mod;
 
+type DefaultCheckCallback = fn(
+    &Model,
+    &syn::ImplGenerics<'_>,
+    Option<&syn::WhereClause>,
+    &[FieldSelectExpressionTyBuilder<'_>],
+) -> std::prelude::v1::Result<TokenStream, syn::Error>;
+
 pub fn derive(
     item: DeriveInput,
-    check_for_backend: Option<CheckForBackend>,
+    default_check: Option<DefaultCheckCallback>,
 ) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
 
@@ -50,41 +57,26 @@ pub fn derive(
         .map(|f| field_column_inst(f, &model))
         .collect::<Result<Vec<_>>>()?;
 
-    let check_function = if let Some(backends) = model
-        .check_for_backend
-        .as_ref()
-        .or(check_for_backend.as_ref())
-        .and_then(|c| match c {
-            CheckForBackend::Backends(punctuated) => Some(punctuated),
-            CheckForBackend::Disabled(_lit_bool) => None,
-        }) {
-        let field_check_bound = model
-            .fields()
-            .iter()
-            .zip(&field_select_expression_type_builders)
-            .flat_map(|(f, ty_builder)| {
-                backends.iter().map(move |b| {
-                    let span = Span::mixed_site().located_at(f.ty.span());
-                    let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
-                    let ty = ty_builder.type_with_backend(b);
-                    Ok(syn::parse_quote_spanned! {span =>
-                        #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
-                    })
-                })
+    let check_function = match model.check_for_backend.as_ref() {
+        Some(CheckForBackend::Backends(backends)) => Some(generate_check_function(
+            &model,
+            &original_impl_generics,
+            original_where_clause,
+            &field_select_expression_type_builders,
+            backends,
+            parse_quote!(_check_field_compatibility),
+        )?),
+        Some(CheckForBackend::Disabled(_lit)) => None,
+        None => default_check
+            .map(|c| {
+                c(
+                    &model,
+                    &original_impl_generics,
+                    original_where_clause,
+                    &field_select_expression_type_builders,
+                )
             })
-            .collect::<Result<Vec<_>>>()?;
-        let where_clause = &mut original_where_clause.cloned();
-        let where_clause = where_clause.get_or_insert_with(|| parse_quote!(where));
-        for field_check in field_check_bound {
-            where_clause.predicates.push(field_check);
-        }
-        Some(quote::quote! {
-            fn _check_field_compatibility #original_impl_generics()
-                #where_clause
-            {}
-        })
-    } else {
-        None
+            .transpose()?,
     };
 
     let errors: TokenStream = compile_errors
@@ -110,6 +102,41 @@ pub fn derive(
 
         #errors
     }))
+}
+
+pub fn generate_check_function(
+    model: &Model,
+    original_impl_generics: &syn::ImplGenerics<'_>,
+    original_where_clause: Option<&syn::WhereClause>,
+    field_select_expression_type_builders: &[FieldSelectExpressionTyBuilder<'_>],
+    backends: &syn::punctuated::Punctuated<syn::TypePath, syn::token::Comma>,
+    function_name: Ident,
+) -> Result<TokenStream> {
+    let field_check_bound = model
+        .fields()
+        .iter()
+        .zip(field_select_expression_type_builders)
+        .flat_map(|(f, ty_builder)| {
+            backends.iter().map(move |b| {
+                let span = Span::mixed_site().located_at(f.ty.span());
+                let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
+                let ty = ty_builder.type_with_backend(b);
+                Ok(syn::parse_quote_spanned! {span =>
+                    #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
+                })
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let where_clause = &mut original_where_clause.cloned();
+    let where_clause = where_clause.get_or_insert_with(|| parse_quote!(where));
+    for field_check in field_check_bound {
+        where_clause.predicates.push(field_check);
+    }
+    Ok(quote::quote! {
+        fn #function_name #original_impl_generics()
+            #where_clause
+        {}
+    })
 }
 
 fn to_field_ty_bound(field_ty: &syn::Type) -> Result<TokenStream> {
@@ -176,7 +203,7 @@ fn field_select_expression_ty_builder<'a>(
     }
 }
 
-enum FieldSelectExpressionTyBuilder<'a> {
+pub enum FieldSelectExpressionTyBuilder<'a> {
     Always(TokenStream),
     EmbedSelectable { embed_ty: &'a syn::Type },
 }

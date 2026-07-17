@@ -333,6 +333,518 @@ extern "SQL" {
         x: X,
     ) -> X::Out;
 
+    /// Extracts a text value from a well-formed JSON document at the given path.
+    ///
+    /// Returns `NULL` if the path does not exist in the JSON document, or if the value at that
+    /// path is a JSON `null`.
+    ///
+    /// To extract other types, use:
+    /// - [`json_extract_integer`](json_extract_integer()) for integer values
+    /// - [`json_extract_double`](json_extract_double()) for floating-point values
+    /// - [`json_extract_json`](json_extract_json_1()) for JSON objects or arrays
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": "xyz"});
+    /// let result = diesel::select(json_extract_string::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("xyz".to_string()), result);
+    ///
+    /// let json = json!({"a": 42});
+    /// let result = diesel::select(json_extract_string::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("42".to_string()), result);
+    ///
+    /// let result = diesel::select(json_extract_string::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": "xyz"});
+    /// let result = diesel::select(json_extract_string::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "json_extract"]
+    fn json_extract_string<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Text>;
+
+    /// Extracts an integer value from a well-formed JSON document at the given path.
+    ///
+    /// Returns `NULL` if the path does not exist in the JSON document, or if the value at that
+    /// path is a JSON `null`.
+    ///
+    /// To extract other types, use:
+    /// - [`json_extract_string`](json_extract_string()) for text values
+    /// - [`json_extract_double`](json_extract_double()) for floating-point values
+    /// - [`json_extract_json`](json_extract_json_1()) for JSON objects or arrays
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(json_extract_integer::<Json, _, _>(json, "$.c[2].f"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(7), result);
+    ///
+    /// let json = json!({"a": 3.7});
+    /// let result = diesel::select(json_extract_integer::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(3), result);
+    ///
+    /// let result = diesel::select(json_extract_integer::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 2});
+    /// let result = diesel::select(json_extract_integer::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "json_extract"]
+    fn json_extract_integer<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Integer>;
+
+    /// Extracts a floating-point value from a well-formed JSON document at the given path.
+    ///
+    /// Returns `NULL` if the path does not exist in the JSON document, or if the value at that
+    /// path is a JSON `null`.
+    ///
+    /// To extract other types, use:
+    /// - [`json_extract_string`](json_extract_string()) for text values
+    /// - [`json_extract_integer`](json_extract_integer()) for integer values
+    /// - [`json_extract_json`](json_extract_json_1()) for JSON objects or arrays
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": 3.14});
+    /// let result = diesel::select(json_extract_double::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert_eq!(Some(3.14), result);
+    ///
+    /// let json = json!({"a": 7});
+    /// let result = diesel::select(json_extract_double::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert_eq!(Some(7.0), result);
+    ///
+    /// let result = diesel::select(json_extract_double::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 3.14});
+    /// let result = diesel::select(json_extract_double::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "json_extract"]
+    fn json_extract_double<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Double>;
+
+    /// Extracts a JSON object or array from a well-formed JSON document at the given path.
+    ///
+    /// When a single path is provided, returns the value at that path as a [`Json`] value.
+    /// When multiple paths are provided (using the variadic form), returns a JSON array
+    /// containing the extracted values.
+    ///
+    /// Returns `NULL` if a single path does not exist in the JSON document. With multiple paths,
+    /// missing paths appear as `null` inside the returned JSON array.
+    ///
+    /// To extract other types, use:
+    /// - [`json_extract_string`](json_extract_string()) for text values
+    /// - [`json_extract_integer`](json_extract_integer()) for integer values
+    /// - [`json_extract_double`](json_extract_double()) for floating-point values
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(json_extract_json_1::<Json, _, _>(json, "$.c[2]"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!({"f": 7})), result);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5], "f": 7});
+    /// let result = diesel::select(json_extract_json_2::<Json, _, _, _>(json, "$.c", "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([[4, 5], 2])), result);
+    ///
+    /// let json = json!({"a": 42});
+    /// let result = diesel::select(json_extract_json_1::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!(42)), result);
+    ///
+    /// let json = json!({"a": 42});
+    /// let result = diesel::select(json_extract_json_2::<Json, _, _, _>(json, "$.a", "$.b"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([42, null])), result);
+    ///
+    /// let result = diesel::select(json_extract_json_1::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 42});
+    /// let result = diesel::select(json_extract_json_1::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 42});
+    /// let result = diesel::select(json_extract_json_2::<Json, _, _, _>(json, "$.b", "$.c"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([null, null])), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "json_extract"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn json_extract_json<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Json>;
+
+    /// Extracts a text value from a well-formed JSON or JSONB document at the given path.
+    ///
+    /// Works identically to [`json_extract_string`](json_extract_string()) for scalar text values.
+    ///
+    /// Returns `NULL` if the path does not exist in the JSON document, or if the value at that
+    /// path is a JSON `null`.
+    ///
+    /// To extract other types, use:
+    /// - [`jsonb_extract_integer`](jsonb_extract_integer()) for integer values
+    /// - [`jsonb_extract_double`](jsonb_extract_double()) for floating-point values
+    /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": "xyz"});
+    /// let result = diesel::select(jsonb_extract_string::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("xyz".to_string()), result);
+    ///
+    /// let json = json!({"a": 42});
+    /// let result = diesel::select(jsonb_extract_string::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert_eq!(Some("42".to_string()), result);
+    ///
+    /// let result = diesel::select(jsonb_extract_string::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": "xyz"});
+    /// let result = diesel::select(jsonb_extract_string::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<String>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "jsonb_extract"]
+    fn jsonb_extract_string<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Text>;
+
+    /// Extracts an integer value from a well-formed JSON or JSONB document at the given path.
+    ///
+    /// Works identically to [`json_extract_integer`](json_extract_integer()) for integer values.
+    ///
+    /// Returns `NULL` if the path does not exist in the JSON document, or if the value at that
+    /// path is a JSON `null`.
+    ///
+    /// To extract other types, use:
+    /// - [`jsonb_extract_string`](jsonb_extract_string()) for text values
+    /// - [`jsonb_extract_double`](jsonb_extract_double()) for floating-point values
+    /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(jsonb_extract_integer::<Json, _, _>(json, "$.c[2].f"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(7), result);
+    ///
+    /// let json = json!({"a": 3.7});
+    /// let result = diesel::select(jsonb_extract_integer::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert_eq!(Some(3), result);
+    ///
+    /// let result = diesel::select(jsonb_extract_integer::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 2});
+    /// let result = diesel::select(jsonb_extract_integer::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<i32>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "jsonb_extract"]
+    fn jsonb_extract_integer<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Integer>;
+
+    /// Extracts a floating-point value from a well-formed JSON or JSONB document at the given path.
+    ///
+    /// Works identically to [`json_extract_double`](json_extract_double()) for floating-point values.
+    ///
+    /// Returns `NULL` if the path does not exist in the JSON document, or if the value at that
+    /// path is a JSON `null`.
+    ///
+    /// To extract other types, use:
+    /// - [`jsonb_extract_string`](jsonb_extract_string()) for text values
+    /// - [`jsonb_extract_integer`](jsonb_extract_integer()) for integer values
+    /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": 3.14});
+    /// let result = diesel::select(jsonb_extract_double::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert_eq!(Some(3.14), result);
+    ///
+    /// let json = json!({"a": 7});
+    /// let result = diesel::select(jsonb_extract_double::<Json, _, _>(json, "$.a"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert_eq!(Some(7.0), result);
+    ///
+    /// let result = diesel::select(jsonb_extract_double::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 3.14});
+    /// let result = diesel::select(jsonb_extract_double::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<f64>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "jsonb_extract"]
+    fn jsonb_extract_double<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Double>;
+
+    /// Extracts a JSON object or array from a well-formed JSON or JSONB document at the given path,
+    /// returning it in JSONB format.
+    ///
+    /// Unlike [`json_extract_json`](json_extract_json_1()), which returns JSON objects and arrays
+    /// as text, this function returns them in the internal JSONB binary format. For scalar values
+    /// (text, integer, double, null), both functions behave identically.
+    ///
+    /// When a single path is provided, returns the value at that path as a [`Jsonb`] value.
+    /// When multiple paths are provided (using the variadic form), returns a JSONB array
+    /// containing the extracted values.
+    ///
+    /// Returns `NULL` if a single path does not exist in the JSON document. With multiple paths,
+    /// missing paths appear as `null` inside the returned JSONB array.
+    ///
+    /// To extract other types, use:
+    /// - [`jsonb_extract_string`](jsonb_extract_string()) for text values
+    /// - [`jsonb_extract_integer`](jsonb_extract_integer()) for integer values
+    /// - [`jsonb_extract_double`](jsonb_extract_double()) for floating-point values
+    ///
+    /// This function requires at least SQLite 3.9 or newer.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Json, Jsonb, Nullable};
+    /// #     use serde_json::{json, Value};
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 9, 0);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(jsonb_extract_jsonb_1::<Json, _, _>(json, "$"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!({"a": 2, "c": [4, 5, {"f": 7}]})), result);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(jsonb_extract_jsonb_1::<Json, _, _>(json, "$.c"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([4, 5, {"f": 7}])), result);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(jsonb_extract_jsonb_1::<Json, _, _>(json, "$.c[2]"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!({"f": 7})), result);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5]});
+    /// let result = diesel::select(jsonb_extract_jsonb_2::<Json, _, _, _>(json, "$.c", "$.x"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([[4, 5], null])), result);
+    ///
+    /// let result = diesel::select(jsonb_extract_jsonb_1::<Nullable<Json>, _, _>(None::<Value>, "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert!(result.is_none());
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
+    /// let result = diesel::select(jsonb_extract_jsonb_1::<Json, _, _>(json, "$.x"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(None, result);
+    ///
+    /// let json = json!({"a": 2, "c": [4, 5], "f": 7});
+    /// let result = diesel::select(jsonb_extract_jsonb_2::<Json, _, _, _>(json, "$.c", "$.a"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([[4, 5], 2])), result);
+    ///
+    /// let json = json!({"a": 2});
+    /// let result = diesel::select(jsonb_extract_jsonb_2::<Json, _, _, _>(json, "$.b", "$.c"))
+    ///     .get_result::<Option<Value>>(connection)?;
+    /// assert_eq!(Some(json!([null, null])), result);
+    ///
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[sql_name = "jsonb_extract"]
+    #[variadic(last_arguments = 1, skip_zero_argument_variant = true)]
+    fn jsonb_extract_jsonb<J: JsonOrNullableJsonOrJsonbOrNullableJsonb + SingleValue>(
+        json: J,
+        text: Text,
+    ) -> Nullable<Jsonb>;
+
     /// Converts the given json value to pretty-printed, indented text
     ///
     /// This function requires at least SQLite 3.46 or newer
@@ -1614,6 +2126,443 @@ extern "SQL" {
         json: J,
         path: Text,
     ) -> Nullable<Jsonb>;
+
+    /// The `json_insert(X,P,V,...)` SQL function takes a single JSON value as its first argument
+    /// followed by zero or more pairs of path and value arguments. It returns a copy of the X
+    /// argument with the values V inserted at the paths P, but only where nothing already exists at
+    /// the path. Paths that already select an element of X are left unchanged.
+    ///
+    /// The path/value pairs are applied sequentially from left to right.
+    ///
+    /// A path that ends in `[#]` appends the value to an existing array.
+    ///
+    /// If the `json_insert(X)` function is called with no path/value pairs, then it returns the
+    /// input X reformatted, with excess whitespace removed.
+    ///
+    /// The `json_insert()` function throws an error if any of the path arguments is not a
+    /// well-formed path.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Json, Text, Nullable};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1, "c": 3});
+    /// let result = diesel::select(json_insert_1::<Json, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2, "c": 3}), result);
+    ///
+    /// // A path that already exists is left unchanged.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_insert_1::<Json, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// // A path ending in "[#]" appends to an array.
+    /// let json = json!(['a', 'b', 'c']);
+    /// let result = diesel::select(json_insert_1::<Json, Text, _, _, _>(json, "$[#]", "d"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(['a', 'b', 'c', 'd']), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(
+    ///     json_insert_2::<Json, Integer, Integer, _, _, _, _, _>(json, "$.b", 2, "$.c", 3),
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2, "c": 3}), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_insert_0::<Json, _>(json))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let result = diesel::select(json_insert_1::<Nullable<Json>, Integer, _, _, _>(None::<serde_json::Value>, "$.b", 1))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(result, None);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn json_insert<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json> + SingleValue,
+        V: NotBlob,
+    >(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> J::Out;
+
+    /// The `jsonb_insert(X,P,V,...)` SQL function works just like the [`json_insert()`](json_insert_1())
+    /// function except that the result is returned in SQLite's private binary JSONB format rather than
+    /// in the standard RFC 8259 text format.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Jsonb, Text, Nullable};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1, "c": 3});
+    /// let result = diesel::select(jsonb_insert_1::<Jsonb, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2, "c": 3}), result);
+    ///
+    /// // A path that already exists is left unchanged.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_insert_1::<Jsonb, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// // A path ending in "[#]" appends to an array.
+    /// let json = json!(['a', 'b', 'c']);
+    /// let result = diesel::select(jsonb_insert_1::<Jsonb, Text, _, _, _>(json, "$[#]", "d"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(['a', 'b', 'c', 'd']), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(
+    ///     jsonb_insert_2::<Jsonb, Integer, Integer, _, _, _, _, _>(json, "$.b", 2, "$.c", 3),
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2, "c": 3}), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_insert_0::<Jsonb, _>(json))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let result = diesel::select(jsonb_insert_1::<Nullable<Jsonb>, Integer, _, _, _>(None::<serde_json::Value>, "$.b", 1))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(result, None);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn jsonb_insert<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Jsonb> + SingleValue,
+        V: NotBlob,
+    >(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> J::Out;
+
+    /// The `json_replace(X,P,V,...)` SQL function takes a single JSON value as its first argument
+    /// followed by zero or more pairs of path and value arguments. It returns a copy of the X
+    /// argument with values V substituted at the paths P, but only where something already exists
+    /// at the path. Paths that select elements not found in X are silently ignored.
+    ///
+    /// The path/value pairs are applied sequentially from left to right.
+    ///
+    /// If the `json_replace(X)` function is called with no path/value pairs, then it returns the
+    /// input X reformatted, with excess whitespace removed.
+    ///
+    /// The `json_replace()` function throws an error if any of the path arguments is not a
+    /// well-formed path.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Json, Text, Nullable};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1, "b": 2});
+    /// let result = diesel::select(json_replace_1::<Json, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 99, "b": 2}), result);
+    ///
+    /// // A path that does not exist is silently ignored.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_replace_1::<Json, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let json = json!({"a": 1, "b": 2});
+    /// let result = diesel::select(
+    ///     json_replace_2::<Json, Integer, Text, _, _, _, _, _>(json, "$.a", 99, "$.b", "x"),
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 99, "b": "x"}), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_replace_0::<Json, _>(json))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let result = diesel::select(json_replace_1::<Nullable<Json>, Integer, _, _, _>(None::<serde_json::Value>, "$.a", 1))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(result, None);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn json_replace<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json> + SingleValue,
+        V: NotBlob,
+    >(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> J::Out;
+
+    /// The `jsonb_replace(X,P,V,...)` SQL function works just like the [`json_replace()`](json_replace_1())
+    /// function except that the result is returned in SQLite's private binary JSONB format rather than
+    /// in the standard RFC 8259 text format.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Jsonb, Text, Nullable};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1, "b": 2});
+    /// let result = diesel::select(jsonb_replace_1::<Jsonb, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 99, "b": 2}), result);
+    ///
+    /// // A path that does not exist is silently ignored.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_replace_1::<Jsonb, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_replace_0::<Jsonb, _>(json))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let result = diesel::select(jsonb_replace_1::<Nullable<Jsonb>, Integer, _, _, _>(None::<serde_json::Value>, "$.a", 1))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(result, None);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn jsonb_replace<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Jsonb> + SingleValue,
+        V: NotBlob,
+    >(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> J::Out;
+
+    /// The `json_set(X,P,V,...)` SQL function takes a single JSON value as its first argument
+    /// followed by zero or more pairs of path and value arguments. It returns a copy of the X
+    /// argument with values V inserted or replaced at the paths P. Unlike [`json_replace()`](json_replace_1()),
+    /// `json_set()` also inserts new values where the path does not already exist.
+    ///
+    /// The path/value pairs are applied sequentially from left to right.
+    ///
+    /// A path that ends in `[#]` appends the value to an existing array.
+    ///
+    /// If the `json_set(X)` function is called with no path/value pairs, then it returns the
+    /// input X reformatted, with excess whitespace removed.
+    ///
+    /// The `json_set()` function throws an error if any of the path arguments is not a
+    /// well-formed path.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Json, Text, Nullable};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_set_1::<Json, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2}), result);
+    ///
+    /// // Existing values are replaced.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_set_1::<Json, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 99}), result);
+    ///
+    /// // A path ending in "[#]" appends to an array.
+    /// let json = json!(['a', 'b', 'c']);
+    /// let result = diesel::select(json_set_1::<Json, Text, _, _, _>(json, "$[#]", "d"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(['a', 'b', 'c', 'd']), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(
+    ///     json_set_2::<Json, Integer, Integer, _, _, _, _, _>(json, "$.b", 2, "$.c", 3),
+    /// )
+    /// .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2, "c": 3}), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(json_set_0::<Json, _>(json))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let result = diesel::select(json_set_1::<Nullable<Json>, Integer, _, _, _>(None::<serde_json::Value>, "$.b", 1))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(result, None);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn json_set<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Json> + SingleValue,
+        V: NotBlob,
+    >(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> J::Out;
+
+    /// The `jsonb_set(X,P,V,...)` SQL function works just like the [`json_set()`](json_set_1())
+    /// function except that the result is returned in SQLite's private binary JSONB format rather than
+    /// in the standard RFC 8259 text format.
+    ///
+    /// This function requires at least SQLite 3.38 or newer
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     #[cfg(feature = "serde_json")]
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::dsl::*;
+    /// #     use diesel::sql_types::{Integer, Jsonb, Text, Nullable};
+    /// #     use serde_json::json;
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 38, 0);
+    /// #
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_set_1::<Jsonb, Integer, _, _, _>(json, "$.b", 2))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1, "b": 2}), result);
+    ///
+    /// // Existing values are replaced.
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_set_1::<Jsonb, Integer, _, _, _>(json, "$.a", 99))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 99}), result);
+    ///
+    /// // A path ending in "[#]" appends to an array.
+    /// let json = json!(['a', 'b', 'c']);
+    /// let result = diesel::select(jsonb_set_1::<Jsonb, Text, _, _, _>(json, "$[#]", "d"))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!(['a', 'b', 'c', 'd']), result);
+    ///
+    /// let json = json!({"a": 1});
+    /// let result = diesel::select(jsonb_set_0::<Jsonb, _>(json))
+    ///     .get_result::<serde_json::Value>(connection)?;
+    /// assert_eq!(json!({"a": 1}), result);
+    ///
+    /// let result = diesel::select(jsonb_set_1::<Nullable<Jsonb>, Integer, _, _, _>(None::<serde_json::Value>, "$.b", 1))
+    ///     .get_result::<Option<serde_json::Value>>(connection)?;
+    /// assert_eq!(result, None);
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "__sqlite-shared")]
+    #[variadic(2)]
+    fn jsonb_set<
+        J: JsonOrNullableJsonOrJsonbOrNullableJsonb + MaybeNullableValue<Jsonb> + SingleValue,
+        V: NotBlob,
+    >(
+        json: J,
+        path: Text,
+        value: V,
+    ) -> J::Out;
 
     /// Applies an RFC 7396 MergePatch `patch` to the input JSON `target` and
     /// returns the patched JSON value.

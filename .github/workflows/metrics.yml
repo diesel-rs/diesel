@@ -12,9 +12,14 @@ env:
   CARGO_NET_RETRY: 10
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: "-C target-cpu=native"
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.ref }}-${{ github.workflow }}
 jobs:
   metrics:
+    name: Collect Benchmark metrics
     runs-on: ubuntu-latest
+    environment: Metrics
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +30,7 @@ jobs:
         with:
           persist-credentials: false
       - name: cache
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: metrics-${{matrix.backend}}-cargo-${{ hashFiles('diesel_bench/Cargo.toml')}}
       - name: Install postgres (Linux)
@@ -66,9 +71,8 @@ jobs:
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo 'DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test' >> $GITHUB_ENV
       - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
+        run: |
+          rustup update stable
       - name: Run Benchmarks (Postgres)
         if: matrix.backend == 'postgres'
         run: cargo +stable bench --no-fail-fast --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rand_chacha rust_postgres tokio_postgres futures futures-util sea-orm sea-orm/sqlx-postgres criterion/async_tokio serde diesel-async diesel-async/postgres wtx wtx/postgres zero-postgres"
@@ -81,13 +85,15 @@ jobs:
       - name: Push metrics
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          BACKEND: ${{ matrix.backend }}
+          METRIC_ACCESS_KEY: ${{ secrets.METRIC_ACCESS_KEY }}
         run: |
           sudo apt-get -y install git
 
           mkdir ~/.ssh -p
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-keyscan github.com >> ~/.ssh/known_hosts
-          echo "${{ secrets.METRIC_ACCESS_KEY }}" >> ~/.ssh/id_ed25519
+          echo "$METRIC_ACCESS_KEY" >> ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           df -h
           rm diesel_bench/target/release -rf
@@ -111,10 +117,10 @@ jobs:
 
           cd metrics
           export FOLDER_NAME=$(date +%Y%m%d-%H%M%S)
-          mkdir -p metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
-          mv ../diesel_bench/target/criterion/* metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+          mkdir -p metrics/$FOLDER_NAME-$GITHUB_SHA-$BACKEND
+          mv ../diesel_bench/target/criterion/* metrics/$FOLDER_NAME-$GITHUB_SHA-$BACKEND
 
-          git add metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+          git add metrics/$FOLDER_NAME-$GITHUB_SHA-$BACKEND
           git -c user.name=Bot -c user.email=dummy@example.com commit --message "📈"
 
           git push origin master

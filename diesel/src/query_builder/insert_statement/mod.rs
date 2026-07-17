@@ -11,13 +11,15 @@ pub(crate) use self::private::Insert;
 )]
 pub(crate) use self::private::{InsertOrIgnore, Replace};
 
-use super::returning_clause::*;
 use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::returning::{
+    InsertStmtKind, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_source::{Column, Table};
 use crate::{QuerySource, insertable::*};
 use core::marker::PhantomData;
@@ -228,6 +230,40 @@ impl<T: QuerySource, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, O
     }
 }
 
+// This is a separate free standing function
+// so that the debug impl for sqlite can use it with
+// slightly adjusted types
+pub(super) fn walk_ast_intern<'b, T, U, Op, Ret, DB>(
+    mut out: AstPass<'_, 'b, DB>,
+    records: &'b U,
+    into_clause: &'b T::FromClause,
+    operator: &'b Op,
+    returning: &'b Ret,
+) -> QueryResult<()>
+where
+    DB: Backend + DieselReserveSpecialization,
+    T: Table,
+    T::FromClause: QueryFragment<DB>,
+    U: QueryFragment<DB> + CanInsertInSingleQuery<DB>,
+    Op: QueryFragment<DB>,
+    Ret: QueryFragment<DB>,
+{
+    if records.rows_to_insert() == Some(0) {
+        out.push_sql("SELECT 1 FROM ");
+        into_clause.walk_ast(out.reborrow())?;
+        out.push_sql(" WHERE 1=0");
+        return Ok(());
+    }
+
+    operator.walk_ast(out.reborrow())?;
+    out.push_sql(" INTO ");
+    into_clause.walk_ast(out.reborrow())?;
+    out.push_sql(" ");
+    records.walk_ast(out.reborrow())?;
+    returning.walk_ast(out.reborrow())?;
+    Ok(())
+}
+
 impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret>
 where
     DB: Backend + DieselReserveSpecialization,
@@ -237,28 +273,23 @@ where
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.records.rows_to_insert() == Some(0) {
-            out.push_sql("SELECT 1 FROM ");
-            self.into_clause.walk_ast(out.reborrow())?;
-            out.push_sql(" WHERE 1=0");
-            return Ok(());
-        }
-
-        self.operator.walk_ast(out.reborrow())?;
-        out.push_sql(" INTO ");
-        self.into_clause.walk_ast(out.reborrow())?;
-        out.push_sql(" ");
-        self.records.walk_ast(out.reborrow())?;
-        self.returning.walk_ast(out.reborrow())?;
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        walk_ast_intern::<T, U, Op, Ret, DB>(
+            out,
+            &self.records,
+            &self.into_clause,
+            &self.operator,
+            &self.returning,
+        )
     }
 }
 
 impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
 where
     T: Table,
+    U: InsertStmtKind,
     InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<U::StmtKind, T>>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>;
@@ -271,12 +302,13 @@ where
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
     T: QuerySource,
-    Ret: Expression + SelectableExpression<T> + NonAggregate,
+    U: InsertStmtKind,
+    Ret: SelectableExpression<ReturningQuerySource<U::StmtKind, T>> + NonAggregate,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
-impl<T: QuerySource, U, Op, Ret, Conn> RunQueryDsl<Conn> for InsertStatement<T, U, Op, Ret> {}
+impl<T: QuerySource, U, Op, Ret> RunQueryDslSupport for InsertStatement<T, U, Op, Ret> {}
 
 impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     /// Specify what expression is returned after execution of the `insert`.
@@ -566,7 +598,7 @@ mod private {
         type Table = T;
         type Op = Op;
         type Values = ();
-        type Ret = crate::query_builder::returning_clause::NoReturningClause;
+        type Ret = crate::query_builder::returning::NoReturningClause;
     }
 
     impl<T, U, Op, Ret> InsertAutoTypeHelper for InsertStatement<T, U, Op, Ret>

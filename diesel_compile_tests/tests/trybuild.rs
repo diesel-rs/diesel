@@ -12,6 +12,32 @@ fn main() -> ui_test::color_eyre::Result<()> {
         .canonicalize()
         .unwrap();
     config.path_filter(&diesel_root_path, "DIESEL");
+    if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
+        // When `CARGO_TARGET_DIR` points outside of the diesel workspace -- e.g.
+        // when tests are run from a sandbox that redirects build artifacts to a
+        // temporary location -- `path_filter(&diesel_root_path, "DIESEL")` alone
+        // doesn't normalize paths emitted by rustc that point at the target
+        // directory (such as `<target>/ui/0/.../*.long-type-*.txt`), so they
+        // would leak into the blessed `.stderr` files. Map the actual target
+        // directory to the canonical in-workspace location so blessing produces
+        // the expected output regardless of where cargo places build artifacts.
+        //
+        // We can't use `Config::path_filter` for this because it canonicalizes
+        // the path it's given, takes that path's *parent*, and only registers
+        // the parent as the substring to replace (presumably so a caller can
+        // pass any concrete file inside the directory they want normalized).
+        // Here we already have the directory we want to replace and have no
+        // guaranteed-to-exist child file to pass, so we register an explicit
+        // (escaped) regex match against the target directory instead.
+        if let Ok(target_dir) = PathBuf::from(target_dir).canonicalize() {
+            if !target_dir.starts_with(&diesel_root_path) {
+                config.filter(
+                    &regex::escape(&target_dir.to_string_lossy()),
+                    "DIESEL/diesel/diesel_compile_tests/target",
+                );
+            }
+        }
+    }
     config.filter("and [0-9]* others", "and N others");
     config.filter(
         "= note: consider using `--verbose` to print the full type name to the console\n",

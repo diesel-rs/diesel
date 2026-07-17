@@ -27,6 +27,8 @@ pub const BASE_QUERY_NOTE: &str =
     "base_query = schema::table_name::table.order_by(schema::table_name::id)";
 pub const BASE_QUERY_TYPE_NOTE: &str =
     "base_query_type = dsl::OrderBy<schema::table_name::table, schema::table_name::id>";
+pub const RENAME_ALL_NOTE: &str = "rename_all = \"camelCase\"";
+pub const RENAME_NOTE: &str = "rename = \"your_name\"";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> syn::Error {
     let prefix = if valid.len() == 1 { "" } else { " one of" };

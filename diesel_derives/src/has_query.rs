@@ -2,24 +2,64 @@ use proc_macro2::TokenStream;
 use syn::punctuated::Punctuated;
 use syn::{DeriveInput, parse_quote};
 
-use crate::model::{CheckForBackend, Model};
+use crate::model::Model;
+use crate::selectable::FieldSelectExpressionTyBuilder;
+
+fn generate_default_checks(
+    model: &Model,
+    original_impl_generics: &syn::ImplGenerics<'_>,
+    original_where_clause: Option<&syn::WhereClause>,
+    field_select_expression_type_builders: &[FieldSelectExpressionTyBuilder<'_>],
+) -> syn::Result<TokenStream> {
+    let checks = [
+        (
+            quote::quote! {
+                diesel::internal::derives::has_query::expand_pg!
+            },
+            parse_quote! {diesel::pg::Pg},
+            parse_quote! {_check_field_compatibility_pg},
+        ),
+        (
+            quote::quote! {
+                diesel::internal::derives::has_query::expand_sqlite!
+            },
+            parse_quote! {diesel::sqlite::Sqlite},
+            parse_quote! {_check_field_compatibility_sqlite},
+        ),
+        (
+            quote::quote! {
+                diesel::internal::derives::has_query::expand_mysql!
+            },
+            parse_quote! {diesel::mysql::Mysql},
+            parse_quote! {_check_field_compatibility_mysql},
+        ),
+    ]
+    .into_iter()
+    .map(|(backend_macro, backend_ty, function)| {
+        let mut backend = Punctuated::new();
+        backend.push(backend_ty);
+
+        let check = super::selectable::generate_check_function(
+            model,
+            original_impl_generics,
+            original_where_clause,
+            field_select_expression_type_builders,
+            &backend,
+            function,
+        )?;
+        Ok(quote::quote! {
+            #backend_macro {#check}
+        })
+    })
+    .collect::<syn::Result<Vec<_>>>()?;
+
+    Ok(quote::quote! { #(#checks)*})
+}
 
 pub(crate) fn derive(item: DeriveInput) -> syn::Result<TokenStream> {
     // other required traits
-    let mut checks = Punctuated::new();
-    if cfg!(feature = "postgres") {
-        checks.push(parse_quote! {diesel::pg::Pg});
-    }
-    if cfg!(feature = "sqlite") {
-        checks.push(parse_quote! {diesel::sqlite::Sqlite});
-    }
-    if cfg!(feature = "mysql") {
-        checks.push(parse_quote! {diesel::mysql::Mysql});
-    }
-    let selectable = super::selectable::derive(
-        item.clone(),
-        (!checks.is_empty()).then_some(CheckForBackend::Backends(checks)),
-    )?;
+
+    let selectable = super::selectable::derive(item.clone(), Some(generate_default_checks))?;
     let queryable = super::queryable::derive(item.clone())?;
 
     let ident = &item.ident;

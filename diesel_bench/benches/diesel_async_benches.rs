@@ -1,10 +1,10 @@
-use super::consts;
 use super::Bencher;
+use super::consts;
 use diesel::insert_into;
 use diesel::prelude::{
-    allow_tables_to_appear_in_same_query, joinable, table, AsChangeset, Associations,
-    BelongingToDsl, ExpressionMethods, GroupedBy, Identifiable, Insertable, QueryDsl, Queryable,
-    QueryableByName,
+    AsChangeset, Associations, BelongingToDsl, ExpressionMethods, GroupedBy, Identifiable,
+    Insertable, QueryDsl, Queryable, QueryableByName, allow_tables_to_appear_in_same_query,
+    joinable, table,
 };
 use diesel_async::AsyncConnection;
 use diesel_async::RunQueryDsl;
@@ -217,25 +217,20 @@ async fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
 }
 
 #[cfg(feature = "sqlite")]
-async fn insert_users<F: Fn(usize) -> Option<&'static str> + Send, const N: usize>(
+async fn insert_users<F: Fn(usize) -> Option<&'static str> + Send + Sync, const N: usize>(
     conn: &mut TestConnection,
     hair_color_init: F,
 ) {
-    use diesel_async::scoped_futures::ScopedFutureExt;
-
-    conn.transaction(|conn| {
-        async move {
-            for idx in 0..N {
-                let user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
-                insert_into(users::table)
-                    .values(user)
-                    .execute(conn)
-                    .await
-                    .unwrap();
-            }
-            diesel::result::QueryResult::Ok(())
+    conn.transaction(async |conn| {
+        for idx in 0..N {
+            let user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+            insert_into(users::table)
+                .values(user)
+                .execute(conn)
+                .await
+                .unwrap();
         }
-        .scope_boxed()
+        diesel::result::QueryResult::Ok(())
     })
     .await
     .unwrap();

@@ -1,7 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_regression_test_for_2623"
-snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -14,7 +13,7 @@ diesel::table! {
 diesel::table! {
     tab_problem (id) {
         id -> Integer,
-        key1 -> BigInt,
+        key1 -> Integer,
     }
 }
 

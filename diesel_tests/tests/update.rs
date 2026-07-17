@@ -669,3 +669,122 @@ fn update_array_slice_to_expression() {
 
     assert_eq!(Ok(expected_data), data);
 }
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_update() {
+    use crate::schema::users::dsl::*;
+    use diesel::pg::returning::old;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+
+    let (was, now): (String, String) = update(users.filter(id.eq(sean.id)))
+        .set(name.eq("Renamed"))
+        .returning((old(name), name))
+        .get_result(connection)
+        .unwrap();
+
+    assert_eq!("Sean", was);
+    assert_eq!("Renamed", now);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_old_column_in_update_via_selectable() {
+    use crate::schema::users;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    // Mix `old(col)` and a raw column on the same table inside a `Selectable`
+    // struct: in `UPDATE`, the row necessarily existed pre-update, so `old(col)`
+    // has the same Rust SQL type as the column itself.
+    #[derive(Queryable, Selectable, PartialEq, Debug)]
+    #[diesel(table_name = users)]
+    struct UpdateOldNew {
+        #[diesel(select_expression = diesel::pg::returning::old(users::name))]
+        was: String,
+        name: String,
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+
+    let row: UpdateOldNew = update(users::table.filter(users::id.eq(sean.id)))
+        .set(users::name.eq("Renamed"))
+        .returning(UpdateOldNew::as_select())
+        .get_result(connection)
+        .unwrap();
+
+    assert_eq!(
+        UpdateOldNew {
+            was: "Sean".to_string(),
+            name: "Renamed".to_string(),
+        },
+        row,
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn returning_subselect_and_old_in_update() {
+    use crate::schema::{posts, users};
+    use diesel::pg::returning::old;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    insert_into(posts::table)
+        .values((posts::user_id.eq(sean.id), posts::title.eq("First Post")))
+        .execute(connection)
+        .unwrap();
+
+    // Tests that a RETURNING clause can combine `old(col)` with a correlated
+    // subselect, and that `old(col)` can be used inside the subselect's WHERE
+    // to correlate with the pre-update row, and that boxed expressions work even
+    // if the QS type does not involve `ReturningQuerySource<UpdateStmt, ...>`.
+    let boxed_expr: Box<
+        dyn BoxableExpression<users::table, diesel::pg::Pg, SqlType = diesel::sql_types::Text>,
+    > = Box::new(users::name);
+    let (was, now, post_by_new_id, post_by_old_id, now_boxed): (
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+        String,
+    ) = update(users::table.filter(users::id.eq(sean.id)))
+        .set(users::name.eq("Renamed"))
+        .returning((
+            old(users::name),
+            users::name,
+            posts::table
+                .select(posts::title)
+                .filter(posts::user_id.eq(users::id))
+                .single_value(),
+            posts::table
+                .select(posts::title)
+                .filter(posts::user_id.eq(old(users::id)))
+                .single_value(),
+            boxed_expr,
+        ))
+        .get_result(connection)
+        .unwrap();
+
+    assert_eq!("Sean", was);
+    assert_eq!("Renamed", now);
+    assert_eq!(Some("First Post".to_string()), post_by_new_id);
+    assert_eq!(Some("First Post".to_string()), post_by_old_id);
+    assert_eq!("Renamed", now_boxed);
+}

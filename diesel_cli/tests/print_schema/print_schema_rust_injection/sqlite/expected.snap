@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_rust_injection"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    tests (id) {
+        id -> Integer,
+        #[sql_name = r##"x"] } include!(env!("P")); mod y { #[sql_name="z"##]
+        x_include_env_P_mod_y_sql_name_z -> Text,
+    }
+}

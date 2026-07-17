@@ -29,9 +29,15 @@ impl ToSql<sql_types::Json, Pg> for serde_json::Value {
 impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let bytes = value.as_bytes();
-        if bytes[0] != 1 {
+        let first_byte = bytes
+            .first()
+            .ok_or("Received an empty response from the server")?;
+
+        if *first_byte != 1 {
             return Err("Unsupported JSONB encoding version".into());
         }
+        // That's an empty slice if there is only
+        // one response byte
         serde_json::from_slice(&bytes[1..]).map_err(|_| "Invalid Json".into())
     }
 }

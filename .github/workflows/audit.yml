@@ -7,9 +7,12 @@ on:
   schedule:
     - cron: "0 0 */7 * *"
 
+name: Security Audit
 permissions:
   contents: "read"
-
+concurrency:
+  cancel-in-progress: true
+  group: ${{ github.ref }}-${{ github.workflow }}
 jobs:
   security_audit:
     runs-on: ubuntu-latest

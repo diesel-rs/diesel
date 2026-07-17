@@ -6,9 +6,9 @@ mod table_data;
 #[cfg(feature = "uses_information_schema")]
 mod information_schema;
 #[cfg(feature = "mysql")]
-mod mysql;
+pub mod mysql;
 #[cfg(feature = "postgres")]
-mod pg;
+pub mod pg;
 mod schema_resolver;
 #[cfg(feature = "sqlite")]
 mod sqlite;

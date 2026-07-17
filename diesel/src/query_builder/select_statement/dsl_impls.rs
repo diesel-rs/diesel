@@ -131,6 +131,9 @@ where
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
     SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
+    O: ValidGrouping<G::Expressions>,
+    <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
+        MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
 {
     type Output = SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 
@@ -265,23 +268,25 @@ where
 }
 
 // no impls for `NoFromClause` here because order is not really supported there yet
-impl<ST, F, S, D, W, O, LOf, G, H, LC, Expr> OrderDsl<Expr>
-    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+
+// Without GROUP BY: validate that SELECT and ORDER BY have matching aggregate nature.
+impl<ST, F, S, D, W, O, LOf, H, LC, Expr> OrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, NoGroupByClause, H, LC>
 where
     F: QuerySource,
     Expr: AppearsOnTable<F>,
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>:
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, NoGroupByClause, H, LC>:
         SelectQuery<SqlType = ST>,
     OrderClause<Expr>: ValidOrderingForDistinct<D>,
-    G: ValidGroupByClause,
     S: SelectClauseExpression<FromClause<F>>,
-    Expr: ValidGrouping<G::Expressions>,
-    S::Selection: ValidGrouping<G::Expressions>,
-    <S::Selection as ValidGrouping<G::Expressions>>::IsAggregate:
-        MixedAggregates<<Expr as ValidGrouping<G::Expressions>>::IsAggregate>,
+    Expr: ValidGrouping<()>,
+    S::Selection: ValidGrouping<()>,
+    <S::Selection as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
 {
-    type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>;
+    type Output =
+        SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, NoGroupByClause, H, LC>;
 
     fn order(self, expr: Expr) -> Self::Output {
         let order = OrderClause(expr);
@@ -299,19 +304,102 @@ where
     }
 }
 
-impl<F, S, D, W, O, LOf, G, H, LC, Expr> ThenOrderDsl<Expr>
-    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, G, H, LC>
+// With GROUP BY: only validate that the ORDER BY expression is valid for the group
+// (grouped column or aggregate). SELECT validity is enforced by the Query impl at
+// execution time, so checking it here would reject valid queries where order_by()
+// is called before select() with a non-trivial GROUP BY.
+impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> OrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<GB>, H, LC>
 where
     F: QuerySource,
     Expr: AppearsOnTable<F>,
-    G: ValidGroupByClause,
-    S: SelectClauseExpression<FromClause<F>>,
-    Expr: ValidGrouping<G::Expressions>,
-    S::Selection: ValidGrouping<G::Expressions>,
-    <S::Selection as ValidGrouping<G::Expressions>>::IsAggregate:
-        MixedAggregates<<Expr as ValidGrouping<G::Expressions>>::IsAggregate>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, GroupByClause<GB>, H, LC>:
+        SelectQuery<SqlType = ST>,
+    OrderClause<Expr>: ValidOrderingForDistinct<D>,
+    Expr: ValidGrouping<GB>,
 {
-    type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, G, H, LC>;
+    type Output =
+        SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, GroupByClause<GB>, H, LC>;
+
+    fn order(self, expr: Expr) -> Self::Output {
+        let order = OrderClause(expr);
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            order,
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
+}
+
+// Without GROUP BY: validate that SELECT and the new ORDER BY term have matching
+// aggregate nature.
+impl<F, S, D, W, O, LOf, H, LC, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, NoGroupByClause, H, LC>
+where
+    F: QuerySource,
+    Expr: AppearsOnTable<F>,
+    S: SelectClauseExpression<FromClause<F>>,
+    Expr: ValidGrouping<()>,
+    S::Selection: ValidGrouping<()>,
+    <S::Selection as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
+{
+    type Output = SelectStatement<
+        FromClause<F>,
+        S,
+        D,
+        W,
+        OrderClause<(O, Expr)>,
+        LOf,
+        NoGroupByClause,
+        H,
+        LC,
+    >;
+
+    fn then_order_by(self, expr: Expr) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            OrderClause((self.order.0, expr)),
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
+}
+
+// With GROUP BY: Validate the whole order expression against the given group by expression
+impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, GroupByClause<GB>, H, LC>
+where
+    F: QuerySource,
+    Expr: AppearsOnTable<F>,
+    Self: SelectQuery<SqlType = ST>,
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, GroupByClause<GB>, H, LC>:
+        SelectQuery<SqlType = ST>,
+    (O, Expr): ValidGrouping<GB>,
+{
+    type Output = SelectStatement<
+        FromClause<F>,
+        S,
+        D,
+        W,
+        OrderClause<(O, Expr)>,
+        LOf,
+        GroupByClause<GB>,
+        H,
+        LC,
+    >;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
         SelectStatement::new(
@@ -588,7 +676,7 @@ where
 
 impl<F, S, D, W, O, LOf, G, H, LC> QueryDsl for SelectStatement<F, S, D, W, O, LOf, G, H, LC> {}
 
-impl<F, S, D, W, O, LOf, G, H, LC, Conn> RunQueryDsl<Conn>
+impl<F, S, D, W, O, LOf, G, H, LC> RunQueryDslSupport
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 {
 }

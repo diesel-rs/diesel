@@ -1,0 +1,59 @@
+error[E0499]: cannot borrow `value` as mutable more than once at a time
+  --> tests/fail/sqlite_value_enforces_only_one_ref.rs:5:18
+   |
+ LL |     let first = value.read_blob();
+   |                 ----- first mutable borrow occurs here
+ LL |     let second = value.read_text();
+   |                  ^^^^^ second mutable borrow occurs here
+...
+LL |     println!("{first:?}, {second}, {third:?}");
+   |                ----- first borrow later used here
+
+error[E0499]: cannot borrow `value` as mutable more than once at a time
+  --> tests/fail/sqlite_value_enforces_only_one_ref.rs:7:17
+   |
+ LL |     let first = value.read_blob();
+   |                 ----- first mutable borrow occurs here
+...
+ LL |     let third = value.read_blob();
+   |                 ^^^^^ second mutable borrow occurs here
+...
+LL |     println!("{first:?}, {second}, {third:?}");
+   |                ----- first borrow later used here
+
+error[E0499]: cannot borrow `value` as mutable more than once at a time
+  --> tests/fail/sqlite_value_enforces_only_one_ref.rs:9:13
+   |
+ LL |     let first = value.read_blob();
+   |                 ----- first mutable borrow occurs here
+...
+ LL |     let _ = value.read_integer();
+   |             ^^^^^ second mutable borrow occurs here
+...
+LL |     println!("{first:?}, {second}, {third:?}");
+   |                ----- first borrow later used here
+
+error[E0499]: cannot borrow `value` as mutable more than once at a time
+  --> tests/fail/sqlite_value_enforces_only_one_ref.rs:11:13
+   |
+ LL |     let first = value.read_blob();
+   |                 ----- first mutable borrow occurs here
+...
+LL |     let _ = value.read_long();
+   |             ^^^^^ second mutable borrow occurs here
+...
+LL |     println!("{first:?}, {second}, {third:?}");
+   |                ----- first borrow later used here
+
+error[E0499]: cannot borrow `value` as mutable more than once at a time
+  --> tests/fail/sqlite_value_enforces_only_one_ref.rs:13:13
+   |
+ LL |     let first = value.read_blob();
+   |                 ----- first mutable borrow occurs here
+...
+LL |     let _ = value.read_double();
+   |             ^^^^^ second mutable borrow occurs here
+...
+LL |     println!("{first:?}, {second}, {third:?}");
+   |                ----- first borrow later used here
+For more information about this error, try `rustc --explain E0499`.

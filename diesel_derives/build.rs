@@ -218,6 +218,21 @@ fn main() {
             })],
         ),
         (
+            "enum",
+            vec![
+                Example::with_heading("diesel_derives__tests__enum_1.snap", "Database side Enum"),
+                Example::with_heading("diesel_derives__tests__enum_2.snap", "Mapping to Integer"),
+                Example::with_heading(
+                    "diesel_derives__tests__enum_rename_all.snap",
+                    "Rename all variants",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__enum_rename_single.snap",
+                    "Rename single variant",
+                ),
+            ],
+        ),
+        (
             "from_sql_row",
             vec![Example::new("diesel_derives__tests__from_sql_row_1.snap")],
         ),
@@ -315,11 +330,19 @@ fn main() {
             "diesel_derives__tests__sql_type_1 (postgres).snap",
             "PostgreSQL",
         ));
+        mapping[mapping.len() - 2].1.push(Example::with_heading(
+            "diesel_derives__tests__sql_type_enum (postgres).snap",
+            "PostgreSQL - Enum",
+        ));
     }
     if has_mysql {
         mapping[mapping.len() - 2].1.push(Example::with_heading(
             "diesel_derives__tests__sql_type_1 (mysql).snap",
             "MySQL",
+        ));
+        mapping[mapping.len() - 2].1.push(Example::with_heading(
+            "diesel_derives__tests__sql_type_enum (mysql).snap",
+            "MySQL - Enum",
         ));
     }
 

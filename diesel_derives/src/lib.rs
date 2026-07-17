@@ -40,6 +40,7 @@ mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
 mod diesel_public_if;
+mod enum_;
 mod from_sql_row;
 mod has_query;
 mod identifiable;
@@ -80,7 +81,7 @@ mod valid_grouping;
 /// Normally, Diesel produces two implementations of the `AsChangeset` trait for your
 /// struct using this derive: one for an owned version and one for a borrowed version.
 /// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
-/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
+/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer update a borrowed
 /// versions of your struct.
 ///
 /// By default, any `Option` fields on the struct are skipped if their value is
@@ -155,6 +156,19 @@ fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 /// you can specify this by adding the annotation `#[diesel(not_sized)]`
 /// as attribute on the type. This will skip the impls for non-reference types.
 ///
+/// `Rc<T>`, `Arc<T>`, and `Box<T>` wrappers around Diesel's built-in primitive
+/// types (`String`, `i32`, `bool`, `Vec<u8>`, etc.) are supported as
+/// `AsExpression` values through Diesel's internal `foreign_derive`
+/// implementations, so fields like `Rc<String>` work transparently with
+/// `#[derive(Insertable)]` and `#[derive(Queryable)]`. The unsized variants
+/// `Rc<str>` / `Arc<str>` / `Box<str>` and the `[u8]` equivalents are supported
+/// as well (one heap allocation instead of two compared to `Rc<String>`).
+/// Wrapping a *user-defined* `AsExpression` type in `Rc`/`Arc`/`Box` is not
+/// currently supported because of coherence and orphan-rule conflicts between
+/// the wildcard
+/// `impl<T, ST> AsExpression<ST> for T where T: Expression<SqlType = ST>` and
+/// the smart-pointer `Expression` impls.
+///
 /// Using this derive requires implementing the `ToSql` trait for your type.
 ///
 /// # Attributes:
@@ -169,6 +183,7 @@ fn derive_as_changeset_inner(input: proc_macro2::TokenStream) -> proc_macro2::To
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///   that the type is `Sized`
+/// * `#[diesel(enum_type)]`, to indicate that the type represents a SQL side enum
 ///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/as_expression.md")))]
 #[cfg_attr(
@@ -1400,6 +1415,27 @@ fn __diesel_public_if_inner(
 /// }
 /// ```
 ///
+/// Individual columns may be guarded by a `#[cfg(...)]` attribute, so a table
+/// whose columns vary by enabled crate features can live in a single `table!`
+/// block instead of duplicated feature gated modules.
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::table! {
+///     users {
+///         id -> Integer,
+///         name -> Text,
+///         #[cfg(feature = "chrono")]
+///         created_at -> Timestamp,
+///     }
+/// }
+/// ```
+///
+/// The primary key itself cannot be feature gated this way: if a feature flag
+/// changes which columns form the primary key, the whole `table!` block still
+/// needs to be duplicated behind the relevant `#[cfg(...)]` attributes.
+///
 /// This module will also contain several helper types:
 ///
 /// dsl
@@ -1694,6 +1730,25 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// corresponding enum manually by first establishing the connection via the inner type and then
 /// wrap the result into the enum.
 ///
+/// ## Optional Container Attributes
+///
+/// This macro supports generating code for [`diesel-async`](https://docs.rs/diesel-async/latest/diesel_async/).
+/// By adding the `#[diesel_async]` attribute, the macro instead derives
+/// implements `diesel_async::AsyncConnection` and related traits
+/// for an enum of connections to different databases.
+/// This way each tuple field type must implement `diesel_async::AsyncConnection`.
+/// It is possible to use `diesel-async`'s `SyncConnectionWrapper` as connection type.
+/// The implementation of `diesel_async::AsyncConnection::establish` works similar to the sync variant.
+///
+/// The usual stability guarantees of `diesel` do not apply here.
+/// When this attribute is used the generated code is only compatible to the `diesel-async` version supported,
+/// by this `diesel` version.
+///
+/// Note: The associated types `LoadFuture` and `ExecuteFuture` in the implementation
+/// of the trait [`AsyncConnectionCore`](https://docs.rs/diesel-async/latest/diesel_async/trait.AsyncConnectionCore.html)
+/// must be bound by `'conn`.
+///
+///
 /// # Example
 /// ```
 /// # extern crate diesel;
@@ -1854,7 +1909,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// ```
 ///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/multiconnection.md")))]
-#[proc_macro_derive(MultiConnection)]
+#[proc_macro_derive(MultiConnection, attributes(diesel_async))]
 pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
     derive_multiconnection_inner(input.into()).into()
 }
@@ -2176,13 +2231,35 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///
 /// On most backends, the implementation of the function is defined in a
 /// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
-/// Rust instead. You must call `register_impl` or
-/// `register_nondeterministic_impl` (in the generated function's `_internals`
-/// module) with every connection before you can use the function.
+/// Rust instead. You must call `register_impl` (in the generated function's
+/// `_utils` module) with every connection before you can use the function.
+///
+/// Three registration functions are generated in the `_utils` module:
+///
+/// - `register_impl`: registers a deterministic function (takes an `Fn`).
+/// - `register_nondeterministic_impl`: registers a function that may return
+///   different results for the same inputs, e.g. `random` (takes an `FnMut`).
+/// - `register_impl_with_behavior`: registers a function with an explicit
+///   [`SqliteFunctionBehavior`] for full control over how SQLite treats the
+///   function:
+///
+///   - `SqliteFunctionBehavior::DETERMINISTIC`: The function always returns the
+///     same result given the same inputs. Allows SQLite to optimize queries.
+///   - `SqliteFunctionBehavior::INNOCUOUS`: The function is safe to call from
+///     schema objects (views, triggers, etc.) when `set_trusted_schema(false)`.
+///   - `SqliteFunctionBehavior::DIRECTONLY`: The function cannot be called from
+///     schema objects. Use for functions with side effects.
+///   - `SqliteFunctionBehavior::empty()`: Non-deterministic function.
+///
+/// To register the implementation automatically for every new SQLite connection
+/// opened in the process, instead of manually per connection, see
+/// [`register_auto_extension`](../diesel/sqlite/fn.register_auto_extension.html).
 ///
 /// These functions will only be generated if the `sqlite` feature is enabled,
 /// and the function is not generic.
 /// SQLite doesn't support generic functions and variadic functions.
+///
+/// [`SqliteFunctionBehavior`]: ../diesel/sqlite/struct.SqliteFunctionBehavior.html
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -2772,5 +2849,131 @@ pub fn derive_has_query(input: TokenStream) -> TokenStream {
 fn derive_has_query_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
         .and_then(has_query::derive)
+        .unwrap_or_else(syn::Error::into_compile_error)
+}
+
+/// Implements `FromSql` and `ToSql` for enum types
+///
+/// This derive enables an enum (with unit-variants only) to be serialized to the database as
+/// a byte-string and deserialized from the same representation from the database.
+///
+/// This derive generates `FromSql` and `ToSql` implementations for all backends based on the provided
+/// SQL type. It currently supports the following SQL types:
+///
+/// * `diesel::sql_types::Integer`, `diesel::sql_types::SmallInt`, `diesel::sql_types::BigInt`, `diesel::sql_types::TinyInt`
+///   and their unsigned variants for all backends to (de)serialize a Rust enum as integer values.
+///   This requires annotating every variant with an explicit discriminant value
+/// * `diesel::sql_types::Text` for all backend to (de)serialize a Rust enum as text values.
+/// * Any custom SQL type marked with `#[diesel(enum_type)]`
+///
+/// Additional it internally generates the same implementations as `#[derive(FromSqlRow)]`
+/// and `#[derive(AsExpression)]`
+///
+/// # Attributes
+///
+/// ## Required container attributes
+///
+/// * `#[diesel(sql_type = path::to::MyEnumType)]`, specifies the database type this enum represents, can appear several times
+///
+/// ## Optional container attributes
+///
+/// * `#[diesel(rename_all = "case")]` to rename all enum variants according the provided scheme. The following schemes are supported:
+///      + `"lowercase"` to rename all variants to lower-case
+///      + `"UPPERCASE"` to rename all variants to upper-case
+///      + `"PascalCase"` to keep the provided Rust variant name
+///      + `"camelCase"` to rename all variants to camel-case
+///      + `"snake_case"` to rename all variants to snake-case
+///      + `"SCREAMING_SNAKE_CASE"` to rename all variants to screaming snake case
+///      + `"kebab-case"` to rename all variants to kebab-case
+///      + `"SCREAMING-KEBAB-CASE"` to rename all variants to screaming kebab case
+///
+/// ## Optional variant attributes
+///
+/// * `#[diesel(rename = "newSqlName")]` to provide an explicit name for the SQL side variant
+///
+/// # Examples
+///
+/// ## Usage with database side Enums
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = schema::sql_types::Color)]
+/// enum Color {
+///     Red,
+///     Green,
+///     Blue
+/// }
+/// # #[cfg(feature = "postgres")]
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select(Color::Red.into_sql::<schema::sql_types::Color>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
+///
+/// ## Usage with a database side integer column
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = diesel::sql_types::Integer)]
+/// enum Color {
+///     // Explicit discriminants are required here
+///     Red = 1,
+///     Green = 2,
+///     Blue = 3
+/// }
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select(1.into_sql::<diesel::sql_types::Integer>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// ```
+///
+/// ## Usage with a database side text column
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenvy;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Debug, diesel::types::Enum, PartialEq)]
+/// #[diesel(sql_type = diesel::sql_types::Text)]
+/// #[diesel(rename_all = "SCREAMING_SNAKE_CASE")]
+/// enum Color {
+///     Red,
+///     Green,
+///     Blue,
+/// }
+/// # fn main() -> QueryResult<()> {
+/// # let connection = &mut connection_no_data();
+/// let r = diesel::select("RED".into_sql::<diesel::sql_types::Text>())
+///     .get_result::<Color>(connection)?;
+/// assert_eq!(r, Color::Red);
+/// Ok(())
+/// # }
+/// ```
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/enum.md")))]
+#[proc_macro_derive(Enum, attributes(diesel))]
+pub fn derive_enum(input: TokenStream) -> TokenStream {
+    derive_enum_inner(input.into()).into()
+}
+
+fn derive_enum_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    syn::parse2(input)
+        .and_then(enum_::derive)
         .unwrap_or_else(syn::Error::into_compile_error)
 }

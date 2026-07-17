@@ -146,7 +146,7 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        doc = "implementation for [`ReturningClause`](crate::query_builder::ReturningClause)"
+        doc = "implementation for [`ReturningClause`](crate::query_builder::returning::ReturningClause)"
     )]
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),

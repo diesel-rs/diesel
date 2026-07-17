@@ -1,8 +1,7 @@
 use super::Query;
 use crate::backend::{Backend, DieselReserveSpecialization};
-use crate::connection::Connection;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, Untyped};
@@ -183,7 +182,7 @@ impl<Inner> Query for SqlQuery<Inner> {
     type SqlType = Untyped;
 }
 
-impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
+impl<Inner> RunQueryDslSupport for SqlQuery<Inner> {}
 
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -303,7 +302,7 @@ impl<Q, Value, ST> Query for UncheckedBind<Q, Value, ST> {
     type SqlType = Untyped;
 }
 
-impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}
+impl<Query, Value, ST> RunQueryDslSupport for UncheckedBind<Query, Value, ST> {}
 
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// See [`SqlQuery::into_boxed`].
@@ -395,7 +394,7 @@ where
     type SqlType = Untyped;
 }
 
-impl<Conn: Connection, Query> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Query> {}
+impl<DB: Backend, Query> RunQueryDslSupport for BoxedSqlQuery<'_, DB, Query> {}
 
 mod private {
     use crate::backend::{Backend, DieselReserveSpecialization};

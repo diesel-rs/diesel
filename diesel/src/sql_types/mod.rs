@@ -20,6 +20,7 @@ mod ord;
 pub use self::fold::Foldable;
 pub use self::ord::SqlOrd;
 
+use crate::backend::Backend;
 use crate::expression::TypedExpressionType;
 use crate::query_builder::QueryId;
 
@@ -679,6 +680,32 @@ pub trait SqlType: 'static {
 
     #[doc(hidden)]
     const IS_ARRAY: bool = false;
+}
+
+/// A marker trait for SQL types representing database side enums
+///
+/// This trait describes how an enum should be mapped to the underlying database storage type
+/// by specifying one of a set of different strategies.
+///
+/// The generic constant `HAS_EXPLICIT_DISCRIMINANT` can be used to enforce that for a given mapping
+/// the user needs to provide explicit discriminant values. The [`#[derive(Enum)]`](crate::types::Enum) macro
+/// will pass the true only if this is the case.
+///
+/// The generic type `DB` represents the database backend for which this mapping is valid
+///
+/// # Deriving
+///
+/// This trait can be automatically derived by using [`#[derive(SqlType)]`](derive@SqlType)
+/// with the `#[diesel(enum_type)]` attribute
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+// TODO: it seems like `#[diagnostic::on_unimplemented]` doesn't work here
+pub trait EnumSqlType<const HAS_EXPLICIT_DISCRIMINANT: bool, DB: Backend>: SqlType {
+    /// The mapping strategy used by this type
+    ///
+    /// This mainly exists to share the logic between different SQL types
+    type Strategy: crate::types::enum_::EnumMapping<DB>;
 }
 
 /// Is one value of `IsNull` nullable?

@@ -1,4 +1,5 @@
-use diesel::{associations::HasTable, *};
+use diesel::associations::HasTable;
+use diesel::*;
 
 #[cfg(feature = "postgres")]
 mod custom_schemas;
@@ -49,6 +50,44 @@ impl User {
     pub fn new_post(&self, title: &str, body: Option<&str>) -> NewPost {
         NewPost::new(self.id, title, body)
     }
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserRcString {
+    pub id: i32,
+    pub name: std::rc::Rc<String>,
+    pub hair_color: Option<std::rc::Rc<String>>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserArcString {
+    pub id: i32,
+    pub name: std::sync::Arc<String>,
+    pub hair_color: Option<std::sync::Arc<String>>,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
@@ -132,6 +171,72 @@ impl NewUser {
             hair_color: hair_color.map(|s| s.to_string()),
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserRcString {
+    pub name: std::rc::Rc<String>,
+    pub hair_color: Option<std::rc::Rc<String>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserArcString {
+    pub name: std::sync::Arc<String>,
+    pub hair_color: Option<std::sync::Arc<String>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserRcStr {
+    pub name: std::rc::Rc<str>,
+    pub hair_color: Option<std::rc::Rc<str>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserArcStr {
+    pub name: std::sync::Arc<str>,
+    pub hair_color: Option<std::sync::Arc<str>>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserRcStr {
+    pub id: i32,
+    pub name: std::rc::Rc<str>,
+    pub hair_color: Option<std::rc::Rc<str>>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserArcStr {
+    pub id: i32,
+    pub name: std::sync::Arc<str>,
+    pub hair_color: Option<std::sync::Arc<str>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Insertable)]
@@ -410,4 +515,19 @@ pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
         .filter(users::name.eq(name))
         .first(connection)
         .unwrap()
+}
+
+/// `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
+/// the query will be rejected at execution time, so we just skip.
+///
+/// Returns `true` if the connected PostgreSQL server is version 18 or newer.
+/// On non-postgres backends this always returns `false`.
+#[cfg(feature = "postgres")]
+pub fn pg_server_supports_returning_old(connection: &mut TestConnection) -> bool {
+    diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result::<i32>(connection)
+    .expect("Failed to get PostgreSQL server version")
+        >= 180000
 }

@@ -1,10 +1,12 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
-use crate::expression::{AppearsOnTable, SelectableExpression};
-use crate::query_builder::returning_clause::*;
+use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
+use crate::query_builder::returning::{
+    DeleteStmt, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_source::{QuerySource, Table};
 
@@ -269,8 +271,8 @@ where
 impl<T, U> AsQuery for DeleteStatement<T, U, NoReturningClause>
 where
     T: Table,
-    T::AllColumns: SelectableExpression<T>,
     DeleteStatement<T, U, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<DeleteStmt, T>>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = DeleteStatement<T, U, ReturningClause<T::AllColumns>>;
@@ -283,12 +285,12 @@ where
 impl<T, U, Ret> Query for DeleteStatement<T, U, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: SelectableExpression<T>,
+    Ret: SelectableExpression<ReturningQuerySource<DeleteStmt, T>>,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
-impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> where T: QuerySource {}
+impl<T, U, Ret> RunQueryDslSupport for DeleteStatement<T, U, Ret> where T: QuerySource {}
 
 impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// Specify what expression is returned after execution of the `delete`.
@@ -314,7 +316,6 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// ```
     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     where
-        E: SelectableExpression<T>,
         DeleteStatement<T, U, ReturningClause<E>>: Query,
     {
         DeleteStatement {

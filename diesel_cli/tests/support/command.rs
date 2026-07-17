@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 use std::fmt::{Debug, Error, Formatter};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};

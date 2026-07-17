@@ -3,6 +3,7 @@ use diesel::expression::expression_types;
 use diesel::internal::table_macro::{FromClause, SelectStatement};
 use diesel::prelude::*;
 use diesel::query_builder::*;
+use diesel::query_source::NamedTable;
 use std::borrow::Borrow;
 
 use crate::column::Column;
@@ -149,4 +150,19 @@ where
 impl<T, U> QueryId for Table<T, U> {
     type QueryId = ();
     const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<T, U> NamedTable for Table<T, U>
+where
+    T: Borrow<str>,
+    U: Borrow<str>,
+    Self: diesel::Table,
+{
+    fn schema(&self) -> Option<&str> {
+        self.schema().map(|u| u.borrow())
+    }
+
+    fn table(&self) -> &str {
+        self.name().borrow()
+    }
 }

@@ -154,7 +154,7 @@ mod jsonb {
             JSONB_FLOAT5 => Err("FLOAT5 is not supported".into()),
             JSONB_TEXT => read_jsonb_text(payload_bytes, payload_size),
             JSONB_TEXTJ => read_jsonb_textj(payload_bytes, payload_size),
-            JSONB_TEXTRAW => Err("TEXTRAW is not supported".into()),
+            JSONB_TEXTRAW => read_jsonb_text(payload_bytes, payload_size),
             JSONB_TEXT5 => Err("TEXT5 is not supported".into()),
             JSONB_ARRAY => read_jsonb_array(payload_bytes, payload_size),
             JSONB_OBJECT => read_jsonb_object(payload_bytes, payload_size),
@@ -593,6 +593,31 @@ mod tests {
 
         let result = read_jsonb_value(&data).unwrap().0;
         assert_eq!(result, json!("foo"));
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_textraw() {
+        // JSONB_TEXTRAW with payload "foo"
+        let mut data = Vec::new();
+        data.extend(create_jsonb_header(JSONB_TEXTRAW, 0x03).unwrap());
+        data.extend_from_slice(b"foo");
+
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!("foo"));
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_object_with_textraw_key() {
+        // JSONB_OBJECT with a TEXTRAW key and value
+        let mut data = Vec::new();
+        data.extend(create_jsonb_header(JSONB_OBJECT, 0x06).unwrap());
+        data.extend(create_jsonb_header(JSONB_TEXTRAW, 0x01).unwrap());
+        data.extend_from_slice(b"a");
+        data.extend(create_jsonb_header(JSONB_TEXTRAW, 0x03).unwrap());
+        data.extend_from_slice(b"bar");
+
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!({"a": "bar"}));
     }
 
     #[diesel_test_helper::test]

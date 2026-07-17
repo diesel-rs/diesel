@@ -1,0 +1,8 @@
+error[E0433]: cannot find module or crate `does` in this scope
+  --> tests/fail/derive/bad_table_name2.rs:12:23
+   |
+LL | #[diesel(table_name = does::not::exist)]
+   |                       ^^^^ use of unresolved module or unlinked crate `does`
+   |
+   = help: you might be missing a crate named `does`
+For more information about this error, try `rustc --explain E0433`.

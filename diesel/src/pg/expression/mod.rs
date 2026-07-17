@@ -19,6 +19,10 @@ mod return_type_helpers {
     #[allow(unused_imports)]
     #[doc(inline)]
     pub use super::functions::return_type_helpers_reexported::*;
+
+    #[allow(unused_imports)]
+    #[doc(inline)]
+    pub use super::super::returning::return_type_helpers_reexported::*;
 }
 
 /// PostgreSQL specific expression DSL methods.

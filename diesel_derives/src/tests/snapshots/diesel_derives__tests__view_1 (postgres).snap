@@ -6,6 +6,12 @@ info:
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod view {
+    const _: () = {
+        assert!(
+            2u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`view` contains 2 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+        );
+    };
     use ::diesel;
     pub use self::columns::*;
     use diesel::sql_types::*;
@@ -23,7 +29,7 @@ pub mod view {
     }
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "view")]
-    pub const all_columns: (id, name) = (id, name);
+    pub const all_columns: AllColumns = (id, name);
     #[allow(non_camel_case_types)]
     #[derive(
         Debug,
@@ -53,8 +59,11 @@ pub mod view {
             star
         }
     }
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "view")]
+    pub type AllColumns = (id, name);
     #[doc = concat!("The SQL type of all of the columns on this ", "view")]
-    pub type SqlType = (Integer, Text);
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "view")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -108,9 +117,9 @@ pub mod view {
     #[doc(hidden)]
     pub use self::view as table;
     impl diesel::query_source::QueryRelation for view {
-        type AllColumns = (id, name);
+        type AllColumns = AllColumns;
         fn all_columns() -> Self::AllColumns {
-            (id, name)
+            all_columns
         }
     }
     impl diesel::internal::table_macro::Sealed for view {}
@@ -167,6 +176,18 @@ pub mod view {
         ) -> Self::Out {
             __diesel_internal_alias.field(__diesel_internal_column)
         }
+    }
+    impl<StmtKind> diesel::query_source::AppearsInFromClause<view>
+    for diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, view> {
+        type Count = diesel::query_source::Once;
+    }
+    impl<
+        StmtKind,
+        T,
+    > diesel::query_source::AppearsInFromClause<
+        diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, T>,
+    > for view {
+        type Count = diesel::query_source::Never;
     }
     impl diesel::query_source::AppearsInFromClause<view>
     for diesel::internal::table_macro::NoFromClause {
@@ -379,12 +400,11 @@ pub mod view {
         pub struct star;
         impl<__GB> diesel::expression::ValidGrouping<__GB> for star
         where
-            (id, name): diesel::expression::ValidGrouping<__GB>,
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
         {
-            type IsAggregate = <(
-                id,
-                name,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+            type IsAggregate = <super::AllColumns as diesel::expression::ValidGrouping<
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::Expression for star {
             type SqlType = diesel::expression::expression_types::NotSelectable;
@@ -455,6 +475,14 @@ pub mod view {
             }
         }
         impl diesel::SelectableExpression<super::view> for id {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::view,
+            >,
+        > for id {}
         impl<QS> diesel::AppearsOnTable<QS> for id
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -676,6 +704,14 @@ pub mod view {
             }
         }
         impl diesel::SelectableExpression<super::view> for name {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::view,
+            >,
+        > for name {}
         impl<QS> diesel::AppearsOnTable<QS> for name
         where
             QS: diesel::query_source::AppearsInFromClause<

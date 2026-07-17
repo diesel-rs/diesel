@@ -21,12 +21,16 @@ impl<'a> MysqlValue<'a> {
         Self::new_internal(raw, tpe)
     }
 
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "mysql"
+    ))]
     pub(in crate::mysql) fn new_internal(raw: &'a [u8], tpe: MysqlType) -> Self {
         Self { raw, tpe }
     }
 
     /// Get the underlying raw byte representation
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &'a [u8] {
         self.raw
     }
 

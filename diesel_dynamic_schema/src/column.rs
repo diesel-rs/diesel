@@ -2,6 +2,7 @@ use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, TypedExpressionType, ValidGrouping};
 use diesel::prelude::*;
 use diesel::query_builder::*;
+use diesel::query_source::ColumnHasTable;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
@@ -66,5 +67,21 @@ where
         out.push_sql(".");
         out.push_identifier(self.name.borrow())?;
         Ok(())
+    }
+}
+
+impl<T, U, ST> ColumnHasTable for Column<T, U, ST>
+where
+    U: Borrow<str>,
+    T: Clone,
+{
+    type Table = T;
+
+    fn table(&self) -> Self::Table {
+        self.table.clone()
+    }
+
+    fn name(&self) -> &str {
+        self.name.borrow()
     }
 }

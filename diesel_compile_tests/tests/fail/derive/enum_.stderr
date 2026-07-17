@@ -1,0 +1,20 @@
+error: no `#[diesel(sql_type = ...)]` attribute provided
+ --> tests/fail/derive/enum_.rs:6:1
+  |
+LL | enum Test {
+  | ^^^^
+
+error: got invalid case identifier: `Foo`
+       only: `lowercase`, `UPPERCASE`, `PascalCase`, `camelCase`, `snake_case`, `SCREAMING_SNAKE_CASE`, `kebab-case` and `SCREAMING-KEBAB-CASE` are supported
+  --> tests/fail/derive/enum_.rs:13:23
+   |
+LL | #[diesel(rename_all = "Foo")]
+   |                       ^^^^^
+
+warning: unused import: `diesel::prelude::*`
+ --> tests/fail/derive/enum_.rs:2:5
+  |
+LL | use diesel::prelude::*;
+  |     ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default

@@ -12,6 +12,7 @@ use crate::print_schema::{ColumnSorting, DocConfig};
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract",
+    "async",
     "alignof",
     "as",
     "become",
@@ -69,7 +70,7 @@ static RESERVED_NAMES: &[&str] = &[
     "is_nullable",
 ];
 
-fn is_reserved_name(name: &str) -> bool {
+pub(super) fn is_reserved_name(name: &str) -> bool {
     RESERVED_NAMES.contains(&name)
         || (
             // Names ending in an underscore are not considered reserved so that we
@@ -83,8 +84,8 @@ fn contains_unmappable_chars(name: &str) -> bool {
     !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
-pub fn rust_name_for_sql_name(sql_name: &str) -> String {
-    if is_reserved_name(sql_name) {
+pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
+    if is_reserved_name(sql_name) || Some(sql_name) == table_name.map(|t| t.rust_name.as_str()) {
         format!("{sql_name}_")
     } else if contains_unmappable_chars(sql_name) {
         // Map each non-alphanumeric character ([^a-zA-Z0-9]) to an underscore.
@@ -201,7 +202,16 @@ fn get_column_information(
     if let Err(NotFound) = column_info {
         Err(crate::errors::Error::NoTableFound(table.clone()))
     } else {
-        let column_info = column_info?;
+        let mut column_info = column_info?;
+        if matches!(kind, SupportedQueryRelationStructures::View) {
+            // we don't support max_length for views yet
+            column_info
+                .iter_mut()
+                .map(|a| {
+                    a.max_length = None;
+                })
+                .for_each(|_| {});
+        }
         tracing::info!(?column_info, "Load column information for table {table}");
         Ok(column_info)
     }
@@ -339,7 +349,7 @@ fn load_column_structure_data(
             comment,
             ..
         } = c;
-        let rust_name = rust_name_for_sql_name(&column_name);
+        let rust_name = rust_name_for_sql_name(&column_name, Some(name));
 
         Ok(ColumnDefinition {
             sql_name: column_name,
@@ -367,7 +377,7 @@ pub fn load_table_data(
         load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| rust_name_for_sql_name(k))
+        .map(|k| rust_name_for_sql_name(k, Some(&name)))
         .collect::<Vec<_>>();
     Ok(TableData {
         name,

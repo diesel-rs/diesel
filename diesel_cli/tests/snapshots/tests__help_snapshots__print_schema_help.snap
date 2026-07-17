@@ -87,5 +87,11 @@ Options:
       --sqlite-integer-primary-key-is-bigint
           For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, when the table isn't declared with `WITHOUT ROWID`. See https://www.sqlite.org/lang_createtable.html#rowid for more information
 
+      --custom-enum-derives <CUSTOM_RUST_ENUM_TYPE_DERIVES>...
+          A list of derives to implement for every automatically generated Rust enum in the schema, separated by commas
+
+      --no-generate-rust-enum-types
+          Generate Rust enum type definitions for sql side enum types
+
   -h, --help
           Print help (see a summary with '-h')

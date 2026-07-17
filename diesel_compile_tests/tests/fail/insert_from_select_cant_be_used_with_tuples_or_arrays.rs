@@ -28,7 +28,7 @@ fn main() {
     insert_into(posts).values(users).execute(&mut conn).unwrap();
 
     insert_into(posts).values(vec![users, users]);
-    //~^ ERROR: the trait bound `users::table: UndecoratedInsertRecord<posts::table>` is not satisfied
+    //~^ ERROR: the trait bound `table: UndecoratedInsertRecord<table>` is not satisfied
 
     insert_into(posts).values((users, users));
     //~^ ERROR: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`

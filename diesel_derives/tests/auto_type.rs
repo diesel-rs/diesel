@@ -394,6 +394,12 @@ fn test_pg_timestamp_expression_methods() -> _ {
     pg_extras::timestamp.at_time_zone(s)
 }
 
+#[cfg(feature = "postgres")]
+#[auto_type]
+fn test_pg_returning_old() -> _ {
+    diesel::pg::returning::old(users::id)
+}
+
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn test_sqlite_expression_methods() -> _ {
@@ -576,6 +582,24 @@ fn sqlite_variadic_functions() -> _ {
         jsonb_array_0(),
         jsonb_array_1(sqlite_extras::text),
         jsonb_array_2(sqlite_extras::id, sqlite_extras::json),
+        json_insert_0(sqlite_extras::json),
+        json_insert_1(sqlite_extras::jsonb, sqlite_extras::text, sqlite_extras::id),
+        json_insert_2(
+            sqlite_extras::json,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_insert_0(sqlite_extras::jsonb),
+        jsonb_insert_1(sqlite_extras::json, sqlite_extras::text, sqlite_extras::id),
+        jsonb_insert_2(
+            sqlite_extras::jsonb,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
         json_object_0(),
         json_object_1(sqlite_extras::text, sqlite_extras::id),
         json_object_2(
@@ -605,6 +629,42 @@ fn sqlite_variadic_functions() -> _ {
             sqlite_extras::jsonb,
             sqlite_extras::text,
             sqlite_extras::text,
+        ),
+        json_replace_0(sqlite_extras::json),
+        json_replace_1(sqlite_extras::jsonb, sqlite_extras::text, sqlite_extras::id),
+        json_replace_2(
+            sqlite_extras::json,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_replace_0(sqlite_extras::jsonb),
+        jsonb_replace_1(sqlite_extras::json, sqlite_extras::text, sqlite_extras::id),
+        jsonb_replace_2(
+            sqlite_extras::jsonb,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        json_set_0(sqlite_extras::json),
+        json_set_1(sqlite_extras::jsonb, sqlite_extras::text, sqlite_extras::id),
+        json_set_2(
+            sqlite_extras::json,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
+        ),
+        jsonb_set_0(sqlite_extras::jsonb),
+        jsonb_set_1(sqlite_extras::json, sqlite_extras::text, sqlite_extras::id),
+        jsonb_set_2(
+            sqlite_extras::jsonb,
+            sqlite_extras::text,
+            sqlite_extras::id,
+            sqlite_extras::text,
+            sqlite_extras::json,
         ),
     )
 }

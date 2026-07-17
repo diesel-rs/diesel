@@ -11,16 +11,12 @@ table! {
 #[diesel(table_name = users)]
 struct UserStruct1 {
     #[column_name = "name"]
-    //~^ ERROR: cannot find type `name` in module `users`
-    //~| ERROR: cannot find value `name` in module `users`
     full_name: String,
 }
 
 #[derive(AsChangeset)]
 #[diesel(table_name = users)]
 struct UserTuple(#[column_name = "name"] String);
-//~^ ERROR: cannot find type `name` in module `users`
-//~| ERROR: cannot find value `name` in module `users`
 
 #[derive(AsChangeset)]
 #[diesel(table_name = users)]

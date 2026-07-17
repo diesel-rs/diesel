@@ -1,4 +1,5 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::cmp;
 use core::ffi as libc;
 use core::mem::MaybeUninit;
 use core::mem::{self, ManuallyDrop};
@@ -62,15 +63,15 @@ impl OutputBinds {
     pub(super) fn from_output_types(
         types: &[Option<MysqlType>],
         metadata: &StatementMetadata,
-    ) -> Self {
+    ) -> Result<Self, Box<dyn core::error::Error + Send + Sync>> {
         let data = metadata
             .fields()
             .iter()
             .zip(types.iter().copied().chain(core::iter::repeat(None)))
             .map(|(field, tpe)| BindData::for_output(tpe, field))
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
 
-        Self(Binds { data })
+        Ok(Self(Binds { data }))
     }
 
     pub(super) fn populate_dynamic_buffers(&mut self, stmt: &StatementUse<'_>) -> QueryResult<()> {
@@ -126,6 +127,7 @@ impl Index<usize> for OutputBinds {
 }
 
 bitflags::bitflags! {
+    /// See https://dev.mysql.com/doc/dev/mysql-server/latest/group__group__cs__column__definition__flags.html
     #[derive(Clone, Copy, Debug)]
     pub(crate) struct Flags: u32 {
         const NOT_NULL_FLAG = 1;
@@ -138,27 +140,38 @@ bitflags::bitflags! {
         const BINARY_FLAG = 128;
         const ENUM_FLAG = 256;
         const AUTO_INCREMENT_FLAG = 512;
-        const TIMESTAMP_FLAG = 1024;
-        const SET_FLAG = 2048;
-        const NO_DEFAULT_VALUE_FLAG = 4096;
-        const ON_UPDATE_NOW_FLAG = 8192;
-        const NUM_FLAG = 32768;
-        const PART_KEY_FLAG = 16384;
-        const GROUP_FLAG = 32768;
-        const UNIQUE_FLAG = 65536;
-        const BINCMP_FLAG = 130_172;
+        const TIMESTAMP_FLAG = 1_024;
+        const SET_FLAG = 2_048;
+        const NO_DEFAULT_VALUE_FLAG = 4_096;
+        const ON_UPDATE_NOW_FLAG = 8_192;
+        const PART_KEY_FLAG = 16_384;
+        const NUM_FLAG = 32_768;
+        const UNIQUE_FLAG = 65_536;
+        const BINCMP_FLAG = 131_072;
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
+        const FIELD_IN_ADD_INDEX = (1 << 20);
+        const FIELD_IS_RENAMED = (1 << 21);
+        const FIELD_FLAGS_STORAGE_MEDIA = 22;
+        const FIELD_FLAGS_COLUMN_FORMAT = 24;
+        const FIELD_IS_DROPPED = (1 << 26);
+        const EXPLICIT_NULL_FLAG = (1 << 27);
+        const GROUP_FLAG = (1 << 28);
+        const NOT_SECONDARY_FLAG = (1 << 29);
+        const FIELD_IS_INVISIBLE = (1 << 30);
     }
 }
 
-impl From<u32> for Flags {
-    fn from(flags: u32) -> Self {
-        Flags::from_bits(flags).expect(
+impl TryFrom<u32> for Flags {
+    type Error = Box<dyn core::error::Error + Send + Sync>;
+    fn try_from(flags: u32) -> Result<Self, Self::Error> {
+        Flags::from_bits(flags).ok_or_else(|| {
             "We encountered an unknown type flag while parsing \
              Mysql's type information. If you see this error message \
-             please open an issue at diesels github page.",
-        )
+             please open an issue at diesels github page.\
+             https://github.com/diesel-rs/diesel/issues"
+                .into()
+        })
     }
 }
 
@@ -178,6 +191,13 @@ pub(super) struct BindData {
 // instead of just copying the pointer
 impl Clone for BindData {
     fn clone(&self) -> Self {
+        // we just make sure here that we never create a
+        // slice larger than the allocation
+        let length = cmp::min(
+            self.capacity,
+            self.length.try_into().expect("usize fits the length"),
+        );
+
         let (ptr, len, capacity) = if let Some(ptr) = self.bytes {
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
@@ -187,10 +207,7 @@ impl Clone for BindData {
                 // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
-                core::slice::from_raw_parts(
-                    ptr.as_ptr(),
-                    self.length.try_into().expect("usize is at least 32bit"),
-                )
+                core::slice::from_raw_parts(ptr.as_ptr(), length)
             };
             bind_buffer(slice.to_owned())
         } else {
@@ -241,7 +258,10 @@ impl BindData {
         }
     }
 
-    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata<'_>) -> Self {
+    fn for_output(
+        tpe: Option<MysqlType>,
+        metadata: &MysqlFieldMetadata<'_>,
+    ) -> Result<Self, Box<dyn core::error::Error + Send + Sync>> {
         let (tpe, flags) = if let Some(tpe) = tpe {
             match (tpe, metadata.field_type()) {
                 // Those are types where we handle the conversion in diesel itself
@@ -365,15 +385,15 @@ impl BindData {
                 | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_BLOB)
                 | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_VAR_STRING)
                 | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_STRING) => {
-                    (metadata.field_type(), metadata.flags())
+                    (metadata.field_type(), metadata.flags()?)
                 }
 
                 (tpe, _) => tpe.into(),
             }
         } else {
-            (metadata.field_type(), metadata.flags())
+            (metadata.field_type(), metadata.flags()?)
         };
-        Self::from_tpe_and_flags((tpe, flags))
+        Ok(Self::from_tpe_and_flags((tpe, flags)))
     }
 
     fn from_tpe_and_flags((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
@@ -521,14 +541,15 @@ impl BindData {
     /// this function is unsafe unless the binds are immediately rebound.
     unsafe fn bind_for_truncated_data(&mut self) -> Option<(ffi::MYSQL_BIND, usize)> {
         if self.is_truncated() {
-            if let Some(bytes) = self.bytes {
+            if let Some(bytes) = self.bytes.take() {
                 let mut bytes =
                     unsafe { Vec::from_raw_parts(bytes.as_ptr(), self.capacity, self.capacity) };
-                self.bytes = None;
 
                 let offset = self.capacity;
                 let length = usize::try_from(self.length).expect("Usize is at least 32 bit");
-                let truncated_amount = length - offset;
+                let truncated_amount = length
+                    .checked_sub(offset)
+                    .expect("offset is always smaller than the actual length");
 
                 debug_assert!(
                     truncated_amount > 0,
@@ -819,12 +840,11 @@ mod tests {
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
         let meta = (bind.tpe, bind.flags).into();
-        dbg!(meta);
 
         let value = bind.value().expect("Is not null");
         let value = MysqlValue::new_internal(value.as_bytes(), meta);
 
-        dbg!(T::from_sql(value))
+        T::from_sql(value)
     }
 
     #[cfg(feature = "extras")]
@@ -935,7 +955,8 @@ mod tests {
 
         let metadata = stmt.metadata().unwrap();
         let mut output_binds =
-            OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
+            OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata)
+                .unwrap();
         let stmt = stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 

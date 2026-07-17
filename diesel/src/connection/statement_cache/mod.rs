@@ -183,6 +183,15 @@ where
         }
     }
 
+    /// Removes all cached statements so subsequent queries are re-prepared,
+    /// while keeping the configured caching strategy.
+    // Currently used only by the SQLite authorizer, so it is compiled only for
+    // backends that provide that caller.
+    #[cfg(feature = "__sqlite-shared")]
+    pub(crate) fn clear(&mut self) {
+        self.cache.clear();
+    }
+
     /// Setting custom caching strategy. It is used in tests, to verify caching logic
     #[allow(dead_code)]
     pub(crate) fn set_strategy<Strategy>(&mut self, s: Strategy)

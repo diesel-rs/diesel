@@ -24,7 +24,8 @@ impl<'a> StatementIterator<'a> {
     ) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
 
-        let mut output_binds = OutputBinds::from_output_types(types, &metadata);
+        let mut output_binds = OutputBinds::from_output_types(types, &metadata)
+            .map_err(crate::result::Error::DeserializationError)?;
 
         let mut stmt = stmt.execute_statement(&mut output_binds)?;
         let size = unsafe { stmt.result_size() }?;

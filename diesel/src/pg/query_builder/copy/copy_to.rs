@@ -440,6 +440,10 @@ where
     ///
     /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
     /// for more details.
+    ///
+    /// Diesel will automatically escape the provided delimiter for the default
+    /// PostgreSQL setting `standard_conforming_strings=on`. If you use a non-standard
+    /// conforming setting you need to take care of escaping the value on your own
     pub fn with_delimiter(self, delimiter: char) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.delimiter = Some(delimiter);
@@ -451,6 +455,10 @@ where
     ///
     /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
     /// for more details.
+    ///
+    /// Diesel will automatically escape the provided delimiter for the default
+    /// PostgreSQL setting `standard_conforming_strings=on`. If you use a non-standard
+    /// conforming setting you need to take care of escaping the value on your own
     pub fn with_null(self, null: impl Into<String>) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.null = Some(null.into());
@@ -461,6 +469,10 @@ where
     ///
     /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
     /// for more details.
+    ///
+    /// Diesel will automatically escape the provided delimiter for the default
+    /// PostgreSQL setting `standard_conforming_strings=on`. If you use a non-standard
+    /// conforming setting you need to take care of escaping the value on your own
     pub fn with_quote(self, quote: char) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.quote = Some(quote);
@@ -471,6 +483,10 @@ where
     ///
     /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
     /// for more details.
+    ///
+    /// Diesel will automatically escape the provided delimiter for the default
+    /// PostgreSQL setting `standard_conforming_strings=on`. If you use a non-standard
+    /// conforming setting you need to take care of escaping the value on your own
     pub fn with_escape(self, escape: char) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.escape = Some(escape);

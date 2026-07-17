@@ -11,10 +11,9 @@ const _: () = {
         const IS_ARRAY: bool = false;
     }
     impl diesel::sql_types::SingleValue for Integer {}
-    use diesel::pg::{PgMetadataLookup, PgTypeMetadata};
     impl diesel::sql_types::HasSqlType<Integer> for diesel::pg::Pg {
-        fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
-            PgTypeMetadata::new(42, 142)
+        fn metadata(_: &mut Self::MetadataLookup) -> diesel::pg::PgTypeMetadata {
+            diesel::pg::PgTypeMetadata::new(42, 142)
         }
     }
 };

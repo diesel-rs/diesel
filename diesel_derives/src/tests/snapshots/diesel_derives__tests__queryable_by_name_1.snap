@@ -23,14 +23,14 @@ const _: () = {
                     diesel::dsl::SqlTypeOf<users::r#id>,
                     i32,
                 >(row, "id")?;
-                <i32 as std::convert::Into<i32>>::into(field)
+                <i32 as ::core::convert::Into<i32>>::into(field)
             };
             let mut name = {
                 let field = diesel::row::NamedRow::get::<
                     diesel::dsl::SqlTypeOf<users::r#name>,
                     String,
                 >(row, "name")?;
-                <String as std::convert::Into<String>>::into(field)
+                <String as ::core::convert::Into<String>>::into(field)
             };
             diesel::deserialize::Result::Ok(Self { id: id, name: name })
         }

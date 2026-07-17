@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Example: columns used in where clause
 //!
 //! To run this:

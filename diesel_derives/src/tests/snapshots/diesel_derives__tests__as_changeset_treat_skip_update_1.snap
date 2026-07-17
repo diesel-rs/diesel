@@ -6,6 +6,7 @@ info:
 ---
 const _: () = {
     use diesel;
+    fn _check_owned() {}
     impl diesel::query_builder::AsChangeset for User {
         type Target = users::table;
         type Changeset = <() as diesel::query_builder::AsChangeset>::Changeset;
@@ -15,7 +16,12 @@ const _: () = {
             diesel::query_builder::AsChangeset::as_changeset(())
         }
     }
-    impl<'update> diesel::query_builder::AsChangeset for &'update User {
+    #[allow(clippy::multiple_bound_locations)]
+    fn _check_borrowed<'update>() {}
+    impl<'update> diesel::query_builder::AsChangeset for &'update User
+    where
+        (): diesel::query_builder::AsChangeset,
+    {
         type Target = users::table;
         type Changeset = <() as diesel::query_builder::AsChangeset>::Changeset;
         fn as_changeset(

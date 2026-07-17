@@ -6,6 +6,12 @@ info:
 ---
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
+    const _: () = {
+        assert!(
+            2u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`users` contains 2 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+        );
+    };
     use ::diesel;
     pub use self::columns::*;
     use diesel::sql_types::*;
@@ -23,7 +29,7 @@ pub mod users {
     }
     #[allow(non_upper_case_globals, dead_code)]
     #[doc = concat!("A tuple of all of the columns on this", "table")]
-    pub const all_columns: (id, name) = (id, name);
+    pub const all_columns: AllColumns = (id, name);
     #[allow(non_camel_case_types)]
     #[derive(
         Debug,
@@ -53,8 +59,11 @@ pub mod users {
             star
         }
     }
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "table")]
+    pub type AllColumns = (id, name);
     #[doc = concat!("The SQL type of all of the columns on this ", "table")]
-    pub type SqlType = (Integer, Text);
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -107,12 +116,12 @@ pub mod users {
     }
     impl diesel::Table for table {
         type PrimaryKey = id;
-        type AllColumns = (id, name);
+        type AllColumns = AllColumns;
         fn primary_key(&self) -> Self::PrimaryKey {
             id
         }
         fn all_columns() -> Self::AllColumns {
-            (id, name)
+            all_columns
         }
     }
     impl diesel::associations::HasTable for table {
@@ -209,6 +218,18 @@ pub mod users {
         ) -> Self::Out {
             __diesel_internal_alias.field(__diesel_internal_column)
         }
+    }
+    impl<StmtKind> diesel::query_source::AppearsInFromClause<table>
+    for diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, table> {
+        type Count = diesel::query_source::Once;
+    }
+    impl<
+        StmtKind,
+        T,
+    > diesel::query_source::AppearsInFromClause<
+        diesel::internal::table_macro::returning::ReturningQuerySource<StmtKind, T>,
+    > for table {
+        type Count = diesel::query_source::Never;
     }
     impl diesel::query_source::AppearsInFromClause<table>
     for diesel::internal::table_macro::NoFromClause {
@@ -395,6 +416,12 @@ pub mod users {
             (__diesel_internal_rhs, __diesel_internal_on_clause)
         }
     }
+
+
+
+
+
+
     #[doc = concat!("Contains all of the columns of this ", "table")]
     pub mod columns {
         use ::diesel;
@@ -421,12 +448,11 @@ pub mod users {
         pub struct star;
         impl<__GB> diesel::expression::ValidGrouping<__GB> for star
         where
-            (id, name): diesel::expression::ValidGrouping<__GB>,
+            super::AllColumns: diesel::expression::ValidGrouping<__GB>,
         {
-            type IsAggregate = <(
-                id,
-                name,
-            ) as diesel::expression::ValidGrouping<__GB>>::IsAggregate;
+            type IsAggregate = <super::AllColumns as diesel::expression::ValidGrouping<
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::Expression for star {
             type SqlType = diesel::expression::expression_types::NotSelectable;
@@ -497,6 +523,14 @@ pub mod users {
             }
         }
         impl diesel::SelectableExpression<super::table> for id {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for id {}
         impl<QS> diesel::AppearsOnTable<QS> for id
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -674,6 +708,10 @@ pub mod users {
                 )
             }
         }
+
+
+
+
         impl diesel::query_source::Column for id {
             type Table = super::table;
             const NAME: &'static str = "id";
@@ -718,6 +756,14 @@ pub mod users {
             }
         }
         impl diesel::SelectableExpression<super::table> for name {}
+        impl<
+            __StmtKind,
+        > diesel::SelectableExpression<
+            diesel::internal::table_macro::returning::ReturningQuerySource<
+                __StmtKind,
+                super::table,
+            >,
+        > for name {}
         impl<QS> diesel::AppearsOnTable<QS> for name
         where
             QS: diesel::query_source::AppearsInFromClause<
@@ -839,6 +885,10 @@ pub mod users {
                 self.eq(__diesel_internal_rhs)
             }
         }
+
+
+
+
         impl diesel::query_source::Column for name {
             type Table = super::table;
             const NAME: &'static str = "name";

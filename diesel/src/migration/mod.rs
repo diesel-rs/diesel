@@ -162,6 +162,42 @@ impl<DB: Backend> Migration<DB> for Box<dyn Migration<DB> + '_> {
     }
 }
 
+impl<DB: Backend> Migration<DB> for alloc::rc::Rc<dyn Migration<DB> + '_> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).run(conn)
+    }
+
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).revert(conn)
+    }
+
+    fn metadata(&self) -> &dyn MigrationMetadata {
+        (**self).metadata()
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        (**self).name()
+    }
+}
+
+impl<DB: Backend> Migration<DB> for alloc::sync::Arc<dyn Migration<DB> + '_> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).run(conn)
+    }
+
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
+        (**self).revert(conn)
+    }
+
+    fn metadata(&self) -> &dyn MigrationMetadata {
+        (**self).metadata()
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        (**self).name()
+    }
+}
+
 impl<DB: Backend> Migration<DB> for &dyn Migration<DB> {
     fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (**self).run(conn)
@@ -200,6 +236,18 @@ pub trait MigrationConnection: Connection {
     /// }
     /// ```
     fn setup(&mut self) -> QueryResult<usize>;
+
+    /// Read the current search_path so it can be restored after a migration.
+    #[doc(hidden)]
+    fn read_search_path(&mut self) -> QueryResult<Option<String>> {
+        Ok(None)
+    }
+
+    /// Set the search_path previously saved.
+    #[doc(hidden)]
+    fn set_search_path(&mut self, _search_path: &str) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 #[cfg(feature = "postgres")]
@@ -207,6 +255,22 @@ impl MigrationConnection for crate::pg::PgConnection {
     fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+    }
+
+    fn read_search_path(&mut self) -> QueryResult<Option<String>> {
+        use crate::RunQueryDsl;
+        use crate::dsl::{select, sql};
+        let search_path =
+            select(sql::<Text>("current_setting('search_path')")).get_result::<String>(self)?;
+        Ok(Some(search_path))
+    }
+
+    fn set_search_path(&mut self, search_path: &str) -> QueryResult<()> {
+        use crate::RunQueryDsl;
+        crate::sql_query("SELECT set_config('search_path', $1, false)")
+            .bind::<Text, _>(search_path)
+            .execute(self)?;
+        Ok(())
     }
 }
 
@@ -223,5 +287,23 @@ impl MigrationConnection for crate::sqlite::SqliteConnection {
     fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Migration;
+    use crate::backend::Backend;
+    use alloc::boxed::Box;
+    use alloc::rc::Rc;
+    use alloc::sync::Arc;
+
+    fn assert_migration<DB: Backend, M: Migration<DB>>() {}
+
+    #[allow(dead_code)]
+    fn migration_for_box_rc_arc_dyn_compiles<DB: Backend>() {
+        assert_migration::<DB, Box<dyn Migration<DB>>>();
+        assert_migration::<DB, Rc<dyn Migration<DB>>>();
+        assert_migration::<DB, Arc<dyn Migration<DB>>>();
     }
 }

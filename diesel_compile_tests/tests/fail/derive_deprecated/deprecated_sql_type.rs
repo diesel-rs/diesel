@@ -4,7 +4,6 @@ use diesel::expression::AsExpression;
 
 #[derive(Debug, AsExpression)]
 #[sql_type = "foo"]
-//~^ ERROR: cannot find type `foo` in this scope
 struct Lol1;
 
 #[derive(AsExpression)]
@@ -30,7 +29,6 @@ struct Lol5;
 #[derive(QueryableByName)]
 struct Lul1 {
     #[sql_type = "foo"]
-    //~^ ERROR: cannot find type `foo` in this scope
     foo: i32,
 }
 

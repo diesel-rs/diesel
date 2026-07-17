@@ -8,15 +8,22 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment f
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               `LimitOffsetClause<L, O>` implements `QueryFragment<Pg>`
-               `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `QueryFragment<Mysql>`
-               `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `QueryFragment<Sqlite>`
-               `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `QueryFragment<Mysql>`
-               `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
-               `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<Mysql>`
-               `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<Sqlite>`
-               `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/mysql/query_builder/limit_offset.rs
+     |
+   LL |   impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `LimitOffsetClause<NoLimitClause, NoOffsetClause>`
+...
+  LL | / impl<L> QueryFragment<Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
+  LL | | where
+  LL | |     LimitClause<L>: QueryFragment<Mysql>,
+     | |_________________________________________^ `LimitOffsetClause<LimitClause<L>, NoOffsetClause>`
+...
+  LL | / impl<L, O> QueryFragment<Mysql> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
+  LL | | where
+  LL | |     LimitClause<L>: QueryFragment<Mysql>,
+  LL | |     OffsetClause<O>: QueryFragment<Mysql>,
+     | |__________________________________________^ `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
      = note: 1 redundant requirement hidden
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`

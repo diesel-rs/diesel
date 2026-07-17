@@ -32,4 +32,3 @@ diesel::table! {
         extern_ -> Integer,
     }
 }
-

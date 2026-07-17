@@ -77,7 +77,13 @@ where
         (0..len)
             .map(|_| {
                 let range_size: usize = bytes.read_i32::<NetworkEndian>()?.try_into()?;
-                let (range_bytes, new_bytes) = bytes.split_at(range_size);
+                let (range_bytes, new_bytes) =
+                    bytes.split_at_checked(range_size).ok_or_else(|| {
+                        format!(
+                            "Invalid element byte count: Expected at least {range_size} bytes, but only {} bytes were received",
+                            bytes.len()
+                        )
+                    })?;
                 bytes = new_bytes;
                 FromSql::from_sql(PgValue::new_internal(range_bytes, &value))
             })
@@ -196,3 +202,47 @@ multirange_to_sql_nullable!(core::ops::RangeInclusive<T>);
 multirange_to_sql_nullable!(core::ops::RangeFrom<T>);
 multirange_to_sql_nullable!(core::ops::RangeTo<T>);
 multirange_to_sql_nullable!(core::ops::RangeToInclusive<T>);
+
+#[cfg(test)]
+mod tests {
+    use crate::deserialize::FromSql;
+    use crate::pg::Pg;
+    use crate::pg::PgValue;
+    use crate::sql_types::{Integer, Multirange};
+    use byteorder::{NetworkEndian, WriteBytesExt};
+    use std::ops::Bound;
+
+    #[test]
+    fn check_invalid_element_size_for_multirange() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+        // size
+        value.write_u32::<NetworkEndian>(1).unwrap();
+        // range size
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        // just too less bytes
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res =
+            <Vec<(Bound<i32>, Bound<i32>)> as FromSql<Multirange<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element byte count: Expected at least 6 bytes, but only 4 bytes were received",
+        );
+        // invalid size
+        let mut value = Vec::<u8>::new();
+        // size
+        value.write_u32::<NetworkEndian>(1).unwrap();
+        let value = PgValue::for_test(&value);
+        // we don't need anything else, it should already fail here
+        let res =
+            <Vec<(Bound<i32>, Bound<i32>)> as FromSql<Multirange<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "failed to fill whole buffer"
+        );
+    }
+}

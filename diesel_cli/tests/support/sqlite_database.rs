@@ -17,7 +17,7 @@ impl Database {
     }
 
     pub fn create(self) -> Self {
-        fs::File::create(&self.url).expect(&format!("Error creating database {}", &self.url));
+        fs::File::create(&self.url).expect(&format!("Error creating database {}", self.url));
         self
     }
 
@@ -41,7 +41,7 @@ impl Database {
 
     pub fn conn(&self) -> SqliteConnection {
         SqliteConnection::establish(&self.url)
-            .expect(&format!("Failed to open connection to {}", &self.url))
+            .expect(&format!("Failed to open connection to {}", self.url))
     }
 
     pub fn execute(&self, command: &str) {

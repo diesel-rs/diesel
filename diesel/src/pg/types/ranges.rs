@@ -86,7 +86,15 @@ where
             lower_bound = Bound::Excluded(T::default_value());
         } else if !flags.contains(RangeFlags::LB_INF) {
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
-            let (elem_bytes, new_bytes) = bytes.split_at(elem_size.try_into()?);
+
+            let (elem_bytes, new_bytes) = bytes
+                .split_at_checked(elem_size.try_into()?)
+                .ok_or_else(|| {
+                    format!(
+                        "Invalid element size: Got {elem_size} elements, but only {} bytes",
+                        bytes.len()
+                    )
+                })?;
             bytes = new_bytes;
             let value = T::from_sql(PgValue::new_internal(elem_bytes, &value))?;
 
@@ -285,5 +293,36 @@ impl ToSql<RangeBoundEnum, Pg> for RangeBound {
         out.write_all(literal.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::deserialize::FromSql;
+    use crate::pg::Pg;
+    use crate::pg::PgValue;
+    use crate::pg::types::ranges::RangeFlags;
+    use crate::sql_types::{Integer, Range};
+    use byteorder::{NetworkEndian, WriteBytesExt};
+    use std::ops::Bound;
+
+    #[test]
+    fn check_invalid_element_size_for_range() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+
+        // flags
+        value.write_u8(RangeFlags::empty().bits()).unwrap();
+        // elem size
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <(Bound<i32>, Bound<i32>) as FromSql<Range<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element size: Got 6 elements, but only 4 bytes"
+        );
     }
 }

@@ -1,10 +1,11 @@
 use crate::config::{self, Config};
 use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
-
 use clap::{ArgAction, ArgMatches, Args, FromArgMatches};
+use diesel::QueryResult;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeSet, HashSet};
+use std::borrow::Cow;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::{Write as IoWrite, stdout};
 use std::{process, str};
@@ -30,6 +31,7 @@ pub struct PrintSchemaArgs {
     pub except_custom_type_definitions_indices: Option<Vec<usize>>,
     pub include_views_indices: Option<Vec<usize>>,
     pub experimental_infer_nullable_for_views_indices: Option<Vec<usize>>,
+    pub custom_rust_enum_type_derives_indices: Option<Vec<usize>>,
 }
 
 impl PrintSchemaArgs {
@@ -52,6 +54,7 @@ impl PrintSchemaArgs {
     const INCLUDE_VIEWS: &'static str = "INCLUDE_VIEWS";
     const EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS: &'static str =
         "EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS";
+    const CUSTOM_RUST_ENUM_TYPE_DERIVES: &'static str = "CUSTOM_RUST_ENUM_TYPE_DERIVES";
 
     fn populate_indices(&mut self, matches: &ArgMatches) {
         let Self {
@@ -72,6 +75,7 @@ impl PrintSchemaArgs {
             except_custom_type_definitions_indices,
             include_views_indices,
             experimental_infer_nullable_for_views_indices,
+            custom_rust_enum_type_derives_indices,
         } = self;
         let mapping = [
             (schema_indices, Self::SCHEMA),
@@ -102,6 +106,10 @@ impl PrintSchemaArgs {
                 experimental_infer_nullable_for_views_indices,
                 Self::EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS,
             ),
+            (
+                custom_rust_enum_type_derives_indices,
+                Self::CUSTOM_RUST_ENUM_TYPE_DERIVES,
+            ),
         ];
 
         for (indices, key) in mapping {
@@ -131,6 +139,7 @@ impl FromArgMatches for PrintSchemaArgs {
             except_custom_type_definitions_indices: None,
             include_views_indices: None,
             experimental_infer_nullable_for_views_indices: None,
+            custom_rust_enum_type_derives_indices: None,
         };
         out.populate_indices(matches);
         Ok(out)
@@ -304,6 +313,17 @@ pub struct InnerPrintSchemaArgs {
         value_parser = clap::value_parser!(bool),
     )]
     pub sqlite_integer_primary_key_is_bigint: Vec<bool>,
+    /// A list of derives to implement for every automatically generated Rust enum in the schema, separated by commas.
+    #[arg(
+        id = PrintSchemaArgs::CUSTOM_RUST_ENUM_TYPE_DERIVES,
+        long = "custom-enum-derives",
+        num_args = 1..,
+        action = clap::ArgAction::Append,
+    )]
+    pub custom_rust_enum_type_derives: Vec<String>,
+    /// Generate Rust enum type definitions for sql side enum types
+    #[arg(long = "no-generate-rust-enum-types", action = ArgAction::SetTrue)]
+    pub no_generate_rust_enum_types: bool,
 }
 
 #[tracing::instrument]
@@ -319,8 +339,24 @@ pub fn run_infer_schema(
         .set_filter(&args)?
         .update_config(args)?
         .print_schema;
+    let multi_schema_safe_tables = if root_config.has_multiple_schema() {
+        Some(all_safe_tables_for_multi_schema(&mut conn, &root_config)?)
+    } else {
+        None
+    };
+    let multi_schema_table_prefixes = if root_config.has_multiple_schema() {
+        Some(multi_schema_table_prefixes(&mut conn, &root_config, false)?)
+    } else {
+        None
+    };
     for config in root_config.all_configs.values() {
-        run_print_schema(&mut conn, config, &mut stdout())?;
+        run_print_schema(
+            &mut conn,
+            config,
+            &mut stdout(),
+            multi_schema_safe_tables.as_deref(),
+            multi_schema_table_prefixes.as_ref(),
+        )?;
     }
 
     Ok(())
@@ -367,8 +403,15 @@ pub fn run_print_schema<W: IoWrite>(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
     output: &mut W,
+    multi_schema_safe_tables: Option<&[TableName]>,
+    multi_schema_table_prefixes: Option<&BTreeMap<TableName, String>>,
 ) -> Result<(), crate::errors::Error> {
-    let schema = output_schema(connection, config)?;
+    let schema = output_schema(
+        connection,
+        config,
+        multi_schema_safe_tables,
+        multi_schema_table_prefixes,
+    )?;
 
     output
         .write_all(schema.as_bytes())
@@ -476,10 +519,223 @@ fn sqlite_diesel_types() -> HashSet<&'static str> {
     types
 }
 
+fn escape_rust_string(input: &str) -> String {
+    let mut number_of_quotes = 0;
+    let mut number_of_hashes = 0;
+    for c in input.chars() {
+        match c {
+            '#' => number_of_hashes += 1,
+            '"' => number_of_quotes += 1,
+            _ => {}
+        }
+    }
+    let (raw, hashes) = if number_of_quotes > 0 {
+        (
+            "r",
+            Cow::Owned(std::iter::repeat_n('#', number_of_hashes + 1).collect::<String>()),
+        )
+    } else {
+        ("", Cow::Borrowed(""))
+    };
+
+    format!("{raw}{hashes}\"{input}\"{hashes}")
+}
+
+#[allow(clippy::ptr_arg)] // we need a `&String` otherwise this cannot be used with `fold`
+fn join_string(mut acc: String, el: &String) -> String {
+    if !acc.is_empty() {
+        acc.push_str(", ");
+    }
+    acc.push_str(el);
+    acc
+}
+
+struct CustomTypeInfos {
+    custom_type_list: Vec<Vec<Option<ColumnType>>>,
+    enum_variant_list: HashMap<(String, Option<String>), Vec<EnumVariant>>,
+}
+
+fn load_custom_types(
+    connection: &mut InferConnection,
+    data: &[QueryRelationData],
+    config: &config::PrintSchema,
+) -> QueryResult<CustomTypeInfos> {
+    let backend = Backend::for_connection(connection);
+    let diesel_provided_types = match backend {
+        #[cfg(feature = "postgres")]
+        Backend::Pg => pg_diesel_types(),
+        #[cfg(feature = "sqlite")]
+        Backend::Sqlite => sqlite_diesel_types(),
+        #[cfg(feature = "mysql")]
+        Backend::Mysql => mysql_diesel_types(),
+    };
+    let custom_types = data
+        .iter()
+        .map(|cd| {
+            cd.columns()
+                .iter()
+                .map(|c| {
+                    Some(&c.ty)
+                        .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
+                        // Skip generating custom SQL type definitions if the type matches any
+                        // regex specified in `except_custom_type_definitions`.
+                        // Matching is performed against:
+                        //   - the Rust type name (`ty.rust_name`),
+                        //   - the raw SQL type name (`ty.sql_name`),
+                        //   - and the schema-qualified SQL name (`schema.sql_name`), if present.
+                        .filter(|ty| {
+                            let schema_qualified =
+                                ty.schema.as_deref().map(|s| format!("{s}.{}", ty.sql_name));
+                            !config.except_custom_type_definitions.iter().any(|rx| {
+                                rx.is_match(ty.rust_name.as_str())
+                                    || rx.is_match(ty.sql_name.as_str())
+                                    || schema_qualified
+                                        .as_deref()
+                                        .is_some_and(|fq| rx.is_match(fq))
+                            })
+                        })
+                        .map(|ty| match backend {
+                            #[cfg(feature = "postgres")]
+                            Backend::Pg => ty.clone(),
+                            #[cfg(feature = "sqlite")]
+                            Backend::Sqlite => ty.clone(),
+                            #[cfg(feature = "mysql")]
+                            Backend::Mysql => {
+                                // For MySQL we generate custom types for unknown types that
+                                // are dedicated to the column
+                                use heck::ToUpperCamelCase;
+
+                                ColumnType {
+                                    rust_name: format!(
+                                        "{} {} {}",
+                                        cd.table_name().rust_name,
+                                        c.rust_name,
+                                        ty.rust_name
+                                    )
+                                    .to_upper_camel_case(),
+                                    ..ty.clone()
+                                }
+                            }
+                        })
+                })
+                .collect::<Vec<Option<ColumnType>>>()
+        })
+        .collect::<Vec<_>>();
+
+    let enum_variants = match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(pg_connection) => {
+            let types_to_generate = pg_types_to_generate(&custom_types);
+            let mut out = HashMap::new();
+            for t in types_to_generate {
+                if let Some(variants) = crate::infer_schema_internals::pg::load_enum_variants(
+                    pg_connection,
+                    &t.sql_name,
+                    t.schema.as_deref(),
+                )? {
+                    out.insert((t.sql_name.clone(), t.schema.clone()), variants);
+                }
+            }
+            out
+        }
+        #[cfg(any(feature = "mysql", feature = "sqlite"))]
+        _ => HashMap::new(),
+    };
+
+    Ok(CustomTypeInfos {
+        custom_type_list: custom_types,
+        enum_variant_list: enum_variants,
+    })
+}
+
+fn safe_tables_for_config(
+    connection: &mut InferConnection,
+    config: &config::PrintSchema,
+) -> Result<Vec<TableName>, crate::errors::Error> {
+    let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
+    let table_names = filter_table_names(
+        &unfiltered_table_names,
+        &config.filter,
+        config.include_views,
+    );
+    Ok(filter_column_structure(
+        &table_names,
+        SupportedQueryRelationStructures::Table,
+    ))
+}
+
+pub(crate) fn all_safe_tables_for_multi_schema(
+    connection: &mut InferConnection,
+    root_config: &config::RootPrintSchema,
+) -> Result<Vec<TableName>, crate::errors::Error> {
+    let mut tables = Vec::new();
+    for config in root_config.all_configs.values() {
+        tables.extend(safe_tables_for_config(connection, config)?);
+    }
+    tables.sort();
+    tables.dedup();
+    Ok(tables)
+}
+
+pub(crate) fn module_prefix_for_config(
+    config: &config::PrintSchema,
+    use_file_module_paths: bool,
+) -> Option<String> {
+    match config.schema_name() {
+        Some(pg_schema) => Some(if use_file_module_paths {
+            let file = config.file.as_ref()?;
+            let stem = file.file_stem()?.to_str()?;
+            format!("crate::{stem}::{pg_schema}")
+        } else {
+            format!("crate::{pg_schema}")
+        }),
+        None => Some(if use_file_module_paths {
+            let file = config.file.as_ref()?;
+            let stem = file.file_stem()?.to_str()?;
+            format!("crate::{stem}")
+        } else {
+            "crate".to_string()
+        }),
+    }
+}
+
+pub(crate) fn multi_schema_table_prefixes(
+    connection: &mut InferConnection,
+    root_config: &config::RootPrintSchema,
+    use_file_module_paths: bool,
+) -> Result<BTreeMap<TableName, String>, crate::errors::Error> {
+    let mut prefixes = BTreeMap::new();
+    for config in root_config.all_configs.values() {
+        let Some(prefix) = module_prefix_for_config(config, use_file_module_paths) else {
+            continue;
+        };
+        for table in safe_tables_for_config(connection, config)? {
+            prefixes.entry(table).or_insert(prefix.clone());
+        }
+    }
+    Ok(prefixes)
+}
+
+fn table_codegen_path<'a>(
+    table: &'a TableName,
+    local_safe_tables: &BTreeSet<TableName>,
+    table_prefixes: Option<&BTreeMap<TableName, String>>,
+) -> Cow<'a, str> {
+    if local_safe_tables.contains(table) {
+        Cow::Borrowed(&table.rust_name)
+    } else if let Some(prefix) = table_prefixes.and_then(|prefixes| prefixes.get(table)) {
+        Cow::Owned(format!("{prefix}::{}", table.rust_name))
+    } else {
+        Cow::Borrowed(&table.rust_name)
+    }
+}
+
 #[tracing::instrument(skip(connection))]
 pub fn output_schema(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
+    multi_schema_safe_tables: Option<&[TableName]>,
+    multi_schema_table_prefixes: Option<&BTreeMap<TableName, String>>,
 ) -> Result<String, crate::errors::Error> {
     let backend = Backend::for_connection(connection);
     let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
@@ -490,84 +746,41 @@ pub fn output_schema(
     );
 
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
-    let safe_tables =
-        &filter_column_structure(&table_names, SupportedQueryRelationStructures::Table);
+    let fk_safe_tables: Cow<'_, [TableName]> = multi_schema_safe_tables
+        .map(Cow::Borrowed)
+        .unwrap_or_else(|| {
+            Cow::Owned(filter_column_structure(
+                &table_names,
+                SupportedQueryRelationStructures::Table,
+            ))
+        });
+    let current_schema_safe_tables: Cow<'_, [TableName]> = if multi_schema_safe_tables.is_some() {
+        Cow::Owned(filter_column_structure(
+            &table_names,
+            SupportedQueryRelationStructures::Table,
+        ))
+    } else {
+        Cow::Borrowed(fk_safe_tables.as_ref())
+    };
     let foreign_keys_for_allow_tables =
-        filter_foreign_keys_for_grouping(&foreign_keys, safe_tables);
+        filter_foreign_keys_for_grouping(&foreign_keys, &fk_safe_tables);
     let duplicate_foreign_keys = duplicated_foreign_keys(&foreign_keys);
     let foreign_keys_for_joinable =
-        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, safe_tables);
+        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &fk_safe_tables)
+            .into_iter()
+            .filter(|fk| current_schema_safe_tables.contains(&fk.child_table))
+            .collect::<Vec<_>>();
     let foreign_keys_for_joinable =
         remove_duplicated_foreign_keys(&foreign_keys_for_joinable, &duplicate_foreign_keys);
+
+    let local_safe_tables: BTreeSet<TableName> =
+        current_schema_safe_tables.iter().cloned().collect();
 
     let resolver = SchemaResolverImpl::new(connection, table_names, config, unfiltered_table_names);
     let data = resolver.resolve_query_relations()?;
 
     let columns_custom_types = if config.generate_missing_sql_type_definitions() {
-        let diesel_provided_types = match backend {
-            #[cfg(feature = "postgres")]
-            Backend::Pg => pg_diesel_types(),
-            #[cfg(feature = "sqlite")]
-            Backend::Sqlite => sqlite_diesel_types(),
-            #[cfg(feature = "mysql")]
-            Backend::Mysql => mysql_diesel_types(),
-        };
-
-        Some(
-            data.iter()
-                .map(|cd| {
-                    cd.columns()
-                        .iter()
-                        .map(|c| {
-                            Some(&c.ty)
-                                .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
-                                // Skip generating custom SQL type definitions if the type matches any
-                                // regex specified in `except_custom_type_definitions`.
-                                // Matching is performed against:
-                                //   - the Rust type name (`ty.rust_name`),
-                                //   - the raw SQL type name (`ty.sql_name`),
-                                //   - and the schema-qualified SQL name (`schema.sql_name`), if present.
-                                .filter(|ty| {
-                                    let schema_qualified = ty
-                                        .schema
-                                        .as_deref()
-                                        .map(|s| format!("{s}.{}", ty.sql_name));
-                                    !config.except_custom_type_definitions.iter().any(|rx| {
-                                        rx.is_match(ty.rust_name.as_str())
-                                            || rx.is_match(ty.sql_name.as_str())
-                                            || schema_qualified
-                                                .as_deref()
-                                                .is_some_and(|fq| rx.is_match(fq))
-                                    })
-                                })
-                                .map(|ty| match backend {
-                                    #[cfg(feature = "postgres")]
-                                    Backend::Pg => ty.clone(),
-                                    #[cfg(feature = "sqlite")]
-                                    Backend::Sqlite => ty.clone(),
-                                    #[cfg(feature = "mysql")]
-                                    Backend::Mysql => {
-                                        // For MySQL we generate custom types for unknown types that
-                                        // are dedicated to the column
-                                        use heck::ToUpperCamelCase;
-
-                                        ColumnType {
-                                            rust_name: format!(
-                                                "{} {} {}",
-                                                &cd.table_name().rust_name,
-                                                &c.rust_name,
-                                                &ty.rust_name
-                                            )
-                                            .to_upper_camel_case(),
-                                            ..ty.clone()
-                                        }
-                                    }
-                                })
-                        })
-                        .collect::<Vec<Option<ColumnType>>>()
-                })
-                .collect::<Vec<_>>(),
-        )
+        Some(load_custom_types(connection, &data, config)?)
     } else {
         None
     };
@@ -579,19 +792,21 @@ pub fn output_schema(
         with_docs: config.with_docs,
         allow_tables_to_appear_in_same_query_config: config
             .allow_tables_to_appear_in_same_query_config,
-        custom_types_for_tables: columns_custom_types.map(|custom_types_sorted| {
-            CustomTypesForTables {
-                backend,
-                types_overrides_sorted: custom_types_sorted,
-                with_docs: match config.with_docs {
-                    DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment => true,
-                    DocConfig::OnlyDatabaseComments | DocConfig::NoDocComments => false,
-                },
-                #[cfg(any(feature = "postgres", feature = "mysql"))]
-                derives: config.custom_type_derives(),
-            }
+        custom_types_for_tables: columns_custom_types.map(|t| CustomTypesForTables {
+            backend,
+            types_overrides_sorted: t.custom_type_list,
+            enum_variants: t.enum_variant_list,
+            with_docs: match config.with_docs {
+                DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment => true,
+                DocConfig::OnlyDatabaseComments | DocConfig::NoDocComments => false,
+            },
+            sql_type_derives: config.custom_type_derives(),
+            rust_type_derives: config.custom_rust_types_derives(),
+            generate_rust_enums: config.generate_rust_enum_definitions(),
         }),
         import_types: config.import_types(),
+        local_safe_tables: &local_safe_tables,
+        multi_schema_table_prefixes,
     };
 
     let mut out = String::new();
@@ -687,13 +902,66 @@ pub fn format_schema(schema: &str) -> Result<String, crate::errors::Error> {
     Ok(out)
 }
 
+struct RustEnum<'a> {
+    tpe: &'a ColumnType,
+    variants: Vec<EnumVariant>,
+    custom_derives: &'a BTreeSet<String>,
+}
+
+impl Display for RustEnum<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(
+            f,
+            "/// A Rust enum matching the database type [`{s}`](super::sql_types::{s})",
+            s = self.tpe.rust_name
+        )?;
+        writeln!(f, "///")?;
+        writeln!(f, "/// (Automatically generated by Diesel.)")?;
+        writeln!(
+            f,
+            "#[derive({})]",
+            self.custom_derives.iter().fold(String::new(), join_string)
+        )?;
+        writeln!(
+            f,
+            "#[diesel(sql_type = super::sql_types::{})]",
+            self.tpe.rust_name
+        )?;
+        writeln!(f, "pub enum {} {{", self.tpe.rust_name)?;
+        let mut out = PadAdapter::new(f);
+        for v in &self.variants {
+            writeln!(
+                out,
+                "#[diesel(rename = {})]",
+                escape_rust_string(&v.sql_name)
+            )?;
+            writeln!(out, "{},", v.rust_name())?;
+        }
+        writeln!(f, "}}\n")?;
+        Ok(())
+    }
+}
+
+struct RustEnums<'a>(Vec<RustEnum<'a>>);
+
+impl Display for RustEnums<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for e in &self.0 {
+            writeln!(f, "{e}\n")?;
+        }
+        Ok(())
+    }
+}
+
 struct CustomTypesForTables {
     backend: Backend,
     // To be zipped with tables then columns
     types_overrides_sorted: Vec<Vec<Option<ColumnType>>>,
+    enum_variants: HashMap<(String, Option<String>), Vec<EnumVariant>>,
     with_docs: bool,
-    #[cfg(any(feature = "postgres", feature = "mysql"))]
-    derives: Vec<String>,
+    sql_type_derives: BTreeSet<String>,
+    rust_type_derives: BTreeSet<String>,
+    generate_rust_enums: bool,
 }
 
 pub struct CustomTypesForTablesForDisplay<'a> {
@@ -708,31 +976,36 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
             #[cfg(feature = "postgres")]
             Backend::Pg => {
                 let _ = &self.tables;
-                let mut types_to_generate: Vec<&ColumnType> = self
-                    .custom_types
-                    .types_overrides_sorted
-                    .iter()
-                    .flatten()
-                    .flatten()
-                    .collect();
+                let types_to_generate =
+                    pg_types_to_generate(&self.custom_types.types_overrides_sorted);
                 if types_to_generate.is_empty() {
                     return Ok(());
                 }
-                types_to_generate
-                    .sort_unstable_by_key(|column_type| column_type.rust_name.as_str());
-                // On PG we expect that there may be duplicates because types names are not made
-                // specific to the column, unlike MySQL
-                types_to_generate.dedup_by_key(|column_type| column_type.rust_name.as_str());
 
                 if self.custom_types.with_docs {
                     writeln!(f, "/// A module containing custom SQL type definitions")?;
                     writeln!(f, "///")?;
                     writeln!(f, "/// (Automatically generated by Diesel.)")?;
                 }
+                let mut rust_types = Vec::new();
                 let mut out = PadAdapter::new(f);
                 writeln!(out, "pub mod sql_types {{")?;
-
                 for (idx, &ct) in types_to_generate.iter().enumerate() {
+                    let is_enum = if let Some(variants) = self
+                        .custom_types
+                        .enum_variants
+                        .get(&(ct.sql_name.clone(), ct.schema.clone()))
+                    {
+                        rust_types.push(RustEnum {
+                            tpe: ct,
+                            variants: variants.clone(),
+                            custom_derives: &self.custom_types.rust_type_derives,
+                        });
+                        true
+                    } else {
+                        false
+                    };
+
                     if idx != 0 {
                         writeln!(out)?;
                     }
@@ -745,25 +1018,50 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                         writeln!(out, "///")?;
                         writeln!(out, "/// (Automatically generated by Diesel.)")?;
                     }
-                    writeln!(out, "#[derive({})]", self.custom_types.derives.join(", "))?;
+                    writeln!(
+                        out,
+                        "#[derive({})]",
+                        self.custom_types
+                            .sql_type_derives
+                            .iter()
+                            .fold(String::new(), join_string)
+                    )?;
                     if let Some(ref schema) = ct.schema {
                         writeln!(
                             out,
-                            "#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]",
-                            ct.sql_name, schema
+                            "#[diesel(postgres_type(name = {}, schema = {}))]",
+                            escape_rust_string(&ct.sql_name),
+                            escape_rust_string(schema)
                         )?;
                     } else {
-                        writeln!(out, "#[diesel(postgres_type(name = \"{}\"))]", ct.sql_name)?;
+                        writeln!(
+                            out,
+                            "#[diesel(postgres_type(name = {}))]",
+                            escape_rust_string(&ct.sql_name)
+                        )?;
+                    }
+                    if is_enum {
+                        writeln!(out, "#[diesel(enum_type)]")?;
                     }
                     writeln!(out, "pub struct {};", ct.rust_name)?;
                 }
 
                 writeln!(f, "}}\n")?;
+                rust_enum_module(f, rust_types, self.custom_types.generate_rust_enums)?;
+
                 Ok(())
             }
             #[cfg(feature = "sqlite")]
             Backend::Sqlite => {
-                let _ = (&f, self.custom_types.with_docs, &self.tables);
+                let _ = (
+                    &f,
+                    self.custom_types.with_docs,
+                    &self.tables,
+                    &self.custom_types.generate_rust_enums,
+                    &self.custom_types.rust_type_derives,
+                    &self.custom_types.enum_variants,
+                    &self.custom_types.sql_type_derives,
+                );
 
                 let mut types_to_generate: Vec<&ColumnType> = self
                     .custom_types
@@ -781,6 +1079,15 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                 for t in &types_to_generate {
                     eprintln!("Encountered unknown type for Sqlite: {}", t.sql_name);
                 }
+                // this is here to make rustc happy to not warn about unused code
+                if false {
+                    let a = EnumVariant {
+                        order: 0,
+                        sql_name: "".into(),
+                    };
+                    let _ = a.rust_name();
+                    rust_enum_module(f, Vec::new(), false)?;
+                }
                 unreachable!(
                     "Diesel only support a closed set of types for Sqlite. \
                      If you ever see this error message please open an \
@@ -790,10 +1097,11 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
             }
             #[cfg(feature = "mysql")]
             Backend::Mysql => {
+                let _ = &self.custom_types.enum_variants;
                 let CustomTypesForTables {
                     types_overrides_sorted,
                     with_docs,
-                    derives,
+                    sql_type_derives: derives,
                     ..
                 } = self.custom_types;
                 let mut types_to_generate: Vec<(&ColumnType, &TableName, &ColumnDefinition)> =
@@ -816,11 +1124,23 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                     writeln!(f, "///")?;
                     writeln!(f, "/// (Automatically generated by Diesel.)")?;
                 }
-
+                let mut rust_types = Vec::new();
                 let mut out = PadAdapter::new(f);
                 writeln!(out, "pub mod sql_types {{")?;
 
                 for (idx, &(custom_type, table, column)) in types_to_generate.iter().enumerate() {
+                    let enum_type = if let Some(variants) =
+                        crate::infer_schema_internals::mysql::get_enum_variants(&column.ty)
+                    {
+                        rust_types.push(RustEnum {
+                            tpe: custom_type,
+                            variants,
+                            custom_derives: &self.custom_types.rust_type_derives,
+                        });
+                        true
+                    } else {
+                        false
+                    };
                     if idx != 0 {
                         writeln!(out)?;
                     }
@@ -838,7 +1158,11 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                         writeln!(out, "/// (Automatically generated by Diesel.)")?;
                     }
 
-                    writeln!(out, "#[derive({})]", derives.join(", "))?;
+                    writeln!(
+                        out,
+                        "#[derive({})]",
+                        derives.iter().fold(String::new(), join_string)
+                    )?;
 
                     let mysql_name = {
                         let mut c = custom_type.sql_name.chars();
@@ -850,14 +1174,35 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                     };
 
                     writeln!(out, "#[diesel(mysql_type(name = \"{mysql_name}\"))]")?;
+                    if enum_type {
+                        writeln!(out, "#[diesel(enum_type)]")?;
+                    }
                     writeln!(out, "pub struct {};", custom_type.rust_name)?;
                 }
 
                 writeln!(f, "}}\n")?;
+                rust_enum_module(f, rust_types, self.custom_types.generate_rust_enums)?;
                 Ok(())
             }
         }
     }
+}
+
+fn rust_enum_module(
+    f: &mut Formatter<'_>,
+    rust_types: Vec<RustEnum<'_>>,
+    generate_rust_enums: bool,
+) -> Result<(), fmt::Error> {
+    if generate_rust_enums && !rust_types.is_empty() {
+        writeln!(f, "/// A module containing custom Rust type definitions")?;
+        writeln!(f, "///")?;
+        writeln!(f, "/// (Automatically generated by Diesel.)")?;
+        writeln!(f, "pub mod rust_types {{")?;
+        let mut out = PadAdapter::new(f);
+        writeln!(out, "{}", RustEnums(rust_types))?;
+        writeln!(f, "}}\n")?;
+    }
+    Ok(())
 }
 
 struct ModuleDefinition<'a>(&'a str, QueryRelationDefinitions<'a>);
@@ -892,6 +1237,8 @@ struct QueryRelationDefinitions<'a> {
     allow_tables_to_appear_in_same_query_config: AllowTablesToAppearInSameQueryConfig,
     import_types: Option<&'a [String]>,
     custom_types_for_tables: Option<CustomTypesForTables>,
+    local_safe_tables: &'a BTreeSet<TableName>,
+    multi_schema_table_prefixes: Option<&'a BTreeMap<TableName, String>>,
 }
 
 impl<'a> Display for QueryRelationDefinitions<'a> {
@@ -923,7 +1270,15 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
         }
 
         for foreign_key in &self.fk_constraints_for_joinable {
-            writeln!(f, "{}", Joinable(foreign_key))?;
+            writeln!(
+                f,
+                "{}",
+                Joinable {
+                    constraint: foreign_key,
+                    local_safe_tables: self.local_safe_tables,
+                    table_prefixes: self.multi_schema_table_prefixes,
+                }
+            )?;
         }
 
         let table_groups = match self.allow_tables_to_appear_in_same_query_config {
@@ -938,9 +1293,41 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
                 &self.fk_constraints_for_allow_tables,
             ),
             AllowTablesToAppearInSameQueryConfig::AllTables => {
-                vec![self.data.iter().map(|table| table.table_name()).collect()]
+                let all_local_tables: Vec<_> =
+                    self.data.iter().map(|table| table.table_name()).collect();
+                if all_local_tables.len() >= 2 {
+                    vec![all_local_tables]
+                } else {
+                    foreign_key_table_groups(
+                        self.data
+                            .iter()
+                            .filter_map(|t| match t {
+                                QueryRelationData::View(_) => None,
+                                QueryRelationData::Table(table_data) => Some(table_data),
+                            })
+                            .collect(),
+                        &self.fk_constraints_for_allow_tables,
+                    )
+                }
             }
             AllowTablesToAppearInSameQueryConfig::None => vec![],
+        };
+        let table_groups = if self.multi_schema_table_prefixes.is_some() {
+            table_groups
+                .into_iter()
+                .filter(|table_group| {
+                    let all_local = table_group
+                        .iter()
+                        .all(|table| self.local_safe_tables.contains(*table));
+                    let has_local_joinable_child = self
+                        .fk_constraints_for_joinable
+                        .iter()
+                        .any(|fk| table_group.iter().any(|table| **table == fk.child_table));
+                    all_local || has_local_joinable_child
+                })
+                .collect()
+        } else {
+            table_groups
         };
         for (table_group_index, table_group) in table_groups
             .into_iter()
@@ -955,7 +1342,15 @@ impl<'a> Display for QueryRelationDefinitions<'a> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in table_group {
-                    write!(out, "{},", table.rust_name)?;
+                    write!(
+                        out,
+                        "{},",
+                        table_codegen_path(
+                            table,
+                            self.local_safe_tables,
+                            self.multi_schema_table_prefixes,
+                        )
+                    )?;
                 }
             }
             writeln!(f, ");")?;
@@ -1118,7 +1513,11 @@ impl<'a> Display for QueryRelationDefinition<'a> {
             }
 
             if self.table.table_name().rust_name != self.table.table_name().sql_name {
-                writeln!(out, r#"#[sql_name = "{full_sql_name}"]"#,)?;
+                writeln!(
+                    out,
+                    r#"#[sql_name = {}]"#,
+                    escape_rust_string(&full_sql_name)
+                )?;
             }
 
             write!(out, "{} ", self.table.table_name())?;
@@ -1201,7 +1600,11 @@ impl Display for ColumnDefinitions<'_> {
 
                 // Write out attributes
                 if column.rust_name != column.sql_name {
-                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
+                    writeln!(
+                        out,
+                        r#"#[sql_name = {}]"#,
+                        escape_rust_string(&column.sql_name)
+                    )?;
                 }
                 if let Some(max_length) = column.ty.max_length {
                     writeln!(out, r#"#[max_length = {max_length}]"#)?;
@@ -1215,18 +1618,29 @@ impl Display for ColumnDefinitions<'_> {
     }
 }
 
-struct Joinable<'a>(&'a ForeignKeyConstraint);
+struct Joinable<'a> {
+    constraint: &'a ForeignKeyConstraint,
+    local_safe_tables: &'a BTreeSet<TableName>,
+    table_prefixes: Option<&'a BTreeMap<TableName, String>>,
+}
 
 impl Display for Joinable<'_> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let child_table_name = &self.0.child_table.rust_name;
-
-        let parent_table_name = &self.0.parent_table.rust_name;
+        let child_table_name = table_codegen_path(
+            &self.constraint.child_table,
+            self.local_safe_tables,
+            self.table_prefixes,
+        );
+        let parent_table_name = table_codegen_path(
+            &self.constraint.parent_table,
+            self.local_safe_tables,
+            self.table_prefixes,
+        );
 
         write!(
             f,
             "diesel::joinable!({} -> {} ({}));",
-            child_table_name, parent_table_name, self.0.foreign_key_columns_rust[0],
+            child_table_name, parent_table_name, self.constraint.foreign_key_columns_rust[0],
         )
     }
 }
@@ -1370,4 +1784,14 @@ impl str::FromStr for AllowTablesToAppearInSameQueryConfig {
             }
         })
     }
+}
+
+#[cfg(feature = "postgres")]
+fn pg_types_to_generate(custom_types: &[Vec<Option<ColumnType>>]) -> Vec<&ColumnType> {
+    let mut types_to_generate: Vec<&ColumnType> = custom_types.iter().flatten().flatten().collect();
+    types_to_generate.sort_unstable_by_key(|column_type| column_type.rust_name.as_str());
+    // On PG we expect that there may be duplicates because types names are not made
+    // specific to the column, unlike MySQL
+    types_to_generate.dedup_by_key(|column_type| column_type.rust_name.as_str());
+    types_to_generate
 }

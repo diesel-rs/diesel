@@ -1,4 +1,7 @@
+use diesel::deserialize::Queryable;
 use diesel_table_macro_syntax::ColumnDef;
+use heck::ToPascalCase;
+use std::borrow::Cow;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
@@ -24,6 +27,7 @@ pub struct ColumnType {
     pub is_unsigned: bool,
     pub record: Option<Vec<ColumnType>>,
     pub max_length: Option<u64>,
+    pub unmodified_type: String,
 }
 
 impl ColumnType {
@@ -59,6 +63,7 @@ impl ColumnType {
             is_unsigned: last.ident == "Unsigned",
             record: None,
             max_length,
+            unmodified_type: last.ident.to_string(),
         };
         let is_range = last.ident == "Range";
         let is_multirange = last.ident == "Multirange";
@@ -287,4 +292,21 @@ impl SupportedQueryRelationStructures {
     pub const ALL_NAMES: [&'static str; Self::VARIANT_COUNT] = Self::display_all();
     #[cfg(feature = "uses_information_schema")]
     const VARIANT_COUNT: usize = 2;
+}
+
+#[derive(Queryable, PartialEq, Debug, Clone)]
+pub struct EnumVariant {
+    pub order: i32,
+    pub sql_name: String,
+}
+
+impl EnumVariant {
+    pub fn rust_name(&self) -> String {
+        let n = if super::inference::is_reserved_name(&self.sql_name) {
+            Cow::Owned(format!("{}_", self.sql_name))
+        } else {
+            Cow::Borrowed(&self.sql_name)
+        };
+        n.to_pascal_case()
+    }
 }

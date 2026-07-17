@@ -16,7 +16,7 @@ use crate::query_source::{QueryRelation, QueryRelationField, TableNotEqual};
 pub trait FieldAliasMapper<S> {
     /// Output type when mapping `C` to `Alias<S>`
     ///
-    /// If `C: Column<Table = S::Table>`, `Out = AliasedField<S, C>`  
+    /// If `C: Column<Table = S::Table>`, `Out = AliasedField<S, C>`
     /// Otherwise, `Out = C`
     type Out;
 
@@ -91,7 +91,7 @@ macro_rules! field_alias_mapper {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(field_alias_mapper);
+crate::for_each_tuple!(field_alias_mapper);
 
 // The following `FieldAliasMapper` impls are useful for the generic join implementations.
 // More may be added.

@@ -1,5 +1,7 @@
 use alloc::boxed::Box;
 
+use crate::expression::{ValidGrouping, is_aggregate};
+
 simple_clause!(
     /// DSL node that represents that no order clause is set
     NoOrderClause,
@@ -25,4 +27,12 @@ where
     fn from(_: NoOrderClause) -> Self {
         None
     }
+}
+
+impl<GB> ValidGrouping<GB> for NoOrderClause {
+    type IsAggregate = is_aggregate::Never;
+}
+
+impl<GB, Expr: ValidGrouping<GB>> ValidGrouping<GB> for OrderClause<Expr> {
+    type IsAggregate = Expr::IsAggregate;
 }
