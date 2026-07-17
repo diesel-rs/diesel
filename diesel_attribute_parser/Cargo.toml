@@ -1,0 +1,26 @@
+[package]
+name = "diesel_attribute_parser"
+version = "0.1.0"
+rust-version.workspace = true
+include.workspace = true
+edition.workspace = true
+license = "MIT OR Apache-2.0"
+description = "You should not use this crate directly, it is internal to Diesel."
+documentation = "https://diesel.rs/guides/"
+homepage = "https://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel/"
+autotests = false
+
+[dependencies]
+syn = { version = "2.0", features = ["derive", "fold", "full", "visit-mut"] }
+quote = "1.0.9"
+proc-macro2 = "1.0.27"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+without-deprecated = []
+with-deprecated = []
+nightly = ["proc-macro2/nightly"]

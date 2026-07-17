@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
+use diesel_attribute_parser::AttributeSpanWrapper;
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned as _;
 use syn::{DeriveInput, Expr, Path, Result, Type, parse_quote};
 
-use crate::attrs::AttributeSpanWrapper;
 use crate::field::Field;
 use crate::model::Model;
 use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};

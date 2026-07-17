@@ -1,3 +1,5 @@
+use diesel_attribute_parser::util::parse_eq;
+use diesel_attribute_parser::{AttributeSpanWrapper, MySpanned};
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
@@ -16,9 +18,6 @@ use syn::{
 use syn::{GenericParam, Meta};
 use syn::{LitBool, Path};
 use syn::{LitInt, MetaNameValue};
-
-use crate::attrs::{AttributeSpanWrapper, MySpanned};
-use crate::util::parse_eq;
 
 const VARIADIC_VARIANTS_DEFAULT: usize = 2;
 const VARIADIC_ARG_COUNT_ENV: Option<&str> = option_env!("DIESEL_VARIADIC_FUNCTION_ARGS");

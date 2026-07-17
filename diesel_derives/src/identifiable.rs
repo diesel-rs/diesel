@@ -1,10 +1,10 @@
+use diesel_attribute_parser::AttributeSpanWrapper;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
 use syn::Result;
 use syn::parse_quote;
 
-use crate::attrs::AttributeSpanWrapper;
 use crate::field::Field;
 use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;

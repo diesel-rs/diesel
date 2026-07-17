@@ -2,7 +2,7 @@ use syn::parse::{ParseStream, Result};
 use syn::{Ident, LitBool, parenthesized};
 
 use crate::deprecated::utils::parse_eq_and_lit_str;
-use crate::util::TREAT_NONE_AS_NULL_NOTE;
+use crate::notes::TREAT_NONE_AS_NULL_NOTE;
 
 pub fn parse_changeset_options(name: Ident, input: ParseStream) -> Result<(Ident, LitBool)> {
     if input.is_empty() {

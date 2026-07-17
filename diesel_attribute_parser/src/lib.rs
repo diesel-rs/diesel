@@ -7,26 +7,54 @@ use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Comma;
-use syn::{Attribute, Expr, Ident, LitBool, LitStr, Path, Type, TypePath};
+use syn::{Attribute, Expr, Ident, LitBool, LitStr, Path, Token, Type, TypePath};
 
 use crate::deprecated::ParseDeprecated;
-use crate::model::CheckForBackend;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
-use crate::util::{
-    BASE_QUERY_NOTE, BASE_QUERY_TYPE_NOTE, BELONGS_TO_NOTE, COLUMN_NAME_NOTE, DESERIALIZE_AS_NOTE,
-    MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, RENAME_ALL_NOTE, RENAME_NOTE, SELECT_EXPRESSION_NOTE,
-    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQL_TYPE_NOTE, SQLITE_TYPE_NOTE,
-    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE, parse_eq,
-    parse_eq_type, parse_paren, unknown_attribute,
-};
+use crate::util::{parse_eq, parse_eq_type, parse_paren, parse_paren_list, unknown_attribute};
 
-use crate::util::{CHECK_FOR_BACKEND_NOTE, parse_paren_list};
+use self::notes::*;
+
+mod deprecated;
+pub mod parsers;
+pub mod util;
+
+pub enum CheckForBackend {
+    Backends(Punctuated<TypePath, Token![,]>),
+    Disabled(LitBool),
+}
+
+mod notes {
+    pub const COLUMN_NAME_NOTE: &str = "column_name = foo";
+    pub const SQL_TYPE_NOTE: &str = "sql_type = Foo";
+    pub const SERIALIZE_AS_NOTE: &str = "serialize_as = Foo";
+    pub const DESERIALIZE_AS_NOTE: &str = "deserialize_as = Foo";
+    pub const TABLE_NAME_NOTE: &str = "table_name = foo";
+    pub const TREAT_NONE_AS_DEFAULT_VALUE_NOTE: &str = "treat_none_as_default_value = true";
+    pub const TREAT_NONE_AS_NULL_NOTE: &str = "treat_none_as_null = true";
+    pub const BELONGS_TO_NOTE: &str = "belongs_to(Foo, foreign_key = foo_id)";
+    pub const MYSQL_TYPE_NOTE: &str = "mysql_type(name = \"foo\")";
+    pub const SQLITE_TYPE_NOTE: &str = "sqlite_type(name = \"foo\")";
+    pub const POSTGRES_TYPE_NOTE: &str = "postgres_type(name = \"foo\", schema = \"public\")";
+    pub const POSTGRES_TYPE_NOTE_ID: &str = "postgres_type(oid = 37, array_oid = 54)";
+    pub const SELECT_EXPRESSION_NOTE: &str =
+        "select_expression = schema::table_name::column_name.is_not_null()";
+    pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
+        "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
+    pub const CHECK_FOR_BACKEND_NOTE: &str = "diesel::pg::Pg";
+    pub const BASE_QUERY_NOTE: &str =
+        "base_query = schema::table_name::table.order_by(schema::table_name::id)";
+    pub const BASE_QUERY_TYPE_NOTE: &str =
+        "base_query_type = dsl::OrderBy<schema::table_name::table, schema::table_name::id>";
+    pub const RENAME_ALL_NOTE: &str = "rename_all = \"camelCase\"";
+    pub const RENAME_NOTE: &str = "rename = \"your_name\"";
+}
 
 pub trait MySpanned {
     fn span(&self) -> Span;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct AttributeSpanWrapper<T> {
     pub item: T,
     pub attribute_span: Span,
@@ -287,7 +315,7 @@ impl Parse for StructAttr {
             )),
             "primary_key" => Ok(StructAttr::PrimaryKey(
                 name,
-                parse_paren_list(input, "key1, key2", syn::Token![,])?,
+                parse_paren_list(input, "key1, key2", Token![,])?,
             )),
             "check_for_backend" => {
                 let value = if parse_paren::<DisabledCheckForBackend>(&input.fork(), "").is_ok() {
@@ -298,7 +326,7 @@ impl Parse for StructAttr {
                     CheckForBackend::Backends(parse_paren_list(
                         input,
                         CHECK_FOR_BACKEND_NOTE,
-                        syn::Token![,],
+                        Token![,],
                     )?)
                 };
                 Ok(StructAttr::CheckForBackend(name, value))
