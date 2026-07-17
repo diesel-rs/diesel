@@ -40,6 +40,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for generating matching Rust enums for database enums in Diesel-CLI
 * Added `#[diesel_async]` attribute to `#[derive(MultiConnection)]` to support async MultiConnections. 
 * Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
+* Added `--no-schema` CLI flag to the `migration run` subcommand
 
 ### Fixed
 
