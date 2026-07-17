@@ -34,7 +34,7 @@ pub enum MigrationFormat {
 pub enum MigrationCommand {
     /// Runs all pending migrations.
     Run {
-        /// Do not regenerate `schema.rs` during migration.
+        /// Do not regenerate `schema.rs` while running the migrations.
         #[arg(long = "no-schema", action = ArgAction::SetTrue)]
         no_schema: bool,
     },

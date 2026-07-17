@@ -11,7 +11,7 @@ Options:
           Specifies the database URL to connect to. Falls back to the DATABASE_URL environment variable if unspecified
 
       --no-schema
-          Do not regenerate `schema.rs` during migration
+          Do not regenerate `schema.rs` while running the migrations
 
       --config-file <CONFIG_FILE>
           The location of the configuration file to use. Falls back to the `DIESEL_CONFIG_FILE` environment variable if unspecified. Defaults to `diesel.toml` in your project root. See diesel.rs/guides/configuring-diesel-cli for documentation on this file
