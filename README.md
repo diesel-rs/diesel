@@ -16,7 +16,7 @@ Rust."
 
 Supported databases:
 1. [PostgreSQL](https://docs.diesel.rs/main/diesel/pg/index.html)
-2. [MySQL](https://docs.diesel.rs/main/diesel/mysql/index.html)
+2. [MySQL (MariaDB)](https://docs.diesel.rs/main/diesel/mysql/index.html)
 3. [SQLite](https://docs.diesel.rs/main/diesel/sqlite/index.html)
 
 You can configure the database backend in `Cargo.toml`:

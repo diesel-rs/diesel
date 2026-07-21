@@ -1,4 +1,4 @@
-//! Provides types and functions related to working with MySQL
+//! Provides types and functions related to working with MySQL and MariaDB
 //!
 //! Much of this module is re-exported from database agnostic locations.
 //! However, if you are writing code specifically to extend Diesel on
