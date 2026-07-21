@@ -24,6 +24,33 @@ pub(crate) fn table_1() {
 }
 
 #[test]
+pub(crate) fn table_with_docs() {
+    // A documented table with documented columns must keep the caller's docs
+    // and receive no injected `#[doc(hidden)]`.
+    let input = quote::quote! {
+        /// The users of the application.
+        users {
+            /// The primary key.
+            id -> Integer,
+            /// The user's display name.
+            name -> Text,
+        }
+    };
+    let name = if cfg!(feature = "postgres") {
+        "table_with_docs (postgres)"
+    } else {
+        "table_with_docs"
+    };
+
+    expand_with(
+        &crate::table_proc_inner as &dyn Fn(_) -> _,
+        input,
+        FunctionMacro(syn::parse_quote!(table)),
+        name,
+    );
+}
+
+#[test]
 pub(crate) fn table_with_column_feature_gate() {
     let input = quote::quote! {
         users {

@@ -4,6 +4,7 @@ expression: out
 info:
   input: "table! {\n    users { id -> Integer, name -> Text, }\n}\n"
 ---
+#[doc(hidden)]
 #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
 pub mod users {
     const _: () = {
@@ -539,6 +540,7 @@ pub mod users {
         }
         impl diesel::SelectableExpression<table> for star {}
         impl diesel::AppearsOnTable<table> for star {}
+        #[doc(hidden)]
         #[allow(non_camel_case_types, dead_code)]
         #[derive(
             Debug,
@@ -793,6 +795,7 @@ pub mod users {
             type Table = super::table;
             const NAME: &'static str = "id";
         }
+        #[doc(hidden)]
         #[allow(non_camel_case_types, dead_code)]
         #[derive(
             Debug,

@@ -15,6 +15,15 @@ fn has_cfg_attributes(column: &ColumnDef) -> bool {
     column.meta.iter().any(|attr| attr.path().is_ident("cfg"))
 }
 
+/// Emits `#[doc(hidden)]` unless the caller documented the item.
+fn doc_hidden_unless_documented(meta: &[syn::Attribute]) -> TokenStream {
+    if meta.iter().any(|attr| attr.path().is_ident("doc")) {
+        TokenStream::new()
+    } else {
+        quote::quote!(#[doc(hidden)])
+    }
+}
+
 struct CfgGroup<'a> {
     cfg_attrs: Vec<&'a syn::Attribute>,
     columns: Vec<&'a ColumnDef>,
@@ -550,8 +559,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 
     let imports_for_column_module = imports.iter().map(fix_import_for_submodule);
 
+    let module_doc_hidden = doc_hidden_unless_documented(meta);
     quote::quote! {
         #(#meta)*
+        #module_doc_hidden
         #[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
         pub mod #table_name {
             const _: () = {
@@ -1091,8 +1102,10 @@ fn expand_column_def(
         }
     };
 
+    let column_doc_hidden = doc_hidden_unless_documented(meta);
     quote::quote_spanned! {span=>
         #(#meta)*
+        #column_doc_hidden
         #[allow(non_camel_case_types, dead_code)]
         #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
         pub struct #column_name;

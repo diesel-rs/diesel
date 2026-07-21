@@ -56,6 +56,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* The `table!` and `view!` macros now mark the generated schema module and column structs `#[doc(hidden)]` when the caller supplied no doc comment, so the generated output compiles cleanly under `missing_docs`. Documented items keep the caller's docs and stay visible.
 
 ## [2.3.11] 2026-07-10
 

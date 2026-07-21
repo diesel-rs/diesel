@@ -34,6 +34,9 @@ proc-macro = true
 [[test]]
 name = "tests"
 
+[[test]]
+name = "missing_docs"
+
 [features]
 default = []
 nightly = ["proc-macro2/nightly", "diesel_attribute_parser/nightly"]
