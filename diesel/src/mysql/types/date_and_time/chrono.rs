@@ -70,7 +70,7 @@ impl ToSql<Time, Mysql> for NaiveTime {
             second: self.second() as libc::c_uint,
             day: 0,
             month: 0,
-            second_part: 0,
+            second_part: libc::c_ulong::from(self.nanosecond() / 1_000),
             year: 0,
             neg: false,
             time_type: MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
@@ -85,7 +85,8 @@ impl ToSql<Time, Mysql> for NaiveTime {
 impl FromSql<Time, Mysql> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Time, Mysql>>::from_sql(bytes)?;
-        NaiveTime::from_hms_opt(mysql_time.hour, mysql_time.minute, mysql_time.second)
+        let micro = mysql_time.second_part.try_into()?;
+        NaiveTime::from_hms_micro_opt(mysql_time.hour, mysql_time.minute, mysql_time.second, micro)
             .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
     }
 }
@@ -210,6 +211,24 @@ mod tests {
             Ok(roughly_half_past_eleven),
             query.get_result::<NaiveTime>(connection)
         );
+    }
+
+    #[diesel_test_helper::test]
+    fn times_of_day_with_microseconds_encode_correctly() {
+        let connection = &mut connection();
+
+        let with_micros = NaiveTime::from_hms_micro_opt(8, 30, 0, 123_456).unwrap();
+        let query = select(sql::<Time>("CAST('08:30:00.123456' AS TIME(6))").eq(with_micros));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn times_of_day_with_microseconds_decode_correctly() {
+        let connection = &mut connection();
+
+        let with_micros = NaiveTime::from_hms_micro_opt(8, 30, 0, 123_456).unwrap();
+        let query = select(sql::<Time>("CAST('08:30:00.123456' AS TIME(6))"));
+        assert_eq!(Ok(with_micros), query.get_result::<NaiveTime>(connection));
     }
 
     #[diesel_test_helper::test]
