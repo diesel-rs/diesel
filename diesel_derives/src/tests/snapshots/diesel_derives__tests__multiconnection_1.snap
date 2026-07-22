@@ -1970,8 +1970,8 @@ mod multi_connection_impl {
                         let r = <PgConnection as diesel::connection::LoadConnection>::load(
                             conn,
                             query,
-                        )?;
-                        Ok(super::row::MultiCursor::Pg(r))
+                        );
+                        Ok(super::row::MultiCursor::Pg(r?))
                     }
                     Self::Sqlite(conn) => {
                         let query = SerializedQuery {
@@ -1985,8 +1985,8 @@ mod multi_connection_impl {
                         let r = <diesel::SqliteConnection as diesel::connection::LoadConnection>::load(
                             conn,
                             query,
-                        )?;
-                        Ok(super::row::MultiCursor::Sqlite(r))
+                        );
+                        Ok(super::row::MultiCursor::Sqlite(r?))
                     }
                 }
             }

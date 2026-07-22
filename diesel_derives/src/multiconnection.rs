@@ -239,7 +239,7 @@ fn generate_connection_impl(
                 query_builder: super::query_builder::MultiQueryBuilder::#variant_ident(Default::default()),
                 p: std::marker::PhantomData::<#ty>,
             };
-            let r = <#ty as #conn_load>::load(conn, query)#await_token?;
+            let r = <#ty as #conn_load>::load(conn, query);
         }
     };
 
@@ -268,7 +268,7 @@ fn generate_connection_impl(
                     #load_query
                     Box::pin(async move {
                         Ok(Box::pin(
-                            futures_util::StreamExt::map(r, |result| result.map(super::row::MultiRow::#variant_ident))
+                            futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
                         ) as Self::Stream<'conn, 'query>)
                     })
                 }
@@ -307,7 +307,7 @@ fn generate_connection_impl(
             quote::quote! {
                 Self::#variant_ident(conn) => {
                     #load_query
-                    Ok(super::row::MultiCursor::#variant_ident(r))
+                    Ok(super::row::MultiCursor::#variant_ident(r?))
                 }
             }
         });
