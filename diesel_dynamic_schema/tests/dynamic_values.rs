@@ -256,6 +256,50 @@ fn dynamic_query() {
 }
 
 #[test]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
+fn mixed_type_boxed_fields() {
+    let connection = &mut super::establish_connection();
+    crate::create_user_table(connection);
+    sql_query("INSERT INTO users (id, name, hair_color) VALUES (42, 'Sean', 'black')")
+        .execute(connection)
+        .unwrap();
+
+    let users = diesel_dynamic_schema::table("users");
+    let id = users.column::<Integer, _>("id");
+    let name = users.column::<Text, _>("name");
+    let hair_color = users.column::<Text, _>("hair_color");
+
+    let mut select = DynamicSelectClause::new();
+
+    // `id` (Integer) and `name`/`hair_color` (Text) are different Rust types, so
+    // they can't be combined via `add_fields`, which requires a single common
+    // type. `box_field` erases that difference (using `select`'s own DB/QS
+    // types to resolve the conversion) so they can all be added to the same
+    // select clause in one `add_boxed_fields` call.
+    let boxed_fields = vec![
+        select.box_field(id),
+        select.box_field(name),
+        select.box_field(hair_color),
+    ];
+
+    select.add_boxed_fields(boxed_fields);
+    assert_eq!(select.len(), 3);
+
+    let actual_data: Vec<DynamicRow<NamedField<MyDynamicValue>>> =
+        users.select(select).load(connection).unwrap();
+
+    assert_eq!(actual_data[0]["id"], MyDynamicValue::Integer(42));
+    assert_eq!(
+        actual_data[0]["name"],
+        MyDynamicValue::String("Sean".into())
+    );
+    assert_eq!(
+        actual_data[0]["hair_color"],
+        MyDynamicValue::String("black".into())
+    );
+}
+
+#[test]
 fn mixed_value_query() {
     use diesel::dsl::sql;
 
