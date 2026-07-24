@@ -1,0 +1,192 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Traits related to relationships between multiple tables."><title>diesel::associations - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0-nightly (7908a1d65 2023-04-17)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../static.files/main-1a524efa7bd4ab32.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../../diesel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../../diesel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Module associations</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#traits">Traits</a></li><li><a href="#derives">Derive Macros</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">diesel</a>::<wbr><a class="mod" href="#">associations</a><button id="copy-path" title="Copy item path to clipboard"><img src="../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/diesel/associations/mod.rs.html#1-412">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Traits related to relationships between multiple tables.</p>
+<p>Associations in Diesel are always child-to-parent.
+You can declare an association between two records with <code>#[diesel(belongs_to)]</code>.
+Unlike other ORMs, Diesel has no concept of <code>has many</code></p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::{posts, users};
+
+<span class="attr">#[derive(Identifiable, Queryable, PartialEq, Debug)]
+#[diesel(table_name = users)]
+</span><span class="kw">pub struct </span>User {
+    id: i32,
+    name: String,
+}
+
+<span class="attr">#[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
+#[diesel(belongs_to(User))]
+#[diesel(table_name = posts)]
+</span><span class="kw">pub struct </span>Post {
+    id: i32,
+    user_id: i32,
+    title: String,
+}
+
+<span class="kw">let </span>user = users.find(<span class="number">2</span>).get_result::&lt;User&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>users_post = Post::belonging_to(<span class="kw-2">&amp;</span>user)
+    .first(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = Post { id: <span class="number">3</span>, user_id: <span class="number">2</span>, title: <span class="string">&quot;My first post too&quot;</span>.into() };
+<span class="macro">assert_eq!</span>(expected, users_post);</code></pre></div>
+<p>Note that in addition to the <code>#[diesel(belongs_to)]</code> annotation, we also need to
+<code>#[derive(Associations)]</code></p>
+<p><code>#[diesel(belongs_to)]</code> is given the name of the struct that represents the parent.
+Both the parent and child must implement <a href="../prelude/trait.Identifiable.html" title="trait diesel::prelude::Identifiable"><code>Identifiable</code></a>.
+The struct given to <code>#[diesel(belongs_to)]</code> must be in scope,
+so you will need <code>use some_module::User</code> if <code>User</code> is defined in another module.</p>
+<p>If the parent record is generic over lifetimes, they can be written as <code>'_</code>.
+You will also need to wrap the type in quotes until
+<code>unrestricted_attribute_tokens</code> is stable.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Identifiable)]
+#[diesel(table_name = users)]
+</span><span class="kw">pub struct </span>User&lt;<span class="lifetime">&#39;a</span>&gt; {
+    id: i32,
+    name: Cow&lt;<span class="lifetime">&#39;a</span>, str&gt;,
+}
+
+<span class="attr">#[derive(Associations)]
+#[diesel(belongs_to(User&lt;<span class="lifetime">&#39;_</span>&gt;))]
+#[diesel(table_name = posts)]
+</span><span class="kw">pub struct </span>Post {
+    id: i32,
+    user_id: i32,
+    title: String,
+}</code></pre></div>
+<p>By default, Diesel assumes that your foreign keys will follow the convention <code>table_name_id</code>.
+If your foreign key has a different name,
+you can provide the <code>foreign_key</code> argument to <code>#[diesel(belongs_to)]</code>.
+For example, <code>#[diesel(belongs_to(Foo, foreign_key = mykey))]</code>.</p>
+<p>Associated data is typically loaded in multiple queries (one query per table).
+This is usually more efficient than using a join,
+especially if 3 or more tables are involved.
+For most datasets,
+using a join to load in a single query transmits so much duplicate data
+that it costs more time than the extra round trip would have.</p>
+<p>You can load the children for one or more parents using
+<a href="../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to" title="associated function diesel::query_dsl::BelongingToDsl::belonging_to"><code>belonging_to</code></a></p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>user = users.find(<span class="number">1</span>).first::&lt;User&gt;(connection).expect(<span class="string">&quot;Error loading user&quot;</span>);
+<span class="kw">let </span>post_list = Post::belonging_to(<span class="kw-2">&amp;</span>user)
+    .load::&lt;Post&gt;(connection)
+    .expect(<span class="string">&quot;Error loading posts&quot;</span>);
+<span class="kw">let </span>expected = <span class="macro">vec!</span>[
+    Post { id: <span class="number">1</span>, user_id: <span class="number">1</span>, title: <span class="string">&quot;My first post&quot;</span>.to_string() },
+    Post { id: <span class="number">2</span>, user_id: <span class="number">1</span>, title: <span class="string">&quot;About Rust&quot;</span>.to_string() },
+];
+
+<span class="macro">assert_eq!</span>(post_list, expected);</code></pre></div>
+<p>If you’re coming from other ORMs, you’ll notice that this design is quite different from most.
+There you would have an instance method on the parent, or have the children stored somewhere on
+the posts. This design leads to many problems, including <a href="https://stackoverflow.com/q/97197/1254484">N+1 query
+bugs</a>, and runtime errors when accessing an
+association that isn’t there.</p>
+<p>In Diesel, data and its associations are considered to be separate. If you want to pass around
+a user and all of its posts, that type is <code>(User, Vec&lt;Post&gt;)</code>.</p>
+<p>Next lets look at how to load the children for more than one parent record.
+<a href="../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to" title="associated function diesel::query_dsl::BelongingToDsl::belonging_to"><code>belonging_to</code></a> can be used to load the data, but we’ll also need to group it
+with its parents. For this we use an additional method <a href="trait.GroupedBy.html#tymethod.grouped_by" title="method diesel::associations::GroupedBy::grouped_by"><code>grouped_by</code></a>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>sean = users.filter(name.eq(<span class="string">&quot;Sean&quot;</span>)).first::&lt;User&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>tess = users.filter(name.eq(<span class="string">&quot;Tess&quot;</span>)).first::&lt;User&gt;(connection)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>seans_posts = Post::belonging_to(<span class="kw-2">&amp;</span>sean)
+    .select(title)
+    .load::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;My first post&quot;</span>, <span class="string">&quot;About Rust&quot;</span>], seans_posts);
+
+<span class="comment">// A vec or slice can be passed as well
+</span><span class="kw">let </span>more_posts = Post::belonging_to(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[sean, tess])
+    .select(title)
+    .load::&lt;String&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">vec!</span>[<span class="string">&quot;My first post&quot;</span>, <span class="string">&quot;About Rust&quot;</span>, <span class="string">&quot;My first post too&quot;</span>], more_posts);</code></pre></div>
+<p>Typically you will want to group up the children with their parents.
+In other ORMs, this is often called a <code>has_many</code> relationship.
+Diesel provides support for doing this grouping, once the data has been
+loaded.</p>
+<p><a href="trait.GroupedBy.html#tymethod.grouped_by" title="method diesel::associations::GroupedBy::grouped_by"><code>grouped_by</code></a> is called on a <code>Vec&lt;Child&gt;</code> with a <code>&amp;[Parent]</code>.
+The return value will be <code>Vec&lt;Vec&lt;Child&gt;&gt;</code> indexed to match their parent.
+Or to put it another way, the returned data can be passed to <code>zip</code>,
+and it will be combined with its parent.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>users = users::table.load::&lt;User&gt;(connection)<span class="question-mark">?</span>;
+<span class="kw">let </span>posts = Post::belonging_to(<span class="kw-2">&amp;</span>users)
+    .load::&lt;Post&gt;(connection)<span class="question-mark">?
+    </span>.grouped_by(<span class="kw-2">&amp;</span>users);
+<span class="kw">let </span>data = users.into_iter().zip(posts).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+
+<span class="kw">let </span>expected_data = <span class="macro">vec!</span>[
+    (
+        User { id: <span class="number">1</span>, name: <span class="string">&quot;Sean&quot;</span>.into() },
+        <span class="macro">vec!</span>[
+            Post { id: <span class="number">1</span>, user_id: <span class="number">1</span>, title: <span class="string">&quot;My first post&quot;</span>.into() },
+            Post { id: <span class="number">2</span>, user_id: <span class="number">1</span>, title: <span class="string">&quot;About Rust&quot;</span>.into() },
+        ],
+    ),
+    (
+        User { id: <span class="number">2</span>, name: <span class="string">&quot;Tess&quot;</span>.into() },
+        <span class="macro">vec!</span>[
+            Post { id: <span class="number">3</span>, user_id: <span class="number">2</span>, title: <span class="string">&quot;My first post too&quot;</span>.into() },
+        ],
+    ),
+];
+
+<span class="macro">assert_eq!</span>(expected_data, data);</code></pre></div>
+<p><a href="trait.GroupedBy.html#tymethod.grouped_by" title="method diesel::associations::GroupedBy::grouped_by"><code>grouped_by</code></a> can be called multiple times
+if you have multiple children or grandchildren.</p>
+<p>For example, this code will load some users,
+all of their posts,
+and all of the comments on those posts.
+Explicit type annotations have been added
+to make each line a bit more clear.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>users: Vec&lt;User&gt; = users::table.load::&lt;User&gt;(connection)
+    .expect(<span class="string">&quot;error loading users&quot;</span>);
+<span class="kw">let </span>posts: Vec&lt;Post&gt; = Post::belonging_to(<span class="kw-2">&amp;</span>users)
+    .load::&lt;Post&gt;(connection)
+    .expect(<span class="string">&quot;error loading posts&quot;</span>);
+<span class="kw">let </span>comments: Vec&lt;Comment&gt; = Comment::belonging_to(<span class="kw-2">&amp;</span>posts)
+    .load::&lt;Comment&gt;(connection)
+    .expect(<span class="string">&quot;Error loading comments&quot;</span>);
+<span class="kw">let </span>grouped_comments: Vec&lt;Vec&lt;Comment&gt;&gt; = comments.grouped_by(<span class="kw-2">&amp;</span>posts);
+<span class="kw">let </span>posts_and_comments: Vec&lt;Vec&lt;(Post, Vec&lt;Comment&gt;)&gt;&gt; = posts
+    .into_iter()
+    .zip(grouped_comments)
+    .grouped_by(<span class="kw-2">&amp;</span>users);
+<span class="kw">let </span>result: Vec&lt;(User, Vec&lt;(Post, Vec&lt;Comment&gt;)&gt;)&gt; = users
+    .into_iter()
+    .zip(posts_and_comments)
+    .collect();
+<span class="kw">let </span>expected = <span class="macro">vec!</span>[
+    (
+        User { id: <span class="number">1</span>, name: <span class="string">&quot;Sean&quot;</span>.to_string() },
+        <span class="macro">vec!</span>[
+            (
+                Post { id: <span class="number">1</span>, user_id: <span class="number">1</span>, title: <span class="string">&quot;My first post&quot;</span>.to_string() },
+                <span class="macro">vec!</span>[ Comment { id: <span class="number">1</span>, post_id: <span class="number">1</span>, body: <span class="string">&quot;Great post&quot;</span>.to_string() } ]
+            ),
+            (
+                Post { id: <span class="number">2</span>, user_id: <span class="number">1</span>, title: <span class="string">&quot;About Rust&quot;</span>.to_string() },
+                <span class="macro">vec!</span>[
+                    Comment { id: <span class="number">2</span>, post_id: <span class="number">2</span>, body: <span class="string">&quot;Yay! I am learning Rust&quot;</span>.to_string() }
+                ]
+
+            )
+        ]
+    ),
+    (
+        User { id: <span class="number">2</span>, name: <span class="string">&quot;Tess&quot;</span>.to_string() },
+        <span class="macro">vec!</span>[
+            (
+                Post { id: <span class="number">3</span>, user_id: <span class="number">2</span>, title: <span class="string">&quot;My first post too&quot;</span>.to_string() },
+                <span class="macro">vec!</span>[ Comment { id: <span class="number">3</span>, post_id: <span class="number">3</span>, body: <span class="string">&quot;I enjoyed your post&quot;</span>.to_string() } ]
+            )
+        ]
+    )
+];
+
+<span class="macro">assert_eq!</span>(result, expected);</code></pre></div>
+<p>And that’s it.
+It may seem odd to have load, group, and zip be explicit separate steps
+if you are coming from another ORM.
+However, the goal is to provide simple building blocks which can
+be used to construct the complex behavior applications need.</p>
+</div></details><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.BelongsTo.html" title="trait diesel::associations::BelongsTo">BelongsTo</a></div><div class="desc docblock-short">Indicates that a type belongs to <code>Parent</code></div></li><li><div class="item-name"><a class="trait" href="trait.GroupedBy.html" title="trait diesel::associations::GroupedBy">GroupedBy</a></div><div class="desc docblock-short">The <code>grouped_by</code> function groups records by their parent.</div></li><li><div class="item-name"><a class="trait" href="trait.HasTable.html" title="trait diesel::associations::HasTable">HasTable</a></div><div class="desc docblock-short">This trait indicates that a struct is associated with a single database table.</div></li><li><div class="item-name"><a class="trait" href="trait.Identifiable.html" title="trait diesel::associations::Identifiable">Identifiable</a></div><div class="desc docblock-short">This trait indicates that a struct represents a single row in a database table.</div></li></ul><h2 id="derives" class="small-section-header"><a href="#derives">Derive Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="derive" href="derive.Associations.html" title="derive diesel::associations::Associations">Associations</a></div><div class="desc docblock-short">Implement required traits for the associations API</div></li><li><div class="item-name"><a class="derive" href="derive.Identifiable.html" title="derive diesel::associations::Identifiable">Identifiable</a></div><div class="desc docblock-short">Implements <code>Identifiable</code> for references of the current type</div></li></ul></section></div></main></body></html>

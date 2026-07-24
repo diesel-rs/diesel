@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Alias","AliasedField","MoreThanOnce","Never","Once"],"trait":["AliasSource","AppearsInFromClause","Column","ColumnHasTable","JoinTo","NamedTable","Plus","QueryRelation","QueryRelationField","QuerySource","SizeRestrictedColumn","Table","TableNotEqual","View"]};

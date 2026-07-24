@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["ByteWrapper","RawBytesBindCollector"],"trait":["BindCollector"]};
