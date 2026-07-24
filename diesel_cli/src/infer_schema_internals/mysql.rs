@@ -290,7 +290,7 @@ pub fn get_enum_variants(ct: &ColumnType) -> Option<Vec<EnumVariant>> {
                 .enumerate()
                 .map(|(idx, v)| EnumVariant {
                     order: idx as _,
-                    sql_name: v.to_owned(),
+                    sql_name: v.replace("''", "'"),
                 })
                 .collect(),
         )
@@ -501,7 +501,7 @@ mod test {
                 },
                 EnumVariant {
                     order: 1,
-                    sql_name: "b''c".into()
+                    sql_name: "b'c".into()
                 }
             ]
         );
