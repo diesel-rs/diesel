@@ -5,6 +5,8 @@ use crate::result::QueryResult;
 #[doc(inline)]
 pub use self::query_fragment_impls::DuplicatedKeys;
 
+#[cfg(feature = "mysql")]
+mod insert_returning_id;
 mod limit_offset;
 mod query_fragment_impls;
 

@@ -170,6 +170,14 @@ impl StatementUse<'_> {
             .map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
+    /// The executed statement's `mysql_stmt_insert_id`. Must be called after
+    /// `execute`. The C API documents this as undefined when the statement
+    /// generated no `AUTO_INCREMENT` value, so it is only reachable through
+    /// `execute_returning_id`, which restricts to integer-primary-key inserts.
+    pub(in crate::mysql::connection) fn insert_id(&self) -> u64 {
+        unsafe { ffi::mysql_stmt_insert_id(self.inner.stmt.as_ptr()) }
+    }
+
     /// This function should be called after `execute` only
     /// otherwise it's not guaranteed to return a valid result
     pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
