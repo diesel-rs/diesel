@@ -95,7 +95,7 @@ pub use schema::Schema;
 pub use table::Table;
 
 #[doc(inline)]
-pub use self::dynamic_select::DynamicSelectClause;
+pub use self::dynamic_select::{DynamicSelectClause, IntoBoxedField};
 
 /// Create a new [`Table`] with the given name.
 ///
