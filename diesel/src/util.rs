@@ -42,6 +42,7 @@ pub(crate) mod std_compat {
 pub(crate) mod std_compat {
     pub(crate) use std::collections::HashMap;
     #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "__sqlite-shared",
         feature = "mysql_backend",
         feature = "postgres_backend"
