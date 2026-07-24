@@ -377,6 +377,52 @@ pub enum BusyDecision {
     GiveUp,
 }
 
+/// The `auto_vacuum` mode of a database, controlling whether and when SQLite
+/// reclaims freed pages back to the file.
+///
+/// The mode is stored in the database file, not the connection. [`Full`] and
+/// [`Incremental`] can be switched between at any time, but changing from or to
+/// [`None`] only takes effect on a database with no tables yet, or after a
+/// subsequent `VACUUM` rewrites the file.
+///
+/// [`None`]: AutoVacuumMode::None
+/// [`Full`]: AutoVacuumMode::Full
+/// [`Incremental`]: AutoVacuumMode::Incremental
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AutoVacuumMode {
+    /// Freed pages stay on the freelist and the file never shrinks (default).
+    None,
+    /// Freed pages are reclaimed and the file truncated at every commit.
+    Full,
+    /// Freelist bookkeeping is kept, pages are reclaimed only when
+    /// `incremental_vacuum` runs.
+    Incremental,
+}
+
+impl AutoVacuumMode {
+    fn from_code(code: i64) -> QueryResult<Self> {
+        match code {
+            0 => Ok(AutoVacuumMode::None),
+            1 => Ok(AutoVacuumMode::Full),
+            2 => Ok(AutoVacuumMode::Incremental),
+            other => Err(Error::DeserializationError(
+                alloc::format!("unexpected auto_vacuum mode {other}").into(),
+            )),
+        }
+    }
+}
+
+/// Renders the SQLite keyword for the mode (`NONE`, `FULL`, `INCREMENTAL`).
+impl core::fmt::Display for AutoVacuumMode {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(match self {
+            AutoVacuumMode::None => "NONE",
+            AutoVacuumMode::Full => "FULL",
+            AutoVacuumMode::Incremental => "INCREMENTAL",
+        })
+    }
+}
+
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///
@@ -1317,6 +1363,58 @@ impl SqliteConnection {
             .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL)
     }
 
+    /// Read the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::None);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn auto_vacuum(&mut self, schema: Option<&str>) -> QueryResult<AutoVacuumMode> {
+        use crate::query_dsl::RunQueryDsl;
+
+        let query = alloc::format!("PRAGMA {}.auto_vacuum", quote_schema(schema));
+        let code = crate::dsl::sql::<crate::sql_types::BigInt>(&query).get_result(self)?;
+        AutoVacuumMode::from_code(code)
+    }
+
+    /// Set the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`.
+    /// Changing from or to [`AutoVacuumMode::None`] only takes effect on a
+    /// database with no tables yet, or after a subsequent `VACUUM`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::Incremental);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn set_auto_vacuum(
+        &mut self,
+        schema: Option<&str>,
+        mode: AutoVacuumMode,
+    ) -> QueryResult<()> {
+        let query = alloc::format!("PRAGMA {}.auto_vacuum = {mode}", quote_schema(schema));
+        self.batch_execute(&query)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -1357,6 +1455,13 @@ impl SqliteConnection {
 
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
+}
+
+// Quotes a schema name for interpolation into a `PRAGMA`, which accepts no bound
+// parameters. The name becomes a double-quoted identifier with interior quotes
+// doubled, `None` targets `main`.
+fn quote_schema(schema: Option<&str>) -> String {
+    alloc::format!("\"{}\"", schema.unwrap_or("main").replace('"', "\"\""))
 }
 
 #[cfg(test)]
@@ -3292,5 +3397,106 @@ mod tests {
         // Querying the view should succeed because the function is INNOCUOUS
         let result = crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
         assert!(result.is_ok());
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_all_modes_roundtrip_on_fresh_database() {
+        for mode in [
+            AutoVacuumMode::None,
+            AutoVacuumMode::Full,
+            AutoVacuumMode::Incremental,
+        ] {
+            let conn = &mut connection();
+            conn.set_auto_vacuum(None, mode).unwrap();
+            assert_eq!(mode, conn.auto_vacuum(None).unwrap());
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_incremental_sticks_across_schema_creation() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::Incremental, conn.auto_vacuum(None).unwrap());
+
+        crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            AutoVacuumMode::Incremental,
+            conn.auto_vacuum(None).unwrap(),
+            "the mode survives once the schema exists"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_change_from_none_requires_vacuum_on_populated_database() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO t (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::None, conn.auto_vacuum(None).unwrap());
+
+        // On a populated database the switch away from `None` is silently
+        // deferred until a full rewrite.
+        conn.set_auto_vacuum(None, AutoVacuumMode::Full).unwrap();
+        assert_eq!(
+            AutoVacuumMode::None,
+            conn.auto_vacuum(None).unwrap(),
+            "the change does not take effect without a VACUUM"
+        );
+
+        crate::sql_query("VACUUM").execute(conn).unwrap();
+        assert_eq!(
+            AutoVacuumMode::Full,
+            conn.auto_vacuum(None).unwrap(),
+            "VACUUM rewrites the file and applies the mode"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        crate::sql_query("ATTACH DATABASE ':memory:' AS aux")
+            .execute(conn)
+            .unwrap();
+
+        conn.set_auto_vacuum(Some("aux"), AutoVacuumMode::Full)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::Full, conn.auto_vacuum(Some("aux")).unwrap());
+        assert_eq!(
+            AutoVacuumMode::None,
+            conn.auto_vacuum(None).unwrap(),
+            "main keeps its own default"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_schema_name_with_double_quote_is_handled() {
+        let conn = &mut connection();
+        let schema = "we\"ird";
+        crate::sql_query(alloc::format!(
+            "ATTACH DATABASE ':memory:' AS \"{}\"",
+            schema.replace('"', "\"\"")
+        ))
+        .execute(conn)
+        .unwrap();
+
+        conn.set_auto_vacuum(Some(schema), AutoVacuumMode::Incremental)
+            .unwrap();
+        assert_eq!(
+            AutoVacuumMode::Incremental,
+            conn.auto_vacuum(Some(schema)).unwrap()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_mode_display_renders_sqlite_keywords() {
+        assert_eq!("NONE", AutoVacuumMode::None.to_string());
+        assert_eq!("FULL", AutoVacuumMode::Full.to_string());
+        assert_eq!("INCREMENTAL", AutoVacuumMode::Incremental.to_string());
     }
 }
