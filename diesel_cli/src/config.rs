@@ -472,6 +472,10 @@ impl<'de> Deserialize<'de> for RootPrintSchema {
 }
 
 impl RootPrintSchema {
+    pub fn has_multiple_schema(&self) -> bool {
+        self.has_multiple_schema
+    }
+
     fn set_relative_path_base(&mut self, base: &Path) {
         for config in self.all_configs.values_mut() {
             config.set_relative_path_base(base);

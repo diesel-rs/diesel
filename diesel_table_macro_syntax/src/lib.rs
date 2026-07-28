@@ -4,6 +4,7 @@ use syn::MetaNameValue;
 use syn::parse_quote;
 use syn::spanned::Spanned;
 
+#[derive(Clone)]
 pub struct ViewDecl {
     pub use_statements: Vec<syn::ItemUse>,
     pub meta: Vec<syn::Attribute>,
@@ -33,17 +34,20 @@ impl ViewDecl {
     }
 }
 
+#[derive(Clone)]
 pub struct TableDecl {
     pub view: ViewDecl,
     pub primary_keys: Option<PrimaryKey>,
 }
 
+#[derive(Clone)]
 #[allow(dead_code)] // paren_token is currently unused
 pub struct PrimaryKey {
     paren_token: syn::token::Paren,
     pub keys: syn::punctuated::Punctuated<Ident, syn::Token![,]>,
 }
 
+#[derive(Clone)]
 pub struct ColumnDef {
     pub meta: Vec<syn::Attribute>,
     pub column_name: Ident,

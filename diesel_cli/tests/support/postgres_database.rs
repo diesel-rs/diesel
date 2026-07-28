@@ -40,7 +40,7 @@ impl Database {
 
     pub fn conn(&self) -> PgConnection {
         PgConnection::establish(&self.url)
-            .expect(&format!("Failed to open connection to {}", &self.url))
+            .expect(&format!("Failed to open connection to {}", self.url))
     }
 
     pub fn execute(&self, command: &str) {

@@ -3,5 +3,5 @@ source: diesel_cli/tests/help_snapshots.rs
 expression: res.stdout()
 ---
 diesel 
- Version: 2.3.10
+ Version: 2.3.11
  Supported Backends: postgres

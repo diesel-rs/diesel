@@ -20,6 +20,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::on_commit` and `SqliteConnection::remove_commit_hook` to register a callback invoked when a transaction is about to be committed, wrapping `sqlite3_commit_hook`
 * Added `SqliteConnection::on_authorize` and `SqliteConnection::remove_authorizer` to register an authorizer callback that allows, denies, or ignores SQL actions during statement compilation, wrapping `sqlite3_set_authorizer`, along with the `AuthorizerContext` and `AuthorizerDecision` types
 * Added `SqliteConnection::on_trace` and `SqliteConnection::remove_trace` to register a callback for SQL execution tracing (statement, profile, and row events), wrapping `sqlite3_trace_v2`, along with the `SqliteTraceEvent` and `SqliteTraceFlags` types
+* Added `SqliteConnection::on_update` and `SqliteConnection::remove_update_hook` to register row-change callbacks (insert, update, or delete) through a `SqliteUpdateRouter`, wrapping `sqlite3_update_hook`, together with the `SqliteUpdateRouter`, `SqliteChangeEvent`, `SqliteChangeOp`, `SqliteChangeOps`, and `DynamicChangeTable` types. `SqliteUpdateRouter::on` accepts a `table!` table (including a schema-qualified one), and `SqliteUpdateRouter::on_dynamic` accepts a runtime `diesel_dynamic_schema` table
+* Added `SqliteConnection::on_collation_needed` and `SqliteConnection::remove_collation_needed_hook` to register a callback invoked when SQLite encounters an unknown collation sequence, wrapping `sqlite3_collation_needed`, along with the `CollationNeededContext` and `SqliteTextRep` types
 * Added `json_extract` and `jsonb_extract` SQL function support for the SQLite backend
 * Added `json_insert` and `jsonb_insert` SQL function support for the SQLite backend
 * Added `json_replace`, `jsonb_replace`, `json_set`, and `jsonb_set` SQL function support for the SQLite backend
@@ -36,6 +38,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added a `RunQueryDslSupport` trait to indicate types that should implement `RunQueryDsl` in a sync/async agnostic way
 * Added a `#[derive(diesel::Enum)]` proc-macro to easily map Rust enums to database enums.
 * Added support for generating matching Rust enums for database enums in Diesel-CLI
+* Added `#[diesel_async]` attribute to `#[derive(MultiConnection)]` to support async MultiConnections. 
+* Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
+* Added `--no-schema` CLI flag to the `migration run` subcommand
 
 ### Fixed
 
@@ -44,12 +49,21 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
+* `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
+* Fixed `FromSql`/`ToSql` for `chrono::NaiveTime` on MySQL dropping the fractional-seconds component of `TIME` values, so a `TIME(N)` column now round-trips its microseconds like `DATETIME` / `TIMESTAMP` already did.
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* Extended libsqlite3-sys support to include 0.38
+
+## [2.3.11] 2026-07-10
+
+* Fixed several potential panics in PostgreSQL (de)serialization code
+* Fixed using `.load()` batch inserts and returning clauses on the SQLite backend
+* Harden usage of `SqliteConnection::deserialize_read_only_database()`
 
 ## [2.3.10] 2026-06-05
 
@@ -2398,3 +2412,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8
 [2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9
 [2.3.10]: https://github.com/diesel-rs/diesel/compare/v2.3.9...v2.3.10
+[2.3.11]: https://github.com/diesel-rs/diesel/compare/v2.3.10...v2.3.11

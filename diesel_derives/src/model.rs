@@ -8,10 +8,11 @@ use syn::{
     LitBool, Path, Type,
 };
 
-use crate::attrs::{StructAttr, parse_attributes};
 use crate::field::Field;
-use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::camel_to_snake;
+use diesel_attribute_parser::CheckForBackend;
+use diesel_attribute_parser::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use diesel_attribute_parser::{StructAttr, parse_attributes};
 
 pub struct Model {
     name: Path,
@@ -32,11 +33,6 @@ pub struct Model {
     pub base_query: Option<syn::Expr>,
     pub base_query_type: Option<syn::Type>,
     fields: Vec<Field>,
-}
-
-pub enum CheckForBackend {
-    Backends(syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>),
-    Disabled(LitBool),
 }
 
 impl Model {

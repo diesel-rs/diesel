@@ -1,14 +1,16 @@
-use crate::attrs::AttributeSpanWrapper;
-use crate::field::Field;
-use crate::model::Model;
-use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
+use std::collections::{HashMap, HashSet};
+
+use diesel_attribute_parser::AttributeSpanWrapper;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use quote::quote_spanned;
-use std::collections::{HashMap, HashSet};
 use syn::spanned::Spanned as _;
 use syn::{DeriveInput, Expr, Path, Result, Type};
 use syn::{Lifetime, parse_quote};
+
+use crate::field::Field;
+use crate::model::Model;
+use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, true)?;
