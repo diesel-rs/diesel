@@ -224,6 +224,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, cra
         is_unsigned: unsigned,
         record: None,
         max_length: attr.max_length,
+        unmodified_type: attr.type_name.clone(),
     })
 }
 
@@ -330,13 +331,13 @@ mod test {
     use super::*;
     use std::env;
 
-    fn connection() -> MysqlConnection {
+    fn connection() -> MariadbConnection {
         dotenv().ok();
 
         let connection_url = env::var("MYSQL_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");
-        let mut connection = MysqlConnection::establish(&connection_url).unwrap();
+        let mut connection = MariadbConnection::establish(&connection_url).unwrap();
         connection.begin_test_transaction().unwrap();
         connection
     }

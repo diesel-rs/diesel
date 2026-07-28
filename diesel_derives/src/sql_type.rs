@@ -124,24 +124,22 @@ fn mariadb_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
         .mysql_type
         .as_ref()
         .map(|mysql_type| Ident::new(&mysql_type.name.value(), Span::call_site()))
-        .and_then(|ty| {
-            if cfg!(not(feature = "mariadb")) {
-                return None;
-            }
-
+        .map(|ty| {
             let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
-            Some(quote! {
-                impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
-                    for diesel::mariadb::Mariadb
-                #where_clause
-                {
-                    fn metadata(_: &mut ()) -> diesel::mariadb::MariadbType {
-                        diesel::mariadb::MariadbType::#ty
+            quote! {
+                diesel::internal::derives::sql_type::expand_mariadb! {
+                    impl #impl_generics diesel::sql_types::HasSqlType<#struct_name #ty_generics>
+                        for diesel::mariadb::Mariadb
+                    #where_clause
+                    {
+                        fn metadata(_: &mut ()) -> diesel::mariadb::MariadbType {
+                            diesel::mariadb::MariadbType::#ty
+                        }
                     }
                 }
-            })
+            }
         })
 }
 
