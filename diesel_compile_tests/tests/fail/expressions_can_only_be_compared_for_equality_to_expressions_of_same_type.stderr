@@ -24,8 +24,10 @@ help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented fo
  LL |         name -> VarChar,
    |         ^^^^
    = help: the following other types implement trait `AsExpression<T>`:
+             &'__expr AutoVacuumMode
              &'__expr i32
              Arc<i32>
+             AutoVacuumMode
              Box<i32>
              Rc<i32>
              i32
