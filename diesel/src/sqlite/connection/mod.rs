@@ -47,6 +47,7 @@ use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
 use crate::query_builder::*;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_source::{ColumnHasTable, NamedTable};
 use crate::result::*;
 use crate::serialize::ToSql;
@@ -55,6 +56,7 @@ use crate::sqlite::{Sqlite, SqliteFunctionBehavior};
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ffi as libc;
+use core::marker::PhantomData;
 use core::num::NonZeroI64;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -388,39 +390,18 @@ pub enum BusyDecision {
 /// [`None`]: AutoVacuumMode::None
 /// [`Full`]: AutoVacuumMode::Full
 /// [`Incremental`]: AutoVacuumMode::Incremental
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, crate::types::Enum)]
+#[diesel(sql_type = crate::sql_types::Integer)]
+#[non_exhaustive]
+#[repr(i32)]
 pub enum AutoVacuumMode {
     /// Freed pages stay on the freelist and the file never shrinks (default).
-    None,
+    None = 0,
     /// Freed pages are reclaimed and the file truncated at every commit.
-    Full,
+    Full = 1,
     /// Freelist bookkeeping is kept, pages are reclaimed only when
     /// `incremental_vacuum` runs.
-    Incremental,
-}
-
-impl AutoVacuumMode {
-    fn from_code(code: i64) -> QueryResult<Self> {
-        match code {
-            0 => Ok(AutoVacuumMode::None),
-            1 => Ok(AutoVacuumMode::Full),
-            2 => Ok(AutoVacuumMode::Incremental),
-            other => Err(Error::DeserializationError(
-                alloc::format!("unexpected auto_vacuum mode {other}").into(),
-            )),
-        }
-    }
-}
-
-/// Renders the SQLite keyword for the mode (`NONE`, `FULL`, `INCREMENTAL`).
-impl core::fmt::Display for AutoVacuumMode {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str(match self {
-            AutoVacuumMode::None => "NONE",
-            AutoVacuumMode::Full => "FULL",
-            AutoVacuumMode::Incremental => "INCREMENTAL",
-        })
-    }
+    Incremental = 2,
 }
 
 impl SqliteConnection {
@@ -1381,10 +1362,8 @@ impl SqliteConnection {
     /// ```
     pub fn auto_vacuum(&mut self, schema: Option<&str>) -> QueryResult<AutoVacuumMode> {
         use crate::query_dsl::RunQueryDsl;
-
-        let query = alloc::format!("PRAGMA {}.auto_vacuum", quote_schema(schema));
-        let code = crate::dsl::sql::<crate::sql_types::BigInt>(&query).get_result(self)?;
-        AutoVacuumMode::from_code(code)
+        let query: Pragma<'_, crate::sql_types::Integer> = Pragma::new("auto_vacuum", schema);
+        query.get_result(self)
     }
 
     /// Set the [`auto_vacuum`](AutoVacuumMode) mode of a database.
@@ -1411,8 +1390,15 @@ impl SqliteConnection {
         schema: Option<&str>,
         mode: AutoVacuumMode,
     ) -> QueryResult<()> {
-        let query = alloc::format!("PRAGMA {}.auto_vacuum = {mode}", quote_schema(schema));
-        self.batch_execute(&query)
+        use crate::query_dsl::RunQueryDsl;
+        // #[repr(i32)] guarantees the discriminant fits exactly in i32.
+        SetPragmaInt {
+            schema,
+            name: "auto_vacuum",
+            value: mode as i32,
+        }
+        .execute(self)
+        .map(|_| ())
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -1457,12 +1443,80 @@ fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
 }
 
-// Quotes a schema name for interpolation into a `PRAGMA`, which accepts no bound
-// parameters. The name becomes a double-quoted identifier with interior quotes
-// doubled, `None` targets `main`.
-fn quote_schema(schema: Option<&str>) -> String {
-    alloc::format!("\"{}\"", schema.unwrap_or("main").replace('"', "\"\""))
+// A `PRAGMA` accepts no bind parameters, neither for the schema it targets nor for the
+// value it assigns, so the schema is rendered as a quoted identifier by the query
+// builder. `name` is always a constant chosen here, never caller data.
+//
+// TODO: this fragment is intentionally duplicated between the `page_count`/`freelist_count`
+// helpers and the `auto_vacuum` helpers. They are separate pull requests sent to upstream
+// from a fork, and GitHub does not allow one to be based on the other, so neither can share
+// a definition before the other lands. Collapse the two copies into one once both are in.
+struct Pragma<'a, ST> {
+    schema: Option<&'a str>,
+    name: &'static str,
+    sql_type: PhantomData<ST>,
 }
+
+impl<'a, ST> Pragma<'a, ST> {
+    fn new(name: &'static str, schema: Option<&'a str>) -> Self {
+        Pragma {
+            schema,
+            name,
+            sql_type: PhantomData,
+        }
+    }
+}
+
+impl<ST> QueryFragment<Sqlite> for Pragma<'_, ST> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        out.push_sql(".");
+        out.push_sql(self.name);
+        Ok(())
+    }
+}
+
+// The schema name is runtime data, so the rendered SQL is not determined by the type.
+impl<ST> QueryId for Pragma<'_, ST> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<ST> Query for Pragma<'_, ST> {
+    type SqlType = ST;
+}
+
+impl<ST> RunQueryDslSupport for Pragma<'_, ST> {}
+
+// `PRAGMA name = value` takes no bind parameter for the value either, so the integer is
+// rendered as a literal.
+struct SetPragmaInt<'a> {
+    schema: Option<&'a str>,
+    name: &'static str,
+    value: i32,
+}
+
+impl QueryFragment<Sqlite> for SetPragmaInt<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        out.push_sql(".");
+        out.push_sql(self.name);
+        out.push_sql(" = ");
+        out.push_sql(&alloc::format!("{}", self.value));
+        Ok(())
+    }
+}
+
+impl QueryId for SetPragmaInt<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for SetPragmaInt<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -3477,9 +3531,9 @@ mod tests {
     #[diesel_test_helper::test]
     fn auto_vacuum_schema_name_with_double_quote_is_handled() {
         let conn = &mut connection();
-        let schema = "we\"ird";
+        let schema = r#"we"ird"#;
         crate::sql_query(alloc::format!(
-            "ATTACH DATABASE ':memory:' AS \"{}\"",
+            r#"ATTACH DATABASE ':memory:' AS "{}""#,
             schema.replace('"', "\"\"")
         ))
         .execute(conn)
@@ -3491,12 +3545,5 @@ mod tests {
             AutoVacuumMode::Incremental,
             conn.auto_vacuum(Some(schema)).unwrap()
         );
-    }
-
-    #[diesel_test_helper::test]
-    fn auto_vacuum_mode_display_renders_sqlite_keywords() {
-        assert_eq!("NONE", AutoVacuumMode::None.to_string());
-        assert_eq!("FULL", AutoVacuumMode::Full.to_string());
-        assert_eq!("INCREMENTAL", AutoVacuumMode::Incremental.to_string());
     }
 }
