@@ -47,6 +47,7 @@ use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
 use crate::query_builder::*;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_source::{ColumnHasTable, NamedTable};
 use crate::result::*;
 use crate::serialize::ToSql;
@@ -1226,9 +1227,10 @@ impl SqliteConnection {
     /// Attach the database file at `path` under `schema_name`.
     ///
     /// Runs [`ATTACH DATABASE ? AS ?`](https://www.sqlite.org/lang_attach.html) with
-    /// both operands bound as parameters, so no escaping or quoting is needed and a
-    /// `file:` path is not treated as a [URI](https://sqlite.org/uri.html) unless the
-    /// connection enabled URI filenames.
+    /// both operands bound as parameters, so no SQL string escaping is needed.
+    /// Diesel always opens connections with `SQLITE_OPEN_URI`, so a path beginning
+    /// with `file:` is interpreted as a URI exactly as it is in
+    /// [`SqliteConnection::establish`].
     ///
     /// A missing file is created as an empty database unless
     /// [`set_attach_create_enabled(false)`][Self::set_attach_create_enabled] is set,
@@ -1254,10 +1256,7 @@ impl SqliteConnection {
     /// ```
     pub fn attach_database(&mut self, path: &str, schema_name: &str) -> QueryResult<()> {
         use crate::query_dsl::RunQueryDsl;
-        use crate::sql_types::Text;
-        crate::sql_query("ATTACH DATABASE ? AS ?")
-            .bind::<Text, _>(path)
-            .bind::<Text, _>(schema_name)
+        AttachDatabase { path, schema_name }
             .execute(self)
             .map(|_| ())
     }
@@ -1269,11 +1268,7 @@ impl SqliteConnection {
     /// ordinary error.
     pub fn detach_database(&mut self, schema_name: &str) -> QueryResult<()> {
         use crate::query_dsl::RunQueryDsl;
-        use crate::sql_types::Text;
-        crate::sql_query("DETACH DATABASE ?")
-            .bind::<Text, _>(schema_name)
-            .execute(self)
-            .map(|_| ())
+        DetachDatabase { schema_name }.execute(self).map(|_| ())
     }
 
     /// Enable or disable trigger execution.
@@ -1411,6 +1406,49 @@ impl SqliteConnection {
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
 }
+
+struct AttachDatabase<'a> {
+    path: &'a str,
+    schema_name: &'a str,
+}
+
+impl QueryFragment<Sqlite> for AttachDatabase<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("ATTACH DATABASE ");
+        out.push_bind_param::<crate::sql_types::Text, _>(self.path)?;
+        out.push_sql(" AS ");
+        out.push_bind_param::<crate::sql_types::Text, _>(self.schema_name)?;
+        Ok(())
+    }
+}
+
+impl QueryId for AttachDatabase<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for AttachDatabase<'_> {}
+
+struct DetachDatabase<'a> {
+    schema_name: &'a str,
+}
+
+impl QueryFragment<Sqlite> for DetachDatabase<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("DETACH DATABASE ");
+        out.push_bind_param::<crate::sql_types::Text, _>(self.schema_name)?;
+        Ok(())
+    }
+}
+
+impl QueryId for DetachDatabase<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for DetachDatabase<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -3204,10 +3242,10 @@ mod tests {
     // These ATTACH tests need a real filesystem (temp files), which is not
     // available on the wasm target, where SQLite is in-memory only.
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
-    fn temp_db_path(tag: &str) -> std::path::PathBuf {
-        let mut path = std::env::temp_dir();
-        path.push(format!("diesel_attach_{}_{}.db", std::process::id(), tag));
-        path
+    fn temp_db_path(name: &str) -> (tempfile::TempDir, std::path::PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(name);
+        (dir, path)
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
@@ -3221,21 +3259,19 @@ mod tests {
             return;
         }
 
-        let path = temp_db_path("create");
-        let _ = std::fs::remove_file(&path);
-        let attach = format!("ATTACH DATABASE '{}' AS aux_create", path.display());
+        let (_dir, path) = temp_db_path("create.db");
 
         // Disabled: attaching a path that does not exist yet must fail.
-        assert!(crate::sql_query(&attach).execute(conn).is_err());
+        assert!(
+            conn.attach_database(path.to_str().unwrap(), "aux_create")
+                .is_err()
+        );
 
         // Enabled: the same ATTACH now creates and opens the file.
         conn.set_attach_create_enabled(true).unwrap();
-        crate::sql_query(&attach).execute(conn).unwrap();
-        crate::sql_query("DETACH DATABASE aux_create")
-            .execute(conn)
+        conn.attach_database(path.to_str().unwrap(), "aux_create")
             .unwrap();
-
-        let _ = std::fs::remove_file(&path);
+        conn.detach_database("aux_create").unwrap();
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
@@ -3251,51 +3287,32 @@ mod tests {
         }
 
         // Seed an existing on-disk database with a table to write into.
-        let path = temp_db_path("write");
-        let _ = std::fs::remove_file(&path);
+        let (_dir, path) = temp_db_path("write.db");
         {
             let mut seed = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
             crate::sql_query("CREATE TABLE t (id INTEGER)")
                 .execute(&mut seed)
                 .unwrap();
         }
-        let attach = format!("ATTACH DATABASE '{}' AS aux_write", path.display());
 
         // Disabled: the attached database is opened read-only, so writes fail.
-        crate::sql_query(&attach).execute(conn).unwrap();
+        conn.attach_database(path.to_str().unwrap(), "aux_write")
+            .unwrap();
         assert!(
             crate::sql_query("INSERT INTO aux_write.t (id) VALUES (1)")
                 .execute(conn)
                 .is_err()
         );
-        crate::sql_query("DETACH DATABASE aux_write")
-            .execute(conn)
-            .unwrap();
+        conn.detach_database("aux_write").unwrap();
 
         // Enabled: the attached database is writable again.
         conn.set_attach_write_enabled(true).unwrap();
-        crate::sql_query(&attach).execute(conn).unwrap();
+        conn.attach_database(path.to_str().unwrap(), "aux_write")
+            .unwrap();
         crate::sql_query("INSERT INTO aux_write.t (id) VALUES (1)")
             .execute(conn)
             .unwrap();
-        crate::sql_query("DETACH DATABASE aux_write")
-            .execute(conn)
-            .unwrap();
-
-        let _ = std::fs::remove_file(&path);
-    }
-
-    // Build a temp path with an arbitrary file name so we can exercise names
-    // that would break a hand-assembled ATTACH statement.
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
-    fn temp_db_path_named(file_name: &str) -> std::path::PathBuf {
-        let mut path = std::env::temp_dir();
-        path.push(format!(
-            "diesel_attach_{}_{}",
-            std::process::id(),
-            file_name
-        ));
-        path
+        conn.detach_database("aux_write").unwrap();
     }
 
     // Tables used by the ATTACH round-trip tests below. Their CREATE statements are
@@ -3337,10 +3354,7 @@ mod tests {
 
         let conn = &mut connection();
 
-        let path = temp_db_path("join");
-        let _ = std::fs::remove_file(&path);
-
-        conn.attach_database(path.to_str().unwrap(), "aux").unwrap();
+        conn.attach_database(":memory:", "aux").unwrap();
 
         // Schema-qualified CREATE is DDL and stays raw SQL. The rows and the join
         // below use the typed query DSL.
@@ -3383,32 +3397,25 @@ mod tests {
                 .get_result::<String>(conn)
                 .is_err()
         );
-
-        let _ = std::fs::remove_file(&path);
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[diesel_test_helper::test]
-    fn attach_database_binds_path_verbatim_without_quoting_or_uri_parsing() {
-        // A quote or a `file:` prefix would break or reinterpret a hand-assembled
-        // statement. Bound parameters take both verbatim.
-        for file_name in ["o'brien.db", "file:verbatim.db"] {
-            let path = temp_db_path_named(file_name);
-            let _ = std::fs::remove_file(&path);
+    fn attach_database_binds_path_verbatim_without_quoting() {
+        // A single quote in the path would break a hand-assembled ATTACH statement.
+        // Bound parameters take the path verbatim.
+        let (_dir, path) = temp_db_path("o'brien.db");
 
-            conn_attach_roundtrip(&path);
+        conn_attach_roundtrip(&path);
 
-            // The table created through ATTACH persisted to the literal file, so a
-            // fresh connection to that exact path can read it.
-            let mut direct = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
-            let count = attach_marker::table
-                .count()
-                .get_result::<i64>(&mut direct)
-                .unwrap();
-            assert_eq!(count, 0);
-
-            let _ = std::fs::remove_file(&path);
-        }
+        // The table created through ATTACH persisted to the literal file, so a
+        // fresh connection to that exact path can read it.
+        let mut direct = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+        let count = attach_marker::table
+            .count()
+            .get_result::<i64>(&mut direct)
+            .unwrap();
+        assert_eq!(count, 0);
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
@@ -3421,6 +3428,44 @@ mod tests {
         conn.batch_execute("CREATE TABLE verbatim.attach_marker (id INTEGER PRIMARY KEY)")
             .unwrap();
         conn.detach_database("verbatim").unwrap();
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_database_interprets_file_uri_query_parameters() {
+        // Seed a database with a row to read through the attached schema.
+        let (_dir, path) = temp_db_path("uri_seed.db");
+        {
+            let mut seed = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+            crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+                .execute(&mut seed)
+                .unwrap();
+            crate::sql_query("INSERT INTO t (id) VALUES (1)")
+                .execute(&mut seed)
+                .unwrap();
+        }
+
+        // Attach with a `file:` URI and `mode=ro`. If SQLite treated the bound
+        // string as a literal filename it would fail to find the file; interpreting
+        // it as a URI opens the real file in read-only mode instead.
+        let uri = format!("file:{}?mode=ro", path.display());
+        let conn = &mut connection();
+        conn.attach_database(&uri, "ro_schema").unwrap();
+
+        // Read from the attached schema: proves the ATTACH opened a real file.
+        let id: i64 = sql::<crate::sql_types::BigInt>("SELECT id FROM ro_schema.t")
+            .get_result(conn)
+            .unwrap();
+        assert_eq!(id, 1);
+
+        // Write fails: the URI `mode=ro` parameter took effect.
+        assert!(
+            crate::sql_query("INSERT INTO ro_schema.t (id) VALUES (2)")
+                .execute(conn)
+                .is_err()
+        );
+
+        conn.detach_database("ro_schema").unwrap();
     }
 
     #[diesel_test_helper::test]
@@ -3451,11 +3496,11 @@ mod tests {
         conn.attach_database(":memory:", schema).unwrap();
 
         conn.batch_execute(
-            "CREATE TABLE \"weird 'schema\".t (id INTEGER PRIMARY KEY);
-             INSERT INTO \"weird 'schema\".t (id) VALUES (7);",
+            r#"CREATE TABLE "weird 'schema".t (id INTEGER PRIMARY KEY);
+             INSERT INTO "weird 'schema".t (id) VALUES (7);"#,
         )
         .unwrap();
-        let id = sql::<Integer>("SELECT id FROM \"weird 'schema\".t")
+        let id = sql::<Integer>(r#"SELECT id FROM "weird 'schema".t"#)
             .get_result::<i32>(conn)
             .unwrap();
         assert_eq!(id, 7);
@@ -3476,8 +3521,7 @@ mod tests {
         }
 
         // Create disabled: attaching a nonexistent path fails and materializes nothing.
-        let missing = temp_db_path("nocreate");
-        let _ = std::fs::remove_file(&missing);
+        let (_dir_missing, missing) = temp_db_path("nocreate.db");
         assert!(
             conn.attach_database(missing.to_str().unwrap(), "missing")
                 .is_err()
@@ -3486,8 +3530,7 @@ mod tests {
 
         // Write disabled: an existing database attaches read-only, so writes fail.
         conn.set_attach_write_enabled(false).unwrap();
-        let existing = temp_db_path("readonly");
-        let _ = std::fs::remove_file(&existing);
+        let (_dir_existing, existing) = temp_db_path("readonly.db");
         {
             let mut seed = SqliteConnection::establish(existing.to_str().unwrap()).unwrap();
             seed.batch_execute("CREATE TABLE readonly_marker (id INTEGER)")
@@ -3502,8 +3545,6 @@ mod tests {
                 .is_err()
         );
         conn.detach_database("ro").unwrap();
-
-        let _ = std::fs::remove_file(&existing);
     }
 
     // ---- DIRECTONLY / INNOCUOUS function behavior tests ----
