@@ -1446,11 +1446,6 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 // A `PRAGMA` accepts no bind parameters, neither for the schema it targets nor for the
 // value it assigns, so the schema is rendered as a quoted identifier by the query
 // builder. `name` is always a constant chosen here, never caller data.
-//
-// TODO: this fragment is intentionally duplicated between the `page_count`/`freelist_count`
-// helpers and the `auto_vacuum` helpers. They are separate pull requests sent to upstream
-// from a fork, and GitHub does not allow one to be based on the other, so neither can share
-// a definition before the other lands. Collapse the two copies into one once both are in.
 struct Pragma<'a, ST> {
     schema: Option<&'a str>,
     name: &'static str,
