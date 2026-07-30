@@ -1,0 +1,11 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: remove_enum"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    resource (resource_id) {
+        resource_id -> Integer,
+    }
+}
