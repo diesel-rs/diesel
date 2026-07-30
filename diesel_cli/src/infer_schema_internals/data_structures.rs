@@ -221,7 +221,7 @@ pub enum SupportedQueryRelationStructures {
     Table,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum QueryRelationData {
     View(ViewData),
     Table(TableData),

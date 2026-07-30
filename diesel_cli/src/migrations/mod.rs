@@ -17,7 +17,7 @@ use std::{env, io};
 use crate::database::InferConnection;
 use crate::{config::Config, regenerate_schema_if_file_specified};
 
-mod diff_schema;
+pub mod diff_schema;
 
 #[derive(Debug, Args)]
 pub struct MigrationArgs {

@@ -1,0 +1,7 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: add_enum_variant"
+---
+-- Your SQL goes here
+ALTER TABLE `resource` MODIFY COLUMN `some_field` enum('a', 'b', 'c', 'd''d') NOT NULL;
+ALTER TABLE `resource` MODIFY COLUMN `some_field2` enum('FOOBAR', 'BAZBOOM', 'BAZZ') NOT NULL;

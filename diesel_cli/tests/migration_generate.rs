@@ -291,6 +291,30 @@ fn migration_generate_postgres_add_record() {
     test_generate_migration("postgres_add_record", Vec::new())
 }
 
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[test]
+fn migration_generate_add_enum() {
+    test_generate_migration("add_enum", Vec::new())
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[test]
+fn migration_generate_remove_enum() {
+    test_generate_migration("remove_enum", Vec::new())
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[test]
+fn migration_generate_add_enum_variant() {
+    test_generate_migration("add_enum_variant", Vec::new())
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[test]
+fn migration_generate_drop_enum_variant() {
+    test_generate_migration("drop_enum_variant", Vec::new())
+}
+
 #[test]
 fn migration_generate_with_duplicate_specified_version_fails() {
     const VERSION_ARG: &str = "--version=12345";
