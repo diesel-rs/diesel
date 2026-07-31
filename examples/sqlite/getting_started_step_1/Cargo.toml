@@ -12,7 +12,7 @@ libsqlite3-sys = { workspace = true, features = ["bundled"] }
 dotenvy = "0.15"
 
 [dev-dependencies]
-assert_cmd = "2.0.14"
+assert_cmd = "2.1"
 tempfile = "3"
 diesel_migrations = { version = "2.3.0", path = "../../../diesel_migrations" }
 
