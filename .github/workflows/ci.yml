@@ -231,9 +231,9 @@ jobs:
           cargo --version
           rustc --version
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
         with:
-          tool: nextest
+          tool: nextest@0.9.140
 
       - name: Add Flags (nightly)
         if: matrix.rust == 'nightly'
@@ -346,7 +346,7 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=300 update
           sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
         with:
           tool: typos
       - name: Set environment variables
@@ -380,7 +380,7 @@ jobs:
       - name: Add wasm32-unknown-unknown target
         run: rustup target add wasm32-unknown-unknown
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
         with:
           tool: wasm-bindgen@0.2.108
 
@@ -550,7 +550,7 @@ jobs:
         run: |
           rustup install 1.88.0
           rustup install nightly
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
         with:
           tool: cargo-hack,cargo-minimal-versions
       - name: Cache cargo registry
@@ -584,7 +584,7 @@ jobs:
         run: |
           rustup update stable
           rustup override set stable
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@6a1bd70eaac3c8bdf093356838d7ee09fda951cf # v2.85.5
         with:
           tool: cargo-semver-checks
       - name: Run cargo semver-checks
