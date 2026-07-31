@@ -277,7 +277,9 @@ fn infer_functions(
                             schema: query_source_lookup.schema.map(|t| t.to_owned()),
                         })
                     }
-                    FunctionArgExpr::Wildcard => Ok(Expression::Unknown),
+                    FunctionArgExpr::WildcardWithOptions(_) | FunctionArgExpr::Wildcard => {
+                        Ok(Expression::Unknown)
+                    }
                 },
             })
             .collect::<Result<Vec<_>, _>>()?,
