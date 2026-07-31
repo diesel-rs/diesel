@@ -1,8 +1,6 @@
 ---
 source: diesel_cli/tests/print_schema.rs
-assertion_line: 503
 description: "Test: print_schema_fk_related_tables"
-snapshot_kind: text
 ---
 // @generated automatically by Diesel CLI.
 
@@ -22,6 +20,7 @@ diesel::table! {
     comments (id) {
         id -> Int4,
         post_id -> Int4,
+        post_id_2 -> Int4,
     }
 }
 
@@ -51,7 +50,6 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(comments -> posts (post_id));
 diesel::joinable!(posts -> users (user_id));
 diesel::joinable!(transactions -> sessions (session_id));
 

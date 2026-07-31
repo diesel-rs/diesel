@@ -22,7 +22,7 @@ const _: () = {
             (users::r#id, users::r#name)
         }
     }
-    fn _check_field_compatibility()
+    fn _check_field_compatibility_pg()
     where
         i32: diesel::deserialize::FromSqlRow<
             diesel::dsl::SqlTypeOf<users::r#id>,
@@ -33,6 +33,8 @@ const _: () = {
             diesel::pg::Pg,
         >,
     {}
+
+
 };
 const _: () = {
     use diesel;

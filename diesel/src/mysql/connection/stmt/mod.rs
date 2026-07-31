@@ -1,8 +1,8 @@
 #![allow(unsafe_code)] // module uses ffi
+use core::ffi as libc;
+use core::ffi::CStr;
+use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
-use std::ffi::CStr;
-use std::os::raw as libc;
-use std::ptr::NonNull;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::connection::statement_cache::MaybeCached;

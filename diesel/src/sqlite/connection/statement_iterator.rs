@@ -1,5 +1,6 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use alloc::string::String;
+use core::cell::RefCell;
 
 use super::row::{PrivateSqliteRow, SqliteRow};
 use super::stmt::StatementUse;
@@ -37,7 +38,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
             };
             let last_row = &mut *last_row;
             let duplicated = last_row.duplicate(column_names);
-            std::mem::replace(last_row, duplicated)
+            core::mem::replace(last_row, duplicated)
         };
         if let PrivateSqliteRow::Direct(mut stmt) = last_row {
             let res = unsafe {

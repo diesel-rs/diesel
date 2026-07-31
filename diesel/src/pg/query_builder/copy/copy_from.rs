@@ -1,5 +1,5 @@
-use std::borrow::Cow;
-use std::marker::PhantomData;
+use alloc::borrow::Cow;
+use core::marker::PhantomData;
 
 use byteorder::NetworkEndian;
 use byteorder::WriteBytesExt;
@@ -7,21 +7,21 @@ use byteorder::WriteBytesExt;
 use super::CommonOptions;
 use super::CopyFormat;
 use super::CopyTarget;
+use crate::Connection;
+use crate::Insertable;
+use crate::QueryResult;
 use crate::expression::bound::Bound;
 use crate::insertable::ColumnInsertValue;
-use crate::pg::backend::FailedToLookupTypeError;
-use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::pg::Pg;
 use crate::pg::PgMetadataLookup;
+use crate::pg::backend::FailedToLookupTypeError;
+use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::query_builder::BatchInsert;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::QueryId;
 use crate::query_builder::ValuesClause;
 use crate::serialize::IsNull;
 use crate::serialize::ToSql;
-use crate::Connection;
-use crate::Insertable;
-use crate::QueryResult;
 use crate::{Column, Table};
 
 /// Describes the different possible settings for the `HEADER` option
@@ -134,7 +134,7 @@ where
 }
 
 pub trait CopyFromExpression<T> {
-    type Error: From<crate::result::Error> + std::error::Error;
+    type Error: From<crate::result::Error> + core::error::Error;
 
     fn callback(&mut self, copy: &mut impl std::io::Write) -> Result<(), Self::Error>;
 
@@ -148,7 +148,7 @@ pub trait CopyFromExpression<T> {
 
 impl<S, F, E> CopyFromExpression<S::Table> for CopyFrom<S, F>
 where
-    E: From<crate::result::Error> + std::error::Error,
+    E: From<crate::result::Error> + core::error::Error,
     S: CopyTarget,
     F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
 {
@@ -184,9 +184,9 @@ impl PgMetadataLookup for Dummy {
 
 trait CopyFromInsertableHelper {
     type Target: CopyTarget;
-    const COLUMN_COUNT: i16;
+    const COLUMN_COUNT: u16;
 
-    fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull>;
+    fn write_to_buffer(&self, idx: u16, out: &mut Vec<u8>) -> QueryResult<IsNull>;
 }
 
 macro_rules! impl_copy_from_insertable_helper_for_values_clause {
@@ -207,12 +207,9 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
             {
                 type Target = ($($ST,)*);
 
-                // statically known to always fit
-                // as we don't support more than 128 columns
-                #[allow(clippy::cast_possible_truncation)]
-                const COLUMN_COUNT: i16 = $Tuple as i16;
+                const COLUMN_COUNT: u16 = $Tuple;
 
-                fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
+                fn write_to_buffer(&self, idx: u16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
                     use crate::query_builder::ByteWrapper;
                     use crate::serialize::Output;
 
@@ -244,10 +241,9 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
 
                 // statically known to always fit
                 // as we don't support more than 128 columns
-                #[allow(clippy::cast_possible_truncation)]
-                const COLUMN_COUNT: i16 = $Tuple as i16;
+                const COLUMN_COUNT: u16 = $Tuple;
 
-                fn write_to_buffer(&self, idx: i16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
+                fn write_to_buffer(&self, idx: u16, out: &mut Vec<u8>) -> QueryResult<IsNull> {
                     use crate::query_builder::ByteWrapper;
                     use crate::serialize::Output;
 
@@ -269,7 +265,7 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(impl_copy_from_insertable_helper_for_values_clause);
+crate::for_each_tuple!(impl_copy_from_insertable_helper_for_values_clause);
 
 #[derive(Debug)]
 pub struct InsertableWrapper<I>(Option<I>);
@@ -308,7 +304,7 @@ where
         for i in values.values {
             // column count
             buffer
-                .write_i16::<NetworkEndian>(V::COLUMN_COUNT)
+                .write_u16::<NetworkEndian>(V::COLUMN_COUNT)
                 .map_err(io_result_mapper)?;
             for idx in 0..V::COLUMN_COUNT {
                 // first write the null indicator as dummy value
@@ -533,7 +529,7 @@ where
     C: Connection<Backend = Pg>,
 {
     /// The error type returned by the execute function
-    type Error: std::error::Error;
+    type Error: core::error::Error;
 
     /// See the trait documentation for details
     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;

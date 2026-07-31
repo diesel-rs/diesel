@@ -1,7 +1,7 @@
 use crate::support::{database, project};
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
-use diesel::{select, RunQueryDsl};
+use diesel::{RunQueryDsl, select};
 use std::path::Path;
 
 #[test]
@@ -134,9 +134,11 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result
-        .stderr()
-        .contains("Failed to run run_error_migrations_fails with: "));
+    assert!(
+        result
+            .stderr()
+            .contains("Failed to run run_error_migrations_fails with: ")
+    );
 }
 
 #[test]
@@ -421,6 +423,43 @@ fn migration_run_updates_schema_if_config_present() {
 }
 
 #[test]
+fn migration_run_ignores_schema_if_config_present_with_no_schema_cli_flag() {
+    let p = project("migration_run_ignores_schema_with_cli_flag")
+        .folder("migrations")
+        .file(
+            "diesel.toml",
+            r#"
+            [print_schema]
+            file = "src/my_schema.rs"
+            "#,
+        )
+        .build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        Some("DROP TABLE users"),
+        None,
+    );
+
+    assert!(!p.has_file("src/my_schema.rs"));
+
+    let result = p.command("migration").arg("run").arg("--no-schema").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    // Schema still doesn't exist.
+    assert!(!p.has_file("src/my_schema.rs"));
+}
+
+#[test]
 fn migrations_can_be_run_with_no_config_file() {
     let p = project("migration_run_no_config_file")
         .folder("migrations")
@@ -635,4 +674,32 @@ fn migration_run_without_transaction() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout() == "Running migration 2023-05-08-210424_without_transaction\n");
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn reset_search_path_after_migration() {
+    let p: crate::support::Project = project("print_schema_after_search_path_change")
+        .folder("migrations")
+        .build();
+    let _db = database(&p.database_url());
+
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_set_search_path",
+        "CREATE SCHEMA IF NOT EXISTS custom_schema; SET search_path TO custom_schema;",
+        Some("SET search_path TO public; DROP SCHEMA IF EXISTS custom_schema CASCADE;"),
+        None,
+    );
+
+    p.create_migration(
+        "12346_create_users",
+        "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL);",
+        Some("DROP TABLE users;"),
+        None,
+    );
+
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Migration failed: {:?}", result);
 }

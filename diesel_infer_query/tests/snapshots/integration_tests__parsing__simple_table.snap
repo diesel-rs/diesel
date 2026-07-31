@@ -1,0 +1,38 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT users.id, name, hair_color as hair_colour FROM users"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Field {
+                schema: None,
+                query_source: "users",
+                field_name: "id",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Field {
+                schema: None,
+                query_source: "users",
+                field_name: "name",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "hair_colour",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "users",
+                field_name: "hair_color",
+                via_left_join: false,
+            },
+        },
+    ],
+}

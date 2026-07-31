@@ -95,11 +95,14 @@
 //! nanoseconds on an operation that will take microseconds or even
 //! milliseconds.
 
-use std::any::TypeId;
-use std::borrow::Cow;
-use std::collections::hash_map::Entry;
-use std::hash::Hash;
-use std::ops::{Deref, DerefMut};
+use crate::util::std_compat::Entry;
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::any::TypeId;
+use core::hash::Hash;
+use core::ops::{Deref, DerefMut};
 
 use strategy::{
     LookupStatementResult, StatementCacheStrategy, WithCacheStrategy, WithoutCacheStrategy,
@@ -180,6 +183,15 @@ where
         }
     }
 
+    /// Removes all cached statements so subsequent queries are re-prepared,
+    /// while keeping the configured caching strategy.
+    // Currently used only by the SQLite authorizer, so it is compiled only for
+    // backends that provide that caller.
+    #[cfg(feature = "__sqlite-shared")]
+    pub(crate) fn clear(&mut self) {
+        self.cache.clear();
+    }
+
     /// Setting custom caching strategy. It is used in tests, to verify caching logic
     #[allow(dead_code)]
     pub(crate) fn set_strategy<Strategy>(&mut self, s: Strategy)
@@ -207,7 +219,7 @@ where
     #[allow(unreachable_pub)]
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql"
     ))]
     pub fn cached_statement<'a, T, R, C>(

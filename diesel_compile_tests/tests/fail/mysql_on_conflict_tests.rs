@@ -82,7 +82,7 @@ fn main() {
         .on_conflict(dsl::DuplicatedKeys)
         .do_nothing()
         .execute(&mut connection);
-    //~^ ERROR: `ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
+    //~^ ERROR: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
 
     insert_into(users)
         .values((id.eq(42), name.eq("John")))

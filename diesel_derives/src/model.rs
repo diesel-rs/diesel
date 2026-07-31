@@ -1,17 +1,18 @@
 use proc_macro2::Span;
 use std::slice::from_ref;
+use syn::Result;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::Result;
 use syn::{
     Data, DataStruct, DeriveInput, Field as SynField, Fields, FieldsNamed, FieldsUnnamed, Ident,
     LitBool, Path, Type,
 };
 
-use crate::attrs::{parse_attributes, StructAttr};
 use crate::field::Field;
-use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::camel_to_snake;
+use diesel_attribute_parser::CheckForBackend;
+use diesel_attribute_parser::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use diesel_attribute_parser::{StructAttr, parse_attributes};
 
 pub struct Model {
     name: Path,
@@ -24,6 +25,7 @@ pub struct Model {
     pub aggregate: bool,
     pub not_sized: bool,
     pub foreign_derive: bool,
+    pub enum_type: bool,
     pub mysql_type: Option<MysqlType>,
     pub sqlite_type: Option<SqliteType>,
     pub postgres_type: Option<PostgresType>,
@@ -31,11 +33,6 @@ pub struct Model {
     pub base_query: Option<syn::Expr>,
     pub base_query_type: Option<syn::Type>,
     fields: Vec<Field>,
-}
-
-pub enum CheckForBackend {
-    Backends(syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>),
-    Disabled(LitBool),
 }
 
 impl Model {
@@ -74,6 +71,7 @@ impl Model {
         let mut sql_types = vec![];
         let mut aggregate = false;
         let mut not_sized = false;
+        let mut enum_type = false;
         let mut foreign_derive = false;
         let mut mysql_type = None;
         let mut sqlite_type = None;
@@ -106,6 +104,7 @@ impl Model {
                 StructAttr::Aggregate(_) => aggregate = true,
                 StructAttr::NotSized(_) => not_sized = true,
                 StructAttr::ForeignDerive(_) => foreign_derive = true,
+                StructAttr::EnumType(_) => enum_type = true,
                 StructAttr::MysqlType(_, val) => mysql_type = Some(val),
                 StructAttr::SqliteType(_, val) => sqlite_type = Some(val),
                 StructAttr::PostgresType(_, val) => postgres_type = Some(val),
@@ -114,6 +113,7 @@ impl Model {
                 }
                 StructAttr::BaseQuery(_, e) => base_query = Some(e),
                 StructAttr::BaseQueryType(_, t) => base_query_type = Some(t),
+                StructAttr::RenameAll(_, _) => { /*ignore here as only relevant for enums*/ }
             }
         }
 
@@ -137,6 +137,7 @@ impl Model {
             check_for_backend,
             base_query,
             base_query_type,
+            enum_type,
         })
     }
 

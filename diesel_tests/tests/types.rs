@@ -737,6 +737,49 @@ fn pg_array_from_sql() {
     );
 }
 
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_ndim_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let ndarray =
+        query_single_value::<Array<Bool>, NdArray<bool>>("ARRAY[ARRAY['t', 'f', 't']]::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    let ndarray = query_single_value::<Array<Bool>, NdArray<bool>>(
+        "ARRAY[ARRAY['t', 'f'], ARRAY['f', 't']]::bool[]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(vec![true, false, false, true], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>("'{{{1, 2, 3}}}'::int[]");
+    assert_eq!(vec![1, 1, 3], ndarray.dims);
+    assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>("'{{{1}, {2}, {3}}}'::int[]");
+    assert_eq!(vec![1, 3, 1], ndarray.dims);
+    assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>(
+        "'{{{1, 2}, {3, 4}, {5, 6}},{{3, 4}, {5, 6}, {7, 8}},{{5, 6}, {7, 8}, {9, 10}}}'::int[]",
+    );
+    assert_eq!(vec![3, 3, 2], ndarray.dims);
+    assert_eq!(
+        vec![1, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 5, 6, 7, 8, 9, 10],
+        ndarray.data
+    );
+    let ndarray = query_single_value::<Array<VarChar>, NdArray<String>>(
+        "ARRAY[ARRAY['Hello', 'world'], ARRAY['', 'world']]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(
+        ndarray.data,
+        vec![
+            "Hello".to_string(),
+            "world".to_string(),
+            "".to_string(),
+            "world".to_string()
+        ],
+    );
+}
+
 #[cfg(feature = "postgres")]
 #[diesel_test_helper::test]
 fn pg_array_from_sql_non_one_lower_bound() {
@@ -752,6 +795,23 @@ fn pg_array_from_sql_non_one_lower_bound() {
         vec![true, false, true],
         query_single_value::<Array<Bool>, Vec<bool>>("'[2:4]={t, f, t}'::bool[]")
     );
+}
+
+#[cfg(feature = "postgres")]
+#[diesel_test_helper::test]
+fn pg_ndim_array_from_sql_non_one_lower_bound() {
+    use diesel::data_types::NdArray;
+
+    let ndarray =
+        query_single_value::<Array<Bool>, NdArray<bool>>("'[0:0][0:2]={{t, f, t}}'::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    query_single_value::<Array<Bool>, NdArray<bool>>("'[1:1][1:3]={{t, f, t}}'::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    query_single_value::<Array<Bool>, NdArray<bool>>("'[3:3][2:4]={{t, f, t}}'::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
 }
 
 #[diesel_test_helper::test]
@@ -791,6 +851,51 @@ fn pg_array_containing_null() {
         Some("world".to_string()),
     ];
     assert_eq!(expected, data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_ndim_array_containing_null() {
+    use diesel::data_types::NdArray;
+
+    let query = "ARRAY[ARRAY['Hello', '', NULL, 'world']]";
+    let ndarray = query_single_value::<Array<Nullable<VarChar>>, NdArray<Option<String>>>(query);
+    let expected = vec![
+        Some("Hello".to_string()),
+        Some("".to_string()),
+        None,
+        Some("world".to_string()),
+    ];
+    assert_eq!(expected, ndarray.data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_empty_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let res =
+        query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>("ARRAY[]::text[]");
+    assert_eq!(Vec::<Option<String>>::new(), res);
+
+    let ndarray = query_single_value::<Array<Nullable<VarChar>>, NdArray<Option<String>>>(
+        "ARRAY[ARRAY[]]::text[]",
+    );
+    assert_eq!(Vec::<usize>::new(), ndarray.dims);
+    assert_eq!(Vec::<Option<String>>::new(), ndarray.data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_nullable_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let res = query_single_value::<Nullable<Array<Integer>>, Option<Vec<i32>>>("NULL::int4[]");
+    assert_eq!(None, res);
+
+    let ndarray =
+        query_single_value::<Nullable<Array<Integer>>, Option<NdArray<i32>>>("NULL::int4[][]");
+    assert_eq!(None, ndarray);
 }
 
 #[diesel_test_helper::test]
@@ -995,7 +1100,7 @@ fn mysql_numeric_bigdecimal_from_sql() {
 
     // Some non standard values:
     let query = "cast(18446744073709551616 as decimal)"; // 2^64; doesn't fit in u64
-                                                         // It is mysql, it will trim it even in strict mode
+    // It is mysql, it will trim it even in strict mode
     let expected_value: BigDecimal = "9999999999.00"
         .parse()
         .expect("Could not parse to a BigDecimal");
@@ -1394,7 +1499,7 @@ where
     select(sql::<T>(sql_str)).first(connection).unwrap()
 }
 
-use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
+use diesel::expression::{AsExpression, SqlLiteral, ValidGrouping, is_aggregate};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
 
@@ -1464,9 +1569,11 @@ fn test_range_from_sql() {
     );
 
     let query = "SELECT '[2,1)'::int4range";
-    assert!(sql::<Range<Int4>>(query)
-        .load::<(Bound<i32>, Bound<i32>)>(connection)
-        .is_err());
+    assert!(
+        sql::<Range<Int4>>(query)
+            .load::<(Bound<i32>, Bound<i32>)>(connection)
+            .is_err()
+    );
 
     let query = "'empty'::int4range";
     let expected_value = (Bound::Excluded(0), Bound::Excluded(0));
@@ -1750,6 +1857,33 @@ fn citext_fields() {
         .unwrap();
 
     assert_eq!(lowercase_in_db, Some("lowercase_value".to_string()));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn deserialize_1d_array_to_ndarray() {
+    use diesel::data_types::NdArray;
+    use diesel::sql_types::{Array, Bool};
+
+    let conn = &mut connection();
+
+    diesel::sql_query(
+        "CREATE TABLE test_table(\
+                       bool_array BOOLEAN[], \
+                       float_array FLOAT4[] \
+                       )",
+    )
+    .execute(conn)
+    .unwrap();
+    diesel::sql_query("INSERT INTO test_table VALUES('{true, false}', '{{{1.0, 2.0}}}')")
+        .execute(conn)
+        .unwrap();
+
+    let res = diesel::dsl::sql::<Array<Bool>>("SELECT bool_array FROM test_table")
+        .get_result::<NdArray<bool>>(conn)
+        .unwrap();
+    assert_eq!(res.dims, vec![2]);
+    assert_eq!(res.data, vec![true, false]);
 }
 
 #[diesel_test_helper::test]

@@ -9,8 +9,8 @@ error[E0277]: `ReturningClause<(id, name)>` is no valid SQL fragment for the `Sq
      = help: the trait `QueryFragment<Sqlite, backend::sql_dialect::returning_clause::DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(id, name)>`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-help: `diesel::query_builder::returning_clause::ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
-    --> DIESEL/diesel/diesel/src/query_builder/returning_clause.rs
+help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
      |
   LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
   LL | | where
@@ -59,8 +59,8 @@ error[E0277]: `ReturningClause<name>` is no valid SQL fragment for the `Sqlite` 
      = help: the trait `QueryFragment<Sqlite, backend::sql_dialect::returning_clause::DoesNotSupportReturningClause>` is not implemented for `ReturningClause<name>`
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
-help: `diesel::query_builder::returning_clause::ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
-    --> DIESEL/diesel/diesel/src/query_builder/returning_clause.rs
+help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
      |
   LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
   LL | | where

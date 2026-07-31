@@ -144,7 +144,7 @@ fn filter_by_like() {
         .values(&data)
         .execute(connection)
         .unwrap();
-    let data = users.load::<User>(connection).unwrap();
+    let data = users.order(id).load::<User>(connection).unwrap();
     let sean = data[0].clone();
     let tess = data[1].clone();
     let jim = data[2].clone();
@@ -182,7 +182,7 @@ fn filter_by_ilike() {
         .values(&data)
         .execute(connection)
         .unwrap();
-    let data = users.load::<User>(connection).unwrap();
+    let data = users.order(id).load::<User>(connection).unwrap();
     let sean = data[0].clone();
     let tess = data[1].clone();
     let jim = data[2].clone();

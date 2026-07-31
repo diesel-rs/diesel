@@ -199,6 +199,20 @@ fn print_schema_custom_types_custom_schema() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_custom_enum_derives() {
+    test_print_schema(
+        "print_schema_custom_enum_derives",
+        vec![
+            "--custom-enum-derives",
+            "Clone",
+            "--custom-enum-derives",
+            "Copy",
+        ],
+    );
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
@@ -237,6 +251,15 @@ fn print_schema_disabling_custom_type_works() {
         "print_schema_disabling_custom_type_works",
         vec!["--no-generate-missing-sql-type-definitions"],
         false, // explicitly exclude required types
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_disabling_enum_types_works() {
+    test_print_schema(
+        "print_schema_disabling_enum_types_works",
+        vec!["--no-generate-rust-enum-types"],
     )
 }
 
@@ -367,7 +390,6 @@ fn print_schema_comments_dont_fallback_on_generated() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
 fn print_schema_fk_related_tables() {
     test_print_schema(
         "print_schema_fk_related_tables",
@@ -452,12 +474,130 @@ fn print_schema_with_multiple_schema() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_multiple_schema_cross_schema_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "--schema",
+            "game",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "--schema",
+            "people",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_same_schema_cross_file_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_same_schema_cross_file_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "--schema",
+            "inventory",
+            "-o",
+            "orders",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "--schema",
+            "inventory",
+            "-o",
+            "customers",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_default_schema_cross_file_foreign_key() {
+    test_multiple_print_schema(
+        "print_schema_with_default_schema_cross_file_foreign_key",
+        vec![
+            "--schema-key",
+            "user1",
+            "-o",
+            "orders",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "-o",
+            "customers",
+            "--with-docs",
+        ],
+    )
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn print_schema_sqlite_primary_key_as_bigint() {
     test_print_schema(
         "print_schema_sqlite_primary_key_as_bigint",
         vec!["--sqlite-integer-primary-key-is-bigint"],
     );
+}
+
+#[test]
+fn print_schema_with_view() {
+    test_print_schema(
+        "print_schema_with_view",
+        vec!["--include-views", "--with-docs"],
+    );
+}
+
+#[test]
+fn print_schema_view_infer_nullable_simple() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_simple",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
+fn print_schema_view_infer_nullable_from_table() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_from_table",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    );
+}
+
+#[test]
+fn print_schema_view_infer_nullable_from_table_only_view() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_only_view",
+        vec![
+            "--include-views",
+            "--experimental-infer-nullable-for-views",
+            "-o",
+            "test",
+        ],
+    )
+}
+
+#[test]
+fn print_schema_view_infer_nullable_left_join() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_left_join",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_view_infer_nullable_mixed_schema() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_mixed_schema",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
 }
 
 #[test]
@@ -675,6 +815,15 @@ fn assert_schema_compiles(test_name: &str, schema: String) {
 
 fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let config = read_file(&test_path.join("diesel.toml"));
+    // prevent name collisions by shorting the original name
+    // Postgres allows database names up to 63 bytes, "_config` is 7 bytes
+    // The project builder also appends another 7 bytes by adding "diesel_"
+    // which gives us a max name length of 49
+    let test_name = if test_name.len() >= 49 {
+        &test_name[..49]
+    } else {
+        test_name
+    };
     let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
 
     let patch_file = backend_file_path(test_name, "schema.patch");

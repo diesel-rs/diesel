@@ -1,11 +1,12 @@
+use diesel_attribute_parser::AttributeSpanWrapper;
+use diesel_attribute_parser::CheckForBackend;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type};
+use syn::{DeriveInput, Ident, LitStr, Result, Type, parse_quote, parse_quote_spanned};
 
-use crate::attrs::AttributeSpanWrapper;
 use crate::field::{Field, FieldName};
-use crate::model::{CheckForBackend, Model};
+use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
@@ -31,7 +32,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 Ok(quote!(
                    {
                        let field = diesel::row::NamedRow::get::<#st, #deserialize_ty>(row, #name)?;
-                       <#deserialize_ty as std::convert::Into<#field_ty>>::into(field)
+                       <#deserialize_ty as ::core::convert::Into<#field_ty>>::into(field)
                    }
                 ))
             }

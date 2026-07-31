@@ -1,10 +1,10 @@
+use crate::Queryable;
 #[cfg(feature = "mysql_backend")]
 use crate::deserialize::FromSqlRef;
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
-use crate::Queryable;
 use core::error::Error;
 use core::str::{self, FromStr};
 

@@ -1,0 +1,7 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: remove_enum"
+---
+-- Your SQL goes here
+ALTER TABLE `resource` DROP COLUMN `some_field`;
+ALTER TABLE `resource` DROP COLUMN `some_field2`;

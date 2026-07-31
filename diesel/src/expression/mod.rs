@@ -45,6 +45,8 @@ pub(crate) mod subselect;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::operators::Concat;
 
+pub use self::operators::Collate;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport
@@ -73,9 +75,10 @@ pub(crate) mod dsl {
     pub use super::sql_literal::sql;
 
     #[cfg(feature = "postgres_backend")]
+    #[allow(ambiguous_glob_reexports)]
     pub use crate::pg::expression::dsl::*;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     pub use crate::sqlite::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())
@@ -118,6 +121,8 @@ pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 use crate::backend::Backend;
 use crate::dsl::{AsExprOf, AsSelect};
 use crate::sql_types::{HasSqlType, SingleValue, SqlType};
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 /// Represents a typed fragment of SQL.
 ///
@@ -139,6 +144,7 @@ pub mod expression_types {
     use super::{QueryMetadata, TypedExpressionType};
     use crate::backend::Backend;
     use crate::sql_types::SingleValue;
+    use alloc::vec::Vec;
 
     /// Query nodes with this expression type do not have a statically at compile
     /// time known expression type.
@@ -175,6 +181,14 @@ pub mod expression_types {
 }
 
 impl<T: Expression + ?Sized> Expression for Box<T> {
+    type SqlType = T::SqlType;
+}
+
+impl<T: Expression + ?Sized> Expression for alloc::rc::Rc<T> {
+    type SqlType = T::SqlType;
+}
+
+impl<T: Expression + ?Sized> Expression for alloc::sync::Arc<T> {
     type SqlType = T::SqlType;
 }
 
@@ -323,6 +337,20 @@ where
 {
 }
 
+impl<T: ?Sized, QS> AppearsOnTable<QS> for alloc::rc::Rc<T>
+where
+    T: AppearsOnTable<QS>,
+    alloc::rc::Rc<T>: Expression,
+{
+}
+
+impl<T: ?Sized, QS> AppearsOnTable<QS> for alloc::sync::Arc<T>
+where
+    T: AppearsOnTable<QS>,
+    alloc::sync::Arc<T>: Expression,
+{
+}
+
 impl<'a, T: ?Sized, QS> AppearsOnTable<QS> for &'a T
 where
     T: AppearsOnTable<QS>,
@@ -349,6 +377,20 @@ impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
 where
     T: SelectableExpression<QS>,
     Box<T>: AppearsOnTable<QS>,
+{
+}
+
+impl<T: ?Sized, QS> SelectableExpression<QS> for alloc::rc::Rc<T>
+where
+    T: SelectableExpression<QS>,
+    alloc::rc::Rc<T>: AppearsOnTable<QS>,
+{
+}
+
+impl<T: ?Sized, QS> SelectableExpression<QS> for alloc::sync::Arc<T>
+where
+    T: SelectableExpression<QS>,
+    alloc::sync::Arc<T>: AppearsOnTable<QS>,
 {
 }
 
@@ -732,6 +774,14 @@ pub trait ValidGrouping<GroupByClause> {
 }
 
 impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for alloc::rc::Rc<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for alloc::sync::Arc<T> {
     type IsAggregate = T::IsAggregate;
 }
 

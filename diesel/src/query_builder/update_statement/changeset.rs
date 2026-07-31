@@ -1,10 +1,10 @@
+use crate::Table;
 use crate::backend::DieselReserveSpecialization;
+use crate::expression::AppearsOnTable;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
-use crate::expression::AppearsOnTable;
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
-use crate::Table;
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).

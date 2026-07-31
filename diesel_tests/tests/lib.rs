@@ -8,10 +8,13 @@ extern crate diesel;
 
 mod aggregate_expressions;
 mod alias;
+mod allow_tables_to_appear_in_same_query;
 #[cfg(not(feature = "sqlite"))]
 mod annotations;
 mod associations;
 mod boxed_queries;
+mod cast;
+mod collation;
 mod combination;
 mod connection;
 #[cfg(feature = "postgres")]
@@ -38,10 +41,12 @@ mod internal_details;
 mod joins;
 mod limit_offset;
 mod macros;
+mod migrations;
 #[cfg(feature = "postgres")]
 mod only;
 #[cfg(not(feature = "sqlite"))]
 mod operations;
+mod option_has_table;
 mod order;
 mod perf_details;
 #[cfg(feature = "postgres")]
@@ -58,4 +63,5 @@ mod transactions;
 mod types;
 mod types_roundtrip;
 mod update;
+mod view_testing;
 mod window_functions;

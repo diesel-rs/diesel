@@ -18,7 +18,9 @@ pub enum Error {
     TableFilterRegexInvalid(#[from] regex::Error),
     #[error("Unable to find diesel.toml or Cargo.toml in {0:?} or any parent directories.")]
     ProjectRootNotFound(PathBuf),
-    #[error("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")]
+    #[error(
+        "The --database-url argument must be passed, or the DATABASE_URL environment variable must be set."
+    )]
     DatabaseUrlMissing,
     #[error("Encountered an IO error: {0} for `{n}`", n=print_optional_path(.1))]
     IoError(#[source] std::io::Error, Option<PathBuf>),
@@ -72,13 +74,26 @@ pub enum Error {
     TooManyMigrations(PathBuf, String),
     #[error("Specified migration version `{1}` already exists inside `{n}`", n=print_path(.0))]
     DuplicateMigrationVersion(PathBuf, String),
+    #[error("Could not resolved view: Failed to resolve relation `{n}`", n=print_relation(.0))]
+    CouldNotResolveView(TableName),
+    #[error("Invalid field used in view definition: `{n}`, field `{f}`", n = print_relation(.0), f=.1)]
+    FieldNotFoundForView(TableName, String),
+    #[error("Cyclic view definition detected: `{n}`", n=print_relation(.0))]
+    CyclicViewDefinition(TableName),
+    #[error("Error inferring view definitions: {0}")]
+    InferError(diesel_infer_query::Error),
 }
 
 fn print_path(path: &Path) -> String {
     format!("{}", path.display())
 }
+
 fn print_optional_path(path: &Option<PathBuf>) -> String {
     path.as_ref().map(|p| print_path(p)).unwrap_or_default()
+}
+
+fn print_relation(tpl: &TableName) -> String {
+    tpl.full_sql_name()
 }
 
 impl Error {
@@ -86,6 +101,19 @@ impl Error {
         match error {
             MigrationError::IoError(error) => Self::IoError(error, path.map(Into::into)),
             _ => Self::MigrationError(Box::new(error)),
+        }
+    }
+}
+
+impl From<diesel_infer_query::Error> for Error {
+    fn from(value: diesel_infer_query::Error) -> Self {
+        match value {
+            diesel_infer_query::Error::ResolverFailure { inner, .. }
+                if inner.downcast_ref::<Self>().is_some() =>
+            {
+                *inner.downcast().expect("We checked this before")
+            }
+            e => Self::InferError(e),
         }
     }
 }

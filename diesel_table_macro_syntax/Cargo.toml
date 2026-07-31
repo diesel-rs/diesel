@@ -9,7 +9,7 @@ repository = "https://github.com/diesel-rs/diesel/"
 autotests = false
 include.workspace = true
 rust-version.workspace = true
-edition = "2021"
+edition.workspace = true
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

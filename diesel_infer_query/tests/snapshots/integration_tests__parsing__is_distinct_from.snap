@@ -1,0 +1,43 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT 'abc' IS DISTINCT FROM NULL, 'def' IS NOT DISTINCT FROM NULL"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "abc",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                op: "IS DISTINCT FROM",
+                statically_not_null: true,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Literal {
+                    value: Some(
+                        "def",
+                    ),
+                    is_null: false,
+                },
+                right: Literal {
+                    value: None,
+                    is_null: true,
+                },
+                op: "IS NOT DISTINCT FROM",
+                statically_not_null: true,
+            },
+        },
+    ],
+}

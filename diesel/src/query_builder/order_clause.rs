@@ -1,4 +1,6 @@
-use crate::expression::{is_aggregate, ValidGrouping};
+use alloc::boxed::Box;
+
+use crate::expression::{ValidGrouping, is_aggregate};
 
 simple_clause!(
     /// DSL node that represents that no order clause is set

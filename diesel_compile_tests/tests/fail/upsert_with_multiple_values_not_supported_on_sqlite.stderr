@@ -35,11 +35,11 @@ error[E0277]: `BatchInsert<Vec<...>, ..., (), false>` is no valid SQL fragment f
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/insert_statement/batch_insert.rs
      |
-  LL | / impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
-  LL | |     for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
-  LL | | where
-  LL | |     DB: Backend,
-  LL | |     Self: QueryFragment<DB, DB::BatchInsertSupport>,
+ LL | / impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
+ LL | |     for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
+ LL | | where
+ LL | |     DB: Backend,
+ LL | |     Self: QueryFragment<DB, DB::BatchInsertSupport>,
      | |____________________________________________________^ `BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>` implements `QueryFragment<DB>`
 ...
  LL | / impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool>

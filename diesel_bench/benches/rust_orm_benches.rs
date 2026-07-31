@@ -1,3 +1,4 @@
+use super::consts;
 use criterion::Bencher;
 use rustorm::EntityManager;
 use rustorm::{FromDao, Pool, ToColumnNames, ToDao, ToTableName};
@@ -123,39 +124,21 @@ fn connect() -> EntityManager {
             .execute_sql_with_return("DELETE FROM users", &[])
             .unwrap();
     } else if cfg!(feature = "mysql") {
-        entity_manager
-            .db()
-            .execute_sql_with_return("SET FOREIGN_KEY_CHECKS = 0;", &[])
-            .unwrap();
-        entity_manager
-            .db()
-            .execute_sql_with_return("TRUNCATE TABLE comments", &[])
-            .unwrap();
-        entity_manager
-            .db()
-            .execute_sql_with_return("TRUNCATE TABLE posts", &[])
-            .unwrap();
-        entity_manager
-            .db()
-            .execute_sql_with_return("TRUNCATE TABLE users", &[])
-            .unwrap();
-        entity_manager
-            .db()
-            .execute_sql_with_return("SET FOREIGN_KEY_CHECKS = 1;", &[])
-            .unwrap();
+        #[cfg(feature = "mysql")]
+        for query in consts::mysql::CLEANUP_QUERIES {
+            entity_manager
+                .db()
+                .execute_sql_with_return(*query, &[])
+                .unwrap();
+        }
     } else if cfg!(feature = "postgres") {
-        entity_manager
-            .db()
-            .execute_sql_with_return("TRUNCATE TABLE comments CASCADE", &[])
-            .unwrap();
-        entity_manager
-            .db()
-            .execute_sql_with_return("TRUNCATE TABLE posts CASCADE", &[])
-            .unwrap();
-        entity_manager
-            .db()
-            .execute_sql_with_return("TRUNCATE TABLE users CASCADE", &[])
-            .unwrap();
+        #[cfg(feature = "postgres")]
+        for query in consts::postgres::CLEANUP_QUERIES {
+            entity_manager
+                .db()
+                .execute_sql_with_return(*query, &[])
+                .unwrap();
+        }
     }
 
     entity_manager

@@ -12,6 +12,7 @@ pub(crate) mod backend;
 pub(crate) mod connection;
 mod metadata_lookup;
 pub(crate) mod query_builder;
+pub mod returning;
 pub(crate) mod serialize;
 mod transaction;
 mod value;
@@ -55,6 +56,8 @@ pub use crate::upsert;
 /// Most of these types are used to implement `ToSql` and `FromSql` for higher
 /// level types.
 pub mod data_types {
+    #[doc(inline)]
+    pub use super::types::array::NdArray;
     #[doc(inline)]
     pub use super::types::date_and_time::{PgDate, PgInterval, PgTime, PgTimestamp};
     #[doc(inline)]

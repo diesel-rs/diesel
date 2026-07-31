@@ -11,14 +11,62 @@ error: expected `=`
 LL |     #[diesel(serialize_as(Foo))]
    |                          ^
 
-error: expected identifier
+error: expected type
   --> tests/fail/derive/bad_serialize_as.rs:33:29
    |
 LL |     #[diesel(serialize_as = "foo")]
    |                             ^^^^^
 
-error: expected identifier
+error: expected type
   --> tests/fail/derive/bad_serialize_as.rs:42:29
    |
 LL |     #[diesel(serialize_as = 1omg)]
    |                             ^^^^
+
+error: `serialize_as` does not support pointer types
+  --> tests/fail/derive/bad_serialize_as.rs:51:29
+   |
+LL |     #[diesel(serialize_as = *const u8)]
+   |                             ^^^^^^^^^
+
+error: `serialize_as` does not support function pointer types
+  --> tests/fail/derive/bad_serialize_as.rs:60:29
+   |
+LL |     #[diesel(serialize_as = fn() -> i32)]
+   |                             ^^^^^^^^^^^
+
+error: `serialize_as` does not support inference types
+  --> tests/fail/derive/bad_serialize_as.rs:69:29
+   |
+LL |     #[diesel(serialize_as = _)]
+   |                             ^
+
+error: `serialize_as` does not support reference types
+  --> tests/fail/derive/bad_serialize_as.rs:78:29
+   |
+LL |     #[diesel(serialize_as = &'static str)]
+   |                             ^^^^^^^^^^^^
+
+error: `serialize_as` does not support unsized slice types, use an array instead
+  --> tests/fail/derive/bad_serialize_as.rs:87:29
+   |
+LL |     #[diesel(serialize_as = [u8])]
+   |                             ^^^^
+
+error: `serialize_as` does not support trait objects
+  --> tests/fail/derive/bad_serialize_as.rs:96:29
+   |
+LL |     #[diesel(serialize_as = dyn ToString)]
+   |                             ^^^^^^^^^^^^
+
+error: `serialize_as` does not support impl trait types
+   --> tests/fail/derive/bad_serialize_as.rs:105:29
+    |
+LL |     #[diesel(serialize_as = impl ToString)]
+    |                             ^^^^^^^^^^^^^
+
+error: macro invocation is not supported in `serialize_as`
+   --> tests/fail/derive/bad_serialize_as.rs:114:29
+    |
+LL |     #[diesel(serialize_as = concat_idents!(Foo, Bar))]
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^

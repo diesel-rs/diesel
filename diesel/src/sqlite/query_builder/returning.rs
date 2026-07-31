@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::query_builder::returning_clause::ReturningClause;
+use crate::query_builder::returning::ReturningClause;
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;
 use crate::sqlite::backend::SqliteReturningClause;

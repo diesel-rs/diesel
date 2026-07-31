@@ -1,9 +1,9 @@
+use crate::Expression;
 use crate::pg::Pg;
-use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::ColumnList;
 use crate::query_builder::QueryFragment;
+use crate::query_builder::nodes::StaticQueryFragment;
 use crate::sql_types::SqlType;
-use crate::Expression;
 use crate::{Column, Table};
 
 pub(crate) mod copy_from;
@@ -192,4 +192,4 @@ macro_rules! copy_target_for_columns {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(copy_target_for_columns);
+crate::for_each_tuple!(copy_target_for_columns);

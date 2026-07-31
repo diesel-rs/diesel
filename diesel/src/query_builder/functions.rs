@@ -6,8 +6,9 @@ use super::{
     AsQuery, IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement,
     IncompleteReplaceStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
 };
-use crate::expression::Expression;
 use crate::Table;
+use crate::expression::Expression;
+use alloc::string::String;
 
 /// Creates an `UPDATE` statement.
 ///
@@ -254,17 +255,17 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # use schema::brands;
 /// #
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// #[derive(Insertable)]
 /// #[diesel(table_name = brands)]
 /// struct NewBrand {
 ///     color: Option<String>,
 /// }
 ///
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # fn main() {
 /// #     use schema::brands::dsl::*;
 /// #     let connection = &mut establish_connection();
@@ -286,7 +287,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///     .execute(connection)
 ///     .unwrap();
 /// # }
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(feature = "__sqlite-shared")]
 /// # fn main() {}
 /// ```
 ///
@@ -302,17 +303,17 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # use schema::brands;
 /// #
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// #[derive(Insertable)]
 /// #[diesel(table_name = brands)]
 /// struct NewBrand {
 ///     accent: Option<Option<String>>,
 /// }
 ///
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # fn main() {
 /// #     use schema::brands::dsl::*;
 /// #     let connection = &mut establish_connection();
@@ -342,7 +343,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///     .execute(connection)
 ///     .unwrap();
 /// # }
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(feature = "__sqlite-shared")]
 /// # fn main() {}
 /// ```
 ///

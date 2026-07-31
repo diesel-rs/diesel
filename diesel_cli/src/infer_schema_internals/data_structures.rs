@@ -1,6 +1,11 @@
+use diesel::deserialize::Queryable;
 use diesel_table_macro_syntax::ColumnDef;
+use heck::ToPascalCase;
+use std::borrow::Cow;
+use std::fmt::{self, Display};
+use std::str::FromStr;
 
-use super::table_data::TableName;
+use super::{TableData, ViewData, table_data::TableName};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnInformation {
@@ -22,6 +27,7 @@ pub struct ColumnType {
     pub is_unsigned: bool,
     pub record: Option<Vec<ColumnType>>,
     pub max_length: Option<u64>,
+    pub unmodified_type: String,
 }
 
 impl ColumnType {
@@ -57,6 +63,7 @@ impl ColumnType {
             is_unsigned: last.ident == "Unsigned",
             record: None,
             max_length,
+            unmodified_type: last.ident.to_string(),
         };
         let is_range = last.ident == "Range";
         let is_multirange = last.ident == "Multirange";
@@ -132,8 +139,6 @@ impl ColumnType {
     }
 }
 
-use std::fmt;
-
 impl fmt::Display for ColumnType {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         if self.is_nullable {
@@ -207,5 +212,101 @@ impl ForeignKeyConstraint {
             min(&self.parent_table, &self.child_table),
             max(&self.parent_table, &self.child_table),
         )
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum SupportedQueryRelationStructures {
+    View,
+    Table,
+}
+
+#[derive(Debug, Clone)]
+pub enum QueryRelationData {
+    View(ViewData),
+    Table(TableData),
+}
+
+impl QueryRelationData {
+    pub fn table_name(&self) -> &TableName {
+        match &self {
+            Self::Table(table) => &table.name,
+            Self::View(view) => &view.name,
+        }
+    }
+
+    pub fn columns(&self) -> &Vec<ColumnDefinition> {
+        match self {
+            Self::Table(table) => &table.column_data,
+            Self::View(view) => &view.column_data,
+        }
+    }
+
+    pub fn comment(&self) -> &Option<String> {
+        match self {
+            Self::Table(table) => &table.comment,
+            Self::View(view) => &view.comment,
+        }
+    }
+
+    pub fn relation_type(&self) -> &'static str {
+        match self {
+            QueryRelationData::View(_view_data) => "view",
+            QueryRelationData::Table(_table_data) => "table",
+        }
+    }
+}
+
+impl Display for SupportedQueryRelationStructures {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let format = self.as_str();
+        write!(f, "{format}")
+    }
+}
+
+impl FromStr for SupportedQueryRelationStructures {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "BASE TABLE" => Ok(Self::Table),
+            "VIEW" => Ok(Self::View),
+            _ => unreachable!("This should never happen. Read {s}"),
+        }
+    }
+}
+
+impl SupportedQueryRelationStructures {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::Table => "BASE TABLE",
+            Self::View => "VIEW",
+        }
+    }
+
+    #[cfg(feature = "uses_information_schema")]
+    const fn display_all() -> [&'static str; Self::VARIANT_COUNT] {
+        [Self::Table.as_str(), Self::View.as_str()]
+    }
+
+    #[cfg(feature = "uses_information_schema")]
+    pub const ALL_NAMES: [&'static str; Self::VARIANT_COUNT] = Self::display_all();
+    #[cfg(feature = "uses_information_schema")]
+    const VARIANT_COUNT: usize = 2;
+}
+
+#[derive(Queryable, PartialEq, Debug, Clone)]
+pub struct EnumVariant {
+    pub order: i32,
+    pub sql_name: String,
+}
+
+impl EnumVariant {
+    pub fn rust_name(&self) -> String {
+        let n = if super::inference::is_reserved_name(&self.sql_name) {
+            Cow::Owned(format!("{}_", self.sql_name))
+        } else {
+            Cow::Borrowed(&self.sql_name)
+        };
+        n.to_pascal_case()
     }
 }

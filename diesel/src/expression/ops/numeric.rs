@@ -5,7 +5,7 @@ use crate::result::QueryResult;
 use crate::sql_types;
 
 macro_rules! numeric_operation {
-    ($name:ident, $op:expr) => {
+    ($name:ident, $op:expr_2021) => {
         #[doc(hidden)]
         #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
         pub struct $name<Lhs, Rhs> {

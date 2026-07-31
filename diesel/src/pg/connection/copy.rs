@@ -48,7 +48,7 @@ impl<'conn> CopyToBuffer<'conn> {
     pub(super) fn new(conn: &'conn mut RawConnection, result: PgResult) -> Self {
         Self {
             conn,
-            ptr: std::ptr::null_mut(),
+            ptr: core::ptr::null_mut(),
             offset: 0,
             len: 0,
             result,
@@ -58,7 +58,7 @@ impl<'conn> CopyToBuffer<'conn> {
     #[allow(unsafe_code)] // construct a slice from a raw ptr
     pub(crate) fn data_slice(&self) -> &[u8] {
         if !self.ptr.is_null() && self.offset < self.len {
-            let slice = unsafe { std::slice::from_raw_parts(self.ptr as *const u8, self.len - 1) };
+            let slice = unsafe { core::slice::from_raw_parts(self.ptr as *const u8, self.len - 1) };
             &slice[self.offset..]
         } else {
             &[]
@@ -75,7 +75,7 @@ impl Drop for CopyToBuffer<'_> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             unsafe { pq_sys::PQfreemem(self.ptr as *mut ffi::c_void) };
-            self.ptr = std::ptr::null_mut();
+            self.ptr = core::ptr::null_mut();
         }
     }
 }
@@ -97,7 +97,7 @@ impl BufRead for CopyToBuffer<'_> {
             unsafe {
                 if !self.ptr.is_null() {
                     pq_sys::PQfreemem(self.ptr as *mut ffi::c_void);
-                    self.ptr = std::ptr::null_mut();
+                    self.ptr = core::ptr::null_mut();
                 }
                 let len =
                     pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0);

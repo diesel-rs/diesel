@@ -5,7 +5,7 @@ license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
-edition = "2021"
+edition.workspace = true
 include.workspace = true
 rust-version.workspace = true
 

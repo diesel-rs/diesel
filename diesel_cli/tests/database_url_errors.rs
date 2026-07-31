@@ -9,12 +9,16 @@ fn missing_sqlite_panic_bare() {
         .command_without_database_url("setup")
         .env("DATABASE_URL", "example.db")
         .run();
-    assert!(result
-        .stderr()
-        .contains("`example.db` is not a valid database URL. It should start with "));
-    assert!(result
-        .stderr()
-        .contains("or maybe you meant to use the `sqlite` feature which is not enabled."));
+    assert!(
+        result
+            .stderr()
+            .contains("`example.db` is not a valid database URL. It should start with ")
+    );
+    assert!(
+        result
+            .stderr()
+            .contains("or maybe you meant to use the `sqlite` feature which is not enabled.")
+    );
 }
 
 #[test]
@@ -85,8 +89,10 @@ fn broken_dotenv_file_results_in_error() {
     p.skip_drop_db();
 
     let result = p.command_without_database_url("setup").run();
-    assert!(result
-        .stderr()
-        .contains("Initializing `.env` file failed: Error parsing line"));
+    assert!(
+        result
+            .stderr()
+            .contains("Initializing `.env` file failed: Error parsing line")
+    );
     assert!(!result.is_success());
 }

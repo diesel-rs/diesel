@@ -1,6 +1,6 @@
 use crate::expression::operators::Concat;
-use crate::mysql::backend::MysqlOnConflictClause;
 use crate::mysql::Mysql;
+use crate::mysql::backend::MysqlOnConflictClause;
 use crate::query_builder::insert_statement::DefaultValues;
 use crate::query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
 use crate::query_builder::nodes::StaticQueryFragment;
@@ -217,4 +217,4 @@ macro_rules! do_nothing_for_composite_keys {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(do_nothing_for_composite_keys);
+crate::for_each_tuple!(do_nothing_for_composite_keys);

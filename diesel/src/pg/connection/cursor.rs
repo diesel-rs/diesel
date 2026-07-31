@@ -2,7 +2,7 @@ use super::private::QueryFragmentHelper;
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
-use std::rc::Rc;
+use alloc::rc::Rc;
 
 #[allow(missing_debug_implementations)]
 pub struct Cursor {

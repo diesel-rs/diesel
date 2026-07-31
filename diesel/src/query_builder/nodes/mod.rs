@@ -1,6 +1,6 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::query_builder::*;
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 #[doc(hidden)] // used by the table macro
 pub trait StaticQueryFragment {
@@ -53,8 +53,8 @@ impl<DB: Backend> MiddleFragment<DB> for &str {
 #[derive(Debug, Copy, Clone)]
 #[doc(hidden)] // used by the table macro
 pub struct InfixNode<T, U, M> {
-    lhs: T,
-    rhs: U,
+    pub(crate) lhs: T,
+    pub(crate) rhs: U,
     middle: M,
 }
 
