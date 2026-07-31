@@ -46,10 +46,14 @@ use crate::MigrationError;
 /// # let connection_url = String::from(":memory:");
 /// # #[cfg(feature = "mysql")]
 /// # let connection_url = database_url_from_env("MYSQL_DATABASE_URL");
+/// # #[cfg(feature = "mariadb")]
+/// # let connection_url = database_url_from_env("MARIADB_DATABASE_URL");
 /// # #[cfg(feature = "postgres")]
 /// # type SqliteConnection = PgConnection;
 /// # #[cfg(feature = "mysql")]
 /// # type SqliteConnection = MysqlConnection;
+/// # #[cfg(feature = "mariadb")]
+/// # type SqliteConnection = MariadbConnection;
 /// fn migration_function(conn: &mut SqliteConnection) -> QueryResult<()> {
 ///     diesel::sql_query("SELECT 'EXECUTE YOUR MIGRATION HERE'").execute(conn)?;
 ///     Ok(())

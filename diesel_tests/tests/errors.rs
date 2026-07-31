@@ -1,5 +1,5 @@
 use crate::schema::*;
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 use diesel::result::DatabaseErrorKind::CheckViolation;
 use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, NotNullViolation, UniqueViolation};
 use diesel::result::Error::DatabaseError;
@@ -225,7 +225,7 @@ fn not_null_constraints_correct_column_name() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] //ERROR_CODES Unterscheiden sich -> MariaDB 4022
 /// MySQL < 8.0.16 doesn't enforce check constraints
 fn check_constraints_are_detected() {
     let connection = &mut connection();

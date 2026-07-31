@@ -67,15 +67,33 @@ impl FromSql<Any, diesel::mysql::Mysql> for MyDynamicValue {
     }
 }
 
+#[cfg(feature = "mariadb")]
+impl FromSql<Any, diesel::mariadb::Mariadb> for MyDynamicValue {
+    fn from_sql(value: diesel::mariadb::MariadbValue) -> Result<Self> {
+        use diesel::mariadb::{Mariadb, MariadbType};
+        match value.value_type() {
+            MariadbType::String => {
+                <String as FromSql<diesel::sql_types::Text, Mariadb>>::from_sql(value)
+                    .map(MyDynamicValue::String)
+            }
+            MariadbType::Long => <i32 as FromSql<diesel::sql_types::Integer, Mariadb>>::from_sql(value)
+                .map(MyDynamicValue::Integer),
+            e => Err(format!("Unknown data type: {e:?}").into()),
+        }
+    }
+}
+
 #[cfg(feature = "postgres")]
 type TestDB = diesel::pg::Pg;
 #[cfg(feature = "mysql")]
 type TestDB = diesel::mysql::Mysql;
+#[cfg(feature = "mariadb")]
+type TestDB = diesel::mariadb::Mariadb;
 #[cfg(feature = "sqlite")]
 type TestDB = diesel::sqlite::Sqlite;
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 fn test_ergonomics() {
     let connection = &mut super::establish_connection();
     crate::create_user_table(connection);

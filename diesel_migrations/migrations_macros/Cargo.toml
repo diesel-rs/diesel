@@ -38,6 +38,7 @@ default = []
 sqlite = []
 postgres = []
 mysql = []
+mariadb = []
 
 [lints]
 workspace = true

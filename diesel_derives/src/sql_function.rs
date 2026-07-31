@@ -1957,11 +1957,14 @@ impl SqlFunctionAttribute {
                 "mysql_backend" => Some(syn::parse_quote!(
                     diesel::internal::sql_functions::expand_mysql
                 )),
+                "mariadb_backend" => Some(syn::parse_quote!(
+                    diesel::internal::sql_functions::expand_mariadb
+                )),
                 feature => {
                     return Err(syn::Error::new(
                         feature.span(),
                         format!(
-                            "only `mysql_backend`, `postgres_backend` and `sqlite` \
+                            "only `mysql_backend`, `mariadb_backend`, `postgres_backend` and `sqlite` \
                                  are supported features, but got `{feature}`"
                         ),
                     ));

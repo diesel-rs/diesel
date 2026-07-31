@@ -29,10 +29,14 @@ use diesel::migration::{Migration, MigrationSource};
 /// # let connection_url = String::from(":memory:");
 /// # #[cfg(feature = "mysql")]
 /// # let connection_url = database_url_from_env("MYSQL_DATABASE_URL");
+/// # #[cfg(feature = "mariadb")]
+/// # let connection_url = database_url_from_env("MARIADB_DATABASE_URL");
 /// # #[cfg(feature = "postgres")]
 /// # type SqliteConnection = PgConnection;
 /// # #[cfg(feature = "mysql")]
 /// # type SqliteConnection = MysqlConnection;
+/// # #[cfg(feature = "mariadb")]
+/// # type SqliteConnection = MariadbConnection;
 /// #
 /// // Create a new empty combined source
 /// let mut combined_sources = CombinedMigrationSource::default();

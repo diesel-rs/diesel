@@ -74,6 +74,8 @@ pub struct Default<'a, Col> {
 use diesel::backend::*;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
+#[cfg(feature = "mariadb")]
+use diesel::mariadb::Mariadb;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::query_builder::*;
@@ -160,6 +162,19 @@ where
     Col: QueryFragment<Mysql>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.0.walk_ast(out.reborrow())?;
+        out.push_sql(" AUTO_INCREMENT");
+        Ok(())
+    }
+}
+
+#[cfg(feature = "mariadb")]
+impl<Col> QueryFragment<Mariadb> for AutoIncrement<Col>
+where
+    Col: QueryFragment<Mariadb>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTO_INCREMENT");

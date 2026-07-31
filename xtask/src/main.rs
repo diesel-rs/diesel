@@ -46,6 +46,7 @@ enum Backend {
     Postgres,
     Sqlite,
     Mysql,
+    Mariadb,
     All,
 }
 
@@ -59,6 +60,7 @@ impl Display for Backend {
             Backend::Postgres => write!(f, "postgres"),
             Backend::Sqlite => write!(f, "sqlite"),
             Backend::Mysql => write!(f, "mysql"),
+            Backend::Mariadb => write!(f, "mariadb"),
             Backend::All => write!(f, "all"),
         }
     }

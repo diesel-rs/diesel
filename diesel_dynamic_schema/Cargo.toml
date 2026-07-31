@@ -52,6 +52,7 @@ default = []
 postgres = ["diesel/postgres_backend"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql_backend"]
+mariadb = ["diesel/mariadb_backend"]
 
 [lints]
 workspace = true

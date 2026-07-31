@@ -84,11 +84,20 @@ impl TestArgs {
                         );
                     }
                 }
+                Backend::Mariadb => {
+                    if std::env::var("MARIADB_DATABASE_URL").is_err()
+                        || std::env::var("MARIADB_UNIT_TEST_DATABASE_URL").is_err()
+                    {
+                        println!(
+                            "Remember to set `MARIADB_DATABASE_URL` and `MARIADB_UNIT_TEST_DATABASE_URL` for running the mariadb tests"
+                        );
+                    }
+                }
                 Backend::All => unreachable!(),
             }
         }
         let backend = &self.backend;
-        if matches!(backend, Backend::Postgres | Backend::Mysql | Backend::All if self.wasm) {
+        if matches!(backend, Backend::Postgres | Backend::Mysql | Backend::Mariadb | Backend::All if self.wasm) {
             eprintln!(
                 "Only the sqlite backend supports wasm for now, the current backend is {backend}"
             );
@@ -98,6 +107,7 @@ impl TestArgs {
             Backend::Postgres => std::env::var("PG_DATABASE_URL"),
             Backend::Sqlite => std::env::var("SQLITE_DATABASE_URL"),
             Backend::Mysql => std::env::var("MYSQL_DATABASE_URL"),
+            Backend::Mariadb => std::env::var("MARIADB_DATABASE_URL"),
             Backend::All => unreachable!(),
         };
         let url = url
@@ -165,7 +175,7 @@ impl TestArgs {
                 .arg(format!("diesel_migrations/{backend}"))
                 .args(&self.flags);
 
-            if matches!(self.backend, Backend::Mysql) {
+            if matches!(self.backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);
             }
@@ -228,7 +238,7 @@ impl TestArgs {
                 .arg(format!("diesel-dynamic-schema/{backend}"))
                 .arg("-F")
                 .arg(format!("diesel_migrations/{backend}"));
-            if matches!(backend, Backend::Mysql) {
+            if matches!(backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);
             }

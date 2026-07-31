@@ -387,7 +387,7 @@ fn migration_redo_with_zero_should_not_revert_any_migration() {
     assert!(result.stdout() == "");
 }
 
-#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql does not support DDL + Transactions
 #[test]
 fn migration_redo_without_transaction() {
     let p = project("migration_redo_without_transaction")
@@ -419,7 +419,7 @@ fn migration_redo_without_transaction() {
     assert!(db.table_exists("customers"));
 }
 
-#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql does not support DDL + Transactions
 #[test]
 fn migration_redo_without_transaction_twice() {
     let p = project("migration_redo_without_transaction_twice")
@@ -462,7 +462,7 @@ fn migration_redo_without_transaction_twice() {
     assert!(db.table_exists("customers2"));
 }
 
-#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql does not support DDL + Transactions
 #[test]
 fn migration_redo_without_transaction_all() {
     let p = project("migration_redo_without_transaction_all")

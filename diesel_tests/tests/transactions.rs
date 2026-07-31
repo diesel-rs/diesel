@@ -18,7 +18,10 @@ fn transaction_executes_fn_in_a_sql_transaction() {
         .transaction::<_, Error, _>(|conn1| {
             assert_eq!(0, get_count(conn1));
             assert_eq!(0, get_count(conn2));
+            #[cfg(not(feature = "mariadb"))]
             diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES")).execute(conn1)?;
+            #[cfg(feature = "mariadb")]
+            diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)")).execute(conn1)?;
             assert_eq!(1, get_count(conn1));
             assert_eq!(0, get_count(conn2));
             Ok(())
@@ -45,7 +48,12 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     setup_test_table(connection, test_name);
 
     let _ = connection.transaction::<(), _, _>(|connection| {
+        #[cfg(not(feature = "mariadb"))]
         diesel::sql_query(format!("INSERT INTO {test_name} DEFAULT VALUES"))
+            .execute(connection)
+            .unwrap();
+        #[cfg(feature = "mariadb")]
+        diesel::sql_query(format!("INSERT INTO {test_name} VALUES (DEFAULT)"))
             .execute(connection)
             .unwrap();
         Err(Error::RollbackTransaction)
@@ -104,12 +112,22 @@ fn transactions_can_be_nested() {
     }
 
     let _ = connection.transaction::<(), _, _>(|connection| {
+        #[cfg(not(feature = "mariadb"))]
         diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES"))
+            .execute(connection)
+            .unwrap();
+        #[cfg(feature = "mariadb")]
+        diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)"))
             .execute(connection)
             .unwrap();
         assert_eq!(1, get_count(connection));
         let _ = connection.transaction::<(), _, _>(|connection| {
+            #[cfg(not(feature = "mariadb"))]
             diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES"))
+                .execute(connection)
+                .unwrap();
+            #[cfg(feature = "mariadb")]
+            diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)"))
                 .execute(connection)
                 .unwrap();
             assert_eq!(2, get_count(connection));
@@ -117,7 +135,12 @@ fn transactions_can_be_nested() {
         });
         assert_eq!(1, get_count(connection));
         let _ = connection.transaction::<(), Error, _>(|connection| {
+            #[cfg(not(feature = "mariadb"))]
             diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES"))
+                .execute(connection)
+                .unwrap();
+            #[cfg(feature = "mariadb")]
+            diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)"))
                 .execute(connection)
                 .unwrap();
             assert_eq!(2, get_count(connection));
@@ -138,7 +161,10 @@ fn test_transaction_always_rolls_back() {
     setup_test_table(connection, test_name);
 
     let result = connection.test_transaction::<_, Error, _>(|connection| {
+        #[cfg(not(feature = "mariadb"))]
         diesel::sql_query(format!("INSERT INTO {test_name} DEFAULT VALUES")).execute(connection)?;
+        #[cfg(feature = "mariadb")]
+        diesel::sql_query(format!("INSERT INTO {test_name} VALUES (DEFAULT)")).execute(connection)?;
         assert_eq!(1, count_test_table(connection, test_name));
         Ok("success")
     });

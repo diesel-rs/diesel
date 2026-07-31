@@ -185,6 +185,81 @@ cfg_if::cfg_if! {
             }
         }
 
+    } else if #[cfg(feature = "mariadb")] {
+        #[allow(dead_code)]
+        type DB = diesel::mariadb::Mariadb;
+        type DbConnection = MariadbConnection;
+
+        fn database_url_for_env() -> String {
+            database_url_from_env("MARIADB_UNIT_TEST_DATABASE_URL")
+        }
+
+        fn setup_database(connection: &mut MariadbConnection) {
+            clean_tables(connection);
+            create_tables_with_data(connection);
+        }
+
+        fn clean_tables(_connection: &mut MariadbConnection) {}
+
+        fn connection_no_data() -> MariadbConnection {
+            let connection_url = database_url_for_env();
+            let mut connection = MariadbConnection::establish(&connection_url).unwrap();
+            clean_tables(&mut connection);
+            connection
+        }
+
+        fn create_tables_with_data(connection: &mut MariadbConnection) {
+            diesel::sql_query("CREATE TEMPORARY TABLE users (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                name TEXT NOT NULL
+            ) CHARACTER SET utf8mb4").execute(connection).unwrap();
+            diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+                      .execute(connection).unwrap();
+
+            diesel::sql_query("CREATE TEMPORARY TABLE animals (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                species TEXT NOT NULL,
+                legs INTEGER NOT NULL,
+                name TEXT
+            ) CHARACTER SET utf8mb4").execute(connection).unwrap();
+            diesel::sql_query("INSERT INTO animals (species, legs, name) VALUES
+                               ('dog', 4, 'Jack'),
+                               ('spider', 8, null)").execute(connection).unwrap();
+
+            diesel::sql_query("CREATE TEMPORARY TABLE posts (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL
+            ) CHARACTER SET utf8mb4").execute(connection).unwrap();
+            diesel::sql_query("INSERT INTO posts (user_id, title) VALUES
+                (1, 'My first post'),
+                (1, 'About Rust'),
+                (2, 'My first post too')").execute(connection).unwrap();
+
+            diesel::sql_query("CREATE TEMPORARY TABLE comments (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                post_id INTEGER NOT NULL,
+                body TEXT NOT NULL
+            ) CHARACTER SET utf8mb4").execute(connection).unwrap();
+            diesel::sql_query("INSERT INTO comments (post_id, body) VALUES
+                (1, 'Great post'),
+                (2, 'Yay! I am learning Rust'),
+                (3, 'I enjoyed your post')").execute(connection).unwrap();
+
+            diesel::sql_query("CREATE TEMPORARY TABLE brands (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                color VARCHAR(255) NOT NULL DEFAULT 'Green',
+                accent VARCHAR(255) DEFAULT 'Blue'
+            )").execute(connection).unwrap();
+        }
+
+        #[allow(dead_code)]
+        fn establish_connection() -> MariadbConnection {
+            let mut connection = connection_no_data();
+            create_tables_with_data(&mut connection);
+            connection.begin_test_transaction().unwrap();
+            connection
+        }
     } else if #[cfg(feature = "mysql")] {
         #[allow(dead_code)]
         type DB = diesel::mysql::Mysql;
@@ -264,8 +339,8 @@ cfg_if::cfg_if! {
         compile_error!(
             "At least one backend must be used to test this crate.\n \
             Pass argument `--features \"<backend>\"` with one or more of the following backends, \
-            'mysql', 'postgres', or 'sqlite'. \n\n \
-            ex. cargo test --features \"mysql postgres sqlite\"\n"
+            'mysql', 'mariadb', 'postgres', or 'sqlite'. \n\n \
+            ex. cargo test --features \"mysql mariadb postgres sqlite\"\n"
         );
     }
 }

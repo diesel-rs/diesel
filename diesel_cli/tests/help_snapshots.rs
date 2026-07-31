@@ -168,6 +168,8 @@ fn version() {
         insta::assert_snapshot!("postgres", res.stdout());
     } else if cfg!(feature = "mysql") {
         insta::assert_snapshot!("mysql", res.stdout());
+    } else if cfg!(feature = "mariadb") {
+        insta::assert_snapshot!("mariadb", res.stdout());
     } else {
         unreachable!();
     }

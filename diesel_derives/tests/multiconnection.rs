@@ -10,6 +10,8 @@ pub enum InferConnection {
     Sqlite(SqliteConnection),
     #[cfg(feature = "mysql")]
     Mysql(MysqlConnection),
+    #[cfg(feature = "mariadb")]
+    Mariadb(MariadbConnection),
 }
 
 #[derive(Queryable, Selectable, Insertable, AsChangeset)]
@@ -120,6 +122,8 @@ fn check_queries_work() {
 fn establish_connection() -> InferConnection {
     let database_url = if cfg!(feature = "mysql") {
         dotenvy::var("MYSQL_UNIT_TEST_DATABASE_URL").or_else(|_| dotenvy::var("DATABASE_URL"))
+    } else if cfg!(feature = "mariadb") {
+        dotenvy::var("MARIADB_UNIT_TEST_DATABASE_URL").or_else(|_| dotenvy::var("DATABASE_URL"))
     } else if cfg!(feature = "postgres") {
         dotenvy::var("PG_DATABASE_URL").or_else(|_| dotenvy::var("DATABASE_URL"))
     } else {
@@ -181,6 +185,29 @@ fn make_test_table(conn: &mut InferConnection) {
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(conn) => {
+            diesel::sql_query(
+                "CREATE TEMPORARY TABLE type_test( \
+                     `small_int` SMALLINT,\
+                     `integer` INT,\
+                     `big_int` BIGINT,\
+                     `float` FLOAT,\
+                     `double` DOUBLE,\
+                     `string` TEXT,\
+                     `blob` BLOB,\
+                     `timestamp1` DATETIME,
+                     `date1` DATE,\
+                     `time1` TIME,\
+                     `timestamp2` DATETIME,
+                     `date2` DATE,\
+                     `time2` TIME,\
+                     `numeric` NUMERIC
+                 )",
+            )
+            .execute(conn)
+            .unwrap();
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(conn) => {
             diesel::sql_query(
                 "CREATE TEMPORARY TABLE type_test( \
                      `small_int` SMALLINT,\
@@ -459,14 +486,14 @@ fn nullable_type_checks() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // such binds are broken for mysql + multiconnection
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // such binds are broken for mysql + multiconnection
 fn contains_binds() {
     use diesel::connection::InstrumentationEvent;
 
     let mut conn = establish_connection();
     conn.set_instrumentation(|event: InstrumentationEvent<'_>| {
         if let InstrumentationEvent::StartQuery { query, .. } = event {
-            #[cfg(any(feature = "sqlite", feature = "mysql"))]
+            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "mariadb"))]
             assert_eq!(query.to_string(), "SELECT ? -- binds: [1]");
             #[cfg(feature = "postgres")]
             assert_eq!(query.to_string(), "SELECT $1 -- binds: [1]");
@@ -481,7 +508,7 @@ fn contains_binds() {
 
 #[test]
 // mysql struggles with selects without from
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn check_enum_works() {
     #[derive(Debug, Clone, Copy, diesel::types::Enum, PartialEq)]
     #[diesel(sql_type = diesel::sql_types::Text)]

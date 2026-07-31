@@ -26,4 +26,9 @@ const _: () = {
             diesel::mysql::MysqlType::Long
         }
     }
+    diesel::internal::derives::sql_type::expand_mariadb! {
+        impl diesel::sql_types::HasSqlType < Integer > for diesel::mariadb::Mariadb { fn
+        metadata(_ : & mut ()) -> diesel::mariadb::MariadbType {
+        diesel::mariadb::MariadbType::Long } }
+    }
 };

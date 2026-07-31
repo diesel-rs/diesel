@@ -79,6 +79,8 @@ fn broken_dotenv_file_results_in_error() {
     let url = "postgres://localhost";
     #[cfg(feature = "mysql")]
     let url = "mysql://localhost";
+    #[cfg(feature = "mariadb")]
+    let url = "mariadb://localhost";
     #[cfg(feature = "sqlite")]
     let url = ":memory:";
 

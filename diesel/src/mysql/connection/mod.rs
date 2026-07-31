@@ -452,7 +452,7 @@ impl<B: MysqlLikeBackend> MysqlLikeConnection<B> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "mysql"))]
 mod tests {
     extern crate dotenvy;
 

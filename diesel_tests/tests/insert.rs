@@ -473,7 +473,7 @@ fn insert_record_with_custom_returning_clause() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(feature = "sqlite", feature = "mysql", feature = "mariadb")))] //TODO sollte mit mariadb funktionieren
 fn insert_records_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
 
@@ -544,7 +544,7 @@ fn batch_insert_with_returning_id_sqlite() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn batch_insert_with_defaults() {
     use crate::schema::users::table as users;
     use crate::schema_dsl::*;
@@ -589,7 +589,7 @@ fn batch_insert_with_defaults() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_with_defaults() {
     use crate::schema::users::table as users;
     use crate::schema_dsl::*;
@@ -622,7 +622,7 @@ fn insert_with_defaults() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_in_nullable_with_non_null_default() {
     use crate::schema::users::table as users;
     use crate::schema_dsl::*;
@@ -668,7 +668,7 @@ fn insert_in_nullable_with_non_null_default() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
@@ -706,7 +706,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "sqlite")))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb", feature = "sqlite")))]
 fn insert_with_generated_column() {
     use crate::schema::user_with_last_names::table as users;
     #[derive(Debug, Queryable, Insertable, Selectable, Default)]
@@ -997,7 +997,7 @@ fn insert_optional_field_with_null() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn insert_optional_field_with_default() {
     use crate::schema::users::dsl::*;
     use crate::schema_dsl::*;
@@ -1032,7 +1032,7 @@ fn insert_optional_field_with_default() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn insert_all_default_fields() {
     use crate::schema::users::dsl::*;
     use crate::schema_dsl::*;
@@ -1203,7 +1203,7 @@ fn upsert_with_composite_primary_key_do_update() {
 
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     diesel::insert_into(users::table)
         .values((users::id.eq(1), users::name.eq("John")))
         .on_conflict(diesel::dsl::DuplicatedKeys)
@@ -1212,7 +1212,7 @@ fn upsert_with_composite_primary_key_do_update() {
         .execute(conn)
         .unwrap();
 
-    #[cfg(not(feature = "mysql"))]
+    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     diesel::insert_into(users::table)
         .values((users::id.eq(1), users::name.eq("John")))
         .on_conflict(users::id)

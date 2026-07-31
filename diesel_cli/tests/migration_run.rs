@@ -94,6 +94,16 @@ fn migration_run_inserts_run_on_timestamps() {
         .unwrap()
     }
 
+    #[cfg(feature = "mariadb")]
+    fn valid_run_on_timestamp(db: &database::Database) -> bool {
+        select(sql::<Bool>(
+            "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
+             WHERE run_on < NOW() + INTERVAL 1 HOUR)",
+        ))
+        .get_result(&mut db.conn())
+        .unwrap()
+    }
+
     assert!(
         valid_run_on_timestamp(&db),
         "Running a migration did not insert an updated run_on value"
@@ -651,7 +661,7 @@ fn migration_run_runs_pending_migrations_custom_migrations_dir_from_diesel_toml(
     assert!(db.table_exists("users"));
 }
 
-#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql does not support DDL + Transactions
 #[test]
 fn migration_run_without_transaction() {
     let p = project("migration_run_without_transaction")

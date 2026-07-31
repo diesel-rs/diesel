@@ -36,7 +36,7 @@ pub use self::backend::{Mariadb, MariadbType};
 /// values row by row from the result set.
 ///
 /// ```rust
-/// # include!("../../doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
 /// #     run_test().unwrap();

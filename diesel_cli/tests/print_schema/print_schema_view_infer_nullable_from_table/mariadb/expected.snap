@@ -1,0 +1,23 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_from_table"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    test {
+        id -> Integer,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(test, users,);

@@ -28,6 +28,7 @@ impl<B: MysqlLikeBackend> ToSql<sql_types::Json, B> for serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mysql::Mysql;
     #[diesel_test_helper::test]
     fn json_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;

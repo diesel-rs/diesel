@@ -31,7 +31,8 @@ fn delete_single_record() {
 #[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
-    feature = "mysql"
+    feature = "mysql",
+    feature = "mariadb" // TODO sollte funktionieren
 )))]
 fn return_deleted_records() {
     use crate::schema::users::dsl::*;

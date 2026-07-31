@@ -1,0 +1,7 @@
+CREATE TABLE users(id INTEGER NOT NULL PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE posts(
+       id INTEGER NOT NULL PRIMARY KEY,
+       title TEXT NOT NULL,
+       user_id INTEGER NOT NULL,
+       FOREIGN KEY (user_id) REFERENCES users(id)
+);

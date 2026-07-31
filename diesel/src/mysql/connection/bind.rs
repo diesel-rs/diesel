@@ -822,7 +822,7 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "mysql"))]
 mod tests {
     use super::*;
     use crate::connection::statement_cache::{MaybeCached, PrepareForCache};

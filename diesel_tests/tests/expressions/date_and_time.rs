@@ -452,7 +452,7 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(any(feature = "postgres", feature = "sqlite", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "sqlite", feature = "mysql", feature = "mariadb"))]
 fn setup_test_table(conn: &mut TestConnection) {
     use crate::schema_dsl::*;
 

@@ -246,11 +246,11 @@ pub trait AggregateExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
@@ -288,11 +288,11 @@ pub trait AggregateExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
@@ -363,11 +363,11 @@ pub trait WindowExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;

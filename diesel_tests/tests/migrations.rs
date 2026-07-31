@@ -58,9 +58,9 @@ fn test_rust_migrations() {
         .add_migration("2026-01-23-174620", "test4", migration)
         .unwrap();
 
-    #[cfg(not(feature = "mysql"))]
+    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     let conn = &mut crate::schema::connection();
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     let conn = &mut crate::schema::connection_without_transaction();
 
     assert!(!typed_called.load(Ordering::Relaxed));
@@ -68,7 +68,7 @@ fn test_rust_migrations() {
     assert!(!rust_migration_called2.load(Ordering::Relaxed));
     assert_eq!(GLOBAL_FLAG.load(Ordering::Relaxed), 0);
     let res = conn.run_pending_migrations(source.clone()).map(|c| c.len());
-    if cfg!(feature = "mysql") {
+    if cfg!(any(feature = "mysql", feature = "mariadb")) {
         let _ = conn.revert_all_migrations(source);
     }
 

@@ -1,5 +1,5 @@
 use super::schema::*;
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 use crate::schema_dsl::*;
 use diesel::*;
 
@@ -112,7 +112,7 @@ table! {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
@@ -140,7 +140,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     let connection = &mut connection();
     drop_table_cascade(connection, "users");
@@ -224,7 +224,7 @@ table! {
 }
 
 // the test is somehow broken on some mariadb versions
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(feature = "sqlite", feature = "mysql", feature = "mariadb")))]
 #[diesel_test_helper::test]
 fn select_for_update_locks_selected_rows() {
     use self::users_select_for_update::dsl::*;

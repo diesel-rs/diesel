@@ -391,7 +391,7 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
-    /// # #[cfg(not(feature = "mysql"))] // mariadb doesn't support this variant
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mariadb doesn't support this variant
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::sql_types::{Integer, Nullable};
@@ -445,7 +445,7 @@ extern "SQL" {
     /// assert_eq!(expected, res);
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() {}
     /// ```
     #[doc(alias = "lag")]
@@ -606,7 +606,7 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
-    /// # #[cfg(not(feature = "mysql"))] // mariadb doesn't support this variant
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mariadb doesn't support this variant
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::sql_types::{Integer, Nullable};
@@ -660,7 +660,7 @@ extern "SQL" {
     /// assert_eq!(expected, res);
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// fn main() {}
     /// ```
     #[doc(alias = "lead")]

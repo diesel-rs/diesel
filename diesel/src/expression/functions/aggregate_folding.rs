@@ -60,7 +60,7 @@ extern "SQL" {
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// assert_eq!(
     ///     Ok(Some(4i64)),
     ///     animals

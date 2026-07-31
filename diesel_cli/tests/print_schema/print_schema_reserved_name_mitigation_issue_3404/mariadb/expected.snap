@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_reserved_name_mitigation_issue_3404"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    reserved_names_columns (id) {
+        id -> Integer,
+        #[sql_name = "is_nullable"]
+        is_nullable_ -> Nullable<Bool>,
+    }
+}
+

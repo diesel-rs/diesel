@@ -55,7 +55,7 @@ fn eager_loading_associations_for_multiple_ref_records() {
     assert_eq!(expected_data, users_and_posts);
 }
 
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 mod eager_loading_with_string_keys {
     use crate::schema::{connection, drop_table_cascade};
     use diesel::connection::SimpleConnection;

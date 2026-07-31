@@ -1061,7 +1061,7 @@ fn derive_selectable_inner(input: proc_macro2::TokenStream) -> proc_macro2::Toke
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/sql_type.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
-    proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type))
+    proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type, mariadb_type))
 )]
 #[cfg_attr(
     any(feature = "without-deprecated", not(feature = "with-deprecated")),
@@ -1756,8 +1756,10 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// pub enum AnyConnection {
 /// #   #[cfg(feature = "postgres")]
 ///     Postgresql(diesel::PgConnection),
-/// #   #[cfg(feature = "mysql")]
+/// #   #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
 ///     Mysql(diesel::MysqlConnection),
+/// #   #[cfg(feature = "mariadb")]
+///     Mariadb(diesel::MariadbConnection),
 /// #   #[cfg(feature = "sqlite")]
 ///     Sqlite(diesel::SqliteConnection),
 /// }
@@ -1827,8 +1829,10 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// pub enum AnyConnection {
 /// #   #[cfg(feature = "postgres")]
 ///     Postgresql(diesel::PgConnection),
-/// #   #[cfg(feature = "mysql")]
+/// #   #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
 ///     Mysql(diesel::MysqlConnection),
+/// #   #[cfg(feature = "mariadb")]
+///     Mariadb(diesel::MariadbConnection),
 /// #   #[cfg(feature = "sqlite")]
 ///     Sqlite(diesel::SqliteConnection),
 /// }
@@ -1882,9 +1886,13 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// # impl ToSql<MyInteger, diesel::pg::Pg> for MyEnum {
 /// #    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, diesel::pg::Pg>) -> serialize::Result { todo!() }
 /// # }
-/// # #[cfg(feature = "mysql")]
+/// # #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
 /// # impl ToSql<MyInteger, diesel::mysql::Mysql> for MyEnum {
 /// #    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, diesel::mysql::Mysql>) -> serialize::Result { todo!() }
+/// # }
+/// # #[cfg(feature = "mariadb")]
+/// # impl ToSql<MyInteger, diesel::mariadb::Mariadb> for MyEnum {
+/// #    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, diesel::mariadb::Mariadb>) -> serialize::Result { todo!() }
 /// # }
 /// # #[cfg(feature = "sqlite")]
 /// # impl ToSql<MyInteger, diesel::sqlite::Sqlite> for MyEnum {
@@ -1894,9 +1902,13 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// # impl FromSql<MyInteger, diesel::pg::Pg> for MyEnum {
 /// #    fn from_sql(bytes: <diesel::pg::Pg as Backend>::RawValue<'_>) -> deserialize::Result<Self> { todo!() }
 /// # }
-/// # #[cfg(feature = "mysql")]
+/// # #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
 /// # impl FromSql<MyInteger, diesel::mysql::Mysql> for MyEnum {
 /// #    fn from_sql(bytes: <diesel::mysql::Mysql as Backend>::RawValue<'_>) -> deserialize::Result<Self> { todo!() }
+/// # }
+/// # #[cfg(feature = "mariadb")]
+/// # impl FromSql<MyInteger, diesel::mariadb::Mariadb> for MyEnum {
+/// #    fn from_sql(bytes: <diesel::mariadb::Mariadb as Backend>::RawValue<'_>) -> deserialize::Result<Self> { todo!() }
 /// # }
 /// # #[cfg(feature = "sqlite")]
 /// # impl FromSql<MyInteger, diesel::sqlite::Sqlite> for MyEnum {

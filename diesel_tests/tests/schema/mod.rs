@@ -10,6 +10,8 @@ include!("pg_schema.rs");
 include!("sqlite_schema.rs");
 #[cfg(feature = "mysql")]
 include!("mysql_schema.rs");
+#[cfg(feature = "mariadb")]
+include!("mariadb_schema.rs");
 
 #[derive(
     PartialEq,
@@ -318,18 +320,20 @@ pub type TestConnection = PgConnection;
 pub type TestConnection = SqliteConnection;
 #[cfg(feature = "mysql")]
 pub type TestConnection = MysqlConnection;
+#[cfg(feature = "mariadb")]
+pub type TestConnection = MariadbConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 pub struct DropTable<'a> {
     pub connection: &'a mut TestConnection,
     pub table_name: &'static str,
     pub can_drop: bool,
 }
 
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
@@ -351,6 +355,10 @@ const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
 #[cfg(feature = "mysql")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
     diesel_migrations::embed_migrations!("../migrations/mysql");
+    
+#[cfg(feature = "mariadb")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/mariadb");
 
 pub fn connection() -> TestConnection {
     let mut result = connection_without_transaction();
@@ -409,6 +417,14 @@ pub fn backend_specific_connection() -> TestConnection {
     MysqlConnection::establish(&connection_url).unwrap()
 }
 
+#[cfg(feature = "mariadb")]
+pub fn backend_specific_connection() -> TestConnection {
+    let connection_url = dotenvy::var("MARIADB_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
+    MariadbConnection::establish(&connection_url).unwrap()
+}
+
 #[cfg(feature = "postgres")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
     diesel::sql_query("SET CONSTRAINTS ALL DEFERRED")
@@ -417,6 +433,13 @@ pub fn disable_foreign_keys(connection: &mut TestConnection) {
 }
 
 #[cfg(feature = "mysql")]
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
+        .execute(connection)
+        .unwrap();
+}
+
+#[cfg(feature = "mariadb")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
     diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
         .execute(connection)

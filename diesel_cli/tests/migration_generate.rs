@@ -398,6 +398,8 @@ const BACKEND: &str = "sqlite";
 const BACKEND: &str = "postgres";
 #[cfg(feature = "mysql")]
 const BACKEND: &str = "mysql";
+#[cfg(feature = "mariadb")]
+const BACKEND: &str = "mariadb";
 
 fn backend_file_path(test_name: &str, file: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
