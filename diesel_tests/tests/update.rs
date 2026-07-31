@@ -919,7 +919,10 @@ fn named_struct_batch_grouped_pkey() {
     assert_eq!(Ok(expected), actual);
 }
 
-#[cfg(not(feature = "mysql"))]
+#[cfg(any(
+    all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+    feature = "postgres"
+))]
 #[diesel_test_helper::test]
 fn named_struct_batch_returning() {
     #[derive(Debug, Clone, AsChangeset, Identifiable)]

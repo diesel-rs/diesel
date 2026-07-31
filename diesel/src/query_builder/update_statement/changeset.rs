@@ -7,6 +7,7 @@ use crate::expression::operators::Eq;
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
 use crate::{Identifiable, Table};
+use alloc::borrow::ToOwned;
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).

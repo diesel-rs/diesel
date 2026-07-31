@@ -38,7 +38,7 @@ where
         let first = self
             .values
             .first()
-            .ok_or_else(|| QueryBuilderError(Box::new(EmptyChangeset)))?;
+            .ok_or_else(|| QueryBuilderError(alloc::boxed::Box::new(EmptyChangeset)))?;
 
         BatchValueHelper::assign(&first.1, out.reborrow())?;
 

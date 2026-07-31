@@ -71,7 +71,7 @@ tempfile = "3.10.1"
 diesel_test_helper = { path = "../diesel_test_helper" }
 
 [features]
-default = ["with-deprecated", "std"]
+default = ["with-deprecated", "32-column-tables", "std"]
 extras = ["chrono", "time", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
