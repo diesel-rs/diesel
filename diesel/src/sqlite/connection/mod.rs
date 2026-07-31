@@ -54,6 +54,7 @@ use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::{Sqlite, SqliteFunctionBehavior};
 use alloc::string::String;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::ffi as libc;
 use core::marker::PhantomData;
