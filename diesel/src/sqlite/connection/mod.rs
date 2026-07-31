@@ -1580,7 +1580,7 @@ impl QueryFragment<Sqlite> for SetPragmaInt<'_> {
         out.push_sql(".");
         out.push_sql(self.name);
         out.push_sql(" = ");
-        out.push_sql(&alloc::format!("{}", self.value));
+        out.push_sql(&self.value.to_string());
         Ok(())
     }
 }
