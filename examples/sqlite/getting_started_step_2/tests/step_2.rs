@@ -1,4 +1,4 @@
-use assert_cmd::Command;
+use assert_cmd::cargo::cargo_bin_cmd;
 use diesel::Connection;
 use diesel::SqliteConnection;
 use diesel_migrations::MigrationHarness;
@@ -11,8 +11,7 @@ fn write_post() {
     let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
 
-    let _ = Command::cargo_bin("write_post")
-        .unwrap()
+    let _ = cargo_bin_cmd!("write_post_step_2")
         .env("SQLITE_DATABASE_URL", &db_url)
         .write_stdin("Test Title\ntest text\n1 2 3")
         .assert()
@@ -21,11 +20,10 @@ fn write_post() {
             "What would you like your title to be?\n\nOk! Let's write Test Title (Press "
                 .to_owned()
                 + EOF
-                + " when finished)\n\n\nSaved draft Test Title\n",
+                + " when finished)\n\n\nSaved draft Test Title with id 1\n",
         );
 
-    let _ = Command::cargo_bin("show_posts")
-        .unwrap()
+    let _ = cargo_bin_cmd!("show_posts_step_2")
         .env("SQLITE_DATABASE_URL", &db_url)
         .assert()
         .append_context("show_posts", "")
