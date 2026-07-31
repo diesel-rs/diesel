@@ -1,4 +1,4 @@
-use assert_cmd::Command;
+use assert_cmd::cargo::cargo_bin_cmd;
 use diesel::Connection;
 use diesel::SqliteConnection;
 use diesel_migrations::MigrationHarness;
@@ -11,8 +11,7 @@ fn show_posts() {
     let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
 
-    let _ = Command::cargo_bin("show_posts")
-        .unwrap()
+    let _ = cargo_bin_cmd!("show_posts_step_1")
         .env("SQLITE_DATABASE_URL", &db_url)
         .assert()
         .append_context("show_posts", "")
