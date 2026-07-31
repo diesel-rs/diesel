@@ -23,7 +23,8 @@ impl<'a> MysqlValue<'a> {
 
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        feature = "mysql"
+        feature = "mysql",
+        feature = "mariadb"
     ))]
     pub(in crate::mysql) fn new_internal(raw: &'a [u8], tpe: MysqlType) -> Self {
         Self { raw, tpe }

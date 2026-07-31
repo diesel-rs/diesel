@@ -555,7 +555,7 @@ where
 pub use crate::pg::sql_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 pub use crate::mysql::sql_types::{Datetime, Unsigned};
 
 #[doc(inline)]

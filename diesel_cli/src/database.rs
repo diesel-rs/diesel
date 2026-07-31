@@ -1,4 +1,4 @@
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use super::query_helper;
 use clap::{ArgAction, Args, Subcommand};
 use diesel::connection::InstrumentationEvent;
@@ -126,11 +126,11 @@ impl Backend {
                     available_schemes.join(" or ")
                 );
             }
-            #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+            #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "mariadb")))]
             _ => compile_error!(
                 "At least one backend must be specified for use with this crate. \
                  You may omit the unneeded dependencies in the following command. \n\n \
-                 ex. `cargo install diesel_cli --no-default-features --features mysql postgres sqlite` \n"
+                 ex. `cargo install diesel_cli --no-default-features --features mysql mariadb postgres sqlite` \n"
             ),
         }
     }
@@ -490,7 +490,7 @@ fn pg_database_exists(conn: &mut PgConnection, database_name: &str) -> QueryResu
         .map(|x| x.is_some())
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 table! {
     information_schema.schemata (schema_name) {
         schema_name -> Text,
@@ -570,7 +570,7 @@ pub fn database_url(database_url: Option<String>) -> Result<String, crate::error
         .ok_or(crate::errors::Error::DatabaseUrlMissing)
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn change_database_of_url(
     database_url: &str,
     default_database: &str,
@@ -583,7 +583,7 @@ fn change_database_of_url(
     Ok((database, new_url.into()))
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn get_database_and_url(database_url: &str) -> Result<(String, url::Url), crate::errors::Error> {
     let base = url::Url::parse(database_url)?;
     let database = base

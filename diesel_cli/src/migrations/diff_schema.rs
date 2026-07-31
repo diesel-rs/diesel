@@ -379,7 +379,7 @@ pub fn generate_sql_based_on_diff_schema(
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_up_sql::<Mysql>(&mut qb, &config, &enum_sql_types, &diesel::mysql::Mysql)?;
+                diff.generate_up_sql(&mut qb, &config, &enum_sql_types, &diesel::mysql::Mysql)?;
                 qb.finish()
             }
             #[cfg(feature = "mariadb")]

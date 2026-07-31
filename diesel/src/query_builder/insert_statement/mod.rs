@@ -559,6 +559,17 @@ mod private {
         }
     }
 
+    #[cfg(feature = "mariadb_backend")]
+    impl QueryFragment<crate::mariadb::Mariadb> for InsertOrIgnore {
+        fn walk_ast<'b>(
+            &'b self,
+            mut out: AstPass<'_, 'b, crate::mariadb::Mariadb>,
+        ) -> QueryResult<()> {
+            out.push_sql("INSERT IGNORE");
+            Ok(())
+        }
+    }
+
     /// A marker type for replace statements
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Replace;
@@ -579,6 +590,17 @@ mod private {
         fn walk_ast<'b>(
             &'b self,
             mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
+        ) -> QueryResult<()> {
+            out.push_sql("REPLACE");
+            Ok(())
+        }
+    }
+    
+    #[cfg(feature = "mariadb_backend")]
+    impl QueryFragment<crate::mariadb::Mariadb> for Replace {
+        fn walk_ast<'b>(
+            &'b self,
+            mut out: AstPass<'_, 'b, crate::mariadb::Mariadb>,
         ) -> QueryResult<()> {
             out.push_sql("REPLACE");
             Ok(())

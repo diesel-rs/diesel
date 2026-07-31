@@ -44,7 +44,7 @@ impl SqlDialect for Mariadb {
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
 
     type WindowFrameClauseGroupSupport =
-        sql_dialect::window_frame_clause_group_support::NoGroupWindowFrameUnit;
+        sql_dialect::window_frame_clause_group_support::IsoGroupWindowFrameUnit;
 
     type WindowFrameExclusionSupport =
         sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport;

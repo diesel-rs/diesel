@@ -102,7 +102,7 @@ impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
 ))]
 impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Time, Mysql>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Time, B>>::from_sql(bytes)?;
         let micro = mysql_time.second_part.try_into()?;
         NaiveTime::from_hms_micro_opt(mysql_time.hour, mysql_time.minute, mysql_time.second, micro)
             .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())

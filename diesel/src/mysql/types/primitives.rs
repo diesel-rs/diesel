@@ -1,5 +1,5 @@
 use crate::Queryable;
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 use crate::deserialize::FromSqlRef;
 use crate::deserialize::{self, FromSql};
 #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]

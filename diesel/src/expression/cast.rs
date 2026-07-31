@@ -136,6 +136,14 @@ type_name! {
         Decimal => "decimal",
         Time => "time",
     }
+    diesel::mariadb::Mariadb: "mariadb_backend" {
+        Int8 => "signed",
+        Text => "char",
+        Date => "date",
+        Datetime => "datetime",
+        Decimal => "decimal",
+        Time => "time",
+    }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
         Int8 => "bigint",

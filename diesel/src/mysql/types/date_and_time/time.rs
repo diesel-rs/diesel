@@ -4,7 +4,7 @@ use time::{
 };
 
 use crate::deserialize::{self, FromSql};
-use crate::mysql::{MysqlValue, UsesMysqlTypes};
+use crate::mysql::{MysqlValue, MysqlLikeBackend};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
@@ -63,7 +63,7 @@ fn to_primitive_datetime(dt: OffsetDateTime) -> PrimitiveDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> ToSql<Datetime, B> for PrimitiveDateTime {
+impl<B: MysqlLikeBackend> ToSql<Datetime, B> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
@@ -86,7 +86,7 @@ impl<B: UsesMysqlTypes> ToSql<Datetime, B> for PrimitiveDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> FromSql<Datetime, B> for PrimitiveDateTime {
+impl<B: MysqlLikeBackend> FromSql<Datetime, B> for PrimitiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Timestamp, B>>::from_sql(bytes)?;
 
@@ -101,7 +101,7 @@ impl<B: UsesMysqlTypes> FromSql<Datetime, B> for PrimitiveDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> ToSql<Timestamp, B> for PrimitiveDateTime {
+impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         <PrimitiveDateTime as ToSql<Datetime, B>>::to_sql(self, out)
     }
@@ -111,7 +111,7 @@ impl<B: UsesMysqlTypes> ToSql<Timestamp, B> for PrimitiveDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> FromSql<Timestamp, B> for PrimitiveDateTime {
+impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for PrimitiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         <PrimitiveDateTime as FromSql<Datetime, B>>::from_sql(bytes)
     }
@@ -122,7 +122,7 @@ impl<B: UsesMysqlTypes> FromSql<Timestamp, B> for PrimitiveDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> ToSql<Datetime, B> for OffsetDateTime {
+impl<B: MysqlLikeBackend> ToSql<Datetime, B> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         let prim = to_primitive_datetime(*self);
         <PrimitiveDateTime as ToSql<Datetime, B>>::to_sql(&prim, &mut out.reborrow())
@@ -133,7 +133,7 @@ impl<B: UsesMysqlTypes> ToSql<Datetime, B> for OffsetDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> FromSql<Datetime, B> for OffsetDateTime {
+impl<B: MysqlLikeBackend> FromSql<Datetime, B> for OffsetDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let prim = <PrimitiveDateTime as FromSql<Datetime, B>>::from_sql(bytes)?;
         Ok(prim.assume_offset(UtcOffset::UTC))
@@ -145,7 +145,7 @@ impl<B: UsesMysqlTypes> FromSql<Datetime, B> for OffsetDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> ToSql<Timestamp, B> for OffsetDateTime {
+impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         <OffsetDateTime as ToSql<Datetime, B>>::to_sql(self, out)
     }
@@ -155,7 +155,7 @@ impl<B: UsesMysqlTypes> ToSql<Timestamp, B> for OffsetDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> FromSql<Timestamp, B> for OffsetDateTime {
+impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for OffsetDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         <OffsetDateTime as FromSql<Datetime, B>>::from_sql(bytes)
     }
@@ -165,7 +165,7 @@ impl<B: UsesMysqlTypes> FromSql<Timestamp, B> for OffsetDateTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> ToSql<Time, B> for NaiveTime {
+impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, B>) -> serialize::Result {
         let mysql_time = MysqlTime {
             hour: self.hour() as libc::c_uint,
@@ -188,7 +188,7 @@ impl<B: UsesMysqlTypes> ToSql<Time, B> for NaiveTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> FromSql<Time, B> for NaiveTime {
+impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Time, B>>::from_sql(bytes)?;
 
@@ -201,7 +201,7 @@ impl<B: UsesMysqlTypes> FromSql<Time, B> for NaiveTime {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> ToSql<Date, B> for NaiveDate {
+impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
@@ -224,7 +224,7 @@ impl<B: UsesMysqlTypes> ToSql<Date, B> for NaiveDate {
     feature = "time",
     any(feature = "mysql_backend", feature = "mariadb_backend")
 ))]
-impl<B: UsesMysqlTypes> FromSql<Date, B> for NaiveDate {
+impl<B: MysqlLikeBackend> FromSql<Date, B> for NaiveDate {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Date, B>>::from_sql(bytes)?;
 

@@ -113,7 +113,7 @@ std = ["serde_json?/std"]
 hashbrown = ["dep:hashbrown"]
 
 [package.metadata.docs.rs]
-features = ["postgres", "mysql", "sqlite", "extras"]
+features = ["postgres", "mysql", "mariadb", "sqlite", "extras"]
 no-default-features = true
 rustc-args = ["--cfg", "diesel_docs"]
 rustdoc-args = ["--cfg", "diesel_docsrs", "-Z", "unstable-options", "--generate-link-to-definition", "--generate-macro-expansion"]

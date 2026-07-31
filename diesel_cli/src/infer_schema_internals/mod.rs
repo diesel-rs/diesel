@@ -6,7 +6,7 @@ mod table_data;
 #[cfg(feature = "uses_information_schema")]
 mod information_schema;
 #[cfg(feature = "mariadb")]
-mod mariadb;
+pub mod mariadb;
 #[cfg(feature = "mysql")]
 pub mod mysql;
 #[cfg(feature = "postgres")]

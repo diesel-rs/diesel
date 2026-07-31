@@ -7,12 +7,13 @@ use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::stmt::iterator::StatementIterator;
 use self::url::ConnectionOptions;
-use super::backend::Mysql;
 use crate::RunQueryDsl;
 use crate::connection::instrumentation::{DebugQuery, DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
+#[cfg(feature = "mysql")]
+use crate::mysql::Mysql;
 use crate::mysql::MysqlLikeBackend;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;

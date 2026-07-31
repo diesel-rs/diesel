@@ -251,7 +251,7 @@ fn determine_column_type(
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(_) => super::mysql::determine_column_type(attr),
-        #[cfg(feature = "mysql")]
+        #[cfg(feature = "mariadb")]
         InferConnection::Mariadb(_) => super::mariadb::determine_column_type(attr),
     }
 }

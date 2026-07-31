@@ -631,18 +631,15 @@ pub(crate) fn load_custom_types(
                             }
                             #[cfg(feature = "mariadb")]
                             Backend::Mariadb => {
-                                // For MySQL we generate custom types for unknown types that
+                                // For MariaDb we generate custom types for unknown types that
                                 // are dedicated to the column
-                                use heck::ToUpperCamelCase;
-
                                 ColumnType {
-                                    rust_name: format!(
-                                        "{} {} {}",
+                                    rust_name: mysql_enum_name(
                                         &cd.table_name().rust_name,
                                         &c.rust_name,
-                                        &ty.rust_name
-                                    )
-                                    .to_upper_camel_case(),
+                                        ty,
+                                    ),
+                                    max_length: None,
                                     ..ty.clone()
                                 }
                             }
@@ -668,7 +665,7 @@ pub(crate) fn load_custom_types(
             }
             out
         }
-        #[cfg(any(feature = "mysql", feature = "sqlite"))]
+        #[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
         _ => HashMap::new(),
     };
 
@@ -678,11 +675,12 @@ pub(crate) fn load_custom_types(
     })
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub(crate) fn mysql_enum_name(table_name: &str, column_name: &str, ty: &ColumnType) -> String {
     use heck::ToUpperCamelCase;
     format!("{} {} {}", table_name, column_name, ty.rust_name).to_upper_camel_case()
 }
+
 
 fn safe_tables_for_config(
     connection: &mut InferConnection,
@@ -1255,7 +1253,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
 
                 for (idx, &(custom_type, table, column)) in types_to_generate.iter().enumerate() {
                     let enum_type = if let Some(variants) =
-                        crate::infer_schema_internals::mysql::get_enum_variants(&column.ty)
+                        crate::infer_schema_internals::mariadb::get_enum_variants(&column.ty)
                     {
                         rust_types.push(RustEnum {
                             tpe: custom_type,
@@ -1584,7 +1582,7 @@ impl<'a> Display for QueryRelationDefinition<'a> {
                 }
             }
 
-            #[cfg(any(feature = "mysql", feature = "postgres"))]
+            #[cfg(any(feature = "mysql", feature = "mariadb", feature = "postgres"))]
             {
                 let mut already_imported_custom_types: HashSet<&str> = HashSet::new();
                 for ct in self
@@ -1604,7 +1602,7 @@ impl<'a> Display for QueryRelationDefinition<'a> {
                 }
             }
 
-            #[cfg(not(any(feature = "mysql", feature = "postgres")))]
+            #[cfg(not(any(feature = "mysql", feature = "mariadb", feature = "postgres")))]
             let _ = self.custom_type_overrides;
 
             if has_written_import {

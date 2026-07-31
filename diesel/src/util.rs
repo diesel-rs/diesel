@@ -45,6 +45,7 @@ pub(crate) mod std_compat {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "__sqlite-shared",
         feature = "mysql_backend",
+        feature = "mariadb_backend",
         feature = "postgres_backend"
     ))]
     pub(crate) use std::collections::hash_map::Entry;

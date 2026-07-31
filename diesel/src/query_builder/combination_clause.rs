@@ -408,6 +408,24 @@ mod mysql {
     impl SupportsCombinationClause<Union, All> for Mysql {}
 }
 
+#[cfg(feature = "mariadb_backend")]
+mod mariadb {
+    use super::*;
+    use crate::mariadb::Mariadb;
+
+    impl<T: QueryFragment<Mariadb>> QueryFragment<Mariadb> for ParenthesisWrapper<T> {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {
+            out.push_sql("(");
+            self.inner.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+
+    impl SupportsCombinationClause<Union, Distinct> for Mariadb {}
+    impl SupportsCombinationClause<Union, All> for Mariadb {}
+}
+
 #[cfg(feature = "__sqlite-shared")]
 mod sqlite {
     use super::*;

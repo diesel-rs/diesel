@@ -1,19 +1,19 @@
-#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use crate::Table;
 use crate::associations::HasTable;
-#[cfg(any(feature = "__sqlite-shared", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "mysql", feature = "mariadb"))]
 use crate::associations::Identifiable;
 use crate::connection::Connection;
-#[cfg(any(feature = "__sqlite-shared", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "mysql", feature = "mariadb"))]
 use crate::dsl::Find;
-#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use crate::dsl::Update;
-#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use crate::expression::{MixedAggregates, ValidGrouping, is_aggregate};
 use crate::query_builder::{AsChangeset, IntoUpdateTarget};
-#[cfg(any(feature = "__sqlite-shared", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "mysql", feature = "mariadb"))]
 use crate::query_dsl::methods::{ExecuteDsl, FindDsl};
-#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "__sqlite-shared", feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::result::QueryResult;
 
@@ -93,6 +93,34 @@ where
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<MysqlConnection>,
     Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
+    <Changes::Table as Table>::AllColumns: ValidGrouping<()>
+        + crate::expression::SelectableExpression<
+            crate::query_builder::returning::ReturningQuerySource<
+                crate::query_builder::returning::UpdateStmt,
+                Changes::Table,
+            >,
+        >,
+    <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
+{
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
+        crate::update(changeset).set(changeset).execute(self)?;
+        Changes::table().find(changeset.id()).get_result(self)
+    }
+}
+
+
+#[cfg(feature = "mariadb")]
+use crate::mariadb::MariadbConnection;
+
+#[cfg(feature = "mariadb")]
+impl<'b, Changes, Output> UpdateAndFetchResults<Changes, Output> for MariadbConnection
+where
+    Changes: Copy + Identifiable,
+    Changes: AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
+    Changes::Table: FindDsl<Changes::Id>,
+    Update<Changes, Changes>: ExecuteDsl<MariadbConnection>,
+    Find<Changes::Table, Changes::Id>: LoadQuery<'b, MariadbConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>
         + crate::expression::SelectableExpression<
             crate::query_builder::returning::ReturningQuerySource<

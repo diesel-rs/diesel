@@ -7,7 +7,7 @@ use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
 use crate::query_builder::upsert::on_conflict_actions::{DoNothing, DoUpdate};
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
-use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
+use crate::query_builder::upsert::on_conflict_target::ConflictTarget;
 use crate::query_builder::where_clause::NoWhereClause;
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;
@@ -131,10 +131,10 @@ where
 ///
 /// See [`InsertStatement::on_conflict`](crate::query_builder::InsertStatement::on_conflict)
 /// for examples
-#[derive(Debug, Copy, Clone)]
-pub struct DuplicatedKeys;
+//#[derive(Debug, Copy, Clone)]
+type DuplicatedKeys = crate::mysql::query_builder::DuplicatedKeys;
 
-impl<Tab> OnConflictTarget<Tab> for ConflictTarget<DuplicatedKeys> {}
+//impl<Tab> OnConflictTarget<Tab> for ConflictTarget<DuplicatedKeys> {}
 
 impl QueryFragment<Mariadb, MariadbOnConflictClause> for ConflictTarget<DuplicatedKeys> {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {

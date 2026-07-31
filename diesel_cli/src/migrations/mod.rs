@@ -693,15 +693,26 @@ where
     }
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn should_redo_migration_in_transaction(t: &dyn Any) -> bool {
-    !matches!(
+    #[cfg(all(feature = "mysql", feature = "mariadb"))]
+    return !matches!(
+        t.downcast_ref::<InferConnection>(),
+        Some(InferConnection::Mysql(_)|InferConnection::Mariadb(_))
+    );
+    #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
+    return !matches!(
         t.downcast_ref::<InferConnection>(),
         Some(InferConnection::Mysql(_))
-    )
+    );
+    #[cfg(all(not(feature = "mysql"), feature = "mariadb"))]
+    return !matches!(
+        t.downcast_ref::<InferConnection>(),
+        Some(InferConnection::Mariadb(_))
+    );
 }
 
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn should_redo_migration_in_transaction(_t: &dyn Any) -> bool {
     true
 }

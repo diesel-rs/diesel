@@ -334,7 +334,7 @@ pub mod sql_types;
 pub mod migration;
 pub mod row;
 
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 pub mod mysql;
 
 #[cfg(feature = "mariadb_backend")]
@@ -858,6 +858,9 @@ pub mod prelude {
     #[cfg(feature = "mysql")]
     #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
+    #[cfg(feature = "mariadb")]
+    #[doc(inline)]
+    pub use crate::mariadb::MariadbConnection;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;

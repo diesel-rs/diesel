@@ -64,7 +64,7 @@ impl ConnectionOptions {
             Err(_) => return Err(connection_url_error()),
         };
 
-        if url.scheme() != "mysql" {
+        if url.scheme() != "mysql" && url.scheme() != "mariadb" {
             return Err(connection_url_error());
         }
 

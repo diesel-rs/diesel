@@ -109,6 +109,7 @@ mod information_schema {
     table! {
         information_schema.table_constraints (constraint_schema, constraint_name) {
             table_schema -> VarChar,
+            table_name -> VarChar,
             constraint_schema -> VarChar,
             constraint_name -> VarChar,
             constraint_type -> VarChar,
@@ -169,7 +170,8 @@ pub fn load_foreign_key_constraints(
         .inner_join(
             kcu::table.on(tc::constraint_schema
                 .eq(kcu::constraint_schema)
-                .and(tc::constraint_name.eq(kcu::constraint_name))),
+                .and(tc::constraint_name.eq(kcu::constraint_name))
+                .and(kcu::table_name.eq(tc::table_name))),
         )
         .select((
             (kcu::table_name, kcu::table_schema),
@@ -184,7 +186,7 @@ pub fn load_foreign_key_constraints(
             HashMap::new(),
             |mut acc, (child_table, parent_table, foreign_key, primary_key, fk_constraint_name)| {
                 let entry = acc
-                    .entry(fk_constraint_name)
+                    .entry((parent_table.clone(), fk_constraint_name))
                     .or_insert_with(|| (child_table, parent_table, Vec::new(), Vec::new()));
                 entry.2.push(foreign_key);
                 entry.3.push(primary_key);
@@ -280,6 +282,25 @@ fn determine_unsigned(sql_type_name: &str) -> bool {
     sql_type_name.to_lowercase().contains("unsigned")
 }
 
+pub fn get_enum_variants(ct: &ColumnType) -> Option<Vec<EnumVariant>> {
+    if let Some(enum_variants) = ct.unmodified_type.strip_prefix("enum('")
+        && let Some(enum_variants) = enum_variants.strip_suffix("')")
+    {
+        Some(
+            enum_variants
+                .split("','")
+                .enumerate()
+                .map(|(idx, v)| EnumVariant {
+                    order: idx as _,
+                    sql_name: v.replace("''", "'"),
+                })
+                .collect(),
+        )
+    } else {
+        None
+    }
+}
+
 #[test]
 fn values_which_already_map_to_type_are_returned_unchanged() {
     assert_eq!("text", determine_type_name("text").unwrap());
@@ -334,7 +355,7 @@ mod test {
     fn connection() -> MariadbConnection {
         dotenv().ok();
 
-        let connection_url = env::var("MYSQL_DATABASE_URL")
+        let connection_url = env::var("MARIADB_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");
         let mut connection = MariadbConnection::establish(&connection_url).unwrap();

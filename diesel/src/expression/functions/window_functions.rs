@@ -79,6 +79,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn rank() -> BigInt;
 
     /// Rank of current row within its partition, without gaps
@@ -122,6 +126,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn dense_rank() -> BigInt;
 
@@ -168,6 +176,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn percent_rank() -> Double;
 
     /// Cumulative distribution value
@@ -212,6 +224,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn cume_dist() -> Double;
 
@@ -292,6 +308,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lag<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(value: T)
     -> T::Nullable;
 
@@ -340,6 +360,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn lag_with_offset<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(
         value: T,
@@ -434,6 +458,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lag_with_offset_and_default<
         T: SqlType
             + SingleValue
@@ -492,6 +520,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lead<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(
         value: T,
     ) -> T::Nullable;
@@ -543,6 +575,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn lead_with_offset<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(
         value: T,
@@ -636,6 +672,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn lead_with_offset_and_default<
         T: SqlType
