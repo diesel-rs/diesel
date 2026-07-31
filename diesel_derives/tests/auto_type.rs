@@ -1,5 +1,6 @@
 #![allow(dead_code)] // this is a compile pass test
 use diesel::dsl::*;
+use diesel::expression::IntoSql;
 use diesel::helper_types::*;
 use diesel::prelude::*;
 use diesel::sql_types;
