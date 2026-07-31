@@ -1,125 +1,76 @@
 use crate::backend::{Backend, sql_dialect};
-use crate::expression::TypedExpressionType;
 use crate::query_builder::{AstPass, QueryFragment};
-use crate::serialize::ToSql;
-use crate::sql_types::{HasSqlType, SqlType};
-use crate::{Column, QueryResult, Table, query_builder::*};
+use crate::{QueryResult, query_builder::*};
 use core::marker::PhantomData;
 
-/// Represents the column list for use in a batch update statement.
-///
-/// This trait is implemented by columns and tuples of columns.
-pub trait BatchColumn<Tab, DB: Backend> {
-    /// The table these columns belong to
-    type Table;
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend"
+))]
+pub(crate) const BATCH_UPDATE_ALIAS: &str = "__diesel_internal_temp_values";
 
-    /// Generate the SQL for this columns list.
-    ///
-    /// Column names must *not* be qualified.
-    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend"
+))]
+pub trait BatchValueHelper<DB: Backend> {
+    fn assign<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+
+    fn column_name<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+
+    fn bind_value<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 }
 
-impl<C, Tab, DB> BatchColumn<Tab, DB> for C
-where
-    C: Column,
-    Tab: Table,
-    DB: Backend,
-{
-    type Table = Tab;
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend"
+))]
+pub trait BatchAssignHelper<DB: Backend> {
+    fn batch_assign_identifier<'a>(&'a self, out: AstPass<'_, 'a, DB>) -> QueryResult<()>;
+}
 
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_identifier(C::NAME)?;
-        Ok(())
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend"
+))]
+pub trait BatchKeyHelper<PK, DB: Backend> {
+    fn bind_value<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+
+    fn column_name<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+
+    fn assign<'b>(pk: &'b PK, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+}
+
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend"
+))]
+impl<PK, DB, C> BatchKeyHelper<PK, DB> for C
+where
+    DB: Backend + crate::sql_types::HasSqlType<PK::SqlType>,
+    C: crate::serialize::ToSql<PK::SqlType, DB>,
+    PK: crate::expression::Expression + crate::Column + QueryFragment<DB>,
+    PK::SqlType: crate::sql_types::SingleValue,
+{
+    fn bind_value<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_bind_param(self)
     }
-}
 
-/// Represents the listed columns assigned to alias columns for use in an
-/// batch update statement.
-///
-/// This trait is implemented by columns and tuples of columns.
-///
-/// - `sep`: Separator that appears between consecutive assignments to alias.
-/// - `ambiguous`: If the targeted column should contain leading table as identifier.
-/// - `alias`: Alias name for the temporary table with identical column name.
-///
-///
-/// #### Expected SQL fragments:
-/// (Note: Identifier quotations omitted!)
-///
-/// * `BatchColumnAssign::walk_ast(&columns, out, ", ", false, "tmp")` \
-///   = `"users.hair_color = tmp.hair_color, users.type = tmp.type"`
-///
-/// * `BatchColumnAssign::walk_ast(&columns, out, " AND ", true, "tmp")` \
-///   = `"hair_color = tmp.hair_color AND type = tmp.type"`
-pub trait BatchColumnAssign<Tab, DB: Backend> {
-    /// The table these columns belong to
-    type Table;
+    fn column_name<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_identifier(PK::NAME)
+    }
 
-    /// Generate the SQL for the listed columns assignments.
-    ///
-    /// Column names must *not* be qualified.
-    fn walk_ast<'b>(
-        &'b self,
-        out: AstPass<'_, 'b, DB>,
-        sep: &'_ str,
-        ambiguous: bool,
-        alias: &'_ str,
-    ) -> QueryResult<()>;
-}
-
-impl<C, Tab, DB> BatchColumnAssign<Tab, DB> for C
-where
-    C: Column + QueryFragment<DB>,
-    Tab: Table,
-    DB: Backend,
-{
-    type Table = Tab;
-
-    fn walk_ast<'b>(
-        &'b self,
-        mut out: AstPass<'_, 'b, DB>,
-        _sep: &'_ str,
-        ambiguous: bool,
-        alias: &'_ str,
-    ) -> QueryResult<()> {
-        match ambiguous {
-            true => out.push_identifier(<C as Column>::NAME)?,
-            false => <C as QueryFragment<DB>>::walk_ast(self, out.reborrow())?,
-        }
+    fn assign<'b>(pk: &'b PK, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        pk.walk_ast(out.reborrow())?;
         out.push_sql(" = ");
-        out.push_identifier(alias)?;
+        out.push_identifier(BATCH_UPDATE_ALIAS)?;
         out.push_sql(".");
-        out.push_identifier(<C as Column>::NAME)?;
-        Ok(())
-    }
-}
-
-/// Represents the value list for use in a batch update statement.
-///
-/// This trait is implemented by all referenced values that also implement [ToSql],
-/// [crate::query_builder::update_statement::changeset::Assign] and tuples of both.
-pub trait BatchValue<ST, Tab, DB: Backend> {
-    /// The table these values belong to
-    type Table;
-    /// The SqlType these values refer to
-    type SqlType;
-
-    /// Generate the SQL for this value list.
-    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
-}
-
-impl<T, ST, Tab, DB> BatchValue<ST, Tab, DB> for &T
-where
-    T: ToSql<ST, DB>,
-    ST: SqlType + TypedExpressionType,
-    Tab: Table,
-    DB: Backend + HasSqlType<ST>,
-{
-    type Table = Tab;
-    type SqlType = ST;
-
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_bind_param(self)?;
+        out.push_identifier(PK::NAME)?;
         Ok(())
     }
 }
@@ -149,9 +100,6 @@ pub struct BatchUpdate<I, C, PK, Tab> {
 }
 
 impl<I, C, PK, Tab> BatchUpdate<I, C, PK, Tab> {
-    /// Alias for temporary created table during batch update progress.
-    pub const ALIAS: &str = "__diesel_internal_temp_values";
-
     /// Docs
     pub fn new(values: Vec<(I, C)>, primary_key: PK) -> Self {
         Self {

@@ -1,35 +1,39 @@
-use crate::backend::{Backend, SqlDialect};
-use crate::expression::TypedExpressionType;
+use crate::query_builder::update_statement::batch_update::{
+    BATCH_UPDATE_ALIAS, BatchAssignHelper, BatchKeyHelper, BatchUpdate, BatchValueHelper,
+};
+use crate::query_builder::update_statement::changeset::{Assign, ColumnWrapperForUpdate};
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
-use crate::sql_types::{HasSqlType, SqlType};
-use crate::{Expression, QueryResult, Table, query_builder::*};
+use crate::{QueryResult, Table};
 
-impl<IT, CT, I, C, PK, Tab, DB>
-    QueryFragment<DB, crate::pg::backend::PostgresLikeBatchUpdateSupport>
-    for BatchUpdate<I, C, PK, Tab>
+impl<C, T> BatchAssignHelper<crate::pg::Pg> for Assign<ColumnWrapperForUpdate<C>, T>
 where
-    DB: Backend
-        + SqlDialect<BatchUpdateSupport = crate::pg::backend::PostgresLikeBatchUpdateSupport>,
-    IT: SqlType + TypedExpressionType, // SqlType of I
-    CT: SqlType + TypedExpressionType, // SqlType of C
-    I: BatchValue<IT, Tab, DB>,
-    C: Expression<SqlType = CT>
-        + BatchColumn<Tab, DB>
-        + BatchColumnAssign<Tab, DB>
-        + BatchValue<CT, Tab, DB>,
-    PK: Expression<SqlType = IT> + BatchColumnAssign<Tab, DB> + BatchColumn<Tab, DB>,
-    Tab: Table<PrimaryKey = PK>,
-    DB: Backend + HasSqlType<IT> + HasSqlType<CT>,
+    ColumnWrapperForUpdate<C>: QueryFragment<crate::pg::Pg>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn batch_assign_identifier<'b>(
+        &'b self,
+        mut out: AstPass<'_, 'b, crate::pg::Pg>,
+    ) -> QueryResult<()> {
+        self.target.walk_ast(out.reborrow())
+    }
+}
+
+impl<Tab, I, C> QueryFragment<crate::pg::Pg, crate::pg::backend::PostgresLikeBatchUpdateSupport>
+    for BatchUpdate<I, C, Tab::PrimaryKey, Tab>
+where
+    C: BatchValueHelper<crate::pg::Pg>,
+    I: BatchKeyHelper<Tab::PrimaryKey, crate::pg::Pg>,
+    Tab: Table,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
         // Always unsafe to cache since this does not have a static query id.
         out.unsafe_to_cache_prepared();
 
-        if self.values.is_empty() {
-            return Err(QueryBuilderError(Box::new(EmptyChangeset)));
-        }
+        let first = self
+            .values
+            .first()
+            .ok_or_else(|| QueryBuilderError(Box::new(EmptyChangeset)))?;
 
         out.push_sql(" SET ");
 
@@ -46,13 +50,11 @@ where
         // WHERE
         //      tab.column_b = tmp.column_b;
 
-        let first = self.values.first().expect("missing batch update values");
-
         // --- Assign target columns from temporary columns
         //
         //      column_a = tmp.column_a,
         //      column_c = tmp.column_c
-        BatchColumnAssign::walk_ast(&first.1, out.reborrow(), ", ", true, Self::ALIAS)?;
+        BatchValueHelper::assign(&first.1, out.reborrow())?;
 
         // --- List of values
         //
@@ -62,18 +64,18 @@ where
         // )
         out.push_sql(" FROM ( VALUES ");
         let mut values = self.values.iter();
-        if let Some(value) = values.next() {
+        if let Some((key, value)) = values.next() {
             out.push_sql("(");
-            BatchValue::walk_ast(&value.0, out.reborrow())?;
+            BatchKeyHelper::bind_value(key, out.reborrow())?;
             out.push_sql(", ");
-            BatchValue::walk_ast(&value.1, out.reborrow())?;
+            BatchValueHelper::bind_value(value, out.reborrow())?;
             out.push_sql(")");
         }
-        for value in values {
+        for (key, value) in values {
             out.push_sql(", (");
-            BatchValue::walk_ast(&value.0, out.reborrow())?;
+            BatchKeyHelper::bind_value(key, out.reborrow())?;
             out.push_sql(", ");
-            BatchValue::walk_ast(&value.1, out.reborrow())?;
+            BatchValueHelper::bind_value(value, out.reborrow())?;
             out.push_sql(")");
         }
         out.push_sql(" )");
@@ -82,25 +84,18 @@ where
         //
         //      AS tmp(column_a, column_b, column_c)
         out.push_sql(" AS ");
-        out.push_identifier(Self::ALIAS)?;
+        out.push_identifier(BATCH_UPDATE_ALIAS)?;
         out.push_sql("(");
-        BatchColumn::walk_ast(&self.primary_key, out.reborrow())?; // p_key columns
+        BatchKeyHelper::column_name(&first.0, out.reborrow())?;
         out.push_sql(", ");
-        BatchColumn::walk_ast(&first.1, out.reborrow())?; // changeset columns
+        BatchValueHelper::column_name(&first.1, out.reborrow())?;
         out.push_sql(")");
 
         // --- Set equality condition for primary key(s)
         //
         // WHERE tab.column_b = tmp.column_b;
         out.push_sql(" WHERE ");
-        BatchColumnAssign::walk_ast(
-            &self.primary_key,
-            out.reborrow(),
-            " AND ",
-            false,
-            Self::ALIAS,
-        )?;
-
+        <I as BatchKeyHelper<Tab::PrimaryKey, crate::pg::Pg>>::assign(&self.primary_key, out)?;
         Ok(())
     }
 }

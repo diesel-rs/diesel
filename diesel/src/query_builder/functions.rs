@@ -81,10 +81,10 @@ use alloc::string::String;
 ///
 /// <br/>
 ///
-/// **Batch Update**
+/// # Batch Update
 ///
 /// To update a batch of rows, provide [`set`] a slice or a reference to a vector
-/// as an argument and avoid calling [`filter`], since a special `WHERE` clause
+/// as an argument. You cannot call [`filter`], since a special `WHERE` clause
 /// will be auto-generated instead. The `WHERE` clause will use the PRIMARY KEY
 /// as an identifier to apply the changes. The update struct requires both derive
 /// macros [`AsChangeset`] and [`Identifiable`].
@@ -129,8 +129,6 @@ use alloc::string::String;
 ///    User { id: 6, name: "Mev".to_string(), surname: "Sane".to_string() },
 ///    User { id: 3, name: "Kody".to_string(), surname: "Pineda".to_string() },
 ///    // Previous update of `id = 6` will be overwritten in the database.
-///    // Known issue: Return value of `get_results` will contain incorrectly
-///    // the first update and not the second one.
 ///    User { id: 6, name: "Mev2".to_string(), surname: "Sane2".to_string() },
 /// ];
 ///

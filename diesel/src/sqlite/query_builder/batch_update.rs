@@ -7,66 +7,62 @@ use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
 use crate::{QueryResult, Table};
 
-impl<C, T> BatchAssignHelper<crate::mysql::Mysql> for Assign<ColumnWrapperForUpdate<C>, T>
+impl<C, T> BatchAssignHelper<crate::sqlite::Sqlite> for Assign<ColumnWrapperForUpdate<C>, T>
 where
-    C: QueryFragment<crate::mysql::Mysql>,
+    ColumnWrapperForUpdate<C>: QueryFragment<crate::sqlite::Sqlite>,
 {
     fn batch_assign_identifier<'b>(
         &'b self,
-        mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
+        mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>,
     ) -> QueryResult<()> {
-        self.target.0.walk_ast(out.reborrow())
+        self.target.walk_ast(out.reborrow())
     }
 }
 
-impl<I, C, Tab>
-    QueryFragment<crate::mysql::Mysql, crate::mysql::backend::MySqlLikeBatchUpdateSupport>
+impl<I, C, Tab> QueryFragment<crate::sqlite::Sqlite, crate::sqlite::backend::SqliteBatchUpdate>
     for BatchUpdate<I, C, Tab::PrimaryKey, Tab>
 where
-    I: BatchKeyHelper<Tab::PrimaryKey, crate::mysql::Mysql>,
-    C: BatchValueHelper<crate::mysql::Mysql>,
+    I: BatchKeyHelper<Tab::PrimaryKey, crate::sqlite::Sqlite>,
+    C: BatchValueHelper<crate::sqlite::Sqlite>,
     Tab: Table,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::mysql::Mysql>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         // Always unsafe to cache since this does not have a static query id.
         out.unsafe_to_cache_prepared();
 
-        // UPDATE my_table AS tab
-        // JOIN ( WITH CTE (column_b, column_a, column_c) AS(
-        //      SELECT 1, 10, 20
-        //      UNION ALL SELECT 2, 5, 10
-        //      UNION ALL SELECT 3, 15, 30) SELECT * FROM CTE
-        // ) AS tmp
-        // ON
-        //      tab.column_b = tmp.column_b
-        // SET
-        //      tab.column_a = tmp.column_a,
-        //      tab.column_c = tmp.column_c;
+        out.push_sql(" SET ");
+        // for sqlite:
+        // update test set name = source.name from (with cte(id, name) as (values (1, 'boom'), (2, 'baz')) select * from cte)
+        // as source where source.id = test.id;
 
         let first = self
             .values
             .first()
             .ok_or_else(|| QueryBuilderError(Box::new(EmptyChangeset)))?;
 
-        out.push_sql(" JOIN ( WITH  ");
+        BatchValueHelper::assign(&first.1, out.reborrow())?;
+
+        out.push_sql(" FROM( WITH ");
         out.push_identifier("CTE")?;
         out.push_sql("(");
         BatchKeyHelper::column_name(&first.0, out.reborrow())?;
         out.push_sql(", ");
         BatchValueHelper::column_name(&first.1, out.reborrow())?;
-        out.push_sql(") AS (");
+        out.push_sql(") AS ( VALUES");
         let mut values = self.values.iter();
         if let Some((key, value)) = values.next() {
-            out.push_sql(" SELECT ");
+            out.push_sql("(");
             BatchKeyHelper::bind_value(key, out.reborrow())?;
             out.push_sql(", ");
             BatchValueHelper::bind_value(value, out.reborrow())?;
+            out.push_sql(")");
         }
         for (key, value) in values {
-            out.push_sql(" UNION ALL SELECT ");
+            out.push_sql(", (");
             BatchKeyHelper::bind_value(key, out.reborrow())?;
             out.push_sql(", ");
             BatchValueHelper::bind_value(value, out.reborrow())?;
+            out.push_sql(")");
         }
         out.push_sql(" ) SELECT * FROM ");
         out.push_identifier("CTE")?;
@@ -74,15 +70,11 @@ where
 
         out.push_sql(" AS ");
         out.push_identifier(BATCH_UPDATE_ALIAS)?;
-
-        out.push_sql(" ON ");
-
-        <I as BatchKeyHelper<Tab::PrimaryKey, crate::mysql::Mysql>>::assign(
+        out.push_sql(" WHERE ");
+        <I as BatchKeyHelper<Tab::PrimaryKey, crate::sqlite::Sqlite>>::assign(
             &self.primary_key,
-            out.reborrow(),
+            out,
         )?;
-        out.push_sql(" SET ");
-        BatchValueHelper::assign(&first.1, out.reborrow())?;
 
         Ok(())
     }
