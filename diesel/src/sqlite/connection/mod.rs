@@ -1407,6 +1407,7 @@ fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
 }
 
+#[derive(QueryId)]
 struct AttachDatabase<'a> {
     path: &'a str,
     schema_name: &'a str,
@@ -1422,14 +1423,9 @@ impl QueryFragment<Sqlite> for AttachDatabase<'_> {
     }
 }
 
-impl QueryId for AttachDatabase<'_> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
-}
-
 impl RunQueryDslSupport for AttachDatabase<'_> {}
 
+#[derive(QueryId)]
 struct DetachDatabase<'a> {
     schema_name: &'a str,
 }
@@ -1440,12 +1436,6 @@ impl QueryFragment<Sqlite> for DetachDatabase<'_> {
         out.push_bind_param::<crate::sql_types::Text, _>(self.schema_name)?;
         Ok(())
     }
-}
-
-impl QueryId for DetachDatabase<'_> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl RunQueryDslSupport for DetachDatabase<'_> {}
