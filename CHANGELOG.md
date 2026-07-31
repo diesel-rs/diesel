@@ -35,6 +35,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::set_limit`, `SqliteConnection::get_limit`, and `SqliteConnection::set_recommended_security_limits` to configure SQLite's per-connection runtime limits (`sqlite3_limit`) via the new `SqliteLimit` enum.
 * Added support for `#[cfg(...)]` attributes on individual columns inside the `table!` macro, so a schema whose columns vary by enabled crate features can live in a single `table!` block instead of duplicated feature gated modules.
 * Added `SqliteConnection` methods to configure SQLite's per-connection `sqlite3_db_config` options: `set_defensive`/`is_defensive`, `set_trusted_schema`/`is_trusted_schema`, `with_load_extension_enabled`, `set_fts3_tokenizer_enabled`/`is_fts3_tokenizer_enabled`, `set_writable_schema`/`is_writable_schema`, `set_attach_create_enabled`/`is_attach_create_enabled`, `set_attach_write_enabled`/`is_attach_write_enabled`, `set_triggers_enabled`/`are_triggers_enabled`, `set_views_enabled`/`are_views_enabled`, `set_foreign_keys_enabled`/`are_foreign_keys_enabled`, and `set_double_quoted_strings_dml`/`are_double_quoted_strings_dml_enabled` (plus the `_ddl` variants).
+* Added `SqliteConnection::attach_database` and `SqliteConnection::detach_database` helpers that run `ATTACH DATABASE`/`DETACH DATABASE` with the file path and schema name passed as bound parameters, avoiding hand-assembled statements and path escaping. They pair with the `set_attach_create_enabled` and `set_attach_write_enabled` hardening knobs.
 * Added `SqliteFunctionBehavior` and a `register_impl_with_behavior` function (generated next to `register_impl`/`register_nondeterministic_impl` by `#[declare_sql_function]`) to register custom SQLite functions with explicit behavior flags (`DETERMINISTIC`, `INNOCUOUS`, `DIRECTONLY`, `SUBTYPE`).
 * Added a `RunQueryDslSupport` trait to indicate types that should implement `RunQueryDsl` in a sync/async agnostic way
 * Added a `#[derive(diesel::Enum)]` proc-macro to easily map Rust enums to database enums.
@@ -52,12 +53,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
+* Fixed `FromSql`/`ToSql` for `chrono::NaiveTime` on MySQL dropping the fractional-seconds component of `TIME` values, so a `TIME(N)` column now round-trips its microseconds like `DATETIME` / `TIMESTAMP` already did.
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* Extended libsqlite3-sys support to include 0.38
 
 ## [2.3.11] 2026-07-10
 

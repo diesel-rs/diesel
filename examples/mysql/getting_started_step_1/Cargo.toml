@@ -11,7 +11,7 @@ openssl-sys = { workspace = true, features = ["vendored"] }
 dotenvy = "0.15"
 
 [dev-dependencies]
-assert_cmd = "2.0.14"
+assert_cmd = "2.1"
 url = "2.2.2"
 diesel_migrations = { version = "2.3.0", path = "../../../diesel_migrations" }
 

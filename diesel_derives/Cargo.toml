@@ -15,7 +15,8 @@ include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md", "bu
 syn = { version = "2.0", features = ["derive", "fold", "full", "visit-mut"] }
 quote = "1.0.9"
 proc-macro2 = "1.0.27"
-diesel_table_macro_syntax = {version = "0.3", path = "../diesel_table_macro_syntax"}
+diesel_table_macro_syntax = { version = "0.3", path = "../diesel_table_macro_syntax" }
+diesel_attribute_parser = { version = "0.1", path = "../diesel_attribute_parser" }
 dsl_auto_type = { version = "0.2", path = "../dsl_auto_type" }
 
 [dev-dependencies]
@@ -35,15 +36,15 @@ name = "tests"
 
 [features]
 default = []
-nightly = ["proc-macro2/nightly"]
+nightly = ["proc-macro2/nightly", "diesel_attribute_parser/nightly"]
 postgres = []
 sqlite = []
 mysql = []
 32-column-tables = []
 64-column-tables = ["32-column-tables"]
 128-column-tables = ["64-column-tables"]
-without-deprecated = []
-with-deprecated = []
+without-deprecated = ["diesel_attribute_parser/without-deprecated"]
+with-deprecated = ["diesel_attribute_parser/with-deprecated"]
 r2d2 = []
 chrono = []
 time = []

@@ -1,19 +1,26 @@
 use diesel::QueryResult;
 use diesel::backend::Backend;
-use diesel::query_builder::QueryBuilder;
+use diesel::query_builder::{QueryBuilder, QueryFragment};
 use diesel_table_macro_syntax::{ColumnDef, TableDecl, ViewDecl};
+use enum_type_query_fragments::{
+    AddEnumVariants, CreateEnumType, DropEnumType, EnumType, MigrateEnumData,
+};
+use schema_parsing::{EnumVariant, SqlTypeInfo};
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::path::Path;
 use syn::visit::Visit;
 
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
-    ColumnDefinition, ColumnType, ForeignKeyConstraint, SupportedQueryRelationStructures,
-    TableData, TableName, filter_table_names, load_table_names,
+    self, ColumnDefinition, ColumnType, ForeignKeyConstraint, QueryRelationData,
+    SupportedQueryRelationStructures, TableData, TableName, filter_table_names, load_table_names,
 };
 use crate::print_schema::{ColumnSorting, DocConfig};
+
+mod enum_type_query_fragments;
+mod schema_parsing;
 
 fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
     let mut map = HashMap::new();
@@ -43,9 +50,9 @@ pub fn generate_sql_based_on_diff_schema(
 
     let syn_file = syn::parse_file(&content)?;
 
-    let mut tables_from_schema = SchemaCollector::default();
+    let mut rust_side_schema = schema_parsing::SchemaCollector::default();
 
-    tables_from_schema.visit_file(&syn_file);
+    rust_side_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_maybe_url(database_url)?;
 
     let foreign_keys =
@@ -60,20 +67,21 @@ pub fn generate_sql_based_on_diff_schema(
                 acc
             });
 
-    let mut expected_fk_map = tables_from_schema.joinable.into_iter().try_fold(
-        HashMap::<_, Vec<_>>::new(),
-        |mut acc, t| {
-            t.map(|t| {
-                acc.entry(t.child_table.to_string()).or_default().push(t);
-                acc
-            })
-        },
-    )?;
+    let mut expected_fk_map =
+        rust_side_schema
+            .joinable
+            .iter()
+            .try_fold(HashMap::<_, Vec<_>>::new(), |mut acc, t| {
+                t.clone().map(|t| {
+                    acc.entry(t.child_table.to_string()).or_default().push(t);
+                    acc
+                })
+            })?;
 
     let mut table_pk_key_list = HashMap::new();
     let mut expected_schema_map = HashMap::new();
 
-    for t in tables_from_schema.table_decls {
+    for t in rust_side_schema.table_decls.clone() {
         let t = t?;
         let keys = t.primary_keys.as_ref().map(|keys| {
             keys.keys
@@ -103,6 +111,7 @@ pub fn generate_sql_based_on_diff_schema(
     let table_names = load_table_names(&mut conn, None)?;
     let tables_from_database =
         filter_table_names(&table_names, &config.filter, config.include_views);
+    let mut table_data = Vec::new();
     for (structure, table) in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
         match structure {
@@ -113,6 +122,7 @@ pub fn generate_sql_based_on_diff_schema(
                     &config,
                     structure,
                 )?;
+                table_data.push(QueryRelationData::Table(columns.clone()));
                 if let Some(TableDecl { primary_keys, view }) =
                     expected_schema_map.remove(&table.sql_name.to_lowercase())
                 {
@@ -134,7 +144,11 @@ pub fn generate_sql_based_on_diff_schema(
                             "Cannot change primary keys with --diff-schema yet".into(),
                         ));
                     }
-                    schema_diff.push(update_columns(view, columns.column_data)?);
+                    schema_diff.push(update_columns(
+                        view,
+                        columns.column_data,
+                        &rust_side_schema.enum_sql_types,
+                    )?);
                 } else {
                     tracing::info!("Table does not exist yet");
                     let foreign_keys = foreign_key_map
@@ -185,55 +199,221 @@ pub fn generate_sql_based_on_diff_schema(
         }
     }));
 
+    let mut schema_diff_down = schema_diff.clone();
+
+    let mut enum_sql_types = Vec::new();
+    if config.generate_missing_sql_type_definitions() && config.generate_rust_enum_definitions() {
+        let custom_type_infos =
+            crate::print_schema::load_custom_types(&mut conn, &table_data, &config)?;
+        let mut sql_types = rust_side_schema.enum_sql_types.clone();
+
+        for (ty, tab, col) in custom_type_infos
+            .custom_type_list
+            .iter()
+            .zip(&table_data)
+            .flat_map(|(c, t)| c.iter().zip(t.columns()).map(move |(ct, c)| (ct, t, c)))
+            .filter_map(|(ty, tab, col)| Some((ty.as_ref()?, tab, col)))
+        {
+            if let Some(t) = custom_type_infos
+                .enum_variant_list
+                .get(&(ty.sql_name.clone(), ty.schema.clone()))
+                .cloned()
+                .or({
+                    #[cfg(feature = "mysql")]
+                    {
+                        crate::infer_schema_internals::mysql::get_enum_variants(ty)
+                    }
+                    #[cfg(not(feature = "mysql"))]
+                    None
+                })
+            {
+                if let Some(rust_side_type_idx) = sql_types
+                    .iter()
+                    .position(|t| t.is_type(ty, &rust_side_schema, col, tab))
+                    && let Some(rust_variants) = rust_side_schema.enums.iter().find(|t| {
+                        t.sql_type
+                            .path
+                            .segments
+                            .last()
+                            .map(|s| s.ident == sql_types[rust_side_type_idx].rust_name)
+                            .unwrap_or_default()
+                    })
+                {
+                    let sql_type_info = sql_types.remove(rust_side_type_idx);
+                    enum_sql_types.push((sql_type_info.clone(), rust_variants.clone()));
+                    let rust_variant_set = rust_variants
+                        .variants
+                        .iter()
+                        .map(|v| &v.sql_name)
+                        .collect::<BTreeSet<_>>();
+                    let sql_variant_set = t.iter().map(|v| &v.sql_name).collect::<BTreeSet<_>>();
+                    let added_variants = rust_variant_set
+                        .difference(&sql_variant_set)
+                        .copied()
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    let removed_variants = sql_variant_set
+                        .difference(&rust_variant_set)
+                        .copied()
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    let mut affected_tables = table_data
+                        .iter()
+                        .flat_map(|t| t.columns().iter().map(move |c| (c, t)))
+                        .filter(|(c, _t)| sql_type_info.rust_name == c.ty.rust_name)
+                        .map(|(c, t)| (c.clone(), t.clone()))
+                        .collect::<Vec<_>>();
+                    if affected_tables.is_empty() {
+                        affected_tables.push((col.clone(), tab.clone()));
+                    }
+
+                    if !added_variants.is_empty() || !removed_variants.is_empty() {
+                        if removed_variants.is_empty() {
+                            schema_diff.push(SchemaDiff::AddEnumVariant {
+                                added_variants: added_variants.clone(),
+                                all_variants: rust_variants
+                                    .variants
+                                    .iter()
+                                    .map(|v| v.sql_name.clone())
+                                    .collect(),
+                                type_info: sql_type_info.clone(),
+                                column_info: Some((tab.table_name().sql_name.clone(), col.clone())),
+                            });
+                        } else {
+                            schema_diff.push(SchemaDiff::MigrateEnumData {
+                                affected_tables: affected_tables.clone(),
+                                type_info: sql_type_info.clone(),
+                                infos: rust_variants.clone(),
+                            });
+                        }
+                        if added_variants.is_empty() {
+                            schema_diff_down.push(SchemaDiff::AddEnumVariant {
+                                added_variants: removed_variants,
+                                type_info: sql_type_info.clone(),
+                                all_variants: t.iter().map(|v| v.sql_name.clone()).collect(),
+                                column_info: Some((tab.table_name().sql_name.clone(), col.clone())),
+                            });
+                        } else {
+                            schema_diff_down.push(SchemaDiff::MigrateEnumData {
+                                affected_tables,
+                                type_info: sql_type_info.clone(),
+                                infos: schema_parsing::EnumInfos {
+                                    variants: t
+                                        .iter()
+                                        .map(|v| EnumVariant {
+                                            sql_name: v.sql_name.clone(),
+                                        })
+                                        .collect(),
+                                    sql_type: syn::parse_str(&ty.rust_name)?,
+                                },
+                            });
+                        }
+                    }
+                } else {
+                    let drop_enum = SchemaDiff::DropEnum {
+                        old_variants: t.clone(),
+                        old_type: ty.clone(),
+                    };
+                    schema_diff.push(drop_enum.clone());
+                    schema_diff_down.push(drop_enum);
+                    enum_sql_types.push((
+                        schema_parsing::SqlTypeInfo::from_column_type(ty)?,
+                        schema_parsing::EnumInfos {
+                            variants: t
+                                .into_iter()
+                                .map(|v| schema_parsing::EnumVariant {
+                                    sql_name: v.sql_name.clone(),
+                                })
+                                .collect(),
+                            sql_type: syn::parse_str(&ty.rust_name)?,
+                        },
+                    ));
+                }
+            }
+        }
+        for tpe in sql_types {
+            if let Some(rust_variants) = rust_side_schema.enums.iter().find(|t| {
+                t.sql_type
+                    .path
+                    .segments
+                    .last()
+                    .map(|s| s.ident == tpe.rust_name)
+                    .unwrap_or_default()
+            }) {
+                enum_sql_types.push((tpe.clone(), rust_variants.clone()));
+                let add_enum = SchemaDiff::AddEnum {
+                    infos: rust_variants.clone(),
+                    type_info: tpe,
+                };
+                schema_diff.push(add_enum.clone());
+                schema_diff_down.push(add_enum);
+            } else {
+                tracing::debug!(?tpe, "Enum sql type not found");
+            }
+        }
+    }
+
     let mut up_sql = String::new();
-    let mut down_sql = String::new();
+
+    // sort so that types come before tables
+    schema_diff.sort_by(SchemaDiff::cmp);
 
     for diff in schema_diff {
         let up = match conn {
             #[cfg(feature = "postgres")]
             InferConnection::Pg(_) => {
                 let mut qb = diesel::pg::PgQueryBuilder::default();
-                diff.generate_up_sql(&mut qb, &config)?;
+                diff.generate_up_sql(&mut qb, &config, &enum_sql_types, &diesel::pg::Pg)?;
                 qb.finish()
             }
             #[cfg(feature = "sqlite")]
             InferConnection::Sqlite(_) => {
                 let mut qb = diesel::sqlite::SqliteQueryBuilder::default();
-                diff.generate_up_sql(&mut qb, &config)?;
+                diff.generate_up_sql(&mut qb, &config, &enum_sql_types, &diesel::sqlite::Sqlite)?;
                 qb.finish()
             }
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_up_sql(&mut qb, &config)?;
+                diff.generate_up_sql(&mut qb, &config, &enum_sql_types, &diesel::mysql::Mysql)?;
                 qb.finish()
             }
         };
+        if !up.is_empty() {
+            up_sql += &up;
+            up_sql += "\n";
+        }
+    }
 
+    // sort so that tables come before types
+    schema_diff_down.sort_by(|a, b| SchemaDiff::cmp(a, b).reverse());
+
+    let mut down_sql = String::new();
+    for diff in schema_diff_down {
         let down = match conn {
             #[cfg(feature = "postgres")]
             InferConnection::Pg(_) => {
                 let mut qb = diesel::pg::PgQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config)?;
+                diff.generate_down_sql(&mut qb, &config, &enum_sql_types, &diesel::pg::Pg)?;
                 qb.finish()
             }
             #[cfg(feature = "sqlite")]
             InferConnection::Sqlite(_) => {
                 let mut qb = diesel::sqlite::SqliteQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config)?;
+                diff.generate_down_sql(&mut qb, &config, &enum_sql_types, &diesel::sqlite::Sqlite)?;
                 qb.finish()
             }
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config)?;
+                diff.generate_down_sql(&mut qb, &config, &enum_sql_types, &diesel::mysql::Mysql)?;
                 qb.finish()
             }
         };
-        up_sql += &up;
-        up_sql += "\n";
-        down_sql += &down;
-        down_sql += "\n";
+        if !down.is_empty() {
+            down_sql += &down;
+            down_sql += "\n";
+        }
     }
 
     Ok((up_sql, down_sql))
@@ -242,6 +422,7 @@ pub fn generate_sql_based_on_diff_schema(
 fn update_columns(
     view: ViewDecl,
     columns: Vec<ColumnDefinition>,
+    rust_enum_sql_types: &[SqlTypeInfo],
 ) -> Result<SchemaDiff, crate::errors::Error> {
     let mut expected_column_map = view
         .column_defs
@@ -256,7 +437,7 @@ fn update_columns(
     for c in columns {
         if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
             let tpe = ColumnType::for_column_def(&def)?;
-            if !is_same_type(&c.ty, tpe) {
+            if !is_same_type(&c.ty, tpe, rust_enum_sql_types) {
                 tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
                 changed_columns.push((c, def));
             }
@@ -283,7 +464,19 @@ fn update_columns(
     })
 }
 
-fn is_same_type(ty: &ColumnType, tpe: ColumnType) -> bool {
+fn is_same_type(ty: &ColumnType, tpe: ColumnType, rust_enum_sql_types: &[SqlTypeInfo]) -> bool {
+    #[cfg(feature = "mysql")]
+    {
+        if crate::infer_schema_internals::mysql::get_enum_variants(ty).is_some()
+            && rust_enum_sql_types
+                .iter()
+                .any(|e| e.rust_name == tpe.rust_name)
+        {
+            return true;
+        }
+    }
+    #[cfg(not(feature = "mysql"))]
+    let _ = rust_enum_sql_types;
     if ty.is_array != tpe.is_array
         || ty.is_nullable != tpe.is_nullable
         || ty.is_unsigned != tpe.is_unsigned
@@ -314,9 +507,10 @@ fn is_same_type(ty: &ColumnType, tpe: ColumnType) -> bool {
     if let Some(compatible) = compatible_types.get(&tpe.sql_name.to_lowercase() as &str) {
         return compatible.contains(&(&ty.sql_name.to_lowercase() as &str));
     }
-    false
+    ty.rust_name == tpe.rust_name
 }
 
+#[derive(Clone)]
 #[allow(clippy::enum_variant_names)]
 enum SchemaDiff {
     DropTable {
@@ -326,7 +520,7 @@ enum SchemaDiff {
     },
     CreateTable {
         to_create: TableDecl,
-        foreign_keys: Vec<(Joinable, String)>,
+        foreign_keys: Vec<(schema_parsing::Joinable, String)>,
     },
     ChangeTable {
         table: String,
@@ -334,16 +528,52 @@ enum SchemaDiff {
         removed_columns: Vec<ColumnDefinition>,
         changed_columns: Vec<(ColumnDefinition, ColumnDef)>,
     },
+    DropEnum {
+        old_variants: Vec<infer_schema_internals::EnumVariant>,
+        old_type: ColumnType,
+    },
+    AddEnum {
+        infos: schema_parsing::EnumInfos,
+        type_info: schema_parsing::SqlTypeInfo,
+    },
+    AddEnumVariant {
+        added_variants: Vec<String>,
+        all_variants: Vec<String>,
+        type_info: schema_parsing::SqlTypeInfo,
+        column_info: Option<(String, ColumnDefinition)>,
+    },
+    MigrateEnumData {
+        affected_tables: Vec<(ColumnDefinition, QueryRelationData)>,
+        type_info: schema_parsing::SqlTypeInfo,
+        infos: schema_parsing::EnumInfos,
+    },
 }
 
 impl SchemaDiff {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (Self::AddEnum { .. }, _) => std::cmp::Ordering::Less,
+            (Self::DropEnum { .. }, _) => std::cmp::Ordering::Greater,
+            (_, Self::AddEnum { .. }) => std::cmp::Ordering::Greater,
+            (_, Self::DropEnum { .. }) => std::cmp::Ordering::Less,
+            _ => std::cmp::Ordering::Equal,
+        }
+    }
+
     fn generate_up_sql<DB>(
         &self,
-        query_builder: &mut impl QueryBuilder<DB>,
+        query_builder: &mut DB::QueryBuilder,
         config: &PrintSchema,
+        enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+        db: &DB,
     ) -> Result<(), crate::errors::Error>
     where
         DB: Backend,
+        for<'a> CreateEnumType<'a>: QueryFragment<DB>,
+        for<'a> EnumType<'a>: QueryFragment<DB>,
+        for<'a> DropEnumType<'a>: QueryFragment<DB>,
+        for<'a> AddEnumVariants<'a>: QueryFragment<DB>,
+        for<'a> MigrateEnumData<'a>: QueryFragment<DB>,
     {
         match self {
             SchemaDiff::DropTable { table, .. } => {
@@ -388,7 +618,13 @@ impl SchemaDiff {
                 let sqlite_integer_primary_key_is_bigint = config
                     .sqlite_integer_primary_key_is_bigint
                     .unwrap_or_default();
-                collect_and_generate_record_types(query_builder, &column_data)?;
+                collect_and_generate_record_types(
+                    query_builder,
+                    &column_data,
+                    enum_sql_types,
+                    db,
+                    table,
+                )?;
                 generate_create_table(
                     query_builder,
                     table,
@@ -396,6 +632,8 @@ impl SchemaDiff {
                     &primary_keys,
                     &foreign_keys,
                     sqlite_integer_primary_key_is_bigint,
+                    enum_sql_types,
+                    db,
                 )?;
             }
             SchemaDiff::ChangeTable {
@@ -413,7 +651,13 @@ impl SchemaDiff {
                 }
                 let for_record_types =
                     extract_record_types_from_changed_columns(added_columns, changed_columns)?;
-                collect_and_generate_record_types(query_builder, &for_record_types)?;
+                collect_and_generate_record_types(
+                    query_builder,
+                    &for_record_types,
+                    enum_sql_types,
+                    db,
+                    table,
+                )?;
                 for c in added_columns
                     .iter()
                     .chain(changed_columns.iter().map(|(_, b)| b))
@@ -423,9 +667,46 @@ impl SchemaDiff {
                         &table.to_lowercase(),
                         &c.column_name.to_string().to_lowercase(),
                         &ColumnType::for_column_def(c)?,
+                        enum_sql_types,
+                        db,
                     )?;
                     query_builder.push_sql("\n");
                 }
+            }
+            Self::DropEnum { old_type, .. } => {
+                DropEnumType {
+                    tpe: &SqlTypeInfo::from_column_type(old_type)?,
+                }
+                .to_sql(query_builder, db)?;
+            }
+            Self::AddEnum { infos, type_info } => {
+                let create_type = CreateEnumType {
+                    tpe: type_info,
+                    variants: &infos.variants,
+                };
+                create_type.to_sql(query_builder, db)?;
+            }
+            Self::AddEnumVariant {
+                added_variants,
+                all_variants,
+                type_info,
+                column_info,
+            } => {
+                AddEnumVariants {
+                    added_variants,
+                    all_variants,
+                    tpe: type_info,
+                    column_info: column_info.as_ref().map(|v| (v.0.as_str(), &v.1)),
+                }
+                .to_sql(query_builder, db)?;
+            }
+            Self::MigrateEnumData {
+                affected_tables,
+                type_info,
+                infos,
+            } => {
+                MigrateEnumData::new(affected_tables, type_info, enum_sql_types, infos)
+                    .to_sql(query_builder, db)?;
             }
         }
         Ok(())
@@ -433,11 +714,18 @@ impl SchemaDiff {
 
     fn generate_down_sql<DB>(
         &self,
-        query_builder: &mut impl QueryBuilder<DB>,
+        query_builder: &mut DB::QueryBuilder,
         config: &PrintSchema,
+        enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+        db: &DB,
     ) -> Result<(), crate::errors::Error>
     where
         DB: Backend,
+        for<'a> EnumType<'a>: QueryFragment<DB>,
+        for<'a> DropEnumType<'a>: QueryFragment<DB>,
+        for<'a> CreateEnumType<'a>: QueryFragment<DB>,
+        for<'a> MigrateEnumData<'a>: QueryFragment<DB>,
+        for<'a> AddEnumVariants<'a>: QueryFragment<DB>,
     {
         match self {
             SchemaDiff::DropTable {
@@ -467,6 +755,8 @@ impl SchemaDiff {
                     &columns.primary_key,
                     &fk,
                     sqlite_integer_primary_key_is_bigint,
+                    enum_sql_types,
+                    db,
                 )?;
             }
             SchemaDiff::CreateTable { to_create, .. } => {
@@ -521,9 +811,51 @@ impl SchemaDiff {
                         &table.to_lowercase(),
                         &c.sql_name.to_lowercase(),
                         &c.ty,
+                        enum_sql_types,
+                        db,
                     )?;
                     query_builder.push_sql("\n");
                 }
+            }
+            Self::DropEnum {
+                old_variants,
+                old_type,
+            } => {
+                CreateEnumType {
+                    tpe: &SqlTypeInfo::from_column_type(old_type)?,
+                    variants: &old_variants
+                        .iter()
+                        .map(|v| EnumVariant {
+                            sql_name: v.sql_name.clone(),
+                        })
+                        .collect::<Vec<_>>(),
+                }
+                .to_sql(query_builder, db)?;
+            }
+            Self::AddEnum { type_info, .. } => {
+                DropEnumType { tpe: type_info }.to_sql(query_builder, db)?;
+            }
+            Self::AddEnumVariant {
+                added_variants,
+                type_info,
+                all_variants,
+                column_info,
+            } => {
+                AddEnumVariants {
+                    added_variants,
+                    tpe: type_info,
+                    all_variants,
+                    column_info: column_info.as_ref().map(|(t, c)| (t.as_str(), c)),
+                }
+                .to_sql(query_builder, db)?;
+            }
+            Self::MigrateEnumData {
+                affected_tables,
+                type_info,
+                infos,
+            } => {
+                MigrateEnumData::new(affected_tables, type_info, enum_sql_types, infos)
+                    .to_sql(query_builder, db)?;
             }
         }
         Ok(())
@@ -580,15 +912,26 @@ where
 }
 
 fn collect_and_generate_record_types<DB>(
-    query_builder: &mut impl QueryBuilder<DB>,
+    query_builder: &mut DB::QueryBuilder,
     column_data: &[ColumnDefinition],
+    enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+    db: &DB,
+    table_name: &str,
 ) -> Result<(), crate::errors::Error>
 where
     DB: Backend,
+    for<'a> EnumType<'a>: QueryFragment<DB>,
 {
     let record_types = collect_record_types(column_data);
     for (column, record_types) in record_types {
-        generate_record_types(query_builder, record_types, column)?;
+        generate_record_types(
+            query_builder,
+            record_types,
+            column,
+            enum_sql_types,
+            db,
+            table_name,
+        )?;
     }
     Ok(())
 }
@@ -646,12 +989,16 @@ fn collect_record_types(column_data: &[ColumnDefinition]) -> Vec<(Cow<'_, str>, 
 }
 
 fn generate_record_types<DB>(
-    query_builder: &mut impl QueryBuilder<DB>,
+    query_builder: &mut DB::QueryBuilder,
     record_types: &[ColumnType],
     column_name: Cow<'_, str>,
+    enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+    db: &DB,
+    table_name: &str,
 ) -> QueryResult<()>
 where
     DB: Backend,
+    for<'a> EnumType<'a>: QueryFragment<DB>,
 {
     query_builder.push_sql("CREATE TYPE ");
     let record_type_name = format!("{}_RECORD", column_name.to_uppercase());
@@ -676,6 +1023,9 @@ where
             record_type,
             &format!("{}_RECORD_FIELD_{idx}", column_name.to_uppercase()),
             true,
+            enum_sql_types,
+            db,
+            table_name,
         )?;
         if idx != record_types.len() - 1 {
             query_builder.push_sql(",");
@@ -687,19 +1037,22 @@ where
 }
 
 fn generate_add_column<DB>(
-    query_builder: &mut impl QueryBuilder<DB>,
+    query_builder: &mut DB::QueryBuilder,
     table: &str,
     column: &str,
     ty: &ColumnType,
+    enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+    db: &DB,
 ) -> QueryResult<()>
 where
     DB: Backend,
+    for<'a> EnumType<'a>: QueryFragment<DB>,
 {
     query_builder.push_sql("ALTER TABLE ");
     query_builder.push_identifier(table)?;
     query_builder.push_sql(" ADD COLUMN ");
     query_builder.push_identifier(column)?;
-    generate_column_type_name(query_builder, ty, column, false)?;
+    generate_column_type_name(query_builder, ty, column, false, enum_sql_types, db, table)?;
     query_builder.push_sql(";");
     Ok(())
 }
@@ -721,16 +1074,20 @@ where
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_create_table<DB>(
-    query_builder: &mut impl QueryBuilder<DB>,
+    query_builder: &mut DB::QueryBuilder,
     table: &str,
     column_data: &[ColumnDefinition],
     primary_keys: &[String],
     foreign_keys: &[(String, String, String)],
     sqlite_integer_primary_key_is_bigint: bool,
+    enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+    db: &DB,
 ) -> QueryResult<()>
 where
     DB: Backend,
+    for<'a> EnumType<'a>: QueryFragment<DB>,
 {
     query_builder.push_sql("CREATE TABLE ");
     query_builder.push_identifier(table)?;
@@ -764,9 +1121,25 @@ where
                 sql_name: "Integer".into(),
                 ..column.ty.clone()
             };
-            generate_column_type_name(query_builder, &ty, &column.sql_name, false)?;
+            generate_column_type_name(
+                query_builder,
+                &ty,
+                &column.sql_name,
+                false,
+                enum_sql_types,
+                db,
+                table,
+            )?;
         } else {
-            generate_column_type_name(query_builder, &column.ty, &column.sql_name, false)?;
+            generate_column_type_name(
+                query_builder,
+                &column.ty,
+                &column.sql_name,
+                false,
+                enum_sql_types,
+                db,
+                table,
+            )?;
         }
 
         if is_only_primary_key {
@@ -813,38 +1186,110 @@ where
     Ok(())
 }
 
+struct ColumnTypeName<'a> {
+    ty: Cow<'a, ColumnType>,
+    column_name: &'a str,
+    for_record: bool,
+    enum_type: Option<EnumType<'a>>,
+}
+
+impl<'a> ColumnTypeName<'a> {
+    fn new(
+        ty: &'a ColumnType,
+        column_name: &'a str,
+        for_record: bool,
+        enum_sql_types: &'a [(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+        table_name: &str,
+    ) -> Self {
+        #[cfg(feature = "mysql")]
+        let ty = if crate::infer_schema_internals::mysql::get_enum_variants(ty).is_some() {
+            let mut ty = ty.clone();
+            ty.rust_name = crate::print_schema::mysql_enum_name(table_name, column_name, &ty);
+            ty.max_length = None;
+            Cow::Owned(ty)
+        } else {
+            Cow::Borrowed(ty)
+        };
+        #[cfg(not(feature = "mysql"))]
+        let ty = {
+            let _ = table_name;
+            Cow::Borrowed(ty)
+        };
+        let enum_type = if let Some((enum_type, enum_infos)) = enum_sql_types
+            .iter()
+            .find(|(t, _)| t.rust_name == ty.rust_name)
+        {
+            Some(EnumType {
+                tpe: enum_type,
+                variants: &enum_infos.variants,
+            })
+        } else {
+            None
+        };
+
+        Self {
+            ty,
+            column_name,
+            for_record,
+            enum_type,
+        }
+    }
+}
+
+impl<DB> QueryFragment<DB> for ColumnTypeName<'_>
+where
+    DB: Backend,
+    for<'a> EnumType<'a>: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut pass: diesel::query_builder::AstPass<'_, 'b, DB>,
+    ) -> QueryResult<()> {
+        if let Some(enum_type) = self.enum_type.as_ref() {
+            pass.push_sql(" ");
+            enum_type.walk_ast(pass.reborrow())?;
+        } else if self.ty.record.is_some() {
+            // TODO: handle schema
+            pass.push_sql(" ");
+            // need to quote the type name here as we quote it during creating which creates an upper case only type
+            pass.push_identifier(&format!("{}_RECORD", self.column_name.to_uppercase()))?;
+        } else {
+            // TODO: handle schema
+            pass.push_sql(&format!(" {}", self.ty.sql_name.to_uppercase()));
+        }
+        if self.ty.is_array {
+            pass.push_sql("[]");
+        }
+        if let Some(max_length) = self.ty.max_length {
+            pass.push_sql(&format!("({max_length})"));
+        }
+        if !self.for_record {
+            if !self.ty.is_nullable {
+                pass.push_sql(" NOT NULL");
+            }
+            if self.ty.is_unsigned {
+                pass.push_sql(" UNSIGNED");
+            }
+        }
+        Ok(())
+    }
+}
+
 fn generate_column_type_name<DB>(
-    query_builder: &mut impl QueryBuilder<DB>,
+    query_builder: &mut DB::QueryBuilder,
     ty: &ColumnType,
     column_name: &str,
     for_record: bool,
+    enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
+    db: &DB,
+    table_name: &str,
 ) -> QueryResult<()>
 where
     DB: Backend,
+    for<'a> EnumType<'a>: QueryFragment<DB>,
 {
-    // TODO: handle schema
-    if ty.record.is_some() {
-        query_builder.push_sql(" ");
-        // need to quote the type name here as we quote it during creating which creates an upper case only type
-        query_builder.push_identifier(&format!("{}_RECORD", column_name.to_uppercase()))?;
-    } else {
-        query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
-    }
-    if ty.is_array {
-        query_builder.push_sql("[]");
-    }
-    if let Some(max_length) = ty.max_length {
-        query_builder.push_sql(&format!("({max_length})"));
-    }
-    if !for_record {
-        if !ty.is_nullable {
-            query_builder.push_sql(" NOT NULL");
-        }
-        if ty.is_unsigned {
-            query_builder.push_sql(" UNSIGNED");
-        }
-    }
-    Ok(())
+    ColumnTypeName::new(ty, column_name, for_record, enum_sql_types, table_name)
+        .to_sql(query_builder, db)
 }
 
 fn generate_drop_table<DB>(
@@ -859,44 +1304,4 @@ where
     query_builder.push_identifier(table)?;
     query_builder.push_sql(";");
     Ok(())
-}
-
-struct Joinable {
-    parent_table: syn::Ident,
-    child_table: syn::Ident,
-    ref_column: syn::Ident,
-}
-
-impl syn::parse::Parse for Joinable {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let child_table = input.parse()?;
-        let _arrow: syn::Token![->] = input.parse()?;
-        let parent_table = input.parse()?;
-        let content;
-        syn::parenthesized!(content in input);
-        let ref_column = content.parse()?;
-        Ok(Self {
-            child_table,
-            parent_table,
-            ref_column,
-        })
-    }
-}
-
-#[derive(Default)]
-struct SchemaCollector {
-    table_decls: Vec<Result<TableDecl, syn::Error>>,
-    joinable: Vec<Result<Joinable, syn::Error>>,
-}
-
-impl<'ast> syn::visit::Visit<'ast> for SchemaCollector {
-    fn visit_macro(&mut self, i: &'ast syn::Macro) {
-        let last_segment = i.path.segments.last();
-        if last_segment.map(|s| s.ident == "table").unwrap_or(false) {
-            self.table_decls.push(i.parse_body());
-        } else if last_segment.map(|s| s.ident == "joinable").unwrap_or(false) {
-            self.joinable.push(i.parse_body());
-        }
-        syn::visit::visit_macro(self, i)
-    }
 }
