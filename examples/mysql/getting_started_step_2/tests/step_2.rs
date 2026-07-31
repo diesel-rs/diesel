@@ -1,4 +1,4 @@
-use assert_cmd::Command;
+use assert_cmd::cargo::cargo_bin_cmd;
 use diesel::connection::SimpleConnection;
 use diesel::{Connection, MysqlConnection};
 use diesel_migrations::MigrationHarness;
@@ -34,8 +34,7 @@ fn write_post() {
     let migrations = diesel_migrations::FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
 
-    let _ = Command::cargo_bin("write_post")
-        .unwrap()
+    let _ = cargo_bin_cmd!("write_post_step_2")
         .env("MYSQL_DATABASE_URL", db_url.to_string())
         .write_stdin("Test Title\ntest text\n1 2 3")
         .assert()
@@ -47,8 +46,7 @@ fn write_post() {
                 + " when finished)\n\n\nSaved draft Test Title with id 1\n",
         );
 
-    let _ = Command::cargo_bin("show_posts")
-        .unwrap()
+    let _ = cargo_bin_cmd!("show_posts_step_2")
         .env("MYSQL_DATABASE_URL", db_url.to_string())
         .assert()
         .append_context("show_posts", "")
