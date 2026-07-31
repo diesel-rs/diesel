@@ -77,6 +77,7 @@ pub fn derive(item: DeriveEnumInput) -> Result<TokenStream> {
     let struct_ty = syn::Type::Path(syn::TypePath {
         qself: None,
         path: item.ident.into(),
+        attrs: Vec::new(),
     });
     let sql_types = item
         .sql_type_attrs
