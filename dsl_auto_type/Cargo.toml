@@ -10,12 +10,12 @@ rust-version.workspace = true
 include.workspace = true
 
 [dependencies]
-darling = "0.23"
+darling = "0.24"
 either = "1"
 heck = "0.5"
 proc-macro2 = "1"
 quote = "1"
-syn = { version = "2", features = ["extra-traits", "full", "derive", "parsing", "visit"] }
+syn = { version = "3", features = ["extra-traits", "full", "derive", "parsing", "visit"] }
 
 [dev-dependencies]
 diesel = { path = "../diesel" }

@@ -12,6 +12,7 @@ pub fn test(_: TokenStream, item: TokenStream) -> TokenStream {
         vis,
         block,
         attrs,
+        modifiers: _,
     } = parse_macro_input!(item as ItemFn);
 
     let cfgs = quote! {

@@ -273,5 +273,8 @@ pub(crate) fn infer_projection(
         ) => Err(Error::UnsupportedSql {
             msg: format!("Unsupported `SELECT` expression: `{s}`"),
         }),
+        s @ SelectItem::ExprWithAliases { .. } => Err(Error::UnsupportedSql {
+            msg: format!("Unsupported `SELECT` expression: `{s}`"),
+        }),
     }
 }

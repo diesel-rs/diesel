@@ -127,6 +127,7 @@ impl TypeInferrer<'_> {
                         .map(|e| self.infer_expression_type(e, None))
                         .collect(),
                     paren_token: Default::default(),
+                    attrs: Vec::new(),
                 })
             }
             (syn::Expr::Path(syn::ExprPath { path, .. }), None) => {
@@ -148,6 +149,7 @@ impl TypeInferrer<'_> {
                     syn::Type::Path(syn::TypePath {
                         path: path.clone(),
                         qself: None,
+                        attrs: Vec::new(),
                     })
                 }
             }
@@ -197,6 +199,7 @@ impl TypeInferrer<'_> {
                 syn::Type::Path(syn::TypePath {
                     path: type_path,
                     qself: None,
+                    attrs: Vec::new(),
                 })
             }
             (
@@ -235,6 +238,7 @@ impl TypeInferrer<'_> {
                     leading_colon: None,
                 },
                 qself: None,
+                attrs: Vec::new(),
             }),
             (syn::Expr::Lit(syn::ExprLit { lit, .. }), None) => match lit {
                 syn::Lit::Str(_) => parse_quote_spanned!(lit.span()=> &'static str),
