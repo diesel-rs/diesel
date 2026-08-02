@@ -178,7 +178,16 @@ fn main() {
         ),
         (
             "as_expression",
-            vec![Example::new("diesel_derives__tests__as_expression_1.snap")],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__as_expression_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__as_expression_not_sized_1.snap",
+                    "With `#[diesel(not_sized)]`",
+                ),
+            ],
         ),
         (
             "associations",
