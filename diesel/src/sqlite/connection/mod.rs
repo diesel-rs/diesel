@@ -54,8 +54,10 @@ use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
 use crate::sqlite::{Sqlite, SqliteFunctionBehavior};
 use alloc::string::String;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::ffi as libc;
+use core::marker::PhantomData;
 use core::num::NonZeroI64;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -376,6 +378,31 @@ pub enum BusyDecision {
     Retry,
     /// Give up, returning `SQLITE_BUSY` to the caller.
     GiveUp,
+}
+
+/// The `auto_vacuum` mode of a database, controlling whether and when SQLite
+/// reclaims freed pages back to the file.
+///
+/// The mode is stored in the database file, not the connection. [`Full`] and
+/// [`Incremental`] can be switched between at any time, but changing from or to
+/// [`None`] only takes effect on a database with no tables yet, or after a
+/// subsequent `VACUUM` rewrites the file.
+///
+/// [`None`]: AutoVacuumMode::None
+/// [`Full`]: AutoVacuumMode::Full
+/// [`Incremental`]: AutoVacuumMode::Incremental
+#[derive(Debug, Clone, Copy, PartialEq, Eq, crate::types::Enum)]
+#[diesel(sql_type = crate::sql_types::Integer)]
+#[non_exhaustive]
+#[repr(i32)]
+pub enum AutoVacuumMode {
+    /// Freed pages stay on the freelist and the file never shrinks (default).
+    None = 0,
+    /// Freed pages are reclaimed and the file truncated at every commit.
+    Full = 1,
+    /// Freelist bookkeeping is kept, pages are reclaimed only when
+    /// `incremental_vacuum` runs.
+    Incremental = 2,
 }
 
 impl SqliteConnection {
@@ -1365,6 +1392,63 @@ impl SqliteConnection {
             .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL)
     }
 
+    /// Read the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::None);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn auto_vacuum(&mut self, schema: Option<&str>) -> QueryResult<AutoVacuumMode> {
+        use crate::query_dsl::RunQueryDsl;
+        let query: Pragma<'_, crate::sql_types::Integer> = Pragma::new("auto_vacuum", schema);
+        query.get_result(self)
+    }
+
+    /// Set the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`.
+    /// Changing from or to [`AutoVacuumMode::None`] only takes effect on a
+    /// database with no tables yet, or after a subsequent `VACUUM`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::Incremental);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn set_auto_vacuum(
+        &mut self,
+        schema: Option<&str>,
+        mode: AutoVacuumMode,
+    ) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+        // #[repr(i32)] guarantees the discriminant fits exactly in i32.
+        SetPragmaInt {
+            schema,
+            name: "auto_vacuum",
+            value: mode as i32,
+        }
+        .execute(self)
+        .map(|_| ())
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -1439,6 +1523,76 @@ impl QueryFragment<Sqlite> for DetachDatabase<'_> {
 }
 
 impl RunQueryDslSupport for DetachDatabase<'_> {}
+
+// A `PRAGMA` accepts no bind parameters, neither for the schema it targets nor for the
+// value it assigns, so the schema is rendered as a quoted identifier by the query
+// builder. `name` is always a constant chosen here, never caller data.
+struct Pragma<'a, ST> {
+    schema: Option<&'a str>,
+    name: &'static str,
+    sql_type: PhantomData<ST>,
+}
+
+impl<'a, ST> Pragma<'a, ST> {
+    fn new(name: &'static str, schema: Option<&'a str>) -> Self {
+        Pragma {
+            schema,
+            name,
+            sql_type: PhantomData,
+        }
+    }
+}
+
+impl<ST> QueryFragment<Sqlite> for Pragma<'_, ST> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        out.push_sql(".");
+        out.push_sql(self.name);
+        Ok(())
+    }
+}
+
+// The schema name is runtime data, so the rendered SQL is not determined by the type.
+impl<ST> QueryId for Pragma<'_, ST> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<ST> Query for Pragma<'_, ST> {
+    type SqlType = ST;
+}
+
+impl<ST> RunQueryDslSupport for Pragma<'_, ST> {}
+
+// `PRAGMA name = value` takes no bind parameter for the value either, so the integer is
+// rendered as a literal.
+struct SetPragmaInt<'a> {
+    schema: Option<&'a str>,
+    name: &'static str,
+    value: i32,
+}
+
+impl QueryFragment<Sqlite> for SetPragmaInt<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        out.push_sql(".");
+        out.push_sql(self.name);
+        out.push_sql(" = ");
+        out.push_sql(&self.value.to_string());
+        Ok(())
+    }
+}
+
+impl QueryId for SetPragmaInt<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for SetPragmaInt<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -3597,5 +3751,99 @@ mod tests {
         // Querying the view should succeed because the function is INNOCUOUS
         let result = crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
         assert!(result.is_ok());
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_all_modes_roundtrip_on_fresh_database() {
+        for mode in [
+            AutoVacuumMode::None,
+            AutoVacuumMode::Full,
+            AutoVacuumMode::Incremental,
+        ] {
+            let conn = &mut connection();
+            conn.set_auto_vacuum(None, mode).unwrap();
+            assert_eq!(mode, conn.auto_vacuum(None).unwrap());
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_incremental_sticks_across_schema_creation() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::Incremental, conn.auto_vacuum(None).unwrap());
+
+        crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            AutoVacuumMode::Incremental,
+            conn.auto_vacuum(None).unwrap(),
+            "the mode survives once the schema exists"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_change_from_none_requires_vacuum_on_populated_database() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO t (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::None, conn.auto_vacuum(None).unwrap());
+
+        // On a populated database the switch away from `None` is silently
+        // deferred until a full rewrite.
+        conn.set_auto_vacuum(None, AutoVacuumMode::Full).unwrap();
+        assert_eq!(
+            AutoVacuumMode::None,
+            conn.auto_vacuum(None).unwrap(),
+            "the change does not take effect without a VACUUM"
+        );
+
+        crate::sql_query("VACUUM").execute(conn).unwrap();
+        assert_eq!(
+            AutoVacuumMode::Full,
+            conn.auto_vacuum(None).unwrap(),
+            "VACUUM rewrites the file and applies the mode"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        crate::sql_query("ATTACH DATABASE ':memory:' AS aux")
+            .execute(conn)
+            .unwrap();
+
+        conn.set_auto_vacuum(Some("aux"), AutoVacuumMode::Full)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::Full, conn.auto_vacuum(Some("aux")).unwrap());
+        assert_eq!(
+            AutoVacuumMode::None,
+            conn.auto_vacuum(None).unwrap(),
+            "main keeps its own default"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_schema_name_with_double_quote_is_handled() {
+        let conn = &mut connection();
+        let schema = r#"we"ird"#;
+        crate::sql_query(alloc::format!(
+            r#"ATTACH DATABASE ':memory:' AS "{}""#,
+            schema.replace('"', "\"\"")
+        ))
+        .execute(conn)
+        .unwrap();
+
+        conn.set_auto_vacuum(Some(schema), AutoVacuumMode::Incremental)
+            .unwrap();
+        assert_eq!(
+            AutoVacuumMode::Incremental,
+            conn.auto_vacuum(Some(schema)).unwrap()
+        );
     }
 }
