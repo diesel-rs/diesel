@@ -417,4 +417,47 @@ mod tests {
 
         assert_eq!(output, 1);
     }
+
+    #[diesel_test_helper::test]
+    fn first_row_of_a_result_set_deserializes_variable_length_values() {
+        // Regression test for the first row of every result set coming back
+        // with empty strings when diesel is linked against MariaDB
+        // Connector/C instead of Oracle's libmysqlclient.
+        //
+        // Diesel binds variable-length output columns with tiny buffers, so
+        // the first row of a result set is fetched as `MYSQL_DATA_TRUNCATED`
+        // and refetched column-by-column via `mysql_stmt_fetch_column`,
+        // after which the grown buffers are re-bound with
+        // `mysql_stmt_bind_result`. MariaDB's `mysql_stmt_bind_result`
+        // writes through the caller's `length` pointers at bind time
+        // (0 for variable-length types; acknowledged as incorrect and
+        // removed on MariaDB's master branch in CONC-821, but present in
+        // every released Connector/C), which used to zero the lengths of
+        // the row that had just been fetched — so every variable-length
+        // value in that row deserialized as "". Later rows reuse the grown
+        // buffers and were never affected. The second row here is longer
+        // than the first so it also exercises the buffer-regrow path.
+        #[derive(crate::deserialize::QueryableByName, PartialEq, Eq, Debug)]
+        struct Row {
+            #[diesel(sql_type = crate::sql_types::Text)]
+            s: String,
+        }
+
+        let connection = &mut connection();
+        let rows = crate::sql_query(
+            "SELECT 'alpha' AS s UNION ALL SELECT 'much-longer-second-row-value' ORDER BY s",
+        )
+        .load::<Row>(connection)
+        .unwrap();
+
+        assert_eq!(
+            rows,
+            vec![
+                Row { s: "alpha".into() },
+                Row {
+                    s: "much-longer-second-row-value".into()
+                },
+            ]
+        );
+    }
 }

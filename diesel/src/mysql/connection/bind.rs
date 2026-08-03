@@ -88,7 +88,22 @@ impl OutputBinds {
             }
         }
 
-        unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }
+        // MariaDB Connector/C's `mysql_stmt_bind_result` writes through the
+        // caller's `length` pointers at bind time: 0 for variable-length types,
+        // `pack_len` for fixed-size types (libmariadb/mariadb_stmt.c,
+        // mysql_stmt_bind_result). Oracle's libmysqlclient leaves them
+        // untouched, and MariaDB has acknowledged the write as incorrect and
+        // removed it on its master branch (CONC-821), but every Connector/C
+        // release to date still performs it. Since this rebind happens *after*
+        // the current row's data was fetched into the buffers, it zeroes the
+        // lengths we just populated and every variable-length value in the
+        // first row reads back empty. Preserve the lengths across the rebind.
+        let lengths: Vec<libc::c_ulong> = self.0.data.iter().map(|d| d.length).collect();
+        let result = unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) };
+        for (data, length) in self.0.data.iter_mut().zip(lengths) {
+            data.length = length;
+        }
+        result
     }
 
     pub(super) fn update_buffer_lengths(&mut self) {

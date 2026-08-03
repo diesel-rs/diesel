@@ -53,6 +53,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed `FromSql`/`ToSql` for `chrono::NaiveTime` on MySQL dropping the fractional-seconds component of `TIME` values, so a `TIME(N)` column now round-trips its microseconds like `DATETIME` / `TIMESTAMP` already did.
+* Fixed the MySQL backend returning empty strings for every variable-length column in the first row of a result set when diesel is linked against MariaDB Connector/C (whose `mysql_stmt_bind_result` zeroes the caller's length values at bind time, destroying the lengths of the row that was just fetched during diesel's post-truncation rebind)
 
 ### Changed
 
