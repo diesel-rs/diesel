@@ -1553,6 +1553,69 @@ impl SqliteConnection {
         self.batch_execute(&query.finish())
     }
 
+    /// Rebuild a database, repacking it into the smallest space it can occupy.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`.
+    ///
+    /// This cannot run inside a transaction, needs free space of up to twice the size
+    /// of the database while it runs, and renumbers the implicit `rowid` of any table
+    /// declared without an `INTEGER PRIMARY KEY`.
+    ///
+    /// Naming a schema requires SQLite 3.24.0 or later, otherwise returns an error.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.vacuum(None)?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn vacuum(&mut self, schema: Option<&str>) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+
+        Vacuum { schema, into: None }.execute(self).map(|_| ())
+    }
+
+    /// Write a vacuumed copy of a database to `path`, leaving the original untouched.
+    ///
+    /// This is SQLite's online backup: the copy is consistent, defragmented, and taken
+    /// without blocking readers. `schema` selects an attached database by name, `None`
+    /// copies `main`. The path is a bind parameter, so it needs no quoting.
+    ///
+    /// `path` may name a file that does not exist or one that is empty, but writing
+    /// over an existing database fails rather than replacing it.
+    ///
+    /// Requires SQLite 3.27.0 or later, otherwise returns an error.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let backup = dir.path().join("backup.db");
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.vacuum_into(None, backup.to_str().unwrap())?;
+    /// # assert!(backup.exists());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn vacuum_into(&mut self, schema: Option<&str>, path: &str) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+
+        Vacuum {
+            schema,
+            into: Some(path),
+        }
+        .execute(self)
+        .map(|_| ())
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -1697,6 +1760,34 @@ impl QueryId for SetPragmaInt<'_> {
 }
 
 impl RunQueryDslSupport for SetPragmaInt<'_> {}
+
+// `VACUUM` names its schema as an identifier, so that operand is quoted by the query
+// builder, while the `INTO` destination is an expression and binds normally.
+struct Vacuum<'a> {
+    schema: Option<&'a str>,
+    into: Option<&'a str>,
+}
+
+impl QueryFragment<Sqlite> for Vacuum<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("VACUUM ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        if let Some(into) = self.into {
+            out.push_sql(" INTO ");
+            out.push_bind_param::<crate::sql_types::Text, _>(into)?;
+        }
+        Ok(())
+    }
+}
+
+// The schema name is runtime data, so the rendered SQL is not determined by the type.
+impl QueryId for Vacuum<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for Vacuum<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -4215,5 +4306,192 @@ mod tests {
         let conn = &mut connection();
 
         assert!(conn.incremental_vacuum(Some("nope"), None).is_err());
+    }
+
+    // Leaves the database holding one small row but occupying many pages, so a rebuild
+    // has something to reclaim.
+    fn fill_then_delete(conn: &mut SqliteConnection) {
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((
+                pragma_probe::id.eq(1),
+                pragma_probe::payload.eq("x".repeat(256 * 1024)),
+            ))
+            .execute(conn)
+            .unwrap();
+        crate::delete(pragma_probe::table).execute(conn).unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((pragma_probe::id.eq(2), pragma_probe::payload.eq("kept")))
+            .execute(conn)
+            .unwrap();
+    }
+
+    // The same, in an attached schema.
+    fn fill_then_delete_aux(conn: &mut SqliteConnection) {
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(1),
+                aux_pragma_probe::payload.eq("x".repeat(256 * 1024)),
+            ))
+            .execute(conn)
+            .unwrap();
+        crate::delete(aux_pragma_probe::table)
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_repacks_the_database() {
+        let conn = &mut connection();
+        fill_then_delete(conn);
+        let before = conn.page_count(None).unwrap();
+        assert!(before > 1);
+
+        conn.vacuum(None).unwrap();
+
+        assert!(
+            conn.page_count(None).unwrap() < before,
+            "rebuilding should release the pages the deleted row occupied"
+        );
+        assert_eq!(
+            1,
+            pragma_probe::table.count().get_result::<i64>(conn).unwrap(),
+            "the surviving row is still there"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        conn.attach_database(":memory:", "aux").unwrap();
+        fill_then_delete_aux(conn);
+        let before = conn.page_count(Some("aux")).unwrap();
+        assert!(before > 1);
+
+        conn.vacuum(Some("aux")).unwrap();
+
+        assert!(conn.page_count(Some("aux")).unwrap() < before);
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_inside_a_transaction_is_an_error() {
+        use crate::connection::Connection;
+
+        let conn = &mut connection();
+        let result: QueryResult<()> = conn.transaction(|conn| conn.vacuum(None));
+
+        assert!(result.is_err());
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_writes_a_readable_copy_through_a_quoted_path() {
+        let dir = tempfile::tempdir().unwrap();
+        // A quote in the path would break a hand-assembled statement. It is a bind
+        // parameter, so it is taken verbatim.
+        let destination = dir.path().join("o'brien backup.db");
+
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((pragma_probe::id.eq(1), pragma_probe::payload.eq("copied")))
+            .execute(conn)
+            .unwrap();
+
+        conn.vacuum_into(None, destination.to_str().unwrap())
+            .unwrap();
+
+        let copy = &mut SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+        assert_eq!(
+            "copied",
+            pragma_probe::table
+                .select(pragma_probe::payload)
+                .get_result::<String>(copy)
+                .unwrap()
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_refuses_to_overwrite_an_existing_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let destination = dir.path().join("occupied.db");
+        {
+            let occupied = &mut SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+            occupied.batch_execute(PROBE_TABLE).unwrap();
+        }
+
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+
+        assert!(
+            conn.vacuum_into(None, destination.to_str().unwrap())
+                .is_err()
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_copies_the_named_attached_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let destination = dir.path().join("aux copy.db");
+
+        let conn = &mut connection();
+        conn.attach_database(":memory:", "aux").unwrap();
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(7),
+                aux_pragma_probe::payload.eq("copied"),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        conn.vacuum_into(Some("aux"), destination.to_str().unwrap())
+            .unwrap();
+
+        let copy = &mut SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+        // In the copy the table sits in `main`, while `aux_pragma_probe` is declared
+        // schema-qualified, so this one read cannot go through it.
+        let id = sql::<Integer>("SELECT id FROM aux_pragma_probe")
+            .get_result::<i32>(copy)
+            .unwrap();
+        assert_eq!(7, id);
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_escapes_a_backtick_in_the_schema_name() {
+        let conn = &mut connection();
+        let schema = "back`tick";
+        conn.attach_database(":memory:", schema).unwrap();
+
+        conn.vacuum(Some(schema)).unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuuming_two_schemas_rebuilds_each_of_them() {
+        // The schema is part of the rendered SQL, so the two calls must not share a
+        // prepared statement. If they did, the second would rebuild the first's
+        // database again and leave this one untouched.
+        let conn = &mut connection();
+        fill_then_delete(conn);
+        conn.attach_database(":memory:", "aux").unwrap();
+        fill_then_delete_aux(conn);
+
+        let main_before = conn.page_count(None).unwrap();
+        let aux_before = conn.page_count(Some("aux")).unwrap();
+
+        conn.vacuum(None).unwrap();
+        conn.vacuum(Some("aux")).unwrap();
+
+        assert!(
+            conn.page_count(None).unwrap() < main_before,
+            "main was rebuilt"
+        );
+        assert!(
+            conn.page_count(Some("aux")).unwrap() < aux_before,
+            "aux was rebuilt too, not main a second time"
+        );
     }
 }
