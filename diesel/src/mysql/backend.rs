@@ -1,65 +1,18 @@
 //! The MySQL backend
 
 use super::MysqlValue;
-use super::query_builder::MysqlQueryBuilder;
-use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
+use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::MysqlType;
 use crate::backend::*;
 use crate::internal::derives::multiconnection::sql_dialect;
+use super::MysqlQueryBuilder;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
+use crate::mysql_like::query_fragments::{MysqlStyleDefaultValueClause, MysqlConcatClause, MysqlOnConflictClause, MysqlRequiresOrderForWindowFunctions};
 
 /// The MySQL backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Mysql;
-
-/// Represents possible types, that can be transmitted as via the
-/// Mysql wire protocol
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-#[non_exhaustive]
-pub enum MysqlType {
-    /// A 8 bit signed integer
-    Tiny,
-    /// A 8 bit unsigned integer
-    UnsignedTiny,
-    /// A 16 bit signed integer
-    Short,
-    /// A 16 bit unsigned integer
-    UnsignedShort,
-    /// A 32 bit signed integer
-    Long,
-    /// A 32 bit unsigned integer
-    UnsignedLong,
-    /// A 64 bit signed integer
-    LongLong,
-    /// A 64 bit unsigned integer
-    UnsignedLongLong,
-    /// A 32 bit floating point number
-    Float,
-    /// A 64 bit floating point number
-    Double,
-    /// A fixed point decimal value
-    Numeric,
-    /// A datatype to store a time value
-    Time,
-    /// A datatype to store a date value
-    Date,
-    /// A datatype containing timestamp values ranging from
-    /// '1000-01-01 00:00:00' to '9999-12-31 23:59:59'.
-    DateTime,
-    /// A datatype containing timestamp values ranging from
-    /// 1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
-    Timestamp,
-    /// A datatype for string values
-    String,
-    /// A datatype containing binary large objects
-    Blob,
-    /// A value containing a set of bit's
-    Bit,
-    /// A user defined set type
-    Set,
-    /// A user defined enum type
-    Enum,
-}
 
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
@@ -105,16 +58,6 @@ impl SqlDialect for Mysql {
 impl DieselReserveSpecialization for Mysql {}
 impl TrustedBackend for Mysql {}
 
-#[derive(Debug, Clone, Copy)]
-pub struct MysqlStyleDefaultValueClause;
-
-#[derive(Debug, Clone, Copy)]
-pub struct MysqlConcatClause;
-
-#[derive(Debug, Clone, Copy)]
-pub struct MysqlOnConflictClause;
-
-#[derive(Debug, Clone, Copy)]
-pub struct MysqlRequiresOrderForWindowFunctions;
-
-impl SupportsOnConflictClause for MysqlOnConflictClause {}
+impl MysqlLikeBackend for Mysql {
+    const SCHEME: &'static str = "mysql";
+}

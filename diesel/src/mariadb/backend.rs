@@ -1,8 +1,5 @@
 use crate::{
-    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect},
-    mariadb::{MariadbQueryBuilder, MariadbValue},
-    query_builder::bind_collector::RawBytesBindCollector,
-    sql_types::TypeMetadata,
+    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect}, mariadb::{MariadbQueryBuilder, MariadbValue}, mysql_like::MysqlLikeBackend, query_builder::bind_collector::RawBytesBindCollector, sql_types::TypeMetadata,
 };
 
 /// The MariaDB backend
@@ -11,7 +8,7 @@ pub struct Mariadb;
 
 /// Represents possible types, that can be transmitted as via the
 /// Mysql wire protocol
-pub type MariadbType = crate::mysql::MysqlType;
+pub type MariadbType = crate::mysql_like::MysqlType;
 
 impl Backend for Mariadb {
     type QueryBuilder = MariadbQueryBuilder;
@@ -44,7 +41,7 @@ impl SqlDialect for Mariadb {
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
 
     type WindowFrameClauseGroupSupport =
-        sql_dialect::window_frame_clause_group_support::IsoGroupWindowFrameUnit;
+        sql_dialect::window_frame_clause_group_support::NoGroupWindowFrameUnit;
 
     type WindowFrameExclusionSupport =
         sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport;
@@ -58,9 +55,13 @@ impl SqlDialect for Mariadb {
 impl DieselReserveSpecialization for Mariadb {}
 impl TrustedBackend for Mariadb {}
 
-pub(crate) type MariadbOnConflictClause = crate::mysql::backend::MysqlOnConflictClause;
+pub(crate) type MariadbOnConflictClause = crate::mysql_like::query_fragments::MysqlOnConflictClause;
 pub(crate) type MariadbStyleDefaultValueClause =
-    crate::mysql::backend::MysqlStyleDefaultValueClause;
-pub(crate) type MariadbConcatClause = crate::mysql::backend::MysqlConcatClause;
+    crate::mysql_like::query_fragments::MysqlStyleDefaultValueClause;
+pub(crate) type MariadbConcatClause = crate::mysql_like::query_fragments::MysqlConcatClause;
 pub(crate) type MariadbRequiresOrderForWindowFunctions =
-    crate::mysql::backend::MysqlRequiresOrderForWindowFunctions;
+    crate::mysql_like::query_fragments::MysqlRequiresOrderForWindowFunctions;
+
+impl MysqlLikeBackend for Mariadb {
+    const SCHEME: &'static str = "mariadb";
+}

@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use super::backend::Mysql;
 use crate::backend::Backend;
 use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
@@ -11,10 +10,8 @@ pub use self::query_fragment_impls::DuplicatedKeys;
 mod limit_offset;
 mod query_fragment_impls;
 
-/// The MySQL query builder
-pub type MysqlQueryBuilder = MysqlLikeQueryBuilder<Mysql>;
 
-/// The MySQL query builder
+/// The MySQL-Like query builder
 #[allow(missing_debug_implementations)]
 pub struct MysqlLikeQueryBuilder<B: Backend> {
     sql: String,

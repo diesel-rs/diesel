@@ -26,7 +26,7 @@ impl<'a> MysqlValue<'a> {
         feature = "mysql",
         feature = "mariadb"
     ))]
-    pub(in crate::mysql) fn new_internal(raw: &'a [u8], tpe: MysqlType) -> Self {
+    pub(crate) fn new_internal(raw: &'a [u8], tpe: MysqlType) -> Self {
         Self { raw, tpe }
     }
 

@@ -1,10 +1,8 @@
 use crate::Queryable;
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 use crate::deserialize::FromSqlRef;
 use crate::deserialize::{self, FromSql};
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
-use crate::mysql::MysqlLikeBackend;
-use crate::mysql::{MysqlValue, NumericRepresentation};
+use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::{MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
 use core::error::Error;
@@ -48,7 +46,6 @@ fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<SmallInt, B> for i16 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -79,7 +76,6 @@ impl<B: MysqlLikeBackend> FromSql<SmallInt, B> for i16 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -110,7 +106,6 @@ impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<BigInt, B> for i64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -125,7 +120,6 @@ impl<B: MysqlLikeBackend> FromSql<BigInt, B> for i64 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Float, B> for f32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -142,7 +136,6 @@ impl<B: MysqlLikeBackend> FromSql<Float, B> for f32 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Double, B> for f64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -162,7 +155,6 @@ impl<B: MysqlLikeBackend> FromSql<Double, B> for f64 {
 /// impl in terms of `String`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Text, B> for *const str {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         let string = str::from_utf8(value.as_bytes())?;
@@ -170,7 +162,6 @@ impl<B: MysqlLikeBackend> FromSql<Text, B> for *const str {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<'a, B: MysqlLikeBackend> FromSqlRef<'a, Text, B> for &'a str {
     fn from_sql(bytes: &'a mut MysqlValue<'_>) -> deserialize::Result<Self> {
         let string = str::from_utf8(bytes.as_bytes())?;
@@ -178,7 +169,6 @@ impl<'a, B: MysqlLikeBackend> FromSqlRef<'a, Text, B> for &'a str {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> Queryable<Text, B> for *const str {
     type Row = Self;
 
@@ -192,21 +182,18 @@ impl<B: MysqlLikeBackend> Queryable<Text, B> for *const str {
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Binary, B> for *const [u8] {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const [u8])
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<'a, B: MysqlLikeBackend> FromSqlRef<'a, Binary, B> for &'a [u8] {
     fn from_sql(bytes: &'a mut MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes())
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> Queryable<Binary, B> for *const [u8] {
     type Row = Self;
 

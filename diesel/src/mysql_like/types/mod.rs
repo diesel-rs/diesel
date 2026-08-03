@@ -8,23 +8,20 @@ mod numeric;
 mod primitives;
 
 use crate::deserialize::{self, FromSql};
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
-use crate::mysql::MysqlLikeBackend;
-use crate::mysql::{MysqlType, MysqlValue};
+use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::{MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 use crate::sql_types::{self, ops::*};
 use byteorder::{NativeEndian, WriteBytesExt};
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<TinyInt, B> for i8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<TinyInt, B> for i8 {
     fn from_sql(value: B::RawValue<'_>) -> deserialize::Result<Self> {
         let bytes = value.as_bytes();
@@ -34,7 +31,6 @@ impl<B: MysqlLikeBackend> FromSql<TinyInt, B> for i8 {
 
 /// Represents the MySQL unsigned type.
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 pub struct Unsigned<ST: 'static>(ST);
 
 impl<T> Add for Unsigned<T>
@@ -69,7 +65,6 @@ where
     type Output = Unsigned<T::Output>;
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<Unsigned<TinyInt>, B> for u8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_u8(*self)?;
@@ -77,7 +72,6 @@ impl<B: MysqlLikeBackend> ToSql<Unsigned<TinyInt>, B> for u8 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Unsigned<TinyInt>, B> for u8 {
     #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)] // that's what we want
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
@@ -86,7 +80,6 @@ impl<B: MysqlLikeBackend> FromSql<Unsigned<TinyInt>, B> for u8 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<Unsigned<SmallInt>, B> for u16 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_u16::<NativeEndian>(*self)?;
@@ -94,7 +87,6 @@ impl<B: MysqlLikeBackend> ToSql<Unsigned<SmallInt>, B> for u16 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Unsigned<SmallInt>, B> for u16
 where
     i32: deserialize::FromSql<sql_types::Integer, B>,
@@ -110,7 +102,6 @@ where
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<Unsigned<Integer>, B> for u32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_u32::<NativeEndian>(*self)?;
@@ -118,7 +109,6 @@ impl<B: MysqlLikeBackend> ToSql<Unsigned<Integer>, B> for u32 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Unsigned<Integer>, B> for u32
 where
     i64: deserialize::FromSql<sql_types::BigInt, B>,
@@ -134,7 +124,6 @@ where
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<Unsigned<BigInt>, B> for u64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_u64::<NativeEndian>(*self)?;
@@ -142,7 +131,6 @@ impl<B: MysqlLikeBackend> ToSql<Unsigned<BigInt>, B> for u64 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Unsigned<BigInt>, B> for u64
 where
     i64: deserialize::FromSql<sql_types::BigInt, B>,
@@ -158,7 +146,6 @@ where
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<Bool, B> for bool {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         let int_value = i32::from(*self);
@@ -166,14 +153,12 @@ impl<B: MysqlLikeBackend> ToSql<Bool, B> for bool {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> FromSql<Bool, B> for bool {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes().iter().any(|x| *x != 0))
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<sql_types::SmallInt, B> for i16 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_i16::<NativeEndian>(*self)
@@ -182,7 +167,6 @@ impl<B: MysqlLikeBackend> ToSql<sql_types::SmallInt, B> for i16 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<sql_types::Integer, B> for i32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_i32::<NativeEndian>(*self)
@@ -191,7 +175,6 @@ impl<B: MysqlLikeBackend> ToSql<sql_types::Integer, B> for i32 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<sql_types::BigInt, B> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_i64::<NativeEndian>(*self)
@@ -200,7 +183,6 @@ impl<B: MysqlLikeBackend> ToSql<sql_types::BigInt, B> for i64 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<sql_types::Double, B> for f64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_f64::<NativeEndian>(*self)
@@ -209,7 +191,6 @@ impl<B: MysqlLikeBackend> ToSql<sql_types::Double, B> for f64 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> ToSql<sql_types::Float, B> for f32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         out.write_f32::<NativeEndian>(*self)
@@ -218,28 +199,24 @@ impl<B: MysqlLikeBackend> ToSql<sql_types::Float, B> for f32 {
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> HasSqlType<Unsigned<TinyInt>> for B {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedTiny
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> HasSqlType<Unsigned<SmallInt>> for B {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedShort
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> HasSqlType<Unsigned<Integer>> for B {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLong
     }
 }
 
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl<B: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for B {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLongLong
@@ -288,5 +265,4 @@ impl<B: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for B {
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(mysql_type(name = "DateTime"))]
-#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 pub struct Datetime;

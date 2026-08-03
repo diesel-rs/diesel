@@ -4,8 +4,8 @@ use std::io::Write;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
-use crate::mysql::MysqlLikeBackend;
-use crate::mysql::MysqlValue;
+use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::MysqlValue;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
@@ -185,7 +185,6 @@ impl MysqlTimestampType {
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
-        #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
         impl<B: MysqlLikeBackend> ToSql<$ty, B> for MysqlTime {
             fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
                 let buffer = self.serialize();
@@ -195,7 +194,6 @@ macro_rules! mysql_time_impls {
             }
         }
 
-        #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
         impl<B: MysqlLikeBackend> FromSql<$ty, B> for MysqlTime {
             fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
                 value.time_value()

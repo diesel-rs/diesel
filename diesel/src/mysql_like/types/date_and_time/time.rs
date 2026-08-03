@@ -1,38 +1,66 @@
-use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use std::os::raw as libc;
+use time::{
+    Date as NaiveDate, Month, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+};
 
 use crate::deserialize::{self, FromSql};
-use crate::mysql::{MysqlLikeBackend, MysqlValue};
+use crate::mysql_like::{MysqlValue, MysqlLikeBackend};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
 use super::{MysqlTime, MysqlTimestampType};
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
-impl<B: MysqlLikeBackend> ToSql<Datetime, B> for NaiveDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
-        <NaiveDateTime as ToSql<Timestamp, B>>::to_sql(self, out)
+fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn core::error::Error>> {
+    for (name, field) in [
+        ("year", dt.year),
+        ("month", dt.month),
+        ("day", dt.day),
+        ("offset", dt.time_zone_displacement.try_into()?),
+    ] {
+        if field != 0 {
+            return Err(format!("Unable to convert {dt:?} to time: {name} must be 0").into());
+        }
     }
+
+    let hour: u8 = dt.hour.try_into()?;
+    let minute: u8 = dt.minute.try_into()?;
+    let second: u8 = dt.second.try_into()?;
+    let microsecond: u32 = dt.second_part.try_into()?;
+
+    Ok(NaiveTime::from_hms_micro(
+        hour,
+        minute,
+        second,
+        microsecond,
+    )?)
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
-impl<B: MysqlLikeBackend> FromSql<Datetime, B> for NaiveDateTime {
-    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        <NaiveDateTime as FromSql<Timestamp, B>>::from_sql(bytes)
-    }
+fn to_datetime(dt: MysqlTime) -> Result<OffsetDateTime, Box<dyn core::error::Error>> {
+    let year: i32 = dt.year.try_into()?;
+    let month: u8 = dt.month.try_into()?;
+    let month: Month = month.try_into()?;
+    let day: u8 = dt.day.try_into()?;
+    let hour: u8 = dt.hour.try_into()?;
+    let minute: u8 = dt.minute.try_into()?;
+    let second: u8 = dt.second.try_into()?;
+    let microsecond: u32 = dt.second_part.try_into()?;
+    let offset = UtcOffset::from_whole_seconds(dt.time_zone_displacement)?;
+
+    Ok(PrimitiveDateTime::new(
+        NaiveDate::from_calendar_date(year, month, day)?,
+        NaiveTime::from_hms_micro(hour, minute, second, microsecond)?,
+    )
+    .assume_offset(offset))
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
-impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for NaiveDateTime {
+fn to_primitive_datetime(dt: OffsetDateTime) -> PrimitiveDateTime {
+    let dt = dt.to_offset(UtcOffset::UTC);
+    PrimitiveDateTime::new(dt.date(), dt.time())
+}
+
+// Mysql datetime column has a wider range than timestamp column, so let's implement the fundamental operations in terms of datetime.
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> ToSql<Datetime, B> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
@@ -41,8 +69,7 @@ impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for NaiveDateTime {
             hour: self.hour() as libc::c_uint,
             minute: self.minute() as libc::c_uint,
             second: self.second() as libc::c_uint,
-            #[allow(deprecated)] // otherwise we would need to bump our minimal chrono version
-            second_part: libc::c_ulong::from(self.timestamp_subsec_micros()),
+            second_part: libc::c_ulong::from(self.microsecond()),
             neg: false,
             time_type: MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
             time_zone_displacement: 0,
@@ -52,31 +79,65 @@ impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for NaiveDateTime {
     }
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
-impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for NaiveDateTime {
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> FromSql<Datetime, B> for PrimitiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Timestamp, B>>::from_sql(bytes)?;
 
-        let micro = mysql_time.second_part.try_into()?;
-        NaiveDate::from_ymd_opt(
-            mysql_time.year.try_into()?,
-            mysql_time.month,
-            mysql_time.day,
-        )
-        .and_then(|v| {
-            v.and_hms_micro_opt(mysql_time.hour, mysql_time.minute, mysql_time.second, micro)
-        })
-        .ok_or_else(|| format!("Cannot parse this date: {mysql_time:?}").into())
+        to_datetime(mysql_time)
+            .map(to_primitive_datetime)
+            .map_err(|err| format!("Cannot parse this date: {mysql_time:?}: {err}").into())
     }
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
+// We can implement timestamps in terms of datetimes
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for PrimitiveDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+        <PrimitiveDateTime as ToSql<Datetime, B>>::to_sql(self, out)
+    }
+}
+
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for PrimitiveDateTime {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
+        <PrimitiveDateTime as FromSql<Datetime, B>>::from_sql(bytes)
+    }
+}
+
+// Delegate offset datetimes in terms of UTC primitive datetimes; this stores everything in the DB as UTC
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> ToSql<Datetime, B> for OffsetDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+        let prim = to_primitive_datetime(*self);
+        <PrimitiveDateTime as ToSql<Datetime, B>>::to_sql(&prim, &mut out.reborrow())
+    }
+}
+
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> FromSql<Datetime, B> for OffsetDateTime {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
+        let prim = <PrimitiveDateTime as FromSql<Datetime, B>>::from_sql(bytes)?;
+        Ok(prim.assume_offset(UtcOffset::UTC))
+    }
+}
+
+// delegate timestamp column to datetime column for offset datetimes
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for OffsetDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+        <OffsetDateTime as ToSql<Datetime, B>>::to_sql(self, out)
+    }
+}
+
+#[cfg(feature = "time")]
+impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for OffsetDateTime {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
+        <OffsetDateTime as FromSql<Datetime, B>>::from_sql(bytes)
+    }
+}
+
+#[cfg(feature = "time")]
 impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, B>) -> serialize::Result {
         let mysql_time = MysqlTime {
@@ -85,7 +146,7 @@ impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
             second: self.second() as libc::c_uint,
             day: 0,
             month: 0,
-            second_part: libc::c_ulong::from(self.nanosecond() / 1_000),
+            second_part: 0,
             year: 0,
             neg: false,
             time_type: MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
@@ -96,23 +157,17 @@ impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
     }
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
+#[cfg(feature = "time")]
 impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Time, B>>::from_sql(bytes)?;
-        let micro = mysql_time.second_part.try_into()?;
-        NaiveTime::from_hms_micro_opt(mysql_time.hour, mysql_time.minute, mysql_time.second, micro)
-            .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
+
+        to_time(mysql_time)
+            .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())
     }
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
+#[cfg(feature = "time")]
 impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
         let mysql_time = MysqlTime {
@@ -132,28 +187,35 @@ impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
     }
 }
 
-#[cfg(all(
-    feature = "chrono",
-    any(feature = "mysql_backend", feature = "mariadb_backend")
-))]
+#[cfg(feature = "time")]
 impl<B: MysqlLikeBackend> FromSql<Date, B> for NaiveDate {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Date, B>>::from_sql(bytes)?;
-        NaiveDate::from_ymd_opt(
-            mysql_time.year.try_into()?,
-            mysql_time.month,
-            mysql_time.day,
-        )
-        .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
+
+        to_datetime(mysql_time)
+            .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())
+            .and_then(|dt| {
+                let prim = to_primitive_datetime(dt);
+                if prim.time() == NaiveTime::MIDNIGHT {
+                    Ok(prim.date())
+                } else {
+                    Err(format!("Unable to convert {prim:?} to date: non-0 time part").into())
+                }
+            })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    extern crate chrono;
     extern crate dotenvy;
+    extern crate time;
 
-    use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
+    use time::{
+        Date as NaiveDate, Duration, OffsetDateTime, Time as NaiveTime,
+        macros::{date, datetime, time},
+    };
+
+    use super::to_primitive_datetime;
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
@@ -164,10 +226,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
-        let time = NaiveDate::from_ymd_opt(1970, 1, 1)
-            .unwrap()
-            .and_hms_opt(0, 0, 0)
-            .unwrap();
+        let time = datetime!(1970-1-1 0:0:0);
         let query = select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
         let query = select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)").eq(time));
@@ -177,10 +236,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
-        let time = NaiveDate::from_ymd_opt(1970, 1, 1)
-            .unwrap()
-            .and_hms_opt(0, 0, 0)
-            .unwrap();
+        let time = datetime!(1970-1-1 0:0:0);
         let epoch_from_sql =
             select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)")).get_result(connection);
         assert_eq!(Ok(time), epoch_from_sql);
@@ -192,11 +248,11 @@ mod tests {
     #[diesel_test_helper::test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
-        let time = Utc::now().naive_utc() + Duration::try_days(1).unwrap();
+        let time = to_primitive_datetime(OffsetDateTime::now_utc()) + Duration::days(1);
         let query = select(now.lt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let time = Utc::now().naive_utc() - Duration::try_days(1).unwrap();
+        let time = to_primitive_datetime(OffsetDateTime::now_utc()) - Duration::days(1);
         let query = select(now.gt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -205,15 +261,15 @@ mod tests {
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
-        let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+        let midnight = time!(0:0:0);
         let query = select(sql::<Time>("CAST('00:00:00' AS TIME)").eq(midnight));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let noon = NaiveTime::from_hms_opt(12, 0, 0).unwrap();
+        let noon = time!(12:0:0);
         let query = select(sql::<Time>("CAST('12:00:00' AS TIME)").eq(noon));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let roughly_half_past_eleven = NaiveTime::from_hms_opt(23, 37, 4).unwrap();
+        let roughly_half_past_eleven = time!(23:37:4);
         let query = select(sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -221,15 +277,15 @@ mod tests {
     #[diesel_test_helper::test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
-        let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+        let midnight = time!(0:0:0);
         let query = select(sql::<Time>("CAST('00:00:00' AS TIME)"));
         assert_eq!(Ok(midnight), query.get_result::<NaiveTime>(connection));
 
-        let noon = NaiveTime::from_hms_opt(12, 0, 0).unwrap();
+        let noon = time!(12:0:0);
         let query = select(sql::<Time>("CAST('12:00:00' AS TIME)"));
         assert_eq!(Ok(noon), query.get_result::<NaiveTime>(connection));
 
-        let roughly_half_past_eleven = NaiveTime::from_hms_opt(23, 37, 4).unwrap();
+        let roughly_half_past_eleven = time!(23:37:4);
         let query = select(sql::<Time>("CAST('23:37:04' AS TIME)"));
         assert_eq!(
             Ok(roughly_half_past_eleven),
@@ -238,31 +294,13 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    fn times_of_day_with_microseconds_encode_correctly() {
-        let connection = &mut connection();
-
-        let with_micros = NaiveTime::from_hms_micro_opt(8, 30, 0, 123_456).unwrap();
-        let query = select(sql::<Time>("CAST('08:30:00.123456' AS TIME(6))").eq(with_micros));
-        assert!(query.get_result::<bool>(connection).unwrap());
-    }
-
-    #[diesel_test_helper::test]
-    fn times_of_day_with_microseconds_decode_correctly() {
-        let connection = &mut connection();
-
-        let with_micros = NaiveTime::from_hms_micro_opt(8, 30, 0, 123_456).unwrap();
-        let query = select(sql::<Time>("CAST('08:30:00.123456' AS TIME(6))"));
-        assert_eq!(Ok(with_micros), query.get_result::<NaiveTime>(connection));
-    }
-
-    #[diesel_test_helper::test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
-        let january_first_2000 = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let january_first_2000 = date!(2000 - 1 - 1);
         let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)").eq(january_first_2000));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let january_first_2018 = NaiveDate::from_ymd_opt(2018, 1, 1).unwrap();
+        let january_first_2018 = date!(2018 - 1 - 1);
         let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)").eq(january_first_2018));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -270,14 +308,14 @@ mod tests {
     #[diesel_test_helper::test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
-        let january_first_2000 = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        let january_first_2000 = date!(2000 - 1 - 1);
         let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)"));
         assert_eq!(
             Ok(january_first_2000),
             query.get_result::<NaiveDate>(connection)
         );
 
-        let january_first_2018 = NaiveDate::from_ymd_opt(2018, 1, 1).unwrap();
+        let january_first_2018 = date!(2018 - 1 - 1);
         let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)"));
         assert_eq!(
             Ok(january_first_2018),

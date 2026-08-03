@@ -6,7 +6,7 @@ use mysqlclient_sys as ffi;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::connection::statement_cache::MaybeCached;
-use crate::mysql::MysqlType;
+use crate::mysql_like::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 pub(super) mod iterator;
@@ -163,7 +163,7 @@ pub(super) struct StatementUse<'a> {
 }
 
 impl StatementUse<'_> {
-    pub(in crate::mysql::connection) fn affected_rows(&self) -> QueryResult<usize> {
+    pub(in crate::mysql_like::connection) fn affected_rows(&self) -> QueryResult<usize> {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.inner.stmt.as_ptr()) };
         affected_rows
             .try_into()
@@ -172,7 +172,7 @@ impl StatementUse<'_> {
 
     /// This function should be called after `execute` only
     /// otherwise it's not guaranteed to return a valid result
-    pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
+    pub(in crate::mysql_like::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
         let size = unsafe { ffi::mysql_stmt_num_rows(self.inner.stmt.as_ptr()) };
         usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))
     }
@@ -195,7 +195,7 @@ impl StatementUse<'_> {
         }
     }
 
-    pub(in crate::mysql::connection) unsafe fn fetch_column(
+    pub(in crate::mysql_like::connection) unsafe fn fetch_column(
         &self,
         bind: &mut ffi::MYSQL_BIND,
         idx: usize,
@@ -215,7 +215,7 @@ impl StatementUse<'_> {
 
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
     /// you must call this function again before calling `mysql_stmt_fetch`.
-    pub(in crate::mysql::connection) unsafe fn bind_result(
+    pub(in crate::mysql_like::connection) unsafe fn bind_result(
         &self,
         binds: *mut ffi::MYSQL_BIND,
     ) -> QueryResult<()> {

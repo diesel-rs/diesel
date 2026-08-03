@@ -556,7 +556,7 @@ pub use crate::pg::sql_types::*;
 
 #[doc(inline)]
 #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
-pub use crate::mysql::sql_types::{Datetime, Unsigned};
+pub use crate::mysql_like::sql_types::{Datetime, Unsigned};
 
 #[doc(inline)]
 #[cfg(feature = "__sqlite-shared")]

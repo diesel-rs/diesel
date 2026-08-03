@@ -1,4 +1,4 @@
-use crate::mysql::MysqlLikeBackend;
+use crate::mysql_like::MysqlLikeBackend;
 use crate::sql_types::EnumSqlType;
 use crate::types::enum_::{EnumMapping, EnumTypeMapping, EnumVariant, IntMapping};
 use std::io::Write;

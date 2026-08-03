@@ -335,6 +335,9 @@ pub mod migration;
 pub mod row;
 
 #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+pub mod mysql_like;
+
+#[cfg(feature = "mysql_backend")]
 pub mod mysql;
 
 #[cfg(feature = "mariadb_backend")]

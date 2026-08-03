@@ -8,9 +8,9 @@ use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
 
 use super::stmt::{MysqlFieldMetadata, StatementUse};
-use crate::mysql::connection::stmt::StatementMetadata;
-use crate::mysql::types::date_and_time::MysqlTime;
-use crate::mysql::{MysqlType, MysqlValue};
+use crate::mysql_like::connection::stmt::StatementMetadata;
+use crate::mysql_like::types::date_and_time::MysqlTime;
+use crate::mysql_like::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
 fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
@@ -827,7 +827,7 @@ mod tests {
     use super::*;
     use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
     use crate::deserialize::FromSql;
-    use crate::mysql::connection::stmt::Statement;
+    use crate::mysql_like::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
     #[cfg(feature = "numeric")]

@@ -4,19 +4,11 @@ mod bigdecimal {
     use std::io::prelude::*;
 
     use crate::deserialize::{self, FromSql};
-    #[cfg(all(
-        any(feature = "mysql_backend", feature = "mariadb_backend"),
-        feature = "numeric"
-    ))]
-    use crate::mysql::MysqlLikeBackend;
-    use crate::mysql::{MysqlValue, NumericRepresentation};
+    use crate::mysql_like::MysqlLikeBackend;
+    use crate::mysql_like::{MysqlValue, NumericRepresentation};
     use crate::serialize::{self, IsNull, Output, ToSql};
     use crate::sql_types::Numeric;
 
-    #[cfg(all(
-        any(feature = "mysql_backend", feature = "mariadb_backend"),
-        feature = "numeric"
-    ))]
     impl<B: MysqlLikeBackend> ToSql<Numeric, B> for BigDecimal {
         fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
             write!(out, "{}", *self)
@@ -25,10 +17,6 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(
-        any(feature = "mysql_backend", feature = "mariadb_backend"),
-        feature = "numeric"
-    ))]
     impl<B: MysqlLikeBackend> FromSql<Numeric, B> for BigDecimal {
         fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
             match value.numeric_value()? {

@@ -7,6 +7,7 @@ use alloc::ffi::CString;
 use core::ffi::CStr;
 use std::collections::HashMap;
 
+use crate::mysql_like::MysqlLikeBackend;
 use crate::result::{ConnectionError, ConnectionResult};
 
 use mysqlclient_sys::mysql_ssl_mode;
@@ -42,7 +43,7 @@ bitflags::bitflags! {
     }
 }
 
-pub(super) struct ConnectionOptions {
+pub(super) struct ConnectionOptions<B: MysqlLikeBackend> {
     host: Option<CString>,
     user: CString,
     password: Option<CString>,
@@ -55,16 +56,17 @@ pub(super) struct ConnectionOptions {
     ssl_cert: Option<CString>,
     ssl_key: Option<CString>,
     local_infile: Option<bool>,
+    _phantom: std::marker::PhantomData<B>,
 }
 
-impl ConnectionOptions {
+impl<B: MysqlLikeBackend> ConnectionOptions<B> {
     pub(super) fn parse(database_url: &str) -> ConnectionResult<Self> {
         let url = match Url::parse(database_url) {
             Ok(url) => url,
             Err(_) => return Err(connection_url_error()),
         };
 
-        if url.scheme() != "mysql" && url.scheme() != "mariadb" {
+        if url.scheme() != B::SCHEME {
             return Err(connection_url_error());
         }
 
@@ -159,6 +161,7 @@ impl ConnectionOptions {
             ssl_cert,
             ssl_key,
             local_infile,
+            _phantom: std::marker::PhantomData,
         })
     }
 

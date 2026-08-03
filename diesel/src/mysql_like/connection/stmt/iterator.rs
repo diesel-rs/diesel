@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
 use crate::backend::Backend;
 use crate::connection::statement_cache::MaybeCached;
-use crate::mysql::{Mysql, MysqlLikeBackend, MysqlType};
+use crate::mysql_like::{MysqlLikeBackend, MysqlType};
 use crate::result::QueryResult;
 use crate::row::*;
 
@@ -238,7 +238,7 @@ impl<'a, B: MysqlLikeBackend> Field<'a, B> for MysqlLikeField<'a, B> {
         }
     }
 
-    fn value(&self) -> Option<<Mysql as Backend>::RawValue<'_>> {
+    fn value(&self) -> Option<<B as Backend>::RawValue<'_>> {
         match &*self.binds {
             PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].value(),
         }

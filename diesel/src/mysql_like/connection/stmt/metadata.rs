@@ -4,18 +4,18 @@ use core::ptr::NonNull;
 use core::slice;
 
 use super::ffi;
-use crate::mysql::connection::bind::Flags;
+use crate::mysql_like::connection::bind::Flags;
 
-pub(in crate::mysql::connection) struct StatementMetadata {
+pub(in crate::mysql_like::connection) struct StatementMetadata {
     result: NonNull<ffi::MYSQL_RES>,
 }
 
 impl StatementMetadata {
-    pub(in crate::mysql::connection) fn new(result: NonNull<ffi::MYSQL_RES>) -> Self {
+    pub(in crate::mysql_like::connection) fn new(result: NonNull<ffi::MYSQL_RES>) -> Self {
         StatementMetadata { result }
     }
 
-    pub(in crate::mysql::connection) fn fields(&'_ self) -> &'_ [MysqlFieldMetadata<'_>] {
+    pub(in crate::mysql_like::connection) fn fields(&'_ self) -> &'_ [MysqlFieldMetadata<'_>] {
         unsafe {
             let num_fields = ffi::mysql_num_fields(self.result.as_ptr());
             let field_ptr = ffi::mysql_fetch_fields(self.result.as_ptr());
@@ -35,13 +35,13 @@ impl Drop for StatementMetadata {
 }
 
 #[repr(transparent)]
-pub(in crate::mysql::connection) struct MysqlFieldMetadata<'a>(
+pub(in crate::mysql_like::connection) struct MysqlFieldMetadata<'a>(
     ffi::MYSQL_FIELD,
     core::marker::PhantomData<&'a ()>,
 );
 
 impl MysqlFieldMetadata<'_> {
-    pub(in crate::mysql::connection) fn field_name(&self) -> Option<&str> {
+    pub(in crate::mysql_like::connection) fn field_name(&self) -> Option<&str> {
         if self.0.name.is_null() {
             None
         } else {
@@ -54,11 +54,11 @@ impl MysqlFieldMetadata<'_> {
         }
     }
 
-    pub(in crate::mysql::connection) fn field_type(&self) -> ffi::enum_field_types {
+    pub(in crate::mysql_like::connection) fn field_type(&self) -> ffi::enum_field_types {
         self.0.type_
     }
 
-    pub(in crate::mysql::connection) fn flags(
+    pub(in crate::mysql_like::connection) fn flags(
         &self,
     ) -> Result<Flags, Box<dyn core::error::Error + Send + Sync>> {
         Flags::try_from(self.0.flags)

@@ -7,4 +7,4 @@
 pub use crate::pg::data_types::*;
 
 #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
-pub use crate::mysql::data_types::*;
+pub use crate::mysql_like::data_types::*;
