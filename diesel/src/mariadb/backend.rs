@@ -1,5 +1,9 @@
 use crate::{
-    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect}, mariadb::{MariadbQueryBuilder, MariadbValue}, mysql_like::MysqlLikeBackend, query_builder::bind_collector::RawBytesBindCollector, sql_types::TypeMetadata,
+    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect},
+    mariadb::{MariadbQueryBuilder, MariadbValue},
+    mysql_like::MysqlLikeBackend,
+    query_builder::bind_collector::RawBytesBindCollector,
+    sql_types::TypeMetadata,
 };
 
 /// The MariaDB backend

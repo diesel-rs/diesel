@@ -123,7 +123,15 @@ fn mariadb_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {
     model
         .mariadb_type
         .as_ref()
-        .map_or_else(||model.mysql_type.as_ref().map(|mysql_type| Ident::new(&mysql_type.name.value(), Span::mixed_site())), |mariadb_type| Some(Ident::new(&mariadb_type.name.value(), Span::mixed_site())))
+        .map_or_else(
+            || {
+                model
+                    .mysql_type
+                    .as_ref()
+                    .map(|mysql_type| Ident::new(&mysql_type.name.value(), Span::mixed_site()))
+            },
+            |mariadb_type| Some(Ident::new(&mariadb_type.name.value(), Span::mixed_site())),
+        )
         .map(|ty| {
             let struct_name = &item.ident;
             let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();

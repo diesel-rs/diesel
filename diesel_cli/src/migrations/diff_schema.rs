@@ -422,7 +422,12 @@ pub fn generate_sql_based_on_diff_schema(
             #[cfg(feature = "mariadb")]
             InferConnection::Mariadb(_) => {
                 let mut qb = diesel::mariadb::MariadbQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config, &enum_sql_types, &diesel::mariadb::Mariadb)?;
+                diff.generate_down_sql(
+                    &mut qb,
+                    &config,
+                    &enum_sql_types,
+                    &diesel::mariadb::Mariadb,
+                )?;
                 qb.finish()
             }
         };

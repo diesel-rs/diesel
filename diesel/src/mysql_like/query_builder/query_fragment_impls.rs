@@ -46,14 +46,18 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for NoWait {
     }
 }
 
-impl<B: MysqlLikeBackend> QueryFragment<B, crate::mysql_like::query_fragments::MysqlStyleDefaultValueClause> for DefaultValues {
+impl<B: MysqlLikeBackend>
+    QueryFragment<B, crate::mysql_like::query_fragments::MysqlStyleDefaultValueClause>
+    for DefaultValues
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         out.push_sql("() VALUES ()");
         Ok(())
     }
 }
 
-impl<B: MysqlLikeBackend, L, R> QueryFragment<B, crate::mysql_like::query_fragments::MysqlConcatClause> for Concat<L, R>
+impl<B: MysqlLikeBackend, L, R>
+    QueryFragment<B, crate::mysql_like::query_fragments::MysqlConcatClause> for Concat<L, R>
 where
     L: QueryFragment<B>,
     R: QueryFragment<B>,
@@ -71,7 +75,8 @@ where
     }
 }
 
-impl<B: MysqlLikeBackend,T> QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoNothing<T>
+impl<B: MysqlLikeBackend, T>
+    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoNothing<T>
 where
     T: Table + StaticQueryFragment,
     T::Component: QueryFragment<B>,
@@ -84,7 +89,8 @@ where
     }
 }
 
-impl<B: MysqlLikeBackend, T, Tab> QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoUpdate<T, Tab>
+impl<B: MysqlLikeBackend, T, Tab>
+    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoUpdate<T, Tab>
 where
     T: QueryFragment<B>,
     Tab: Table + StaticQueryFragment,
@@ -103,7 +109,8 @@ where
     }
 }
 
-impl<B: MysqlLikeBackend, Values, Target, Action> QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
+impl<B: MysqlLikeBackend, Values, Target, Action>
+    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
     for OnConflictValues<Values, Target, Action, NoWhereClause>
 where
     Values: QueryFragment<B>,
@@ -132,7 +139,10 @@ pub struct DuplicatedKeys;
 
 impl<Tab> OnConflictTarget<Tab> for ConflictTarget<DuplicatedKeys> {}
 
-impl<B: MysqlLikeBackend> QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for ConflictTarget<DuplicatedKeys> {
+impl<B: MysqlLikeBackend>
+    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
+    for ConflictTarget<DuplicatedKeys>
+{
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         Ok(())
     }
@@ -158,7 +168,7 @@ trait DoNothingClauseHelper<B: MysqlLikeBackend> {
         T::Component: QueryFragment<B>;
 }
 
-impl<B: MysqlLikeBackend,C> DoNothingClauseHelper<B> for C
+impl<B: MysqlLikeBackend, C> DoNothingClauseHelper<B> for C
 where
     C: Column,
 {

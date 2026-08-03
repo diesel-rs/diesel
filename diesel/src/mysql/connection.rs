@@ -90,16 +90,15 @@ use crate::{mysql::Mysql, mysql_like::MysqlLikeConnection};
 /// ```
 pub type MysqlConnection = MysqlLikeConnection<Mysql>;
 
-
 #[cfg(test)]
 mod tests {
     extern crate dotenvy;
 
     use super::*;
-    use std::env;
     use crate::connection::Connection;
     use crate::connection::SimpleConnection;
     use crate::query_dsl::RunQueryDsl;
+    use std::env;
 
     fn connection() -> MysqlConnection {
         dotenvy::dotenv().ok();

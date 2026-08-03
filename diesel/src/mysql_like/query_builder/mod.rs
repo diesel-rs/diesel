@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::backend::Backend;
 use crate::query_builder::QueryBuilder;
@@ -9,7 +9,6 @@ pub use self::query_fragment_impls::DuplicatedKeys;
 
 mod limit_offset;
 mod query_fragment_impls;
-
 
 /// The MySQL-Like query builder
 #[allow(missing_debug_implementations)]

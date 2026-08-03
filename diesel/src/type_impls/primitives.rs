@@ -75,7 +75,11 @@ mod foreign_impls {
 
     #[derive(FromSqlRow)]
     #[cfg_attr(
-        any(feature = "mysql_backend", feature = "mariadb_backend", feature = "postgres_backend"),
+        any(
+            feature = "mysql_backend",
+            feature = "mariadb_backend",
+            feature = "postgres_backend"
+        ),
         derive(AsExpression)
     )]
     #[diesel(foreign_derive)]

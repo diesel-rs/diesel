@@ -12,7 +12,7 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for LimitOffsetClause<NoLimitClause, 
     }
 }
 
-impl<B: MysqlLikeBackend,L> QueryFragment<B> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
+impl<B: MysqlLikeBackend, L> QueryFragment<B> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
     LimitClause<L>: QueryFragment<B>,
 {
@@ -22,7 +22,8 @@ where
     }
 }
 
-impl<B: MysqlLikeBackend,L, O> QueryFragment<B> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
+impl<B: MysqlLikeBackend, L, O> QueryFragment<B>
+    for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
     LimitClause<L>: QueryFragment<B>,
     OffsetClause<O>: QueryFragment<B>,
@@ -64,7 +65,9 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for BoxedLimitOffsetClause<'_, B> {
     }
 }
 
-impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B>
+    for LimitOffsetClause<NoLimitClause, NoOffsetClause>
+{
     type BoxedClause = BoxedLimitOffsetClause<'a, B>;
 
     fn into_boxed(self) -> Self::BoxedClause {
@@ -75,7 +78,8 @@ impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B> for LimitOffsetClause<NoLim
     }
 }
 
-impl<'a, B: MysqlLikeBackend, L> IntoBoxedClause<'a, B> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
+impl<'a, B: MysqlLikeBackend, L> IntoBoxedClause<'a, B>
+    for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
     L: QueryFragment<B> + Send + 'a,
 {
@@ -89,7 +93,8 @@ where
     }
 }
 
-impl<'a, B: MysqlLikeBackend, L, O> IntoBoxedClause<'a, B> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
+impl<'a, B: MysqlLikeBackend, L, O> IntoBoxedClause<'a, B>
+    for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
     L: QueryFragment<B> + Send + 'a,
     O: QueryFragment<B> + Send + 'a,

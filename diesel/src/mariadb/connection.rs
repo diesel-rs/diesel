@@ -93,7 +93,7 @@ pub type MariadbConnection = crate::mysql_like::MysqlLikeConnection<Mariadb>;
 mod tests {
     extern crate dotenvy;
 
-use super::*;
+    use super::*;
     use std::env;
 
     use crate::connection::Connection;

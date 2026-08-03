@@ -355,7 +355,7 @@ const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
 #[cfg(feature = "mysql")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
     diesel_migrations::embed_migrations!("../migrations/mysql");
-    
+
 #[cfg(feature = "mariadb")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
     diesel_migrations::embed_migrations!("../migrations/mariadb");

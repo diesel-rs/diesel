@@ -126,7 +126,12 @@ impl Backend {
                     available_schemes.join(" or ")
                 );
             }
-            #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "mariadb")))]
+            #[cfg(not(any(
+                feature = "mysql",
+                feature = "sqlite",
+                feature = "postgres",
+                feature = "mariadb"
+            )))]
             _ => compile_error!(
                 "At least one backend must be specified for use with this crate. \
                  You may omit the unneeded dependencies in the following command. \n\n \

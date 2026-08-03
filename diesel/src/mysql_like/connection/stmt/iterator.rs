@@ -1,8 +1,7 @@
 #![allow(unsafe_code)] // module uses ffi
 use alloc::rc::Rc;
 use core::cell::{Ref, RefCell};
-#[cfg(feature = "std")]
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
 use crate::backend::Backend;
@@ -258,10 +257,10 @@ fn fun_with_row_iters() {
 
     use crate::connection::LoadConnection;
     use crate::deserialize::{FromSql, FromSqlRow};
+    use crate::mysql::Mysql;
     use crate::prelude::*;
     use crate::row::{Field, Row};
     use crate::sql_types;
-    use crate::mysql::Mysql;
 
     let conn = &mut crate::test_helpers::connection();
 

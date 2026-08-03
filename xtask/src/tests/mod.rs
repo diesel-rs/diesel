@@ -97,7 +97,8 @@ impl TestArgs {
             }
         }
         let backend = &self.backend;
-        if matches!(backend, Backend::Postgres | Backend::Mysql | Backend::Mariadb | Backend::All if self.wasm) {
+        if matches!(backend, Backend::Postgres | Backend::Mysql | Backend::Mariadb | Backend::All if self.wasm)
+        {
             eprintln!(
                 "Only the sqlite backend supports wasm for now, the current backend is {backend}"
             );

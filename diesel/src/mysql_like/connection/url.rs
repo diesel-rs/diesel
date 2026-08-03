@@ -317,7 +317,9 @@ mod tests {
 
         assert_eq!(
             Some(&*host1),
-            ConnectionOptions::parse::<Mysql>("mysql://[::1]").unwrap().host()
+            ConnectionOptions::parse::<Mysql>("mysql://[::1]")
+                .unwrap()
+                .host()
         );
         assert_eq!(
             Some(&*host2),
@@ -363,7 +365,8 @@ mod tests {
             "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={ssl_ca}"
         );
 
-        let conn_opts2 = ConnectionOptions::parse::<Mysql>(url_with_unix_str_and_ssl_ca.as_str()).unwrap();
+        let conn_opts2 =
+            ConnectionOptions::parse::<Mysql>(url_with_unix_str_and_ssl_ca.as_str()).unwrap();
         assert_eq!(None, conn_opts2.host);
         assert_eq!(None, conn_opts2.port);
         assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts2.ssl_ca.unwrap());
@@ -387,7 +390,8 @@ mod tests {
             "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_cert={ssl_cert}"
         );
 
-        let conn_opts2 = ConnectionOptions::parse::<Mysql>(url_with_unix_str_and_ssl_cert.as_str()).unwrap();
+        let conn_opts2 =
+            ConnectionOptions::parse::<Mysql>(url_with_unix_str_and_ssl_cert.as_str()).unwrap();
         assert_eq!(None, conn_opts2.host);
         assert_eq!(None, conn_opts2.port);
         assert_eq!(
@@ -414,7 +418,8 @@ mod tests {
             "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_key={ssl_key}"
         );
 
-        let conn_opts2 = ConnectionOptions::parse::<Mysql>(url_with_unix_str_and_ssl_key.as_str()).unwrap();
+        let conn_opts2 =
+            ConnectionOptions::parse::<Mysql>(url_with_unix_str_and_ssl_key.as_str()).unwrap();
         assert_eq!(None, conn_opts2.host);
         assert_eq!(None, conn_opts2.port);
         assert_eq!(CString::new(ssl_key).unwrap(), conn_opts2.ssl_key.unwrap());

@@ -4,7 +4,7 @@ use time::{
 };
 
 use crate::deserialize::{self, FromSql};
-use crate::mysql_like::{MysqlValue, MysqlLikeBackend};
+use crate::mysql_like::{MysqlLikeBackend, MysqlValue};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types::{Date, Datetime, Time, Timestamp};
 

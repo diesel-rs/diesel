@@ -858,12 +858,12 @@ pub mod prelude {
     #[doc(inline)]
     pub use diesel_derives::view_proc as view;
 
-    #[cfg(feature = "mysql")]
-    #[doc(inline)]
-    pub use crate::mysql::MysqlConnection;
     #[cfg(feature = "mariadb")]
     #[doc(inline)]
     pub use crate::mariadb::MariadbConnection;
+    #[cfg(feature = "mysql")]
+    #[doc(inline)]
+    pub use crate::mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;

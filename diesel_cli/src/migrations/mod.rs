@@ -698,7 +698,7 @@ fn should_redo_migration_in_transaction(t: &dyn Any) -> bool {
     #[cfg(all(feature = "mysql", feature = "mariadb"))]
     return !matches!(
         t.downcast_ref::<InferConnection>(),
-        Some(InferConnection::Mysql(_)|InferConnection::Mariadb(_))
+        Some(InferConnection::Mysql(_) | InferConnection::Mariadb(_))
     );
     #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
     return !matches!(

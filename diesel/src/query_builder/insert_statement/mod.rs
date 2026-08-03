@@ -595,7 +595,7 @@ mod private {
             Ok(())
         }
     }
-    
+
     #[cfg(feature = "mariadb_backend")]
     impl QueryFragment<crate::mariadb::Mariadb> for Replace {
         fn walk_ast<'b>(

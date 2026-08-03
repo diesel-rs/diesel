@@ -1,14 +1,17 @@
 //! The MySQL backend
 
+use super::MysqlQueryBuilder;
 use super::MysqlValue;
-use crate::mysql_like::MysqlLikeBackend;
-use crate::mysql_like::MysqlType;
 use crate::backend::*;
 use crate::internal::derives::multiconnection::sql_dialect;
-use super::MysqlQueryBuilder;
+use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::MysqlType;
+use crate::mysql_like::query_fragments::{
+    MysqlConcatClause, MysqlOnConflictClause, MysqlRequiresOrderForWindowFunctions,
+    MysqlStyleDefaultValueClause,
+};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
-use crate::mysql_like::query_fragments::{MysqlStyleDefaultValueClause, MysqlConcatClause, MysqlOnConflictClause, MysqlRequiresOrderForWindowFunctions};
 
 /// The MySQL backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]

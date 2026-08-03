@@ -153,8 +153,8 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                 }
 
                 Some(
-                    "expand_sqlite" | "expand_pg" | "expand_mysql" | "expand_mariadb" | "expand_r2d2"
-                    | "expand_chrono" | "expand_time" | "expand_numeric",
+                    "expand_sqlite" | "expand_pg" | "expand_mysql" | "expand_mariadb"
+                    | "expand_r2d2" | "expand_chrono" | "expand_time" | "expand_numeric",
                 ) => {
                     *i = syn::Stmt::Item(syn::Item::Verbatim(proc_macro2::TokenStream::new()));
                 }

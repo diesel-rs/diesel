@@ -74,7 +74,7 @@
 //! #         }
 //! #     }
 //! # }
-//! 
+//!
 //! # #[cfg(feature = "mariadb")]
 //! # impl FromSql<Any, diesel::mariadb::Mariadb> for MyDynamicValue {
 //! #    fn from_sql(value: diesel::mariadb::MariadbValue) -> deserialize::Result<Self> {
@@ -491,7 +491,6 @@ where
         Self::from_nullable_row(row)
     }
 }
-
 
 #[cfg(feature = "sqlite")]
 impl<I> QueryableByName<diesel::sqlite::Sqlite> for DynamicRow<NamedField<Option<I>>>

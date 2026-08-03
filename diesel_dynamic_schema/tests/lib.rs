@@ -73,7 +73,12 @@ fn columns_used_in_where_clause() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb", feature = "sqlite"))]
+#[cfg(any(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "sqlite"
+))]
 fn providing_custom_schema_name() {
     let table = schema("information_schema").table("users");
     let sql = debug_query::<Backend, _>(&table);

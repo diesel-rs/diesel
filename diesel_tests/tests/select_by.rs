@@ -50,7 +50,7 @@ table! {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]  // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use crate::schema_dsl::*;
     let connection = &mut connection();

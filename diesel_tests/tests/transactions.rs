@@ -21,7 +21,8 @@ fn transaction_executes_fn_in_a_sql_transaction() {
             #[cfg(not(feature = "mariadb"))]
             diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES")).execute(conn1)?;
             #[cfg(feature = "mariadb")]
-            diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)")).execute(conn1)?;
+            diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)"))
+                .execute(conn1)?;
             assert_eq!(1, get_count(conn1));
             assert_eq!(0, get_count(conn2));
             Ok(())
@@ -164,7 +165,8 @@ fn test_transaction_always_rolls_back() {
         #[cfg(not(feature = "mariadb"))]
         diesel::sql_query(format!("INSERT INTO {test_name} DEFAULT VALUES")).execute(connection)?;
         #[cfg(feature = "mariadb")]
-        diesel::sql_query(format!("INSERT INTO {test_name} VALUES (DEFAULT)")).execute(connection)?;
+        diesel::sql_query(format!("INSERT INTO {test_name} VALUES (DEFAULT)"))
+            .execute(connection)?;
         assert_eq!(1, count_test_table(connection, test_name));
         Ok("success")
     });

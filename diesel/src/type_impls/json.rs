@@ -3,10 +3,7 @@
 use crate::deserialize::FromSqlRow;
 use crate::expression::AsExpression;
 use crate::sql_types::Json;
-#[cfg(any(
-    feature = "postgres_backend",
-    feature = "__sqlite-shared"
-))]
+#[cfg(any(feature = "postgres_backend", feature = "__sqlite-shared"))]
 use crate::sql_types::Jsonb;
 
 #[derive(AsExpression, FromSqlRow)]

@@ -122,10 +122,11 @@ impl Project {
     pub fn database_url(&self) -> String {
         self.database_url_from_env("MYSQL_DATABASE_URL").to_string()
     }
-    
+
     #[cfg(feature = "mariadb")]
     pub fn database_url(&self) -> String {
-        self.database_url_from_env("MARIADB_DATABASE_URL").to_string()
+        self.database_url_from_env("MARIADB_DATABASE_URL")
+            .to_string()
     }
 
     #[cfg(feature = "sqlite")]

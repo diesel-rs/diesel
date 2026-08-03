@@ -1,6 +1,5 @@
 //! Provides shared types and functions related to working with MySQL and MariaDB
 
-
 mod types;
 
 mod connection;
@@ -10,7 +9,12 @@ mod value;
 
 use core::hash::Hash;
 
-use crate::{backend::{Backend, DieselReserveSpecialization}, mysql_like::query_builder::MysqlLikeQueryBuilder, query_builder::bind_collector::RawBytesBindCollector, sql_types::TypeMetadata};
+use crate::{
+    backend::{Backend, DieselReserveSpecialization},
+    mysql_like::query_builder::MysqlLikeQueryBuilder,
+    query_builder::bind_collector::RawBytesBindCollector,
+    sql_types::TypeMetadata,
+};
 
 pub use self::connection::MysqlLikeConnection;
 pub use self::value::{MysqlValue, NumericRepresentation};
@@ -97,7 +101,6 @@ pub enum MysqlType {
 pub(crate) mod query_fragments {
     use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 
-
     #[derive(Debug, Clone, Copy)]
     pub struct MysqlStyleDefaultValueClause;
 
@@ -111,5 +114,4 @@ pub(crate) mod query_fragments {
     pub struct MysqlRequiresOrderForWindowFunctions;
 
     impl SupportsOnConflictClause for MysqlOnConflictClause {}
-
 }

@@ -72,10 +72,10 @@ pub struct Default<'a, Col> {
 }
 
 use diesel::backend::*;
-#[cfg(feature = "mysql")]
-use diesel::mysql::Mysql;
 #[cfg(feature = "mariadb")]
 use diesel::mariadb::Mariadb;
+#[cfg(feature = "mysql")]
+use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::query_builder::*;

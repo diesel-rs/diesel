@@ -64,7 +64,14 @@ impl SemverArgs {
         self.run_semver_checks_for(
             &metadata,
             "diesel",
-            &["sqlite", "postgres", "mysql", "mariadb", "extras", "with-deprecated"],
+            &[
+                "sqlite",
+                "postgres",
+                "mysql",
+                "mariadb",
+                "extras",
+                "with-deprecated",
+            ],
             false_positives_for_diesel,
         );
         self.run_semver_checks_for(&metadata, "diesel_migrations", &[], HashMap::new());

@@ -1061,7 +1061,10 @@ fn derive_selectable_inner(input: proc_macro2::TokenStream) -> proc_macro2::Toke
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/sql_type.md")))]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
-    proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type, mariadb_type))
+    proc_macro_derive(
+        SqlType,
+        attributes(diesel, postgres, sqlite_type, mysql_type, mariadb_type)
+    )
 )]
 #[cfg_attr(
     any(feature = "without-deprecated", not(feature = "with-deprecated")),

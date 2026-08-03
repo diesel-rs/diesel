@@ -11,7 +11,9 @@ use syn::{
 use crate::field::Field;
 use crate::util::camel_to_snake;
 use diesel_attribute_parser::CheckForBackend;
-use diesel_attribute_parser::parsers::{BelongsTo, MariadbType, MysqlType, PostgresType, SqliteType};
+use diesel_attribute_parser::parsers::{
+    BelongsTo, MariadbType, MysqlType, PostgresType, SqliteType,
+};
 use diesel_attribute_parser::{StructAttr, parse_attributes};
 
 pub struct Model {
