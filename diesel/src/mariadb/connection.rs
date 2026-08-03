@@ -96,13 +96,17 @@ mod tests {
 use super::*;
     use std::env;
 
+    use crate::connection::Connection;
+    use crate::connection::SimpleConnection;
+    use crate::query_dsl::RunQueryDsl;
+
     fn connection() -> MariadbConnection {
         dotenvy::dotenv().ok();
         let database_url = env::var("MARIADB_UNIT_TEST_DATABASE_URL")
             .or_else(|_| env::var("MARIADB_DATABASE_URL"))
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run unit tests");
-        MysqlConnection::establish(&database_url).unwrap()
+        MariadbConnection::establish(&database_url).unwrap()
     }
 
     #[diesel_test_helper::test]

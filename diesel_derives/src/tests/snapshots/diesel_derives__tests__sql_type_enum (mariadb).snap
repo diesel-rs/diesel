@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(SqlType)]\n#[diesel(mysql_type(name = \"Long\"))]\n#[diesel(enum_type)]\nstruct Integer;\n"
+  input: "#[derive(SqlType)]\n#[diesel(mariadb_type(name = \"Long\"))]\n#[diesel(enum_type)]\nstruct Integer;\n"
 ---
 const _: () = {
     use diesel;
@@ -21,10 +21,10 @@ const _: () = {
     {
         type Strategy = diesel::internal::derives::sql_type::EnumTypeMapping;
     }
-    impl diesel::sql_types::HasSqlType<Integer> for diesel::mysql::Mysql {
-        fn metadata(_: &mut ()) -> diesel::mysql::MysqlType {
-            diesel::mysql::MysqlType::Long
+
+    impl diesel::sql_types::HasSqlType<Integer> for diesel::mariadb::Mariadb {
+        fn metadata(_: &mut ()) -> diesel::mariadb::MariadbType {
+            diesel::mariadb::MariadbType::Long
         }
     }
-
 };

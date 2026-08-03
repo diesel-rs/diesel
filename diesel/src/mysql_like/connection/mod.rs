@@ -345,7 +345,7 @@ impl<B: MysqlLikeBackend> MysqlLikeConnection<B> {
         use crate::ConnectionError::CouldntSetupConfiguration;
 
         let raw_connection = RawConnection::new();
-        let connection_options = ConnectionOptions::<B>::parse(database_url)?;
+        let connection_options = ConnectionOptions::parse::<B>(database_url)?;
         raw_connection.connect(&connection_options)?;
         let mut conn = MysqlLikeConnection {
             raw_connection,

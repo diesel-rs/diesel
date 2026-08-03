@@ -8,7 +8,7 @@ use std::sync::Once;
 use super::statement_cache::PrepareForCache;
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
-use crate::mysql_like::{MysqlLikeBackend, MysqlType};
+use crate::mysql_like::MysqlType;
 use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
@@ -54,7 +54,7 @@ impl RawConnection {
         result
     }
 
-    pub(super) fn connect<B: MysqlLikeBackend>(&self, connection_options: &ConnectionOptions<B>) -> ConnectionResult<()> {
+    pub(super) fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
         let host = connection_options.host();
         let user = connection_options.user();
         let password = connection_options.password();

@@ -935,7 +935,7 @@ mod tests {
             ).execute(conn)
             .unwrap();
 
-        let stmt = crate::mysql::connection::prepared_query(
+        let stmt = crate::mysql_like::connection::prepared_query(
             &crate::sql_query(
                 "SELECT
                     tiny_int, small_int, medium_int, int_col,

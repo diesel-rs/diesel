@@ -27,7 +27,7 @@ use crate::{mysql::Mysql, mysql_like::MysqlLikeConnection};
 /// values row by row from the result set.
 ///
 /// ```rust
-/// # include!("../../doctest_setup.rs");
+/// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
 /// #     run_test().unwrap();
@@ -97,6 +97,9 @@ mod tests {
 
     use super::*;
     use std::env;
+    use crate::connection::Connection;
+    use crate::connection::SimpleConnection;
+    use crate::query_dsl::RunQueryDsl;
 
     fn connection() -> MysqlConnection {
         dotenvy::dotenv().ok();

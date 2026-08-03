@@ -33,6 +33,13 @@ fn generate_default_checks(
             parse_quote! {diesel::mysql::Mysql},
             parse_quote! {_check_field_compatibility_mysql},
         ),
+        (
+            quote::quote! {
+                diesel::internal::derives::has_query::expand_mariadb!
+            },
+            parse_quote! {diesel::mariadb::Mariadb},
+            parse_quote! {_check_field_compatibility_mariadb},
+        ),
     ]
     .into_iter()
     .map(|(backend_macro, backend_ty, function)| {

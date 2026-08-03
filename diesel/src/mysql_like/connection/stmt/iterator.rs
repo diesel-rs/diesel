@@ -245,7 +245,7 @@ impl<'a, B: MysqlLikeBackend> Field<'a, B> for MysqlLikeField<'a, B> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "mysql"))]
 #[diesel_test_helper::test]
 #[allow(clippy::drop_non_drop)] // we want to explicitly extend lifetimes here
 fn fun_with_row_iters() {
@@ -261,6 +261,7 @@ fn fun_with_row_iters() {
     use crate::prelude::*;
     use crate::row::{Field, Row};
     use crate::sql_types;
+    use crate::mysql::Mysql;
 
     let conn = &mut crate::test_helpers::connection();
 

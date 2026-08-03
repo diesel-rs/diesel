@@ -127,6 +127,10 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                     let item = syn::parse2(m.mac.tokens.clone()).unwrap();
                     *i = syn::Stmt::Item(item);
                 }
+                Some("expand_mariadb") if cfg!(feature = "mariadb") => {
+                    let item = syn::parse2(m.mac.tokens.clone()).unwrap();
+                    *i = syn::Stmt::Item(item);
+                }
                 Some("expand_pg") if cfg!(feature = "postgres") => {
                     let item = syn::parse2(m.mac.tokens.clone()).unwrap();
                     *i = syn::Stmt::Item(item);
@@ -149,7 +153,7 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                 }
 
                 Some(
-                    "expand_sqlite" | "expand_pg" | "expand_mysql" | "expand_r2d2"
+                    "expand_sqlite" | "expand_pg" | "expand_mysql" | "expand_mariadb" | "expand_r2d2"
                     | "expand_chrono" | "expand_time" | "expand_numeric",
                 ) => {
                     *i = syn::Stmt::Item(syn::Item::Verbatim(proc_macro2::TokenStream::new()));
@@ -168,6 +172,9 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                     *i = syn::parse2(m.mac.tokens.clone()).unwrap();
                 }
                 Some("expand_mysql") if cfg!(feature = "mysql") => {
+                    *i = syn::parse2(m.mac.tokens.clone()).unwrap();
+                }
+                Some("expand_mariadb") if cfg!(feature = "mariadb") => {
                     *i = syn::parse2(m.mac.tokens.clone()).unwrap();
                 }
                 Some("expand_pg") if cfg!(feature = "postgres") => {
@@ -193,6 +200,7 @@ impl syn::visit_mut::VisitMut for FixupVisitor {
                     "expand_sqlite"
                     | "expand_pg"
                     | "expand_mysql"
+                    | "expand_mariadb"
                     | "expand_r2d2"
                     | "expand_time"
                     | "expand_chrono"
