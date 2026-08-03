@@ -1449,6 +1449,61 @@ impl SqliteConnection {
         .map(|_| ())
     }
 
+    /// Total number of pages in a database, via `PRAGMA page_count`.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`.
+    /// Multiply by the page size for the size the database accounts for.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// // An empty database occupies no pages until something is written.
+    /// assert_eq!(conn.page_count(None)?, 0);
+    /// conn.batch_execute("CREATE TABLE items (id INTEGER PRIMARY KEY)")?;
+    /// assert!(conn.page_count(None)? > 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn page_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
+        self.read_pragma_count("page_count", schema)
+    }
+
+    /// Unused pages on a database's freelist, via `PRAGMA freelist_count`.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`. A
+    /// growing freelist is reclaimable space, freed by `VACUUM`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// assert_eq!(conn.freelist_count(None)?, 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn freelist_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
+        self.read_pragma_count("freelist_count", schema)
+    }
+
+    fn read_pragma_count(
+        &mut self,
+        pragma: &'static str,
+        schema: Option<&str>,
+    ) -> QueryResult<i64> {
+        use crate::query_dsl::RunQueryDsl;
+
+        let query: Pragma<'_, crate::sql_types::BigInt> = Pragma::new(pragma, schema);
+        query.get_result(self)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -3845,5 +3900,132 @@ mod tests {
             AutoVacuumMode::Incremental,
             conn.auto_vacuum(Some(schema)).unwrap()
         );
+    }
+
+    table! {
+        pragma_probe (id) {
+            id -> Integer,
+            payload -> Text,
+        }
+    }
+
+    table! {
+        aux.aux_pragma_probe (id) {
+            id -> Integer,
+            payload -> Text,
+        }
+    }
+
+    const PROBE_TABLE: &str =
+        "CREATE TABLE pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)";
+
+    // Large enough to spill onto overflow pages, so the database outgrows a single page
+    // and leaves reclaimable pages behind once the row is deleted.
+    fn overflowing_payload() -> String {
+        "x".repeat(64 * 1024)
+    }
+
+    fn insert_overflowing_row(conn: &mut SqliteConnection) {
+        crate::insert_into(pragma_probe::table)
+            .values((
+                pragma_probe::id.eq(1),
+                pragma_probe::payload.eq(overflowing_payload()),
+            ))
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn page_count_is_positive_and_grows() {
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        let initial = conn.page_count(None).unwrap();
+        assert!(initial > 0, "an initialized database has at least one page");
+
+        insert_overflowing_row(conn);
+
+        assert!(
+            conn.page_count(None).unwrap() > initial,
+            "a row spanning overflow pages grows the page count"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn freelist_count_tracks_reclaimable_space() {
+        let conn = &mut connection();
+        assert_eq!(
+            0,
+            conn.freelist_count(None).unwrap(),
+            "a fresh database has an empty freelist"
+        );
+
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        insert_overflowing_row(conn);
+
+        crate::delete(pragma_probe::table).execute(conn).unwrap();
+        assert!(
+            conn.freelist_count(None).unwrap() > 0,
+            "deleting the row leaves reclaimable pages on the freelist"
+        );
+
+        // `VACUUM` has no query DSL equivalent.
+        crate::sql_query("VACUUM").execute(conn).unwrap();
+        assert_eq!(
+            0,
+            conn.freelist_count(None).unwrap(),
+            "VACUUM reclaims the freelist"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn schema_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        conn.attach_database(":memory:", "aux").unwrap();
+        conn.batch_execute(
+            "CREATE TABLE aux.aux_pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)",
+        )
+        .unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(1),
+                aux_pragma_probe::payload.eq(overflowing_payload()),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        let main_pages = conn.page_count(None).unwrap();
+        let aux_pages = conn.page_count(Some("aux")).unwrap();
+        assert!(
+            aux_pages > main_pages,
+            "the attached database holds the data, main stays small"
+        );
+        assert_eq!(
+            main_pages,
+            conn.page_count(Some("main")).unwrap(),
+            "an explicit main matches the default"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn schema_name_with_backtick_is_escaped() {
+        // The query builder quotes SQLite identifiers with backticks, so a backtick is
+        // the character that has to be doubled.
+        let conn = &mut connection();
+        let schema = "back`tick";
+        conn.attach_database(":memory:", schema).unwrap();
+        conn.batch_execute("CREATE TABLE `back``tick`.probe (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        assert!(conn.page_count(Some(schema)).unwrap() > 0);
+        assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn unknown_schema_is_reported_as_an_error() {
+        let conn = &mut connection();
+
+        assert!(conn.page_count(Some("nope")).is_err());
+        assert!(conn.freelist_count(Some("nope")).is_err());
     }
 }
