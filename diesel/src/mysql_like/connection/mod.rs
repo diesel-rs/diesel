@@ -18,7 +18,6 @@ use crate::query_builder::*;
 use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-#[expect(private_bounds)]
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*&ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_cert=/etc/ssl/certs/client-cert.crt&ssl_key=/etc/ssl/certs/client-key.crt]`
 ///
@@ -330,7 +329,6 @@ fn prepared_query<'a, B: MysqlLikeBackend + Default, T: QueryFragment<B> + Query
     Ok(stmt)
 }
 
-#[expect(private_bounds)]
 impl<B: MysqlLikeBackend> MysqlLikeConnection<B> {
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET time_zone = '+00:00';").execute(self)?;

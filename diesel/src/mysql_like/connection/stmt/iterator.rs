@@ -11,7 +11,6 @@ use crate::result::QueryResult;
 use crate::row::*;
 
 #[allow(missing_debug_implementations)]
-#[expect(private_bounds)]
 pub struct StatementIterator<'a, B: MysqlLikeBackend> {
     stmt: StatementUse<'a>,
     last_row: Rc<RefCell<PrivateMysqlRow>>,
@@ -20,7 +19,6 @@ pub struct StatementIterator<'a, B: MysqlLikeBackend> {
     _phantom: PhantomData<B>,
 }
 
-#[expect(private_bounds)]
 impl<'a, B: MysqlLikeBackend> StatementIterator<'a, B> {
     pub fn from_stmt(
         stmt: MaybeCached<'a, Statement>,
@@ -140,7 +138,6 @@ impl<B: MysqlLikeBackend> ExactSizeIterator for StatementIterator<'_, B> {
 
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
-#[expect(private_bounds)]
 pub struct MysqlRow<B: MysqlLikeBackend> {
     row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
@@ -218,7 +215,6 @@ impl<'a, B: MysqlLikeBackend> RowIndex<&'a str> for MysqlRow<B> {
 }
 
 #[allow(missing_debug_implementations)]
-#[expect(private_bounds)]
 pub struct MysqlLikeField<'a, B: MysqlLikeBackend> {
     binds: Ref<'a, PrivateMysqlRow>,
     metadata: Rc<StatementMetadata>,

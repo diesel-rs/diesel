@@ -34,7 +34,9 @@ pub mod sql_types {
     pub use super::types::{Datetime, Unsigned};
 }
 
-pub(crate) trait MysqlLikeBackend
+/// A trait for backends which implement the MySQL wire protocol. This is implemented for both MySQL and MariaDB,
+/// and can be used when writing code that is compatible with both backends.
+pub trait MysqlLikeBackend
 where
     Self: for<'a> Backend<
             RawValue<'a> = MysqlValue<'a>,
@@ -46,6 +48,8 @@ where
     Self: DieselReserveSpecialization,
     Self: 'static,
 {
+    /// The scheme used in the connection URL for this backend.
+    /// "mysql" for MySQL, "mariadb" for MariaDB.
     const SCHEME: &'static str;
 }
 

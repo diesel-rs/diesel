@@ -390,6 +390,28 @@ mod postgres {
     impl SupportsCombinationClause<Except, All> for Pg {}
 }
 
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+mod mysql_like {
+    use super::*;
+    use crate::mysql_like::MysqlLikeBackend;
+
+    impl<B, T> QueryFragment<B> for ParenthesisWrapper<T>
+    where
+        B: MysqlLikeBackend,
+        T: QueryFragment<B>,
+    {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+            out.push_sql("(");
+            self.inner.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+
+    impl<B: MysqlLikeBackend> SupportsCombinationClause<Union, Distinct> for B {}
+    impl<B: MysqlLikeBackend> SupportsCombinationClause<Union, All> for B {}
+}
+/*
 #[cfg(feature = "mysql_backend")]
 mod mysql {
     use super::*;
@@ -407,23 +429,17 @@ mod mysql {
     impl SupportsCombinationClause<Union, Distinct> for Mysql {}
     impl SupportsCombinationClause<Union, All> for Mysql {}
 }
+*/
 
 #[cfg(feature = "mariadb_backend")]
 mod mariadb {
     use super::*;
     use crate::mariadb::Mariadb;
 
-    impl<T: QueryFragment<Mariadb>> QueryFragment<Mariadb> for ParenthesisWrapper<T> {
-        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {
-            out.push_sql("(");
-            self.inner.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-            Ok(())
-        }
-    }
-
-    impl SupportsCombinationClause<Union, Distinct> for Mariadb {}
-    impl SupportsCombinationClause<Union, All> for Mariadb {}
+    impl SupportsCombinationClause<Intersect, Distinct> for Mariadb {}
+    impl SupportsCombinationClause<Intersect, All> for Mariadb {}
+    impl SupportsCombinationClause<Except, Distinct> for Mariadb {}
+    impl SupportsCombinationClause<Except, All> for Mariadb {}
 }
 
 #[cfg(feature = "__sqlite-shared")]

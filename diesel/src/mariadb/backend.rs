@@ -1,5 +1,8 @@
 use crate::{
-    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect},
+    backend::{
+        Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend,
+        sql_dialect::{self, returning_clause::SupportsReturningClause},
+    },
     mariadb::{MariadbQueryBuilder, MariadbValue},
     mysql_like::MysqlLikeBackend,
     query_builder::bind_collector::RawBytesBindCollector,
@@ -27,7 +30,7 @@ impl TypeMetadata for Mariadb {
 }
 
 impl SqlDialect for Mariadb {
-    type ReturningClause = sql_dialect::returning_clause::PgLikeReturningClause;
+    type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
 
     type OnConflictClause = MariadbOnConflictClause;
 

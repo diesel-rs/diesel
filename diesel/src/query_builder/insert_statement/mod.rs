@@ -548,18 +548,15 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql_backend")]
-    impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
-        fn walk_ast<'b>(
-            &'b self,
-            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
-        ) -> QueryResult<()> {
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    impl<B: crate::mysql_like::MysqlLikeBackend> QueryFragment<B> for InsertOrIgnore {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
             out.push_sql("INSERT IGNORE");
             Ok(())
         }
     }
 
-    #[cfg(feature = "mariadb_backend")]
+    /*#[cfg(feature = "mariadb_backend")]
     impl QueryFragment<crate::mariadb::Mariadb> for InsertOrIgnore {
         fn walk_ast<'b>(
             &'b self,
@@ -568,7 +565,7 @@ mod private {
             out.push_sql("INSERT IGNORE");
             Ok(())
         }
-    }
+    }*/
 
     /// A marker type for replace statements
     #[derive(Debug, Copy, Clone, QueryId)]
@@ -585,18 +582,15 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql_backend")]
-    impl QueryFragment<crate::mysql::Mysql> for Replace {
-        fn walk_ast<'b>(
-            &'b self,
-            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
-        ) -> QueryResult<()> {
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    impl<B: crate::mysql_like::MysqlLikeBackend> QueryFragment<B> for Replace {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
             out.push_sql("REPLACE");
             Ok(())
         }
     }
 
-    #[cfg(feature = "mariadb_backend")]
+    /*#[cfg(feature = "mariadb_backend")]
     impl QueryFragment<crate::mariadb::Mariadb> for Replace {
         fn walk_ast<'b>(
             &'b self,
@@ -605,7 +599,7 @@ mod private {
             out.push_sql("REPLACE");
             Ok(())
         }
-    }
+    }*/
 
     // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
     #[allow(unreachable_pub)]
