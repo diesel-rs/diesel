@@ -217,4 +217,74 @@ mod test {
         );
         assert_eq!(Ok(None), get_table_comment(&mut connection, &table_2));
     }
+
+    #[test]
+    fn get_enum_variants() {
+        let mut connection = connection();
+        diesel::sql_query("DROP TABLE IF EXISTS enum_tests")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+            "CREATE TABLE enum_tests(enum_a ENUM('a', 'b'), enum_b ENUM ('a'   ,'b''c'), no_enum INTEGER)",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        let table = TableName {
+            sql_name: "enum_tests".into(),
+            rust_name: "enum_tests".into(),
+            schema: None,
+        };
+        let table_data =
+            get_table_data(&mut connection, &table, &ColumnSorting::OrdinalPosition).unwrap();
+
+        let [a, b, c] = table_data.as_slice() else {
+            unreachable!()
+        };
+        assert_eq!(a.column_name, "enum_a");
+        assert_eq!(b.column_name, "enum_b");
+        assert_eq!(c.column_name, "no_enum");
+
+        let a = determine_column_type(a).unwrap();
+        let b = determine_column_type(b).unwrap();
+        let c = determine_column_type(c).unwrap();
+        assert_eq!(a.unmodified_type, "enum('a','b')");
+        assert_eq!(b.unmodified_type, "enum('a','b''c')");
+        // mysql returns a slightly different type name than mariadb
+        assert!(
+            c.unmodified_type.starts_with("int"),
+            "Unexpected type `{}`, expected a integer",
+            c.unmodified_type
+        );
+
+        let enum_variants_a = super::get_enum_variants(&a).unwrap();
+        assert_eq!(
+            enum_variants_a,
+            [
+                EnumVariant {
+                    order: 0,
+                    sql_name: "a".into()
+                },
+                EnumVariant {
+                    order: 1,
+                    sql_name: "b".into()
+                }
+            ]
+        );
+        let enum_variants_b = super::get_enum_variants(&b).unwrap();
+        assert_eq!(
+            enum_variants_b,
+            [
+                EnumVariant {
+                    order: 0,
+                    sql_name: "a".into()
+                },
+                EnumVariant {
+                    order: 1,
+                    sql_name: "b'c".into()
+                }
+            ]
+        );
+        let enum_variants_c = super::get_enum_variants(&c);
+        assert!(enum_variants_c.is_none());
+    }
 }

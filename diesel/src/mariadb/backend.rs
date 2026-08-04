@@ -1,7 +1,7 @@
 use crate::{
     backend::{
         Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend,
-        sql_dialect::{self, returning_clause::SupportsReturningClause},
+        sql_dialect,
     },
     mariadb::{MariadbQueryBuilder, MariadbValue},
     mysql_like::MysqlLikeBackend,

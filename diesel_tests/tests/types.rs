@@ -1,6 +1,6 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 #![allow(warnings)]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 extern crate bigdecimal;
 extern crate chrono;
 
@@ -12,7 +12,7 @@ use diesel::query_dsl::LoadQuery;
 use diesel::sql_types::*;
 use diesel::*;
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use quickcheck::quickcheck;
 
 table! {
@@ -197,7 +197,7 @@ fn i32_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u8_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<TinyInt>, u8>("255", 255));
     assert!(query_to_sql_equality::<Unsigned<TinyInt>, u8>("0", 0));
@@ -208,7 +208,7 @@ fn u8_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u8_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<TinyInt>, u8>("0"));
     assert_eq!(255, query_single_value::<Unsigned<TinyInt>, u8>("255"));
@@ -217,7 +217,7 @@ fn u8_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u16_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
         "65535", 65535
@@ -237,7 +237,7 @@ fn u16_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u16_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<SmallInt>, u16>("0"));
     assert_eq!(
@@ -252,7 +252,7 @@ fn u16_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u32_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<Integer>, u32>(
         "4294967295",
@@ -274,7 +274,7 @@ fn u32_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u32_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<Integer>, u32>("0"));
     assert_eq!(
@@ -289,7 +289,7 @@ fn u32_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u64_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>(
         "18446744073709551615",
@@ -311,7 +311,7 @@ fn u64_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u64_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<BigInt>, u64>("0"));
     assert_eq!(
@@ -356,7 +356,7 @@ fn i64_to_sql_bigint() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_json_from_sql() {
     let query = "'true'";
     let expected_value = serde_json::Value::Bool(true);
@@ -367,7 +367,7 @@ fn mysql_json_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_json_to_sql_json() {
     let expected_value = "'false'";
     let value = serde_json::Value::Bool(false);
@@ -398,7 +398,7 @@ fn f32_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 #[allow(clippy::float_cmp)]
 fn f32_from_sql() {
     assert_eq!(0.0, query_single_value::<Float, f32>("0.0"));
@@ -440,7 +440,7 @@ fn f32_to_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 fn f32_to_sql() {
     assert!(query_to_sql_equality::<Float, f32>("0.0", 0.0));
     assert!(query_to_sql_equality::<Float, f32>("0.5", 0.5));
@@ -484,7 +484,7 @@ fn f64_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 #[allow(clippy::float_cmp)]
 fn f64_from_sql() {
     assert_eq!(0.0, query_single_value::<Double, f64>("0.0"));
@@ -540,7 +540,7 @@ fn f64_to_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 fn f64_to_sql() {
     assert!(query_to_sql_equality::<Double, f64>("0.0", 0.0));
     assert!(query_to_sql_equality::<Double, f64>("0.5", 0.5));
@@ -1012,7 +1012,7 @@ fn pg_numeric_bigdecimal_to_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_numeric_bigdecimal_to_sql() {
     use self::bigdecimal::BigDecimal;
 
@@ -1080,7 +1080,7 @@ fn pg_numeric_bigdecimal_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_numeric_bigdecimal_from_sql() {
     use self::bigdecimal::BigDecimal;
 

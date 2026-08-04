@@ -593,7 +593,7 @@ fn filter_subselect_with_boxed_query() {
 
 #[diesel_test_helper::test]
 // FIXME: this test shouldn't need to modify schema each run
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 // https://github.com/rust-lang/rust/issues/124396
 #[allow(unknown_lints, non_local_definitions)]
 fn filter_subselect_with_nullable_column() {
