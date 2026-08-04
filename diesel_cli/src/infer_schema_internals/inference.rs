@@ -166,9 +166,9 @@ fn get_table_comment(
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => super::pg::get_table_comment(c, table),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => super::mysql::get_table_comment(c, table),
+        InferConnection::Mysql(ref mut c) => super::mysql_like::get_table_comment(c, table),
         #[cfg(feature = "mariadb")]
-        InferConnection::Mariadb(ref mut c) => super::mariadb::get_table_comment(c, table),
+        InferConnection::Mariadb(ref mut c) => super::mysql_like::get_table_comment(c, table),
     };
     if let Err(NotFound) = table_comment {
         Err(crate::errors::Error::NoTableFound(table.clone()))
@@ -201,10 +201,12 @@ fn get_column_information(
             super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
+        InferConnection::Mysql(ref mut c) => {
+            super::mysql_like::get_table_data(c, table, column_sorting)
+        }
         #[cfg(feature = "mariadb")]
         InferConnection::Mariadb(ref mut c) => {
-            super::mariadb::get_table_data(c, table, column_sorting)
+            super::mysql_like::get_table_data(c, table, column_sorting)
         }
     };
     if let Err(NotFound) = column_info {
@@ -250,9 +252,9 @@ fn determine_column_type(
             super::pg::determine_column_type(attr, diesel::pg::Pg::default_schema(conn)?)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(_) => super::mysql::determine_column_type(attr),
+        InferConnection::Mysql(_) => super::mysql_like::determine_column_type(attr),
         #[cfg(feature = "mariadb")]
-        InferConnection::Mariadb(_) => super::mariadb::determine_column_type(attr),
+        InferConnection::Mariadb(_) => super::mysql_like::determine_column_type(attr),
     }
 }
 

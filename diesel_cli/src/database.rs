@@ -119,6 +119,9 @@ impl Backend {
                 if cfg!(feature = "mysql") {
                     available_schemes.push("`mysql://`");
                 }
+                if cfg!(feature = "mariadb") {
+                    available_schemes.push("`mariadb://`");
+                }
 
                 panic!(
                     "`{}` is not a valid database URL. It should start with {}, or maybe you meant to use the `sqlite` feature which is not enabled.",
@@ -633,7 +636,10 @@ fn path_from_sqlite_url(database_url: &str) -> Result<std::path::PathBuf, crate:
     }
 }
 
-#[cfg(all(test, any(feature = "postgres", feature = "mysql")))]
+#[cfg(all(
+    test,
+    any(feature = "postgres", feature = "mysql", feature = "mariadb")
+))]
 mod tests {
     use super::change_database_of_url;
 

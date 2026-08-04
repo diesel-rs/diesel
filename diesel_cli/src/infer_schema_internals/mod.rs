@@ -9,6 +9,10 @@ mod information_schema;
 pub mod mariadb;
 #[cfg(feature = "mysql")]
 pub mod mysql;
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+pub(crate) mod mysql_like;
+
 #[cfg(feature = "postgres")]
 pub mod pg;
 mod schema_resolver;
