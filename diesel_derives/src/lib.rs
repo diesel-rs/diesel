@@ -1759,7 +1759,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// pub enum AnyConnection {
 /// #   #[cfg(feature = "postgres")]
 ///     Postgresql(diesel::PgConnection),
-/// #   #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
+/// #   #[cfg(feature = "mysql")]
 ///     Mysql(diesel::MysqlConnection),
 /// #   #[cfg(feature = "mariadb")]
 ///     Mariadb(diesel::MariadbConnection),
@@ -1832,7 +1832,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// pub enum AnyConnection {
 /// #   #[cfg(feature = "postgres")]
 ///     Postgresql(diesel::PgConnection),
-/// #   #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
+/// #   #[cfg(feature = "mysql")]
 ///     Mysql(diesel::MysqlConnection),
 /// #   #[cfg(feature = "mariadb")]
 ///     Mariadb(diesel::MariadbConnection),
@@ -1889,7 +1889,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// # impl ToSql<MyInteger, diesel::pg::Pg> for MyEnum {
 /// #    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, diesel::pg::Pg>) -> serialize::Result { todo!() }
 /// # }
-/// # #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
+/// # #[cfg(feature = "mysql")]
 /// # impl ToSql<MyInteger, diesel::mysql::Mysql> for MyEnum {
 /// #    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, diesel::mysql::Mysql>) -> serialize::Result { todo!() }
 /// # }
@@ -1905,7 +1905,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// # impl FromSql<MyInteger, diesel::pg::Pg> for MyEnum {
 /// #    fn from_sql(bytes: <diesel::pg::Pg as Backend>::RawValue<'_>) -> deserialize::Result<Self> { todo!() }
 /// # }
-/// # #[cfg(all(feature = "mysql", not(feature = "mariadb")))]
+/// # #[cfg(feature = "mysql")]
 /// # impl FromSql<MyInteger, diesel::mysql::Mysql> for MyEnum {
 /// #    fn from_sql(bytes: <diesel::mysql::Mysql as Backend>::RawValue<'_>) -> deserialize::Result<Self> { todo!() }
 /// # }

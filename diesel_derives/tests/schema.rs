@@ -23,7 +23,7 @@ pub mod sql_types {
     #[diesel(enum_type)]
     pub struct Color;
 
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(mysql_type(name = "Enum"))]
     #[diesel(enum_type)]
@@ -41,7 +41,7 @@ table! {
     }
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 table! {
     use diesel::sql_types::*;
     use super::sql_types::CarsPaintColorEnum;

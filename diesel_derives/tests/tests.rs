@@ -10,7 +10,7 @@ mod as_changeset;
 mod as_expression;
 mod associations;
 mod auto_type;
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 mod enum_;
 mod identifiable;
 mod insertable;
