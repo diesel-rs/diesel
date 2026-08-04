@@ -425,7 +425,11 @@ fn insert_record_attached_database_using_returning_clause() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(not(feature = "returning_clauses_for_sqlite_3_35"), feature = "mysql", feature = "mariadb")))]
+#[cfg(not(any(
+    not(feature = "returning_clauses_for_sqlite_3_35"),
+    feature = "mysql",
+    feature = "mariadb"
+)))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;
     let connection = &mut connection();

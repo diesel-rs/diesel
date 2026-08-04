@@ -167,7 +167,7 @@ mod infallible_cast {
     test_infallible_cast!(json_to_text, serde_json::json!([1,2,3]) => serde_json::Value, Json => Text, String::from("[1,2,3]") => String);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(jsonb_to_text, serde_json::json!([1,2,3]) => serde_json::Value, Jsonb => Text, String::from("[1, 2, 3]") => String);
-    #[cfg(any(feature = "postgres",feature = "mysql", feature = "mariadb"))]
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     test_infallible_cast!(time_to_text, chrono::NaiveTime::from_hms_opt(10, 1, 42).unwrap() => chrono::NaiveTime, Time => Text, String::from("10:01:42") => String);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(json_to_jsonb, serde_json::json!([1,2,3]) => serde_json::Value, Json => Jsonb, serde_json::json!([1,2,3]) => serde_json::Value);
