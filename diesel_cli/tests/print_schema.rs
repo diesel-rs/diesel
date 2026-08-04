@@ -153,13 +153,13 @@ fn print_schema_type_renaming() {
 }
 
 #[test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn print_schema_unsigned() {
     test_print_schema("print_schema_unsigned", vec!["--with-docs"]);
 }
 
 #[test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn print_schema_datetime_for_mysql() {
     test_print_schema("print_schema_datetime_for_mysql", vec!["--with-docs"]);
 }
@@ -357,7 +357,7 @@ fn print_schema_respects_type_name_case() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn print_schema_comments_fallback_on_generated() {
     test_print_schema(
         "print_schema_comments_fallback_on_generated",
@@ -366,7 +366,7 @@ fn print_schema_comments_fallback_on_generated() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn print_schema_with_enum_set_types() {
     test_print_schema(
         "print_schema_with_enum_set_types",
@@ -381,7 +381,7 @@ fn print_schema_with_enum_set_types() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn print_schema_comments_dont_fallback_on_generated() {
     test_print_schema(
         "print_schema_comments_dont_fallback_on_generated",

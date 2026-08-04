@@ -291,25 +291,25 @@ fn migration_generate_postgres_add_record() {
     test_generate_migration("postgres_add_record", Vec::new())
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 #[test]
 fn migration_generate_add_enum() {
     test_generate_migration("add_enum", Vec::new())
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 #[test]
 fn migration_generate_remove_enum() {
     test_generate_migration("remove_enum", Vec::new())
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 #[test]
 fn migration_generate_add_enum_variant() {
     test_generate_migration("add_enum_variant", Vec::new())
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 #[test]
 fn migration_generate_drop_enum_variant() {
     test_generate_migration("drop_enum_variant", Vec::new())

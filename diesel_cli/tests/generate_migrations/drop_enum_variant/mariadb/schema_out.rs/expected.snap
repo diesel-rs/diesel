@@ -6,12 +6,12 @@ description: "Test: drop_enum_variant"
 
 pub mod sql_types {
     #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
-    #[diesel(mysql_type(name = "Enum"))]
+    #[diesel(mariadb_type(name = "Enum"))]
     #[diesel(enum_type)]
     pub struct ResourceSomeField2Enum;
 
     #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
-    #[diesel(mysql_type(name = "Enum"))]
+    #[diesel(mariadb_type(name = "Enum"))]
     #[diesel(enum_type)]
     pub struct ResourceSomeFieldEnum;
 }
