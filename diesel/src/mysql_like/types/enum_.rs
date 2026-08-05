@@ -3,6 +3,7 @@ use crate::sql_types::EnumSqlType;
 use crate::types::enum_::{EnumMapping, EnumTypeMapping, EnumVariant, IntMapping};
 use std::io::Write;
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> EnumMapping<B> for EnumTypeMapping {
     fn map_to_database_value<'b>(
         output: &mut crate::serialize::Output<'b, '_, B>,
@@ -36,24 +37,28 @@ impl<B: MysqlLikeBackend> EnumMapping<B> for EnumTypeMapping {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> EnumSqlType<true, B>
     for crate::sql_types::Unsigned<crate::sql_types::BigInt>
 {
     type Strategy = IntMapping<u64, Self>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> EnumSqlType<true, B>
     for crate::sql_types::Unsigned<crate::sql_types::Integer>
 {
     type Strategy = IntMapping<u32, Self>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> EnumSqlType<true, B>
     for crate::sql_types::Unsigned<crate::sql_types::SmallInt>
 {
     type Strategy = IntMapping<u16, Self>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> EnumSqlType<true, B>
     for crate::sql_types::Unsigned<crate::sql_types::TinyInt>
 {

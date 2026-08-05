@@ -1,17 +1,18 @@
 use crate::mysql_like::MysqlLikeBackend;
-//use crate::B::B;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
 use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
 use crate::result::QueryResult;
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         Ok(())
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, L> QueryFragment<B> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
     LimitClause<L>: QueryFragment<B>,
@@ -22,6 +23,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, L, O> QueryFragment<B>
     for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
@@ -35,6 +37,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for BoxedLimitOffsetClause<'_, B> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
@@ -46,13 +49,13 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for BoxedLimitOffsetClause<'_, B> {
                 limit.walk_ast(out.reborrow())?;
             }
             (None, Some(offset)) => {
-                // B requires a limit clause in front of any offset clause
+                // Mysql requires a limit clause in front of any offset clause
                 // The documentation proposes the following:
                 // > To retrieve all rows from a certain offset up to the end of the
                 // > result set, you can use some large number for the second parameter.
-                // https://dev.B.com/doc/refman/8.0/en/select.html
+                // https://dev.mysql.com/doc/refman/8.0/en/select.html
                 // Therefore we just use u64::MAX as limit here
-                // That does not result in any limitations because B only supports
+                // That does not result in any limitations because Mysql only supports
                 // up to 64TB of data per table. Assuming 1 bit per row this means
                 // 1024 * 1024 * 1024 * 1024 * 8 = 562.949.953.421.312 rows which is smaller
                 // than 2^64 = 18.446.744.073.709.551.615
@@ -65,6 +68,7 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for BoxedLimitOffsetClause<'_, B> {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B>
     for LimitOffsetClause<NoLimitClause, NoOffsetClause>
 {
@@ -78,6 +82,7 @@ impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B>
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<'a, B: MysqlLikeBackend, L> IntoBoxedClause<'a, B>
     for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
@@ -93,6 +98,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<'a, B: MysqlLikeBackend, L, O> IntoBoxedClause<'a, B>
     for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where

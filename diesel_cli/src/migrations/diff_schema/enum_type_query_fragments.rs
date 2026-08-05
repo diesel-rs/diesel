@@ -2,6 +2,8 @@ use super::ColumnTypeName;
 use super::schema_parsing::{EnumInfos, SqlTypeInfo};
 use crate::infer_schema_internals::{ColumnDefinition, QueryRelationData};
 use diesel::QueryResult;
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+use diesel::mysql_like::MysqlLikeBackend;
 use diesel::query_builder::QueryFragment;
 
 pub(crate) struct EnumType<'a> {
@@ -29,19 +31,9 @@ impl QueryFragment<diesel::pg::Pg> for EnumType<'_> {
 impl QueryFragment<diesel::mysql::Mysql> for EnumType<'_> {
     fn walk_ast<'b>(
         &'b self,
-        mut pass: diesel::query_builder::AstPass<'_, 'b, diesel::mysql::Mysql>,
+        pass: diesel::query_builder::AstPass<'_, 'b, diesel::mysql::Mysql>,
     ) -> QueryResult<()> {
-        let _ = self.tpe;
-        pass.push_sql("enum(");
-        let variants = self
-            .variants
-            .iter()
-            .map(|v| format!("'{}'", v.sql_name.replace('\'', "''")))
-            .collect::<Vec<_>>()
-            .join(", ");
-        pass.push_sql(&variants);
-        pass.push_sql(")");
-        Ok(())
+        mysql_like_query_fragment_enum_type(self, pass)
     }
 }
 
@@ -49,20 +41,28 @@ impl QueryFragment<diesel::mysql::Mysql> for EnumType<'_> {
 impl QueryFragment<diesel::mariadb::Mariadb> for EnumType<'_> {
     fn walk_ast<'b>(
         &'b self,
-        mut pass: diesel::query_builder::AstPass<'_, 'b, diesel::mariadb::Mariadb>,
+        pass: diesel::query_builder::AstPass<'_, 'b, diesel::mariadb::Mariadb>,
     ) -> QueryResult<()> {
-        let _ = self.tpe;
-        pass.push_sql("enum(");
-        let variants = self
-            .variants
-            .iter()
-            .map(|v| format!("'{}'", v.sql_name.replace('\'', "''")))
-            .collect::<Vec<_>>()
-            .join(", ");
-        pass.push_sql(&variants);
-        pass.push_sql(")");
-        Ok(())
+        mysql_like_query_fragment_enum_type(self, pass)
     }
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn mysql_like_query_fragment_enum_type<'b, B: MysqlLikeBackend>(
+    enum_type: &'b EnumType<'_>,
+    mut pass: diesel::query_builder::AstPass<'_, 'b, B>,
+) -> QueryResult<()> {
+    let _ = enum_type.tpe;
+    pass.push_sql("enum(");
+    let variants = enum_type
+        .variants
+        .iter()
+        .map(|v| format!("'{}'", v.sql_name.replace('\'', "''")))
+        .collect::<Vec<_>>()
+        .join(", ");
+    pass.push_sql(&variants);
+    pass.push_sql(")");
+    Ok(())
 }
 
 #[cfg(feature = "sqlite")]
@@ -225,32 +225,9 @@ impl QueryFragment<diesel::pg::Pg> for AddEnumVariants<'_> {
 impl QueryFragment<diesel::mysql::Mysql> for AddEnumVariants<'_> {
     fn walk_ast<'b>(
         &'b self,
-        mut pass: diesel::query_builder::AstPass<'_, 'b, diesel::mysql::Mysql>,
+        pass: diesel::query_builder::AstPass<'_, 'b, diesel::mysql::Mysql>,
     ) -> QueryResult<()> {
-        let _ = self.added_variants;
-        let _ = self.tpe;
-        if let Some((table_infos, column_info)) = self.column_info {
-            use diesel_infer_query::SchemaField;
-
-            pass.push_sql("ALTER TABLE ");
-            pass.push_identifier(table_infos)?;
-            pass.push_sql(" MODIFY COLUMN ");
-            pass.push_identifier(&column_info.sql_name)?;
-            pass.push_sql(" enum(");
-            let variants = self
-                .all_variants
-                .iter()
-                .map(|v| format!("'{}'", v.replace('\'', "''")))
-                .collect::<Vec<_>>()
-                .join(", ");
-            pass.push_sql(&variants);
-            pass.push_sql(")");
-            if !column_info.is_nullable() {
-                pass.push_sql(" NOT NULL");
-            }
-            pass.push_sql(";");
-        }
-        Ok(())
+        mysql_like_add_enum_variants(self, pass)
     }
 }
 
@@ -258,33 +235,41 @@ impl QueryFragment<diesel::mysql::Mysql> for AddEnumVariants<'_> {
 impl QueryFragment<diesel::mariadb::Mariadb> for AddEnumVariants<'_> {
     fn walk_ast<'b>(
         &'b self,
-        mut pass: diesel::query_builder::AstPass<'_, 'b, diesel::mariadb::Mariadb>,
+        pass: diesel::query_builder::AstPass<'_, 'b, diesel::mariadb::Mariadb>,
     ) -> QueryResult<()> {
-        let _ = self.added_variants;
-        let _ = self.tpe;
-        if let Some((table_infos, column_info)) = self.column_info {
-            use diesel_infer_query::SchemaField;
-
-            pass.push_sql("ALTER TABLE ");
-            pass.push_identifier(table_infos)?;
-            pass.push_sql(" MODIFY COLUMN ");
-            pass.push_identifier(&column_info.sql_name)?;
-            pass.push_sql(" enum(");
-            let variants = self
-                .all_variants
-                .iter()
-                .map(|v| format!("'{}'", v.replace('\'', "''")))
-                .collect::<Vec<_>>()
-                .join(", ");
-            pass.push_sql(&variants);
-            pass.push_sql(")");
-            if !column_info.is_nullable() {
-                pass.push_sql(" NOT NULL");
-            }
-            pass.push_sql(";");
-        }
-        Ok(())
+        mysql_like_add_enum_variants(self, pass)
     }
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn mysql_like_add_enum_variants<'b, B: MysqlLikeBackend>(
+    add_enum_variants: &'b AddEnumVariants<'_>,
+    mut pass: diesel::query_builder::AstPass<'_, 'b, B>,
+) -> QueryResult<()> {
+    let _ = add_enum_variants.added_variants;
+    let _ = add_enum_variants.tpe;
+    if let Some((table_infos, column_info)) = add_enum_variants.column_info {
+        use diesel_infer_query::SchemaField;
+
+        pass.push_sql("ALTER TABLE ");
+        pass.push_identifier(table_infos)?;
+        pass.push_sql(" MODIFY COLUMN ");
+        pass.push_identifier(&column_info.sql_name)?;
+        pass.push_sql(" enum(");
+        let variants = add_enum_variants
+            .all_variants
+            .iter()
+            .map(|v| format!("'{}'", v.replace('\'', "''")))
+            .collect::<Vec<_>>()
+            .join(", ");
+        pass.push_sql(&variants);
+        pass.push_sql(")");
+        if !column_info.is_nullable() {
+            pass.push_sql(" NOT NULL");
+        }
+        pass.push_sql(";");
+    }
+    Ok(())
 }
 
 #[cfg(feature = "sqlite")]
@@ -434,31 +419,9 @@ impl QueryFragment<diesel::pg::Pg> for MigrateEnumData<'_> {
 impl QueryFragment<diesel::mysql::Mysql> for MigrateEnumData<'_> {
     fn walk_ast<'b>(
         &'b self,
-        mut pass: diesel::query_builder::AstPass<'_, 'b, diesel::mysql::Mysql>,
+        pass: diesel::query_builder::AstPass<'_, 'b, diesel::mysql::Mysql>,
     ) -> QueryResult<()> {
-        let _ = self.tpe;
-        let _ = self.column_defs;
-        for (col, table) in self.affected_tables {
-            pass.push_sql("ALTER TABLE ");
-            pass.push_identifier(&table.table_name().sql_name)?;
-            pass.push_sql(" MODIFY COLUMN ");
-            pass.push_identifier(&col.sql_name)?;
-            pass.push_sql(" enum(");
-            let variants = self
-                .create_enum
-                .variants
-                .iter()
-                .map(|v| format!("'{}'", v.sql_name.replace('\'', "''")))
-                .collect::<Vec<_>>()
-                .join(", ");
-            pass.push_sql(&variants);
-            pass.push_sql(")");
-            if !col.ty.is_nullable {
-                pass.push_sql(" NOT NULL");
-            }
-            pass.push_sql(";");
-        }
-        Ok(())
+        mysql_like_migrate_enum_data(self, pass)
     }
 }
 
@@ -466,32 +429,40 @@ impl QueryFragment<diesel::mysql::Mysql> for MigrateEnumData<'_> {
 impl QueryFragment<diesel::mariadb::Mariadb> for MigrateEnumData<'_> {
     fn walk_ast<'b>(
         &'b self,
-        mut pass: diesel::query_builder::AstPass<'_, 'b, diesel::mariadb::Mariadb>,
+        pass: diesel::query_builder::AstPass<'_, 'b, diesel::mariadb::Mariadb>,
     ) -> QueryResult<()> {
-        let _ = self.tpe;
-        let _ = self.column_defs;
-        for (col, table) in self.affected_tables {
-            pass.push_sql("ALTER TABLE ");
-            pass.push_identifier(&table.table_name().sql_name)?;
-            pass.push_sql(" MODIFY COLUMN ");
-            pass.push_identifier(&col.sql_name)?;
-            pass.push_sql(" enum(");
-            let variants = self
-                .create_enum
-                .variants
-                .iter()
-                .map(|v| format!("'{}'", v.sql_name.replace('\'', "''")))
-                .collect::<Vec<_>>()
-                .join(", ");
-            pass.push_sql(&variants);
-            pass.push_sql(")");
-            if !col.ty.is_nullable {
-                pass.push_sql(" NOT NULL");
-            }
-            pass.push_sql(";");
-        }
-        Ok(())
+        mysql_like_migrate_enum_data(self, pass)
     }
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn mysql_like_migrate_enum_data<'b, B: MysqlLikeBackend>(
+    migrate_enum_data: &'b MigrateEnumData<'_>,
+    mut pass: diesel::query_builder::AstPass<'_, 'b, B>,
+) -> QueryResult<()> {
+    let _ = migrate_enum_data.tpe;
+    let _ = migrate_enum_data.column_defs;
+    for (col, table) in migrate_enum_data.affected_tables {
+        pass.push_sql("ALTER TABLE ");
+        pass.push_identifier(&table.table_name().sql_name)?;
+        pass.push_sql(" MODIFY COLUMN ");
+        pass.push_identifier(&col.sql_name)?;
+        pass.push_sql(" enum(");
+        let variants = migrate_enum_data
+            .create_enum
+            .variants
+            .iter()
+            .map(|v| format!("'{}'", v.sql_name.replace('\'', "''")))
+            .collect::<Vec<_>>()
+            .join(", ");
+        pass.push_sql(&variants);
+        pass.push_sql(")");
+        if !col.ty.is_nullable {
+            pass.push_sql(" NOT NULL");
+        }
+        pass.push_sql(";");
+    }
+    Ok(())
 }
 
 #[cfg(feature = "sqlite")]

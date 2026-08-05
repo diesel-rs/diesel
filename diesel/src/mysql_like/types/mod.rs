@@ -1,4 +1,4 @@
-//! MySQL specific types
+//! MySQL and Mariadb shared types
 
 pub(super) mod date_and_time;
 mod enum_;

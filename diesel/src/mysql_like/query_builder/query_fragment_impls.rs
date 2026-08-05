@@ -12,6 +12,7 @@ use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;
 use crate::{Column, Table};
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for ForUpdate {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         out.push_sql(" FOR UPDATE");
@@ -19,6 +20,7 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for ForUpdate {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for ForShare {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         out.push_sql(" FOR SHARE");
@@ -26,12 +28,14 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for ForShare {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for NoModifier {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         Ok(())
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for SkipLocked {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         out.push_sql(" SKIP LOCKED");
@@ -39,6 +43,7 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for SkipLocked {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend> QueryFragment<B> for NoWait {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
         out.push_sql(" NOWAIT");
@@ -46,6 +51,7 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for NoWait {
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend>
     QueryFragment<B, crate::mysql_like::query_fragments::MysqlStyleDefaultValueClause>
     for DefaultValues
@@ -56,6 +62,7 @@ impl<B: MysqlLikeBackend>
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, L, R>
     QueryFragment<B, crate::mysql_like::query_fragments::MysqlConcatClause> for Concat<L, R>
 where
@@ -75,6 +82,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, T>
     QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoNothing<T>
 where
@@ -89,6 +97,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, T, Tab>
     QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoUpdate<T, Tab>
 where
@@ -109,6 +118,7 @@ where
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, Values, Target, Action>
     QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
     for OnConflictValues<Values, Target, Action, NoWhereClause>
@@ -129,7 +139,7 @@ where
 }
 
 /// A marker type signaling that the given `ON CONFLICT` clause
-/// uses B's `ON DUPLICATE KEY` syntax that triggers on
+/// uses Mysql's `ON DUPLICATE KEY` syntax that triggers on
 /// all unique constraints
 ///
 /// See [`InsertStatement::on_conflict`](crate::query_builder::InsertStatement::on_conflict)
@@ -139,6 +149,7 @@ pub struct DuplicatedKeys;
 
 impl<Tab> OnConflictTarget<Tab> for ConflictTarget<DuplicatedKeys> {}
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend>
     QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
     for ConflictTarget<DuplicatedKeys>
@@ -148,6 +159,7 @@ impl<B: MysqlLikeBackend>
     }
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, S> QueryFragment<B> for OnConflictSelectWrapper<S>
 where
     S: QueryFragment<B>,
@@ -168,6 +180,7 @@ trait DoNothingClauseHelper<B: MysqlLikeBackend> {
         T::Component: QueryFragment<B>;
 }
 
+#[diagnostic::do_not_recommend]
 impl<B: MysqlLikeBackend, C> DoNothingClauseHelper<B> for C
 where
     C: Column,
