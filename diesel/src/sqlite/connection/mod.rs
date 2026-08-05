@@ -1504,6 +1504,55 @@ impl SqliteConnection {
         query.get_result(self)
     }
 
+    /// Shrink a database by releasing freelist pages, without the full rewrite
+    /// [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`. `pages`
+    /// bounds how many pages are reclaimed. As SQLite specifies, `None` or a value
+    /// below one clears the whole freelist, as does a bound larger than it. Only
+    /// databases in [`AutoVacuumMode::Incremental`] have anything to reclaim, on any
+    /// other mode this succeeds and does nothing.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+    /// // Reclaim at most 8 pages, then whatever is left.
+    /// conn.incremental_vacuum(None, Some(8))?;
+    /// conn.incremental_vacuum(None, None)?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn incremental_vacuum(
+        &mut self,
+        schema: Option<&str>,
+        pages: Option<u32>,
+    ) -> QueryResult<()> {
+        use crate::connection::SimpleConnection;
+        use crate::query_builder::QueryBuilder;
+        use crate::sqlite::SqliteQueryBuilder;
+
+        // SQLite frees one page per step of this statement, so it only empties the
+        // freelist when run to completion. `batch_execute` uses `sqlite3_exec`, which
+        // does that. A prepared statement would not: `StatementUse::run` steps once,
+        // which frees a single page and silently leaves the rest.
+        let mut query = SqliteQueryBuilder::new();
+        query.push_sql("PRAGMA ");
+        query.push_identifier(schema.unwrap_or("main"))?;
+        query.push_sql(".incremental_vacuum");
+        if let Some(pages) = pages {
+            query.push_sql("(");
+            query.push_sql(&pages.to_string());
+            query.push_sql(")");
+        }
+        self.batch_execute(&query.finish())
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -3919,6 +3968,9 @@ mod tests {
     const PROBE_TABLE: &str =
         "CREATE TABLE pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)";
 
+    const AUX_PROBE_TABLE: &str =
+        "CREATE TABLE aux.aux_pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)";
+
     // Large enough to spill onto overflow pages, so the database outgrows a single page
     // and leaves reclaimable pages behind once the row is deleted.
     fn overflowing_payload() -> String {
@@ -3982,10 +4034,7 @@ mod tests {
         let conn = &mut connection();
         conn.batch_execute(PROBE_TABLE).unwrap();
         conn.attach_database(":memory:", "aux").unwrap();
-        conn.batch_execute(
-            "CREATE TABLE aux.aux_pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)",
-        )
-        .unwrap();
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
         crate::insert_into(aux_pragma_probe::table)
             .values((
                 aux_pragma_probe::id.eq(1),
@@ -4027,5 +4076,144 @@ mod tests {
 
         assert!(conn.page_count(Some("nope")).is_err());
         assert!(conn.freelist_count(Some("nope")).is_err());
+    }
+
+    // Leaves many pages on the freelist, so `incremental_vacuum` has something to
+    // reclaim and a bound smaller than the freelist is meaningful.
+    fn grow_then_empty_freelist(conn: &mut SqliteConnection) {
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        let rows = (1..=200)
+            .map(|id| {
+                (
+                    pragma_probe::id.eq(id),
+                    pragma_probe::payload.eq("x".repeat(4000)),
+                )
+            })
+            .collect::<Vec<_>>();
+        crate::insert_into(pragma_probe::table)
+            .values(rows)
+            .execute(conn)
+            .unwrap();
+        crate::delete(pragma_probe::table).execute(conn).unwrap();
+    }
+
+    // The same, in an attached schema.
+    fn grow_then_empty_aux_freelist(conn: &mut SqliteConnection) {
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        let rows = (1..=200)
+            .map(|id| {
+                (
+                    aux_pragma_probe::id.eq(id),
+                    aux_pragma_probe::payload.eq("x".repeat(4000)),
+                )
+            })
+            .collect::<Vec<_>>();
+        crate::insert_into(aux_pragma_probe::table)
+            .values(rows)
+            .execute(conn)
+            .unwrap();
+        crate::delete(aux_pragma_probe::table)
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_clears_the_whole_freelist() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        grow_then_empty_freelist(conn);
+        assert!(
+            conn.freelist_count(None).unwrap() > 1,
+            "the deleted rows should leave many pages on the freelist"
+        );
+
+        conn.incremental_vacuum(None, None).unwrap();
+
+        // Stepping the pragma only once would free a single page and leave the rest, so
+        // this also pins that the statement is driven to completion.
+        assert_eq!(0, conn.freelist_count(None).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_reclaims_at_most_the_requested_pages() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        grow_then_empty_freelist(conn);
+        let before = conn.freelist_count(None).unwrap();
+        assert!(before > 10, "the bound has to be smaller than the freelist");
+
+        conn.incremental_vacuum(None, Some(10)).unwrap();
+
+        let after = conn.freelist_count(None).unwrap();
+        assert!(after >= before - 10, "at most ten pages may be reclaimed");
+        assert!(after < before, "some pages should have been reclaimed");
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_is_a_no_op_outside_incremental_mode() {
+        let conn = &mut connection();
+        assert_eq!(AutoVacuumMode::None, conn.auto_vacuum(None).unwrap());
+        grow_then_empty_freelist(conn);
+        let before = conn.freelist_count(None).unwrap();
+        assert!(before > 0);
+
+        conn.incremental_vacuum(None, None).unwrap();
+
+        assert_eq!(
+            before,
+            conn.freelist_count(None).unwrap(),
+            "a database that is not in incremental mode keeps its freelist"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        conn.attach_database(":memory:", "aux").unwrap();
+        conn.set_auto_vacuum(Some("aux"), AutoVacuumMode::Incremental)
+            .unwrap();
+
+        grow_then_empty_aux_freelist(conn);
+        assert!(conn.freelist_count(Some("aux")).unwrap() > 0);
+
+        conn.incremental_vacuum(Some("aux"), None).unwrap();
+
+        assert_eq!(0, conn.freelist_count(Some("aux")).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_escapes_a_backtick_in_the_schema_name() {
+        // An unquoted identifier would be a syntax error, and the wrong quoting would
+        // address a different database.
+        let conn = &mut connection();
+        let schema = "back`tick";
+        conn.attach_database(":memory:", schema).unwrap();
+
+        conn.incremental_vacuum(Some(schema), None).unwrap();
+
+        assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_of_zero_pages_clears_everything() {
+        // SQLite specifies that a bound below one clears the whole freelist.
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        grow_then_empty_freelist(conn);
+        assert!(conn.freelist_count(None).unwrap() > 0);
+
+        conn.incremental_vacuum(None, Some(0)).unwrap();
+
+        assert_eq!(0, conn.freelist_count(None).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_of_an_unknown_schema_is_an_error() {
+        let conn = &mut connection();
+
+        assert!(conn.incremental_vacuum(Some("nope"), None).is_err());
     }
 }
