@@ -181,7 +181,7 @@ fn main() {
             vec![
                 Example::with_heading(
                     "diesel_derives__tests__as_expression_1.snap",
-                    "Without attributes",
+                    "Basic usage",
                 ),
                 Example::with_heading(
                     "diesel_derives__tests__as_expression_not_sized_1.snap",
