@@ -44,6 +44,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `--no-schema` CLI flag to the `migration run` subcommand
 * Added `SqliteConnection::auto_vacuum` and `SqliteConnection::set_auto_vacuum` to read and set a database's `auto_vacuum` mode through the typed `AutoVacuumMode` enum, each accepting an optional schema name to target an attached database.
 * Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
+* Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
 
 ### Fixed
 
