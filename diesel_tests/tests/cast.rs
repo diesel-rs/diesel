@@ -176,9 +176,7 @@ mod infallible_cast {
 
     #[cfg(feature = "postgres")]
     test_infallible_cast!(text_to_uuid, "9d755438-5ad5-42b8-bc6a-a15ace143975".parse().unwrap() => uuid::Uuid, Uuid => Text, "9d755438-5ad5-42b8-bc6a-a15ace143975".into() => String);
-    #[cfg(feature = "mysql")]
-    test_infallible_cast!(text_to_datetime, chrono::NaiveDateTime::from_str("2025-09-19T10:21:42").unwrap() => chrono::NaiveDateTime, Datetime => Text, "2025-09-19 10:21:42.0000000000000000000000000000000".into() => String);
-    #[cfg(feature = "mariadb")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     test_infallible_cast!(text_to_datetime, chrono::NaiveDateTime::from_str("2025-09-19T10:21:42").unwrap() => chrono::NaiveDateTime, Datetime => Text, "2025-09-19 10:21:42".into() => String);
 
     #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
