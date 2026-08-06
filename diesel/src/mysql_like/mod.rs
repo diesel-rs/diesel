@@ -1,8 +1,8 @@
 //! Provides shared types and functions related to working with MySQL and MariaDB
 
-mod types;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 mod connection;
+mod types;
 
 pub(crate) mod query_builder;
 mod value;
