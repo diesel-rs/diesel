@@ -1,7 +1,7 @@
 //! Provides shared types and functions related to working with MySQL and MariaDB
 
 mod types;
-
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 mod connection;
 
 pub(crate) mod query_builder;
@@ -16,6 +16,7 @@ use crate::{
     sql_types::TypeMetadata,
 };
 
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub use self::connection::MysqlLikeConnection;
 pub use self::value::{MysqlValue, NumericRepresentation};
 

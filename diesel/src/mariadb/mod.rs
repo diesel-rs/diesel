@@ -9,6 +9,7 @@ pub(crate) mod backend;
 
 pub use self::backend::{Mariadb, MariadbType};
 
+#[cfg(feature = "mariadb")]
 mod connection;
 
 #[cfg(feature = "mariadb")]
