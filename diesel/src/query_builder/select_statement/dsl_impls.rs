@@ -1,3 +1,4 @@
+use super::BoxedCloneSelectStatement;
 use super::BoxedSelectStatement;
 use crate::associations::HasTable;
 use crate::backend::Backend;
@@ -13,7 +14,9 @@ use crate::query_builder::from_clause::FromClause;
 use crate::query_builder::group_by_clause::*;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::*;
-use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+use crate::query_builder::limit_offset_clause::{
+    BoxedCloneLimitOffsetClause, BoxedLimitOffsetClause, LimitOffsetClause,
+};
 use crate::query_builder::locking_clause::*;
 use crate::query_builder::offset_clause::*;
 use crate::query_builder::order_clause::*;
@@ -21,7 +24,8 @@ use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::target::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::{
-    AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
+    AsQuery, IntoBoxedClause, IntoBoxedCloneClause, Query, QueryFragment, SelectQuery,
+    SelectStatement,
 };
 use crate::query_dsl::group_by_dsl::ValidDistinctForGroupBy;
 use crate::query_dsl::methods::*;
@@ -31,6 +35,7 @@ use crate::query_source::QuerySource;
 use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::sql_types::{BigInt, BoolOrNullableBool};
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 impl<F, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, D, W, O, LOf, G, H, LC>
@@ -598,6 +603,38 @@ where
     }
 }
 
+impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedCloneDsl<'a, DB>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+where
+    Self: AsQuery,
+    DB: Backend,
+    F: QuerySource,
+    S: SelectClauseExpression<FromClause<F>> + QueryFragment<DB> + Send + Sync + 'a,
+    S::Selection: ValidGrouping<G::Expressions>,
+    D: QueryFragment<DB> + Send + Sync + 'a,
+    W: Into<BoxedCloneWhereClause<'a, DB>>,
+    O: Into<Option<Arc<dyn QueryFragment<DB> + Send + Sync + 'a>>>,
+    LOf: IntoBoxedCloneClause<'a, DB, BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, DB>>,
+    G: ValidGroupByClause + QueryFragment<DB> + Send + Sync + 'a,
+    H: QueryFragment<DB> + Send + Sync + 'a,
+{
+    type Output =
+        BoxedCloneSelectStatement<'a, S::SelectClauseSqlType, FromClause<F>, DB, G::Expressions>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
+        BoxedCloneSelectStatement::new(
+            self.select,
+            self.from,
+            Arc::new(self.distinct),
+            self.where_clause.into(),
+            self.order.into(),
+            self.limit_offset.into_boxed_clone(),
+            self.group_by,
+            Arc::new(self.having),
+        )
+    }
+}
+
 impl<'a, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
 where
@@ -625,6 +662,37 @@ where
             self.limit_offset.into_boxed(),
             self.group_by,
             Box::new(self.having),
+        )
+    }
+}
+
+impl<'a, S, D, W, O, LOf, G, H, DB> BoxedCloneDsl<'a, DB>
+    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
+where
+    Self: AsQuery,
+    DB: Backend,
+    S: SelectClauseExpression<NoFromClause> + QueryFragment<DB> + Send + Sync + 'a,
+    S::Selection: ValidGrouping<G::Expressions>,
+    D: QueryFragment<DB> + Send + Sync + 'a,
+    W: Into<BoxedCloneWhereClause<'a, DB>>,
+    O: Into<Option<Arc<dyn QueryFragment<DB> + Send + Sync + 'a>>>,
+    LOf: IntoBoxedCloneClause<'a, DB, BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, DB>>,
+    G: ValidGroupByClause + QueryFragment<DB> + Send + Sync + 'a,
+    H: QueryFragment<DB> + Send + Sync + 'a,
+{
+    type Output =
+        BoxedCloneSelectStatement<'a, S::SelectClauseSqlType, NoFromClause, DB, G::Expressions>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
+        BoxedCloneSelectStatement::new_no_from_clause(
+            self.select,
+            self.from,
+            Arc::new(self.distinct),
+            self.where_clause.into(),
+            self.order.into(),
+            self.limit_offset.into_boxed_clone(),
+            self.group_by,
+            Arc::new(self.having),
         )
     }
 }

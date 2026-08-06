@@ -1,5 +1,5 @@
 use crate::backend::DieselReserveSpecialization;
-use crate::dsl::{Filter, IntoBoxed, OrFilter};
+use crate::dsl::{Filter, IntoBoxed, IntoBoxedClone, OrFilter};
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
 use crate::query_builder::returning::{
     DeleteStmt, NoReturningClause, ReturningClause, ReturningQuerySource,
@@ -7,7 +7,7 @@ use crate::query_builder::returning::{
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDslSupport;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
+use crate::query_dsl::methods::{BoxedCloneDsl, BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_source::{QuerySource, Table};
 
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -74,6 +74,10 @@ where
 /// A `DELETE` statement with a boxed `WHERE` clause
 pub type BoxedDeleteStatement<'a, DB, T, Ret = NoReturningClause> =
     DeleteStatement<T, BoxedWhereClause<'a, DB>, Ret>;
+
+/// A `DELETE` statement with a boxed cloneable `WHERE` clause
+pub type BoxedCloneDeleteStatement<'a, DB, T, Ret = NoReturningClause> =
+    DeleteStatement<T, BoxedCloneWhereClause<'a, DB>, Ret>;
 
 impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     pub(crate) fn new(table: T, where_clause: U) -> Self {
@@ -199,6 +203,57 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     {
         BoxedDsl::internal_into_boxed(self)
     }
+
+    /// Wraps the `WHERE` clause of this delete statement in an [`Arc`].
+    ///
+    /// This is useful for cases where you want to clone and conditionally
+    /// modify a query, but need the type to remain the same. The backend
+    /// must be specified as part of this. It is not possible to box a query
+    /// and have it be useable on multiple backends.
+    ///
+    /// A cloneable boxed query will incur a slightly greater performance penalty
+    /// than a standard boxed query. In both cases, the query builder can no longer
+    /// be inlined by the compiler. For most applications this cost will be minimal.
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::HashMap;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     let mut params = HashMap::new();
+    /// #     params.insert("sean_has_been_a_jerk", true);
+    /// let query = diesel::delete(users).into_boxed_clone();
+    /// let mut query = query.clone();
+    ///
+    /// if params["sean_has_been_a_jerk"] {
+    ///     query = query.filter(name.eq("Sean"));
+    /// }
+    ///
+    /// let deleted_rows = query.execute(connection)?;
+    /// assert_eq!(1, deleted_rows);
+    ///
+    /// let expected_names = vec!["Tess"];
+    /// let names = users.select(name).load::<String>(connection)?;
+    ///
+    /// assert_eq!(expected_names, names);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn into_boxed_clone<'a, DB>(self) -> IntoBoxedClone<'a, Self, DB>
+    where
+        DB: Backend,
+        Self: BoxedCloneDsl<'a, DB>,
+    {
+        BoxedCloneDsl::internal_into_boxed_clone(self)
+    }
 }
 
 impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
@@ -243,6 +298,22 @@ where
     type Output = BoxedDeleteStatement<'a, DB, T, Ret>;
 
     fn internal_into_boxed(self) -> Self::Output {
+        DeleteStatement {
+            where_clause: self.where_clause.into(),
+            returning: self.returning,
+            from_clause: self.from_clause,
+        }
+    }
+}
+
+impl<'a, T, U, Ret, DB> BoxedCloneDsl<'a, DB> for DeleteStatement<T, U, Ret>
+where
+    U: Into<BoxedCloneWhereClause<'a, DB>>,
+    T: QuerySource,
+{
+    type Output = BoxedCloneDeleteStatement<'a, DB, T, Ret>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
         DeleteStatement {
             where_clause: self.where_clause.into(),
             returning: self.returning,

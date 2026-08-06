@@ -43,7 +43,9 @@ pub use self::collected_query::CollectedQuery;
 #[doc(inline)]
 pub use self::debug_query::DebugQuery;
 #[doc(inline)]
-pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
+pub use self::delete_statement::{
+    BoxedCloneDeleteStatement, BoxedDeleteStatement, DeleteStatement,
+};
 #[doc(inline)]
 pub use self::insert_statement::{
     IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement, IncompleteReplaceStatement,
@@ -52,7 +54,7 @@ pub use self::insert_statement::{
 #[doc(inline)]
 pub use self::query_id::QueryId;
 #[doc(inline)]
-pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
+pub use self::sql_query::{BoxedCloneSqlQuery, BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
 pub use self::upsert::into_conflict_clause::IntoConflictValueClause;
 #[doc(inline)]
@@ -65,7 +67,9 @@ pub use self::update_statement::changeset::AsChangeset;
 #[doc(inline)]
 pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
 #[doc(inline)]
-pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
+pub use self::update_statement::{
+    BoxedCloneUpdateStatement, BoxedUpdateStatement, UpdateStatement,
+};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::combination_clause::{
@@ -74,7 +78,9 @@ pub use self::combination_clause::{
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+pub use self::limit_offset_clause::{
+    BoxedCloneLimitOffsetClause, BoxedLimitOffsetClause, LimitOffsetClause,
+};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
@@ -116,6 +122,11 @@ pub(crate) use self::select_clause::SelectClauseExpression;
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) use self::from_clause::{FromClause, NoFromClause};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::select_statement::BoxedCloneSelectStatement;
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
@@ -372,6 +383,20 @@ pub trait IntoBoxedClause<'a, DB> {
 
     /// Convert the given query node in it's boxed representation
     fn into_boxed(self) -> Self::BoxedClause;
+}
+
+/// A trait used to construct type erased boxed cloneable variant of the current query node
+///
+/// Mainly useful for implementing third party backends
+#[diagnostic::on_unimplemented(
+    note = "this usually means that `{Self}` is no valid SQL for `{DB}`"
+)]
+pub trait IntoBoxedCloneClause<'a, DB> {
+    /// Resulting type
+    type BoxedCloneClause;
+
+    /// Convert the given query node in it's boxed cloneable representation
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause;
 }
 
 /// Types that can be converted into a complete, typed SQL query.

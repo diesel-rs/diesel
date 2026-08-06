@@ -47,6 +47,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
 * Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
 * Added `SqliteConnection::vacuum` and `SqliteConnection::vacuum_into` to rebuild a database or write a vacuumed copy of it to a new file, each accepting an optional schema name to target an attached database, with the destination path passed as a bind parameter.
+* Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
 
 ### Fixed
 

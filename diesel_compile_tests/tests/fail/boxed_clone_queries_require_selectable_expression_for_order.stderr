@@ -1,0 +1,18 @@
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/boxed_clone_queries_require_selectable_expression_for_order.rs:23:43
+   |
+LL |     users::table.into_boxed_clone::<Pg>().order(posts::title.desc());
+   |                                           ^^^^^ expected `Once`, found `Never`
+   |
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/boxed_clone_queries_require_selectable_expression_for_order.rs:16:9
+   |
+LL |         title -> VarChar,
+   |         ^^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `diesel::expression::operators::Desc<posts::columns::title>` to implement `AppearsOnTable<users::table>`
+   = note: required for `BoxedCloneSelectStatement<'_, ..., ..., ...>` to implement `OrderDsl<Desc<title>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0271`.

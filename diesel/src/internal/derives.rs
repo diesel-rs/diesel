@@ -28,7 +28,7 @@ pub mod multiconnection {
     pub use crate::query_builder::insert_statement::DefaultValues;
     #[doc(hidden)]
     pub use crate::query_builder::limit_offset_clause::{
-        BoxedLimitOffsetClause, LimitOffsetClause,
+        BoxedCloneLimitOffsetClause, BoxedLimitOffsetClause, LimitOffsetClause,
     };
     #[doc(hidden)]
     pub use crate::query_builder::returning::ReturningClause;
@@ -36,6 +36,10 @@ pub mod multiconnection {
     pub use crate::query_builder::select_statement::SelectStatement;
     #[doc(hidden)]
     pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
+    #[doc(hidden)]
+    pub use crate::query_builder::select_statement::boxed_clone::{
+        BoxedCloneQueryHelper, BoxedCloneSelectStatement,
+    };
     #[doc(hidden)]
     pub use crate::row::private::RowSealed;
     #[doc(hidden)]
