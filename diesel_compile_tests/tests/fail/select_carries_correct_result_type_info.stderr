@@ -18,10 +18,10 @@ help: `i32` implements trait `FromSql<A, DB>`
   LL | impl FromSql<sql_types::Integer, Pg> for i32 {
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
      |
-    ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+    ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
      |
-  LL | impl FromSql<Integer, Mysql> for i32 {
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Mysql>`
+  LL | impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, B>`
      = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, _>`
      = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, _>`
      = note: required for `diesel::sql_types::Text` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<i32, _>`

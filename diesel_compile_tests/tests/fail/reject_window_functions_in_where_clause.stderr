@@ -1,7 +1,8 @@
 error[E0080]: evaluation panicked: Using window functions in WHERE clauses is not supported
-  --> /rustc/0000000000000000000000000000000000000000/library/core/src/panic.rs:62:8
+  --> /rustc/library/core/src/panic.rs:62:9
    |
-   = note: evaluation of `<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Lt<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::expression::count::count_utils::count<diesel::sql_types::Integer, users::columns::id>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, diesel::expression::functions::aggregate_expressions::over_clause::OverClause>, diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>> as diesel::query_builder::QueryId>::IS_WINDOW_FUNCTION::{constant#0}` failed here
+LL |         $crate::panicking::panic_fmt($crate::const_format_args!($($t)+));
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation of `<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Lt<diesel::expression::functions::aggregate_expressions::AggregateExpression<diesel::expression::count::count_utils::count<diesel::sql_types::Integer, users::columns::id>, diesel::expression::functions::aggregate_expressions::prefix::NoPrefix, diesel::expression::functions::aggregate_expressions::aggregate_order::NoOrder, diesel::expression::functions::aggregate_expressions::aggregate_filter::NoFilter, diesel::expression::functions::aggregate_expressions::over_clause::OverClause>, diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>> as diesel::query_builder::QueryId>::IS_WINDOW_FUNCTION::{constant#0}` failed here
    |
   ::: DIESEL/diesel/diesel/src/query_builder/where_clause.rs
    |

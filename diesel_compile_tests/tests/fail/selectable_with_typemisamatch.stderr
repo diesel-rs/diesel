@@ -21,10 +21,10 @@ LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/mysql/types/primitives.rs
+  ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
    |
-LL | impl FromSql<Integer, Mysql> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Mysql>`
+LL | impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, B>`
    = note: required for `i32` to implement `diesel::Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)

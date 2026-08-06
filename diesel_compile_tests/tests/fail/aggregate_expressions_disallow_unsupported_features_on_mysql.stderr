@@ -29,7 +29,7 @@ help: `Filter<P>` implements trait `QueryFragment<DB, SP>`
      = note: required for `Filter<WhereClause<Grouped<Eq<name, ...>>>>` to implement `QueryFragment<Mysql>`
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i64>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -77,7 +77,7 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
      = note: required for `Order<name, false>` to implement `QueryFragment<Mysql>`
      = note: 4 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i64>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

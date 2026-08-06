@@ -25,5 +25,5 @@ fn main() {
     // .only() is not supported for MySql
     let mut conn = MysqlConnection::establish("").unwrap();
     foo::table.only().load(&mut conn).unwrap();
-    //~^ ERROR: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::MysqlConnection, _>` is not satisfied
+    //~^ ERROR: the trait bound `Only<foo::table>: LoadQuery<'_, MysqlLikeConnection<Mysql>, _>` is not satisfied
 }

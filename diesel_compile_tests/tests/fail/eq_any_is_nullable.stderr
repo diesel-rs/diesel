@@ -19,10 +19,10 @@ help: `bool` implements trait `FromSql<A, DB>`
   LL | impl FromSql<sql_types::Bool, Pg> for bool {
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Bool, Pg>`
      |
-    ::: DIESEL/diesel/diesel/src/mysql/types/mod.rs
+    ::: DIESEL/diesel/diesel/src/mysql_like/types/mod.rs
      |
- LL | impl FromSql<Bool, Mysql> for bool {
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Bool, Mysql>`
+ LL | impl<B: MysqlLikeBackend> FromSql<Bool, B> for bool {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Bool, B>`
      = note: required for `bool` to implement `Queryable<Nullable<Bool>, Pg>`
      = note: required for `bool` to implement `FromSqlRow<Nullable<Bool>, Pg>`
      = note: required for `diesel::sql_types::Nullable<diesel::sql_types::Bool>` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<bool, Pg>`
