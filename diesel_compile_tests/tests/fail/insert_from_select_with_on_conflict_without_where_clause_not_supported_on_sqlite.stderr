@@ -2,9 +2,7 @@ error[E0277]: `OnConflictSelectWrapper<SelectStatement<..., ...>>` is no valid S
     --> tests/fail/insert_from_select_with_on_conflict_without_where_clause_not_supported_on_sqlite.rs:20:18
      |
   LL |         .execute(&mut connection)
-     |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
-     |          |
-     |          required by a bound introduced by this call
+     |                  ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |
      = help: the trait `QueryFragment<Sqlite>` is not implemented for `OnConflictSelectWrapper<SelectStatement<..., ...>>`
      = note: this usually means that the `Sqlite` database system does not support 
