@@ -1573,6 +1573,10 @@ fn generate_querybuilder(
                 for diesel::internal::derives::multiconnection::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
         },
         quote::quote! {
+            <I, C, PK, Tab> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiBatchUpdateSupport>
+                for diesel::internal::derives::multiconnection::BatchUpdate<I, C, PK, Tab>
+        },
+        quote::quote! {
             <S> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiAliasSyntax>
                 for diesel::query_source::Alias<S>
         },
@@ -2011,6 +2015,7 @@ fn generate_backend(connection_types: &[ConnectionVariant], helper: &MultiHelper
         pub struct MultiReturningClause;
         pub struct MultiInsertWithDefaultKeyword;
         pub struct MultiBatchInsertSupport;
+        pub struct MultiBatchUpdateSupport;
         pub struct MultiDefaultValueClauseForInsert;
         pub struct MultiEmptyFromClauseSyntax;
         pub struct MultiExistsSyntax;
@@ -2030,6 +2035,7 @@ fn generate_backend(connection_types: &[ConnectionVariant], helper: &MultiHelper
             type OnConflictClause = diesel::internal::derives::multiconnection::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
             type InsertWithDefaultKeyword = MultiInsertWithDefaultKeyword;
             type BatchInsertSupport = MultiBatchInsertSupport;
+            type BatchUpdateSupport = MultiBatchUpdateSupport;
             type DefaultValueClauseForInsert = MultiDefaultValueClauseForInsert;
             type EmptyFromClauseSyntax = MultiEmptyFromClauseSyntax;
             type ExistsSyntax = MultiExistsSyntax;

@@ -9,6 +9,13 @@ use diesel::sqlite::JsonValidFlag;
 #[cfg(feature = "postgres")]
 use {diesel::sql_types::Integer, std::ops::Bound};
 
+#[derive(AsChangeset, Identifiable)]
+#[diesel(table_name = users)]
+struct UserChanges {
+    id: i32,
+    name: String,
+}
+
 table! {
     users {
         id -> Integer,
@@ -192,10 +199,17 @@ fn test_delete_3() -> _ {
     delete(users::table).filter(users::id.eq(1_i32))
 }
 
-// #[auto_type]
-// fn test_update() -> _ {
-//     update(users::table).set(users::id.eq(42_i32))
-// }
+#[auto_type]
+fn test_update() -> _ {
+    update(users::table).set(users::id.eq(42_i32))
+}
+
+#[auto_type]
+fn test_batch_update() -> _ {
+    let batch: Vec<UserChanges> = vec![];
+
+    update(users::table).set(batch)
+}
 
 #[auto_type]
 fn test_insert1() -> _ {

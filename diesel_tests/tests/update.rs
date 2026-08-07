@@ -788,3 +788,193 @@ fn returning_subselect_and_old_in_update() {
     assert_eq!(Some("First Post".to_string()), post_by_old_id);
     assert_eq!("Renamed", now_boxed);
 }
+
+#[diesel_test_helper::test]
+fn named_struct_batch() {
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    struct User {
+        id: i32,
+        name: String,
+        hair_color: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let update_sean = User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue1"),
+    };
+    let update_tess = User {
+        id: 2,
+        name: String::from("Tess"),
+        hair_color: String::from("black1"),
+    };
+
+    // Check compilation and query for &[]
+    let users_batch = [update_sean, update_tess];
+    let update_users = update(users::table).set(&users_batch);
+    let debug_slice_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Check compilation and query for [; 2]
+    let update_users = update(users::table).set(users_batch.clone());
+    let debug_arr_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Check compilation and query for &Vec
+    let users_batch: Vec<User> = Vec::from(&users_batch);
+    let update_users = update(users::table).set(&users_batch);
+    let debug_vec_ref_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Check compilation and query for Vec
+    let update_users = update(users::table).set(users_batch.clone());
+    let debug_vec_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Check compilation for Box<[U]>
+    let users_batch = users_batch.clone().into_boxed_slice();
+    let update_users = update(users::table).set(users_batch);
+    let debug_boxed_slice_users =
+        diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Expected to create the same query
+    assert_eq!(debug_arr_users.to_string(), debug_slice_users.to_string());
+    assert_eq!(debug_arr_users.to_string(), debug_vec_ref_users.to_string());
+    assert_eq!(debug_arr_users.to_string(), debug_vec_users.to_string());
+    assert_eq!(
+        debug_arr_users.to_string(),
+        debug_boxed_slice_users.to_string()
+    );
+
+    // Should update both Jim and Tess
+    update_users.execute(connection).unwrap();
+
+    let expected = vec![
+        (1, String::from("Sean"), Some(String::from("blue1"))),
+        (2, String::from("Tess"), Some(String::from("black1"))),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[diesel_test_helper::test]
+fn named_struct_batch_grouped_pkey() {
+    table! {
+        #[sql_name = "users"]
+        users_alt (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+        }
+    }
+
+    // Switched order of fields still works.
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    #[diesel(primary_key(id, name))] // mandatory: provide grouped primary key.
+    #[diesel(table_name = users_alt)]
+    struct User {
+        hair_color: String,
+        id: i32,
+        name: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let update_sean = User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue2"),
+    };
+    let update_tess = User {
+        id: 2,
+        name: String::from("Tess_not_found"),
+        hair_color: String::from("black2"),
+    };
+
+    // Check compilation and query for &[]
+    let users_batch = [update_sean, update_tess];
+    let update_users = update(users_alt::table).set(&users_batch);
+    let debug_arr_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Check compilation and query for &Vec
+    let users_batch: Vec<User> = Vec::from(&users_batch);
+    let update_users = update(users_alt::table).set(&users_batch);
+    let debug_vec_ref_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Check compilation and query for Vec
+    let users_batch = users_batch.clone();
+    let update_users = update(users_alt::table).set(users_batch);
+    let debug_vec_users = diesel::debug_query::<crate::schema::TestBackend, _>(&update_users);
+
+    // Expected to create the same query
+    assert_eq!(debug_arr_users.to_string(), debug_vec_ref_users.to_string());
+    assert_eq!(debug_arr_users.to_string(), debug_vec_users.to_string());
+
+    // Should update both Jim and Tess
+    update_users.execute(connection).unwrap();
+
+    let expected = vec![
+        (1, String::from("Sean"), Some(String::from("blue2"))),
+        (2, String::from("Tess"), None),
+    ];
+    let actual = users_alt::table.order(users_alt::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[cfg(any(
+    all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"),
+    feature = "postgres"
+))]
+#[diesel_test_helper::test]
+fn named_struct_batch_returning() {
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    struct User {
+        id: i32,
+        name: String,
+        hair_color: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let update_sean = User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue1"),
+    };
+    let update_tess = User {
+        id: 2,
+        name: String::from("Tess"),
+        hair_color: String::from("black1"),
+    };
+
+    let users_batch = [update_sean, update_tess];
+    let update_users = update(users::table)
+        .set(&users_batch)
+        .get_results::<(i32, String, Option<String>)>(connection)
+        .unwrap();
+
+    let expected = [
+        (1, String::from("Sean"), Some(String::from("blue1"))),
+        (2, String::from("Tess"), Some(String::from("black1"))),
+    ];
+    assert_eq!(update_users, expected);
+}
+
+#[diesel_test_helper::test]
+fn named_struct_batch_empty() {
+    #[derive(Debug, Clone, AsChangeset, Identifiable)]
+    struct User {
+        id: i32,
+        name: String,
+        hair_color: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let users_batch: Vec<User> = Vec::new();
+    let update_users = update(users::table).set(&users_batch).execute(connection);
+
+    assert!(update_users.is_err());
+    assert_eq!(
+        update_users.unwrap_err().to_string(),
+        "There are no changes to save. This query cannot be built"
+    );
+}

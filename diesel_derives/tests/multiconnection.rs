@@ -12,7 +12,7 @@ pub enum InferConnection {
     Mysql(MysqlConnection),
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Identifiable)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -112,6 +112,15 @@ fn check_queries_work() {
         })
         .execute(&mut conn)
         .unwrap();
+
+    // batch update
+    // currently unsupported :(
+    // diesel::update(users::table)
+    //     .set([User {
+    //         id: 42,
+    //         name: "Jane".into(),
+    //     }])
+    //     .execute(&mut conn);
 
     // delete
     diesel::delete(users::table).execute(&mut conn).unwrap();

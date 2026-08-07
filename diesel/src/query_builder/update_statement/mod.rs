@@ -1,5 +1,8 @@
+pub(crate) mod batch_update;
 pub(crate) mod changeset;
 pub(super) mod target;
+
+use private::AllowFilterForUpdate;
 
 use crate::QuerySource;
 use crate::backend::DieselReserveSpecialization;
@@ -25,6 +28,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
         UpdateStatement {
             from_clause: target.table.from_clause(),
             where_clause: target.where_clause,
+            set_clause: SetClause::Immediate,
             values: SetNotCalled,
             returning: NoReturningClause,
         }
@@ -44,6 +48,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause,
+            set_clause: <V as AsChangeset>::SET_CLAUSE,
             values: values.as_changeset(),
             returning: self.returning,
         }
@@ -60,6 +65,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
 pub struct UpdateStatement<T: QuerySource, U, V = SetNotCalled, Ret = NoReturningClause> {
     from_clause: T::FromClause,
     where_clause: U,
+    set_clause: SetClause,
     values: V,
     returning: Ret,
 }
@@ -166,6 +172,7 @@ where
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.and(predicate),
+            set_clause: self.set_clause,
             values: self.values,
             returning: self.returning,
         }
@@ -183,6 +190,7 @@ where
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.into(),
+            set_clause: self.set_clause,
             values: self.values,
             returning: self.returning,
         }
@@ -195,7 +203,7 @@ where
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: QueryFragment<DB>,
-    V: QueryFragment<DB>,
+    V: QueryFragment<DB> + AllowFilterForUpdate<U>,
     Ret: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -206,7 +214,7 @@ where
         out.unsafe_to_cache_prepared();
         out.push_sql("UPDATE ");
         self.from_clause.walk_ast(out.reborrow())?;
-        out.push_sql(" SET ");
+        self.set_clause.walk_ast(out.reborrow())?;
         self.values.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
@@ -309,6 +317,7 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause,
+            set_clause: self.set_clause,
             values: self.values,
             returning: ReturningClause(returns),
         }
@@ -319,7 +328,12 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 #[derive(Debug, Clone, Copy)]
 pub struct SetNotCalled;
 
-mod private {
+pub(crate) mod private {
+    use crate::backend::Backend;
+    use crate::query_builder::where_clause::{BoxedWhereClause, NoWhereClause, WhereClause};
+
+    use super::changeset::Assign;
+
     /// Helper trait for `#[auto_type]`
     ///
     /// This trait allows inferring the return type of `UpdateStatement::set` and
@@ -336,5 +350,58 @@ mod private {
         Changes: crate::AsChangeset,
     {
         type Out = crate::query_builder::UpdateStatement<T, W, Changes::Changeset>;
+    }
+
+    /// A helper trait to mark values clauses as compatible with a given filter syntax
+    #[diagnostic::on_unimplemented(
+        message = "cannot apply a `WHERE` clause to batch updates",
+        note = "the information about which rows to update are provided as part of the values"
+    )]
+    pub trait AllowFilterForUpdate<P> {}
+
+    impl<U> AllowFilterForUpdate<NoWhereClause> for U {}
+
+    impl<W, C, B> AllowFilterForUpdate<WhereClause<W>> for Assign<C, B> {}
+    impl<W, T> AllowFilterForUpdate<WhereClause<W>> for Option<T> where
+        T: AllowFilterForUpdate<WhereClause<W>>
+    {
+    }
+
+    impl<'a, DB, C, B> AllowFilterForUpdate<BoxedWhereClause<'a, DB>> for Assign<C, B> where DB: Backend {}
+    impl<'a, DB, T> AllowFilterForUpdate<BoxedWhereClause<'a, DB>> for Option<T>
+    where
+        DB: Backend,
+        T: AllowFilterForUpdate<BoxedWhereClause<'a, DB>>,
+    {
+    }
+}
+
+/// Determines when the `SET` part of an update statement will be added to the sql.
+///
+/// Usual single row updates default to [SetClause::Immediate]. Batch row updates
+/// will use [SetClause::Delegated].
+///
+/// - [SetClause::Immediate]
+///   will add `SET` right after the [UpdateStatement::from_clause] `QueryFragment`. \
+///   `Update users SET ... ;`
+/// - [SetClause::Delegated]
+///   hands over the control of adding `SET` to [UpdateStatement::values] `QueryFragment`. \
+///   `Update users ... SET ... ; ` will then be permitted.  \
+///   Batch update for mysql requires this behavior.
+#[derive(Clone, Copy, Debug)]
+pub enum SetClause {
+    Immediate,
+    Delegated,
+}
+
+impl<DB> QueryFragment<DB> for SetClause
+where
+    DB: Backend,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        if let SetClause::Immediate = self {
+            out.push_sql(" SET ");
+        }
+        Ok(())
     }
 }

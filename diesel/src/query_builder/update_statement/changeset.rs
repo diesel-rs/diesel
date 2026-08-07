@@ -1,10 +1,13 @@
-use crate::Table;
+use super::{SetClause, batch_update::*};
+use crate::associations::HasTable;
 use crate::backend::DieselReserveSpecialization;
 use crate::expression::AppearsOnTable;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
+use crate::{Identifiable, Table};
+use alloc::borrow::ToOwned;
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).
@@ -16,6 +19,10 @@ pub trait AsChangeset {
 
     /// The update statement this type represents
     type Changeset;
+
+    /// Return the associated Update type. Defaults to Single row Updates.
+    #[doc(hidden)]
+    const SET_CLAUSE: SetClause = SetClause::Immediate;
 
     /// Convert `self` into the actual update statement being executed
     // This method is part of our public API
@@ -81,7 +88,7 @@ where
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct Assign<Target, Expr> {
-    target: Target,
+    pub(crate) target: Target,
     expr: Expr,
 }
 
@@ -138,5 +145,180 @@ where
 
     fn into_target(self) -> Self::QueryAstNode {
         ColumnWrapperForUpdate(self)
+    }
+}
+
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend"
+))]
+impl<C, T, DB> BatchValueHelper<DB> for Assign<ColumnWrapperForUpdate<C>, T>
+where
+    DB: Backend + DieselReserveSpecialization,
+    C: Column + QueryFragment<DB>,
+    T: QueryFragment<DB>,
+    Self: BatchAssignHelper<DB>,
+{
+    fn assign<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.batch_assign_identifier(out.reborrow())?;
+        out.push_sql(" = ");
+        out.push_identifier(BATCH_UPDATE_ALIAS)?;
+        out.push_sql(".");
+        out.push_identifier(C::NAME)?;
+        Ok(())
+    }
+
+    fn column_name<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.target.walk_ast(out)
+    }
+
+    fn bind_value<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.expr.walk_ast(out)
+    }
+}
+
+impl<'a, U, I, C, PK> AsChangeset for &'a [U]
+where
+    U: AsChangeset + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    &'a U: AsChangeset<Target = U::Target, Changeset = C> + Identifiable<Table = U::Target, Id = I>,
+{
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target>;
+    const SET_CLAUSE: SetClause = SetClause::Delegated;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .iter()
+            .map(|value| (Identifiable::id(value), AsChangeset::as_changeset(value)))
+            .collect::<Vec<_>>();
+        BatchUpdate::new(values, U::table().primary_key())
+    }
+}
+
+impl<'a, U> AsChangeset for &'a Vec<U>
+where
+    U: AsChangeset,
+    &'a [U]: AsChangeset,
+{
+    type Target = U::Target;
+    type Changeset = <&'a [U] as AsChangeset>::Changeset;
+    const SET_CLAUSE: SetClause = <&'a [U] as AsChangeset>::SET_CLAUSE;
+
+    fn as_changeset(self) -> Self::Changeset {
+        (&**self).as_changeset()
+    }
+}
+
+impl<'a, U, const N: usize> AsChangeset for &'a [U; N]
+where
+    &'a [U]: AsChangeset,
+{
+    type Target = <&'a [U] as AsChangeset>::Target;
+    type Changeset = <&'a [U] as AsChangeset>::Changeset;
+    const SET_CLAUSE: SetClause = <&'a [U] as AsChangeset>::SET_CLAUSE;
+
+    fn as_changeset(self) -> Self::Changeset {
+        self.as_slice().as_changeset()
+    }
+}
+
+impl<U> AsChangeset for Vec<U>
+where
+    Box<[U]>: AsChangeset,
+{
+    type Target = <Box<[U]> as AsChangeset>::Target;
+    type Changeset = <Box<[U]> as AsChangeset>::Changeset;
+    const SET_CLAUSE: SetClause = <Box<[U]> as AsChangeset>::SET_CLAUSE;
+
+    fn as_changeset(self) -> Self::Changeset {
+        self.into_boxed_slice().as_changeset()
+    }
+}
+
+impl<U, const N: usize> AsChangeset for Box<[U; N]>
+where
+    Box<[U]>: AsChangeset,
+{
+    type Target = <Box<[U]> as AsChangeset>::Target;
+    type Changeset = <Box<[U]> as AsChangeset>::Changeset;
+    const SET_CLAUSE: SetClause = <Box<[U]> as AsChangeset>::SET_CLAUSE;
+
+    fn as_changeset(self) -> Self::Changeset {
+        (self as Box<[U]>).as_changeset()
+    }
+}
+
+impl<U, I, C, PK> AsChangeset for Box<[U]>
+where
+    U: AsChangeset<Changeset = C> + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    for<'a> &'a U: Identifiable<Id: IntoOwned<Owned = I>>,
+{
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target>;
+    const SET_CLAUSE: SetClause = SetClause::Delegated;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .into_iter()
+            .map(|v| {
+                // this clone is not that great, but we do not have
+                // many other options. On the other hand the primary key
+                // is often cheap to clone, especially compared
+                // to sending an large set of updates to the DB, so it shouldn't
+                // matter that much
+                let id = v.id().into_owned();
+                let changes = v.as_changeset();
+                (id, changes)
+            })
+            .collect();
+        BatchUpdate::new(values, U::table().primary_key())
+    }
+}
+
+impl<U, I, C, PK, const N: usize> AsChangeset for [U; N]
+where
+    U: AsChangeset<Changeset = C> + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    for<'a> &'a U: Identifiable<Id: IntoOwned<Owned = I>>,
+{
+    type Target = U::Target;
+    type Changeset = BatchUpdate<I, C, PK, U::Target>;
+    const SET_CLAUSE: SetClause = SetClause::Delegated;
+
+    fn as_changeset(self) -> Self::Changeset {
+        let values = self
+            .into_iter()
+            .map(|v| {
+                // this clone is not that great, but we do not have
+                // many other options. On the other hand the primary key
+                // is often cheap to clone, especially compared
+                // to sending an large set of updates to the DB, so it shouldn't
+                // matter that much
+                let id = v.id().into_owned();
+                let changes = v.as_changeset();
+                (id, changes)
+            })
+            .collect();
+        BatchUpdate::new(values, U::table().primary_key())
+    }
+}
+
+pub(crate) trait IntoOwned {
+    type Owned;
+
+    fn into_owned(self) -> Self::Owned;
+}
+
+impl<T> IntoOwned for &T
+where
+    T: ToOwned,
+{
+    type Owned = T::Owned;
+
+    fn into_owned(self) -> Self::Owned {
+        (*self).to_owned()
     }
 }
