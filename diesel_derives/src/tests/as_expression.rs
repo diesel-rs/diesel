@@ -24,7 +24,7 @@ pub(crate) fn as_expression_not_sized_1() {
     let input = quote::quote! {
         #[diesel(sql_type = diesel::sql_type::Text)]
         #[diesel(not_sized)]
-        struct Foo(str);
+        struct StringSlice(str);
     };
     expand_with(
         &crate::derive_as_expression_inner as &dyn Fn(_) -> _,

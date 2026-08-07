@@ -2,12 +2,12 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "#[derive(AsExpression)]\n#[diesel(sql_type = diesel::sql_type::Text)]\n#[diesel(not_sized)]\nstruct Foo(str);\n"
+  input: "#[derive(AsExpression)]\n#[diesel(sql_type = diesel::sql_type::Text)]\n#[diesel(not_sized)]\nstruct StringSlice(str);\n"
 ---
 const _: () = {
     use diesel;
     impl<'__expr> diesel::expression::AsExpression<diesel::sql_type::Text>
-    for &'__expr Foo {
+    for &'__expr StringSlice {
         type Expression = diesel::internal::derives::as_expression::Bound<
             diesel::sql_type::Text,
             Self,
@@ -25,7 +25,7 @@ const _: () = {
         '__expr,
     > diesel::expression::AsExpression<
         diesel::sql_types::Nullable<diesel::sql_type::Text>,
-    > for &'__expr Foo {
+    > for &'__expr StringSlice {
         type Expression = diesel::internal::derives::as_expression::Bound<
             diesel::sql_types::Nullable<diesel::sql_type::Text>,
             Self,
@@ -40,7 +40,7 @@ const _: () = {
     }
     #[diagnostic::do_not_recommend]
     impl<'__expr, '__expr2> diesel::expression::AsExpression<diesel::sql_type::Text>
-    for &'__expr2 &'__expr Foo {
+    for &'__expr2 &'__expr StringSlice {
         type Expression = diesel::internal::derives::as_expression::Bound<
             diesel::sql_type::Text,
             Self,
@@ -59,7 +59,7 @@ const _: () = {
         '__expr2,
     > diesel::expression::AsExpression<
         diesel::sql_types::Nullable<diesel::sql_type::Text>,
-    > for &'__expr2 &'__expr Foo {
+    > for &'__expr2 &'__expr StringSlice {
         type Expression = diesel::internal::derives::as_expression::Bound<
             diesel::sql_types::Nullable<diesel::sql_type::Text>,
             Self,
@@ -75,7 +75,7 @@ const _: () = {
     impl<
         __DB,
     > diesel::serialize::ToSql<diesel::sql_types::Nullable<diesel::sql_type::Text>, __DB>
-    for Foo
+    for StringSlice
     where
         __DB: diesel::backend::Backend,
         Self: diesel::serialize::ToSql<diesel::sql_type::Text, __DB>,
