@@ -104,7 +104,9 @@ pub enum MysqlType {
 }
 
 pub(crate) mod query_fragments {
-    use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
+    use crate::backend::sql_dialect::{
+        batch_update_support::SupportsBatchUpdate, on_conflict_clause::SupportsOnConflictClause,
+    };
 
     #[derive(Debug, Clone, Copy)]
     pub struct MysqlStyleDefaultValueClause;
@@ -119,4 +121,9 @@ pub(crate) mod query_fragments {
     pub struct MysqlRequiresOrderForWindowFunctions;
 
     impl SupportsOnConflictClause for MysqlOnConflictClause {}
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct MySqlLikeBatchUpdateSupport;
+
+    impl SupportsBatchUpdate for MySqlLikeBatchUpdateSupport {}
 }

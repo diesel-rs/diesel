@@ -12,7 +12,7 @@ edition.workspace = true
 include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md", "build.rs"]
 
 [dependencies]
-syn = { version = "2.0", features = ["derive", "fold", "full", "visit-mut"] }
+syn = { version = "3.0", features = ["derive", "fold", "full", "visit-mut"] }
 quote = "1.0.9"
 proc-macro2 = "1.0.27"
 diesel_table_macro_syntax = { version = "0.3", path = "../diesel_table_macro_syntax" }
@@ -23,7 +23,7 @@ dsl_auto_type = { version = "0.2", path = "../dsl_auto_type" }
 cfg-if = "1"
 dotenvy = "0.15"
 insta = "1.21"
-prettyplease = "0.2"
+prettyplease = "0.3"
 
 [dev-dependencies.diesel]
 path = "../diesel"

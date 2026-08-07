@@ -1,7 +1,7 @@
 use crate::{
     backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect},
     mariadb::{MariadbQueryBuilder, MariadbValue},
-    mysql_like::MysqlLikeBackend,
+    mysql_like::{MysqlLikeBackend, query_fragments::MySqlLikeBatchUpdateSupport},
     query_builder::bind_collector::RawBytesBindCollector,
     sql_types::TypeMetadata,
 };
@@ -34,6 +34,8 @@ impl SqlDialect for Mariadb {
     type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
     type DefaultValueClauseForInsert = MariadbStyleDefaultValueClause;
+
+    type BatchUpdateSupport = MySqlLikeBatchUpdateSupport;
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;

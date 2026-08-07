@@ -6,6 +6,7 @@ use crate::backend::*;
 use crate::internal::derives::multiconnection::sql_dialect;
 use crate::mysql_like::MysqlLikeBackend;
 use crate::mysql_like::MysqlType;
+use crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport;
 use crate::mysql_like::query_fragments::{
     MysqlConcatClause, MysqlOnConflictClause, MysqlRequiresOrderForWindowFunctions,
     MysqlStyleDefaultValueClause,
@@ -36,6 +37,8 @@ impl SqlDialect for Mysql {
     type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
     type DefaultValueClauseForInsert = MysqlStyleDefaultValueClause;
+
+    type BatchUpdateSupport = MySqlLikeBatchUpdateSupport;
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;

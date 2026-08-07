@@ -15,6 +15,7 @@ mod enum_;
 mod identifiable;
 mod insertable;
 mod multiconnection;
+mod query_id;
 mod queryable;
 mod queryable_by_name;
 mod selectable;

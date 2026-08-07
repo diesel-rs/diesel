@@ -1311,6 +1311,7 @@ impl Parse for SqlFunctionDecl {
                 combine_error(e);
                 Type::Never(syn::TypeNever {
                     bang_token: Default::default(),
+                    attrs: Vec::new(),
                 })
             })
         } else {
