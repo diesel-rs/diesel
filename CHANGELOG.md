@@ -48,6 +48,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
 * Added `SqliteConnection::vacuum` and `SqliteConnection::vacuum_into` to rebuild a database or write a vacuumed copy of it to a new file, each accepting an optional schema name to target an attached database, with the destination path passed as a bind parameter.
 * Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
+* Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
 
 ### Fixed
 

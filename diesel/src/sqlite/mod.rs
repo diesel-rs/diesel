@@ -29,6 +29,8 @@ pub use self::connection::SqliteLimit;
 pub use self::connection::SqliteTraceEvent;
 pub use self::connection::SqliteTraceFlags;
 pub use self::connection::SqliteValue;
+pub use self::connection::WalCheckpointMode;
+pub use self::connection::WalCheckpointOutcome;
 pub use self::connection::authorizer;
 pub use self::connection::sqlite_blob::SqliteReadOnlyBlob;
 pub use self::connection::{AuthorizerContext, AuthorizerDecision};
