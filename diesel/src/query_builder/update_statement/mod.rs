@@ -165,7 +165,6 @@ where
     T: QuerySource,
     U: WhereAnd<Predicate>,
     Predicate: AppearsOnTable<T>,
-    //V: private::AllowFilterForUpdate<U::Output>,
 {
     type Output = UpdateStatement<T, U::Output, V, Ret>;
 

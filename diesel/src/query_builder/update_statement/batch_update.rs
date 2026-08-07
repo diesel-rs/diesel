@@ -1,3 +1,5 @@
+#[cfg(doc)]
+use crate::backend::SqlDialect;
 use crate::backend::{Backend, sql_dialect};
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::{QueryResult, query_builder::*};
