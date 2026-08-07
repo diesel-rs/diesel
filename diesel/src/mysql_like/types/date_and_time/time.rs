@@ -210,10 +210,8 @@ mod tests {
     extern crate dotenvy;
     extern crate time;
 
-    use time::{
-        Date as NaiveDate, Duration, OffsetDateTime, Time as NaiveTime,
-        macros::{date, datetime, time},
-    };
+    use time::macros::{date, datetime, time};
+    use time::{Date as NaiveDate, Duration, OffsetDateTime, Time as NaiveTime};
 
     use super::to_primitive_datetime;
 

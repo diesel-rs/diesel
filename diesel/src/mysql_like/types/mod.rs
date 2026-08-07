@@ -13,7 +13,8 @@ use crate::mysql_like::{MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
-use crate::sql_types::{self, ops::*};
+use crate::sql_types::{self};
+use crate::sql_types::ops::*;
 use byteorder::{NativeEndian, WriteBytesExt};
 
 impl<B: MysqlLikeBackend> ToSql<TinyInt, B> for i8 {

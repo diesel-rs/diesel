@@ -9,12 +9,10 @@ mod value;
 
 use core::hash::Hash;
 
-use crate::{
-    backend::{Backend, DieselReserveSpecialization},
-    mysql_like::query_builder::MysqlLikeQueryBuilder,
-    query_builder::bind_collector::RawBytesBindCollector,
-    sql_types::TypeMetadata,
-};
+use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::mysql_like::query_builder::MysqlLikeQueryBuilder;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::sql_types::TypeMetadata;
 
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub use self::connection::MysqlLikeConnection;
@@ -26,13 +24,17 @@ pub use self::value::{MysqlValue, NumericRepresentation};
 /// level types.
 pub mod data_types {
     #[doc(inline)]
-    pub use super::types::date_and_time::{MysqlTime, MysqlTimestampType};
+    pub use super::types::date_and_time::MysqlTime;
+    #[doc(inline)]
+    pub use super::types::date_and_time::MysqlTimestampType;
 }
 
 /// MySQL specific sql types
 pub mod sql_types {
     #[doc(inline)]
-    pub use super::types::{Datetime, Unsigned};
+    pub use super::types::Datetime;
+    #[doc(inline)]
+    pub use super::types::Unsigned;
 }
 
 /// A trait for backends which implement the MySQL wire protocol. This is implemented for both MySQL and MariaDB,
@@ -104,9 +106,8 @@ pub enum MysqlType {
 }
 
 pub(crate) mod query_fragments {
-    use crate::backend::sql_dialect::{
-        batch_update_support::SupportsBatchUpdate, on_conflict_clause::SupportsOnConflictClause,
-    };
+    use crate::backend::sql_dialect::batch_update_support::SupportsBatchUpdate;
+    use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 
     #[derive(Debug, Clone, Copy)]
     pub struct MysqlStyleDefaultValueClause;

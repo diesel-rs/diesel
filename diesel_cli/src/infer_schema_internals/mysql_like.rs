@@ -52,11 +52,9 @@ where
 }
 
 mod column_query {
-    use diesel::{
-        ExpressionMethods, IntoSql, QueryDsl, dsl,
-        helper_types::AsExprOf,
-        sql_types::{Nullable, Text},
-    };
+    use diesel::helper_types::AsExprOf;
+    use diesel::sql_types::{Nullable, Text};
+    use diesel::{ExpressionMethods, IntoSql, QueryDsl, dsl};
 
     use super::information_schema::columns::dsl::*;
     use super::null_if_text;

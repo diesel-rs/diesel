@@ -1,10 +1,11 @@
-use crate::{
-    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect},
-    mariadb::{MariadbQueryBuilder, MariadbValue},
-    mysql_like::{MysqlLikeBackend, query_fragments::MySqlLikeBatchUpdateSupport},
-    query_builder::bind_collector::RawBytesBindCollector,
-    sql_types::TypeMetadata,
+use crate::backend::{
+    Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect,
 };
+use crate::mariadb::{MariadbQueryBuilder, MariadbValue};
+use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport;
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::sql_types::TypeMetadata;
 
 /// The MariaDB backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]

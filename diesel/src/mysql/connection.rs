@@ -1,4 +1,5 @@
-use crate::{mysql::Mysql, mysql_like::MysqlLikeConnection};
+use crate::mysql::Mysql;
+use crate::mysql_like::MysqlLikeConnection;
 
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*&ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_cert=/etc/ssl/certs/client-cert.crt&ssl_key=/etc/ssl/certs/client-key.crt]`
