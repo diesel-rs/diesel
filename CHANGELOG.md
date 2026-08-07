@@ -14,7 +14,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-* Added Batch-Update support for the Postgres and MySQL backends.
+* Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
 * Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
@@ -43,7 +43,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `#[diesel_async]` attribute to `#[derive(MultiConnection)]` to support async MultiConnections. 
 * Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
 * Added `--no-schema` CLI flag to the `migration run` subcommand
-* Add support for Batch-Update for PostgreSQL, MySQL and SQLite
+* Added `SqliteConnection::auto_vacuum` and `SqliteConnection::set_auto_vacuum` to read and set a database's `auto_vacuum` mode through the typed `AutoVacuumMode` enum, each accepting an optional schema name to target an attached database.
+* Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
+* Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
 
 ### Fixed
 
@@ -60,6 +62,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+
+## [2.3.12] 2026-08-07
+
+* Fixed FromSql/ToSql for chrono::NaiveTime on MySQL dropping the fractional-seconds component of TIME values, so a TIME(N) column now round-trips its microseconds like DATETIME / TIMESTAMP already did.
 * Extended libsqlite3-sys support to include 0.38
 
 ## [2.3.11] 2026-07-10
@@ -2412,3 +2418,8 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.5]: https://github.com/diesel-rs/diesel/compare/v2.3.4...v2.3.5
 [2.3.6]: https://github.com/diesel-rs/diesel/compare/v2.3.5...v2.3.6
 [2.3.7]: https://github.com/diesel-rs/diesel/compare/v2.3.6...v2.3.7
+[2.3.8]: https://github.com/diesel-rs/diesel/compare/v2.3.7...v2.3.8
+[2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9
+[2.3.10]: https://github.com/diesel-rs/diesel/compare/v2.3.9...v2.3.10
+[2.3.11]: https://github.com/diesel-rs/diesel/compare/v2.3.10...v2.3.11
+[2.3.12]: https://github.com/diesel-rs/diesel/compare/v2.3.11...v2.3.12

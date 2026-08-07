@@ -220,7 +220,7 @@ fn check_serde_as_supported_type(ty: &Type, attr_name: &str) -> Result<()> {
             ty,
             format!("`{attr_name}` does not support pointer types"),
         )),
-        Type::BareFn(_) => Err(syn::Error::new_spanned(
+        Type::FnPtr(_) => Err(syn::Error::new_spanned(
             ty,
             format!("`{attr_name}` does not support function pointer types"),
         )),
