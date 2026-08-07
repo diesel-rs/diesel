@@ -54,13 +54,16 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
-* Fixed `FromSql`/`ToSql` for `chrono::NaiveTime` on MySQL dropping the fractional-seconds component of `TIME` values, so a `TIME(N)` column now round-trips its microseconds like `DATETIME` / `TIMESTAMP` already did.
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+
+## [2.3.12] 2026-08-07
+
+* Fixed FromSql/ToSql for chrono::NaiveTime on MySQL dropping the fractional-seconds component of TIME values, so a TIME(N) column now round-trips its microseconds like DATETIME / TIMESTAMP already did.
 * Extended libsqlite3-sys support to include 0.38
 
 ## [2.3.11] 2026-07-10
@@ -2417,3 +2420,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.9]: https://github.com/diesel-rs/diesel/compare/v2.3.8...v2.3.9
 [2.3.10]: https://github.com/diesel-rs/diesel/compare/v2.3.9...v2.3.10
 [2.3.11]: https://github.com/diesel-rs/diesel/compare/v2.3.10...v2.3.11
+[2.3.12]: https://github.com/diesel-rs/diesel/compare/v2.3.11...v2.3.12
