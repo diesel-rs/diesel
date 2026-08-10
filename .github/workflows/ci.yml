@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         rust: ["stable"]
-        backend: ["postgres", "sqlite", "mysql"]
+        backend: ["postgres", "sqlite", "mysql", "mariadb"]
         os:
           [
             ubuntu-latest,
@@ -55,6 +55,9 @@ jobs:
           - rust: "beta"
             backend: "mysql"
             os: "ubuntu-latest"
+          - rust: "beta"
+            backend: "mariadb"
+            os: "ubuntu-latest"
           - rust: "nightly"
             backend: "postgres"
             os: "ubuntu-latest"
@@ -63,6 +66,9 @@ jobs:
             os: "ubuntu-latest"
           - rust: "nightly"
             backend: "mysql"
+            os: "ubuntu-latest"
+          - rust: "nightly"
+            backend: "mariadb"
             os: "ubuntu-latest"
     runs-on: ${{ matrix.os }}
     steps:
@@ -118,6 +124,17 @@ jobs:
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
 
+      - name: Install mariadb (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'mariadb'
+        run: |
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev mariadb-server mariadb-client
+          sudo systemctl start mariadb.service
+          mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
         run: |
@@ -147,6 +164,19 @@ jobs:
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mysql@8.4/lib" >> $GITHUB_ENV
           echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
+          
+      - name: Install mariadb (MacOS Intel)
+        if: matrix.os == 'macos-15-intel' && matrix.backend == 'mariadb'
+        run: |
+          brew install mariadb@12.3
+          /usr/local/opt/mariadb@12.3/bin/mariadb.server start
+          sleep 3
+          /usr/local/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test;  grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@12.3/lib" >> $GITHUB_ENV
+          echo "MARIADBCLIENT_VERSION=12.3" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
         if: matrix.os == 'macos-26' && matrix.backend == 'mysql'
@@ -161,6 +191,20 @@ jobs:
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mysql@8.4/lib" >> $GITHUB_ENV
           echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
+
+      - name: Install mariadb (MacOS M1)
+        if: matrix.os == 'macos-26' && matrix.backend == 'mariadb'
+        run: |
+          brew install mariadb@12.3
+          ls /opt/homebrew/opt/mariadb@12.3
+          /opt/homebrew/opt/mariadb@12.3/bin/mariadb.server start
+          sleep 3
+          /opt/homebrew/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@12.3/lib" >> $GITHUB_ENV
+          echo "MARIADBCLIENT_VERSION=12.3" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -562,9 +606,9 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=300 update
           sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       - name: Check diesel_derives
-        run: cargo +1.88.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
+        run: cargo +1.88.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql mariadb 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
       - name: Check diesel
-        run: cargo +1.88.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
+        run: cargo +1.88.0 minimal-versions check -p diesel --features "postgres mysql mariadb sqlite extras"
       - name: Check diesel_dynamic_schema
         run: cargo +1.88.0 minimal-versions check -p diesel-dynamic-schema --all-features
       - name: Check diesel_migrations
