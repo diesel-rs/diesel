@@ -13,7 +13,9 @@ use crate::mysql_like::query_builder::MysqlLikeQueryBuilder;
 pub use self::backend::Mysql;
 #[cfg(feature = "mysql")]
 pub use self::connection::MysqlConnection;
+pub use super::mysql_like::sql_types;
 pub use super::mysql_like::{MysqlType, MysqlValue, NumericRepresentation};
+pub use crate::mysql_like::data_types;
 
 /// The MySQL query builder
 pub type MysqlQueryBuilder = MysqlLikeQueryBuilder<Mysql>;
