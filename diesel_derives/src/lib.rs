@@ -1037,6 +1037,8 @@ fn derive_selectable_inner(input: proc_macro2::TokenStream) -> proc_macro2::Toke
 /// builtin types.
 /// For MySQL, specify which variant of `MysqlType` should be used
 /// by adding `#[diesel(mysql_type(name = "Variant"))]`.
+/// For Mariadb, specify which variant of `MariadbType` should be used
+/// by adding `#[diesel(mariadb_type(name = "Variant"))]`.
 /// For SQLite, specify which variant of `SqliteType` should be used
 /// by adding `#[diesel(sqlite_type(name = "Variant"))]`.
 ///
@@ -1057,6 +1059,9 @@ fn derive_selectable_inner(input: proc_macro2::TokenStream) -> proc_macro2::Toke
 /// * `#[diesel(mysql_type(name = "TypeName"))]`, specifies support for a mysql type
 ///   with the given name. `TypeName` needs to be one of the possible values
 ///   in `MysqlType`
+/// * `#[diesel(mariadb_type(name = "TypeName"))]`, specifies support for a mariadb type
+///   with the given name. `TypeName` needs to be one of the possible values
+///   in `MariadbType`
 ///
 #[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/sql_type.md")))]
 #[cfg_attr(
@@ -1845,6 +1850,7 @@ fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream 
 /// #[derive(Copy, Clone, Debug, SqlType)]
 /// #[diesel(postgres_type(name = "Int4"))]
 /// #[diesel(mysql_type(name = "Long"))]
+/// #[diesel(mariadb_type(name = "Long"))]
 /// #[diesel(sqlite_type(name = "Integer"))]
 /// struct MyInteger;
 ///

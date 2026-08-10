@@ -42,27 +42,6 @@ pub(crate) fn sql_type_1() {
 }
 
 #[test]
-#[cfg(feature = "mariadb")]
-pub(crate) fn sql_type_mysql_type_for_mariadb() {
-    let input = quote::quote! {#[diesel(mysql_type(name = "Long"))]};
-
-    let input = quote::quote! {
-        #input
-        struct Integer;
-    };
-
-    // When `mariadb_type` is absent, but `mysql_type` is present, we should still generate the same code for MariaDB.
-    let name = "sql_type_1 (mariadb)";
-
-    expand_with(
-        &crate::derive_sql_type_inner as &dyn Fn(_) -> _,
-        input,
-        derive(syn::parse_quote!(#[derive(SqlType)])),
-        name,
-    );
-}
-
-#[test]
 pub(crate) fn sql_type_enum() {
     let input = if cfg!(feature = "postgres") {
         quote::quote! {#[diesel(postgres_type(oid = 42, array_oid = 142))]}

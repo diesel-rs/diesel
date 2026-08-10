@@ -26,6 +26,7 @@ pub mod sql_types {
     #[cfg(any(feature = "mysql", feature = "mariadb"))]
     #[derive(diesel::query_builder::QueryId, Clone, diesel::sql_types::SqlType)]
     #[diesel(mysql_type(name = "Enum"))]
+    #[diesel(mariadb_type(name = "Enum"))]
     #[diesel(enum_type)]
     pub struct CarsPaintColorEnum;
 }

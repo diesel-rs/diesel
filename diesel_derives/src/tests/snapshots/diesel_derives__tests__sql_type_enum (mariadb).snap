@@ -21,7 +21,6 @@ const _: () = {
     {
         type Strategy = diesel::internal::derives::sql_type::EnumTypeMapping;
     }
-
     impl diesel::sql_types::HasSqlType<Integer> for diesel::mariadb::Mariadb {
         fn metadata(_: &mut ()) -> diesel::mariadb::MariadbType {
             diesel::mariadb::MariadbType::Long

@@ -1216,7 +1216,7 @@ impl<'a> CustomTypesForTablesForDisplay<'a> {
 
             #[cfg(feature = "mysql")]
             writeln!(out, "#[diesel(mysql_type(name = \"{mysql_name}\"))]")?;
-            #[cfg(not(feature = "mysql"))]
+            #[cfg(feature = "mariadb")]
             writeln!(out, "#[diesel(mariadb_type(name = \"{mysql_name}\"))]")?;
             if enum_type {
                 writeln!(out, "#[diesel(enum_type)]")?;

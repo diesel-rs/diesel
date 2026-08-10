@@ -16,5 +16,4 @@ const _: () = {
             diesel::mysql::MysqlType::Long
         }
     }
-
 };

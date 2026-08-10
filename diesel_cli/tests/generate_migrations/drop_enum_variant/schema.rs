@@ -4,12 +4,14 @@ pub mod sql_types {
     #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "some_enum"))]
     #[diesel(mysql_type(name = "Enum"))]
+    #[diesel(mariadb_type(name = "Enum"))]
     #[diesel(enum_type)]
     pub struct SomeEnum;
 
     #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "some_enum2"))]
     #[diesel(mysql_type(name = "Enum"))]
+    #[diesel(mariadb_type(name = "Enum"))]
     #[diesel(enum_type)]
     pub struct SomeEnum2;
 }

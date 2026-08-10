@@ -34,6 +34,7 @@ mod notes {
     pub const TREAT_NONE_AS_NULL_NOTE: &str = "treat_none_as_null = true";
     pub const BELONGS_TO_NOTE: &str = "belongs_to(Foo, foreign_key = foo_id)";
     pub const MYSQL_TYPE_NOTE: &str = "mysql_type(name = \"foo\")";
+    pub const MARIADB_TYPE_NOTE: &str = "mariadb_type(name = \"foo\")";
     pub const SQLITE_TYPE_NOTE: &str = "sqlite_type(name = \"foo\")";
     pub const POSTGRES_TYPE_NOTE: &str = "postgres_type(name = \"foo\", schema = \"public\")";
     pub const POSTGRES_TYPE_NOTE_ID: &str = "postgres_type(oid = 37, array_oid = 54)";
@@ -306,9 +307,9 @@ impl Parse for StructAttr {
                 name,
                 parse_paren(input, MYSQL_TYPE_NOTE)?,
             )),
-            "mariadb_type" => Ok(StructAttr::MysqlType(
+            "mariadb_type" => Ok(StructAttr::MariadbType(
                 name,
-                parse_paren(input, MYSQL_TYPE_NOTE)?,
+                parse_paren(input, MARIADB_TYPE_NOTE)?,
             )),
             "sqlite_type" => Ok(StructAttr::SqliteType(
                 name,

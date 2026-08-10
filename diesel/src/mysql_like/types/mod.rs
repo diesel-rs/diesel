@@ -12,9 +12,9 @@ use crate::mysql_like::MysqlLikeBackend;
 use crate::mysql_like::{MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::ops::*;
 use crate::sql_types::*;
 use crate::sql_types::{self};
-use crate::sql_types::ops::*;
 use byteorder::{NativeEndian, WriteBytesExt};
 
 impl<B: MysqlLikeBackend> ToSql<TinyInt, B> for i8 {
@@ -266,4 +266,5 @@ impl<B: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for B {
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(mysql_type(name = "DateTime"))]
+#[diesel(mariadb_type(name = "DateTime"))]
 pub struct Datetime;
