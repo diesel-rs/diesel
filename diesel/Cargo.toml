@@ -83,8 +83,8 @@ custom-count-column-tables = []
 postgres = ["dep:pq-sys", "postgres_backend"]
 sqlite-no-std = ["__sqlite-shared", "hashbrown"]
 sqlite = ["__sqlite-shared", "std"]
-mysql = ["dep:mysqlclient-sys", "dep:url", "dep:percent-encoding", "dep:bitflags", "mysql_backend"]
-mariadb = ["dep:mysqlclient-sys", "dep:url", "dep:percent-encoding", "dep:bitflags", "mariadb_backend"]
+mysql = ["__mysql_like_shared", "mysql_backend"]
+mariadb = ["__mysql_like_shared", "mariadb_backend"]
 without-deprecated = ["diesel_derives/without-deprecated"]
 with-deprecated = ["diesel_derives/with-deprecated"]
 network-address = ["dep:ipnetwork", "dep:libc"]
@@ -101,6 +101,7 @@ time = ["diesel_derives/time", "dep:time"]
 uuid = ["dep:uuid"]
 serde_json = ["dep:serde_json"]
 __sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing", "dep:bitflags"]
+__mysql_like_shared = ["dep:mysqlclient-sys", "dep:url", "dep:percent-encoding", "dep:bitflags"]
 __with_asan_tests = [
     "libsqlite3-sys?/bundled",
     "libsqlite3-sys?/with-asan",
