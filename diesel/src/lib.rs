@@ -177,6 +177,8 @@
 //!   mysqlclient-sys = { version = "0.5", features = ["bundled"] }
 //!   openssl-sys = { version = "0.9.100", features = ["vendored"] }
 //!   ```
+//! - `mariadb`: This feature enables the diesel mariadb backend. This feature implies `mariadb_backend`.
+//!   Enabling this feature requires a compatible copy of `libmysqlclient` for your target architecture.
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
 //!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
 //!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
@@ -187,6 +189,11 @@
 //!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
 //!   mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
 //!   mysql backend
+//! - `mariadb_backend`: This feature enables those parts of diesels mariadb backend, that are not dependent
+//!   on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
+//!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//!   mariadb backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//!   mariadb backend
 //! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
 //!   Enabling this feature requires sqlite 3.35.0 or newer.
 //! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
