@@ -1,12 +1,13 @@
 #![allow(unsafe_code)] // module uses ffi
 use core::ffi as libc;
 use core::ffi::CStr;
+use core::marker::PhantomData;
 use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::connection::statement_cache::MaybeCached;
-use crate::mysql_like::MysqlType;
+use crate::mysql_like::{MysqlLikeBackend, MysqlType};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 pub(super) mod iterator;
@@ -16,20 +17,22 @@ pub(super) use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
 #[allow(dead_code, missing_debug_implementations)]
 // https://github.com/rust-lang/rust/issues/81658
-pub struct Statement {
+pub struct Statement<B: MysqlLikeBackend> {
     stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<PreparedStatementBinds>,
+    _phantom: PhantomData<B>,
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
 #[allow(unsafe_code)]
-unsafe impl Send for Statement {}
+unsafe impl<B: MysqlLikeBackend> Send for Statement<B> {}
 
-impl Statement {
+impl<B: MysqlLikeBackend> Statement<B> {
     pub(crate) fn new(stmt: NonNull<ffi::MYSQL_STMT>) -> Self {
         Statement {
             stmt,
             input_binds: None,
+            _phantom: PhantomData,
         }
     }
 
@@ -99,18 +102,8 @@ impl Statement {
 
     fn last_error_type(&self) -> DatabaseErrorKind {
         let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) };
-        // These values are not exposed by the C API, but are documented
-        // at https://dev.mysql.com/doc/refman/8.0/en/server-error-reference.html
-        // and are from the ANSI SQLSTATE standard
-        match last_error_number {
-            1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
-            1216 | 1217 | 1451 | 1452 | 1830 | 1834 => DatabaseErrorKind::ForeignKeyViolation,
-            1792 => DatabaseErrorKind::ReadOnlyTransaction,
-            1048 | 1364 => DatabaseErrorKind::NotNullViolation,
-            3819 => DatabaseErrorKind::CheckViolation,
-            1213 => DatabaseErrorKind::SerializationFailure,
-            _ => DatabaseErrorKind::Unknown,
-        }
+
+        B::map_error_number(last_error_number)
     }
 
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
@@ -123,11 +116,11 @@ impl Statement {
     }
 }
 
-impl<'a> MaybeCached<'a, Statement> {
+impl<'a, B: MysqlLikeBackend> MaybeCached<'a, Statement<B>> {
     pub(super) fn execute_statement(
         self,
         binds: &mut OutputBinds,
-    ) -> QueryResult<StatementUse<'a>> {
+    ) -> QueryResult<StatementUse<'a, B>> {
         unsafe {
             binds.with_mysql_binds(|bind_ptr| self.bind_result(bind_ptr))?;
             self.execute()
@@ -137,7 +130,7 @@ impl<'a> MaybeCached<'a, Statement> {
     /// This function should be called instead of `results` on queries which
     /// have no return value. It should never be called on a statement on
     /// which `results` has previously been called?
-    pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a>> {
+    pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a, B>> {
         unsafe {
             ffi::mysql_stmt_execute(self.stmt.as_ptr());
         }
@@ -151,18 +144,18 @@ impl<'a> MaybeCached<'a, Statement> {
     }
 }
 
-impl Drop for Statement {
+impl<B: MysqlLikeBackend> Drop for Statement<B> {
     fn drop(&mut self) {
         unsafe { ffi::mysql_stmt_close(self.stmt.as_ptr()) };
     }
 }
 
 #[allow(missing_debug_implementations)]
-pub(super) struct StatementUse<'a> {
-    inner: MaybeCached<'a, Statement>,
+pub(super) struct StatementUse<'a, B: MysqlLikeBackend> {
+    inner: MaybeCached<'a, Statement<B>>,
 }
 
-impl StatementUse<'_> {
+impl<B: MysqlLikeBackend> StatementUse<'_, B> {
     pub(in crate::mysql_like::connection) fn affected_rows(&self) -> QueryResult<usize> {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.inner.stmt.as_ptr()) };
         affected_rows
@@ -223,7 +216,7 @@ impl StatementUse<'_> {
     }
 }
 
-impl Drop for StatementUse<'_> {
+impl<B: MysqlLikeBackend> Drop for StatementUse<'_, B> {
     fn drop(&mut self) {
         unsafe {
             ffi::mysql_stmt_free_result(self.inner.stmt.as_ptr());

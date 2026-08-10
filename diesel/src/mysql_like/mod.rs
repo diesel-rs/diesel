@@ -12,6 +12,7 @@ use core::hash::Hash;
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::mysql_like::query_builder::MysqlLikeQueryBuilder;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::result::DatabaseErrorKind;
 use crate::sql_types::TypeMetadata;
 
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
@@ -39,6 +40,7 @@ pub mod sql_types {
 
 /// A trait for backends which implement the MySQL wire protocol. This is implemented for both MySQL and MariaDB,
 /// and can be used when writing code that is compatible with both backends.
+#[expect(private_bounds)]
 pub trait MysqlLikeBackend
 where
     Self: for<'a> Backend<
@@ -49,11 +51,17 @@ where
     Self: Backend<QueryBuilder = MysqlLikeQueryBuilder<Self>>,
     Self: Hash + Eq + Default,
     Self: DieselReserveSpecialization,
+    Self: MapErrorNumber,
     Self: 'static,
 {
     /// The scheme used in the connection URL for this backend.
     /// "mysql" for MySQL, "mariadb" for MariaDB.
     const SCHEME: &'static str;
+}
+
+pub(crate) trait MapErrorNumber {
+    /// Resolve the returned error number to a `DatabaseErrorKind`
+    fn map_error_number(error_number: u32) -> DatabaseErrorKind;
 }
 
 /// Represents possible types, that can be transmitted as via the

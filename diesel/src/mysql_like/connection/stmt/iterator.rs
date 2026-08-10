@@ -12,16 +12,15 @@ use crate::row::*;
 
 #[allow(missing_debug_implementations)]
 pub struct StatementIterator<'a, B: MysqlLikeBackend> {
-    stmt: StatementUse<'a>,
+    stmt: StatementUse<'a, B>,
     last_row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
     len: usize,
-    _phantom: PhantomData<B>,
 }
 
 impl<'a, B: MysqlLikeBackend> StatementIterator<'a, B> {
     pub fn from_stmt(
-        stmt: MaybeCached<'a, Statement>,
+        stmt: MaybeCached<'a, Statement<B>>,
         types: &[Option<MysqlType>],
     ) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
@@ -37,7 +36,6 @@ impl<'a, B: MysqlLikeBackend> StatementIterator<'a, B> {
             last_row: Rc::new(RefCell::new(PrivateMysqlRow::Direct(output_binds))),
             len: size,
             stmt,
-            _phantom: PhantomData,
         })
     }
 }

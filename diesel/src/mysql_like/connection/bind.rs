@@ -10,7 +10,7 @@ use mysqlclient_sys as ffi;
 use super::stmt::{MysqlFieldMetadata, StatementUse};
 use crate::mysql_like::connection::stmt::StatementMetadata;
 use crate::mysql_like::types::date_and_time::MysqlTime;
-use crate::mysql_like::{MysqlType, MysqlValue};
+use crate::mysql_like::{MysqlLikeBackend, MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
 fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
@@ -74,7 +74,10 @@ impl OutputBinds {
         Ok(Self(Binds { data }))
     }
 
-    pub(super) fn populate_dynamic_buffers(&mut self, stmt: &StatementUse<'_>) -> QueryResult<()> {
+    pub(super) fn populate_dynamic_buffers<B: MysqlLikeBackend>(
+        &mut self,
+        stmt: &StatementUse<'_, B>,
+    ) -> QueryResult<()> {
         for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers

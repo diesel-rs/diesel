@@ -2,9 +2,10 @@ use crate::backend::{
     Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect,
 };
 use crate::mariadb::{MariadbQueryBuilder, MariadbValue};
-use crate::mysql_like::MysqlLikeBackend;
 use crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport;
+use crate::mysql_like::{MysqlLikeBackend, MapErrorNumber};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::result::DatabaseErrorKind;
 use crate::sql_types::TypeMetadata;
 
 /// The MariaDB backend
@@ -71,4 +72,22 @@ pub(crate) type MariadbRequiresOrderForWindowFunctions =
 
 impl MysqlLikeBackend for Mariadb {
     const SCHEME: &'static str = "mariadb";
+}
+
+impl MapErrorNumber for Mariadb {
+    fn map_error_number(error_number: u32) -> crate::result::DatabaseErrorKind {
+        // These values are not exposed by the C API, but are documented
+        // at https://mariadb.com/docs/server/reference/error-codes/mariadb-error-code-reference
+        match error_number {
+            1022 | 1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
+            1216 | 1217 | 1451 | 1557 | 1452 | 1830 | 1834 => {
+                DatabaseErrorKind::ForeignKeyViolation
+            }
+            1792 => DatabaseErrorKind::ReadOnlyTransaction,
+            1048 | 1364 => DatabaseErrorKind::NotNullViolation,
+            4025 => DatabaseErrorKind::CheckViolation,
+            1213 => DatabaseErrorKind::SerializationFailure,
+            _ => DatabaseErrorKind::Unknown,
+        }
+    }
 }

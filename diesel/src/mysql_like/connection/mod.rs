@@ -109,7 +109,7 @@ use crate::result::*;
 pub struct MysqlLikeConnection<B: MysqlLikeBackend> {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
-    statement_cache: StatementCache<B, Statement>,
+    statement_cache: StatementCache<B, Statement<B>>,
     instrumentation: DynInstrumentation,
 }
 
@@ -304,10 +304,10 @@ impl<B: MysqlLikeBackend> MultiConnectionHelper for MysqlLikeConnection<B> {
 
 fn prepared_query<'a, B: MysqlLikeBackend + Default, T: QueryFragment<B> + QueryId>(
     source: &'_ T,
-    statement_cache: &'a mut StatementCache<B, Statement>,
+    statement_cache: &'a mut StatementCache<B, Statement<B>>,
     raw_connection: &'a mut RawConnection,
     instrumentation: &mut dyn Instrumentation,
-) -> QueryResult<MaybeCached<'a, Statement>> {
+) -> QueryResult<MaybeCached<'a, Statement<B>>> {
     instrumentation.on_connection_event(InstrumentationEvent::StartQuery {
         query: &crate::debug_query(source),
     });

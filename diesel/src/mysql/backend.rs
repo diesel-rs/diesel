@@ -4,14 +4,15 @@ use super::MysqlQueryBuilder;
 use super::MysqlValue;
 use crate::backend::*;
 use crate::internal::derives::multiconnection::sql_dialect;
-use crate::mysql_like::MysqlLikeBackend;
 use crate::mysql_like::MysqlType;
 use crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport;
 use crate::mysql_like::query_fragments::{
     MysqlConcatClause, MysqlOnConflictClause, MysqlRequiresOrderForWindowFunctions,
     MysqlStyleDefaultValueClause,
 };
+use crate::mysql_like::{MysqlLikeBackend, MapErrorNumber};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::result::DatabaseErrorKind;
 use crate::sql_types::TypeMetadata;
 
 /// The MySQL backend
@@ -66,4 +67,21 @@ impl TrustedBackend for Mysql {}
 
 impl MysqlLikeBackend for Mysql {
     const SCHEME: &'static str = "mysql";
+}
+
+impl MapErrorNumber for Mysql {
+    fn map_error_number(error_number: u32) -> crate::result::DatabaseErrorKind {
+        // These values are not exposed by the C API, but are documented
+        // at https://dev.mysql.com/doc/refman/8.0/en/server-error-reference.html
+        // and are from the ANSI SQLSTATE standard
+        match error_number {
+            1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
+            1216 | 1217 | 1451 | 1452 | 1830 | 1834 => DatabaseErrorKind::ForeignKeyViolation,
+            1792 => DatabaseErrorKind::ReadOnlyTransaction,
+            1048 | 1364 => DatabaseErrorKind::NotNullViolation,
+            3819 => DatabaseErrorKind::CheckViolation,
+            1213 => DatabaseErrorKind::SerializationFailure,
+            _ => DatabaseErrorKind::Unknown,
+        }
+    }
 }
