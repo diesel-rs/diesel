@@ -5,8 +5,6 @@
 //! MariaDB, you may need to work with this module directly.
 pub(crate) mod backend;
 
-//pub(crate) mod query_builder;
-
 pub use self::backend::{Mariadb, MariadbType};
 
 #[cfg(feature = "mariadb")]

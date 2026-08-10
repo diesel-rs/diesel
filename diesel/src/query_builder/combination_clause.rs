@@ -411,25 +411,6 @@ mod mysql_like {
     impl<B: MysqlLikeBackend> SupportsCombinationClause<Union, Distinct> for B {}
     impl<B: MysqlLikeBackend> SupportsCombinationClause<Union, All> for B {}
 }
-/*
-#[cfg(feature = "mysql_backend")]
-mod mysql {
-    use super::*;
-    use crate::mysql::Mysql;
-
-    impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for ParenthesisWrapper<T> {
-        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
-            out.push_sql("(");
-            self.inner.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-            Ok(())
-        }
-    }
-
-    impl SupportsCombinationClause<Union, Distinct> for Mysql {}
-    impl SupportsCombinationClause<Union, All> for Mysql {}
-}
-*/
 
 #[cfg(feature = "mariadb_backend")]
 mod mariadb {
