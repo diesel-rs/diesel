@@ -3,7 +3,7 @@ use crate::backend::{
 };
 use crate::mariadb::{MariadbQueryBuilder, MariadbValue};
 use crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport;
-use crate::mysql_like::{MysqlLikeBackend, MapErrorNumber};
+use crate::mysql_like::{MapErrorNumber, MysqlLikeBackend};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::result::DatabaseErrorKind;
 use crate::sql_types::TypeMetadata;

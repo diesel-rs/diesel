@@ -176,7 +176,7 @@ jobs:
           echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@12.3/lib" >> $GITHUB_ENV
-          echo "MARIADBCLIENT_VERSION=12.3" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=12.3" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
         if: matrix.os == 'macos-26' && matrix.backend == 'mysql'
@@ -204,7 +204,7 @@ jobs:
           echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@12.3/lib" >> $GITHUB_ENV
-          echo "MARIADBCLIENT_VERSION=12.3" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=12.3" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
