@@ -240,7 +240,7 @@ impl<'a, B: MysqlLikeBackend> Field<'a, B> for MysqlLikeField<'a, B> {
     }
 }
 
-#[cfg(all(test, feature = "mysql"))]
+#[cfg(all(test, any(feature = "mysql", feature = "mariadb")))]
 #[diesel_test_helper::test]
 #[allow(clippy::drop_non_drop)] // we want to explicitly extend lifetimes here
 fn fun_with_row_iters() {
@@ -253,10 +253,14 @@ fn fun_with_row_iters() {
 
     use crate::connection::LoadConnection;
     use crate::deserialize::{FromSql, FromSqlRow};
-    use crate::mysql::Mysql;
     use crate::prelude::*;
     use crate::row::{Field, Row};
     use crate::sql_types;
+
+    #[cfg(feature = "mysql")]
+    type DB = crate::mysql::Mysql;
+    #[cfg(feature = "mariadb")]
+    type DB = crate::mariadb::Mariadb;
 
     let conn = &mut crate::test_helpers::connection();
 
@@ -351,20 +355,20 @@ fn fun_with_row_iters() {
     let second_values = (second_fields.0.value(), second_fields.1.value());
 
     assert_eq!(
-        <i32 as FromSql<sql_types::Integer, Mysql>>::from_nullable_sql(first_values.0).unwrap(),
+        <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(first_values.0).unwrap(),
         expected[0].0
     );
     assert_eq!(
-        <String as FromSql<sql_types::Text, Mysql>>::from_nullable_sql(first_values.1).unwrap(),
+        <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(first_values.1).unwrap(),
         expected[0].1
     );
 
     assert_eq!(
-        <i32 as FromSql<sql_types::Integer, Mysql>>::from_nullable_sql(second_values.0).unwrap(),
+        <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(second_values.0).unwrap(),
         expected[1].0
     );
     assert_eq!(
-        <String as FromSql<sql_types::Text, Mysql>>::from_nullable_sql(second_values.1).unwrap(),
+        <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(second_values.1).unwrap(),
         expected[1].1
     );
 
@@ -375,11 +379,11 @@ fn fun_with_row_iters() {
     let first_values = (first_fields.0.value(), first_fields.1.value());
 
     assert_eq!(
-        <i32 as FromSql<sql_types::Integer, Mysql>>::from_nullable_sql(first_values.0).unwrap(),
+        <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(first_values.0).unwrap(),
         expected[0].0
     );
     assert_eq!(
-        <String as FromSql<sql_types::Text, Mysql>>::from_nullable_sql(first_values.1).unwrap(),
+        <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(first_values.1).unwrap(),
         expected[0].1
     );
 }

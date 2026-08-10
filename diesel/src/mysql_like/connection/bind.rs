@@ -822,22 +822,28 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
     }
 }
 
-#[cfg(all(test, feature = "mysql"))]
+#[cfg(all(test, any(feature = "mysql", feature = "mariadb")))]
 mod tests {
     use super::*;
     use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
     use crate::deserialize::FromSql;
+    use crate::mysql_like::connection::MysqlLikeConnection;
     use crate::mysql_like::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
     #[cfg(feature = "numeric")]
     use std::str::FromStr;
 
+    #[cfg(feature = "mysql")]
+    type DB = crate::mysql::Mysql;
+    #[cfg(feature = "mariadb")]
+    type DB = crate::mariadb::Mariadb;
+
     fn to_value<ST, T>(
         bind: &BindData,
     ) -> Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>
     where
-        T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
+        T: FromSql<ST, DB> + std::fmt::Debug,
     {
         let meta = (bind.tpe, bind.flags).into();
 
@@ -1316,12 +1322,12 @@ mod tests {
 
     fn query_single_table(
         query: &'static str,
-        conn: &MysqlConnection,
+        conn: &MysqlLikeConnection<DB>,
         bind_tpe: impl Into<(ffi::enum_field_types, Flags)>,
     ) -> BindData {
-        let stmt: Statement = conn
+        let stmt: Statement<_> = conn
             .raw_connection
-            .prepare(query, PrepareForCache::No, &[])
+            .prepare::<DB>(query, PrepareForCache::No, &[])
             .unwrap();
         let stmt = MaybeCached::CannotCache(stmt);
 
@@ -1337,13 +1343,13 @@ mod tests {
 
     fn input_bind(
         query: &'static str,
-        conn: &MysqlConnection,
+        conn: &MysqlLikeConnection<DB>,
         id: i32,
         (field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
     ) {
         let mut stmt = conn
             .raw_connection
-            .prepare(query, PrepareForCache::No, &[])
+            .prepare::<DB>(query, PrepareForCache::No, &[])
             .unwrap();
         let length = field.len() as _;
         let (tpe, flags) = tpe.into();
