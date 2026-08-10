@@ -130,7 +130,7 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=300 update
           sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev mariadb-server mariadb-client
           sudo systemctl start mariadb.service
-          mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' IDENTIFIED BY 'root';" -uroot -proot
           echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
           echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
@@ -197,7 +197,7 @@ jobs:
         run: |
           brew install mariadb@12.3
           ls /opt/homebrew/opt/mariadb@12.3
-          /opt/homebrew/opt/mariadb@12.3/bin/mariadb.server start
+          /opt/homebrew/opt/mariadb@12.3/bin/mysql.server start
           sleep 3
           /opt/homebrew/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
           echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
@@ -264,6 +264,23 @@ jobs:
           echo "C:\Program Files\MySQL\MySQL Server 8.0\lib" >> $GITHUB_PATH
           echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
           dir "C:\Program Files\MySQL\MySQL Server 8.0\lib"
+
+      - name: Install mariadb (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mariadb'
+        shell: bash
+        run: |
+          choco install mariadb --version=12.3.2 -y
+          "C:\\Program Files\\MariaDB 12.3\\bin\\mariadb" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
+          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
+          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
+          echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\Program Files\MariaDB 12.3\lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=12.3.2" >> $GITHUB_ENV
+          echo "C:\Program Files\MariaDB 12.3\lib" >> $GITHUB_PATH
+          echo "C:\Program Files\MariaDB 12.3\bin" >> $GITHUB_PATH
+          dir "C:\Program Files\MariaDB 12.3\lib"
 
       - name: Rust version check
         shell: bash
