@@ -130,7 +130,7 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=300 update
           sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev mariadb-server mariadb-client
           sudo systemctl start mariadb.service
-          mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' IDENTIFIED BY 'root';" -uroot -proot
+          sudo mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' IDENTIFIED BY 'root';" -uroot
           echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
           echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
@@ -169,14 +169,14 @@ jobs:
         if: matrix.os == 'macos-15-intel' && matrix.backend == 'mariadb'
         run: |
           brew install mariadb@12.3
-          /usr/local/opt/mariadb@12.3/bin/mariadb.server start
+          /usr/local/opt/mariadb@12.3/bin/mysql.server start
           sleep 3
-          /usr/local/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test;  grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
-          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
-          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          sudo /usr/local/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test;  grant all on \`diesel_%\`.* to 'root'@'localhost' identified by 'root';" -uroot
+          echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/usr/local/opt/mariadb@12.3/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=12.3" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=3.4.8" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
         if: matrix.os == 'macos-26' && matrix.backend == 'mysql'
@@ -199,12 +199,12 @@ jobs:
           ls /opt/homebrew/opt/mariadb@12.3
           /opt/homebrew/opt/mariadb@12.3/bin/mysql.server start
           sleep 3
-          /opt/homebrew/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
-          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
-          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          sudo /opt/homebrew/opt/mariadb@12.3/bin/mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' identified by 'root';" -uroot
+          echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=/opt/homebrew/opt/mariadb@12.3/lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=12.3" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=3.4.8" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -277,7 +277,7 @@ jobs:
           echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           echo "MYSQLCLIENT_LIB_DIR=C:\Program Files\MariaDB 12.3\lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=12.3.2" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=3.4.8" >> $GITHUB_ENV
           echo "C:\Program Files\MariaDB 12.3\lib" >> $GITHUB_PATH
           echo "C:\Program Files\MariaDB 12.3\bin" >> $GITHUB_PATH
           dir "C:\Program Files\MariaDB 12.3\lib"
