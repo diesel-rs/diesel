@@ -5,12 +5,12 @@ use self::diesel::*;
 use self::dotenvy::dotenv;
 use std::env;
 
-#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+#[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres", feature = "mariadb")))]
 compile_error!(
     "At least one backend must be used to test this crate.\n \
      Pass argument `--features \"<backend>\"` with one or more of the following backends, \
-     'mysql', 'postgres', or 'sqlite'. \n\n \
-     ex. cargo test --features \"mysql postgres sqlite\"\n"
+     'mysql', 'mariadb', 'postgres', or 'sqlite'. \n\n \
+     ex. cargo test --features \"mysql mariadb postgres sqlite\"\n"
 );
 
 #[cfg(feature = "postgres")]
@@ -31,6 +31,12 @@ fn connection() -> MysqlConnection {
     MysqlConnection::establish(&database_url).unwrap()
 }
 
+#[cfg(feature = "mariadb")]
+fn connection() -> MariadbConnection {
+    let database_url = database_url_from_env("MARIADB_DATABASE_URL");
+    MariadbConnection::establish(&database_url).unwrap()
+}
+
 #[cfg(feature = "postgres")]
 const MIGRATION_SUBDIR: &str = "postgres";
 
@@ -39,6 +45,9 @@ const MIGRATION_SUBDIR: &str = "sqlite";
 
 #[cfg(feature = "mysql")]
 const MIGRATION_SUBDIR: &str = "mysql";
+
+#[cfg(feature = "mariadb")]
+const MIGRATION_SUBDIR: &str = "mariadb";
 
 fn database_url_from_env(backend_specific_env_var: &str) -> String {
     dotenv().ok();
