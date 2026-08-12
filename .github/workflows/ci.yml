@@ -134,7 +134,7 @@ jobs:
           echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
           echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
-          maraidb_config --cc_version
+          mariadb_config --cc_version
 
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
