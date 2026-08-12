@@ -94,7 +94,12 @@ impl OutputBinds {
             Workaround for libmariadb version 3.4.9
             we need to save the lengths before we bind the results here, as libmariadb 3.4.9 overrides the length with 0
         */
-        let lengths = self.0.data.iter().map(|data|data.length).collect::<Vec<_>>();
+        let lengths = self
+            .0
+            .data
+            .iter()
+            .map(|data| data.length)
+            .collect::<Vec<_>>();
         let res = unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) };
         for (data, old_length) in self.0.data.iter_mut().zip(lengths) {
             data.length = old_length;
