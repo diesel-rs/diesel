@@ -270,7 +270,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mariadb'
         shell: bash
         run: |
-          choco install mariadb --version=12.3 -y
+          choco install mariadb --version=12.3.2 -y
           "C:\\Program Files\\MariaDB 12.3\\bin\\mariadb" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
           echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
