@@ -9,22 +9,22 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 use super::{MysqlTime, MysqlTimestampType};
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> ToSql<Datetime, B> for NaiveDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
-        <NaiveDateTime as ToSql<Timestamp, B>>::to_sql(self, out)
+impl<DB: MysqlLikeBackend> ToSql<Datetime, DB> for NaiveDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        <NaiveDateTime as ToSql<Timestamp, DB>>::to_sql(self, out)
     }
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> FromSql<Datetime, B> for NaiveDateTime {
+impl<DB: MysqlLikeBackend> FromSql<Datetime, DB> for NaiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        <NaiveDateTime as FromSql<Timestamp, B>>::from_sql(bytes)
+        <NaiveDateTime as FromSql<Timestamp, DB>>::from_sql(bytes)
     }
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for NaiveDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Timestamp, DB> for NaiveDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
@@ -39,14 +39,14 @@ impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for NaiveDateTime {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Timestamp, B>>::to_sql(&mysql_time, &mut out.reborrow())
+        <MysqlTime as ToSql<Timestamp, DB>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for NaiveDateTime {
+impl<DB: MysqlLikeBackend> FromSql<Timestamp, DB> for NaiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Timestamp, B>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Timestamp, DB>>::from_sql(bytes)?;
 
         let micro = mysql_time.second_part.try_into()?;
         NaiveDate::from_ymd_opt(
@@ -62,8 +62,8 @@ impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for NaiveDateTime {
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
-    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Time, DB> for NaiveTime {
+    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, DB>) -> serialize::Result {
         let mysql_time = MysqlTime {
             hour: self.hour() as libc::c_uint,
             minute: self.minute() as libc::c_uint,
@@ -77,14 +77,14 @@ impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Time, B>>::to_sql(&mysql_time, &mut out.reborrow())
+        <MysqlTime as ToSql<Time, DB>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
+impl<DB: MysqlLikeBackend> FromSql<Time, DB> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Time, B>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Time, DB>>::from_sql(bytes)?;
         let micro = mysql_time.second_part.try_into()?;
         NaiveTime::from_hms_micro_opt(mysql_time.hour, mysql_time.minute, mysql_time.second, micro)
             .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
@@ -92,8 +92,8 @@ impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Date, DB> for NaiveDate {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
@@ -107,14 +107,14 @@ impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Date, B>>::to_sql(&mysql_time, &mut out.reborrow())
+        <MysqlTime as ToSql<Date, DB>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "chrono")]
-impl<B: MysqlLikeBackend> FromSql<Date, B> for NaiveDate {
+impl<DB: MysqlLikeBackend> FromSql<Date, DB> for NaiveDate {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Date, B>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Date, DB>>::from_sql(bytes)?;
         NaiveDate::from_ymd_opt(
             mysql_time.year.try_into()?,
             mysql_time.month,

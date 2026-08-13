@@ -395,12 +395,12 @@ mod mysql_like {
     use super::*;
     use crate::mysql_like::MysqlLikeBackend;
 
-    impl<B, T> QueryFragment<B> for ParenthesisWrapper<T>
+    impl<DB, T> QueryFragment<DB> for ParenthesisWrapper<T>
     where
-        B: MysqlLikeBackend,
-        T: QueryFragment<B>,
+        DB: MysqlLikeBackend,
+        T: QueryFragment<DB>,
     {
-        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
             out.push_sql("(");
             self.inner.walk_ast(out.reborrow())?;
             out.push_sql(")");
@@ -408,8 +408,8 @@ mod mysql_like {
         }
     }
 
-    impl<B: MysqlLikeBackend> SupportsCombinationClause<Union, Distinct> for B {}
-    impl<B: MysqlLikeBackend> SupportsCombinationClause<Union, All> for B {}
+    impl<DB: MysqlLikeBackend> SupportsCombinationClause<Union, Distinct> for DB {}
+    impl<DB: MysqlLikeBackend> SupportsCombinationClause<Union, All> for DB {}
 }
 
 #[cfg(feature = "mariadb_backend")]

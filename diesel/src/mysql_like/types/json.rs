@@ -4,15 +4,15 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 
 #[cfg(feature = "serde_json")]
-impl<B: MysqlLikeBackend> FromSql<sql_types::Json, B> for serde_json::Value {
+impl<DB: MysqlLikeBackend> FromSql<sql_types::Json, DB> for serde_json::Value {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         serde_json::from_slice(value.as_bytes()).map_err(|_| "Invalid Json".into())
     }
 }
 
 #[cfg(feature = "serde_json")]
-impl<B: MysqlLikeBackend> ToSql<sql_types::Json, B> for serde_json::Value {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<sql_types::Json, DB> for serde_json::Value {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
             .map_err(Into::into)

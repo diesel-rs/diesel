@@ -19,7 +19,7 @@ extern "SQL" {
     ) -> sql_types::Nullable<sql_types::Text>;
 }
 
-impl<ST, B: mysql_like::MysqlLikeBackend> Queryable<ST, B> for ColumnInformation
+impl<ST, DB: mysql_like::MysqlLikeBackend> Queryable<ST, DB> for ColumnInformation
 where
     (
         String,
@@ -28,7 +28,7 @@ where
         String,
         Option<u64>,
         Option<String>,
-    ): FromStaticSqlRow<ST, B>,
+    ): FromStaticSqlRow<ST, DB>,
 {
     type Row = (
         String,
@@ -92,25 +92,25 @@ mod comment_query {
     }
 }
 
-pub fn get_table_data<B>(
-    conn: &mut mysql_like::MysqlLikeConnection<B>,
+pub fn get_table_data<DB>(
+    conn: &mut mysql_like::MysqlLikeConnection<DB>,
     table: &TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>>
 where
-    B: mysql_like::MysqlLikeBackend + DefaultSchema,
+    DB: mysql_like::MysqlLikeBackend + DefaultSchema,
     for<'a> diesel::helper_types::Order<
         column_query::Query<'a>,
         information_schema::columns::ordinal_position,
-    >: LoadQuery<'a, mysql_like::MysqlLikeConnection<B>, ColumnInformation>,
+    >: LoadQuery<'a, mysql_like::MysqlLikeConnection<DB>, ColumnInformation>,
     for<'a> diesel::helper_types::Order<column_query::Query<'a>, information_schema::columns::column_name>:
-        LoadQuery<'a, mysql_like::MysqlLikeConnection<B>, ColumnInformation>,
+        LoadQuery<'a, mysql_like::MysqlLikeConnection<DB>, ColumnInformation>,
 {
     use information_schema::columns::dsl::*;
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
-        None => Cow::Owned(B::default_schema(conn)?),
+        None => Cow::Owned(DB::default_schema(conn)?),
     };
 
     let query = column_query::query(&table.sql_name, &schema_name);
@@ -251,17 +251,17 @@ pub fn get_enum_variants(ct: &ColumnType) -> Option<Vec<EnumVariant>> {
     }
 }
 
-pub fn get_table_comment<B>(
-    conn: &mut mysql_like::MysqlLikeConnection<B>,
+pub fn get_table_comment<DB>(
+    conn: &mut mysql_like::MysqlLikeConnection<DB>,
     table: &TableName,
 ) -> QueryResult<Option<String>>
 where
-    B: mysql_like::MysqlLikeBackend + DefaultSchema,
-    for<'a> comment_query::Query<'a>: LoadQuery<'a, mysql_like::MysqlLikeConnection<B>, String>,
+    DB: mysql_like::MysqlLikeBackend + DefaultSchema,
+    for<'a> comment_query::Query<'a>: LoadQuery<'a, mysql_like::MysqlLikeConnection<DB>, String>,
 {
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
-        None => Cow::Owned(B::default_schema(conn)?),
+        None => Cow::Owned(DB::default_schema(conn)?),
     };
 
     let comment = comment_query::query(&table.sql_name, &schema_name).get_result(conn)?;

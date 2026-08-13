@@ -48,9 +48,9 @@ impl QueryFragment<diesel::mariadb::Mariadb> for EnumType<'_> {
 }
 
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
-fn mysql_like_query_fragment_enum_type<'b, B: MysqlLikeBackend>(
+fn mysql_like_query_fragment_enum_type<'b, DB: MysqlLikeBackend>(
     enum_type: &'b EnumType<'_>,
-    mut pass: diesel::query_builder::AstPass<'_, 'b, B>,
+    mut pass: diesel::query_builder::AstPass<'_, 'b, DB>,
 ) -> QueryResult<()> {
     let _ = enum_type.tpe;
     pass.push_sql("enum(");
@@ -242,9 +242,9 @@ impl QueryFragment<diesel::mariadb::Mariadb> for AddEnumVariants<'_> {
 }
 
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
-fn mysql_like_add_enum_variants<'b, B: MysqlLikeBackend>(
+fn mysql_like_add_enum_variants<'b, DB: MysqlLikeBackend>(
     add_enum_variants: &'b AddEnumVariants<'_>,
-    mut pass: diesel::query_builder::AstPass<'_, 'b, B>,
+    mut pass: diesel::query_builder::AstPass<'_, 'b, DB>,
 ) -> QueryResult<()> {
     let _ = add_enum_variants.added_variants;
     let _ = add_enum_variants.tpe;
@@ -436,9 +436,9 @@ impl QueryFragment<diesel::mariadb::Mariadb> for MigrateEnumData<'_> {
 }
 
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
-fn mysql_like_migrate_enum_data<'b, B: MysqlLikeBackend>(
+fn mysql_like_migrate_enum_data<'b, DB: MysqlLikeBackend>(
     migrate_enum_data: &'b MigrateEnumData<'_>,
-    mut pass: diesel::query_builder::AstPass<'_, 'b, B>,
+    mut pass: diesel::query_builder::AstPass<'_, 'b, DB>,
 ) -> QueryResult<()> {
     let _ = migrate_enum_data.tpe;
     let _ = migrate_enum_data.column_defs;

@@ -9,15 +9,15 @@ mod bigdecimal {
     use crate::serialize::{self, IsNull, Output, ToSql};
     use crate::sql_types::Numeric;
 
-    impl<B: MysqlLikeBackend> ToSql<Numeric, B> for BigDecimal {
-        fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+    impl<DB: MysqlLikeBackend> ToSql<Numeric, DB> for BigDecimal {
+        fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
             write!(out, "{}", *self)
                 .map(|_| IsNull::No)
                 .map_err(Into::into)
         }
     }
 
-    impl<B: MysqlLikeBackend> FromSql<Numeric, B> for BigDecimal {
+    impl<DB: MysqlLikeBackend> FromSql<Numeric, DB> for BigDecimal {
         fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
             match value.numeric_value()? {
                 NumericRepresentation::Tiny(x) => Ok(x.into()),

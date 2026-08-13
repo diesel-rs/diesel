@@ -17,17 +17,17 @@ pub(super) use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
 #[allow(dead_code, missing_debug_implementations)]
 // https://github.com/rust-lang/rust/issues/81658
-pub struct Statement<B: MysqlLikeBackend> {
+pub struct Statement<DB: MysqlLikeBackend> {
     stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<PreparedStatementBinds>,
-    _phantom: PhantomData<B>,
+    _phantom: PhantomData<DB>,
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
 #[allow(unsafe_code)]
-unsafe impl<B: MysqlLikeBackend> Send for Statement<B> {}
+unsafe impl<DB: MysqlLikeBackend> Send for Statement<DB> {}
 
-impl<B: MysqlLikeBackend> Statement<B> {
+impl<DB: MysqlLikeBackend> Statement<DB> {
     pub(crate) fn new(stmt: NonNull<ffi::MYSQL_STMT>) -> Self {
         Statement {
             stmt,
@@ -103,7 +103,7 @@ impl<B: MysqlLikeBackend> Statement<B> {
     fn last_error_type(&self) -> DatabaseErrorKind {
         let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) };
 
-        B::map_error_number(last_error_number)
+        DB::map_error_number(last_error_number)
     }
 
     /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
@@ -116,11 +116,11 @@ impl<B: MysqlLikeBackend> Statement<B> {
     }
 }
 
-impl<'a, B: MysqlLikeBackend> MaybeCached<'a, Statement<B>> {
+impl<'a, DB: MysqlLikeBackend> MaybeCached<'a, Statement<DB>> {
     pub(super) fn execute_statement(
         self,
         binds: &mut OutputBinds,
-    ) -> QueryResult<StatementUse<'a, B>> {
+    ) -> QueryResult<StatementUse<'a, DB>> {
         unsafe {
             binds.with_mysql_binds(|bind_ptr| self.bind_result(bind_ptr))?;
             self.execute()
@@ -130,7 +130,7 @@ impl<'a, B: MysqlLikeBackend> MaybeCached<'a, Statement<B>> {
     /// This function should be called instead of `results` on queries which
     /// have no return value. It should never be called on a statement on
     /// which `results` has previously been called?
-    pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a, B>> {
+    pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a, DB>> {
         unsafe {
             ffi::mysql_stmt_execute(self.stmt.as_ptr());
         }
@@ -144,18 +144,18 @@ impl<'a, B: MysqlLikeBackend> MaybeCached<'a, Statement<B>> {
     }
 }
 
-impl<B: MysqlLikeBackend> Drop for Statement<B> {
+impl<DB: MysqlLikeBackend> Drop for Statement<DB> {
     fn drop(&mut self) {
         unsafe { ffi::mysql_stmt_close(self.stmt.as_ptr()) };
     }
 }
 
 #[allow(missing_debug_implementations)]
-pub(super) struct StatementUse<'a, B: MysqlLikeBackend> {
-    inner: MaybeCached<'a, Statement<B>>,
+pub(super) struct StatementUse<'a, DB: MysqlLikeBackend> {
+    inner: MaybeCached<'a, Statement<DB>>,
 }
 
-impl<B: MysqlLikeBackend> StatementUse<'_, B> {
+impl<DB: MysqlLikeBackend> StatementUse<'_, DB> {
     pub(in crate::mysql_like::connection) fn affected_rows(&self) -> QueryResult<usize> {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.inner.stmt.as_ptr()) };
         affected_rows
@@ -216,7 +216,7 @@ impl<B: MysqlLikeBackend> StatementUse<'_, B> {
     }
 }
 
-impl<B: MysqlLikeBackend> Drop for StatementUse<'_, B> {
+impl<DB: MysqlLikeBackend> Drop for StatementUse<'_, DB> {
     fn drop(&mut self) {
         unsafe {
             ffi::mysql_stmt_free_result(self.inner.stmt.as_ptr());

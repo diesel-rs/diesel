@@ -147,12 +147,12 @@ impl RawConnection {
         result
     }
 
-    pub(super) fn prepare<B: MysqlLikeBackend>(
+    pub(super) fn prepare<DB: MysqlLikeBackend>(
         &self,
         query: &str,
         _: PrepareForCache,
         _: &[MysqlType],
-    ) -> QueryResult<Statement<B>> {
+    ) -> QueryResult<Statement<DB>> {
         let stmt = unsafe { ffi::mysql_stmt_init(self.0.as_ptr()) };
         // It is documented that the only reason `mysql_stmt_init` will fail
         // is because of OOM.

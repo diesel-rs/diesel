@@ -13,12 +13,12 @@ mod query_fragment_impls;
 
 /// The MySQL-Like query builder
 #[allow(missing_debug_implementations)]
-pub struct MysqlLikeQueryBuilder<B: Backend> {
+pub struct MysqlLikeQueryBuilder<DB: Backend> {
     sql: String,
-    _phantom: PhantomData<B>,
+    _phantom: PhantomData<DB>,
 }
 
-impl<B: Backend> Default for MysqlLikeQueryBuilder<B> {
+impl<DB: Backend> Default for MysqlLikeQueryBuilder<DB> {
     fn default() -> Self {
         Self {
             sql: String::default(),
@@ -27,14 +27,14 @@ impl<B: Backend> Default for MysqlLikeQueryBuilder<B> {
     }
 }
 
-impl<B: Backend> MysqlLikeQueryBuilder<B> {
+impl<DB: Backend> MysqlLikeQueryBuilder<DB> {
     /// Constructs a new query builder with an empty query
     pub fn new() -> Self {
         MysqlLikeQueryBuilder::default()
     }
 }
 
-impl<B: Backend> QueryBuilder<B> for MysqlLikeQueryBuilder<B> {
+impl<DB: Backend> QueryBuilder<DB> for MysqlLikeQueryBuilder<DB> {
     fn push_sql(&mut self, sql: &str) {
         self.sql.push_str(sql);
     }

@@ -13,65 +13,65 @@ use crate::result::QueryResult;
 use crate::{Column, Table};
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for ForUpdate {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for ForUpdate {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" FOR UPDATE");
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for ForShare {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for ForShare {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" FOR SHARE");
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for NoModifier {
-    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for NoModifier {
+    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for SkipLocked {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for SkipLocked {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" SKIP LOCKED");
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for NoWait {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for NoWait {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" NOWAIT");
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend>
-    QueryFragment<B, crate::mysql_like::query_fragments::MysqlStyleDefaultValueClause>
+impl<DB: MysqlLikeBackend>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MysqlStyleDefaultValueClause>
     for DefaultValues
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("() VALUES ()");
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, L, R>
-    QueryFragment<B, crate::mysql_like::query_fragments::MysqlConcatClause> for Concat<L, R>
+impl<DB: MysqlLikeBackend, L, R>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MysqlConcatClause> for Concat<L, R>
 where
-    L: QueryFragment<B>,
-    R: QueryFragment<B>,
+    L: QueryFragment<DB>,
+    R: QueryFragment<DB>,
 {
     fn walk_ast<'b>(
         &'b self,
-        mut out: crate::query_builder::AstPass<'_, 'b, B>,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
     ) -> crate::result::QueryResult<()> {
         out.push_sql("CONCAT(");
         self.left.walk_ast(out.reborrow())?;
@@ -83,14 +83,14 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, T>
-    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoNothing<T>
+impl<DB: MysqlLikeBackend, T>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoNothing<T>
 where
     T: Table + StaticQueryFragment,
-    T::Component: QueryFragment<B>,
-    T::PrimaryKey: DoNothingClauseHelper<B>,
+    T::Component: QueryFragment<DB>,
+    T::PrimaryKey: DoNothingClauseHelper<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" UPDATE ");
         T::PrimaryKey::walk_ast::<T>(out.reborrow())?;
         Ok(())
@@ -98,15 +98,16 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, T, Tab>
-    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause> for DoUpdate<T, Tab>
+impl<DB: MysqlLikeBackend, T, Tab>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MysqlOnConflictClause>
+    for DoUpdate<T, Tab>
 where
-    T: QueryFragment<B>,
+    T: QueryFragment<DB>,
     Tab: Table + StaticQueryFragment,
-    Tab::PrimaryKey: DoNothingClauseHelper<B>,
-    Tab::Component: QueryFragment<B>,
+    Tab::PrimaryKey: DoNothingClauseHelper<DB>,
+    Tab::Component: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" UPDATE ");
         if self.changeset.is_noop(out.backend())? {
@@ -119,16 +120,16 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, Values, Target, Action>
-    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
+impl<DB: MysqlLikeBackend, Values, Target, Action>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MysqlOnConflictClause>
     for OnConflictValues<Values, Target, Action, NoWhereClause>
 where
-    Values: QueryFragment<B>,
-    Target: QueryFragment<B>,
-    Action: QueryFragment<B>,
-    NoWhereClause: QueryFragment<B>,
+    Values: QueryFragment<DB>,
+    Target: QueryFragment<DB>,
+    Action: QueryFragment<DB>,
+    NoWhereClause: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
         out.push_sql(" ON DUPLICATE KEY");
         self.target.walk_ast(out.reborrow())?;
@@ -150,21 +151,21 @@ pub struct DuplicatedKeys;
 impl<Tab> OnConflictTarget<Tab> for ConflictTarget<DuplicatedKeys> {}
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend>
-    QueryFragment<B, crate::mysql_like::query_fragments::MysqlOnConflictClause>
+impl<DB: MysqlLikeBackend>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MysqlOnConflictClause>
     for ConflictTarget<DuplicatedKeys>
 {
-    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, S> QueryFragment<B> for OnConflictSelectWrapper<S>
+impl<DB: MysqlLikeBackend, S> QueryFragment<DB> for OnConflictSelectWrapper<S>
 where
-    S: QueryFragment<B>,
+    S: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.0.walk_ast(out)
     }
 }
@@ -173,22 +174,22 @@ where
 /// that provides a fake `DO NOTHING` clause
 /// based on reassigning the possible
 /// composite primary key to itself
-trait DoNothingClauseHelper<B: MysqlLikeBackend> {
-    fn walk_ast<T>(out: AstPass<'_, '_, B>) -> QueryResult<()>
+trait DoNothingClauseHelper<DB: MysqlLikeBackend> {
+    fn walk_ast<T>(out: AstPass<'_, '_, DB>) -> QueryResult<()>
     where
         T: StaticQueryFragment,
-        T::Component: QueryFragment<B>;
+        T::Component: QueryFragment<DB>;
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, C> DoNothingClauseHelper<B> for C
+impl<DB: MysqlLikeBackend, C> DoNothingClauseHelper<DB> for C
 where
     C: Column,
 {
-    fn walk_ast<T>(mut out: AstPass<'_, '_, B>) -> QueryResult<()>
+    fn walk_ast<T>(mut out: AstPass<'_, '_, DB>) -> QueryResult<()>
     where
         T: StaticQueryFragment,
-        T::Component: QueryFragment<B>,
+        T::Component: QueryFragment<DB>,
     {
         T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
         out.push_sql(".");
@@ -208,13 +209,13 @@ macro_rules! do_nothing_for_composite_keys {
         }
     )+) => {
         $(
-            impl<B: MysqlLikeBackend,$($T,)*> DoNothingClauseHelper<B> for ($($T,)*)
+            impl<DB: MysqlLikeBackend,$($T,)*> DoNothingClauseHelper<DB> for ($($T,)*)
             where $($T: Column,)*
             {
-                fn walk_ast<Table>(mut out: AstPass<'_, '_, B>) -> QueryResult<()>
+                fn walk_ast<Table>(mut out: AstPass<'_, '_, DB>) -> QueryResult<()>
                 where
                     Table: StaticQueryFragment,
-                    Table::Component: QueryFragment<B>,
+                    Table::Component: QueryFragment<DB>,
                 {
                     let mut first = true;
                     $(

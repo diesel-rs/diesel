@@ -59,13 +59,13 @@ pub(super) struct ConnectionOptions {
 }
 
 impl ConnectionOptions {
-    pub(super) fn parse<B: MysqlLikeBackend>(database_url: &str) -> ConnectionResult<Self> {
+    pub(super) fn parse<DB: MysqlLikeBackend>(database_url: &str) -> ConnectionResult<Self> {
         let url = match Url::parse(database_url) {
             Ok(url) => url,
             Err(_) => return Err(connection_url_error()),
         };
 
-        if url.scheme() != B::SCHEME {
+        if url.scheme() != DB::SCHEME {
             return Err(connection_url_error());
         }
 

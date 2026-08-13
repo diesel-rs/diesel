@@ -11,16 +11,16 @@ use crate::result::QueryResult;
 use crate::row::*;
 
 #[allow(missing_debug_implementations)]
-pub struct StatementIterator<'a, B: MysqlLikeBackend> {
-    stmt: StatementUse<'a, B>,
+pub struct StatementIterator<'a, DB: MysqlLikeBackend> {
+    stmt: StatementUse<'a, DB>,
     last_row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
     len: usize,
 }
 
-impl<'a, B: MysqlLikeBackend> StatementIterator<'a, B> {
+impl<'a, DB: MysqlLikeBackend> StatementIterator<'a, DB> {
     pub fn from_stmt(
-        stmt: MaybeCached<'a, Statement<B>>,
+        stmt: MaybeCached<'a, Statement<DB>>,
         types: &[Option<MysqlType>],
     ) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
@@ -40,8 +40,8 @@ impl<'a, B: MysqlLikeBackend> StatementIterator<'a, B> {
     }
 }
 
-impl<B: MysqlLikeBackend> Iterator for StatementIterator<'_, B> {
-    type Item = QueryResult<MysqlRow<B>>;
+impl<DB: MysqlLikeBackend> Iterator for StatementIterator<'_, DB> {
+    type Item = QueryResult<MysqlRow<DB>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // check if we own the only instance of the bind buffer
@@ -128,7 +128,7 @@ impl<B: MysqlLikeBackend> Iterator for StatementIterator<'_, B> {
     }
 }
 
-impl<B: MysqlLikeBackend> ExactSizeIterator for StatementIterator<'_, B> {
+impl<DB: MysqlLikeBackend> ExactSizeIterator for StatementIterator<'_, DB> {
     fn len(&self) -> usize {
         self.len
     }
@@ -136,10 +136,10 @@ impl<B: MysqlLikeBackend> ExactSizeIterator for StatementIterator<'_, B> {
 
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
-pub struct MysqlRow<B: MysqlLikeBackend> {
+pub struct MysqlRow<DB: MysqlLikeBackend> {
     row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
-    _phantom: PhantomData<B>,
+    _phantom: PhantomData<DB>,
 }
 
 enum PrivateMysqlRow {
@@ -155,11 +155,11 @@ impl PrivateMysqlRow {
     }
 }
 
-impl<B: MysqlLikeBackend> RowSealed for MysqlRow<B> {}
+impl<DB: MysqlLikeBackend> RowSealed for MysqlRow<DB> {}
 
-impl<'a, B: MysqlLikeBackend> Row<'a, B> for MysqlRow<B> {
+impl<'a, DB: MysqlLikeBackend> Row<'a, DB> for MysqlRow<DB> {
     type Field<'f>
-        = MysqlLikeField<'f, B>
+        = MysqlLikeField<'f, DB>
     where
         'a: 'f,
         Self: 'f;
@@ -184,13 +184,13 @@ impl<'a, B: MysqlLikeBackend> Row<'a, B> for MysqlRow<B> {
     }
 
     fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
-        PartialRow::new::<B>(self, range)
+        PartialRow::new::<DB>(self, range)
     }
 }
 
-impl<B: MysqlLikeBackend> RowIndex<usize> for MysqlRow<B>
+impl<DB: MysqlLikeBackend> RowIndex<usize> for MysqlRow<DB>
 where
-    MysqlRow<B>: for<'a> Row<'a, B>,
+    MysqlRow<DB>: for<'a> Row<'a, DB>,
 {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count() {
@@ -201,7 +201,7 @@ where
     }
 }
 
-impl<'a, B: MysqlLikeBackend> RowIndex<&'a str> for MysqlRow<B> {
+impl<'a, DB: MysqlLikeBackend> RowIndex<&'a str> for MysqlRow<DB> {
     fn idx(&self, idx: &'a str) -> Option<usize> {
         self.metadata
             .fields()
@@ -213,14 +213,14 @@ impl<'a, B: MysqlLikeBackend> RowIndex<&'a str> for MysqlRow<B> {
 }
 
 #[allow(missing_debug_implementations)]
-pub struct MysqlLikeField<'a, B: MysqlLikeBackend> {
+pub struct MysqlLikeField<'a, DB: MysqlLikeBackend> {
     binds: Ref<'a, PrivateMysqlRow>,
     metadata: Rc<StatementMetadata>,
     idx: usize,
-    _phantom: PhantomData<B>,
+    _phantom: PhantomData<DB>,
 }
 
-impl<'a, B: MysqlLikeBackend> Field<'a, B> for MysqlLikeField<'a, B> {
+impl<'a, DB: MysqlLikeBackend> Field<'a, DB> for MysqlLikeField<'a, DB> {
     fn field_name(&self) -> Option<&str> {
         self.metadata.fields()[self.idx].field_name()
     }
@@ -231,7 +231,7 @@ impl<'a, B: MysqlLikeBackend> Field<'a, B> for MysqlLikeField<'a, B> {
         }
     }
 
-    fn value(&self) -> Option<<B as Backend>::RawValue<'_>> {
+    fn value(&self) -> Option<<DB as Backend>::RawValue<'_>> {
         match &*self.binds {
             PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].value(),
         }

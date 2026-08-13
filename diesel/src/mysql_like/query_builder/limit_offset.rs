@@ -6,31 +6,32 @@ use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
 use crate::result::QueryResult;
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
-    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, L> QueryFragment<B> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
+impl<DB: MysqlLikeBackend, L> QueryFragment<DB>
+    for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
-    LimitClause<L>: QueryFragment<B>,
+    LimitClause<L>: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out)?;
         Ok(())
     }
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend, L, O> QueryFragment<B>
+impl<DB: MysqlLikeBackend, L, O> QueryFragment<DB>
     for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
-    LimitClause<L>: QueryFragment<B>,
-    OffsetClause<O>: QueryFragment<B>,
+    LimitClause<L>: QueryFragment<DB>,
+    OffsetClause<O>: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out.reborrow())?;
         self.offset_clause.walk_ast(out.reborrow())?;
         Ok(())
@@ -38,8 +39,8 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> QueryFragment<B> for BoxedLimitOffsetClause<'_, B> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+impl<DB: MysqlLikeBackend> QueryFragment<DB> for BoxedLimitOffsetClause<'_, DB> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
             (Some(limit), Some(offset)) => {
                 limit.walk_ast(out.reborrow())?;
@@ -69,10 +70,10 @@ impl<B: MysqlLikeBackend> QueryFragment<B> for BoxedLimitOffsetClause<'_, B> {
 }
 
 #[diagnostic::do_not_recommend]
-impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B>
+impl<'a, DB: MysqlLikeBackend> IntoBoxedClause<'a, DB>
     for LimitOffsetClause<NoLimitClause, NoOffsetClause>
 {
-    type BoxedClause = BoxedLimitOffsetClause<'a, B>;
+    type BoxedClause = BoxedLimitOffsetClause<'a, DB>;
 
     fn into_boxed(self) -> Self::BoxedClause {
         BoxedLimitOffsetClause {
@@ -83,12 +84,12 @@ impl<'a, B: MysqlLikeBackend> IntoBoxedClause<'a, B>
 }
 
 #[diagnostic::do_not_recommend]
-impl<'a, B: MysqlLikeBackend, L> IntoBoxedClause<'a, B>
+impl<'a, DB: MysqlLikeBackend, L> IntoBoxedClause<'a, DB>
     for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
-    L: QueryFragment<B> + Send + 'a,
+    L: QueryFragment<DB> + Send + 'a,
 {
-    type BoxedClause = BoxedLimitOffsetClause<'a, B>;
+    type BoxedClause = BoxedLimitOffsetClause<'a, DB>;
 
     fn into_boxed(self) -> Self::BoxedClause {
         BoxedLimitOffsetClause {
@@ -99,13 +100,13 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<'a, B: MysqlLikeBackend, L, O> IntoBoxedClause<'a, B>
+impl<'a, DB: MysqlLikeBackend, L, O> IntoBoxedClause<'a, DB>
     for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
-    L: QueryFragment<B> + Send + 'a,
-    O: QueryFragment<B> + Send + 'a,
+    L: QueryFragment<DB> + Send + 'a,
+    O: QueryFragment<DB> + Send + 'a,
 {
-    type BoxedClause = BoxedLimitOffsetClause<'a, B>;
+    type BoxedClause = BoxedLimitOffsetClause<'a, DB>;
 
     fn into_boxed(self) -> Self::BoxedClause {
         BoxedLimitOffsetClause {

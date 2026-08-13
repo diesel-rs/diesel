@@ -46,7 +46,7 @@ fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     }
 }
 
-impl<B: MysqlLikeBackend> FromSql<SmallInt, B> for i16 {
+impl<DB: MysqlLikeBackend> FromSql<SmallInt, DB> for i16 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
@@ -76,7 +76,7 @@ impl<B: MysqlLikeBackend> FromSql<SmallInt, B> for i16 {
     }
 }
 
-impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
+impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
@@ -106,7 +106,7 @@ impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
     }
 }
 
-impl<B: MysqlLikeBackend> FromSql<BigInt, B> for i64 {
+impl<DB: MysqlLikeBackend> FromSql<BigInt, DB> for i64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
@@ -120,7 +120,7 @@ impl<B: MysqlLikeBackend> FromSql<BigInt, B> for i64 {
     }
 }
 
-impl<B: MysqlLikeBackend> FromSql<Float, B> for f32 {
+impl<DB: MysqlLikeBackend> FromSql<Float, DB> for f32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
@@ -136,7 +136,7 @@ impl<B: MysqlLikeBackend> FromSql<Float, B> for f32 {
     }
 }
 
-impl<B: MysqlLikeBackend> FromSql<Double, B> for f64 {
+impl<DB: MysqlLikeBackend> FromSql<Double, DB> for f64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
@@ -155,21 +155,21 @@ impl<B: MysqlLikeBackend> FromSql<Double, B> for f64 {
 /// impl in terms of `String`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
-impl<B: MysqlLikeBackend> FromSql<Text, B> for *const str {
+impl<DB: MysqlLikeBackend> FromSql<Text, DB> for *const str {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         let string = str::from_utf8(value.as_bytes())?;
         Ok(string as *const str)
     }
 }
 
-impl<'a, B: MysqlLikeBackend> FromSqlRef<'a, Text, B> for &'a str {
+impl<'a, DB: MysqlLikeBackend> FromSqlRef<'a, Text, DB> for &'a str {
     fn from_sql(bytes: &'a mut MysqlValue<'_>) -> deserialize::Result<Self> {
         let string = str::from_utf8(bytes.as_bytes())?;
         Ok(string)
     }
 }
 
-impl<B: MysqlLikeBackend> Queryable<Text, B> for *const str {
+impl<DB: MysqlLikeBackend> Queryable<Text, DB> for *const str {
     type Row = Self;
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
@@ -182,19 +182,19 @@ impl<B: MysqlLikeBackend> Queryable<Text, B> for *const str {
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
-impl<B: MysqlLikeBackend> FromSql<Binary, B> for *const [u8] {
+impl<DB: MysqlLikeBackend> FromSql<Binary, DB> for *const [u8] {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const [u8])
     }
 }
 
-impl<'a, B: MysqlLikeBackend> FromSqlRef<'a, Binary, B> for &'a [u8] {
+impl<'a, DB: MysqlLikeBackend> FromSqlRef<'a, Binary, DB> for &'a [u8] {
     fn from_sql(bytes: &'a mut MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes())
     }
 }
 
-impl<B: MysqlLikeBackend> Queryable<Binary, B> for *const [u8] {
+impl<DB: MysqlLikeBackend> Queryable<Binary, DB> for *const [u8] {
     type Row = Self;
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {

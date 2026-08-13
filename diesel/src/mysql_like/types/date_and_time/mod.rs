@@ -185,8 +185,8 @@ impl MysqlTimestampType {
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
-        impl<B: MysqlLikeBackend> ToSql<$ty, B> for MysqlTime {
-            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+        impl<DB: MysqlLikeBackend> ToSql<$ty, DB> for MysqlTime {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
                 let buffer = self.serialize();
 
                 out.write_all(&buffer)?;
@@ -194,7 +194,7 @@ macro_rules! mysql_time_impls {
             }
         }
 
-        impl<B: MysqlLikeBackend> FromSql<$ty, B> for MysqlTime {
+        impl<DB: MysqlLikeBackend> FromSql<$ty, DB> for MysqlTime {
             fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
                 value.time_value()
             }

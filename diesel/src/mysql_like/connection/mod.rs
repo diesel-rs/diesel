@@ -106,18 +106,18 @@ use crate::result::*;
 /// #   Ok(())
 /// # }
 /// ```
-pub struct MysqlLikeConnection<B: MysqlLikeBackend> {
+pub struct MysqlLikeConnection<DB: MysqlLikeBackend> {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
-    statement_cache: StatementCache<B, Statement<B>>,
+    statement_cache: StatementCache<DB, Statement<DB>>,
     instrumentation: DynInstrumentation,
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
 #[allow(unsafe_code)]
-unsafe impl<B: MysqlLikeBackend> Send for MysqlLikeConnection<B> {}
+unsafe impl<DB: MysqlLikeBackend> Send for MysqlLikeConnection<DB> {}
 
-impl<B: MysqlLikeBackend> SimpleConnection for MysqlLikeConnection<B> {
+impl<DB: MysqlLikeBackend> SimpleConnection for MysqlLikeConnection<DB> {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         self.instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {
@@ -135,10 +135,10 @@ impl<B: MysqlLikeBackend> SimpleConnection for MysqlLikeConnection<B> {
     }
 }
 
-impl<B: MysqlLikeBackend> ConnectionSealed for MysqlLikeConnection<B> {}
+impl<DB: MysqlLikeBackend> ConnectionSealed for MysqlLikeConnection<DB> {}
 
-impl<B: MysqlLikeBackend> Connection for MysqlLikeConnection<B> {
-    type Backend = B;
+impl<DB: MysqlLikeBackend> Connection for MysqlLikeConnection<DB> {
+    type Backend = DB;
     type TransactionManager = AnsiTransactionManager;
 
     /// Establishes a new connection to the MySQL database
@@ -246,9 +246,9 @@ fn update_transaction_manager_status<T>(
     query_result
 }
 
-impl<B: MysqlLikeBackend> LoadConnection<DefaultLoadingMode> for MysqlLikeConnection<B> {
-    type Cursor<'conn, 'query> = self::stmt::iterator::StatementIterator<'conn, B>;
-    type Row<'conn, 'query> = self::stmt::iterator::MysqlRow<B>;
+impl<DB: MysqlLikeBackend> LoadConnection<DefaultLoadingMode> for MysqlLikeConnection<DB> {
+    type Cursor<'conn, 'query> = self::stmt::iterator::StatementIterator<'conn, DB>;
+    type Row<'conn, 'query> = self::stmt::iterator::MysqlRow<DB>;
 
     fn load<'conn, 'query, T>(
         &'conn mut self,
@@ -267,7 +267,7 @@ impl<B: MysqlLikeBackend> LoadConnection<DefaultLoadingMode> for MysqlLikeConnec
             )
             .and_then(|stmt| {
                 let mut metadata = Vec::new();
-                B::row_metadata(&mut (), &mut metadata);
+                DB::row_metadata(&mut (), &mut metadata);
                 StatementIterator::from_stmt(stmt, &metadata)
             }),
             &mut self.transaction_state,
@@ -278,7 +278,7 @@ impl<B: MysqlLikeBackend> LoadConnection<DefaultLoadingMode> for MysqlLikeConnec
 }
 
 #[cfg(feature = "r2d2")]
-impl<B: MysqlLikeBackend> crate::r2d2::R2D2Connection for MysqlLikeConnection<B> {
+impl<DB: MysqlLikeBackend> crate::r2d2::R2D2Connection for MysqlLikeConnection<DB> {
     fn ping(&mut self) -> QueryResult<()> {
         crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
     }
@@ -288,7 +288,7 @@ impl<B: MysqlLikeBackend> crate::r2d2::R2D2Connection for MysqlLikeConnection<B>
     }
 }
 
-impl<B: MysqlLikeBackend> MultiConnectionHelper for MysqlLikeConnection<B> {
+impl<DB: MysqlLikeBackend> MultiConnectionHelper for MysqlLikeConnection<DB> {
     fn to_any<'a>(
         lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
     ) -> &mut (dyn core::any::Any + 'a) {
@@ -302,18 +302,18 @@ impl<B: MysqlLikeBackend> MultiConnectionHelper for MysqlLikeConnection<B> {
     }
 }
 
-fn prepared_query<'a, B: MysqlLikeBackend + Default, T: QueryFragment<B> + QueryId>(
+fn prepared_query<'a, DB: MysqlLikeBackend + Default, T: QueryFragment<DB> + QueryId>(
     source: &'_ T,
-    statement_cache: &'a mut StatementCache<B, Statement<B>>,
+    statement_cache: &'a mut StatementCache<DB, Statement<DB>>,
     raw_connection: &'a mut RawConnection,
     instrumentation: &mut dyn Instrumentation,
-) -> QueryResult<MaybeCached<'a, Statement<B>>> {
+) -> QueryResult<MaybeCached<'a, Statement<DB>>> {
     instrumentation.on_connection_event(InstrumentationEvent::StartQuery {
         query: &crate::debug_query(source),
     });
     let mut stmt = statement_cache.cached_statement(
         source,
-        &B::default(),
+        &DB::default(),
         &[],
         &*raw_connection,
         RawConnection::prepare,
@@ -321,7 +321,7 @@ fn prepared_query<'a, B: MysqlLikeBackend + Default, T: QueryFragment<B> + Query
     )?;
 
     let mut bind_collector = RawBytesBindCollector::new();
-    source.collect_binds(&mut bind_collector, &mut (), &B::default())?;
+    source.collect_binds(&mut bind_collector, &mut (), &DB::default())?;
     let binds = bind_collector
         .metadata
         .into_iter()
@@ -330,7 +330,7 @@ fn prepared_query<'a, B: MysqlLikeBackend + Default, T: QueryFragment<B> + Query
     Ok(stmt)
 }
 
-impl<B: MysqlLikeBackend> MysqlLikeConnection<B> {
+impl<DB: MysqlLikeBackend> MysqlLikeConnection<DB> {
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET time_zone = '+00:00';").execute(self)?;
         crate::sql_query("SET character_set_client = 'utf8mb4'").execute(self)?;
@@ -339,11 +339,11 @@ impl<B: MysqlLikeBackend> MysqlLikeConnection<B> {
         Ok(())
     }
 
-    fn establish_inner(database_url: &str) -> Result<MysqlLikeConnection<B>, ConnectionError> {
+    fn establish_inner(database_url: &str) -> Result<MysqlLikeConnection<DB>, ConnectionError> {
         use crate::ConnectionError::CouldntSetupConfiguration;
 
         let raw_connection = RawConnection::new();
-        let connection_options = ConnectionOptions::parse::<B>(database_url)?;
+        let connection_options = ConnectionOptions::parse::<DB>(database_url)?;
         raw_connection.connect(&connection_options)?;
         let mut conn = MysqlLikeConnection {
             raw_connection,

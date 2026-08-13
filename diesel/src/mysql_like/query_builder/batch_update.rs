@@ -8,24 +8,24 @@ use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
 use crate::{QueryResult, Table};
 
-impl<B: MysqlLikeBackend, C, T> BatchAssignHelper<B> for Assign<ColumnWrapperForUpdate<C>, T>
+impl<DB: MysqlLikeBackend, C, T> BatchAssignHelper<DB> for Assign<ColumnWrapperForUpdate<C>, T>
 where
-    C: QueryFragment<B>,
+    C: QueryFragment<DB>,
 {
-    fn batch_assign_identifier<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn batch_assign_identifier<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.target.0.walk_ast(out.reborrow())
     }
 }
 
-impl<B: MysqlLikeBackend, I, C, Tab>
-    QueryFragment<B, crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport>
+impl<DB: MysqlLikeBackend, I, C, Tab>
+    QueryFragment<DB, crate::mysql_like::query_fragments::MySqlLikeBatchUpdateSupport>
     for BatchUpdate<I, C, Tab::PrimaryKey, Tab>
 where
-    I: BatchKeyHelper<Tab::PrimaryKey, B>,
-    C: BatchValueHelper<B>,
+    I: BatchKeyHelper<Tab::PrimaryKey, DB>,
+    C: BatchValueHelper<DB>,
     Tab: Table,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, B>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         // Always unsafe to cache since this does not have a static query id.
         out.unsafe_to_cache_prepared();
 
@@ -75,7 +75,7 @@ where
 
         out.push_sql(" ON ");
 
-        <I as BatchKeyHelper<Tab::PrimaryKey, B>>::assign(&self.primary_key, out.reborrow())?;
+        <I as BatchKeyHelper<Tab::PrimaryKey, DB>>::assign(&self.primary_key, out.reborrow())?;
         out.push_sql(" SET ");
         BatchValueHelper::assign(&first.1, out.reborrow())?;
 

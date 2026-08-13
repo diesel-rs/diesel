@@ -60,8 +60,8 @@ fn to_primitive_datetime(dt: OffsetDateTime) -> PrimitiveDateTime {
 
 // Mysql datetime column has a wider range than timestamp column, so let's implement the fundamental operations in terms of datetime.
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> ToSql<Datetime, B> for PrimitiveDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Datetime, DB> for PrimitiveDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
@@ -75,14 +75,14 @@ impl<B: MysqlLikeBackend> ToSql<Datetime, B> for PrimitiveDateTime {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Timestamp, B>>::to_sql(&mysql_time, &mut out.reborrow())
+        <MysqlTime as ToSql<Timestamp, DB>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> FromSql<Datetime, B> for PrimitiveDateTime {
+impl<DB: MysqlLikeBackend> FromSql<Datetime, DB> for PrimitiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Timestamp, B>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Timestamp, DB>>::from_sql(bytes)?;
 
         to_datetime(mysql_time)
             .map(to_primitive_datetime)
@@ -92,54 +92,54 @@ impl<B: MysqlLikeBackend> FromSql<Datetime, B> for PrimitiveDateTime {
 
 // We can implement timestamps in terms of datetimes
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for PrimitiveDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
-        <PrimitiveDateTime as ToSql<Datetime, B>>::to_sql(self, out)
+impl<DB: MysqlLikeBackend> ToSql<Timestamp, DB> for PrimitiveDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        <PrimitiveDateTime as ToSql<Datetime, DB>>::to_sql(self, out)
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for PrimitiveDateTime {
+impl<DB: MysqlLikeBackend> FromSql<Timestamp, DB> for PrimitiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        <PrimitiveDateTime as FromSql<Datetime, B>>::from_sql(bytes)
+        <PrimitiveDateTime as FromSql<Datetime, DB>>::from_sql(bytes)
     }
 }
 
 // Delegate offset datetimes in terms of UTC primitive datetimes; this stores everything in the DB as UTC
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> ToSql<Datetime, B> for OffsetDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Datetime, DB> for OffsetDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let prim = to_primitive_datetime(*self);
-        <PrimitiveDateTime as ToSql<Datetime, B>>::to_sql(&prim, &mut out.reborrow())
+        <PrimitiveDateTime as ToSql<Datetime, DB>>::to_sql(&prim, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> FromSql<Datetime, B> for OffsetDateTime {
+impl<DB: MysqlLikeBackend> FromSql<Datetime, DB> for OffsetDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let prim = <PrimitiveDateTime as FromSql<Datetime, B>>::from_sql(bytes)?;
+        let prim = <PrimitiveDateTime as FromSql<Datetime, DB>>::from_sql(bytes)?;
         Ok(prim.assume_offset(UtcOffset::UTC))
     }
 }
 
 // delegate timestamp column to datetime column for offset datetimes
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> ToSql<Timestamp, B> for OffsetDateTime {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
-        <OffsetDateTime as ToSql<Datetime, B>>::to_sql(self, out)
+impl<DB: MysqlLikeBackend> ToSql<Timestamp, DB> for OffsetDateTime {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        <OffsetDateTime as ToSql<Datetime, DB>>::to_sql(self, out)
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> FromSql<Timestamp, B> for OffsetDateTime {
+impl<DB: MysqlLikeBackend> FromSql<Timestamp, DB> for OffsetDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        <OffsetDateTime as FromSql<Datetime, B>>::from_sql(bytes)
+        <OffsetDateTime as FromSql<Datetime, DB>>::from_sql(bytes)
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
-    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Time, DB> for NaiveTime {
+    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, DB>) -> serialize::Result {
         let mysql_time = MysqlTime {
             hour: self.hour() as libc::c_uint,
             minute: self.minute() as libc::c_uint,
@@ -153,14 +153,14 @@ impl<B: MysqlLikeBackend> ToSql<Time, B> for NaiveTime {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Time, B>>::to_sql(&mysql_time, &mut out.reborrow())
+        <MysqlTime as ToSql<Time, DB>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
+impl<DB: MysqlLikeBackend> FromSql<Time, DB> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Time, B>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Time, DB>>::from_sql(bytes)?;
 
         to_time(mysql_time)
             .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())
@@ -168,8 +168,8 @@ impl<B: MysqlLikeBackend> FromSql<Time, B> for NaiveTime {
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, B>) -> serialize::Result {
+impl<DB: MysqlLikeBackend> ToSql<Date, DB> for NaiveDate {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year().try_into()?,
             month: self.month() as libc::c_uint,
@@ -183,14 +183,14 @@ impl<B: MysqlLikeBackend> ToSql<Date, B> for NaiveDate {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Date, B>>::to_sql(&mysql_time, &mut out.reborrow())
+        <MysqlTime as ToSql<Date, DB>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
 #[cfg(feature = "time")]
-impl<B: MysqlLikeBackend> FromSql<Date, B> for NaiveDate {
+impl<DB: MysqlLikeBackend> FromSql<Date, DB> for NaiveDate {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let mysql_time = <MysqlTime as FromSql<Date, B>>::from_sql(bytes)?;
+        let mysql_time = <MysqlTime as FromSql<Date, DB>>::from_sql(bytes)?;
 
         to_datetime(mysql_time)
             .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())

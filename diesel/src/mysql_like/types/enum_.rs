@@ -4,9 +4,9 @@ use crate::types::enum_::{EnumMapping, EnumTypeMapping, EnumVariant, IntMapping}
 use std::io::Write;
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> EnumMapping<B> for EnumTypeMapping {
+impl<DB: MysqlLikeBackend> EnumMapping<DB> for EnumTypeMapping {
     fn map_to_database_value<'b>(
-        output: &mut crate::serialize::Output<'b, '_, B>,
+        output: &mut crate::serialize::Output<'b, '_, DB>,
         variant: &'static EnumVariant,
     ) -> crate::serialize::Result {
         output.write_all(variant.sql_name.as_bytes())?;
@@ -14,7 +14,7 @@ impl<B: MysqlLikeBackend> EnumMapping<B> for EnumTypeMapping {
     }
 
     fn map_from_database_value(
-        raw: <B as crate::backend::Backend>::RawValue<'_>,
+        raw: <DB as crate::backend::Backend>::RawValue<'_>,
         type_name: &'static str,
         variants: &'static [EnumVariant],
     ) -> crate::deserialize::Result<usize> {
@@ -38,28 +38,28 @@ impl<B: MysqlLikeBackend> EnumMapping<B> for EnumTypeMapping {
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> EnumSqlType<true, B>
+impl<DB: MysqlLikeBackend> EnumSqlType<true, DB>
     for crate::sql_types::Unsigned<crate::sql_types::BigInt>
 {
     type Strategy = IntMapping<u64, Self>;
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> EnumSqlType<true, B>
+impl<DB: MysqlLikeBackend> EnumSqlType<true, DB>
     for crate::sql_types::Unsigned<crate::sql_types::Integer>
 {
     type Strategy = IntMapping<u32, Self>;
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> EnumSqlType<true, B>
+impl<DB: MysqlLikeBackend> EnumSqlType<true, DB>
     for crate::sql_types::Unsigned<crate::sql_types::SmallInt>
 {
     type Strategy = IntMapping<u16, Self>;
 }
 
 #[diagnostic::do_not_recommend]
-impl<B: MysqlLikeBackend> EnumSqlType<true, B>
+impl<DB: MysqlLikeBackend> EnumSqlType<true, DB>
     for crate::sql_types::Unsigned<crate::sql_types::TinyInt>
 {
     type Strategy = IntMapping<u8, Self>;
