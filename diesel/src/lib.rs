@@ -178,7 +178,7 @@
 //!   openssl-sys = { version = "0.9.100", features = ["vendored"] }
 //!   ```
 //! - `mariadb`: This feature enables the diesel mariadb backend. This feature implies `mariadb_backend`.
-//!   Enabling this feature requires a compatible copy of `libmysqlclient` for your target architecture.
+//!   Enabling this feature requires a compatible copy of `libmysqlclient` or `libmariadb` for your target architecture.
 //! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
 //!   on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
 //!   This feature can be used to implement a custom implementation of diesels `Connection` trait for the
