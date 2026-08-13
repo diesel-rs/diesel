@@ -23,8 +23,8 @@ LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    |
   ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
    |
-LL | impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, B>`
+LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
    = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -76,8 +76,8 @@ LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    |
   ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
    |
-LL | impl<B: MysqlLikeBackend> FromSql<Integer, B> for i32 {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, B>`
+LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
    = note: required for `i32` to implement `Queryable<diesel::sql_types::Text, Pg>`
    = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
    = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)
