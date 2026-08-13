@@ -171,6 +171,10 @@ impl<DB: MysqlLikeBackend> StatementUse<'_, DB> {
     }
 
     pub(super) fn populate_row_buffers(&self, binds: &mut OutputBinds) -> QueryResult<Option<()>> {
+        // We're about to call `mysql_stmt_fetch` we need to check if our binds are still valid
+        if binds.are_invalid() {
+            binds.bind_results(self)?;
+        }
         let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.inner.stmt.as_ptr()) };
         if next_row_result < 0 {
             self.inner.did_an_error_occur().map(Some)

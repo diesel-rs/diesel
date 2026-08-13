@@ -24,13 +24,19 @@ fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
 
 pub(super) struct PreparedStatementBinds(Binds);
 
-pub(super) struct OutputBinds(Binds);
+pub(super) struct OutputBinds {
+    binds: Binds,
+    binds_are_invalid: bool,
+}
 
 impl Clone for OutputBinds {
     fn clone(&self) -> Self {
-        Self(Binds {
-            data: self.0.data.clone(),
-        })
+        Self {
+            binds: Binds {
+                data: self.binds.data.clone(),
+            },
+            binds_are_invalid: true,
+        }
     }
 }
 
@@ -71,14 +77,17 @@ impl OutputBinds {
             .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self(Binds { data }))
+        Ok(Self {
+            binds: Binds { data },
+            binds_are_invalid: true,
+        })
     }
 
-    pub(super) fn populate_dynamic_buffers<B: MysqlLikeBackend>(
+    pub(super) fn populate_dynamic_buffers<DB: MysqlLikeBackend>(
         &mut self,
-        stmt: &StatementUse<'_, B>,
+        stmt: &StatementUse<'_, DB>,
     ) -> QueryResult<()> {
-        for (i, data) in self.0.data.iter_mut().enumerate() {
+        for (i, data) in self.binds.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
             // at the end of this function
@@ -90,25 +99,13 @@ impl OutputBinds {
                 }
             }
         }
-        /*
-            Workaround for libmariadb version 3.4.9
-            we need to save the lengths before we bind the results here, as libmariadb 3.4.9 overrides the length with 0
-        */
-        let lengths = self
-            .0
-            .data
-            .iter()
-            .map(|data| data.length)
-            .collect::<Vec<_>>();
-        let res = unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) };
-        for (data, old_length) in self.0.data.iter_mut().zip(lengths) {
-            data.length = old_length;
-        }
-        res
+        // binds need to be rebound with `mysql_stmt_bind_result` before calling `mysql_stmt_fetch`
+        self.binds_are_invalid = true;
+        Ok(())
     }
 
     pub(super) fn update_buffer_lengths(&mut self) {
-        for data in &mut self.0.data {
+        for data in &mut self.binds.data {
             data.update_buffer_length();
         }
     }
@@ -117,7 +114,20 @@ impl OutputBinds {
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
-        self.0.with_mysql_binds(f)
+        self.binds.with_mysql_binds(f)
+    }
+
+    pub(super) fn bind_results<DB: MysqlLikeBackend>(
+        &mut self,
+        stmt: &StatementUse<'_, DB>,
+    ) -> QueryResult<()> {
+        unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }?;
+        self.binds_are_invalid = false;
+        Ok(())
+    }
+
+    pub(crate) fn are_invalid(&self) -> bool {
+        self.binds_are_invalid
     }
 }
 
@@ -138,7 +148,7 @@ impl Binds {
 impl Index<usize> for OutputBinds {
     type Output = BindData;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.0.data[index]
+        &self.binds.data[index]
     }
 }
 
@@ -983,7 +993,7 @@ mod tests {
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &_)> = output_binds
-            .0
+            .binds
             .data
             .into_iter()
             .zip(metadata.fields())
@@ -1349,12 +1359,15 @@ mod tests {
 
         let bind = BindData::from_tpe_and_flags(bind_tpe.into());
 
-        let mut binds = OutputBinds(Binds { data: vec![bind] });
+        let mut binds = OutputBinds {
+            binds: Binds { data: vec![bind] },
+            binds_are_invalid: true,
+        };
 
         let stmt = stmt.execute_statement(&mut binds).unwrap();
         stmt.populate_row_buffers(&mut binds).unwrap();
 
-        binds.0.data.remove(0)
+        binds.binds.data.remove(0)
     }
 
     fn input_bind(
