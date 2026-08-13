@@ -54,6 +54,7 @@ where
     Self: MapErrorNumber,
     Self: 'static,
 {
+    #[doc(hidden)]
     /// The scheme used in the connection URL for this backend.
     /// "mysql" for MySQL, "mariadb" for MariaDB.
     const SCHEME: &'static str;
