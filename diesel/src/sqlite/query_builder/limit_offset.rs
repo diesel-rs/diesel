@@ -1,10 +1,13 @@
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
-use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+use crate::query_builder::limit_offset_clause::{
+    BoxedCloneLimitOffsetClause, BoxedLimitOffsetClause, LimitOffsetClause,
+};
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
-use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
+use crate::query_builder::{AstPass, IntoBoxedClause, IntoBoxedCloneClause, QueryFragment};
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 impl QueryFragment<Sqlite> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
@@ -49,6 +52,27 @@ where
 }
 
 impl QueryFragment<Sqlite> for BoxedLimitOffsetClause<'_, Sqlite> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        match (self.limit.as_ref(), self.offset.as_ref()) {
+            (Some(limit), Some(offset)) => {
+                limit.walk_ast(out.reborrow())?;
+                offset.walk_ast(out.reborrow())?;
+            }
+            (Some(limit), None) => {
+                limit.walk_ast(out.reborrow())?;
+            }
+            (None, Some(offset)) => {
+                // See the `QueryFragment` implementation for `LimitOffsetClause` for details.
+                out.push_sql(" LIMIT -1 ");
+                offset.walk_ast(out.reborrow())?;
+            }
+            (None, None) => {}
+        }
+        Ok(())
+    }
+}
+
+impl QueryFragment<Sqlite> for BoxedCloneLimitOffsetClause<'_, Sqlite> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
             (Some(limit), Some(offset)) => {
@@ -122,6 +146,61 @@ where
         BoxedLimitOffsetClause {
             limit: Some(Box::new(self.limit_clause)),
             offset: Some(Box::new(self.offset_clause)),
+        }
+    }
+}
+
+impl<'a> IntoBoxedCloneClause<'a, Sqlite> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Sqlite>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: None,
+            offset: None,
+        }
+    }
+}
+
+impl<'a, L> IntoBoxedCloneClause<'a, Sqlite> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
+where
+    L: QueryFragment<Sqlite> + Send + Sync + 'a,
+{
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Sqlite>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: Some(Arc::new(self.limit_clause)),
+            offset: None,
+        }
+    }
+}
+
+impl<'a, O> IntoBoxedCloneClause<'a, Sqlite> for LimitOffsetClause<NoLimitClause, OffsetClause<O>>
+where
+    O: QueryFragment<Sqlite> + Send + Sync + 'a,
+{
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Sqlite>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: None,
+            offset: Some(Arc::new(self.offset_clause)),
+        }
+    }
+}
+
+impl<'a, L, O> IntoBoxedCloneClause<'a, Sqlite>
+    for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
+where
+    L: QueryFragment<Sqlite> + Send + Sync + 'a,
+    O: QueryFragment<Sqlite> + Send + Sync + 'a,
+{
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Sqlite>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: Some(Arc::new(self.limit_clause)),
+            offset: Some(Arc::new(self.offset_clause)),
         }
     }
 }

@@ -12,11 +12,16 @@
 //! LC: For Update Clause
 
 pub(crate) mod boxed;
+pub(crate) mod boxed_clone;
 mod dsl_impls;
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) use self::boxed::BoxedSelectStatement;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::boxed_clone::BoxedCloneSelectStatement;
 
 use super::NoFromClause;
 use super::distinct_clause::NoDistinctClause;

@@ -11,7 +11,7 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment f
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/mysql/query_builder/limit_offset.rs
      |
-   LL |   impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+  LL |   impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `LimitOffsetClause<NoLimitClause, NoOffsetClause>`
 ...
   LL | / impl<L> QueryFragment<Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>

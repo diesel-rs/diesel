@@ -601,6 +601,10 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
             #[doc = concat!("Helper type for representing a boxed query from this ", #kind_name)]
             pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<'a, ST, diesel::internal::table_macro::FromClause<#query_source_ident>, DB>;
 
+            #[doc = concat!("Helper type for representing a boxed cloneable query from this ", #kind_name)]
+            pub type BoxedCloneQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedCloneSelectStatement<'a, ST, diesel::internal::table_macro::FromClause<#query_source_ident>, DB>;
+
+
             impl diesel::QuerySource for #query_source_ident {
                 type FromClause = diesel::internal::table_macro::StaticQueryFragmentInstance<#query_source_ident>;
                 type DefaultSelection = <Self as diesel::query_source::QueryRelation>::AllColumns;
@@ -738,6 +742,18 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
                 type OnClause = <diesel::internal::table_macro::BoxedSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB> as diesel::JoinTo<Self>>::OnClause;
                 fn join_target(__diesel_internal_rhs: diesel::internal::table_macro::BoxedSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
                     let (_, __diesel_internal_on_clause) = diesel::internal::table_macro::BoxedSelectStatement::join_target(Self);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
+                }
+            }
+
+            impl<'a, QS, ST, DB> diesel::JoinTo<diesel::internal::table_macro::BoxedCloneSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB>> for #query_source_ident where
+                diesel::internal::table_macro::BoxedCloneSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB>: diesel::JoinTo<Self>,
+                QS: diesel::query_source::QuerySource,
+            {
+                type FromClause = diesel::internal::table_macro::BoxedCloneSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB>;
+                type OnClause = <diesel::internal::table_macro::BoxedCloneSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB> as diesel::JoinTo<Self>>::OnClause;
+                fn join_target(__diesel_internal_rhs: diesel::internal::table_macro::BoxedCloneSelectStatement<'a, diesel::internal::table_macro::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = diesel::internal::table_macro::BoxedCloneSelectStatement::join_target(Self);
                     (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }

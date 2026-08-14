@@ -19,6 +19,7 @@ help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
               JoinTo<Tablesample<S, TSM>>
               JoinTo<SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>>
               JoinTo<BoxedSelectStatement<'_, ..., ..., ...>>
+              JoinTo<BoxedCloneSelectStatement<'_, ..., ..., ...>>
               JoinTo<query_source::joins::Join<Left, Right, Kind>>
               JoinTo<query_source::joins::JoinOn<Join, On>>
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<table, Inner>`
@@ -54,6 +55,7 @@ help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
               JoinTo<Tablesample<S, TSM>>
               JoinTo<SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>>
               JoinTo<BoxedSelectStatement<'_, ..., ..., ...>>
+              JoinTo<BoxedCloneSelectStatement<'_, ..., ..., ...>>
               JoinTo<query_source::joins::Join<Left, Right, Kind>>
               JoinTo<query_source::joins::JoinOn<Join, On>>
     = note: required for `users::table` to implement `JoinWithImplicitOnClause<table, LeftOuter>`
@@ -88,6 +90,7 @@ LL | |     posts {
              JoinTo<comments::table>
              JoinTo<SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>>
              JoinTo<BoxedSelectStatement<'_, ..., ..., ...>>
+             JoinTo<BoxedCloneSelectStatement<'_, ..., ..., ...>>
              JoinTo<query_source::joins::Join<Left, Right, Kind>>
              JoinTo<query_source::joins::JoinOn<Join, On>>
    = note: required for `Join<table, table, Inner>` to implement `JoinTo<users::table>`

@@ -28,6 +28,13 @@ LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB,
 LL | | where
 LL | |     DB: Backend,
     | |________________^ `BoxedSelectStatement<'_, ST, QS, DB, GB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed_clone.rs
+    |
+LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
+LL | | where
+LL | |     DB: Backend,
+    | |________________^ `BoxedCloneSelectStatement<'_, ST, QS, DB, GB>`
     = note: required for `Subselect<bool, Bool>` to implement `Expression`
     = note: 1 redundant requirement hidden
     = note: required for `diesel::expression::exists::Exists<bool>` to implement `Expression`
@@ -69,6 +76,13 @@ LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB,
 LL | | where
 LL | |     DB: Backend,
     | |________________^ `BoxedSelectStatement<'_, ST, QS, DB, GB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed_clone.rs
+    |
+LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
+LL | | where
+LL | |     DB: Backend,
+    | |________________^ `BoxedCloneSelectStatement<'_, ST, QS, DB, GB>`
     = note: required for `Subselect<id, Bool>` to implement `Expression`
     = note: 1 redundant requirement hidden
     = note: required for `diesel::expression::exists::Exists<users::columns::id>` to implement `Expression`

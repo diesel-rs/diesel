@@ -1,9 +1,12 @@
 use crate::mysql::Mysql;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
-use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+use crate::query_builder::limit_offset_clause::{
+    BoxedCloneLimitOffsetClause, BoxedLimitOffsetClause, LimitOffsetClause,
+};
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
-use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
+use crate::query_builder::{AstPass, IntoBoxedClause, IntoBoxedCloneClause, QueryFragment};
 use crate::result::QueryResult;
+use alloc::sync::Arc;
 
 impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
@@ -99,6 +102,67 @@ where
         BoxedLimitOffsetClause {
             limit: Some(Box::new(self.limit_clause)),
             offset: Some(Box::new(self.offset_clause)),
+        }
+    }
+}
+
+impl QueryFragment<Mysql> for BoxedCloneLimitOffsetClause<'_, Mysql> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+        match (self.limit.as_ref(), self.offset.as_ref()) {
+            (Some(limit), Some(offset)) => {
+                limit.walk_ast(out.reborrow())?;
+                offset.walk_ast(out.reborrow())?;
+            }
+            (Some(limit), None) => {
+                limit.walk_ast(out.reborrow())?;
+            }
+            (None, Some(offset)) => {
+                out.push_sql(" LIMIT 18446744073709551615 ");
+                offset.walk_ast(out.reborrow())?;
+            }
+            (None, None) => {}
+        }
+        Ok(())
+    }
+}
+
+impl<'a> IntoBoxedCloneClause<'a, Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Mysql>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: None,
+            offset: None,
+        }
+    }
+}
+
+impl<'a, L> IntoBoxedCloneClause<'a, Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
+where
+    L: QueryFragment<Mysql> + Send + Sync + 'a,
+{
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Mysql>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: Some(Arc::new(self.limit_clause)),
+            offset: None,
+        }
+    }
+}
+
+impl<'a, L, O> IntoBoxedCloneClause<'a, Mysql>
+    for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
+where
+    L: QueryFragment<Mysql> + Send + Sync + 'a,
+    O: QueryFragment<Mysql> + Send + Sync + 'a,
+{
+    type BoxedCloneClause = BoxedCloneLimitOffsetClause<'a, Mysql>;
+
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+        BoxedCloneLimitOffsetClause {
+            limit: Some(Arc::new(self.limit_clause)),
+            offset: Some(Arc::new(self.offset_clause)),
         }
     }
 }

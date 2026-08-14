@@ -19,6 +19,8 @@ pub use crate::query_builder::select_statement::SelectStatement;
 #[doc(hidden)]
 pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
 #[doc(hidden)]
+pub use crate::query_builder::select_statement::boxed_clone::BoxedCloneSelectStatement;
+#[doc(hidden)]
 pub use crate::query_source::aliasing::{
     AliasAliasAppearsInFromClause, AliasAliasAppearsInFromClauseSameTable,
     AliasAppearsInFromClause, FieldAliasMapperAssociatedTypesDisjointnessTrick,
