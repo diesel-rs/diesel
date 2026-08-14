@@ -10,8 +10,11 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment f
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `LimitOffsetClause<L, O>` implements `QueryFragment<Pg>`
+               `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `QueryFragment<DB>`
                `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `QueryFragment<Sqlite>`
+               `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `QueryFragment<DB>`
                `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
+               `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<DB>`
                `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<Sqlite>`
                `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`

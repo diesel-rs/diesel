@@ -75,6 +75,21 @@ where
     }
 }
 
+impl<'a, S, DB> BoxedCloneDsl<'a, DB> for Alias<S>
+where
+    Alias<S>: QuerySource + AsQuery<Query = SelectStatement<FromClause<Alias<S>>>>,
+    SelectStatement<FromClause<Alias<S>>>: BoxedCloneDsl<'a, DB>,
+    <Alias<S> as QuerySource>::DefaultSelection:
+        Expression<SqlType = <Alias<S> as AsQuery>::SqlType> + ValidGrouping<()>,
+    <Alias<S> as AsQuery>::SqlType: TypedExpressionType,
+{
+    type Output = dsl::IntoBoxedClone<'a, SelectStatement<FromClause<Alias<S>>>, DB>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
+        self.as_query().internal_into_boxed_clone()
+    }
+}
+
 impl<S> CombineDsl for Alias<S>
 where
     S: AliasSource,

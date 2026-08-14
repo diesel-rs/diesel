@@ -23,6 +23,8 @@ use alloc::vec::Vec;
 
 mod belonging_to_dsl;
 #[doc(hidden)]
+pub mod boxed_clone_dsl;
+#[doc(hidden)]
 pub mod boxed_dsl;
 mod combine_dsl;
 mod distinct_dsl;
@@ -62,6 +64,7 @@ pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 /// However, generic code may need to include a where clause that references
 /// these traits.
 pub mod methods {
+    pub use super::boxed_clone_dsl::BoxedCloneDsl;
     pub use super::boxed_dsl::BoxedDsl;
     pub use super::distinct_dsl::*;
     #[doc(inline)]
@@ -1345,6 +1348,77 @@ pub trait QueryDsl: Sized {
         Self: methods::BoxedDsl<'a, DB>,
     {
         methods::BoxedDsl::internal_into_boxed(self)
+    }
+
+    /// Wraps the pieces of a query into an [`Arc`].
+    ///
+    /// This is useful for cases where you want to clone and conditionally
+    /// modify a query, but need the type to remain the same. The backend
+    /// must be specified as part of this. It is not possible to box a query
+    /// and have it be useable on multiple backends.
+    ///
+    /// A cloneable boxed query will incur a slightly greater performance penalty
+    /// than a standard boxed query. In both cases, the query builder can no longer
+    /// be inlined by the compiler. For most applications this cost will be minimal.
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     use std::collections::HashMap;
+    /// #     let connection = &mut establish_connection();
+    /// #     let mut params = HashMap::new();
+    /// #     params.insert("name", "Sean");
+    /// let query = users::table.into_boxed_clone();
+    /// let mut query = query.clone();
+    /// if let Some(name) = params.get("name") {
+    ///     query = query.filter(users::name.eq(name));
+    /// }
+    /// let users = query.load(connection);
+    /// #     let expected = vec![(1, String::from("Sean"))];
+    /// #     assert_eq!(Ok(expected), users);
+    /// # }
+    /// ```
+    ///
+    /// Diesel queries also have a similar problem to [`Iterator`], where
+    /// returning them from a function requires exposing the implementation of that
+    /// function. The [`helper_types`][helper_types] module exists to help with this,
+    /// but you might want to hide the return type or have it conditionally change.
+    /// Boxing can achieve both.
+    ///
+    /// [helper_types]: crate::helper_types
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// # fn main() {
+    /// #     let connection = &mut establish_connection();
+    /// fn users_by_name(name: &str) -> users::BoxedCloneQuery<DB> {
+    ///     users::table.filter(users::name.eq(name)).into_boxed_clone()
+    /// }
+    ///
+    /// assert_eq!(
+    ///     Ok(1),
+    ///     users_by_name("Sean").clone().select(users::id).first(connection)
+    /// );
+    /// assert_eq!(
+    ///     Ok(2),
+    ///     users_by_name("Tess").clone().select(users::id).first(connection)
+    /// );
+    /// # }
+    /// ```
+    fn into_boxed_clone<'a, DB>(self) -> IntoBoxedClone<'a, Self, DB>
+    where
+        DB: Backend,
+        Self: methods::BoxedCloneDsl<'a, DB>,
+    {
+        methods::BoxedCloneDsl::internal_into_boxed_clone(self)
     }
 
     /// Wraps this select statement in parenthesis, allowing it to be used

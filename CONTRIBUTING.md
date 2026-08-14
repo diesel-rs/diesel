@@ -157,7 +157,7 @@ Check out [their README](https://github.com/rust-lang/rustfmt) for details.
 The Diesel project does not strictly forbid the usage of LLM's and AI agents for submitting pull requests. 
 There are still a number of restrictions and rules you as a PR author are asked to follow:
 
-* You need to make sure that the code you are trying to submit can be licences under the relevant open source License used by Diesel. It cannot contain any code that is incompatible with the licenses used by Diesel.
+* You need to make sure that the code you are trying to submit can be licensed under the relevant open source license used by Diesel. It cannot contain any code that is incompatible with the licenses used by Diesel.
 * You need to fully understand and review any generated code before submitting a PR. The expectation from the reviewer team is 
   to discuss these changes with you as a person.
 * You need to ensure that the submitted code satisfies the general requirements of submitting PR's to Diesel. That especially includes the following points:

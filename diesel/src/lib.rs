@@ -523,6 +523,9 @@ pub mod helper_types {
     /// Represents the return type of [`.into_boxed::<'a, DB>()`](crate::prelude::QueryDsl::into_boxed)
     pub type IntoBoxed<'a, Source, DB> = <Source as BoxedDsl<'a, DB>>::Output;
 
+    /// Represents the return type of [`.into_boxed_clone::<'a, DB>()`](crate::prelude::QueryDsl::into_boxed_clone)
+    pub type IntoBoxedClone<'a, Source, DB> = <Source as BoxedCloneDsl<'a, DB>>::Output;
+
     /// Represents the return type of [`.distinct()`](crate::prelude::QueryDsl::distinct)
     pub type Distinct<Source> = <Source as DistinctDsl>::Output;
 

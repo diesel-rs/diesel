@@ -6,7 +6,7 @@ use private::AllowFilterForUpdate;
 
 use crate::QuerySource;
 use crate::backend::DieselReserveSpecialization;
-use crate::dsl::{Filter, IntoBoxed};
+use crate::dsl::{Filter, IntoBoxed, IntoBoxedClone};
 use crate::expression::{
     AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
 };
@@ -16,7 +16,7 @@ use crate::query_builder::returning::{
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDslSupport;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
+use crate::query_dsl::methods::{BoxedCloneDsl, BoxedDsl, FilterDsl};
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
@@ -73,6 +73,10 @@ pub struct UpdateStatement<T: QuerySource, U, V = SetNotCalled, Ret = NoReturnin
 /// An `UPDATE` statement with a boxed `WHERE` clause.
 pub type BoxedUpdateStatement<'a, DB, T, V = SetNotCalled, Ret = NoReturningClause> =
     UpdateStatement<T, BoxedWhereClause<'a, DB>, V, Ret>;
+
+/// An `UPDATE` statement with a boxed cloneable `WHERE` clause.
+pub type BoxedCloneUpdateStatement<'a, DB, T, V = SetNotCalled, Ret = NoReturningClause> =
+    UpdateStatement<T, BoxedCloneWhereClause<'a, DB>, V, Ret>;
 
 impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// Adds the given predicate to the `WHERE` clause of the statement being
@@ -158,6 +162,57 @@ impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     {
         BoxedDsl::internal_into_boxed(self)
     }
+
+    /// Wraps the `WHERE` clause of this update statement in an [`Arc`].
+    ///
+    /// This is useful for cases where you want to clone and conditionally
+    /// modify a query, but need the type to remain the same. The backend
+    /// must be specified as part of this. It is not possible to box a query
+    /// and have it be useable on multiple backends.
+    ///
+    /// A cloneable boxed query will incur a slightly greater performance penalty
+    /// than a standard boxed query. In both cases, the query builder can no longer
+    /// be inlined by the compiler. For most applications this cost will be minimal.
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::HashMap;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     let mut params = HashMap::new();
+    /// #     params.insert("tess_has_been_a_jerk", false);
+    /// let query = diesel::update(users).set(name.eq("Jerk")).into_boxed_clone();
+    /// let mut query = query.clone();
+    ///
+    /// if !params["tess_has_been_a_jerk"] {
+    ///     query = query.filter(name.ne("Tess"));
+    /// }
+    ///
+    /// let updated_rows = query.execute(connection)?;
+    /// assert_eq!(1, updated_rows);
+    ///
+    /// let expected_names = vec!["Jerk", "Tess"];
+    /// let names = users.select(name).order(id).load::<String>(connection)?;
+    ///
+    /// assert_eq!(expected_names, names);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn into_boxed_clone<'a, DB>(self) -> IntoBoxedClone<'a, Self, DB>
+    where
+        DB: Backend,
+        Self: BoxedCloneDsl<'a, DB>,
+    {
+        BoxedCloneDsl::internal_into_boxed_clone(self)
+    }
 }
 
 impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
@@ -187,6 +242,24 @@ where
     type Output = BoxedUpdateStatement<'a, DB, T, V, Ret>;
 
     fn internal_into_boxed(self) -> Self::Output {
+        UpdateStatement {
+            from_clause: self.from_clause,
+            where_clause: self.where_clause.into(),
+            set_clause: self.set_clause,
+            values: self.values,
+            returning: self.returning,
+        }
+    }
+}
+
+impl<'a, T, U, V, Ret, DB> BoxedCloneDsl<'a, DB> for UpdateStatement<T, U, V, Ret>
+where
+    T: QuerySource,
+    U: Into<BoxedCloneWhereClause<'a, DB>>,
+{
+    type Output = BoxedCloneUpdateStatement<'a, DB, T, V, Ret>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.into(),
@@ -330,7 +403,9 @@ pub struct SetNotCalled;
 
 pub(crate) mod private {
     use crate::backend::Backend;
-    use crate::query_builder::where_clause::{BoxedWhereClause, NoWhereClause, WhereClause};
+    use crate::query_builder::where_clause::{
+        BoxedCloneWhereClause, BoxedWhereClause, NoWhereClause, WhereClause,
+    };
 
     use super::changeset::Assign;
 
@@ -372,6 +447,17 @@ pub(crate) mod private {
     where
         DB: Backend,
         T: AllowFilterForUpdate<BoxedWhereClause<'a, DB>>,
+    {
+    }
+
+    impl<'a, DB, C, B> AllowFilterForUpdate<BoxedCloneWhereClause<'a, DB>> for Assign<C, B> where
+        DB: Backend
+    {
+    }
+    impl<'a, DB, T> AllowFilterForUpdate<BoxedCloneWhereClause<'a, DB>> for Option<T>
+    where
+        DB: Backend,
+        T: AllowFilterForUpdate<BoxedCloneWhereClause<'a, DB>>,
     {
     }
 }

@@ -1,6 +1,7 @@
 use super::QueryFragment;
 use crate::query_builder::QueryId;
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 
 /// A helper query node that contains both limit and offset clauses
 ///
@@ -30,4 +31,28 @@ pub struct BoxedLimitOffsetClause<'a, DB> {
     pub limit: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
     /// The offset clause
     pub offset: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
+}
+
+/// A cloneable boxed variant of [`LimitOffsetClause`](LimitOffsetClause)
+///
+/// This type is only relevant for implementing custom backends
+#[allow(missing_debug_implementations)]
+#[cfg_attr(
+    diesel_docsrs,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+)]
+pub struct BoxedCloneLimitOffsetClause<'a, DB> {
+    /// The limit clause
+    pub limit: Option<Arc<dyn QueryFragment<DB> + Send + Sync + 'a>>,
+    /// The offset clause
+    pub offset: Option<Arc<dyn QueryFragment<DB> + Send + Sync + 'a>>,
+}
+
+impl<DB> Clone for BoxedCloneLimitOffsetClause<'_, DB> {
+    fn clone(&self) -> Self {
+        Self {
+            limit: self.limit.as_ref().map(Arc::clone),
+            offset: self.offset.as_ref().map(Arc::clone),
+        }
+    }
 }

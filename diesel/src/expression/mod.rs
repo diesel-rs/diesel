@@ -1138,6 +1138,20 @@ impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
     type IsAggregate = IsAggregate;
 }
 
+impl<QS, ST, DB, GB, IsAggregate> QueryId
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Send + Sync + '_
+{
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Send + Sync + '_
+{
+    type IsAggregate = IsAggregate;
+}
+
 /// Converts a tuple of values into a tuple of Diesel expressions.
 #[deprecated(note = "Use `IntoArrayExpression` instead")]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]

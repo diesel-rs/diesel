@@ -1989,6 +1989,7 @@ fn derive_multiconnection_inner(input: proc_macro2::TokenStream) -> proc_macro2:
 /// * Insert from select statements
 /// * Query constructed by `diesel::sql_query`
 /// * Expressions using `diesel::dsl::sql`
+/// * Boxed queries constructed by `.into_boxed()` and `.into_boxed_clone()`
 ///
 /// For these cases a manual type annotation is required. See the "Annotating Types" section below
 /// for details.

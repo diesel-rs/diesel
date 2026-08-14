@@ -12,6 +12,7 @@ mod allow_tables_to_appear_in_same_query;
 #[cfg(not(feature = "sqlite"))]
 mod annotations;
 mod associations;
+mod boxed_clone_queries;
 mod boxed_queries;
 mod cast;
 mod collation;
