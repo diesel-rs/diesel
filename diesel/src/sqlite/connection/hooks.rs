@@ -292,13 +292,14 @@ impl SqliteConnection {
     /// # use diesel::prelude::*;
     /// # use diesel::connection::SimpleConnection;
     /// # use diesel::sqlite::SqliteConnection;
+    /// # use diesel::sqlite::WalCheckpointMode;
     /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
     /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
     /// conn.on_wal(|conn, db_name, n_pages| {
     ///     println!("WAL for {db_name}: {n_pages} pages");
     ///     if n_pages > 1000 {
     ///         // The connection may be used here, e.g. to force a checkpoint.
-    ///         let _ = conn.batch_execute("PRAGMA wal_checkpoint(TRUNCATE);");
+    ///         let _ = conn.wal_checkpoint(None, WalCheckpointMode::Truncate);
     ///     }
     /// });
     /// ```
