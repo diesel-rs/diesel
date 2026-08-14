@@ -96,6 +96,16 @@ impl RawConnection {
 
         let last_error_message = self.last_error_message();
         if last_error_message.is_empty() {
+            let v = true as u32;
+            let v_ptr: *const u32 = &v;
+            // make sure to explicitly require the client to report data truncation
+            unsafe {
+                ffi::mysql_options(
+                    self.0.as_ptr(),
+                    ffi::mysql_option::MYSQL_REPORT_DATA_TRUNCATION,
+                    v_ptr as *const libc::c_void,
+                );
+            }
             Ok(())
         } else {
             Err(ConnectionError::BadConnection(last_error_message))
