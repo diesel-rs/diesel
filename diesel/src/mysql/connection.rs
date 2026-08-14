@@ -16,11 +16,12 @@ use crate::mysql_like::MysqlLikeConnection;
 ///
 /// # Supported loading model implementations
 ///
-/// * [`DefaultLoadingMode`]
+/// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)
 ///
 /// As `MysqlConnection` only supports a single loading mode implementation
 /// it is **not required** to explicitly specify a loading mode
-/// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
+/// when calling [`RunQueryDsl::load_iter()`](crate::query_dsl::RunQueryDsl::load_iter)
+/// or [`LoadConnection::load`](crate::connection::LoadConnection::load)
 ///
 /// ## DefaultLoadingMode
 ///

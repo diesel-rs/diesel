@@ -33,7 +33,7 @@ use crate::result::*;
 ///
 /// # Supported loading model implementations
 ///
-/// * [`DefaultLoadingMode`]
+/// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)
 ///
 /// As `MysqlConnection` only supports a single loading mode implementation
 /// it is **not required** to explicitly specify a loading mode

@@ -1350,7 +1350,7 @@ pub trait QueryDsl: Sized {
         methods::BoxedDsl::internal_into_boxed(self)
     }
 
-    /// Wraps the pieces of a query into an [`Arc`].
+    /// Wraps the pieces of a query into an [`Arc`](alloc::sync::Arc).
     ///
     /// This is useful for cases where you want to clone and conditionally
     /// modify a query, but need the type to remain the same. The backend

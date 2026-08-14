@@ -204,7 +204,7 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
         BoxedDsl::internal_into_boxed(self)
     }
 
-    /// Wraps the `WHERE` clause of this delete statement in an [`Arc`].
+    /// Wraps the `WHERE` clause of this delete statement in an [`Arc`](alloc::sync::Arc).
     ///
     /// This is useful for cases where you want to clone and conditionally
     /// modify a query, but need the type to remain the same. The backend

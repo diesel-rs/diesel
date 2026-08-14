@@ -343,6 +343,7 @@ pub struct Interval;
 #[diesel(mariadb_type(name = "Time"))]
 pub struct Time;
 
+#[allow(rustdoc::redundant_explicit_links)]
 /// The timestamp SQL type.
 ///
 /// ### [`ToSql`](crate::serialize::ToSql) impls
