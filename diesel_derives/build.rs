@@ -297,9 +297,16 @@ fn main() {
         ),
         (
             "queryable_by_name",
-            vec![Example::new(
-                "diesel_derives__tests__queryable_by_name_1.snap",
-            )],
+            vec![
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_1.snap",
+                    "Without attributes",
+                ),
+                Example::with_heading(
+                    "diesel_derives__tests__queryable_by_name_1.snap",
+                    "With `#[diesel(sql_type)]` on field",
+                ),
+            ],
         ),
         (
             "query_id",

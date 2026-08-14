@@ -1,0 +1,27 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(QueryableByName)]\npub struct UserCount {\n    #[diesel(sql_type = diesel::sql_types::BigInt)]\n    pub value: i16,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__DB: diesel::backend::Backend> diesel::deserialize::QueryableByName<__DB>
+    for UserCount
+    where
+        i16: diesel::deserialize::FromSql<diesel::sql_types::BigInt, __DB>,
+    {
+        fn build<'__a>(
+            row: &impl diesel::row::NamedRow<'__a, __DB>,
+        ) -> diesel::deserialize::Result<Self> {
+            let mut value = {
+                let field = diesel::row::NamedRow::get::<
+                    diesel::sql_types::BigInt,
+                    i16,
+                >(row, "value")?;
+                <i16 as ::core::convert::Into<i16>>::into(field)
+            };
+            diesel::deserialize::Result::Ok(Self { value })
+        }
+    }
+};

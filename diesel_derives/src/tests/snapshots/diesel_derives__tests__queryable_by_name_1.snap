@@ -32,7 +32,7 @@ const _: () = {
                 >(row, "name")?;
                 <String as ::core::convert::Into<String>>::into(field)
             };
-            diesel::deserialize::Result::Ok(Self { id: id, name: name })
+            diesel::deserialize::Result::Ok(Self { id, name })
         }
     }
 };
