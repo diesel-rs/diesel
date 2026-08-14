@@ -8,26 +8,19 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment f
      |
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the following other types implement trait `QueryFragment<DB, SP>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/limit_offset.rs
-     |
-  LL |   impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
-     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `LimitOffsetClause<NoLimitClause, NoOffsetClause>`
-...
-  LL | / impl<L> QueryFragment<Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
-  LL | | where
-  LL | |     LimitClause<L>: QueryFragment<Mysql>,
-     | |_________________________________________^ `LimitOffsetClause<LimitClause<L>, NoOffsetClause>`
-...
-  LL | / impl<L, O> QueryFragment<Mysql> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
-  LL | | where
-  LL | |     LimitClause<L>: QueryFragment<Mysql>,
-  LL | |     OffsetClause<O>: QueryFragment<Mysql>,
-     | |__________________________________________^ `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>`
+     = help: the following other types implement trait `QueryFragment<DB, SP>`:
+               `LimitOffsetClause<L, O>` implements `QueryFragment<Pg>`
+               `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `QueryFragment<DB>`
+               `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `QueryFragment<Sqlite>`
+               `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `QueryFragment<DB>`
+               `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
+               `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<DB>`
+               `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `QueryFragment<Sqlite>`
+               `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `QueryFragment<Sqlite>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
      = note: 1 redundant requirement hidden
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, (i32, std::string::String)>`
+     = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, ...>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -48,11 +41,8 @@ LL |         .into_boxed()
    = note: this usually means that `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL for `Mysql`
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
              `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
-             `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
              `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
-             `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Mysql>`
              `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
-             `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
              `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
              `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
    = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
@@ -68,11 +58,8 @@ error[E0277]: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, 
      = note: this usually means that `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL for `Mysql`
      = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
                `LimitOffsetClause<L, O>` implements `IntoBoxedClause<'_, Pg>`
-               `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
                `LimitOffsetClause<LimitClause<L>, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
-               `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Mysql>`
                `LimitOffsetClause<LimitClause<L>, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
-               `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Mysql>`
                `LimitOffsetClause<NoLimitClause, NoOffsetClause>` implements `IntoBoxedClause<'_, Sqlite>`
                `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`

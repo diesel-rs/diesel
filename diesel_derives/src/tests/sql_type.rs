@@ -10,6 +10,8 @@ pub(crate) fn sql_type_1() {
         quote::quote! {#[diesel(sqlite_type(name = "Integer"))]}
     } else if cfg!(feature = "mysql") {
         quote::quote! {#[diesel(mysql_type(name = "Long"))]}
+    } else if cfg!(feature = "mariadb") {
+        quote::quote! {#[diesel(mariadb_type(name = "Long"))]}
     } else {
         unreachable!("At least one feature must be enabled");
     };
@@ -25,6 +27,8 @@ pub(crate) fn sql_type_1() {
         "sql_type_1 (sqlite)"
     } else if cfg!(feature = "mysql") {
         "sql_type_1 (mysql)"
+    } else if cfg!(feature = "mariadb") {
+        "sql_type_1 (mariadb)"
     } else {
         unreachable!("At least one feature must be enabled")
     };
@@ -45,6 +49,8 @@ pub(crate) fn sql_type_enum() {
         quote::quote! {#[diesel(sqlite_type(name = "Integer"))]}
     } else if cfg!(feature = "mysql") {
         quote::quote! {#[diesel(mysql_type(name = "Long"))]}
+    } else if cfg!(feature = "mariadb") {
+        quote::quote! {#[diesel(mariadb_type(name = "Long"))]}
     } else {
         unreachable!("At least one feature must be enabled");
     };
@@ -61,6 +67,8 @@ pub(crate) fn sql_type_enum() {
         "sql_type_enum (sqlite)"
     } else if cfg!(feature = "mysql") {
         "sql_type_enum (mysql)"
+    } else if cfg!(feature = "mariadb") {
+        "sql_type_enum (mariadb)"
     } else {
         unreachable!("At least one feature must be enabled")
     };

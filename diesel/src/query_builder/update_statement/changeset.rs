@@ -151,7 +151,8 @@ where
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 impl<C, T, DB> BatchValueHelper<DB> for Assign<ColumnWrapperForUpdate<C>, T>
 where

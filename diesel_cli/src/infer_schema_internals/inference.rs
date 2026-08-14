@@ -123,6 +123,8 @@ pub fn load_table_names(
         InferConnection::Pg(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => super::information_schema::load_table_names(c, schema_name),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(c) => super::information_schema::load_table_names(c, schema_name),
     }?;
 
     tracing::info!(?tables, "Loaded tables");
@@ -164,7 +166,9 @@ fn get_table_comment(
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => super::pg::get_table_comment(c, table),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => super::mysql::get_table_comment(c, table),
+        InferConnection::Mysql(ref mut c) => super::mysql_like::get_table_comment(c, table),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(ref mut c) => super::mysql_like::get_table_comment(c, table),
     };
     if let Err(NotFound) = table_comment {
         Err(crate::errors::Error::NoTableFound(table.clone()))
@@ -197,7 +201,13 @@ fn get_column_information(
             super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
+        InferConnection::Mysql(ref mut c) => {
+            super::mysql_like::get_table_data(c, table, column_sorting)
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(ref mut c) => {
+            super::mysql_like::get_table_data(c, table, column_sorting)
+        }
     };
     if let Err(NotFound) = column_info {
         Err(crate::errors::Error::NoTableFound(table.clone()))
@@ -242,7 +252,9 @@ fn determine_column_type(
             super::pg::determine_column_type(attr, diesel::pg::Pg::default_schema(conn)?)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(_) => super::mysql::determine_column_type(attr),
+        InferConnection::Mysql(_) => super::mysql_like::determine_column_type(attr),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => super::mysql_like::determine_column_type(attr),
     }
 }
 
@@ -258,6 +270,10 @@ pub(crate) fn get_primary_keys(
         InferConnection::Pg(ref mut c) => super::information_schema::get_primary_keys(c, table),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref mut c) => super::information_schema::get_primary_keys(c, table),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(ref mut c) => {
+            super::information_schema::get_primary_keys(c, table)
+        }
     }?;
     if primary_keys.is_empty() {
         Err(crate::errors::Error::NoPrimaryKeyFound(table.clone()))
@@ -282,6 +298,10 @@ pub fn load_foreign_key_constraints(
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => {
             super::mysql::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(c) => {
+            super::mariadb::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
     };
 
@@ -457,6 +477,10 @@ fn load_view_sql_definition(
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(mysql_connection) => Ok(
             super::information_schema::load_view_sql_definition(mysql_connection, name)?,
+        ),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(mariadb_connection) => Ok(
+            super::information_schema::load_view_sql_definition(mariadb_connection, name)?,
         ),
     }
 }

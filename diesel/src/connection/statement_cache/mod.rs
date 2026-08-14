@@ -220,7 +220,8 @@ where
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "__sqlite-shared",
-        feature = "mysql"
+        feature = "mysql",
+        feature = "mariadb"
     ))]
     pub fn cached_statement<'a, T, R, C>(
         &'a mut self,

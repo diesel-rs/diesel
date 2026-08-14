@@ -259,7 +259,7 @@ mod postgres {
     }
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 mod mysql {
     use crate::schema::*;
     use diesel::*;

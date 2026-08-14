@@ -10,7 +10,7 @@ use diesel_derives::Enum;
 
 #[derive(Debug, Clone, Copy, Enum, PartialEq)]
 #[cfg_attr(feature = "postgres", diesel(sql_type = schema::sql_types::Color))]
-#[cfg_attr(feature = "mysql", diesel(sql_type = schema::sql_types::CarsPaintColorEnum))]
+#[cfg_attr(any(feature = "mysql", feature = "mariadb"), diesel(sql_type = schema::sql_types::CarsPaintColorEnum))]
 #[diesel(sql_type = diesel::sql_types::Text)]
 #[diesel(sql_type = diesel::sql_types::Integer)]
 enum Color {
@@ -19,7 +19,7 @@ enum Color {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn insert_and_select() {
     #[derive(Debug, Clone, Copy, PartialEq, Insertable, HasQuery)]
     #[diesel(table_name = schema::cars)]
@@ -44,7 +44,7 @@ fn insert_and_select() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn raw_sql_equal() {
     let v = Color::Red;
     let conn = &mut connection();
@@ -54,7 +54,7 @@ fn raw_sql_equal() {
         .get_result::<bool>(conn)
         .unwrap();
 
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     let r =
         diesel::select(diesel::dsl::sql::<schema::sql_types::CarsPaintColorEnum>("'Red'").eq(v))
             .get_result::<bool>(conn)

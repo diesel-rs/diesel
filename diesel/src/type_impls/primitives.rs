@@ -24,9 +24,12 @@ mod foreign_impls {
     struct BoolProxy(bool);
 
     #[derive(FromSqlRow)]
-    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
+    #[cfg_attr(
+        any(feature = "mysql_backend", feature = "mariadb_backend"),
+        derive(AsExpression)
+    )]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::TinyInt))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::TinyInt))]
     struct I8Proxy(i8);
 
     #[derive(AsExpression, FromSqlRow)]
@@ -46,37 +49,51 @@ mod foreign_impls {
 
     #[derive(FromSqlRow)]
     #[cfg_attr(
-        any(feature = "mysql_backend", feature = "postgres_backend"),
+        any(
+            feature = "mysql_backend",
+            feature = "postgres_backend",
+            feature = "mariadb_backend"
+        ),
         derive(AsExpression)
     )]
     #[diesel(foreign_derive)]
     #[cfg_attr(
-        feature = "mysql_backend",
+        any(feature = "mysql_backend", feature = "mariadb_backend"),
         diesel(sql_type = crate::sql_types::Unsigned<crate::sql_types::TinyInt>)
     )]
     #[cfg_attr(feature = "postgres_backend", diesel(foreign_derive, sql_type = crate::sql_types::CChar))]
     struct U8Proxy(u8);
 
     #[derive(FromSqlRow)]
-    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
+    #[cfg_attr(
+        any(feature = "mysql_backend", feature = "mariadb_backend"),
+        derive(AsExpression)
+    )]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Unsigned<SmallInt>))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Unsigned<SmallInt>))]
     struct U16Proxy(u16);
 
     #[derive(FromSqlRow)]
     #[cfg_attr(
-        any(feature = "mysql_backend", feature = "postgres_backend"),
+        any(
+            feature = "mysql_backend",
+            feature = "mariadb_backend",
+            feature = "postgres_backend"
+        ),
         derive(AsExpression)
     )]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Unsigned<Integer>))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Unsigned<Integer>))]
     #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Oid))]
     struct U32Proxy(u32);
 
     #[derive(FromSqlRow)]
-    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
+    #[cfg_attr(
+        any(feature = "mysql_backend", feature = "mariadb_backend"),
+        derive(AsExpression)
+    )]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Unsigned<BigInt>))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Unsigned<BigInt>))]
     struct U64Proxy(u64);
 
     #[derive(AsExpression, FromSqlRow)]

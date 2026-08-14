@@ -204,7 +204,7 @@ fn today_executes_sql_function_current_date() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
 
@@ -230,7 +230,7 @@ fn today_executes_sql_function_current_date() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
 
@@ -281,7 +281,7 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {
     use self::has_timestamps::dsl::*;
 
@@ -452,7 +452,12 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(any(feature = "postgres", feature = "sqlite", feature = "mysql"))]
+#[cfg(any(
+    feature = "postgres",
+    feature = "sqlite",
+    feature = "mysql",
+    feature = "mariadb"
+))]
 fn setup_test_table(conn: &mut TestConnection) {
     use crate::schema_dsl::*;
 

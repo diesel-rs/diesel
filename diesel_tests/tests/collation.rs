@@ -62,7 +62,7 @@ fn custom_collation() {
 
     let target_collation = if cfg!(feature = "postgres") {
         Custom("\"C\"")
-    } else if cfg!(feature = "mysql") {
+    } else if cfg!(any(feature = "mysql", feature = "mariadb")) {
         Custom("utf8mb4_bin")
     } else {
         Custom("BINARY")

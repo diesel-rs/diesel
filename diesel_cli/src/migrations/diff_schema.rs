@@ -105,6 +105,10 @@ pub fn generate_sql_based_on_diff_schema(
         InferConnection::Mysql(_) => {
             config.sqlite_integer_primary_key_is_bigint = None;
         }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => {
+            config.sqlite_integer_primary_key_is_bigint = None;
+        }
     }
 
     let mut schema_diff = Vec::new();
@@ -219,11 +223,11 @@ pub fn generate_sql_based_on_diff_schema(
                 .get(&(ty.sql_name.clone(), ty.schema.clone()))
                 .cloned()
                 .or({
-                    #[cfg(feature = "mysql")]
+                    #[cfg(any(feature = "mysql", feature = "mariadb"))]
                     {
-                        crate::infer_schema_internals::mysql::get_enum_variants(ty)
+                        crate::infer_schema_internals::mysql_like::get_enum_variants(ty)
                     }
-                    #[cfg(not(feature = "mysql"))]
+                    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
                     None
                 })
             {
@@ -378,6 +382,12 @@ pub fn generate_sql_based_on_diff_schema(
                 diff.generate_up_sql(&mut qb, &config, &enum_sql_types, &diesel::mysql::Mysql)?;
                 qb.finish()
             }
+            #[cfg(feature = "mariadb")]
+            InferConnection::Mariadb(_) => {
+                let mut qb = diesel::mariadb::MariadbQueryBuilder::default();
+                diff.generate_up_sql(&mut qb, &config, &enum_sql_types, &diesel::mariadb::Mariadb)?;
+                qb.finish()
+            }
         };
         if !up.is_empty() {
             up_sql += &up;
@@ -407,6 +417,17 @@ pub fn generate_sql_based_on_diff_schema(
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
                 diff.generate_down_sql(&mut qb, &config, &enum_sql_types, &diesel::mysql::Mysql)?;
+                qb.finish()
+            }
+            #[cfg(feature = "mariadb")]
+            InferConnection::Mariadb(_) => {
+                let mut qb = diesel::mariadb::MariadbQueryBuilder::default();
+                diff.generate_down_sql(
+                    &mut qb,
+                    &config,
+                    &enum_sql_types,
+                    &diesel::mariadb::Mariadb,
+                )?;
                 qb.finish()
             }
         };
@@ -465,9 +486,9 @@ fn update_columns(
 }
 
 fn is_same_type(ty: &ColumnType, tpe: ColumnType, rust_enum_sql_types: &[SqlTypeInfo]) -> bool {
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     {
-        if crate::infer_schema_internals::mysql::get_enum_variants(ty).is_some()
+        if crate::infer_schema_internals::mysql_like::get_enum_variants(ty).is_some()
             && rust_enum_sql_types
                 .iter()
                 .any(|e| e.rust_name == tpe.rust_name)
@@ -475,7 +496,7 @@ fn is_same_type(ty: &ColumnType, tpe: ColumnType, rust_enum_sql_types: &[SqlType
             return true;
         }
     }
-    #[cfg(not(feature = "mysql"))]
+    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     let _ = rust_enum_sql_types;
     if ty.is_array != tpe.is_array
         || ty.is_nullable != tpe.is_nullable
@@ -1201,8 +1222,8 @@ impl<'a> ColumnTypeName<'a> {
         enum_sql_types: &'a [(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
         table_name: &str,
     ) -> Self {
-        #[cfg(feature = "mysql")]
-        let ty = if crate::infer_schema_internals::mysql::get_enum_variants(ty).is_some() {
+        #[cfg(any(feature = "mysql", feature = "mariadb"))]
+        let ty = if crate::infer_schema_internals::mysql_like::get_enum_variants(ty).is_some() {
             let mut ty = ty.clone();
             ty.rust_name = crate::print_schema::mysql_enum_name(table_name, column_name, &ty);
             ty.max_length = None;
@@ -1210,7 +1231,7 @@ impl<'a> ColumnTypeName<'a> {
         } else {
             Cow::Borrowed(ty)
         };
-        #[cfg(not(feature = "mysql"))]
+        #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
         let ty = {
             let _ = table_name;
             Cow::Borrowed(ty)

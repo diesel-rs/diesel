@@ -36,7 +36,7 @@ mod chrono {
         feature = "postgres_backend",
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Datetime))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
     struct NaiveDateTimeProxy(NaiveDateTime);
 
     #[derive(FromSqlRow)]
@@ -83,7 +83,7 @@ mod time {
         feature = "postgres_backend",
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Datetime))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
     struct NaiveDateTimeProxy(PrimitiveDateTime);
 
     #[derive(FromSqlRow)]
@@ -92,7 +92,8 @@ mod time {
         any(
             feature = "postgres_backend",
             feature = "__sqlite-shared",
-            feature = "mysql_backend"
+            feature = "mysql_backend",
+            feature = "mariadb_backend",
         ),
         derive(AsExpression)
     )]
@@ -101,6 +102,6 @@ mod time {
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
     #[cfg_attr(feature = "__sqlite-shared", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
-    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Datetime))]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
     struct DateTimeProxy(OffsetDateTime);
 }

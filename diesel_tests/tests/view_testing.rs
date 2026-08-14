@@ -20,14 +20,14 @@ diesel::allow_tables_to_appear_in_same_query!(view, view2);
 
 fn view_test_setup() -> TestConnection {
     let mut conn = crate::schema::connection();
-    #[cfg(not(feature = "mysql"))]
+    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     conn.batch_execute(
         "CREATE TEMPORARY VIEW view AS SELECT 42 AS not_id, 'John' AS name; \
           CREATE TEMPORARY VIEW view2 AS SELECT 42 AS not_view_id, 'views!!' AS title;",
     )
     .unwrap();
 
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     conn.batch_execute(
         "CREATE OR REPLACE VIEW view AS SELECT 42 AS not_id, 'John' AS name; \
           CREATE OR REPLACE VIEW view2 AS SELECT 42 AS not_view_id, 'views!!' AS title;",

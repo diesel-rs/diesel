@@ -34,7 +34,7 @@ help: `ExcludeGroup` implements trait `QueryFragment<DB, SP>`
      = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i64>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -82,7 +82,7 @@ help: `ExcludeCurrentRow` implements trait `QueryFragment<DB, SP>`
      = note: required for `ExcludeCurrentRow` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i64>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -130,7 +130,7 @@ help: `ExcludeTies` implements trait `QueryFragment<DB, SP>`
      = note: required for `ExcludeTies` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i64>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -178,7 +178,7 @@ help: `ExcludeNoOthers` implements trait `QueryFragment<DB, SP>`
      = note: required for `ExcludeNoOthers` to implement `QueryFragment<Mysql>`
      = note: 7 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, i64>`
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i64>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

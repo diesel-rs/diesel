@@ -6,6 +6,8 @@ use diesel::connection::LoadConnection;
 use diesel::deserialize::FromSql;
 use diesel::dsl::*;
 use diesel::expression::QueryMetadata;
+#[cfg(feature = "mariadb")]
+use diesel::mariadb::Mariadb;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -33,7 +35,7 @@ impl DefaultSchema for Pg {
     }
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 #[diesel::declare_sql_function]
 extern "SQL" {
     fn database() -> VarChar;
@@ -41,6 +43,17 @@ extern "SQL" {
 
 #[cfg(feature = "mysql")]
 impl DefaultSchema for Mysql {
+    fn default_schema<C>(conn: &mut C) -> QueryResult<String>
+    where
+        C: LoadConnection<Backend = Self>,
+        String: FromSql<sql_types::Text, C::Backend>,
+    {
+        select(database()).get_result(conn)
+    }
+}
+
+#[cfg(feature = "mariadb")]
+impl DefaultSchema for Mariadb {
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: LoadConnection<Backend = Self>,

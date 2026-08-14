@@ -74,11 +74,26 @@ fn missing_mysql_panic() {
 }
 
 #[test]
+#[cfg(not(feature = "mariadb"))]
+fn missing_mariadb_panic() {
+    let p = project("missing_mariadb_panic").build();
+    let result = p
+        .command_without_database_url("setup")
+        .env("DATABASE_URL", "mariadb://localhost")
+        .run();
+    assert!(result.stderr().contains(
+        "Database url `mariadb://localhost` requires the `mariadb` feature but it's not enabled."
+    ));
+}
+
+#[test]
 fn broken_dotenv_file_results_in_error() {
     #[cfg(feature = "postgres")]
     let url = "postgres://localhost";
     #[cfg(feature = "mysql")]
     let url = "mysql://localhost";
+    #[cfg(feature = "mariadb")]
+    let url = "mariadb://localhost";
     #[cfg(feature = "sqlite")]
     let url = ":memory:";
 

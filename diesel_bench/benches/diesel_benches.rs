@@ -1,4 +1,4 @@
-#[cfg(any(feature = "mysql", feature = "postgres"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "postgres"))]
 use super::consts;
 use super::Bencher;
 use diesel::*;
@@ -8,6 +8,9 @@ type TestConnection = PgConnection;
 
 #[cfg(feature = "mysql")]
 type TestConnection = MysqlConnection;
+
+#[cfg(feature = "mariadb")]
+type TestConnection = MariadbConnection;
 
 #[cfg(feature = "sqlite")]
 type TestConnection = SqliteConnection;
@@ -119,6 +122,19 @@ fn connection() -> TestConnection {
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = MysqlConnection::establish(&connection_url).unwrap();
     for query in consts::mysql::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).unwrap();
+    }
+    conn
+}
+
+#[cfg(feature = "mariadb")]
+fn connection() -> TestConnection {
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("MARIADB_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
+    let mut conn = MariadbConnection::establish(&connection_url).unwrap();
+    for query in consts::mariadb::CLEANUP_QUERIES {
         diesel::sql_query(*query).execute(&mut conn).unwrap();
     }
     conn
@@ -293,7 +309,7 @@ pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize
     }
     #[cfg(feature = "postgres")]
     let bind = "$1";
-    #[cfg(any(feature = "mysql", feature = "sqlite"))]
+    #[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
     let bind = "?";
 
     let query = format!(

@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
+error[E0271]: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Pg`
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
     |
  LL |         .execute(conn)
@@ -23,7 +23,7 @@ error[E0277]: the trait bound `CopyFromQuery<table, ...>: ExecuteCopyFromDsl<...
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `diesel::ExecuteCopyFromDsl<diesel::MysqlConnection>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<...>>>`
+    = help: the trait `diesel::ExecuteCopyFromDsl<MysqlLikeConnection<Mysql>>` is not implemented for `CopyFromQuery<table, InsertableWrapper<Vec<...>>>`
 help: `CopyFromQuery<T, A>` implements trait `diesel::ExecuteCopyFromDsl<C>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_from.rs
     |
@@ -41,7 +41,7 @@ LL | |     Self: ExecuteCopyFromDsl<C>,
     | |________________________________^ `ExecuteCopyFromDsl<PooledConnection<...>>`
  
     
-error[E0277]: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
+error[E0277]: the trait bound `MysqlLikeConnection<...>: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:48
     |
  LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
@@ -49,7 +49,7 @@ error[E0277]: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not 
     |                                   |
     |                                   required by a bound introduced by this call
     |
-    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
+    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `MysqlLikeConnection<Mysql>`
 help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |
@@ -70,13 +70,13 @@ LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
  
     
-error[E0277]: the trait bound `MysqlConnection: ExecuteCopyToConnection` is not satisfied
+error[E0277]: the trait bound `MysqlLikeConnection<...>: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:5
     |
  LL |     diesel::copy_to(users::table).load::<User, _>(conn).unwrap();
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `diesel::MysqlConnection`
+    = help: the trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection` is not implemented for `MysqlLikeConnection<Mysql>`
 help: the following other types implement trait `pg::query_builder::copy::copy_to::ExecuteCopyToConnection`
    --> DIESEL/diesel/diesel/src/pg/query_builder/copy/copy_to.rs
     |

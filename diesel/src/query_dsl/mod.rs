@@ -1089,7 +1089,7 @@ pub trait QueryDsl: Sized {
     /// #     run_test();
     /// # }
     /// #
-    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb", feature = "postgres"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use crate::schema::users;
     /// #     let connection = &mut establish_connection();
@@ -1162,7 +1162,7 @@ pub trait QueryDsl: Sized {
     /// #     run_test();
     /// # }
     /// #
-    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb", feature = "postgres"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use crate::schema::users;
     /// #     let connection = &mut establish_connection();
@@ -1230,7 +1230,7 @@ pub trait QueryDsl: Sized {
     /// #     run_test();
     /// # }
     /// #
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use crate::schema::users;
     /// #     let connection = &mut establish_connection();
@@ -1261,7 +1261,7 @@ pub trait QueryDsl: Sized {
     /// #     run_test();
     /// # }
     /// #
-    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb", feature = "postgres"))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use crate::schema::users;
     /// #     let connection = &mut establish_connection();
@@ -1350,7 +1350,7 @@ pub trait QueryDsl: Sized {
         methods::BoxedDsl::internal_into_boxed(self)
     }
 
-    /// Wraps the pieces of a query into an [`Arc`].
+    /// Wraps the pieces of a query into an [`Arc`](alloc::sync::Arc).
     ///
     /// This is useful for cases where you want to clone and conditionally
     /// modify a query, but need the type to remain the same. The backend

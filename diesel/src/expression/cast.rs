@@ -136,6 +136,14 @@ type_name! {
         Decimal => "decimal",
         Time => "time",
     }
+    diesel::mariadb::Mariadb: "mariadb_backend" {
+        Int8 => "signed",
+        Text => "char",
+        Date => "date",
+        Datetime => "datetime",
+        Decimal => "decimal",
+        Time => "time",
+    }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
         Int8 => "bigint",
@@ -179,13 +187,13 @@ impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> wh
 macro_rules! casts_impl {
     (
         $(
-            $($feature: literal : )? ($to: tt <- $from: tt),
+            $($($feature: literal),+ : )? ($to: tt <- $from: tt),
         )+
     ) => {
         $(
-            $(#[cfg(feature = $feature)])?
+            $(#[cfg(any($(feature = $feature,)+))])?
             impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
-            $(#[cfg(feature = $feature)])?
+            $(#[cfg(any($(feature = $feature,)+))])?
             impl CastsTo<sql_types::$to> for sql_types::$from {}
         )+
     };
@@ -218,7 +226,7 @@ casts_impl!(
     (Text <- Time),
     (Json <- Jsonb),
     (Jsonb <- Json),
-    "mysql_backend": (Text <- Datetime),
+    "mysql_backend","mariadb_backend": (Text <- Datetime),
     "postgres_backend": (Text <- Uuid),
     "postgres_backend": (Text <- Inet),
     "postgres_backend": (Text <- Cidr),
@@ -229,11 +237,11 @@ casts_impl!(
 macro_rules! fallible_casts_impl {
     (
         $(
-            $($feature: literal : )? ($to: tt <- $from: tt),
+            $($($feature: literal),+ : )? ($to: tt <- $from: tt),
         )+
     ) => {
         $(
-            $(#[cfg(feature = $feature)])?
+            $(#[cfg(any($(feature = $feature,)+))])?
             impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
         )+
     };
@@ -257,7 +265,7 @@ fallible_casts_impl!(
     (Date <- Text),
     (Time <- Text),
     (Decimal <- Text),
-    "mysql_backend": (Datetime <- Text),
+    "mysql_backend","mariadb_backend": (Datetime <- Text),
     "postgres_backend": (Uuid <- Text),
     "postgres_backend": (Inet <- Text),
     "postgres_backend": (Cidr <- Text),

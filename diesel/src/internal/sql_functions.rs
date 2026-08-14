@@ -61,6 +61,6 @@ macro_rules! expand_sqlite_function {
 }
 
 #[doc(hidden)]
-pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+pub use crate::{expand_mariadb, expand_mysql, expand_pg, expand_sqlite};
 #[doc(hidden)]
 pub use expand_sqlite_function;

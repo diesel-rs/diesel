@@ -187,7 +187,7 @@ fn insert_or_replace_with_select() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 // We can't share the test with SQLite because it modifies
 // schema, but we can at least make sure the query is *syntactically* valid.
 fn insert_or_ignore_with_select() {
@@ -208,7 +208,7 @@ fn insert_or_ignore_with_select() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 // We can't share the test with SQLite because it modifies
 // schema, but we can at least make sure the query is *syntactically* valid.
 fn insert_or_replace_with_select() {
@@ -233,7 +233,7 @@ fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
-    let mut conn = if cfg!(feature = "mysql") {
+    let mut conn = if cfg!(any(feature = "mysql", feature = "mariadb")) {
         let mut conn = connection_without_transaction();
         sql_query(
             "CREATE TEMPORARY TABLE posts (\
@@ -271,7 +271,7 @@ fn on_conflict_do_nothing_with_select() {
     let inserted_rows = query.execute(conn).unwrap();
     assert_eq!(2, inserted_rows);
     let inserted_rows = query.execute(conn).unwrap();
-    if cfg!(feature = "mysql") {
+    if cfg!(any(feature = "mysql", feature = "mariadb")) {
         assert_eq!(2, inserted_rows);
     } else {
         assert_eq!(0, inserted_rows);
@@ -291,7 +291,7 @@ fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
-    let mut conn = if cfg!(feature = "mysql") {
+    let mut conn = if cfg!(any(feature = "mysql", feature = "mariadb")) {
         let mut conn = connection_without_transaction();
         sql_query(
             "CREATE TEMPORARY TABLE posts (\
@@ -321,7 +321,7 @@ fn on_conflict_do_update_with_select() {
 
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
     let target = title;
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     let target = diesel::dsl::DuplicatedKeys;
 
     let query = users
@@ -360,7 +360,7 @@ fn on_conflict_do_update_with_boxed_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
-    let mut conn = if cfg!(feature = "mysql") {
+    let mut conn = if cfg!(any(feature = "mysql", feature = "mariadb")) {
         let mut conn = connection_without_transaction();
         sql_query(
             "CREATE TEMPORARY TABLE posts (\
@@ -390,7 +390,7 @@ fn on_conflict_do_update_with_boxed_select() {
 
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
     let target = title;
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     let target = diesel::dsl::DuplicatedKeys;
 
     users

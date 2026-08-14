@@ -101,6 +101,8 @@ fn supported_backends() -> String {
         "mysql",
         #[cfg(feature = "sqlite")]
         "sqlite",
+        #[cfg(feature = "mariadb")]
+        "mariadb",
     ];
 
     features.join(" ")

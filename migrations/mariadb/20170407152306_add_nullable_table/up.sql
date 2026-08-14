@@ -1,0 +1,4 @@
+CREATE TABLE nullable_table (
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+    value INTEGER
+) CHARACTER SET utf8mb4;

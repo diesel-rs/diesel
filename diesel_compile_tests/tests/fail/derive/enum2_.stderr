@@ -92,21 +92,14 @@ error[E0277]: `types::enum_::EnumTypeMapping` is no valid strategy to map an enu
     --> tests/fail/derive/enum2_.rs:49:82
      |
   LL |     let r = diesel::select(diesel::dsl::sql::<SqlEnum>("_")).get_result::<Test4>(conn);
-     |                                                              ----------          ^^^^ the trait `types::enum_::EnumMapping<Sqlite>` is not implemented for `types::enum_::EnumTypeMapping`
-     |                                                              |
-     |                                                              required by a bound introduced by this call
+     |                                                                                  ^^^^ the trait `types::enum_::EnumMapping<Sqlite>` is not implemented for `types::enum_::EnumTypeMapping`
      |
      = note: the `Sqlite` backend only support mapping to `Text` and `Integer` fields
-help: `types::enum_::EnumTypeMapping` implements trait `types::enum_::EnumMapping<DB>`
+help: the trait `types::enum_::EnumMapping<Pg>` is implemented for `types::enum_::EnumTypeMapping`
     --> DIESEL/diesel/diesel/src/pg/types/enum_.rs
      |
    LL | impl EnumMapping<crate::pg::Pg> for EnumTypeMapping {
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `types::enum_::EnumMapping<Pg>`
-     |
-    ::: DIESEL/diesel/diesel/src/mysql/types/enum_.rs
-     |
-   LL | impl EnumMapping<crate::mysql::Mysql> for EnumTypeMapping {
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `types::enum_::EnumMapping<Mysql>`
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: required for `SqlEnum` to implement `EnumSqlType<false, Sqlite>`
     --> tests/fail/derive/enum2_.rs:24:8
      |

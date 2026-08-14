@@ -8,6 +8,7 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
         feature = "postgres_backend",
         feature = "mysql_backend",
         feature = "__sqlite-shared",
+        feature = "mariadb_backend",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )),
     allow(unused_imports)

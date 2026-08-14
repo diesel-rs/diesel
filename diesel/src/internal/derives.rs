@@ -158,19 +158,19 @@ pub mod sql_type {
     #[doc(hidden)]
     pub use crate::types::enum_::{EnumMapping, EnumTypeMapping};
     #[doc(hidden)]
-    pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+    pub use crate::{expand_mariadb, expand_mysql, expand_pg, expand_sqlite};
 }
 
 #[doc(hidden)]
 pub mod has_query {
     #[doc(hidden)]
-    pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+    pub use crate::{expand_mariadb, expand_mysql, expand_pg, expand_sqlite};
 }
 
 #[doc(hidden)]
 pub mod enum_ {
     #[doc(hidden)]
-    pub use crate::{expand_mysql, expand_pg, expand_sqlite};
+    pub use crate::{expand_mariadb, expand_mysql, expand_pg, expand_sqlite};
 
     #[doc(hidden)]
     pub use crate::types::enum_::{EnumMapping, EnumVariant};

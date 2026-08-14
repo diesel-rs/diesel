@@ -8,14 +8,16 @@ use core::marker::PhantomData;
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 pub(crate) const BATCH_UPDATE_ALIAS: &str = "__diesel_internal_temp_values";
 
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 pub trait BatchValueHelper<DB: Backend> {
     fn assign<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
@@ -28,7 +30,8 @@ pub trait BatchValueHelper<DB: Backend> {
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 pub trait BatchAssignHelper<DB: Backend> {
     fn batch_assign_identifier<'a>(&'a self, out: AstPass<'_, 'a, DB>) -> QueryResult<()>;
@@ -37,7 +40,8 @@ pub trait BatchAssignHelper<DB: Backend> {
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 pub trait BatchKeyHelper<PK, DB: Backend> {
     fn bind_value<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>;
@@ -50,7 +54,8 @@ pub trait BatchKeyHelper<PK, DB: Backend> {
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 impl<PK, DB, C> BatchKeyHelper<PK, DB> for C
 where

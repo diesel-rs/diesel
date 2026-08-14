@@ -38,6 +38,7 @@ impl<'query> StrQueryHelper<'query> {
         feature = "postgres",
         feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn new(s: &'query str) -> Self {
@@ -331,6 +332,7 @@ where
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 /// An optional dyn instrumentation.
@@ -351,6 +353,7 @@ pub(crate) struct DynInstrumentation {
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 impl core::ops::Deref for DynInstrumentation {
@@ -365,6 +368,7 @@ impl core::ops::Deref for DynInstrumentation {
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 impl DerefMut for DynInstrumentation {
@@ -379,6 +383,7 @@ impl DerefMut for DynInstrumentation {
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 impl DynInstrumentation {
@@ -390,6 +395,7 @@ impl DynInstrumentation {
         feature = "postgres",
         feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn default_instrumentation() -> Self {
@@ -407,6 +413,7 @@ impl DynInstrumentation {
         feature = "postgres",
         feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn none() -> Self {
@@ -424,6 +431,7 @@ impl DynInstrumentation {
         feature = "postgres",
         feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
@@ -440,6 +448,7 @@ impl DynInstrumentation {
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 impl<I: Instrumentation> From<I> for DynInstrumentation {
@@ -454,6 +463,7 @@ impl<I: Instrumentation> From<I> for DynInstrumentation {
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 struct NoInstrumentation;
@@ -462,6 +472,7 @@ struct NoInstrumentation;
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 impl Instrumentation for NoInstrumentation {
@@ -473,6 +484,7 @@ impl Instrumentation for NoInstrumentation {
     feature = "postgres",
     feature = "__sqlite-shared",
     feature = "mysql",
+    feature = "mariadb",
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 ))]
 fn unpack_instrumentation(

@@ -84,7 +84,8 @@ fn test_updating_multiple_columns() {
 #[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
-    feature = "mysql"
+    feature = "mysql",
+    feature = "mariadb"
 )))]
 fn update_returning_struct() {
     use crate::schema::users::dsl::*;
@@ -102,7 +103,8 @@ fn update_returning_struct() {
 #[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
-    feature = "mysql"
+    feature = "mysql",
+    feature = "mariadb"
 )))]
 fn update_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
@@ -271,7 +273,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn upsert_with_no_changes_executes_do_nothing() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]
@@ -287,9 +289,9 @@ fn upsert_with_no_changes_executes_do_nothing() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
-    #[cfg(not(feature = "mysql"))]
+    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     assert_eq!(Ok(0), result);
-    #[cfg(feature = "mysql")]
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
     assert_eq!(Ok(1), result);
 }
 
@@ -314,7 +316,7 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]

@@ -5,8 +5,14 @@ mod table_data;
 
 #[cfg(feature = "uses_information_schema")]
 mod information_schema;
+#[cfg(feature = "mariadb")]
+pub mod mariadb;
 #[cfg(feature = "mysql")]
 pub mod mysql;
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+pub(crate) mod mysql_like;
+
 #[cfg(feature = "postgres")]
 pub mod pg;
 mod schema_resolver;

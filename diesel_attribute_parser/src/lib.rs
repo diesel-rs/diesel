@@ -10,7 +10,7 @@ use syn::token::Comma;
 use syn::{Attribute, Expr, Ident, LitBool, LitStr, Path, Token, Type, TypePath};
 
 use crate::deprecated::ParseDeprecated;
-use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use crate::parsers::{BelongsTo, MariadbType, MysqlType, PostgresType, SqliteType};
 use crate::util::{parse_eq, parse_eq_type, parse_paren, parse_paren_list, unknown_attribute};
 
 use self::notes::*;
@@ -34,6 +34,7 @@ mod notes {
     pub const TREAT_NONE_AS_NULL_NOTE: &str = "treat_none_as_null = true";
     pub const BELONGS_TO_NOTE: &str = "belongs_to(Foo, foreign_key = foo_id)";
     pub const MYSQL_TYPE_NOTE: &str = "mysql_type(name = \"foo\")";
+    pub const MARIADB_TYPE_NOTE: &str = "mariadb_type(name = \"foo\")";
     pub const SQLITE_TYPE_NOTE: &str = "sqlite_type(name = \"foo\")";
     pub const POSTGRES_TYPE_NOTE: &str = "postgres_type(name = \"foo\", schema = \"public\")";
     pub const POSTGRES_TYPE_NOTE_ID: &str = "postgres_type(oid = 37, array_oid = 54)";
@@ -263,6 +264,7 @@ pub enum StructAttr {
 
     BelongsTo(Ident, BelongsTo),
     MysqlType(Ident, MysqlType),
+    MariadbType(Ident, MariadbType),
     SqliteType(Ident, SqliteType),
     PostgresType(Ident, PostgresType),
     PrimaryKey(Ident, Punctuated<Ident, Comma>),
@@ -304,6 +306,10 @@ impl Parse for StructAttr {
             "mysql_type" => Ok(StructAttr::MysqlType(
                 name,
                 parse_paren(input, MYSQL_TYPE_NOTE)?,
+            )),
+            "mariadb_type" => Ok(StructAttr::MariadbType(
+                name,
+                parse_paren(input, MARIADB_TYPE_NOTE)?,
             )),
             "sqlite_type" => Ok(StructAttr::SqliteType(
                 name,
@@ -355,6 +361,7 @@ impl Parse for StructAttr {
                     "treat_none_as_null",
                     "belongs_to",
                     "mysql_type",
+                    "mariadb_type",
                     "sqlite_type",
                     "postgres_type",
                     "primary_key",
@@ -382,6 +389,7 @@ impl MySpanned for StructAttr {
             | StructAttr::TreatNoneAsNull(ident, _)
             | StructAttr::BelongsTo(ident, _)
             | StructAttr::MysqlType(ident, _)
+            | StructAttr::MariadbType(ident, _)
             | StructAttr::SqliteType(ident, _)
             | StructAttr::PostgresType(ident, _)
             | StructAttr::CheckForBackend(ident, _)
@@ -417,7 +425,7 @@ where
             let ident = path.get_ident().map(|f| f.to_string());
 
             if let "sql_type" | "column_name" | "table_name" | "changeset_options" | "primary_key"
-            | "belongs_to" | "sqlite_type" | "mysql_type" | "postgres" =
+            | "belongs_to" | "sqlite_type" | "mysql_type" | "mariadb_type" | "postgres" =
                 ident.as_deref().unwrap_or_default()
             {
                 let m = &attr.meta;

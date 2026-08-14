@@ -40,6 +40,20 @@ mod helper_macros {
 
     #[doc(hidden)]
     #[macro_export]
+    #[cfg(feature = "mariadb_backend")]
+    macro_rules! expand_mariadb {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(feature = "mariadb_backend"))]
+    macro_rules! expand_mariadb {
+        ($($tt:tt)*) => {};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
     #[cfg(feature = "__sqlite-shared")]
     macro_rules! expand_sqlite {
         ($($tt:tt)*) => {$($tt)*};

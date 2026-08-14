@@ -11,7 +11,8 @@ use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, Insert
 #[cfg(any(
     feature = "__sqlite-shared",
     feature = "postgres_backend",
-    feature = "mysql_backend"
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
 ))]
 use crate::query_builder::update_statement::batch_update::{BatchKeyHelper, BatchValueHelper};
 use crate::query_builder::*;
@@ -256,7 +257,7 @@ macro_rules! tuple_impls {
                 }
             }
 
-            #[cfg(any(feature = "__sqlite-shared", feature = "postgres_backend", feature = "mysql_backend"))]
+            #[cfg(any(feature = "__sqlite-shared", feature = "postgres_backend", feature = "mysql_backend", feature = "mariadb_backend"))]
             impl<$($T,)+  __DB> BatchValueHelper<__DB> for ($($T,)+)
             where
                 $($T: BatchValueHelper<__DB>,)+
@@ -291,7 +292,7 @@ macro_rules! tuple_impls {
                 }
             }
 
-            #[cfg(any(feature = "__sqlite-shared", feature = "postgres_backend", feature = "mysql_backend"))]
+            #[cfg(any(feature = "__sqlite-shared", feature = "postgres_backend", feature = "mysql_backend", feature = "mariadb_backend"))]
             impl<$($T,)+ $($ST,)+ __DB> BatchKeyHelper<($($ST,)*), __DB> for ($($T,)+)
             where
                 __DB: Backend,

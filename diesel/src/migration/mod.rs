@@ -282,6 +282,14 @@ impl MigrationConnection for crate::mysql::MysqlConnection {
     }
 }
 
+#[cfg(feature = "mariadb")]
+impl MigrationConnection for crate::mariadb::MariadbConnection {
+    fn setup(&mut self) -> QueryResult<usize> {
+        use crate::RunQueryDsl;
+        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+    }
+}
+
 #[cfg(feature = "__sqlite-shared")]
 impl MigrationConnection for crate::sqlite::SqliteConnection {
     fn setup(&mut self) -> QueryResult<usize> {

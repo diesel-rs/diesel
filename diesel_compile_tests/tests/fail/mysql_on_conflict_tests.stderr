@@ -6,24 +6,41 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
+     = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
      |
- LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
- LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | / impl<DB, Values, Target, Action> QueryFragment<DB>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+  LL | |     Self: QueryFragment<DB, DB::OnConflictClause>,
+     | |__________________________________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB>`
+...
+  LL | / impl<DB, Values, Target, Action, SD> QueryFragment<DB, SD>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend<OnConflictClause = SD>,
+...    |
+  LL | |     Target: QueryFragment<DB>,
+  LL | |     Action: QueryFragment<DB>,
+     | |______________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB, SD>`
+...
+ LL | / impl<DB, Values, Target, Action, Expr> QueryFragment<DB>
+ LL | |     for OnConflictValues<Values, Target, Action, WhereClause<Expr>>
  LL | | where
- LL | |     Values: QueryFragment<Mysql>,
- LL | |     Target: QueryFragment<Mysql>,
- LL | |     Action: QueryFragment<Mysql>,
- LL | |     NoWhereClause: QueryFragment<Mysql>,
-     | |________________________________________^
+ LL | |     DB: Backend,
+...    |
+ LL | |     Action: QueryFragment<DB>,
+ LL | |     WhereClause<Expr>: QueryFragment<DB>,
+     | |_________________________________________^ `OnConflictValues<Values, Target, Action, ...>` implements `QueryFragment<DB>`
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Mysql>`
      = note: 1 redundant requirement hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -42,24 +59,41 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
+     = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
      |
- LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
- LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | / impl<DB, Values, Target, Action> QueryFragment<DB>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+  LL | |     Self: QueryFragment<DB, DB::OnConflictClause>,
+     | |__________________________________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB>`
+...
+  LL | / impl<DB, Values, Target, Action, SD> QueryFragment<DB, SD>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend<OnConflictClause = SD>,
+...    |
+  LL | |     Target: QueryFragment<DB>,
+  LL | |     Action: QueryFragment<DB>,
+     | |______________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB, SD>`
+...
+ LL | / impl<DB, Values, Target, Action, Expr> QueryFragment<DB>
+ LL | |     for OnConflictValues<Values, Target, Action, WhereClause<Expr>>
  LL | | where
- LL | |     Values: QueryFragment<Mysql>,
- LL | |     Target: QueryFragment<Mysql>,
- LL | |     Action: QueryFragment<Mysql>,
- LL | |     NoWhereClause: QueryFragment<Mysql>,
-     | |________________________________________^
+ LL | |     DB: Backend,
+...    |
+ LL | |     Action: QueryFragment<DB>,
+ LL | |     WhereClause<Expr>: QueryFragment<DB>,
+     | |_________________________________________^ `OnConflictValues<Values, Target, Action, ...>` implements `QueryFragment<DB>`
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Mysql>`
      = note: 1 redundant requirement hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -107,24 +141,41 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
+     = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
      |
- LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
- LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | / impl<DB, Values, Target, Action> QueryFragment<DB>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+  LL | |     Self: QueryFragment<DB, DB::OnConflictClause>,
+     | |__________________________________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB>`
+...
+  LL | / impl<DB, Values, Target, Action, SD> QueryFragment<DB, SD>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend<OnConflictClause = SD>,
+...    |
+  LL | |     Target: QueryFragment<DB>,
+  LL | |     Action: QueryFragment<DB>,
+     | |______________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB, SD>`
+...
+ LL | / impl<DB, Values, Target, Action, Expr> QueryFragment<DB>
+ LL | |     for OnConflictValues<Values, Target, Action, WhereClause<Expr>>
  LL | | where
- LL | |     Values: QueryFragment<Mysql>,
- LL | |     Target: QueryFragment<Mysql>,
- LL | |     Action: QueryFragment<Mysql>,
- LL | |     NoWhereClause: QueryFragment<Mysql>,
-     | |________________________________________^
+ LL | |     DB: Backend,
+...    |
+ LL | |     Action: QueryFragment<DB>,
+ LL | |     WhereClause<Expr>: QueryFragment<DB>,
+     | |_________________________________________^ `OnConflictValues<Values, Target, Action, ...>` implements `QueryFragment<DB>`
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Mysql>`
      = note: 1 redundant requirement hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -143,24 +194,41 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
+     = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
      |
- LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
- LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | / impl<DB, Values, Target, Action> QueryFragment<DB>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+  LL | |     Self: QueryFragment<DB, DB::OnConflictClause>,
+     | |__________________________________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB>`
+...
+  LL | / impl<DB, Values, Target, Action, SD> QueryFragment<DB, SD>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend<OnConflictClause = SD>,
+...    |
+  LL | |     Target: QueryFragment<DB>,
+  LL | |     Action: QueryFragment<DB>,
+     | |______________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB, SD>`
+...
+ LL | / impl<DB, Values, Target, Action, Expr> QueryFragment<DB>
+ LL | |     for OnConflictValues<Values, Target, Action, WhereClause<Expr>>
  LL | | where
- LL | |     Values: QueryFragment<Mysql>,
- LL | |     Target: QueryFragment<Mysql>,
- LL | |     Action: QueryFragment<Mysql>,
- LL | |     NoWhereClause: QueryFragment<Mysql>,
-     | |________________________________________^
+ LL | |     DB: Backend,
+...    |
+ LL | |     Action: QueryFragment<DB>,
+ LL | |     WhereClause<Expr>: QueryFragment<DB>,
+     | |_________________________________________^ `OnConflictValues<Values, Target, Action, ...>` implements `QueryFragment<DB>`
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Mysql>`
      = note: 1 redundant requirement hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -179,24 +247,41 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
+     = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
+help: the following other types implement trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
      |
- LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
- LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | / impl<DB, Values, Target, Action> QueryFragment<DB>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+  LL | |     Self: QueryFragment<DB, DB::OnConflictClause>,
+     | |__________________________________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB>`
+...
+  LL | / impl<DB, Values, Target, Action, SD> QueryFragment<DB, SD>
+  LL | |     for OnConflictValues<Values, Target, Action, NoWhereClause>
+  LL | | where
+  LL | |     DB: Backend<OnConflictClause = SD>,
+...    |
+  LL | |     Target: QueryFragment<DB>,
+  LL | |     Action: QueryFragment<DB>,
+     | |______________________________^ `OnConflictValues<Values, Target, Action>` implements `QueryFragment<DB, SD>`
+...
+ LL | / impl<DB, Values, Target, Action, Expr> QueryFragment<DB>
+ LL | |     for OnConflictValues<Values, Target, Action, WhereClause<Expr>>
  LL | | where
- LL | |     Values: QueryFragment<Mysql>,
- LL | |     Target: QueryFragment<Mysql>,
- LL | |     Action: QueryFragment<Mysql>,
- LL | |     NoWhereClause: QueryFragment<Mysql>,
-     | |________________________________________^
+ LL | |     DB: Backend,
+...    |
+ LL | |     Action: QueryFragment<DB>,
+ LL | |     WhereClause<Expr>: QueryFragment<DB>,
+     | |_________________________________________^ `OnConflictValues<Values, Target, Action, ...>` implements `QueryFragment<DB>`
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Mysql>`
      = note: 1 redundant requirement hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<diesel::MysqlConnection, Mysql>`
+     = note: required for `InsertStatement<table, ...>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -215,14 +300,19 @@ error[E0277]: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no vali
      |          |
      |          required by a bound introduced by this call
      |
+     = help: the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::ConflictTarget<DuplicatedKeys>`
      = note: this usually means that the `Pg` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is not implemented for `diesel::query_builder::ConflictTarget<DuplicatedKeys>`
-      but trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for it
-    --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
-     |
- LL | impl QueryFragment<Mysql, MysqlOnConflictClause> for ConflictTarget<DuplicatedKeys> {
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: the following other types implement trait `QueryFragment<DB, SP>`:
+               C
+               DistinctOnClause<T>
+               Only<S>
+               Posix
+               Tablesample<S, TSM>
+               TransactionBuilder<'_, C>
+               diesel::pg::expression::array::ArrayLiteral<T, ST>
+               diesel::pg::expression::array::ArraySubselect<T, ST>
+             and N others
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
      = note: 2 redundant requirements hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Pg>`

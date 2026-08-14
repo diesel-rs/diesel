@@ -25,7 +25,7 @@ mod errors;
 mod infer_schema_internals;
 mod migrations;
 mod print_schema;
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 mod query_helper;
 
 use clap::Parser;

@@ -33,7 +33,7 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(feature = "postgres")]
+    /// #     #[cfg(any(feature = "postgres", feature = "mariadb"))]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(any(feature = "__sqlite-shared", feature = "mysql"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
@@ -74,24 +74,24 @@ where
     /// # fn run_test() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(feature = "postgres")]
+    /// #     #[cfg(any(feature = "postgres", feature = "mariadb"))]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(any(feature = "mysql", feature = "__sqlite-shared"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     /// let user = User {
     ///     id: 1,
     ///     name: "Sean",
     /// };
     ///
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     /// let inserted_row_count = diesel::insert_into(users)
     ///     .values(&vec![user, user])
     ///     .on_conflict_do_nothing()
     ///     .execute(conn)?;
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     /// let user_count = users.count().get_result::<i64>(conn)?;
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     /// assert_eq!(user_count, 1);
     /// # Ok(())
     /// # }
@@ -169,7 +169,7 @@ where
     /// assert!(idx_conflict_result.is_err());
     /// # Ok(())
     /// # }
-    /// #[cfg(feature = "mysql")]
+    /// #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// fn run_test() -> diesel::QueryResult<()> { Ok(()) }
     /// ```
     ///
@@ -226,7 +226,7 @@ where
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
     ///
-    /// #[cfg(feature = "mysql")]
+    /// #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// fn main() {}
     /// ```
     ///
@@ -255,7 +255,7 @@ where
     /// # fn main() {
     /// #    run_test().unwrap()
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn run_test() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
@@ -293,7 +293,7 @@ where
     /// assert_eq!(user_names, vec![String::from("Sean")]);
     /// # Ok(())
     /// # }
-    /// #[cfg(not(feature = "mysql"))]
+    /// #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// fn run_test() -> diesel::QueryResult<()> {Ok(())}
     /// ```
     ///
@@ -552,7 +552,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -582,7 +582,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///     .execute(conn);
     /// # #[cfg(any(feature = "__sqlite-shared", feature = "postgres"))]
     /// assert_eq!(Ok(1), insert_count);
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// assert_eq!(Ok(2), insert_count);
     ///
     /// let users_in_db = users.load(conn);
@@ -591,7 +591,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///     users_in_db
     /// );
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() {}
     /// ```
     ///
@@ -600,7 +600,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -633,7 +633,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// );
     /// # Ok(())
     /// # }
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn main() {}
     /// ```
     ///
@@ -644,7 +644,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -677,7 +677,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "Sean".to_string())]), users_in_db);
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() {}
     /// ```
     ///
@@ -686,7 +686,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     ///
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -717,7 +717,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// # Ok(())
     /// # }
     ///
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn main() {}
     /// ```
     ///
@@ -771,7 +771,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///     users_in_db
     /// );
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() {}
     /// ```
     ///
@@ -780,7 +780,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn main() {
     /// #     use diesel::QueryDsl;
     /// #     use diesel::query_dsl::methods::FilterDsl;
@@ -816,7 +816,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "Pascal".to_string())]), users_in_db);
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "mysql", feature = "mariadb"))]
     /// # fn main() {}
     /// ```
     pub fn do_update(self) -> crate::dsl::DoUpdate<Self> {

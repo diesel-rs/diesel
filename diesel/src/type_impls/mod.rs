@@ -5,7 +5,8 @@ mod decimal;
     any(
         feature = "postgres_backend",
         feature = "mysql_backend",
-        feature = "__sqlite-shared"
+        feature = "__sqlite-shared",
+        feature = "mariadb_backend",
     )
 ))]
 mod json;

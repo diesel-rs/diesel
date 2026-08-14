@@ -548,12 +548,10 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql_backend")]
-    impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
-        fn walk_ast<'b>(
-            &'b self,
-            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
-        ) -> QueryResult<()> {
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    #[diagnostic::do_not_recommend]
+    impl<DB: crate::mysql_like::MysqlLikeBackend> QueryFragment<DB> for InsertOrIgnore {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
             out.push_sql("INSERT IGNORE");
             Ok(())
         }
@@ -574,12 +572,10 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql_backend")]
-    impl QueryFragment<crate::mysql::Mysql> for Replace {
-        fn walk_ast<'b>(
-            &'b self,
-            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
-        ) -> QueryResult<()> {
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    #[diagnostic::do_not_recommend]
+    impl<DB: crate::mysql_like::MysqlLikeBackend> QueryFragment<DB> for Replace {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
             out.push_sql("REPLACE");
             Ok(())
         }

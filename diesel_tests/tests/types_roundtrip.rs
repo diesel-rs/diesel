@@ -480,7 +480,7 @@ mod pg_types {
     }
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 mod mysql_types {
     use super::*;
 
@@ -744,7 +744,7 @@ pub fn mk_naive_time((mut seconds, mut nano): (u32, u32)) -> NaiveTime {
     NaiveTime::from_num_seconds_from_midnight_opt(seconds, nano).unwrap()
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
     format!("{}.{}", data.0, data.1)
         .parse()
@@ -761,7 +761,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     earliest_pg_date + Duration::try_days(days as i64 % num_days_representable).unwrap()
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
     let earliest_mysql_date = NaiveDate::from_ymd_opt(1000, 1, 1).unwrap();
     let latest_mysql_date = NaiveDate::from_ymd_opt(9999, 12, 31).unwrap();
@@ -791,7 +791,9 @@ fn mk_f32(f: FloatWrapper) -> f32 {
 impl quickcheck::Arbitrary for FloatWrapper {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let mut f = f32::arbitrary(g);
-        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql")) && f.is_nan() {
+        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql") || cfg!(feature = "mariadb"))
+            && f.is_nan()
+        {
             f = f32::arbitrary(g);
         }
         FloatWrapper(f)
@@ -808,25 +810,27 @@ fn mk_f64(f: DoubleWrapper) -> f64 {
 impl quickcheck::Arbitrary for DoubleWrapper {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let mut f = f64::arbitrary(g);
-        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql")) && f.is_nan() {
+        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql") || cfg!(feature = "mariadb"))
+            && f.is_nan()
+        {
             f = f64::arbitrary(g);
         }
         DoubleWrapper(f)
     }
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 #[derive(Clone, Debug)]
 struct SerdeWrapper(serde_json::Value);
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 impl quickcheck::Arbitrary for SerdeWrapper {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         SerdeWrapper(arbitrary_serde(g, 0))
     }
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn arbitrary_serde(g: &mut quickcheck::Gen, depth: usize) -> serde_json::Value {
     use quickcheck::Arbitrary;
 
@@ -879,7 +883,7 @@ fn arbitrary_serde(g: &mut quickcheck::Gen, depth: usize) -> serde_json::Value {
     }
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn mk_serde_json(data: SerdeWrapper) -> serde_json::Value {
     data.0
 }

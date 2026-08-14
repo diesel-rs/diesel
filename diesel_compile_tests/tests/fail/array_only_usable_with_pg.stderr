@@ -17,7 +17,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
+error[E0271]: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Pg`
     --> tests/fail/array_only_usable_with_pg.rs:12:48
      |
   LL |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
@@ -25,7 +25,7 @@ error[E0271]: type mismatch resolving `<MysqlConnection as Connection>::Backend 
      |                         |
      |                         required by a bound introduced by this call
      |
-     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<i32>>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<...>>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, Vec<i32>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

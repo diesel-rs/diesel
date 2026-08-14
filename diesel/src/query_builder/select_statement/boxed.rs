@@ -608,5 +608,8 @@ mod tests {
 
         #[cfg(feature = "mysql")]
         assert_boxed_query_send!(crate::mysql::Mysql);
+
+        #[cfg(feature = "mariadb")]
+        assert_boxed_query_send!(crate::mariadb::Mariadb);
     }
 }

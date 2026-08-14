@@ -35,6 +35,7 @@ const _: () = {
             diesel::mysql::Mysql,
         >,
     {}
+
 };
 const _: () = {
     use diesel;

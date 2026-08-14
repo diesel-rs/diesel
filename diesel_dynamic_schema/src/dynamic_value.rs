@@ -74,6 +74,22 @@
 //! #         }
 //! #     }
 //! # }
+//!
+//! # #[cfg(feature = "mariadb")]
+//! # impl FromSql<Any, diesel::mariadb::Mariadb> for MyDynamicValue {
+//! #    fn from_sql(value: diesel::mariadb::MariadbValue) -> deserialize::Result<Self> {
+//! #         use diesel::mariadb::{Mariadb, MariadbType};
+//! #         match value.value_type() {
+//! #              MariadbType::String => {
+//! #                  <String as FromSql<diesel::sql_types::Text, Mariadb>>::from_sql(value)
+//! #                      .map(MyDynamicValue::String)
+//! #              }
+//! #              MariadbType::Long => <i32 as FromSql<diesel::sql_types::Integer, Mariadb>>::from_sql(value)
+//! #                 .map(MyDynamicValue::Integer),
+//! #             e => Err(format!("Unknown data type: {:?}", e).into()),
+//! #         }
+//! #     }
+//! # }
 //! #
 //! # fn result_main() -> QueryResult<()> {
 //! #
@@ -184,6 +200,12 @@ impl diesel::expression::QueryMetadata<Any> for diesel::mysql::Mysql {
     }
 }
 
+#[cfg(feature = "mariadb")]
+impl diesel::expression::QueryMetadata<Any> for diesel::mariadb::Mariadb {
+    fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+        out.push(None)
+    }
+}
 /// A dynamically sized container that allows to receive
 /// a not at compile time known number of columns from the database
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -373,6 +395,16 @@ where
     }
 }
 
+#[cfg(feature = "mariadb")]
+impl<I> QueryableByName<diesel::mariadb::Mariadb> for DynamicRow<I>
+where
+    I: FromSql<Any, diesel::mariadb::Mariadb>,
+{
+    fn build<'a>(row: &impl NamedRow<'a, diesel::mariadb::Mariadb>) -> deserialize::Result<Self> {
+        Self::from_row(row)
+    }
+}
+
 #[cfg(feature = "sqlite")]
 impl<I> QueryableByName<diesel::sqlite::Sqlite> for DynamicRow<I>
 where
@@ -446,6 +478,16 @@ where
     I: FromSql<Any, diesel::mysql::Mysql>,
 {
     fn build<'a>(row: &impl NamedRow<'a, diesel::mysql::Mysql>) -> deserialize::Result<Self> {
+        Self::from_nullable_row(row)
+    }
+}
+
+#[cfg(feature = "mariadb")]
+impl<I> QueryableByName<diesel::mariadb::Mariadb> for DynamicRow<NamedField<Option<I>>>
+where
+    I: FromSql<Any, diesel::mariadb::Mariadb>,
+{
+    fn build<'a>(row: &impl NamedRow<'a, diesel::mariadb::Mariadb>) -> deserialize::Result<Self> {
         Self::from_nullable_row(row)
     }
 }

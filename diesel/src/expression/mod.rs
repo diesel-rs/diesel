@@ -95,8 +95,8 @@ pub(crate) mod dsl {
     /// The return type of [`date(expr)`](crate::dsl::date())
     pub type date<Expr> = super::functions::date_and_time::date<Expr>;
 
-    #[cfg(feature = "mysql_backend")]
-    pub use crate::mysql::query_builder::DuplicatedKeys;
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    pub use crate::mysql_like::query_builder::DuplicatedKeys;
 
     pub use super::functions::aggregate_expressions::frame_clause::{
         FrameBoundDsl, FrameClauseDsl,
