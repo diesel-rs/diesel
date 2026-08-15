@@ -428,6 +428,36 @@ impl<Tab> Insertable<Tab> for &DefaultValues {
     }
 }
 
+/// Insert values that produce exactly one row: a single record's values,
+/// [`default_values`](InsertStatement::default_values), or an upsert wrapping
+/// either. Batch inserts and `INSERT ... SELECT` do not qualify.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` may insert zero or several rows",
+    note = "the database client reports one generated id per statement, \
+            so this operation supports only single-row inserts"
+)]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+pub trait SingleRowInsertValues<Tab> {}
+
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
+
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+impl<Tab> SingleRowInsertValues<Tab> for DefaultValues {}
+
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+impl<V, Tab, Target, Action, WhereClause> SingleRowInsertValues<Tab>
+    for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+        V,
+        Target,
+        Action,
+        WhereClause,
+    >
+where
+    V: SingleRowInsertValues<Tab>,
+{
+}
+
 impl<DB> QueryFragment<DB> for DefaultValues
 where
     DB: Backend,

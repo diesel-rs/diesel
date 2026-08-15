@@ -10,6 +10,7 @@ table! {
 
 table! {
     comments (id) {
+        #[auto_increment]
         id -> Integer,
         post_id -> Integer,
         text -> Text,
@@ -18,6 +19,7 @@ table! {
 
 table! {
     composite_fk (id) {
+        #[auto_increment]
         id -> Integer,
         post_id -> Integer,
         user_id -> Integer,
@@ -26,6 +28,7 @@ table! {
 
 table! {
     cyclic_fk_1 (id) {
+        #[auto_increment]
         id -> Integer,
         cyclic_fk_2_id -> Nullable<Integer>,
     }
@@ -33,6 +36,7 @@ table! {
 
 table! {
     cyclic_fk_2 (id) {
+        #[auto_increment]
         id -> Integer,
         cyclic_fk_1_id -> Nullable<Integer>,
     }
@@ -75,6 +79,7 @@ table! {
 
 table! {
     multiple_fks_to_same_table (id) {
+        #[auto_increment]
         id -> Integer,
         post_id_1 -> Nullable<Integer>,
         post_id_2 -> Nullable<Integer>,
@@ -83,6 +88,7 @@ table! {
 
 table! {
     nullable_doubles (id) {
+        #[auto_increment]
         id -> Integer,
         n -> Nullable<Double>,
     }
@@ -90,6 +96,7 @@ table! {
 
 table! {
     nullable_table (id) {
+        #[auto_increment]
         id -> Integer,
         value -> Nullable<Integer>,
     }
@@ -117,6 +124,7 @@ table! {
 
 table! {
     posts (id) {
+        #[auto_increment]
         id -> Integer,
         user_id -> Integer,
         title -> Text,
@@ -132,6 +140,7 @@ table! {
 
 table! {
     self_referential_fk (id) {
+        #[auto_increment]
         id -> Integer,
         parent_id -> Integer,
     }
@@ -139,6 +148,7 @@ table! {
 
 table! {
     special_comments (id) {
+        #[auto_increment]
         id -> Integer,
         special_post_id -> Integer,
     }
@@ -146,6 +156,7 @@ table! {
 
 table! {
     special_posts (id) {
+        #[auto_increment]
         id -> Integer,
         user_id -> Integer,
         title -> Text,
@@ -161,6 +172,7 @@ table! {
 
 table! {
     unsigned_table (id) {
+        #[auto_increment]
         id -> Unsigned<Integer>,
         value -> Unsigned<Integer>,
     }
@@ -168,6 +180,7 @@ table! {
 
 table! {
     users (id) {
+        #[auto_increment]
         id -> Integer,
         name -> Text,
         hair_color -> Nullable<Text>,

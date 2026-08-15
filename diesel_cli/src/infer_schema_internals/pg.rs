@@ -209,6 +209,7 @@ pub fn get_table_data(
                 row.nullable == "YES",
                 max_length,
                 row.comment,
+                false,
             ))
         })
         .collect()
@@ -344,6 +345,7 @@ mod test {
             false,
             None,
             Some("column comment".to_string()),
+            false,
         );
         let text_col = ColumnInformation::new(
             "text_col",
@@ -352,11 +354,26 @@ mod test {
             true,
             Some(128),
             None,
+            false,
         );
-        let not_null =
-            ColumnInformation::new("not_null", "text", pg_catalog.clone(), false, None, None);
-        let array_col =
-            ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None, None);
+        let not_null = ColumnInformation::new(
+            "not_null",
+            "text",
+            pg_catalog.clone(),
+            false,
+            None,
+            None,
+            false,
+        );
+        let array_col = ColumnInformation::new(
+            "array_col",
+            "_varchar",
+            pg_catalog,
+            false,
+            None,
+            None,
+            false,
+        );
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(
@@ -521,6 +538,7 @@ mod test {
             false,
             None,
             None,
+            false,
         );
         let id_domain = ColumnInformation::new(
             "id",
@@ -529,6 +547,7 @@ mod test {
             false,
             None,
             None,
+            false,
         );
 
         assert_eq!(

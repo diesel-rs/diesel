@@ -65,4 +65,18 @@ mod helper_macros {
     macro_rules! expand_sqlite {
         ($($tt:tt)*) => {};
     }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    macro_rules! expand_mysql_like {
+        ($($tt:tt)*) => {$($tt)*};
+    }
+
+    #[doc(hidden)]
+    #[macro_export]
+    #[cfg(not(any(feature = "mysql_backend", feature = "mariadb_backend")))]
+    macro_rules! expand_mysql_like {
+        ($($tt:tt)*) => {};
+    }
 }

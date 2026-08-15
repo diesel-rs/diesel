@@ -1,0 +1,6 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_add_table_auto_increment"
+---
+-- This file should undo anything in `up.sql`
+DROP TABLE IF EXISTS "users";

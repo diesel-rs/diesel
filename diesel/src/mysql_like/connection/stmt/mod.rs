@@ -163,6 +163,18 @@ impl<DB: MysqlLikeBackend> StatementUse<'_, DB> {
             .map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
+    /// The executed statement's `mysql_stmt_insert_id`, zero when it set no
+    /// `AUTO_INCREMENT` value.
+    ///
+    /// The C API calls that zero "undefined", meaning an unspecified value and
+    /// not undefined behaviour: only a statement returning a result set can
+    /// inherit a stale id from the connection.
+    pub(in crate::mysql_like::connection) fn insert_id(&self) -> u64 {
+        // SAFETY: `self.inner` holds a live `MYSQL_STMT` and this reads an
+        // initialised scalar field.
+        unsafe { ffi::mysql_stmt_insert_id(self.inner.stmt.as_ptr()) }
+    }
+
     /// This function should be called after `execute` only
     /// otherwise it's not guaranteed to return a valid result
     pub(in crate::mysql_like::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {

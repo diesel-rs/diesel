@@ -3,6 +3,8 @@ mod raw;
 mod stmt;
 mod url;
 
+use core::num::NonZeroU64;
+
 use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::stmt::iterator::StatementIterator;
@@ -331,6 +333,33 @@ fn prepared_query<'a, DB: MysqlLikeBackend + Default, T: QueryFragment<DB> + Que
 }
 
 impl<DB: MysqlLikeBackend> MysqlLikeConnection<DB> {
+    /// Executes `source` and returns its `mysql_stmt_insert_id`, zero mapped
+    /// to `None`. Public entry point: [`InsertStatement::execute_returning_id`].
+    pub(crate) fn execute_returning_id<T>(&mut self, source: &T) -> QueryResult<Option<NonZeroU64>>
+    where
+        T: QueryFragment<DB> + QueryId,
+    {
+        #[allow(unsafe_code)] // call to unsafe function
+        update_transaction_manager_status(
+            prepared_query(
+                &source,
+                &mut self.statement_cache,
+                &mut self.raw_connection,
+                &mut *self.instrumentation,
+            )
+            .and_then(|stmt| {
+                // SAFETY: `prepared_query` returned this statement freshly
+                // bound, so no result set is pending, which is `execute`'s
+                // requirement.
+                let stmt_use = unsafe { stmt.execute() }?;
+                Ok(NonZeroU64::new(stmt_use.insert_id()))
+            }),
+            &mut self.transaction_state,
+            &mut self.instrumentation,
+            &crate::debug_query(source),
+        )
+    }
+
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET time_zone = '+00:00';").execute(self)?;
         crate::sql_query("SET character_set_client = 'utf8mb4'").execute(self)?;

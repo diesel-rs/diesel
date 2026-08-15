@@ -1651,6 +1651,9 @@ impl Display for ColumnDefinitions<'_> {
                 if let Some(max_length) = column_type.max_length {
                     writeln!(out, r#"#[max_length = {max_length}]"#)?;
                 }
+                if column.auto_increment {
+                    writeln!(out, "#[auto_increment]")?;
+                }
 
                 writeln!(out, "{} -> {},", column.rust_name, column_type)?;
             }

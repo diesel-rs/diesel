@@ -28,6 +28,7 @@ where
         String,
         Option<u64>,
         Option<String>,
+        String,
     ): FromStaticSqlRow<ST, DB>,
 {
     type Row = (
@@ -37,6 +38,7 @@ where
         String,
         Option<u64>,
         Option<String>,
+        String,
     );
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
@@ -47,6 +49,7 @@ where
             row.3 == "YES",
             row.4,
             row.5,
+            row.6.to_lowercase().contains("auto_increment"),
         ))
     }
 }
@@ -72,6 +75,7 @@ mod column_query {
                 character_maximum_length,
                 // MySQL comments are not nullable and are empty strings if not set
                 null_if_text(column_comment, ""),
+                extra,
             ))
             .filter(table_name.eq(table))
             .filter(table_schema.eq(schema))
@@ -170,6 +174,7 @@ pub(in crate::infer_schema_internals) mod information_schema {
             udt_schema -> VarChar,
             column_type -> VarChar,
             column_comment -> VarChar,
+            extra -> VarChar,
         }
     }
 

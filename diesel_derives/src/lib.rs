@@ -1441,6 +1441,25 @@ fn __diesel_public_if_inner(
 /// changes which columns form the primary key, the whole `table!` block still
 /// needs to be duplicated behind the relevant `#[cfg(...)]` attributes.
 ///
+/// A column the database fills from an `AUTO_INCREMENT` counter (MySQL and
+/// MariaDB) can be marked with `#[auto_increment]`, at most one per table.
+/// The table then implements
+/// [`AutoIncrementTable`](trait@diesel::query_source::AutoIncrementTable),
+/// enabling `InsertStatement::execute_returning_id`. `diesel print-schema`
+/// emits the attribute automatically.
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::table! {
+///     users {
+///         #[auto_increment]
+///         id -> Integer,
+///         name -> Text,
+///     }
+/// }
+/// ```
+///
 /// This module will also contain several helper types:
 ///
 /// dsl

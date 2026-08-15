@@ -222,6 +222,11 @@ fn migration_generate_from_diff_add_table() {
 }
 
 #[test]
+fn migration_generate_from_diff_add_table_auto_increment() {
+    test_generate_migration("diff_add_table_auto_increment", Vec::new());
+}
+
+#[test]
 fn migration_generate_from_diff_add_table_sqlite_rowid_column() {
     test_generate_migration(
         "diff_add_table_sqlite_rowid_column",

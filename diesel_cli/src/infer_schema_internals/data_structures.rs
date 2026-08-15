@@ -15,6 +15,7 @@ pub struct ColumnInformation {
     pub nullable: bool,
     pub max_length: Option<u64>,
     pub comment: Option<String>,
+    pub auto_increment: bool,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq)]
@@ -170,6 +171,7 @@ pub struct ColumnDefinition {
     pub rust_name: String,
     pub ty: ColumnType,
     pub comment: Option<String>,
+    pub auto_increment: bool,
 }
 
 impl ColumnInformation {
@@ -180,6 +182,7 @@ impl ColumnInformation {
         nullable: bool,
         max_length: Option<u64>,
         comment: Option<String>,
+        auto_increment: bool,
     ) -> Self
     where
         T: Into<String>,
@@ -192,6 +195,7 @@ impl ColumnInformation {
             nullable,
             max_length,
             comment,
+            auto_increment,
         }
     }
 }
