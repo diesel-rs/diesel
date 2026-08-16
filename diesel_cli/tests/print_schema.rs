@@ -619,6 +619,60 @@ fn print_schema_rust_injection() {
     )
 }
 
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_type_mapping() {
+    test_print_schema_only_config("print_schema_type_mapping");
+}
+
+/// Runs `print-schema` driven purely by `diesel.toml`, with no CLI flags.
+///
+/// This is a self-contained variant of [`test_print_schema_config`]: it sets up
+/// its own insta `Settings` binding rather than relying on being called from
+/// within [`test_print_schema_with_options`]. Use it for options (such as
+/// `type_map`) that can only be configured through `diesel.toml`.
+#[track_caller]
+fn test_print_schema_only_config(test_name: &str) {
+    let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("print_schema")
+        .join(test_name);
+
+    let config = read_file(&test_path.join("diesel.toml"));
+    let schema = read_file(&backend_file_path(test_name, "schema.sql"));
+
+    let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
+
+    let patch_file = backend_file_path(test_name, "schema.patch");
+    if patch_file.exists() {
+        let patch_contents = read_file(&patch_file);
+        p = p.file("schema.patch", &patch_contents);
+    }
+
+    let p = p.build();
+
+    p.command("setup").run();
+    p.create_migration("12345_create_schema", &schema, None, None);
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let mut setting = insta::Settings::new();
+    setting.set_snapshot_path(backend_file_path(test_name, ""));
+    setting.set_omit_expression(true);
+    setting.set_description(format!("Test: {test_name}"));
+    setting.set_prepend_module_to_snapshot(false);
+
+    setting.bind(|| {
+        let generated = p.file_contents("src/schema.rs").replace("\r\n", "\n");
+        insta::assert_snapshot!("expected", generated);
+
+        let result = p.command("print-schema").run();
+        assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+        let result = result.stdout().replace("\r\n", "\n");
+        insta::assert_snapshot!("expected", result);
+    });
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
