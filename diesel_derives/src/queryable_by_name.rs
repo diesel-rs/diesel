@@ -1,7 +1,7 @@
 use diesel_attribute_parser::AttributeSpanWrapper;
 use diesel_attribute_parser::CheckForBackend;
 use proc_macro2::{Span, TokenStream};
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
 use syn::{DeriveInput, Ident, LitStr, Result, Type, parse_quote, parse_quote_spanned};
 
@@ -14,7 +14,6 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     let struct_name = &item.ident;
     let fields = &model.fields().iter().map(get_ident).collect::<Vec<_>>();
-    let field_names = model.fields().iter().map(|f| &f.name);
 
     let initial_field_expr = model
         .fields()
@@ -88,6 +87,14 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     };
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
+    let field_constructor = model.fields().iter().zip(fields).map(|(f, f_n)| {
+        let s = f.span;
+        let field_name = &f.name;
+        match field_name {
+            FieldName::Named(_) => quote_spanned! {s=> #f_n},
+            FieldName::Unnamed(_) => quote_spanned! {s=> #field_name: #f_n},
+        }
+    });
 
     Ok(wrap_in_dummy_mod(quote! {
 
@@ -101,9 +108,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                     let mut #fields = #initial_field_expr;
                 )*
                 diesel::deserialize::Result::Ok(Self {
-                    #(
-                        #field_names: #fields,
-                    )*
+                    #(#field_constructor,)*
                 })
             }
         }
