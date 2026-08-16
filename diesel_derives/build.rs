@@ -1,5 +1,7 @@
 #[cfg(diesel_docsrs)]
 fn inner_format(input: String, expanded: String) -> String {
+    let input = input.trim();
+    let expanded = expanded.trim();
     format!(
         r#"
 
@@ -48,7 +50,8 @@ fn write_detail_section(content: String) -> String {
 #[cfg(diesel_docsrs)]
 fn read_snapshot(snapshot_dir: &std::path::Path, file: &str) -> (String, String) {
     let file = snapshot_dir.join(file);
-    let content = std::fs::read_to_string(file).expect("Failed to read snapshot");
+    let content = std::fs::read_to_string(&file)
+        .expect(&format!("Failed to read snapshot: `{}`", file.display()));
     let mut lines = content
         .lines()
         .skip_while(|l| !l.trim().starts_with("input:"));
