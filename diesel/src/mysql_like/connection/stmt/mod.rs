@@ -76,14 +76,11 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
             .into_owned()
     }
 
-    pub(super) fn metadata(&self) -> QueryResult<StatementMetadata> {
-        use crate::result::Error::DeserializationError;
-
+    //we return a Option here because mariadb sometimes doesn't provide the statement metadata before the execute
+    pub(super) fn metadata(&self) -> QueryResult<Option<StatementMetadata>> {
         let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()) };
         self.did_an_error_occur()?;
-        NonNull::new(result_ptr)
-            .map(StatementMetadata::new)
-            .ok_or_else(|| DeserializationError("No metadata exists".into()))
+        Ok(NonNull::new(result_ptr).map(StatementMetadata::new))
     }
 
     pub(super) fn did_an_error_occur(&self) -> QueryResult<()> {
@@ -217,6 +214,15 @@ impl<DB: MysqlLikeBackend> StatementUse<'_, DB> {
         binds: *mut ffi::MYSQL_BIND,
     ) -> QueryResult<()> {
         unsafe { self.inner.bind_result(binds) }
+    }
+
+    pub(super) fn metadata(&self) -> QueryResult<StatementMetadata> {
+        use crate::result::Error::DeserializationError;
+
+        //At this stage the statement was executed and should therefore provide its metadata
+        self.inner
+            .metadata()?
+            .ok_or_else(|| DeserializationError("No metadata exists".into()))
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::backend::sql_dialect::returning_clause::SupportsReturningClause;
 use crate::backend::{
     Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect,
 };
@@ -9,6 +10,8 @@ use crate::result::DatabaseErrorKind;
 use crate::sql_types::TypeMetadata;
 
 /// The MariaDB backend
+///
+/// the `UPDATE ... RETURNING` clause is only supported by Mariadb >= 13.0
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Mariadb;
 
@@ -29,7 +32,7 @@ impl TypeMetadata for Mariadb {
 }
 
 impl SqlDialect for Mariadb {
-    type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
+    type ReturningClause = MariadbReturningClause;
 
     type OnConflictClause = MariadbOnConflictClause;
 
@@ -69,6 +72,11 @@ pub(crate) type MariadbStyleDefaultValueClause =
 pub(crate) type MariadbConcatClause = crate::mysql_like::query_fragments::MysqlConcatClause;
 pub(crate) type MariadbRequiresOrderForWindowFunctions =
     crate::mysql_like::query_fragments::MysqlRequiresOrderForWindowFunctions;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MariadbReturningClause;
+
+impl SupportsReturningClause for MariadbReturningClause {}
 
 impl MysqlLikeBackend for Mariadb {
     const SCHEME: &'static str = "mariadb";

@@ -23,12 +23,21 @@ impl<'a, DB: MysqlLikeBackend> StatementIterator<'a, DB> {
         stmt: MaybeCached<'a, Statement<DB>>,
         types: &[Option<MysqlType>],
     ) -> QueryResult<Self> {
-        let metadata = stmt.metadata()?;
+        let (metadata, output_binds, mut stmt) = if let Some(metadata) = stmt.metadata()? {
+            let mut output_binds = OutputBinds::from_output_types(types, &metadata)
+                .map_err(crate::result::Error::DeserializationError)?;
 
-        let mut output_binds = OutputBinds::from_output_types(types, &metadata)
-            .map_err(crate::result::Error::DeserializationError)?;
+            let stmt = stmt.execute_statement(&mut output_binds)?;
+            (metadata, output_binds, stmt)
+        } else {
+            //Sometimes we must execute the statement to get its metadata.
+            let stmt = unsafe { stmt.execute()? };
+            let metadata = stmt.metadata()?;
+            let output_binds = OutputBinds::from_output_types(types, &metadata)
+                .map_err(crate::result::Error::DeserializationError)?;
+            (metadata, output_binds, stmt)
+        };
 
-        let mut stmt = stmt.execute_statement(&mut output_binds)?;
         let size = unsafe { stmt.result_size() }?;
 
         Ok(StatementIterator {

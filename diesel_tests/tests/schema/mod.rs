@@ -554,3 +554,21 @@ pub fn pg_server_supports_returning_old(connection: &mut TestConnection) -> bool
     .expect("Failed to get PostgreSQL server version")
         >= 180000
 }
+
+/// `UPDATE ... RETURNING` was introduced in Mariadb 13.0; on older servers
+/// the query will be rejected at execution time, so we just skip.
+///
+/// Returns `true` if the connected Mariadb server is version 13.0 or newer.
+/// On non-mariadb backends this always returns `false`.
+#[cfg(feature = "mariadb")]
+pub fn mariadb_server_supports_update_returning(connection: &mut TestConnection) -> bool {
+    diesel::dsl::sql::<diesel::sql_types::VarChar>("SELECT VERSION();")
+        .get_result::<String>(connection)
+        .expect("Failed to get Mariadb server version")
+        .split('.')
+        .next()
+        .map(|str| str.parse::<u32>())
+        .expect("Failed to split Mariadb server version")
+        .expect("Failed to parse Mariadb server version")
+        >= 13
+}

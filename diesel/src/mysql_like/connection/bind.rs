@@ -985,7 +985,7 @@ mod tests {
             &mut *conn.instrumentation,
         ).unwrap();
 
-        let metadata = stmt.metadata().unwrap();
+        let metadata = stmt.metadata().unwrap().unwrap();
         let mut output_binds =
             OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata)
                 .unwrap();

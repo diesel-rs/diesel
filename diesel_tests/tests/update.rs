@@ -84,13 +84,18 @@ fn test_updating_multiple_columns() {
 #[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
-    feature = "mysql",
-    feature = "mariadb"
+    feature = "mysql"
 )))]
 fn update_returning_struct() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[cfg(feature = "mariadb")]
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
     let sean = find_user_by_name("Sean", connection);
     let user = update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
@@ -103,13 +108,18 @@ fn update_returning_struct() {
 #[diesel_test_helper::test]
 #[cfg(not(any(
     all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
-    feature = "mysql",
-    feature = "mariadb"
+    feature = "mysql"
 )))]
 fn update_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[cfg(feature = "mariadb")]
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
     let sean = find_user_by_name("Sean", connection);
     let user = update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
