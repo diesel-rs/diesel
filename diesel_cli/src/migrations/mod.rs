@@ -1,3 +1,4 @@
+use crate::migrations::lock_file::LockFile;
 use crate::print_schema::PrintSchemaArgs;
 use chrono::Utc;
 use clap::{ArgAction, Args, Subcommand, ValueEnum};
@@ -18,6 +19,7 @@ use crate::database::InferConnection;
 use crate::{config::Config, regenerate_schema_if_file_specified};
 
 pub mod diff_schema;
+mod lock_file;
 
 #[derive(Debug, Args)]
 pub struct MigrationArgs {
@@ -358,13 +360,16 @@ fn conn_and_migration_dir(
 /// A lock can be acquired on this file to make sure we don't have multiple instances of diesel
 /// doing migration work
 /// See [run_migration_command]::generate for an example
-fn migration_folder_lock(dir: PathBuf) -> Result<File, crate::errors::Error> {
+fn migration_folder_lock(dir: PathBuf) -> Result<LockFile, crate::errors::Error> {
     let path = dir.join(".diesel_lock");
     match File::create_new(&path) {
-        Ok(file) => Ok(file),
+        Ok(file) => Ok(LockFile { path, file }),
         Err(err) => {
             if matches!(err.kind(), io::ErrorKind::AlreadyExists) {
-                File::open(&path).map_err(|err| crate::errors::Error::IoError(err, Some(path)))
+                let file = File::open(&path)
+	                .map_err(|err| crate::errors::Error::IoError(err, Some(path.clone())))?;
+
+                Ok(LockFile { path, file })
             } else {
                 Err(crate::errors::Error::IoError(err, Some(path)))
             }
