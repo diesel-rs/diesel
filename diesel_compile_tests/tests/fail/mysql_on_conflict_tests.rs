@@ -33,6 +33,13 @@ fn main() {
         .do_update()
         .set(name.eq("Jane"))
         .execute(&mut connection);
+    
+    insert_into(users)
+        .values((id.eq(42), name.eq("John")))
+        .on_conflict(dsl::DuplicatedKeys)
+        .do_update()
+        .set(name.eq(upsert::values(name)))
+        .execute(&mut connection);
 
     // do not allow columns as on_conflict target
     insert_into(users)
@@ -62,15 +69,6 @@ fn main() {
         .values((id.eq(42), name.eq("John")))
         .on_conflict(dsl::sql("foo"))
         .do_nothing()
-        .execute(&mut connection);
-    //~^ ERROR: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
-
-    // do not allow excluded
-    insert_into(users)
-        .values((id.eq(42), name.eq("John")))
-        .on_conflict(dsl::DuplicatedKeys)
-        .do_update()
-        .set(name.eq(upsert::excluded(name)))
         .execute(&mut connection);
     //~^ ERROR: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
 

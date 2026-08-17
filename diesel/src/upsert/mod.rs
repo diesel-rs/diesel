@@ -25,7 +25,13 @@ pub use self::on_conflict_extension::{
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::on_constraint::*;
 
-/// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause.
+/// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause,
+/// and `VALUES(column)` for MySQL and MariaDB.
 pub fn excluded<T>(excluded: T) -> Excluded<T> {
     Excluded::new(excluded)
 }
+
+/// Reexports `excluded` as `values` for MySQL and MariaDB, 
+/// where the SQL syntax is `VALUES(column)` instead of `excluded.column`.
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+pub use excluded as values;
