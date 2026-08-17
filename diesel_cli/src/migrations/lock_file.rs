@@ -1,6 +1,5 @@
 use std::{
     fs::{File, remove_file},
-    os::fd::AsFd,
     path::PathBuf,
 };
 
@@ -10,9 +9,17 @@ pub struct LockFile {
     pub file: File,
 }
 
-impl AsFd for LockFile {
-    fn as_fd(&self) -> std::os::unix::prelude::BorrowedFd<'_> {
+#[cfg(unix)]
+impl std::os::fd::AsFd for LockFile {
+    fn as_fd(&self) -> std::os::fd::BorrowedFd<'_> {
         self.file.as_fd()
+    }
+}
+
+#[cfg(windows)]
+impl std::os::windows::io::AsHandle for LockFile {
+    fn as_handle(&self) -> std::os::windows::io::BorrowedHandle<'_> {
+        self.file.as_handle()
     }
 }
 
