@@ -367,7 +367,7 @@ fn migration_folder_lock(dir: PathBuf) -> Result<LockFile, crate::errors::Error>
         Err(err) => {
             if matches!(err.kind(), io::ErrorKind::AlreadyExists) {
                 let file = File::open(&path)
-	                .map_err(|err| crate::errors::Error::IoError(err, Some(path.clone())))?;
+                    .map_err(|err| crate::errors::Error::IoError(err, Some(path.clone())))?;
 
                 Ok(LockFile { path, file })
             } else {
