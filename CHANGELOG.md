@@ -64,6 +64,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* .diesel_lock_ file now auto deletes after use
 
 ## [2.3.12] 2026-08-07
 
