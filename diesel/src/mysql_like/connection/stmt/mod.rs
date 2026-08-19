@@ -76,7 +76,7 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
             .into_owned()
     }
 
-    //we return a Option here because mariadb sometimes doesn't provide the statement metadata before the execute
+    ///we return a Option here because mariadb sometimes doesn't provide the statement metadata before the execute
     pub(super) fn metadata(&self) -> QueryResult<Option<StatementMetadata>> {
         let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()) };
         self.did_an_error_occur()?;
