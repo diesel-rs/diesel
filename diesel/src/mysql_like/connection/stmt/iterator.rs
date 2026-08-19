@@ -7,6 +7,7 @@ use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
 use crate::backend::Backend;
 use crate::connection::statement_cache::MaybeCached;
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
+use crate::result::Error::DeserializationError;
 use crate::result::QueryResult;
 use crate::row::*;
 
@@ -24,18 +25,20 @@ impl<'a, DB: MysqlLikeBackend> StatementIterator<'a, DB> {
         types: &[Option<MysqlType>],
     ) -> QueryResult<Self> {
         let (metadata, output_binds, mut stmt) = if let Some(metadata) = stmt.metadata()? {
-            let mut output_binds = OutputBinds::from_output_types(types, &metadata)
-                .map_err(crate::result::Error::DeserializationError)?;
+            let mut output_binds =
+                OutputBinds::from_output_types(types, &metadata).map_err(DeserializationError)?;
 
             let stmt = stmt.execute_statement(&mut output_binds)?;
             (metadata, output_binds, stmt)
-        } else {
+        } else if DB::METADATA_MAY_REQUIRE_EXECUTE {
             //Sometimes we must execute the statement to get its metadata.
             let stmt = unsafe { stmt.execute()? };
             let metadata = stmt.metadata()?;
-            let output_binds = OutputBinds::from_output_types(types, &metadata)
-                .map_err(crate::result::Error::DeserializationError)?;
+            let output_binds =
+                OutputBinds::from_output_types(types, &metadata).map_err(DeserializationError)?;
             (metadata, output_binds, stmt)
+        } else {
+            return Err(DeserializationError("No metadata exists".into()));
         };
 
         let size = unsafe { stmt.result_size() }?;

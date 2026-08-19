@@ -56,8 +56,15 @@ where
 {
     #[doc(hidden)]
     /// The scheme used in the connection URL for this backend.
-    /// "mysql" for MySQL, "mariadb" for MariaDB.
+    /// mysql for MySQL, "mariadb" for MariaDB.
     const SCHEME: &'static str;
+
+    #[doc(hidden)]
+    /// Specifies whether result set metadata can be unavailable until the statement is executed.
+    ///
+    /// Set this to `true` if `mysql_stmt_result_metadata` can return `NULL` between
+    /// `mysql_stmt_prepare` and `mysql_stmt_execute`, despite the query producing a result set.
+    const METADATA_MAY_REQUIRE_EXECUTE: bool;
 }
 
 pub(crate) trait MapErrorNumber {

@@ -67,6 +67,8 @@ impl TrustedBackend for Mysql {}
 
 impl MysqlLikeBackend for Mysql {
     const SCHEME: &'static str = "mysql";
+
+    const METADATA_MAY_REQUIRE_EXECUTE: bool = false;
 }
 
 impl MapErrorNumber for Mysql {

@@ -78,6 +78,8 @@ impl SupportsReturningClause for MariadbReturningClause {}
 
 impl MysqlLikeBackend for Mariadb {
     const SCHEME: &'static str = "mariadb";
+
+    const METADATA_MAY_REQUIRE_EXECUTE: bool = true;
 }
 
 impl MapErrorNumber for Mariadb {
