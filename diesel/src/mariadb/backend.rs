@@ -10,8 +10,6 @@ use crate::result::DatabaseErrorKind;
 use crate::sql_types::TypeMetadata;
 
 /// The MariaDB backend
-///
-/// the `UPDATE ... RETURNING` clause is only supported by Mariadb >= 13.0
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Mariadb;
 
