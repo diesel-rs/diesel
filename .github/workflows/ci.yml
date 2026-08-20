@@ -358,7 +358,7 @@ jobs:
       - name: Run tests
         shell: bash
         env:
-          BACKEND: ${{ matrix.backend }}
+          BACKEND: ${{ matrix.backend == 'mariadb-13' && 'mariadb' || matrix.backend }}
         run: |
           cargo xtask run-tests $BACKEND $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
 
