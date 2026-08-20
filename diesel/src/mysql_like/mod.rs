@@ -56,7 +56,7 @@ where
 {
     #[doc(hidden)]
     /// The scheme used in the connection URL for this backend.
-    /// mysql for MySQL, "mariadb" for MariaDB.
+    /// "mysql" for MySQL, "mariadb" for MariaDB.
     const SCHEME: &'static str;
 
     #[doc(hidden)]

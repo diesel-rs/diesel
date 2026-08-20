@@ -70,6 +70,9 @@ jobs:
           - rust: "nightly"
             backend: "mariadb"
             os: "ubuntu-latest"
+          - rust: "stable"
+            backend: "mariadb-13"
+            os: "windows-2025"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -283,6 +286,24 @@ jobs:
           echo "C:\Program Files\MariaDB 12.3\lib" >> $GITHUB_PATH
           echo "C:\Program Files\MariaDB 12.3\bin" >> $GITHUB_PATH
           dir "C:\Program Files\MariaDB 12.3\lib"
+
+      - name: Install mariadb-13 (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mariadb-13'
+        shell: bash
+        run: |
+          choco install mariadb --pre -y
+          "C:\\Program Files\\MariaDB 13.0\\bin\\mariadb" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
+          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
+          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
+          echo "MARIADB_DATABASE_URL=mariadb://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\Program Files\MariaDB 13.0\lib" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIBNAME=libmariadb" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=3.4.10" >> $GITHUB_ENV
+          echo "C:\Program Files\MariaDB 13.0\lib" >> $GITHUB_PATH
+          echo "C:\Program Files\MariaDB 13.0\bin" >> $GITHUB_PATH
+          dir "C:\Program Files\MariaDB 13.0\lib"
 
       - name: Rust version check
         shell: bash
