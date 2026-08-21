@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This module provides a container that allows to receive a dynamically specified number of fields from the database."><title>diesel_dynamic_schema::dynamic_value - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel_dynamic_schema" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel_dynamic_schema/index.html">diesel_dynamic_schema</a><span class="version">0.2.1</span></h2></div><h2 class="location"><a href="#">Module dynamic_value</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li></ul></section><h2><a href="../index.html">In crate diesel_dynamic_schema</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel_dynamic_schema/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">diesel_dynamic_schema</a>::<wbr><a class="mod" href="#">dynamic_value</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel_dynamic_schema/dynamic_value.rs.html#1-464">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This module provides a container that allows to receive a dynamically
+specified number of fields from the database.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+    <span class="kw">let </span>users = diesel_dynamic_schema::table(<span class="string">"users"</span>);
+    <span class="kw">let </span>id = users.column::&lt;Untyped, <span class="kw">_</span>&gt;(<span class="string">"id"</span>);
+    <span class="kw">let </span>name = users.column::&lt;Untyped, <span class="kw">_</span>&gt;(<span class="string">"name"</span>);
+
+    <span class="kw">let </span><span class="kw-2">mut </span>select = DynamicSelectClause::new();
+
+    select.add_field(id);
+    select.add_field(name);
+
+    <span class="kw">let </span>actual_data: Vec&lt;DynamicRow&lt;NamedField&lt;MyDynamicValue&gt;&gt;&gt; =
+        users.select(select).load(conn)<span class="question-mark">?</span>;
+
+    <span class="macro">assert_eq!</span>(
+        actual_data[<span class="number">0</span>][<span class="string">"name"</span>],
+        MyDynamicValue::String(<span class="string">"Sean"</span>.into())
+    );
+    <span class="macro">assert_eq!</span>(
+        actual_data[<span class="number">0</span>][<span class="number">1</span>],
+        NamedField {
+            name: <span class="string">"name"</span>.into(),
+            value: MyDynamicValue::String(<span class="string">"Sean"</span>.into())
+        }
+    );
+</code></pre></div>
+<p>It is required to provide your own inner type to hold the actual database value.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(PartialEq, Debug)]
+</span><span class="kw">enum </span>MyDynamicValue {
+   String(String),
+   Integer(i32),
+}
+
+<span class="kw">impl </span>FromSql&lt;Any, diesel::pg::Pg&gt; <span class="kw">for </span>MyDynamicValue {
+   <span class="kw">fn </span>from_sql(value: diesel::pg::PgValue) -&gt; deserialize::Result&lt;<span class="self">Self</span>&gt; {
+       <span class="kw">use </span>diesel::pg::Pg;
+       <span class="kw">use </span>std::num::NonZeroU32;
+
+       <span class="kw">const </span>VARCHAR_OID: NonZeroU32 = <span class="kw">unsafe </span>{ NonZeroU32::new_unchecked(<span class="number">1043</span>) };
+       <span class="kw">const </span>TEXT_OID: NonZeroU32 = <span class="kw">unsafe </span>{ NonZeroU32::new_unchecked(<span class="number">25</span>) };
+       <span class="kw">const </span>INTEGER_OID: NonZeroU32 = <span class="kw">unsafe </span>{ NonZeroU32::new_unchecked(<span class="number">23</span>) };
+
+       <span class="kw">match </span>value.get_oid() {
+           VARCHAR_OID | TEXT_OID =&gt; {
+               &lt;String <span class="kw">as </span>FromSql&lt;diesel::sql_types::Text, Pg&gt;&gt;::from_sql(value)
+                   .map(MyDynamicValue::String)
+           }
+           INTEGER_OID =&gt; &lt;i32 <span class="kw">as </span>FromSql&lt;diesel::sql_types::Integer, Pg&gt;&gt;::from_sql(value)
+               .map(MyDynamicValue::Integer),
+           e =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unknown type: {}"</span>, e).into()),
+       }
+   }
+}</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Any.html" title="struct diesel_dynamic_schema::dynamic_value::Any">Any</a></div><div class="desc docblock-short">A marker type used to indicate that
+the provided <code>FromSql</code> impl does handle
+any passed database value, independently
+from the actual value kind</div></li><li><div class="item-name"><a class="struct" href="struct.DynamicRow.html" title="struct diesel_dynamic_schema::dynamic_value::DynamicRow">DynamicRow</a></div><div class="desc docblock-short">A dynamically sized container that allows to receive
+a not at compile time known number of columns from the database</div></li><li><div class="item-name"><a class="struct" href="struct.NamedField.html" title="struct diesel_dynamic_schema::dynamic_value::NamedField">NamedField</a></div><div class="desc docblock-short">A helper struct used as field type in <code>DynamicRow</code>
+to also return the name of the field along with the
+value</div></li></ul></section></div></main></body></html>

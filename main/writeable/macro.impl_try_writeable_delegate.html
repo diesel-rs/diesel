@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Macro to implement `TryWriteable` by delegating to another `TryWriteable`."><title>impl_try_writeable_delegate in writeable - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-0c87338a.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="writeable" data-themes="" data-resource-suffix="" data-rustdoc-version="1.100.0-nightly (8925ea358 2026-08-20)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">impl_try_writeable_delegate</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../writeable/index.html">writeable</a><span class="version">0.6.4</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">impl_<wbr>try_<wbr>writeable_<wbr>delegate</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate writeable</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">writeable</a></div><h1>Macro <span class="macro">impl_<wbr>try_<wbr>writeable_<wbr>delegate</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/writeable/try_writeable.rs.html#483-539">Source</a> </span></div><pre class="rust item-decl"><code>macro_rules! impl_try_writeable_delegate {
+    ($ty:ty, |&amp;$self:ident| $delegate:expr, Error = $error:ty $(, |$error_arg:ident| $error_map:expr)? $(, #[$alloc_feature:meta] fn try_write_to_string)? $(, where $($generics:tt)*)?) =&gt; { ... };
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Macro to implement <a href="trait.TryWriteable.html" title="trait writeable::TryWriteable"><code>TryWriteable</code></a> by delegating to another <code>TryWriteable</code>.</p>
+<p>Useful for wrapper types.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>MyStruct(<span class="prelude-ty">Result</span>&lt;String, String&gt;);
+<span class="macro">writeable::impl_try_writeable_delegate!</span>(
+    MyStruct,
+    |<span class="kw-2">&amp;</span><span class="self">self</span>| <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>,
+    Error = String
+);
+
+<span class="macro">writeable::assert_try_writeable_eq!</span>(
+    MyStruct(<span class="prelude-val">Ok</span>(<span class="string">"hello"</span>.to_string())),
+    <span class="string">"hello"
+</span>);</code></pre></div>
+<p>With an error mapping fn:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>MyStruct(<span class="prelude-ty">Result</span>&lt;String, String&gt;);
+<span class="attr">#[derive(Debug, PartialEq)]
+</span><span class="kw">struct </span>MyError;
+<span class="macro">writeable::impl_try_writeable_delegate!</span>(
+    MyStruct,
+    |<span class="kw-2">&amp;</span><span class="self">self</span>| <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>,
+    Error = MyError,
+    |_error| MyError
+);
+
+<span class="macro">writeable::assert_try_writeable_eq!</span>(
+    MyStruct(<span class="prelude-val">Ok</span>(<span class="string">"hello"</span>.to_string())),
+    <span class="string">"hello"
+</span>);
+<span class="macro">writeable::assert_try_writeable_eq!</span>(
+    MyStruct(<span class="prelude-val">Err</span>(<span class="string">"hello"</span>.to_string())),
+    <span class="string">"hello"</span>,
+    <span class="prelude-val">Err</span>(MyError)
+);</code></pre></div>
+<p>With a cfg on fn <code>write_to_string</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">struct </span>MyStruct(<span class="prelude-ty">Result</span>&lt;String, String&gt;);
+<span class="macro">writeable::impl_try_writeable_delegate!</span>(MyStruct, |<span class="kw-2">&amp;</span><span class="self">self</span>| <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, Error = String, <span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)] </span><span class="kw">fn </span>try_write_to_string);
+
+<span class="macro">writeable::assert_try_writeable_eq!</span>(
+    MyStruct(<span class="prelude-val">Ok</span>(<span class="string">"hello"</span>.to_string())),
+    <span class="string">"hello"
+</span>);</code></pre></div>
+<p>With generics:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>writeable::Writeable;
+
+<span class="kw">struct </span>MyStruct&lt;T&gt;(<span class="prelude-ty">Result</span>&lt;T, T&gt;);
+<span class="macro">writeable::impl_try_writeable_delegate!</span>(MyStruct&lt;T&gt;, |<span class="kw-2">&amp;</span><span class="self">self</span>| <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, Error = T, <span class="kw">where </span>T: Writeable + Clone);
+
+<span class="macro">writeable::assert_try_writeable_eq!</span>(
+    MyStruct(<span class="prelude-val">Ok</span>(<span class="string">"hello"</span>.to_string())),
+    <span class="string">"hello"
+</span>);</code></pre></div>
+<p>Implement both <code>Writeable</code> and <code>TryWriteable</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>writeable::adapters::LossyWrap;
+
+<span class="comment">// The LossyWrap needs to be a field of MyStruct since it can be borrowed from.
+</span><span class="kw">struct </span>MyStruct(LossyWrap&lt;<span class="prelude-ty">Result</span>&lt;String, String&gt;&gt;);
+<span class="macro">writeable::impl_try_writeable_delegate!</span>(MyStruct, |<span class="kw-2">&amp;</span><span class="self">self</span>| <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0.0</span>, Error = String);
+<span class="macro">writeable::impl_writeable_delegate!</span>(MyStruct, |<span class="kw-2">&amp;</span><span class="self">self</span>| <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>);
+<span class="macro">writeable::impl_display_with_writeable!</span>(MyStruct);
+
+<span class="macro">writeable::assert_try_writeable_eq!</span>(
+    MyStruct(LossyWrap(<span class="prelude-val">Ok</span>(<span class="string">"hello"</span>.to_string()))),
+    <span class="string">"hello"
+</span>);
+
+<span class="macro">writeable::assert_writeable_eq!</span>(
+    MyStruct(LossyWrap(<span class="prelude-val">Ok</span>(<span class="string">"hello"</span>.to_string()))),
+    <span class="string">"hello"
+</span>);</code></pre></div></div></details></section></div></main></body></html>

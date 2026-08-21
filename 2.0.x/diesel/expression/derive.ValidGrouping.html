@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `ValidGrouping`"><title>ValidGrouping in diesel::expression - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0-nightly (7908a1d65 2023-04-17)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-1a524efa7bd4ab32.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../../diesel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../../diesel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><div class="sidebar-elems"><h2><a href="index.html">In diesel::expression</a></h2></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="../index.html">diesel</a>::<wbr><a href="index.html">expression</a>::<wbr><a class="derive" href="#">ValidGrouping</a><button id="copy-path" title="Copy item path to clipboard"><img src="../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/diesel_derives/lib.rs.html#955">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(ValidGrouping)]
+{
+    // Attributes available to this derive:
+    #[diesel]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>ValidGrouping</code></p>
+<p>This trait can be automatically derived for structs with no type parameters
+which are never aggregate, as well as for structs which are <code>NonAggregate</code>
+when all type parameters are <code>NonAggregate</code>. For example:</p>
+
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(ValidGrouping)]
+</span><span class="kw">struct </span>LiteralOne;
+
+<span class="attr">#[derive(ValidGrouping)]
+</span><span class="kw">struct </span>Plus&lt;Lhs, Rhs&gt;(Lhs, Rhs);
+
+<span class="comment">// The following impl will be generated:
+
+</span><span class="kw">impl</span>&lt;GroupByClause&gt; ValidGrouping&lt;GroupByClause&gt; <span class="kw">for </span>LiteralOne {
+    <span class="kw">type </span>IsAggregate = is_aggregate::Never;
+}
+
+<span class="kw">impl</span>&lt;Lhs, Rhs, GroupByClause&gt; ValidGrouping&lt;GroupByClause&gt; <span class="kw">for </span>Plus&lt;Lhs, Rhs&gt;
+<span class="kw">where
+    </span>Lhs: ValidGrouping&lt;GroupByClause&gt;,
+    Rhs: ValidGrouping&lt;GroupByClause&gt;,
+    Lhs::IsAggregate: MixedAggregates&lt;Rhs::IsAggregate&gt;,
+{
+    <span class="kw">type </span>IsAggregate = &lt;Lhs::IsAggregate <span class="kw">as </span>MixedAggregates&lt;Rhs::IsAggregate&gt;&gt;::Output;
+}</code></pre></div>
+<p>For types which are always considered aggregate (such as an aggregate
+function), annotate your struct with <code>#[diesel(aggregate)]</code> to set <code>IsAggregate</code>
+explicitly to <code>is_aggregate::Yes</code>.</p>
+<h2 id="attributes"><a href="#attributes">Attributes</a></h2><h3 id="optional-container-attributes"><a href="#optional-container-attributes">Optional container attributes</a></h3>
+<ul>
+<li><code>#[diesel(aggregate)]</code> for cases where the type represents an aggregating
+SQL expression</li>
+</ul>
+</div></details></section></div></main></body></html>

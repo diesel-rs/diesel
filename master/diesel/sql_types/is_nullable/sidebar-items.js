@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["IsNullable","NotNull"],"type":["AreAllNullable","IsOneNullable","IsSqlTypeNullable","MaybeNullable"]};

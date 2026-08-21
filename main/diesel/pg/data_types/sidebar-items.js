@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PgNumeric"],"struct":["Cents","NdArray","PgDate","PgInterval","PgLsn","PgMoney","PgTime","PgTimestamp"]};

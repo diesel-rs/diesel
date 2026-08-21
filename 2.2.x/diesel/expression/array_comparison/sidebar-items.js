@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["In","Many","NotIn"],"trait":["AsInExpression","MaybeEmpty"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["StageLoadSelectItemKind"],"struct":["FileStagingCommand","StageLoadSelectItem","StageParamsObject"]};

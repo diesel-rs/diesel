@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["key",1]],"struct":["Fields","Key","Transform","Value"]};

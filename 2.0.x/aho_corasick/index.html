@@ -1,0 +1,149 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A library for finding occurrences of many patterns at once. This library provides multiple pattern search principally through an implementation of the Aho-Corasick algorithm, which builds a fast finite state machine for executing searches in linear time."><title>aho_corasick - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="aho_corasick" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0-nightly (7908a1d65 2023-04-17)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-1a524efa7bd4ab32.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../aho_corasick/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../aho_corasick/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Crate aho_corasick</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 0.7.20</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">aho_corasick</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../src/aho_corasick/lib.rs.html#1-303">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A library for finding occurrences of many patterns at once. This library
+provides multiple pattern search principally through an implementation of the
+<a href="https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm">Aho-Corasick algorithm</a>,
+which builds a fast finite state machine for executing searches in linear time.</p>
+<p>Additionally, this library provides a number of configuration options for
+building the automaton that permit controlling the space versus time trade
+off. Other features include simple ASCII case insensitive matching, finding
+overlapping matches, replacements, searching streams and even searching and
+replacing text in streams.</p>
+<p>Finally, unlike all other (known) Aho-Corasick implementations, this one
+supports enabling
+<a href="enum.MatchKind.html#variant.LeftmostFirst">leftmost-first</a>
+or
+<a href="enum.MatchKind.html#variant.LeftmostFirst">leftmost-longest</a>
+match semantics, using a (seemingly) novel alternative construction algorithm.
+For more details on what match semantics means, see the
+<a href="enum.MatchKind.html"><code>MatchKind</code></a>
+type.</p>
+<h2 id="overview"><a href="#overview">Overview</a></h2>
+<p>This section gives a brief overview of the primary types in this crate:</p>
+<ul>
+<li><a href="struct.AhoCorasick.html"><code>AhoCorasick</code></a> is the primary type and represents
+an Aho-Corasick automaton. This is the type you use to execute searches.</li>
+<li><a href="struct.AhoCorasickBuilder.html"><code>AhoCorasickBuilder</code></a> can be used to build
+an Aho-Corasick automaton, and supports configuring a number of options.</li>
+<li><a href="struct.Match.html"><code>Match</code></a> represents a single match reported by an
+Aho-Corasick automaton. Each match has two pieces of information: the pattern
+that matched and the start and end byte offsets corresponding to the position
+in the haystack at which it matched.</li>
+</ul>
+<p>Additionally, the <a href="packed/index.html"><code>packed</code></a> sub-module contains a lower
+level API for using fast vectorized routines for finding a small number of
+patterns in a haystack.</p>
+<h2 id="example-basic-searching"><a href="#example-basic-searching">Example: basic searching</a></h2>
+<p>This example shows how to search for occurrences of multiple patterns
+simultaneously. Each match includes the pattern that matched along with the
+byte offsets of the match.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aho_corasick::AhoCorasick;
+
+<span class="kw">let </span>patterns = <span class="kw-2">&amp;</span>[<span class="string">&quot;apple&quot;</span>, <span class="string">&quot;maple&quot;</span>, <span class="string">&quot;Snapple&quot;</span>];
+<span class="kw">let </span>haystack = <span class="string">&quot;Nobody likes maple in their apple flavored Snapple.&quot;</span>;
+
+<span class="kw">let </span>ac = AhoCorasick::new(patterns);
+<span class="kw">let </span><span class="kw-2">mut </span>matches = <span class="macro">vec!</span>[];
+<span class="kw">for </span>mat <span class="kw">in </span>ac.find_iter(haystack) {
+    matches.push((mat.pattern(), mat.start(), mat.end()));
+}
+<span class="macro">assert_eq!</span>(matches, <span class="macro">vec!</span>[
+    (<span class="number">1</span>, <span class="number">13</span>, <span class="number">18</span>),
+    (<span class="number">0</span>, <span class="number">28</span>, <span class="number">33</span>),
+    (<span class="number">2</span>, <span class="number">43</span>, <span class="number">50</span>),
+]);</code></pre></div>
+<h2 id="example-case-insensitivity"><a href="#example-case-insensitivity">Example: case insensitivity</a></h2>
+<p>This is like the previous example, but matches <code>Snapple</code> case insensitively
+using <code>AhoCorasickBuilder</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aho_corasick::AhoCorasickBuilder;
+
+<span class="kw">let </span>patterns = <span class="kw-2">&amp;</span>[<span class="string">&quot;apple&quot;</span>, <span class="string">&quot;maple&quot;</span>, <span class="string">&quot;snapple&quot;</span>];
+<span class="kw">let </span>haystack = <span class="string">&quot;Nobody likes maple in their apple flavored Snapple.&quot;</span>;
+
+<span class="kw">let </span>ac = AhoCorasickBuilder::new()
+    .ascii_case_insensitive(<span class="bool-val">true</span>)
+    .build(patterns);
+<span class="kw">let </span><span class="kw-2">mut </span>matches = <span class="macro">vec!</span>[];
+<span class="kw">for </span>mat <span class="kw">in </span>ac.find_iter(haystack) {
+    matches.push((mat.pattern(), mat.start(), mat.end()));
+}
+<span class="macro">assert_eq!</span>(matches, <span class="macro">vec!</span>[
+    (<span class="number">1</span>, <span class="number">13</span>, <span class="number">18</span>),
+    (<span class="number">0</span>, <span class="number">28</span>, <span class="number">33</span>),
+    (<span class="number">2</span>, <span class="number">43</span>, <span class="number">50</span>),
+]);</code></pre></div>
+<h2 id="example-replacing-matches-in-a-stream"><a href="#example-replacing-matches-in-a-stream">Example: replacing matches in a stream</a></h2>
+<p>This example shows how to execute a search and replace on a stream without
+loading the entire stream into memory first.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aho_corasick::AhoCorasick;
+
+<span class="kw">let </span>patterns = <span class="kw-2">&amp;</span>[<span class="string">&quot;fox&quot;</span>, <span class="string">&quot;brown&quot;</span>, <span class="string">&quot;quick&quot;</span>];
+<span class="kw">let </span>replace_with = <span class="kw-2">&amp;</span>[<span class="string">&quot;sloth&quot;</span>, <span class="string">&quot;grey&quot;</span>, <span class="string">&quot;slow&quot;</span>];
+
+<span class="comment">// In a real example, these might be `std::fs::File`s instead. All you need to
+// do is supply a pair of `std::io::Read` and `std::io::Write` implementations.
+</span><span class="kw">let </span>rdr = <span class="string">&quot;The quick brown fox.&quot;</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>wtr = <span class="macro">vec!</span>[];
+
+<span class="kw">let </span>ac = AhoCorasick::new(patterns);
+ac.stream_replace_all(rdr.as_bytes(), <span class="kw-2">&amp;mut </span>wtr, replace_with)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="string">b&quot;The slow grey sloth.&quot;</span>.to_vec(), wtr);</code></pre></div>
+<h2 id="example-finding-the-leftmost-first-match"><a href="#example-finding-the-leftmost-first-match">Example: finding the leftmost first match</a></h2>
+<p>In the textbook description of Aho-Corasick, its formulation is typically
+structured such that it reports all possible matches, even when they overlap
+with another. In many cases, overlapping matches may not be desired, such as
+the case of finding all successive non-overlapping matches like you might with
+a standard regular expression.</p>
+<p>Unfortunately the “obvious” way to modify the Aho-Corasick algorithm to do
+this doesn’t always work in the expected way, since it will report matches as
+soon as they are seen. For example, consider matching the regex <code>Samwise|Sam</code>
+against the text <code>Samwise</code>. Most regex engines (that are Perl-like, or
+non-POSIX) will report <code>Samwise</code> as a match, but the standard Aho-Corasick
+algorithm modified for reporting non-overlapping matches will report <code>Sam</code>.</p>
+<p>A novel contribution of this library is the ability to change the match
+semantics of Aho-Corasick (without additional search time overhead) such that
+<code>Samwise</code> is reported instead. For example, here’s the standard approach:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aho_corasick::AhoCorasick;
+
+<span class="kw">let </span>patterns = <span class="kw-2">&amp;</span>[<span class="string">&quot;Samwise&quot;</span>, <span class="string">&quot;Sam&quot;</span>];
+<span class="kw">let </span>haystack = <span class="string">&quot;Samwise&quot;</span>;
+
+<span class="kw">let </span>ac = AhoCorasick::new(patterns);
+<span class="kw">let </span>mat = ac.find(haystack).expect(<span class="string">&quot;should have a match&quot;</span>);
+<span class="macro">assert_eq!</span>(<span class="string">&quot;Sam&quot;</span>, <span class="kw-2">&amp;</span>haystack[mat.start()..mat.end()]);</code></pre></div>
+<p>And now here’s the leftmost-first version, which matches how a Perl-like
+regex will work:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aho_corasick::{AhoCorasickBuilder, MatchKind};
+
+<span class="kw">let </span>patterns = <span class="kw-2">&amp;</span>[<span class="string">&quot;Samwise&quot;</span>, <span class="string">&quot;Sam&quot;</span>];
+<span class="kw">let </span>haystack = <span class="string">&quot;Samwise&quot;</span>;
+
+<span class="kw">let </span>ac = AhoCorasickBuilder::new()
+    .match_kind(MatchKind::LeftmostFirst)
+    .build(patterns);
+<span class="kw">let </span>mat = ac.find(haystack).expect(<span class="string">&quot;should have a match&quot;</span>);
+<span class="macro">assert_eq!</span>(<span class="string">&quot;Samwise&quot;</span>, <span class="kw-2">&amp;</span>haystack[mat.start()..mat.end()]);</code></pre></div>
+<p>In addition to leftmost-first semantics, this library also supports
+leftmost-longest semantics, which match the POSIX behavior of a regular
+expression alternation. See
+<a href="enum.MatchKind.html"><code>MatchKind</code></a>
+for more details.</p>
+<h2 id="prefilters"><a href="#prefilters">Prefilters</a></h2>
+<p>While an Aho-Corasick automaton can perform admirably when compared to more
+naive solutions, it is generally slower than more specialized algorithms that
+are accelerated using vector instructions such as SIMD.</p>
+<p>For that reason, this library will internally use a “prefilter” to attempt
+to accelerate searches when possible. Currently, this library has several
+different algorithms it might use depending on the patterns provided. Once the
+number of patterns gets too big, prefilters are no longer used.</p>
+<p>While a prefilter is generally good to have on by default since it works
+well in the common case, it can lead to less predictable or even sub-optimal
+performance in some cases. For that reason, prefilters can be explicitly
+disabled via
+<a href="struct.AhoCorasickBuilder.html#method.prefilter"><code>AhoCorasickBuilder::prefilter</code></a>.</p>
+</div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="packed/index.html" title="mod aho_corasick::packed">packed</a></div><div class="desc docblock-short">A lower level API for packed multiple substring search, principally for a small
+number of patterns.</div></li></ul><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.AhoCorasick.html" title="struct aho_corasick::AhoCorasick">AhoCorasick</a></div><div class="desc docblock-short">An automaton for searching multiple strings in linear time.</div></li><li><div class="item-name"><a class="struct" href="struct.AhoCorasickBuilder.html" title="struct aho_corasick::AhoCorasickBuilder">AhoCorasickBuilder</a></div><div class="desc docblock-short">A builder for configuring an Aho-Corasick automaton.</div></li><li><div class="item-name"><a class="struct" href="struct.Error.html" title="struct aho_corasick::Error">Error</a></div><div class="desc docblock-short">An error that occurred during the construction of an Aho-Corasick
+automaton.</div></li><li><div class="item-name"><a class="struct" href="struct.FindIter.html" title="struct aho_corasick::FindIter">FindIter</a></div><div class="desc docblock-short">An iterator of non-overlapping matches in a particular haystack.</div></li><li><div class="item-name"><a class="struct" href="struct.FindOverlappingIter.html" title="struct aho_corasick::FindOverlappingIter">FindOverlappingIter</a></div><div class="desc docblock-short">An iterator of overlapping matches in a particular haystack.</div></li><li><div class="item-name"><a class="struct" href="struct.Match.html" title="struct aho_corasick::Match">Match</a></div><div class="desc docblock-short">A representation of a match reported by an Aho-Corasick automaton.</div></li><li><div class="item-name"><a class="struct" href="struct.StreamFindIter.html" title="struct aho_corasick::StreamFindIter">StreamFindIter</a></div><div class="desc docblock-short">An iterator that reports Aho-Corasick matches in a stream.</div></li></ul><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.ErrorKind.html" title="enum aho_corasick::ErrorKind">ErrorKind</a></div><div class="desc docblock-short">The kind of error that occurred.</div></li><li><div class="item-name"><a class="enum" href="enum.MatchKind.html" title="enum aho_corasick::MatchKind">MatchKind</a></div><div class="desc docblock-short">A knob for controlling the match semantics of an Aho-Corasick automaton.</div></li></ul><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.StateID.html" title="trait aho_corasick::StateID">StateID</a></div><div class="desc docblock-short">A trait describing the representation of an automaton’s state identifier.</div></li></ul></section></div></main></body></html>
