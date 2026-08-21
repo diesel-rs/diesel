@@ -326,20 +326,39 @@ pub type TestConnection = MariadbConnection;
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 pub struct DropTable<'a> {
     pub connection: &'a mut TestConnection,
-    pub table_name: &'static str,
+    pub table_name: &'a str,
     pub can_drop: bool,
 }
 
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
-            diesel::sql_query(format!("DROP TABLE {}", self.table_name))
+            diesel::sql_query(format!("DROP TABLE IF EXISTS {}", self.table_name))
                 .execute(self.connection)
                 .unwrap();
+        }
+    }
+}
+
+//Used to ensure cleanup of one-off tables in order, e.g. for tables created for a single test with fk constraints
+#[cfg(feature = "postgres")]
+pub struct DropTableInOrder<'a, const N:usize> {
+    pub connection: &'a mut TestConnection,
+    pub table_names: [&'a str; N],
+    pub can_drop: bool,
+}
+
+#[cfg(feature = "postgres")]
+impl<const N:usize> Drop for DropTableInOrder<'_, N> {
+    fn drop(&mut self) {
+        if self.can_drop {
+            for table_name in self.table_names {
+                diesel::sql_query(format!("DROP TABLE IF EXISTS {}", table_name))
+                    .execute(self.connection)
+                    .unwrap();
+            }
         }
     }
 }
@@ -449,20 +468,6 @@ pub fn disable_foreign_keys(connection: &mut TestConnection) {
 #[cfg(feature = "sqlite")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
     diesel::sql_query("PRAGMA defer_foreign_keys = ON")
-        .execute(connection)
-        .unwrap();
-}
-
-#[cfg(feature = "sqlite")]
-pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(format!("DROP TABLE {table}"))
-        .execute(connection)
-        .unwrap();
-}
-
-#[cfg(feature = "postgres")]
-pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(format!("DROP TABLE {table} CASCADE"))
         .execute(connection)
         .unwrap();
 }

@@ -281,7 +281,6 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {
     use self::has_timestamps::dsl::*;
 
@@ -461,7 +460,7 @@ fn adding_interval_to_nullable_things() {
 fn setup_test_table(conn: &mut TestConnection) {
     use crate::schema_dsl::*;
 
-    create_table(
+    create_temporary_table(
         "has_timestamps",
         (
             integer("id").primary_key().auto_increment(),
@@ -475,7 +474,7 @@ fn setup_test_table(conn: &mut TestConnection) {
     .unwrap();
 
     #[cfg(feature = "postgres")]
-    create_table(
+    create_temporary_table(
         "has_timestamptzs",
         (
             integer("id").primary_key().auto_increment(),
@@ -488,7 +487,7 @@ fn setup_test_table(conn: &mut TestConnection) {
     .execute(conn)
     .unwrap();
 
-    create_table(
+    create_temporary_table(
         "has_time",
         (
             integer("id").primary_key().auto_increment(),
@@ -498,7 +497,7 @@ fn setup_test_table(conn: &mut TestConnection) {
     .execute(conn)
     .unwrap();
 
-    create_table(
+    create_temporary_table(
         "has_date",
         (
             integer("id").primary_key().auto_increment(),
@@ -508,7 +507,7 @@ fn setup_test_table(conn: &mut TestConnection) {
     .execute(conn)
     .unwrap();
 
-    create_table(
+    create_temporary_table(
         "nullable_date_and_time",
         (
             integer("id").primary_key().auto_increment(),
