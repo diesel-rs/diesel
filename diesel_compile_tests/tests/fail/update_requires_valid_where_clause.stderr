@@ -8,7 +8,7 @@ error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: IntoUpdateTa
     |
     = help: the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
     = note: only tables or select statements with only the filter clause applied are valid update targets
-help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, ..., ..., ...>`
+help: the trait `IntoUpdateTarget` is conditionally implemented for `SelectStatement<FromClause<F>, ..., ..., ...>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
@@ -17,7 +17,9 @@ LL | | where
 LL | |     F: QuerySource,
 LL | |     Self: HasTable,
 LL | |     W: ValidWhereClause<F>,
-    | |___________________________^
+    | |________-------------------^
+    |          |
+    |          unsatisfied requirement introduced here: `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>: diesel::query_builder::where_clause::ValidWhereClause<users::table>`
 note: required by a bound in `diesel::update`
    --> DIESEL/diesel/diesel/src/query_builder/functions.rs
     |
@@ -74,7 +76,7 @@ error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: IntoUpdateTa
     |
     = help: the trait `IntoUpdateTarget` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
     = note: only tables or select statements with only the filter clause applied are valid update targets
-help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, ..., ..., ...>`
+help: the trait `IntoUpdateTarget` is conditionally implemented for `SelectStatement<FromClause<F>, ..., ..., ...>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
@@ -83,4 +85,6 @@ LL | | where
 LL | |     F: QuerySource,
 LL | |     Self: HasTable,
 LL | |     W: ValidWhereClause<F>,
-    | |___________________________^
+    | |________-------------------^
+    |          |
+    |          unsatisfied requirement introduced here: `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>: diesel::query_builder::where_clause::ValidWhereClause<users::table>`

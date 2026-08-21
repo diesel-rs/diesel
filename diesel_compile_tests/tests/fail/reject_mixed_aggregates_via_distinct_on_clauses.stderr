@@ -7,7 +7,7 @@ error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...
     = help: the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ...>`
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
-help: the trait `DistinctOnDsl<Selection>` is implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
+help: the trait `DistinctOnDsl<Selection>` is conditionally implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ..., ...>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
@@ -17,7 +17,10 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     S: SelectClauseExpression<FromClause<F>>,
 LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
-    | |_____________________________________________________________^
+    | |________________________________-----------------------------^
+    |                                  |
+    |                                  unsatisfied requirement introduced here: `(_, <diesel::query_builder::select_clause::DefaultSelectClause<diesel::query_builder::from_clause::FromClause<posts::table>> as diesel::query_builder::select_clause::SelectClauseExpression<diesel::query_builder::from_clause::FromClause<posts::table>>>::Selection): ValidGrouping<<diesel::query_builder::group_by_clause::GroupByClause<columns::user_id> as diesel::query_builder::group_by_clause::ValidGroupByClause>::Expressions>`
+    |                                  unsatisfied requirement introduced here: `(_, <diesel::query_builder::select_clause::DefaultSelectClause<diesel::query_builder::from_clause::FromClause<posts::table>> as diesel::query_builder::select_clause::SelectClauseExpression<diesel::query_builder::from_clause::FromClause<posts::table>>>::Selection): ValidGrouping<<diesel::query_builder::group_by_clause::GroupByClause<columns::user_id> as diesel::query_builder::group_by_clause::ValidGroupByClause>::Expressions>`
  
     
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<_>` is not satisfied
