@@ -228,10 +228,14 @@ error[E0277]: the trait bound `SelectStatement<FromClause<...>>: GroupByDsl<_>` 
  LL |         .group_by(users::id)
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<...>>`
     |
-help: the trait `GroupByDsl<Expr>` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
+help: the trait `GroupByDsl<Expr>` is conditionally implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
-LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
+LL |   impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
+    |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::query_builder::from_clause::FromClause<diesel::query_builder::select_statement::boxed::BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), diesel::query_builder::from_clause::FromClause<users::table>, _>>>: Sized`
+    |   |    |
+    |  _|    unsatisfied requirement introduced here: `diesel::query_builder::from_clause::FromClause<diesel::query_builder::select_statement::boxed::BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), diesel::query_builder::from_clause::FromClause<users::table>, _>>: Sized`
+    | |
 LL | | where
 LL | |     SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, H>: SelectQuery,
 LL | |     Expr: Expression + AppearsOnTable<F>,

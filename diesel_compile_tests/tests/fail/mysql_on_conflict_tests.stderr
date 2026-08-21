@@ -9,7 +9,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
+help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is conditionally implemented for `OnConflictValues<Values, Target, Action>`
     --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
      |
  LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
@@ -17,6 +17,7 @@ help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is
  LL | | where
  LL | |     Values: QueryFragment<Mysql>,
  LL | |     Target: QueryFragment<Mysql>,
+     | |             -------------------- unsatisfied requirement introduced here: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<columns::name>: QueryFragment<Mysql>`
  LL | |     Action: QueryFragment<Mysql>,
  LL | |     NoWhereClause: QueryFragment<Mysql>,
      | |________________________________________^
@@ -45,7 +46,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
+help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is conditionally implemented for `OnConflictValues<Values, Target, Action>`
     --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
      |
  LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
@@ -53,6 +54,7 @@ help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is
  LL | | where
  LL | |     Values: QueryFragment<Mysql>,
  LL | |     Target: QueryFragment<Mysql>,
+     | |             -------------------- unsatisfied requirement introduced here: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(columns::id, columns::name)>: QueryFragment<Mysql>`
  LL | |     Action: QueryFragment<Mysql>,
  LL | |     NoWhereClause: QueryFragment<Mysql>,
      | |________________________________________^
@@ -110,7 +112,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
+help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is conditionally implemented for `OnConflictValues<Values, Target, Action>`
     --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
      |
  LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
@@ -118,6 +120,7 @@ help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is
  LL | | where
  LL | |     Values: QueryFragment<Mysql>,
  LL | |     Target: QueryFragment<Mysql>,
+     | |             -------------------- unsatisfied requirement introduced here: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(DuplicatedKeys, columns::name)>: QueryFragment<Mysql>`
  LL | |     Action: QueryFragment<Mysql>,
  LL | |     NoWhereClause: QueryFragment<Mysql>,
      | |________________________________________^
@@ -146,7 +149,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
+help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is conditionally implemented for `OnConflictValues<Values, Target, Action>`
     --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
      |
  LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
@@ -154,6 +157,7 @@ help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is
  LL | | where
  LL | |     Values: QueryFragment<Mysql>,
  LL | |     Target: QueryFragment<Mysql>,
+     | |             -------------------- unsatisfied requirement introduced here: `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<SqlLiteral<_>>: QueryFragment<Mysql>`
  LL | |     Action: QueryFragment<Mysql>,
  LL | |     NoWhereClause: QueryFragment<Mysql>,
      | |________________________________________^
@@ -182,7 +186,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
-help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `OnConflictValues<Values, Target, Action>`
+help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is conditionally implemented for `OnConflictValues<Values, Target, Action>`
     --> DIESEL/diesel/diesel/src/mysql/query_builder/query_fragment_impls.rs
      |
  LL | / impl<Values, Target, Action> QueryFragment<Mysql, MysqlOnConflictClause>
@@ -191,6 +195,7 @@ help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is
  LL | |     Values: QueryFragment<Mysql>,
  LL | |     Target: QueryFragment<Mysql>,
  LL | |     Action: QueryFragment<Mysql>,
+     | |             -------------------- unsatisfied requirement introduced here: `diesel::query_builder::upsert::on_conflict_actions::DoUpdate<diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<columns::name>, diesel::query_builder::upsert::on_conflict_actions::Excluded<columns::name>>, users::table>: QueryFragment<Mysql>`
  LL | |     NoWhereClause: QueryFragment<Mysql>,
      | |________________________________________^
      = note: required for `OnConflictValues<ValuesClause<..., ...>, ..., ...>` to implement `QueryFragment<Mysql>`

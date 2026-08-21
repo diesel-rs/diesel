@@ -117,12 +117,13 @@ error[E0277]: the trait bound `Untyped: CompatibleType<User, _>` is not satisfie
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
      = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
              on your struct `User` and in your query `.select(User::as_select())` to get a better error message
-help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is implemented for `Untyped`
+help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is conditionally implemented for `Untyped`
     --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
      |
  LL | /     impl<U, DB> CompatibleType<U, DB> for Untyped
  LL | |     where
  LL | |         U: FromSqlRow<Untyped, DB>,
+     | |            ----------------------- unsatisfied requirement introduced here: `User: FromSqlRow<Untyped, _>`
  LL | |         DB: Backend,
      | |____________________^
      = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
