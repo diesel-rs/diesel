@@ -106,20 +106,41 @@ impl<'a> MysqlValue<'a> {
     /// Returns an error if the type code is not numeric.
     pub(crate) fn numeric_value(&self) -> deserialize::Result<NumericRepresentation<'_>> {
         Ok(match self.tpe {
-            MysqlType::UnsignedTiny | MysqlType::Tiny => {
-                NumericRepresentation::Tiny(self.raw[0].try_into()?)
+            MysqlType::Tiny => {
+                self.too_short_buffer(1, "Tiny")?;
+                NumericRepresentation::Tiny(i8::from_ne_bytes([self.raw[0]]))
             }
-            MysqlType::UnsignedShort | MysqlType::Short => {
+            MysqlType::UnsignedTiny => {
+                self.too_short_buffer(1, "UnsignedTiny")?;
+                NumericRepresentation::UnsignedTiny(self.raw[0])
+            }
+            MysqlType::Short => {
                 self.too_short_buffer(2, "Short")?;
                 NumericRepresentation::Small(i16::from_ne_bytes((&self.raw[..2]).try_into()?))
             }
-            MysqlType::UnsignedLong | MysqlType::Long => {
+            MysqlType::UnsignedShort => {
+                self.too_short_buffer(2, "UnsignedShort")?;
+                NumericRepresentation::UnsignedSmall(u16::from_ne_bytes(
+                    (&self.raw[..2]).try_into()?,
+                ))
+            }
+            MysqlType::Long => {
                 self.too_short_buffer(4, "Long")?;
                 NumericRepresentation::Medium(i32::from_ne_bytes((&self.raw[..4]).try_into()?))
             }
-            MysqlType::UnsignedLongLong | MysqlType::LongLong => {
+            MysqlType::UnsignedLong => {
+                self.too_short_buffer(4, "UnsignedLong")?;
+                NumericRepresentation::UnsignedMedium(u32::from_ne_bytes(
+                    (&self.raw[..4]).try_into()?,
+                ))
+            }
+            MysqlType::LongLong => {
                 self.too_short_buffer(8, "LongLong")?;
                 NumericRepresentation::Big(i64::from_ne_bytes(self.raw.try_into()?))
+            }
+            MysqlType::UnsignedLongLong => {
+                self.too_short_buffer(8, "UnsignedLongLong")?;
+                NumericRepresentation::UnsignedBig(u64::from_ne_bytes(self.raw.try_into()?))
             }
             MysqlType::Float => {
                 self.too_short_buffer(4, "Float")?;
@@ -164,12 +185,20 @@ impl<'a> MysqlValue<'a> {
 pub enum NumericRepresentation<'a> {
     /// Corresponds to `MYSQL_TYPE_TINY`
     Tiny(i8),
+    /// Corresponds to `MYSQL_TYPE_TINY` with the `UNSIGNED` flag set
+    UnsignedTiny(u8),
     /// Corresponds to `MYSQL_TYPE_SHORT`
     Small(i16),
+    /// Corresponds to `MYSQL_TYPE_SHORT` with the `UNSIGNED` flag set
+    UnsignedSmall(u16),
     /// Corresponds to `MYSQL_TYPE_INT24` and `MYSQL_TYPE_LONG`
     Medium(i32),
+    /// Corresponds to `MYSQL_TYPE_INT24` and `MYSQL_TYPE_LONG` with the `UNSIGNED` flag set
+    UnsignedMedium(u32),
     /// Corresponds to `MYSQL_TYPE_LONGLONG`
     Big(i64),
+    /// Corresponds to `MYSQL_TYPE_LONGLONG` with the `UNSIGNED` flag set
+    UnsignedBig(u64),
     /// Corresponds to `MYSQL_TYPE_FLOAT`
     Float(f32),
     /// Corresponds to `MYSQL_TYPE_DOUBLE`
@@ -253,4 +282,75 @@ fn invalid_reads() {
             .numeric_value()
             .is_ok()
     );
+
+    assert!(
+        MysqlValue::new_internal(&[], MysqlType::Tiny)
+            .numeric_value()
+            .is_err()
+    );
+
+    assert!(
+        MysqlValue::new_internal(&[], MysqlType::UnsignedTiny)
+            .numeric_value()
+            .is_err()
+    );
+
+    // The unsigned arms inherit the buffer handling of their signed counterparts:
+    // the narrow ones slice, the widest one requires an exact length.
+    assert!(
+        MysqlValue::new_internal(&[1, 2, 3], MysqlType::UnsignedShort)
+            .numeric_value()
+            .is_ok()
+    );
+
+    assert!(
+        MysqlValue::new_internal(&[1, 2, 3, 4, 5], MysqlType::UnsignedLong)
+            .numeric_value()
+            .is_ok()
+    );
+
+    assert!(
+        MysqlValue::new_internal(&[1, 2, 3, 4, 5, 6, 7, 8, 9], MysqlType::UnsignedLongLong)
+            .numeric_value()
+            .is_err()
+    );
+}
+
+#[test]
+fn numeric_value_keeps_signedness() {
+    use super::NumericRepresentation as N;
+
+    assert!(matches!(
+        MysqlValue::new_internal(&[0xFF], MysqlType::Tiny).numeric_value(),
+        Ok(N::Tiny(-1))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&[200], MysqlType::UnsignedTiny).numeric_value(),
+        Ok(N::UnsignedTiny(200))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&(-1i16).to_ne_bytes(), MysqlType::Short).numeric_value(),
+        Ok(N::Small(-1))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&40000u16.to_ne_bytes(), MysqlType::UnsignedShort).numeric_value(),
+        Ok(N::UnsignedSmall(40000))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&(-1i32).to_ne_bytes(), MysqlType::Long).numeric_value(),
+        Ok(N::Medium(-1))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&u32::MAX.to_ne_bytes(), MysqlType::UnsignedLong).numeric_value(),
+        Ok(N::UnsignedMedium(u32::MAX))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&(-1i64).to_ne_bytes(), MysqlType::LongLong).numeric_value(),
+        Ok(N::Big(-1))
+    ));
+    assert!(matches!(
+        MysqlValue::new_internal(&u64::MAX.to_ne_bytes(), MysqlType::UnsignedLongLong)
+            .numeric_value(),
+        Ok(N::UnsignedBig(u64::MAX))
+    ));
 }
