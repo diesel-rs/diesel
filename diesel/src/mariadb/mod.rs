@@ -7,6 +7,8 @@ pub(crate) mod backend;
 #[cfg(feature = "mariadb")]
 mod connection;
 
+mod query_fragment_impls;
+
 #[doc(inline)]
 pub use self::backend::{Mariadb, MariadbType};
 

@@ -27,6 +27,15 @@ help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
   LL | |     Expr: QueryFragment<DB>,
      | |____________________________^ `QueryFragment<DB, PgLikeReturningClause>`
      |
+    ::: DIESEL/diesel/diesel/src/mariadb/query_fragment_impls.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, crate::mariadb::backend::MariadbReturningClause>
+   LL | |     for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = crate::mariadb::backend::MariadbReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `QueryFragment<DB, mariadb::backend::MariadbReturningClause>`
+     |
     ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
      |
    LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
@@ -76,6 +85,15 @@ help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
   LL | |     >,
   LL | |     Expr: QueryFragment<DB>,
      | |____________________________^ `QueryFragment<DB, PgLikeReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/mariadb/query_fragment_impls.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, crate::mariadb::backend::MariadbReturningClause>
+   LL | |     for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = crate::mariadb::backend::MariadbReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `QueryFragment<DB, mariadb::backend::MariadbReturningClause>`
      |
     ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
      |

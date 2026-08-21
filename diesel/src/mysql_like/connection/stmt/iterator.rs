@@ -7,6 +7,7 @@ use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
 use crate::backend::Backend;
 use crate::connection::statement_cache::MaybeCached;
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
+use crate::result::Error::DeserializationError;
 use crate::result::QueryResult;
 use crate::row::*;
 
@@ -23,12 +24,23 @@ impl<'a, DB: MysqlLikeBackend> StatementIterator<'a, DB> {
         stmt: MaybeCached<'a, Statement<DB>>,
         types: &[Option<MysqlType>],
     ) -> QueryResult<Self> {
+        let mut stmt = if let Some(metadata) = stmt.metadata()? {
+            let mut output_binds =
+                OutputBinds::from_output_types(types, &metadata).map_err(DeserializationError)?;
+            /*
+                This may seem redundant but if we don't do this we will hit
+                a memory bug in `libmysqlclient`
+            */
+            stmt.execute_statement(&mut output_binds)?
+        } else {
+            //Sometimes we must execute the statement to get its metadata.
+            unsafe { stmt.execute()? }
+        };
+
         let metadata = stmt.metadata()?;
+        let output_binds =
+            OutputBinds::from_output_types(types, &metadata).map_err(DeserializationError)?;
 
-        let mut output_binds = OutputBinds::from_output_types(types, &metadata)
-            .map_err(crate::result::Error::DeserializationError)?;
-
-        let mut stmt = stmt.execute_statement(&mut output_binds)?;
         let size = unsafe { stmt.result_size() }?;
 
         Ok(StatementIterator {
@@ -71,7 +83,7 @@ impl<DB: MysqlLikeBackend> Iterator for StatementIterator<'_, DB> {
                 let mut last_row = match self.last_row.try_borrow_mut() {
                     Ok(o) => o,
                     Err(_e) => {
-                        return Some(Err(crate::result::Error::DeserializationError(
+                        return Some(Err(DeserializationError(
                             "Failed to reborrow row. Try to release any `MysqlField` or `MysqlValue` \
                              that exists at this point"
                                 .into(),
