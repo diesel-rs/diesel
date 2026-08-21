@@ -208,14 +208,16 @@ error[E0277]: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>
     = note: double check that `Alias<posts2>` and `Alias<posts3>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = note: double check that any two aliases to the same table in `Alias<posts2>` and `Alias<posts3>` appear in the same `alias!` call
-help: the trait `AppearsInFromClause<QS>` is implemented for `Alias<S>`
+help: the trait `AppearsInFromClause<QS>` is conditionally implemented for `Alias<S>`
    --> DIESEL/diesel/diesel/src/query_source/aliasing/alias.rs
     |
 LL | / impl<S, QS> AppearsInFromClause<QS> for Alias<S>
 LL | | where
 LL | |     S: AliasSource,
 LL | |     S::Target: AliasAppearsInFromClause<S, QS>,
-    | |_______________________________________________^
+    | |________________-------------------------------^
+    |                  |
+    |                  unsatisfied requirement introduced here: `<posts3 as AliasSource>::Target: query_source::aliasing::alias::AliasAppearsInFromClause<posts3, Alias<posts2>>`
     = note: required for `Join<Alias<posts2>, Alias<posts3>, Inner>` to implement `AppearsInFromClause<Alias<posts2>>`
     = note: required for `AliasedField<posts2, posts::columns::id>` to implement `AppearsOnTable<Join<Alias<posts2>, ..., ...>>`
     = note: 2 redundant requirements hidden
@@ -247,12 +249,13 @@ error[E0277]: the trait bound `Join<..., ..., ...>: AppearsInFromClause<...>` is
     = note: double check that `Alias<posts3>` and `Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = note: double check that any two aliases to the same table in `Alias<posts3>` and `Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `alias!` call
-help: the trait `AppearsInFromClause<T>` is implemented for `query_source::joins::Join<Left, Right, Kind>`
+help: the trait `AppearsInFromClause<T>` is conditionally implemented for `query_source::joins::Join<Left, Right, Kind>`
    --> DIESEL/diesel/diesel/src/query_source/joins.rs
     |
 LL | / impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
 LL | | where
 LL | |     Left: AppearsInFromClause<T> + QuerySource,
+    | |           ---------------------- unsatisfied requirement introduced here: `Alias<posts2>: AppearsInFromClause<Alias<posts3>>`
 LL | |     Right: AppearsInFromClause<T> + QuerySource,
 LL | |     Left::Count: Plus<Right::Count>,
     | |____________________________________^
@@ -275,13 +278,14 @@ error[E0277]: the trait bound `Join<..., ..., ...>: AppearsInFromClause<...>` is
     = note: double check that `Alias<posts2>` and `Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
     = note: double check that any two aliases to the same table in `Alias<posts2>` and `Join<Alias<posts2>, Alias<posts3>, Inner>` appear in the same `alias!` call
-help: the trait `AppearsInFromClause<T>` is implemented for `query_source::joins::Join<Left, Right, Kind>`
+help: the trait `AppearsInFromClause<T>` is conditionally implemented for `query_source::joins::Join<Left, Right, Kind>`
    --> DIESEL/diesel/diesel/src/query_source/joins.rs
     |
 LL | / impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
 LL | | where
 LL | |     Left: AppearsInFromClause<T> + QuerySource,
 LL | |     Right: AppearsInFromClause<T> + QuerySource,
+    | |            ---------------------- unsatisfied requirement introduced here: `Alias<posts3>: AppearsInFromClause<Alias<posts2>>`
 LL | |     Left::Count: Plus<Right::Count>,
     | |____________________________________^
     = note: required for `AliasedField<posts2, posts::columns::author>` to implement `AppearsOnTable<Join<Alias<posts2>, ..., ...>>`
