@@ -70,9 +70,6 @@ jobs:
           - rust: "nightly"
             backend: "mariadb"
             os: "ubuntu-latest"
-          - rust: "stable"
-            backend: "mariadb-13"
-            os: "ubuntu-latest"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -138,23 +135,6 @@ jobs:
           echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           mariadb_config --cc_version
-          
-      - name: Install mariadb-13 (Linux)
-        if: runner.os == 'Linux' && matrix.backend == 'mariadb-13'
-        run: |
-          sudo apt-get -o DPkg::Lock::Timeout=300 update
-          curl -LsSO https://r.mariadb.com/downloads/mariadb_repo_setup
-          chmod +x mariadb_repo_setup
-          sudo ./mariadb_repo_setup
-          sudo apt-get -o DPkg::Lock::Timeout=300 update
-          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev libmariadb-dev-compat mariadb-server mariadb-client
-          sudo systemctl start mariadb.service
-          sudo mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' IDENTIFIED BY 'root';" -uroot
-          echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
-          echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
-          echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
-          mariadb_config --cc_version
-          mariadb -V
 
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
@@ -357,7 +337,7 @@ jobs:
       - name: Run tests
         shell: bash
         env:
-          BACKEND: ${{ matrix.backend == 'mariadb-13' && 'mariadb' || matrix.backend }}
+          BACKEND: ${{ matrix.backend }}
         run: |
           cargo xtask run-tests $BACKEND $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
 
