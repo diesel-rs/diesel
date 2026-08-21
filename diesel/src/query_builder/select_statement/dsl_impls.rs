@@ -355,6 +355,7 @@ where
     S::Selection: ValidGrouping<()>,
     <S::Selection as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
+    OrderClause<(O, Expr)>: ValidOrderingForDistinct<D>,
 {
     type Output = SelectStatement<
         FromClause<F>,
@@ -393,6 +394,7 @@ where
     SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, GroupByClause<GB>, H, LC>:
         SelectQuery<SqlType = ST>,
     (O, Expr): ValidGrouping<GB>,
+    OrderClause<(O, Expr)>: ValidOrderingForDistinct<D>,
 {
     type Output = SelectStatement<
         FromClause<F>,
