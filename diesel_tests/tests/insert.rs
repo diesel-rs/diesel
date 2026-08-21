@@ -550,14 +550,12 @@ fn batch_insert_with_returning_id_sqlite() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn batch_insert_with_defaults() {
     use crate::schema::users::table as users;
     use crate::schema_dsl::*;
 
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -595,14 +593,12 @@ fn batch_insert_with_defaults() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_with_defaults() {
     use crate::schema::users::table as users;
     use crate::schema_dsl::*;
 
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -628,14 +624,12 @@ fn insert_with_defaults() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_in_nullable_with_non_null_default() {
     use crate::schema::users::table as users;
     use crate::schema_dsl::*;
 
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -674,18 +668,22 @@ fn insert_in_nullable_with_non_null_default() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    diesel::sql_query(
-        "CREATE TABLE users (
+    #[cfg(any(feature = "mysql", feature = "mariadb"))]
+    let query = "CREATE TEMPORARY TABLE users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        hair_color VARCHAR(10) NOT NULL DEFAULT 'Green'
+    )";
+    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    let query = "CREATE TEMPORARY TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
-    )",
-    )
+    )";
+    diesel::sql_query(query)
     .execute(connection)
     .unwrap();
     let new_users: &[_] = &[
@@ -725,7 +723,7 @@ fn insert_with_generated_column() {
 
     let connection = &mut connection();
     diesel::sql_query(
-        "CREATE TABLE user_with_last_names (
+        "CREATE TEMPORARY TABLE user_with_last_names (
         first_name VARCHAR NOT NULL PRIMARY KEY,
         last_name VARCHAR NOT NULL,
         full_name VARCHAR GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED
@@ -829,8 +827,7 @@ fn insert_only_default_values_with_returning() {
     use crate::schema_dsl::*;
     let connection = &mut connection();
 
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -1003,13 +1000,11 @@ fn insert_optional_field_with_null() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn insert_optional_field_with_default() {
     use crate::schema::users::dsl::*;
     use crate::schema_dsl::*;
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -1038,13 +1033,11 @@ fn insert_optional_field_with_default() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn insert_all_default_fields() {
     use crate::schema::users::dsl::*;
     use crate::schema_dsl::*;
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),

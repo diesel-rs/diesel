@@ -1,5 +1,4 @@
 use super::schema::*;
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 use crate::schema_dsl::*;
 use diesel::*;
 
@@ -112,12 +111,11 @@ table! {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
     let connection = &mut connection();
-    create_table(
+    create_temporary_table(
         "select",
         (
             integer("id").primary_key().auto_increment(),
@@ -126,7 +124,11 @@ fn selecting_columns_and_tables_with_reserved_names() {
     )
     .execute(connection)
     .unwrap();
-    diesel::sql_query("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+
+    let records = vec![join.eq(1),join.eq(2),join.eq(3)];
+
+    insert_into(select)
+        .values(&records)
         .execute(connection)
         .unwrap();
 
@@ -140,11 +142,9 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -224,7 +224,7 @@ table! {
 }
 
 // the test is somehow broken on some mariadb versions
-#[cfg(not(any(feature = "sqlite", feature = "mysql", feature = "mariadb")))]
+#[cfg(not(any(feature = "sqlite", feature = "mariadb")))]
 #[diesel_test_helper::test]
 fn select_for_update_locks_selected_rows() {
     use self::users_select_for_update::dsl::*;
@@ -234,10 +234,10 @@ fn select_for_update_locks_selected_rows() {
     use std::thread;
     use std::time::Duration;
 
+    let conn_ddl = &mut connection_without_transaction();
+    let _guard = DropTable{connection: conn_ddl, table_name: "users_select_for_update", can_drop: true};
+
     let mut conn_1 = connection_without_transaction();
-    diesel::sql_query("DROP TABLE IF EXISTS users_select_for_update")
-        .execute(&mut conn_1)
-        .unwrap();
     create_table(
         "users_select_for_update",
         (
@@ -248,6 +248,7 @@ fn select_for_update_locks_selected_rows() {
     )
     .execute(&mut conn_1)
     .unwrap();
+
     conn_1
         .batch_execute(
             "
@@ -305,16 +306,15 @@ fn select_for_update_locks_selected_rows() {
 fn select_for_update_modifiers() {
     use self::users_select_for_update_modifiers::dsl::*;
 
+    let conn_ddl = &mut connection_without_transaction();
+    let _guard = DropTable{connection: conn_ddl, table_name: "users_select_for_update_modifiers", can_drop: true};
+
     // We need to actually commit some data for the
     // test
     let conn_1 = &mut connection_without_transaction();
     let conn_2 = &mut connection();
     let conn_3 = &mut connection();
 
-    // Recreate the table
-    diesel::sql_query("DROP TABLE IF EXISTS users_select_for_update_modifiers")
-        .execute(conn_1)
-        .unwrap();
     create_table(
         "users_select_for_update_modifiers",
         (
@@ -380,20 +380,15 @@ fn select_for_no_key_update_modifiers() {
     use self::users_fk_for_no_key_update::dsl::*;
     use self::users_select_for_no_key_update::dsl::*;
 
+    let conn_ddl = &mut connection_without_transaction();
+    let _guard = DropTableInOrder{connection: conn_ddl, table_names: ["users_fk_for_no_key_update","users_select_for_no_key_update"], can_drop: true};
+
     // We need to actually commit some data for the
     // test
     let conn_1 = &mut connection_without_transaction();
     let conn_2 = &mut connection();
     let conn_3 = &mut connection();
     let conn_4 = &mut connection();
-
-    // Recreate the table
-    diesel::sql_query("DROP TABLE IF EXISTS users_fk_for_no_key_update")
-        .execute(conn_1)
-        .unwrap();
-    diesel::sql_query("DROP TABLE IF EXISTS users_select_for_no_key_update")
-        .execute(conn_1)
-        .unwrap();
 
     create_table(
         "users_select_for_no_key_update",
@@ -415,6 +410,7 @@ fn select_for_no_key_update_modifiers() {
     )
     .execute(conn_1)
     .unwrap();
+
 
     // Add a foreign key
     diesel::sql_query(

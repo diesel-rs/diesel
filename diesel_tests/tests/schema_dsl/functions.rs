@@ -2,6 +2,10 @@ use diesel::sql_types;
 
 use super::structures::*;
 
+pub fn create_temporary_table<Cols>(name: &str, columns: Cols) -> Temporary<CreateTable<'_, Cols>> {
+    Temporary(CreateTable::new(name, columns))
+}
+
 pub fn create_table<Cols>(name: &str, columns: Cols) -> CreateTable<'_, Cols> {
     CreateTable::new(name, columns)
 }
