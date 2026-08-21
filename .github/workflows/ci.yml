@@ -149,12 +149,12 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=300 update
           sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev libmariadb-dev-compat mariadb-server mariadb-client
           sudo systemctl start mariadb.service
-          sudo mariadb -version
           sudo mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' IDENTIFIED BY 'root';" -uroot
           echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
           echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           mariadb_config --cc_version
+          mariadb -V
 
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
