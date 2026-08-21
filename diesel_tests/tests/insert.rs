@@ -1,5 +1,7 @@
 use super::schema::*;
 use diesel::*;
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+use std::num::NonZeroU64;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -1413,4 +1415,156 @@ fn returning_old_column_in_insert_on_conflict_do_update_via_selectable() {
         },
         row,
     );
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+const GENERATED_KEY: &str = "users.id is AUTO_INCREMENT";
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn execute_returning_id_returns_generated_key() {
+    use crate::schema::users::dsl::{id, name, users};
+
+    let connection = &mut connection();
+
+    let generated = insert_into(users)
+        .values(name.eq("Sean"))
+        .execute_returning_id(connection)
+        .unwrap()
+        .expect(GENERATED_KEY);
+
+    let inserted = users.select(id).load::<i32>(connection).unwrap();
+    assert_eq!(inserted.len(), 1);
+    assert_eq!(generated.get(), u64::try_from(inserted[0]).unwrap());
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn execute_returning_id_reports_each_statement_separately() {
+    use crate::schema::users::dsl::{id, name, users};
+
+    let connection = &mut connection();
+
+    let first = insert_into(users)
+        .values(name.eq("Sean"))
+        .execute_returning_id(connection)
+        .unwrap()
+        .expect(GENERATED_KEY);
+    let second = insert_into(users)
+        .values(name.eq("Tess"))
+        .execute_returning_id(connection)
+        .unwrap()
+        .expect(GENERATED_KEY);
+
+    assert!(second > first);
+    let inserted = users.select(id).order(id).load::<i32>(connection).unwrap();
+    assert_eq!(inserted.len(), 2);
+    let expected = vec![
+        u64::try_from(inserted[0]).unwrap(),
+        u64::try_from(inserted[1]).unwrap(),
+    ];
+    assert_eq!(vec![first.get(), second.get()], expected);
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn execute_returning_id_reports_an_explicit_key() {
+    use crate::schema::users::dsl::{id, name, users};
+
+    let connection = &mut connection();
+
+    // The SQL `LAST_INSERT_ID()` function would not report this one.
+    let generated = insert_into(users)
+        .values((id.eq(42), name.eq("Sean")))
+        .execute_returning_id(connection)
+        .unwrap();
+
+    assert_eq!(generated, NonZeroU64::new(42));
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn execute_returning_id_on_duplicate_key_update_reports_the_existing_row() {
+    use crate::schema::users::dsl::{id, name, users};
+
+    let connection = &mut connection();
+    insert_into(users)
+        .values((id.eq(42), name.eq("Sean")))
+        .execute(connection)
+        .unwrap();
+
+    let generated = insert_into(users)
+        .values((id.eq(42), name.eq("Sean")))
+        .on_conflict(diesel::dsl::DuplicatedKeys)
+        .do_update()
+        .set(name.eq("Renamed"))
+        .execute_returning_id(connection)
+        .unwrap();
+
+    assert_eq!(generated, NonZeroU64::new(42));
+    // Proves the update branch ran.
+    let stored = users.select(name).first::<String>(connection).unwrap();
+    assert_eq!(stored, "Renamed");
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn execute_returning_id_is_none_when_the_row_is_skipped() {
+    use crate::schema::users::dsl::{id, name, users};
+
+    let connection = &mut connection();
+
+    insert_into(users)
+        .values((id.eq(7), name.eq("Sean")))
+        .execute(connection)
+        .unwrap();
+
+    // `users.id` is AUTO_INCREMENT, so `None` is about the skipped row.
+    let skipped = diesel::insert_or_ignore_into(users)
+        .values((id.eq(7), name.eq("Tess")))
+        .execute_returning_id(connection)
+        .unwrap();
+    assert_eq!(skipped, None);
+
+    let stored = users.select(name).first::<String>(connection).unwrap();
+    assert_eq!(stored, "Sean");
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn execute_returning_id_with_default_values() {
+    table! {
+        defaulted_items (item_id) {
+            #[sql_name = "id"]
+            #[auto_increment]
+            item_id -> Integer,
+            count -> Integer,
+        }
+    }
+
+    let connection = &mut connection_without_transaction();
+    // Raw SQL because diesel has no DSL for DDL.
+    sql_query(
+        "CREATE TEMPORARY TABLE defaulted_items (\
+             id INTEGER PRIMARY KEY AUTO_INCREMENT,\
+             count INTEGER NOT NULL DEFAULT 7\
+         )",
+    )
+    .execute(connection)
+    .unwrap();
+    connection.begin_test_transaction().unwrap();
+
+    let generated = insert_into(defaulted_items::table)
+        .default_values()
+        .execute_returning_id(connection)
+        .unwrap()
+        .expect("defaulted_items.id is AUTO_INCREMENT");
+
+    let stored = defaulted_items::table
+        .select((defaulted_items::item_id, defaulted_items::count))
+        .load::<(i32, i32)>(connection)
+        .unwrap();
+    assert_eq!(stored.len(), 1);
+    assert_eq!(generated.get(), u64::try_from(stored[0].0).unwrap());
+    assert_eq!(stored[0].1, 7);
 }

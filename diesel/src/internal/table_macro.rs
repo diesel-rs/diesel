@@ -37,6 +37,8 @@ pub mod ops {
 }
 
 #[doc(hidden)]
+pub use crate::expand_mysql_like;
+#[doc(hidden)]
 pub use crate::expand_pg;
 #[doc(hidden)]
 #[cfg(feature = "custom-count-column-tables")]

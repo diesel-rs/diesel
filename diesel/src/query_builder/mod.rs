@@ -46,6 +46,9 @@ pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::{
     BoxedCloneDeleteStatement, BoxedDeleteStatement, DeleteStatement,
 };
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+#[doc(inline)]
+pub use self::insert_statement::SingleRowInsertValues;
 #[doc(inline)]
 pub use self::insert_statement::{
     IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement, IncompleteReplaceStatement,

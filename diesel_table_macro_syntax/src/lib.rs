@@ -55,6 +55,7 @@ pub struct ColumnDef {
     _arrow: syn::Token![->],
     pub tpe: syn::TypePath,
     pub max_length: Option<syn::LitInt>,
+    pub auto_increment: bool,
 }
 
 impl syn::parse::Parse for ViewDecl {
@@ -161,6 +162,7 @@ impl syn::parse::Parse for ColumnDef {
             syn::Lit::Int(lit_int) => Some(lit_int),
             _ => None,
         })?;
+        let auto_increment = take_flag(&mut meta, "auto_increment")?;
 
         Ok(Self {
             meta,
@@ -168,6 +170,7 @@ impl syn::parse::Parse for ColumnDef {
             _arrow,
             tpe,
             max_length,
+            auto_increment,
             sql_name,
         })
     }
@@ -236,4 +239,28 @@ where
         })?));
     }
     Ok(None)
+}
+
+fn take_flag(
+    meta: &mut Vec<syn::Attribute>,
+    attribute_name: &'static str,
+) -> Result<bool, syn::Error> {
+    if let Some(index) = meta.iter().position(|m| {
+        m.path()
+            .get_ident()
+            .map(|i| i == attribute_name)
+            .unwrap_or(false)
+    }) {
+        let attribute = meta.remove(index);
+        if matches!(attribute.meta, syn::Meta::Path(_)) {
+            Ok(true)
+        } else {
+            Err(syn::Error::new(
+                attribute.span(),
+                format_args!("Expected `#[{attribute_name}]` to have no arguments"),
+            ))
+        }
+    } else {
+        Ok(false)
+    }
 }

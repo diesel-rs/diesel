@@ -367,6 +367,7 @@ fn load_column_structure_data(
         let ColumnInformation {
             column_name,
             comment,
+            auto_increment,
             ..
         } = c;
         let rust_name = rust_name_for_sql_name(&column_name, Some(name));
@@ -376,6 +377,7 @@ fn load_column_structure_data(
             ty,
             rust_name,
             comment,
+            auto_increment,
         })
     })
     .collect::<Result<_, crate::errors::Error>>()

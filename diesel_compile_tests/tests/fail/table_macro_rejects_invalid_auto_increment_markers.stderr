@@ -1,0 +1,15 @@
+error: at most one column per table can be marked with `#[auto_increment]`
+ --> tests/fail/table_macro_rejects_invalid_auto_increment_markers.rs:8:9
+  |
+LL |         other -> Integer,
+  |         ^^^^^
+  |
+  = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `#[auto_increment]` is not supported in `view!` definitions
+  --> tests/fail/table_macro_rejects_invalid_auto_increment_markers.rs:16:9
+   |
+LL |         id -> Integer,
+   |         ^^
+   |
+   = note: this error originates in the macro `diesel::view` (in Nightly builds, run with -Z macro-backtrace for more info)

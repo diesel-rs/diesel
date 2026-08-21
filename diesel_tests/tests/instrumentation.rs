@@ -140,6 +140,41 @@ fn check_events_are_emitted_for_execute_returning_count_does_contain_error_for_f
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
 
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn check_events_are_emitted_for_execute_returning_id() {
+    use diesel::ExpressionMethods;
+    let (events_to_check, mut conn) = setup_test_case();
+    diesel::insert_into(users::table)
+        .values(users::name.eq("John"))
+        .execute_returning_id(&mut conn)
+        .unwrap();
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 3, "{events:?}");
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::CacheQuery { .. });
+    assert_matches!(events[2], Event::FinishQuery { .. });
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+#[diesel_test_helper::test]
+fn check_events_are_emitted_for_execute_returning_id_does_contain_error_for_failures() {
+    use diesel::ExpressionMethods;
+    let (events_to_check, mut conn) = setup_test_case();
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1042), users::name.eq("John")))
+        .execute_returning_id(&mut conn)
+        .unwrap();
+    // The same explicit key again violates the primary key.
+    let _ = diesel::insert_into(users::table)
+        .values((users::id.eq(1042), users::name.eq("Jane")))
+        .execute_returning_id(&mut conn);
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 5, "{events:?}");
+    assert_matches!(events[3], Event::StartQuery { .. });
+    assert_matches!(events[4], Event::FinishQuery { error: Some(_), .. });
+}
+
 #[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_does_contain_error_for_failures() {
     let (events_to_check, mut conn) = setup_test_case();

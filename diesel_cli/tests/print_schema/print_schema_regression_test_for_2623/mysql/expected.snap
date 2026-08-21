@@ -6,12 +6,14 @@ description: "Test: print_schema_regression_test_for_2623"
 
 diesel::table! {
     tab_key1 (id) {
+        #[auto_increment]
         id -> Bigint,
     }
 }
 
 diesel::table! {
     tab_problem (id) {
+        #[auto_increment]
         id -> Bigint,
         key1 -> Bigint,
     }

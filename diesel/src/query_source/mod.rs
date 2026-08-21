@@ -267,6 +267,31 @@ pub trait SizeRestrictedColumn: Column {
     const MAX_LENGTH: usize;
 }
 
+/// A table with a column the database fills from an `AUTO_INCREMENT` counter
+/// when an insert does not provide a value (MySQL and MariaDB).
+///
+/// Sealed, implemented only by the [`table!`](crate::table!) macro for tables
+/// marking a column with `#[auto_increment]`, an attribute `diesel
+/// print-schema` emits for those backends.
+///
+/// The trait itself needs only a backend feature, so a generated `schema.rs`
+/// compiles under every feature combination. Its consumer,
+/// `InsertStatement::execute_returning_id`, additionally requires the `mysql`
+/// or `mariadb` connection feature.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` has no column marked `#[auto_increment]`",
+    note = "annotate the generated column in your `table!` definition with `#[auto_increment]`, \
+            or regenerate your schema with a diesel CLI that emits it, \
+            if the database table has an `AUTO_INCREMENT` column"
+)]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+pub trait AutoIncrementTable: Table + private::Sealed {
+    /// The column filled from the table's `AUTO_INCREMENT` counter.
+    ///
+    /// Recorded for future use, `execute_returning_id` does not consult it.
+    type AutoIncrementColumn: Column<Table = Self>;
+}
+
 /// A helper trait to access the name of a table
 /// and the optionally the name of the schema the table belongs to
 ///

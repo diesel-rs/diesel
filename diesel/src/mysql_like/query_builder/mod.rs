@@ -8,6 +8,8 @@ use crate::result::QueryResult;
 pub use self::query_fragment_impls::DuplicatedKeys;
 
 mod batch_update;
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+mod insert_returning_id;
 mod limit_offset;
 mod query_fragment_impls;
 

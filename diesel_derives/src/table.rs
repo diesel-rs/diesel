@@ -480,6 +480,39 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
 
     let kind_specific_impls = generate_kind_specific_impls(&primary_key, kind);
 
+    let auto_increment_impl = {
+        let mut marked = input.view.column_defs.iter().filter(|c| c.auto_increment);
+        match (marked.next(), marked.next()) {
+            (Some(_), Some(second)) => {
+                let span = Span::mixed_site().located_at(second.column_name.span());
+                return quote::quote_spanned! {span=>
+                    compile_error!("at most one column per table can be marked with `#[auto_increment]`");
+                };
+            }
+            (Some(column), None) if matches!(kind, QuerySourceMacroKind::View) => {
+                let span = Span::mixed_site().located_at(column.column_name.span());
+                return quote::quote_spanned! {span=>
+                    compile_error!("`#[auto_increment]` is not supported in `view!` definitions");
+                };
+            }
+            (Some(column), None) => {
+                let cfg_attrs = cfg_attributes(&column.meta);
+                let column_name = &column.column_name;
+                Some(quote::quote! {
+                    #(#cfg_attrs)*
+                    diesel::internal::table_macro::expand_mysql_like! {
+                        impl diesel::internal::table_macro::Sealed for table {}
+
+                        impl diesel::query_source::AutoIncrementTable for table {
+                            type AutoIncrementColumn = columns::#column_name;
+                        }
+                    }
+                })
+            }
+            (None, _) => None,
+        }
+    };
+
     let backend_specific_table_impls = if matches!(kind, QuerySourceMacroKind::Table) {
         Some(quote::quote! {
             diesel::internal::table_macro::expand_pg! {
@@ -641,6 +674,8 @@ fn expand(input: TableDecl, kind: QuerySourceMacroKind) -> TokenStream {
             }
 
             #kind_specific_impls
+
+            #auto_increment_impl
 
             impl diesel::query_source::AppearsInFromClause<Self> for #query_source_ident {
                 type Count = diesel::query_source::Once;

@@ -165,6 +165,12 @@ fn print_schema_datetime_for_mysql() {
 }
 
 #[test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn print_schema_auto_increment() {
+    test_print_schema("print_schema_auto_increment", Vec::new());
+}
+
+#[test]
 #[cfg(not(windows))]
 fn print_schema_patch_file() {
     let path_to_patch_file = backend_file_path("print_schema_patch_file", "schema.patch");

@@ -17,6 +17,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
+* Added `InsertStatement::execute_returning_id` for MySQL and MariaDB, returning the `AUTO_INCREMENT` value that a single-row insert sets (`None` if it sets none) without the extra `SELECT LAST_INSERT_ID()` round trip. It is available for tables whose `table!` definition marks a column with the new `#[auto_increment]` attribute, which `diesel print-schema` now emits for those backends.
 * Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
 * Added `SqliteConnection::on_commit` and `SqliteConnection::remove_commit_hook` to register a callback invoked when a transaction is about to be committed, wrapping `sqlite3_commit_hook`
 * Added `SqliteConnection::on_authorize` and `SqliteConnection::remove_authorizer` to register an authorizer callback that allows, denies, or ignores SQL actions during statement compilation, wrapping `sqlite3_set_authorizer`, along with the `AuthorizerContext` and `AuthorizerDecision` types

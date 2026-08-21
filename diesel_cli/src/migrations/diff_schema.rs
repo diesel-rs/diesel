@@ -31,6 +31,28 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
     map
 }
 
+/// Whether this backend's `CREATE TABLE` DDL accepts the `AUTO_INCREMENT`
+/// keyword for columns marked with `#[auto_increment]` in `schema.rs`.
+trait SupportsAutoIncrementDdl: Backend {
+    const SUPPORTS_AUTO_INCREMENT: bool = false;
+}
+
+#[cfg(feature = "postgres")]
+impl SupportsAutoIncrementDdl for diesel::pg::Pg {}
+
+#[cfg(feature = "sqlite")]
+impl SupportsAutoIncrementDdl for diesel::sqlite::Sqlite {}
+
+#[cfg(feature = "mysql")]
+impl SupportsAutoIncrementDdl for diesel::mysql::Mysql {
+    const SUPPORTS_AUTO_INCREMENT: bool = true;
+}
+
+#[cfg(feature = "mariadb")]
+impl SupportsAutoIncrementDdl for diesel::mariadb::Mariadb {
+    const SUPPORTS_AUTO_INCREMENT: bool = true;
+}
+
 #[tracing::instrument]
 pub fn generate_sql_based_on_diff_schema(
     mut config: PrintSchema,
@@ -589,7 +611,7 @@ impl SchemaDiff {
         db: &DB,
     ) -> Result<(), crate::errors::Error>
     where
-        DB: Backend,
+        DB: Backend + SupportsAutoIncrementDdl,
         for<'a> CreateEnumType<'a>: QueryFragment<DB>,
         for<'a> EnumType<'a>: QueryFragment<DB>,
         for<'a> DropEnumType<'a>: QueryFragment<DB>,
@@ -621,6 +643,7 @@ impl SchemaDiff {
                             rust_name: c.sql_name.clone(),
                             ty,
                             comment: None,
+                            auto_increment: c.auto_increment,
                         })
                     })
                     .collect::<Result<Vec<_>, crate::errors::Error>>()?;
@@ -741,7 +764,7 @@ impl SchemaDiff {
         db: &DB,
     ) -> Result<(), crate::errors::Error>
     where
-        DB: Backend,
+        DB: Backend + SupportsAutoIncrementDdl,
         for<'a> EnumType<'a>: QueryFragment<DB>,
         for<'a> DropEnumType<'a>: QueryFragment<DB>,
         for<'a> CreateEnumType<'a>: QueryFragment<DB>,
@@ -793,6 +816,7 @@ impl SchemaDiff {
                             rust_name: c.sql_name.clone(),
                             ty,
                             comment: None,
+                            auto_increment: c.auto_increment,
                         })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
@@ -896,6 +920,7 @@ fn extract_record_types_from_changed_columns(
                 rust_name: c.sql_name.clone(),
                 ty,
                 comment: None,
+                auto_increment: c.auto_increment,
             })
         })
         .chain(changed_columns.iter().map(|(c, _)| Ok(c.clone())))
@@ -1107,7 +1132,7 @@ fn generate_create_table<DB>(
     db: &DB,
 ) -> QueryResult<()>
 where
-    DB: Backend,
+    DB: Backend + SupportsAutoIncrementDdl,
     for<'a> EnumType<'a>: QueryFragment<DB>,
 {
     query_builder.push_sql("CREATE TABLE ");
@@ -1161,6 +1186,10 @@ where
                 db,
                 table,
             )?;
+        }
+
+        if column.auto_increment && DB::SUPPORTS_AUTO_INCREMENT {
+            query_builder.push_sql(" AUTO_INCREMENT");
         }
 
         if is_only_primary_key {
