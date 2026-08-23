@@ -22,6 +22,7 @@ mod connection;
 mod copy;
 #[cfg(feature = "postgres")]
 mod custom_types;
+mod ddl;
 mod debug;
 mod delete;
 mod deserialization;
