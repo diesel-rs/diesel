@@ -19,9 +19,9 @@ fn transaction_executes_fn_in_a_sql_transaction() {
         .transaction::<_, Error, _>(|conn1| {
             assert_eq!(0, get_count(conn1));
             assert_eq!(0, get_count(conn2));
-            #[cfg(not(any(feature="mysql", feature = "mariadb")))]
+            #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
             diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES")).execute(conn1)?;
-            #[cfg(any(feature="mysql", feature = "mariadb"))]
+            #[cfg(any(feature = "mysql", feature = "mariadb"))]
             diesel::sql_query(format!("INSERT INTO {TEST_NAME} VALUES (DEFAULT)"))
                 .execute(conn1)?;
             assert_eq!(1, get_count(conn1));
@@ -48,11 +48,11 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     setup_temporary_test_table(connection, test_name);
 
     let _ = connection.transaction::<(), _, _>(|connection| {
-        #[cfg(not(any(feature="mysql", feature = "mariadb")))]
+        #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
         diesel::sql_query(format!("INSERT INTO {test_name} DEFAULT VALUES"))
             .execute(connection)
             .unwrap();
-        #[cfg(any(feature="mysql", feature = "mariadb"))]
+        #[cfg(any(feature = "mysql", feature = "mariadb"))]
         diesel::sql_query(format!("INSERT INTO {test_name} VALUES (DEFAULT)"))
             .execute(connection)
             .unwrap();
@@ -109,7 +109,7 @@ fn transactions_can_be_nested() {
     }
 
     let _ = connection.transaction::<(), _, _>(|connection| {
-        #[cfg(not(any(feature="mysql", feature = "mariadb")))]
+        #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
         diesel::sql_query(format!("INSERT INTO {TEST_NAME} DEFAULT VALUES"))
             .execute(connection)
             .unwrap();
@@ -183,12 +183,17 @@ fn setup_temporary_test_table(connection: &mut TestConnection, table_name: &str)
 }
 
 #[must_use]
+#[cfg(not(feature = "sqlite"))]
 fn setup_test_table<'a>(connection: &'a mut TestConnection, table_name: &'a str) -> DropTable<'a> {
     use crate::schema_dsl::*;
     create_table(table_name, (integer("id").primary_key().auto_increment(),))
         .execute(connection)
         .unwrap();
-    DropTable { connection, table_name, can_drop: true }
+    DropTable {
+        connection,
+        table_name,
+        can_drop: true,
+    }
 }
 
 fn count_test_table(connection: &mut TestConnection, table_name: &str) -> i64 {

@@ -326,12 +326,14 @@ pub type TestConnection = MariadbConnection;
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
+#[cfg(not(feature = "sqlite"))]
 pub struct DropTable<'a> {
     pub connection: &'a mut TestConnection,
     pub table_name: &'a str,
     pub can_drop: bool,
 }
 
+#[cfg(not(feature = "sqlite"))]
 impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
@@ -344,14 +346,14 @@ impl Drop for DropTable<'_> {
 
 //Used to ensure cleanup of one-off tables in order, e.g. for tables created for a single test with fk constraints
 #[cfg(feature = "postgres")]
-pub struct DropTableInOrder<'a, const N:usize> {
+pub struct DropTableInOrder<'a, const N: usize> {
     pub connection: &'a mut TestConnection,
     pub table_names: [&'a str; N],
     pub can_drop: bool,
 }
 
 #[cfg(feature = "postgres")]
-impl<const N:usize> Drop for DropTableInOrder<'_, N> {
+impl<const N: usize> Drop for DropTableInOrder<'_, N> {
     fn drop(&mut self) {
         if self.can_drop {
             for table_name in self.table_names {

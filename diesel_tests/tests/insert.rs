@@ -681,9 +681,7 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )";
-    diesel::sql_query(query)
-    .execute(connection)
-    .unwrap();
+    diesel::sql_query(query).execute(connection).unwrap();
     let new_users: &[_] = &[
         BaldUser {
             name: "Sean".to_string(),

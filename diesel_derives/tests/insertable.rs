@@ -446,7 +446,7 @@ fn insertable_with_slice_of_borrowed() {
     }
 
     let conn = &mut connection();
-    
+
     sql_query("CREATE TEMPORARY TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
         .execute(conn)
         .unwrap();

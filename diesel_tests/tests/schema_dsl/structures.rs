@@ -1,7 +1,7 @@
 use diesel::RunQueryDsl;
 use std::marker::PhantomData;
 
-pub struct Temporary<T>(pub(super)T);
+pub struct Temporary<T>(pub(super) T);
 
 pub struct CreateTable<'a, Cols> {
     name: &'a str,

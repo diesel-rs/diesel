@@ -63,7 +63,11 @@ fn selecting_columns_and_tables_with_reserved_names() {
     .execute(connection)
     .unwrap();
 
-    let records = vec![select::columns::join.eq(1),select::columns::join.eq(2),select::columns::join.eq(3)];
+    let records = vec![
+        select::columns::join.eq(1),
+        select::columns::join.eq(2),
+        select::columns::join.eq(3),
+    ];
 
     insert_into(select::table)
         .values(&records)
