@@ -1,10 +1,10 @@
+use core::borrow::Borrow;
+use core::marker::PhantomData;
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, TypedExpressionType, ValidGrouping};
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use diesel::query_source::ColumnHasTable;
-use std::borrow::Borrow;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 /// A database table column.

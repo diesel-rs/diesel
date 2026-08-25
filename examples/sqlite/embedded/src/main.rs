@@ -68,15 +68,28 @@ fn main() -> ! {
         .execute(&mut conn)
         .unwrap();
 
+    let users_dynamic = diesel_dynamic_schema::table("users");
+    let dynamic_id = users_dynamic.column::<diesel::sql_types::Integer, _>("id");
+    let dynamic_name = users_dynamic.column::<diesel::sql_types::Text, _>("name");
+
     let delay = Delay::new();
     loop {
         let data = users::table
             .filter(users::name.eq("Jane"))
             .first::<(i32, String)>(&mut conn)
             .unwrap();
+        let dynamic_data = users_dynamic
+            .select((dynamic_id, dynamic_name))
+            .filter(dynamic_name.eq("Jane"))
+            .first::<(i32, String)>(&mut conn)
+            .unwrap();
         println!("----");
         println!("Query data:");
         println!("Loaded user data: {} -> {}", data.0, data.1);
+        println!(
+            "Loaded dynamic user data: {} -> {}",
+            dynamic_data.0, dynamic_data.1
+        );
         println!("---");
         delay.delay_millis(500);
     }

@@ -7,7 +7,7 @@ pub fn create_user_table(conn: &mut diesel::PgConnection) {
         .unwrap();
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 pub fn create_user_table(conn: &mut diesel::SqliteConnection) {
     use diesel::*;
 
@@ -34,7 +34,7 @@ pub fn create_user_table(conn: &mut diesel::MariadbConnection) {
         .unwrap();
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 pub fn establish_connection() -> diesel::SqliteConnection {
     use diesel::*;
 

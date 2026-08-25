@@ -1,4 +1,5 @@
 use crate::table::Table;
+use alloc::string::String;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 /// A database schema.

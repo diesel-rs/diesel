@@ -1,10 +1,11 @@
+use alloc::string::String;
+use core::borrow::Borrow;
 use diesel::backend::Backend;
 use diesel::expression::expression_types;
 use diesel::internal::table_macro::{FromClause, SelectStatement};
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use diesel::query_source::NamedTable;
-use std::borrow::Borrow;
 
 use crate::column::Column;
 use crate::dummy_expression::*;

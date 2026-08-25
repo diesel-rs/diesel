@@ -33,7 +33,7 @@ impl FromSql<Any, diesel::pg::Pg> for MyDynamicValue {
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl FromSql<Any, diesel::sqlite::Sqlite> for MyDynamicValue {
     fn from_sql(value: diesel::sqlite::SqliteValue) -> Result<Self> {
         use diesel::sqlite::{Sqlite, SqliteType};
@@ -91,7 +91,7 @@ type TestDB = diesel::pg::Pg;
 type TestDB = diesel::mysql::Mysql;
 #[cfg(feature = "mariadb")]
 type TestDB = diesel::mariadb::Mariadb;
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 type TestDB = diesel::sqlite::Sqlite;
 
 #[test]
@@ -99,7 +99,8 @@ type TestDB = diesel::sqlite::Sqlite;
     feature = "postgres",
     feature = "mysql",
     feature = "mariadb",
-    feature = "sqlite"
+    feature = "sqlite",
+    feature = "sqlite-no-std"
 ))]
 fn test_ergonomics() {
     let connection = &mut super::establish_connection();
