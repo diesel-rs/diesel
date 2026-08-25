@@ -51,6 +51,7 @@ required-features = ["sqlite"]
 default = []
 postgres = ["diesel/postgres_backend"]
 sqlite = ["diesel/sqlite"]
+sqlite-no-std = ["diesel/sqlite-no-std"]
 mysql = ["diesel/mysql_backend"]
 mariadb = ["diesel/mariadb_backend"]
 

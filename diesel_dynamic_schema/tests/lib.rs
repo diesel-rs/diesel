@@ -17,7 +17,7 @@ type Backend = diesel::pg::Pg;
 type Backend = diesel::mysql::Mysql;
 #[cfg(feature = "mariadb")]
 type Backend = diesel::mariadb::Mariadb;
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 type Backend = diesel::sqlite::Sqlite;
 
 #[test]
@@ -77,7 +77,8 @@ fn columns_used_in_where_clause() {
     feature = "postgres",
     feature = "mysql",
     feature = "mariadb",
-    feature = "sqlite"
+    feature = "sqlite",
+    feature = "sqlite-no-std"
 ))]
 fn providing_custom_schema_name() {
     let table = schema("information_schema").table("users");

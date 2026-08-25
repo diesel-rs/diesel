@@ -41,7 +41,7 @@
 //! #     }
 //! # }
 //! #
-//! # #[cfg(feature = "sqlite")]
+//! # #[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 //! # impl FromSql<Any, diesel::sqlite::Sqlite> for MyDynamicValue {
 //! #     fn from_sql(value: diesel::sqlite::SqliteValue) -> deserialize::Result<Self> {
 //! #         use diesel::sqlite::{Sqlite, SqliteType};
@@ -163,13 +163,16 @@
 //! }
 //! ```
 
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::iter::FromIterator;
+use core::ops::{Index, IndexMut};
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
 use diesel::expression::TypedExpressionType;
 use diesel::row::{Field, NamedRow, Row};
 use diesel::QueryableByName;
-use std::iter::FromIterator;
-use std::ops::{Index, IndexMut};
 
 /// A marker type used to indicate that
 /// the provided `FromSql` impl does handle
@@ -186,7 +189,7 @@ impl diesel::expression::QueryMetadata<Any> for diesel::pg::Pg {
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl diesel::expression::QueryMetadata<Any> for diesel::sqlite::Sqlite {
     fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
@@ -405,7 +408,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl<I> QueryableByName<diesel::sqlite::Sqlite> for DynamicRow<I>
 where
     I: FromSql<Any, diesel::sqlite::Sqlite>,
@@ -492,7 +495,7 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl<I> QueryableByName<diesel::sqlite::Sqlite> for DynamicRow<NamedField<Option<I>>>
 where
     I: FromSql<Any, diesel::sqlite::Sqlite>,

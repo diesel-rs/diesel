@@ -1,10 +1,12 @@
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::iter::FromIterator;
+use core::marker::PhantomData;
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, NonAggregate, ValidGrouping};
 use diesel::query_builder::{AstPass, QueryFragment, QueryId};
 use diesel::sql_types::Untyped;
 use diesel::{AppearsOnTable, Expression, QueryResult, SelectableExpression};
-use std::iter::FromIterator;
-use std::marker::PhantomData;
 
 /// Represents a dynamically sized select clause
 #[allow(missing_debug_implementations)]
@@ -110,7 +112,7 @@ where
     }
 }
 
-impl<'a, DB, QS, F> std::iter::Extend<F> for DynamicSelectClause<'a, DB, QS>
+impl<'a, DB, QS, F> core::iter::Extend<F> for DynamicSelectClause<'a, DB, QS>
 where
     F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
     DB: Backend,
