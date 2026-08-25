@@ -669,19 +669,15 @@ fn insert_in_nullable_with_non_null_default() {
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
-    #[cfg(any(feature = "mysql", feature = "mariadb"))]
-    let query = "CREATE TEMPORARY TABLE users (
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(50) NOT NULL,
         hair_color VARCHAR(10) NOT NULL DEFAULT 'Green'
-    )";
-    #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
-    let query = "CREATE TEMPORARY TABLE users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR NOT NULL,
-        hair_color VARCHAR NOT NULL DEFAULT 'Green'
-    )";
-    diesel::sql_query(query).execute(connection).unwrap();
+    )",
+    )
+    .execute(connection)
+    .unwrap();
     let new_users: &[_] = &[
         BaldUser {
             name: "Sean".to_string(),
