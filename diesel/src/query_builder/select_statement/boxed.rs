@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+use alloc::vec::Vec;
+
 use crate::backend::{DieselReserveSpecialization, sql_dialect};
 use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
@@ -207,6 +209,13 @@ where
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::SelectStatementSyntax>>::walk_ast(self, pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.select.collect_output_metadata(out)
     }
 }
 

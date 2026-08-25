@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::Result;
-use syn::{DeriveInput, Ident};
+use syn::{DeriveInput, GenericParam, Ident};
 
 use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;
@@ -20,6 +20,19 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let pg_tokens = pg_tokens(&item, &model);
 
     let is_array = struct_name == "Array" && generic_count == 1;
+    let descriptor_method = if is_array {
+        let element = match item.generics.params.first() {
+            Some(GenericParam::Type(element)) => &element.ident,
+            _ => unreachable!("Array has exactly one type parameter"),
+        };
+        Some(quote! {
+            fn type_descriptor() -> diesel::sql_types::SqlTypeDescriptor {
+                diesel::sql_types::SqlTypeDescriptor::array::<#element, Self>()
+            }
+        })
+    } else {
+        None
+    };
 
     let enum_sql_type = if model.enum_type {
         let mut generics = item.generics.clone();
@@ -56,6 +69,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             type IsNull = diesel::sql_types::is_nullable::NotNull;
 
             const IS_ARRAY: bool = #is_array;
+
+            #descriptor_method
         }
 
         impl #impl_generics diesel::sql_types::SingleValue

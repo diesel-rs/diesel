@@ -42,7 +42,7 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
@@ -75,7 +75,7 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
@@ -108,6 +108,6 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0271`.

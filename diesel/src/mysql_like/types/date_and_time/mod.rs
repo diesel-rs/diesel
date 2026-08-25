@@ -22,7 +22,7 @@ mod time;
 /// [MYSQL_TIME](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html)
 /// struct from libmysqlclient
 #[repr(C)]
-#[derive(Debug, Clone, Copy, AsExpression, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, AsExpression, FromSqlRow)]
 #[non_exhaustive]
 #[diesel(sql_type = Timestamp)]
 #[diesel(sql_type = Time)]

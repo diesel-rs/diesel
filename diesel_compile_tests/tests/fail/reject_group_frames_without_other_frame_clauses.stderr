@@ -14,5 +14,5 @@ LL | impl<O> ValidFrameClause<Order<O, true>> for Groups {}
     = help: for that trait implementation, expected `Order<_, true>`, found `NoOrder`
     = note: required for `StartFrame<Groups, UnboundedPreceding>` to implement `ValidFrameClause<NoOrder>`
     = note: required for `count<Integer, id>` to implement `FrameDsl<StartFrame<Groups, UnboundedPreceding>>`
- 
+
     For more information about this error, try `rustc --explain E0277`.

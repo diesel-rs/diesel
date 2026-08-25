@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, IntoBoxedClone, OrFilter};
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
@@ -336,6 +338,13 @@ where
         self.where_clause.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.returning.collect_output_metadata(out)
     }
 }
 

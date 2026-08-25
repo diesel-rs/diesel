@@ -81,7 +81,7 @@ note: required by a bound in `diesel::Table::AllColumns`
     |
 LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
     |                                                   ^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `(..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ..., ...)` from `table`
@@ -112,7 +112,7 @@ note: required by a bound in `diesel::Table::AllColumns`
     |
 LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0080]: evaluation panicked: `test_table` contains 17 columns, which is more than the supported maximum number of columns

@@ -6,7 +6,7 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, ...>` is no valid SQL fragment f
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `LimitOffsetClause<L, O>` implements `QueryFragment<Pg>`
@@ -29,8 +29,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, ...>` is not satisfied
   --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
    |
@@ -47,7 +47,7 @@ LL |         .into_boxed()
              `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
    = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
 
-   
+
 error[E0277]: the trait bound `LimitOffsetClause<..., ...>: IntoBoxedClause<'_, ...>` is not satisfied
     --> tests/fail/mysql_does_not_support_offset_without_limit.rs:21:10
      |
@@ -71,5 +71,5 @@ LL |     fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
 ...
 LL |         Self: methods::BoxedDsl<'a, DB>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::into_boxed`
-  
+
      For more information about this error, try `rustc --explain E0277`.

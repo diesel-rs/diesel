@@ -39,7 +39,7 @@ LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
@@ -97,7 +97,7 @@ LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<id as Column>::Table == table`
@@ -141,6 +141,6 @@ LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
 LL |     where
 LL |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0271`.

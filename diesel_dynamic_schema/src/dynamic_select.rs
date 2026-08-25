@@ -4,30 +4,30 @@ use core::iter::FromIterator;
 use core::marker::PhantomData;
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, NonAggregate, ValidGrouping};
-use diesel::query_builder::{AstPass, QueryFragment, QueryId};
+use diesel::query_builder::{AstPass, OutputFieldMetadata, QueryFragment, QueryId};
 use diesel::sql_types::Untyped;
 use diesel::{AppearsOnTable, Expression, QueryResult, SelectableExpression};
 
-/// Represents a dynamically sized select clause
+/// Represents a dynamically sized output clause.
 #[allow(missing_debug_implementations)]
-pub struct DynamicSelectClause<'a, DB, QS> {
+pub struct DynamicOutputClause<'a, DB, QS> {
     selects: Vec<Box<dyn QueryFragment<DB> + Send + 'a>>,
     p: PhantomData<QS>,
 }
 
-impl<DB, QS> QueryId for DynamicSelectClause<'_, DB, QS> {
+impl<DB, QS> QueryId for DynamicOutputClause<'_, DB, QS> {
     const HAS_STATIC_QUERY_ID: bool = false;
     type QueryId = ();
 }
 
-impl<DB, QS> Default for DynamicSelectClause<'_, DB, QS> {
+impl<DB, QS> Default for DynamicOutputClause<'_, DB, QS> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, DB, QS> DynamicSelectClause<'a, DB, QS> {
-    /// Constructs a new dynamically sized select clause without any fields
+impl<'a, DB, QS> DynamicOutputClause<'a, DB, QS> {
+    /// Constructs a new dynamically sized output clause without any fields.
     pub fn new() -> Self {
         Self {
             selects: Vec::new(),
@@ -44,7 +44,17 @@ impl<'a, DB, QS> DynamicSelectClause<'a, DB, QS> {
         self.selects.push(Box::new(field))
     }
 
-    /// Add multiple fields to the dynamically sized select clause
+    /// Adds a field and returns the clause.
+    pub fn field<F>(mut self, field: F) -> Self
+    where
+        F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
+        DB: Backend,
+    {
+        self.add_field(field);
+        self
+    }
+
+    /// Adds multiple fields to the dynamically sized output clause.
     pub fn add_fields<I, F>(&mut self, fields: I)
     where
         I: IntoIterator<Item = F>,
@@ -67,18 +77,18 @@ impl<'a, DB, QS> DynamicSelectClause<'a, DB, QS> {
     }
 }
 
-impl<DB, QS> AppearsOnTable<QS> for DynamicSelectClause<'_, DB, QS> where Self: Expression {}
+impl<DB, QS> AppearsOnTable<QS> for DynamicOutputClause<'_, DB, QS> where Self: Expression {}
 
-impl<DB, QS> SelectableExpression<QS> for DynamicSelectClause<'_, DB, QS> where
+impl<DB, QS> SelectableExpression<QS> for DynamicOutputClause<'_, DB, QS> where
     Self: AppearsOnTable<QS>
 {
 }
 
-impl<QS, DB> Expression for DynamicSelectClause<'_, DB, QS> {
+impl<QS, DB> Expression for DynamicOutputClause<'_, DB, QS> {
     type SqlType = Untyped;
 }
 
-impl<DB, QS> QueryFragment<DB> for DynamicSelectClause<'_, DB, QS>
+impl<DB, QS> QueryFragment<DB> for DynamicOutputClause<'_, DB, QS>
 where
     DB: Backend,
 {
@@ -94,25 +104,35 @@ where
         }
         Ok(())
     }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        for s in &self.selects {
+            s.collect_output_metadata(out)?;
+        }
+        Ok(())
+    }
 }
 
-impl<DB, QS> ValidGrouping<()> for DynamicSelectClause<'_, DB, QS> {
+impl<DB, QS> ValidGrouping<()> for DynamicOutputClause<'_, DB, QS> {
     type IsAggregate = is_aggregate::No;
 }
 
-impl<'a, DB, QS, F> FromIterator<F> for DynamicSelectClause<'a, DB, QS>
+impl<'a, DB, QS, F> FromIterator<F> for DynamicOutputClause<'a, DB, QS>
 where
     F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
     DB: Backend,
 {
     fn from_iter<I: IntoIterator<Item = F>>(iter: I) -> Self {
-        let mut select_clause = DynamicSelectClause::new();
+        let mut select_clause = DynamicOutputClause::new();
         select_clause.add_fields(iter);
         select_clause
     }
 }
 
-impl<'a, DB, QS, F> core::iter::Extend<F> for DynamicSelectClause<'a, DB, QS>
+impl<'a, DB, QS, F> core::iter::Extend<F> for DynamicOutputClause<'a, DB, QS>
 where
     F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
     DB: Backend,

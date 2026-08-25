@@ -166,6 +166,21 @@ pub type Binds = Vec<Option<Vec<u8>>>;
 /// A specialized Result type used with the query builder.
 pub type BuildQueryResult = Result<(), Box<dyn Error + Send + Sync>>;
 
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct OutputFieldMetadata<'a> {
+    pub origin: Option<OutputColumnOrigin<'a>>,
+    pub declared_sql_type: Option<crate::sql_types::SqlTypeDescriptor>,
+}
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy)]
+pub struct OutputColumnOrigin<'a> {
+    pub schema: Option<&'a str>,
+    pub table: &'a str,
+    pub column: &'a str,
+}
+
 /// Constructs a SQL query from a Diesel AST.
 ///
 /// The only reason you should ever need to interact with this trait is if you
@@ -251,6 +266,15 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// passes. See [`AstPass`] for more details.
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 
+    #[doc(hidden)]
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        out.push(OutputFieldMetadata::default());
+        Ok(())
+    }
+
     /// Converts this `QueryFragment` to its SQL representation.
     ///
     /// This method should only be called by implementations of `Connection`.
@@ -323,6 +347,13 @@ where
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        QueryFragment::collect_output_metadata(&**self, out)
+    }
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for alloc::rc::Rc<T>
@@ -332,6 +363,13 @@ where
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        QueryFragment::collect_output_metadata(&**self, out)
     }
 }
 
@@ -343,6 +381,13 @@ where
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        QueryFragment::collect_output_metadata(&**self, out)
+    }
 }
 
 impl<T: ?Sized, DB> QueryFragment<DB> for &T
@@ -352,6 +397,13 @@ where
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        QueryFragment::collect_output_metadata(&**self, out)
     }
 }
 
@@ -367,8 +419,18 @@ where
     T: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        match *self {
-            Some(ref c) => c.walk_ast(out),
+        match self {
+            Some(c) => c.walk_ast(out),
+            None => Ok(()),
+        }
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        match self {
+            Some(c) => c.collect_output_metadata(out),
             None => Ok(()),
         }
     }

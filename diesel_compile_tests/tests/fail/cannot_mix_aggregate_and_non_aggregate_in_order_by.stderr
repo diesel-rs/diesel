@@ -27,8 +27,8 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:46:39
     |
@@ -58,8 +58,8 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:50:67
     |
@@ -89,8 +89,8 @@ LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
 LL |     where
 LL |         Self: methods::ThenOrderDsl<Order>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:54:41
     |
@@ -120,8 +120,8 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
+
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:58:34
     |
@@ -149,8 +149,8 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:62:28
     |
@@ -182,8 +182,8 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:66:44
     |
@@ -214,8 +214,8 @@ LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
 LL |     where
 LL |         Self: methods::ThenOrderDsl<Order>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:70:48
     |
@@ -245,8 +245,8 @@ LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
 LL |     where
 LL |         Self: methods::ThenOrderDsl<Order>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:78:34
    |
@@ -325,8 +325,8 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:89:58
    |
@@ -406,7 +406,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
     = note: 2 redundant requirements hidden
     = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
@@ -434,7 +434,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
     = note: 2 redundant requirements hidden
     = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
@@ -462,7 +462,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
     = note: 2 redundant requirements hidden
     = note: required for `(max<Integer, id>, id)` to implement `ValidGrouping<users::columns::name>`
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::id>`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
@@ -478,7 +478,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<users::columns::id>`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `id: IsContainedInGroupBy<value>` is not satisfied
@@ -509,7 +509,7 @@ note: required for `child::columns::value` to implement `ValidGrouping<parent::c
  LL |         value -> Text,
     |         ^^^^^
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `OrderDsl<child::columns::value>`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `id: IsContainedInGroupBy<value>` is not satisfied
@@ -542,7 +542,7 @@ note: required for `child::columns::value` to implement `ValidGrouping<parent::c
     = note: 2 redundant requirements hidden
     = note: required for `(parent::columns::id, child::columns::value)` to implement `ValidGrouping<parent::columns::id>`
     = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `ThenOrderDsl<child::columns::value>`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SkipSelectableExpressionBoundCheckWrapper<...>: ValidGrouping<...>` is not satisfied
@@ -570,8 +570,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: ThenOrderDsl<_>` is not satisfied
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_in_order_by.rs:152:10
     |

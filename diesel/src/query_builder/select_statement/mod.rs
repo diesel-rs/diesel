@@ -22,6 +22,7 @@ pub(crate) use self::boxed::BoxedSelectStatement;
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) use self::boxed_clone::BoxedCloneSelectStatement;
+use alloc::vec::Vec;
 
 use super::NoFromClause;
 use super::distinct_clause::NoDistinctClause;
@@ -40,7 +41,7 @@ use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::having_clause::NoHavingClause;
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
-use crate::query_builder::{QueryId, SelectQuery};
+use crate::query_builder::{OutputFieldMetadata, QueryId, SelectQuery};
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
@@ -262,10 +263,18 @@ impl<F, S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     DB: Backend,
+    S: QueryFragment<DB>,
     Self: QueryFragment<DB, DB::SelectStatementSyntax>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::SelectStatementSyntax>>::walk_ast(self, pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.select.collect_output_metadata(out)
     }
 }
 

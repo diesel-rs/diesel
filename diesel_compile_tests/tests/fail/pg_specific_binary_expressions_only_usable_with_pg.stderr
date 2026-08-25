@@ -7,9 +7,9 @@ error[E0277]: cannot use the `LIKE` operator with expressions of the type `diese
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Sqlite`
-     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
+     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are
              allowed for all backends
-     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
+     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are
              allowed for the PostgreSQL backend
 help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
     --> DIESEL/diesel/diesel/src/pg/backend.rs
@@ -28,8 +28,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: cannot use the `LIKE` operator with expressions of the type `diesel::sql_types::Binary` for the backend `Mysql`
     --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:31:32
      |
@@ -39,9 +39,9 @@ error[E0277]: cannot use the `LIKE` operator with expressions of the type `diese
      |          required by a bound introduced by this call
      |
      = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Mysql`
-     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are 
+     = note: expressions of the type `diesel::sql_types::Text` and `diesel::sql_types::Nullable<Text>` are
              allowed for all backends
-     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
+     = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are
              allowed for the PostgreSQL backend
 help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
     --> DIESEL/diesel/diesel/src/pg/backend.rs
@@ -60,5 +60,5 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
      For more information about this error, try `rustc --explain E0277`.
