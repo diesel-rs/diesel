@@ -51,6 +51,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
+* Added `DynamicValue` as a default `FromSql<Any, DB>` decoder for runtime-shaped rows on PostgreSQL, SQLite, MySQL, and MariaDB, with optional features for rich scalar types.
 
 ### Fixed
 

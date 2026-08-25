@@ -163,7 +163,11 @@
 //! }
 //! ```
 
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+use crate::error::DynamicSchemaError;
 use alloc::borrow::ToOwned;
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::iter::FromIterator;
@@ -594,4 +598,442 @@ impl<'a, V> IntoIterator for &'a mut DynamicRow<V> {
     fn into_iter(self) -> Self::IntoIter {
         self.values.iter_mut()
     }
+}
+
+/// A runtime database value decoded from [`Any`] without custom backend dispatch.
+///
+/// ```rust
+/// # mod connection_setup {
+/// #     include!("../tests/connection_setup.rs");
+/// # }
+/// # use diesel::prelude::*;
+/// # use diesel::sql_query;
+/// # use diesel::sql_types::Untyped;
+/// # use diesel_dynamic_schema::{table, DynamicSelectClause};
+/// # use diesel_dynamic_schema::dynamic_value::{DynamicRow, DynamicValue};
+/// # fn run() -> QueryResult<()> {
+/// # let conn = &mut connection_setup::establish_connection();
+/// # connection_setup::create_user_table(conn);
+/// # sql_query("INSERT INTO users (name) VALUES ('Sean')").execute(conn)?;
+/// let users = table("users");
+/// let name = users.column::<Untyped, _>("name");
+///
+/// let mut select = DynamicSelectClause::new();
+/// select.add_field(name);
+///
+/// let rows: Vec<DynamicRow<DynamicValue>> = users.select(select).load(conn)?;
+/// assert_eq!(rows[0][0], DynamicValue::Text("Sean".into()));
+/// # Ok(())
+/// # }
+/// # run().unwrap();
+/// ```
+#[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
+pub enum DynamicValue {
+    /// SQL `NULL`. `Option<DynamicValue>` decodes it as `Some(Null)`.
+    Null,
+    /// A boolean, produced for PostgreSQL `BOOL`.
+    Bool(bool),
+    /// A signed integer, also used for SQLite, MySQL, and MariaDB booleans.
+    Int(i64),
+    /// An unsigned MySQL or MariaDB integer.
+    UInt(u64),
+    /// A floating-point number, widened to double precision.
+    Float(f64),
+    /// Text.
+    Text(String),
+    /// Raw bytes.
+    Bytes(Vec<u8>),
+    /// A timestamp without a time zone.
+    #[cfg(feature = "chrono")]
+    Timestamp(chrono::NaiveDateTime),
+    /// A UTC timestamp.
+    #[cfg(feature = "chrono")]
+    TimestampTz(chrono::DateTime<chrono::Utc>),
+    /// A calendar date.
+    #[cfg(feature = "chrono")]
+    Date(chrono::NaiveDate),
+    /// A PostgreSQL time of day.
+    #[cfg(feature = "chrono")]
+    Time(chrono::NaiveTime),
+    /// A MySQL or MariaDB `TIME` duration.
+    #[cfg(feature = "chrono")]
+    Duration(chrono::Duration),
+    /// An exact decimal.
+    #[cfg(feature = "numeric")]
+    Numeric(bigdecimal::BigDecimal),
+    /// A UUID.
+    #[cfg(feature = "uuid")]
+    Uuid(uuid::Uuid),
+    /// A JSON document.
+    #[cfg(feature = "serde_json")]
+    Json(serde_json::Value),
+    /// A binary JSON document.
+    #[cfg(feature = "serde_json")]
+    Jsonb(serde_json::Value),
+}
+
+#[cfg(feature = "postgres")]
+impl FromSql<Any, diesel::pg::Pg> for DynamicValue {
+    fn from_sql(value: diesel::pg::PgValue<'_>) -> deserialize::Result<Self> {
+        pg_dynamic_value(value)
+    }
+
+    fn from_nullable_sql(value: Option<diesel::pg::PgValue<'_>>) -> deserialize::Result<Self> {
+        match value {
+            Some(value) => pg_dynamic_value(value),
+            None => Ok(DynamicValue::Null),
+        }
+    }
+}
+
+#[cfg(feature = "postgres")]
+fn pg_dynamic_value(value: diesel::pg::PgValue<'_>) -> deserialize::Result<DynamicValue> {
+    use diesel::pg::Pg;
+    use diesel::sql_types as st;
+
+    const BOOL: u32 = 16;
+    const BYTEA: u32 = 17;
+    const NAME: u32 = 19;
+    const INT8: u32 = 20;
+    const INT2: u32 = 21;
+    const INT4: u32 = 23;
+    const TEXT: u32 = 25;
+    const JSON: u32 = 114;
+    const FLOAT4: u32 = 700;
+    const FLOAT8: u32 = 701;
+    const BPCHAR: u32 = 1042;
+    const VARCHAR: u32 = 1043;
+    const DATE: u32 = 1082;
+    const TIME: u32 = 1083;
+    const TIMESTAMP: u32 = 1114;
+    const TIMESTAMPTZ: u32 = 1184;
+    const NUMERIC: u32 = 1700;
+    const UUID: u32 = 2950;
+    const JSONB: u32 = 3802;
+
+    // Diesel's `FromSql` decodes each value. This function owns only dispatch.
+    let oid = value.get_oid().get();
+    Ok(match oid {
+        BOOL => DynamicValue::Bool(<bool as FromSql<st::Bool, Pg>>::from_sql(value)?),
+        INT2 => DynamicValue::Int(i64::from(<i16 as FromSql<st::SmallInt, Pg>>::from_sql(
+            value,
+        )?)),
+        INT4 => DynamicValue::Int(i64::from(<i32 as FromSql<st::Integer, Pg>>::from_sql(
+            value,
+        )?)),
+        INT8 => DynamicValue::Int(<i64 as FromSql<st::BigInt, Pg>>::from_sql(value)?),
+        FLOAT4 => DynamicValue::Float(f64::from(<f32 as FromSql<st::Float, Pg>>::from_sql(value)?)),
+        FLOAT8 => DynamicValue::Float(<f64 as FromSql<st::Double, Pg>>::from_sql(value)?),
+        TEXT | VARCHAR | BPCHAR | NAME => {
+            DynamicValue::Text(<String as FromSql<st::Text, Pg>>::from_sql(value)?)
+        }
+        BYTEA => DynamicValue::Bytes(<Vec<u8> as FromSql<st::Binary, Pg>>::from_sql(value)?),
+        #[cfg(feature = "uuid")]
+        UUID => DynamicValue::Uuid(<uuid::Uuid as FromSql<st::Uuid, Pg>>::from_sql(value)?),
+        #[cfg(not(feature = "uuid"))]
+        UUID => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "uuid",
+                sql_type: "UUID",
+            }
+            .into())
+        }
+        #[cfg(feature = "numeric")]
+        NUMERIC => DynamicValue::Numeric(
+            <bigdecimal::BigDecimal as FromSql<st::Numeric, Pg>>::from_sql(value)?,
+        ),
+        #[cfg(not(feature = "numeric"))]
+        NUMERIC => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "numeric",
+                sql_type: "NUMERIC",
+            }
+            .into())
+        }
+        #[cfg(feature = "chrono")]
+        TIMESTAMP => DynamicValue::Timestamp(<chrono::NaiveDateTime as FromSql<
+            st::Timestamp,
+            Pg,
+        >>::from_sql(value)?),
+        #[cfg(feature = "chrono")]
+        TIMESTAMPTZ => DynamicValue::TimestampTz(<chrono::DateTime<chrono::Utc> as FromSql<
+            st::Timestamptz,
+            Pg,
+        >>::from_sql(value)?),
+        #[cfg(feature = "chrono")]
+        DATE => DynamicValue::Date(<chrono::NaiveDate as FromSql<st::Date, Pg>>::from_sql(
+            value,
+        )?),
+        #[cfg(feature = "chrono")]
+        TIME => DynamicValue::Time(<chrono::NaiveTime as FromSql<st::Time, Pg>>::from_sql(
+            value,
+        )?),
+        #[cfg(not(feature = "chrono"))]
+        TIMESTAMP => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "TIMESTAMP",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "chrono"))]
+        TIMESTAMPTZ => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "TIMESTAMPTZ",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "chrono"))]
+        DATE => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "DATE",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "chrono"))]
+        TIME => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "TIME",
+            }
+            .into())
+        }
+        #[cfg(feature = "serde_json")]
+        JSON => DynamicValue::Json(<serde_json::Value as FromSql<st::Json, Pg>>::from_sql(
+            value,
+        )?),
+        #[cfg(feature = "serde_json")]
+        JSONB => DynamicValue::Jsonb(<serde_json::Value as FromSql<st::Jsonb, Pg>>::from_sql(
+            value,
+        )?),
+        #[cfg(not(feature = "serde_json"))]
+        JSON => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "serde_json",
+                sql_type: "JSON",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "serde_json"))]
+        JSONB => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "serde_json",
+                sql_type: "JSONB",
+            }
+            .into())
+        }
+        other => {
+            return Err(DynamicSchemaError::UnsupportedType {
+                backend: "PostgreSQL",
+                sql_type: format!("OID {other}"),
+            }
+            .into())
+        }
+    })
+}
+
+#[cfg(feature = "sqlite")]
+impl FromSql<Any, diesel::sqlite::Sqlite> for DynamicValue {
+    fn from_sql(value: diesel::sqlite::SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+        sqlite_dynamic_value(value)
+    }
+
+    fn from_nullable_sql(
+        value: Option<diesel::sqlite::SqliteValue<'_, '_, '_>>,
+    ) -> deserialize::Result<Self> {
+        match value {
+            Some(value) => sqlite_dynamic_value(value),
+            None => Ok(DynamicValue::Null),
+        }
+    }
+}
+
+#[cfg(feature = "sqlite")]
+fn sqlite_dynamic_value(
+    mut value: diesel::sqlite::SqliteValue<'_, '_, '_>,
+) -> deserialize::Result<DynamicValue> {
+    use diesel::sqlite::SqliteType;
+
+    // SQLite reports storage classes, not declared types.
+    // `SmallInt`, `Integer`, and `Float` are bind-only and matched for exhaustiveness.
+    Ok(match value.value_type() {
+        None => DynamicValue::Null,
+        Some(SqliteType::SmallInt | SqliteType::Integer | SqliteType::Long) => {
+            DynamicValue::Int(value.read_long())
+        }
+        Some(SqliteType::Float | SqliteType::Double) => DynamicValue::Float(value.read_double()),
+        Some(SqliteType::Text) => DynamicValue::Text(value.read_text().to_owned()),
+        Some(SqliteType::Binary) => DynamicValue::Bytes(value.read_blob().to_owned()),
+    })
+}
+
+#[cfg(feature = "mysql")]
+impl FromSql<Any, diesel::mysql::Mysql> for DynamicValue {
+    fn from_sql(value: diesel::mysql::MysqlValue<'_>) -> deserialize::Result<Self> {
+        mysql_like_dynamic_value::<diesel::mysql::Mysql>(value, "MySQL")
+    }
+
+    fn from_nullable_sql(
+        value: Option<diesel::mysql::MysqlValue<'_>>,
+    ) -> deserialize::Result<Self> {
+        match value {
+            Some(value) => mysql_like_dynamic_value::<diesel::mysql::Mysql>(value, "MySQL"),
+            None => Ok(DynamicValue::Null),
+        }
+    }
+}
+
+#[cfg(feature = "mariadb")]
+impl FromSql<Any, diesel::mariadb::Mariadb> for DynamicValue {
+    fn from_sql(value: diesel::mariadb::MariadbValue<'_>) -> deserialize::Result<Self> {
+        mysql_like_dynamic_value::<diesel::mariadb::Mariadb>(value, "MariaDB")
+    }
+
+    fn from_nullable_sql(
+        value: Option<diesel::mariadb::MariadbValue<'_>>,
+    ) -> deserialize::Result<Self> {
+        match value {
+            Some(value) => mysql_like_dynamic_value::<diesel::mariadb::Mariadb>(value, "MariaDB"),
+            None => Ok(DynamicValue::Null),
+        }
+    }
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn mysql_like_dynamic_value<DB>(
+    value: diesel::mysql_like::MysqlValue<'_>,
+    backend: &'static str,
+) -> deserialize::Result<DynamicValue>
+where
+    DB: diesel::mysql_like::MysqlLikeBackend,
+{
+    use diesel::mysql_like::MysqlType as T;
+    use diesel::sql_types as st;
+
+    let ty = value.value_type();
+    Ok(match ty {
+        T::Tiny => DynamicValue::Int(i64::from(<i8 as FromSql<st::TinyInt, DB>>::from_sql(
+            value,
+        )?)),
+        T::Short => DynamicValue::Int(i64::from(<i16 as FromSql<st::SmallInt, DB>>::from_sql(
+            value,
+        )?)),
+        T::Long => DynamicValue::Int(i64::from(<i32 as FromSql<st::Integer, DB>>::from_sql(
+            value,
+        )?)),
+        T::LongLong => DynamicValue::Int(<i64 as FromSql<st::BigInt, DB>>::from_sql(value)?),
+        T::UnsignedTiny => DynamicValue::UInt(u64::from(<u8 as FromSql<
+            st::Unsigned<st::TinyInt>,
+            DB,
+        >>::from_sql(value)?)),
+        T::UnsignedShort => DynamicValue::UInt(u64::from(<u16 as FromSql<
+            st::Unsigned<st::SmallInt>,
+            DB,
+        >>::from_sql(value)?)),
+        T::UnsignedLong => DynamicValue::UInt(u64::from(<u32 as FromSql<
+            st::Unsigned<st::Integer>,
+            DB,
+        >>::from_sql(value)?)),
+        T::UnsignedLongLong => DynamicValue::UInt(<u64 as FromSql<
+            st::Unsigned<st::BigInt>,
+            DB,
+        >>::from_sql(value)?),
+        T::Float => {
+            DynamicValue::Float(f64::from(<f32 as FromSql<st::Float, DB>>::from_sql(value)?))
+        }
+        T::Double => DynamicValue::Float(<f64 as FromSql<st::Double, DB>>::from_sql(value)?),
+        // MySQL reports JSON as `String`. MariaDB reports it as `Blob`.
+        T::String | T::Enum | T::Set => {
+            DynamicValue::Text(<String as FromSql<st::Text, DB>>::from_sql(value)?)
+        }
+        T::Blob => DynamicValue::Bytes(<Vec<u8> as FromSql<st::Binary, DB>>::from_sql(value)?),
+        #[cfg(feature = "numeric")]
+        T::Numeric => DynamicValue::Numeric(<bigdecimal::BigDecimal as FromSql<
+            st::Numeric,
+            DB,
+        >>::from_sql(value)?),
+        #[cfg(not(feature = "numeric"))]
+        T::Numeric => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "numeric",
+                sql_type: "NUMERIC",
+            }
+            .into())
+        }
+        #[cfg(feature = "chrono")]
+        T::Date => DynamicValue::Date(<chrono::NaiveDate as FromSql<st::Date, DB>>::from_sql(
+            value,
+        )?),
+        #[cfg(feature = "chrono")]
+        T::DateTime => DynamicValue::Timestamp(<chrono::NaiveDateTime as FromSql<
+            st::Datetime,
+            DB,
+        >>::from_sql(value)?),
+        #[cfg(feature = "chrono")]
+        T::Timestamp => DynamicValue::Timestamp(<chrono::NaiveDateTime as FromSql<
+            st::Timestamp,
+            DB,
+        >>::from_sql(value)?),
+        #[cfg(feature = "chrono")]
+        T::Time => DynamicValue::Duration(mysql_time_to_duration(
+            <diesel::mysql_like::data_types::MysqlTime as FromSql<st::Time, DB>>::from_sql(value)?,
+        )?),
+        #[cfg(not(feature = "chrono"))]
+        T::Date => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "DATE",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "chrono"))]
+        T::DateTime => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "DATETIME",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "chrono"))]
+        T::Timestamp => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "TIMESTAMP",
+            }
+            .into())
+        }
+        #[cfg(not(feature = "chrono"))]
+        T::Time => {
+            return Err(DynamicSchemaError::FeatureDisabled {
+                feature: "chrono",
+                sql_type: "TIME",
+            }
+            .into())
+        }
+        // `MysqlType` is non-exhaustive, so unknown tags fail rather than guess.
+        other => {
+            return Err(DynamicSchemaError::UnsupportedType {
+                backend,
+                sql_type: format!("{other:?}"),
+            }
+            .into())
+        }
+    })
+}
+
+#[cfg(all(feature = "chrono", any(feature = "mysql", feature = "mariadb")))]
+fn mysql_time_to_duration(
+    time: diesel::mysql_like::data_types::MysqlTime,
+) -> deserialize::Result<chrono::Duration> {
+    use core::convert::TryFrom;
+
+    let micros = i64::from(time.hour) * 3_600_000_000
+        + i64::from(time.minute) * 60_000_000
+        + i64::from(time.second) * 1_000_000
+        + i64::try_from(time.second_part)?;
+    let micros = if time.neg { -micros } else { micros };
+    Ok(chrono::Duration::microseconds(micros))
 }
