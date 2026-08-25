@@ -59,7 +59,6 @@ mod schema_inference;
 mod select;
 mod select_by;
 mod serialize_as;
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 mod transactions;
 mod types;
 mod types_roundtrip;

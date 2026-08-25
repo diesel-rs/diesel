@@ -622,7 +622,7 @@ fn filter_subselect_with_nullable_column() {
     }
     let connection = &mut connection();
 
-    create_table(
+    create_temporary_table(
         "home_worlds",
         (
             integer("id").primary_key().auto_increment(),
@@ -632,7 +632,7 @@ fn filter_subselect_with_nullable_column() {
     .execute(connection)
     .unwrap();
 
-    create_table(
+    create_temporary_table(
         "heroes",
         (
             integer("id").primary_key().auto_increment(),

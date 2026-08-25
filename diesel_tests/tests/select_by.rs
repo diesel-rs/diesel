@@ -50,11 +50,10 @@ table! {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use crate::schema_dsl::*;
     let connection = &mut connection();
-    create_table(
+    create_temporary_table(
         "select",
         (
             integer("id").primary_key().auto_increment(),
@@ -63,7 +62,15 @@ fn selecting_columns_and_tables_with_reserved_names() {
     )
     .execute(connection)
     .unwrap();
-    diesel::sql_query("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+
+    let records = vec![
+        select::columns::join.eq(1),
+        select::columns::join.eq(2),
+        select::columns::join.eq(3),
+    ];
+
+    insert_into(select::table)
+        .values(&records)
         .execute(connection)
         .unwrap();
 
@@ -85,12 +92,10 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     use crate::schema_dsl::*;
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),

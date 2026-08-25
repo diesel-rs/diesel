@@ -60,6 +60,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
+* Fixed several Tests using schema modifications for `mysql` and `mariadb`
 
 ### Changed
 

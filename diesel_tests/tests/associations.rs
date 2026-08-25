@@ -55,9 +55,8 @@ fn eager_loading_associations_for_multiple_ref_records() {
     assert_eq!(expected_data, users_and_posts);
 }
 
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // FIXME: Figure out how to handle tests that modify schema
 mod eager_loading_with_string_keys {
-    use crate::schema::{connection, drop_table_cascade};
+    use crate::schema::connection;
     use diesel::connection::SimpleConnection;
     use diesel::*;
 
@@ -80,14 +79,11 @@ mod eager_loading_with_string_keys {
     #[diesel_test_helper::test]
     fn eager_loading_associations_for_multiple_records() {
         let connection = &mut connection();
-        drop_table_cascade(connection, "users");
-        drop_table_cascade(connection, "posts");
-        drop_table_cascade(connection, "fk_doesnt_reference_pk");
         connection
             .batch_execute(
                 r#"
-            CREATE TABLE users (id TEXT PRIMARY KEY NOT NULL);
-            CREATE TABLE posts (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL);
+            CREATE TEMPORARY TABLE users (id VARCHAR(50) PRIMARY KEY NOT NULL);
+            CREATE TEMPORARY TABLE posts (id VARCHAR(50) PRIMARY KEY NOT NULL, user_id TEXT NOT NULL);
             INSERT INTO users (id) VALUES ('Sean'), ('Tess');
             INSERT INTO posts (id, user_id) VALUES ('Hello', 'Sean'), ('World', 'Sean'), ('Hello 2', 'Tess');
         "#,
@@ -278,8 +274,6 @@ fn conn_with_test_data() -> (TestConnection, User, User, User) {
 }
 
 #[diesel_test_helper::test]
-// FIXME: Figure out how to handle tests that modify schema
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 // https://github.com/rust-lang/rust/issues/124396
 #[allow(unknown_lints, non_local_definitions)]
 fn custom_foreign_key() {
@@ -324,9 +318,9 @@ fn custom_foreign_key() {
     connection
         .batch_execute(
             r#"
-            CREATE TABLE users1 (id SERIAL PRIMARY KEY,
+            CREATE TEMPORARY TABLE users1 (id SERIAL PRIMARY KEY,
                                 name TEXT NOT NULL);
-            CREATE TABLE posts1 (id SERIAL PRIMARY KEY,
+            CREATE TEMPORARY TABLE posts1 (id SERIAL PRIMARY KEY,
                                 belongs_to_user INTEGER NOT NULL,
                                 title TEXT NOT NULL);
             INSERT INTO users1 (id, name) VALUES (1, 'Sean'), (2, 'Tess');
