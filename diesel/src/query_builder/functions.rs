@@ -37,6 +37,7 @@ use alloc::string::String;
 /// // to have `RETURNING *` automatically appended to the query. Alternatively, you
 /// // can explicitly return an expression by using the `returning` method before
 /// // getting the result.
+/// // Note for backend `mariadb`: support for `UPDATE ... RETURNING` was introduced with version 13.0
 /// assert_eq!(Ok((1, "James".to_string())), updated_row);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]

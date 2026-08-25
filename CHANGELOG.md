@@ -50,6 +50,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::vacuum` and `SqliteConnection::vacuum_into` to rebuild a database or write a vacuumed copy of it to a new file, each accepting an optional schema name to target an attached database, with the destination path passed as a bind parameter.
 * Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
+* Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 
 ### Fixed
 

@@ -428,9 +428,8 @@ fn insert_record_attached_database_using_returning_clause() {
 
 #[diesel_test_helper::test]
 #[cfg(not(any(
-    not(feature = "returning_clauses_for_sqlite_3_35"),
-    feature = "mysql",
-    feature = "mariadb"
+    all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
+    feature = "mysql"
 )))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;
@@ -479,7 +478,7 @@ fn insert_record_with_custom_returning_clause() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql", feature = "mariadb")))]
+#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
 
@@ -793,7 +792,7 @@ fn insert_empty_slice() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mariadb"))]
 fn insert_empty_slice_with_returning() {
     let connection = &mut connection();
 

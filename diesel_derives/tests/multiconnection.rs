@@ -495,7 +495,6 @@ fn nullable_type_checks() {
 }
 
 #[test]
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // such binds are broken for mysql + multiconnection
 fn contains_binds() {
     use diesel::connection::InstrumentationEvent;
 
@@ -516,8 +515,6 @@ fn contains_binds() {
 }
 
 #[test]
-// mysql struggles with selects without from
-#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 fn check_enum_works() {
     #[derive(Debug, Clone, Copy, diesel::types::Enum, PartialEq)]
     #[diesel(sql_type = diesel::sql_types::Text)]
