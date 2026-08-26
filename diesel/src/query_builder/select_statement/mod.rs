@@ -26,7 +26,7 @@ pub(crate) use self::boxed_clone::BoxedCloneSelectStatement;
 use super::NoFromClause;
 use super::distinct_clause::NoDistinctClause;
 use super::from_clause::AsQuerySource;
-use super::from_clause::FromClause;
+use super::from_clause::{FromClause, FromClauseMembership};
 use super::group_by_clause::*;
 use super::limit_clause::NoLimitClause;
 use super::locking_clause::NoLockingClause;
@@ -277,7 +277,7 @@ where
         SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement,
     >,
     S: QueryFragment<DB>,
-    F: QueryFragment<DB>,
+    F: QueryFragment<DB> + FromClauseMembership,
     D: QueryFragment<DB>,
     W: QueryFragment<DB>,
     O: QueryFragment<DB>,
@@ -287,6 +287,8 @@ where
     LC: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        let frame = out.query_source_frame(self.from.dyn_query_source(), true);
+        let mut out = out.push_query_source(&frame);
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
         self.select.walk_ast(out.reborrow())?;

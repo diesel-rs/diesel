@@ -36,6 +36,8 @@ pub(crate) mod where_clause;
 
 #[doc(inline)]
 pub use self::ast_pass::AstPass;
+#[doc(hidden)]
+pub use self::ast_pass::DynamicTableMembership;
 #[doc(inline)]
 pub use self::bind_collector::{BindCollector, MoveableBindCollector};
 #[doc(inline)]

@@ -1718,6 +1718,7 @@ fn generate_querybuilder(
             >
         where
             QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+                + diesel::internal::derives::multiconnection::FromClauseMembership
         {
             fn walk_ast<'b>(
                 &'b self,
@@ -1813,6 +1814,7 @@ fn generate_querybuilder(
             >
         where
             QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+                + diesel::internal::derives::multiconnection::FromClauseMembership
         {
             fn walk_ast<'b>(
                 &'b self,

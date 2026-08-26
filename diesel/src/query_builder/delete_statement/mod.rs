@@ -1,6 +1,7 @@
 use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, IntoBoxedClone, OrFilter};
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression};
+use crate::query_builder::from_clause::AsQuerySource;
 use crate::query_builder::returning::{
     DeleteStmt, NoReturningClause, ReturningClause, ReturningQuerySource,
 };
@@ -331,6 +332,8 @@ where
     Ret: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        let frame = out.query_source_frame(self.from_clause.as_query_source(), true);
+        let mut out = out.push_query_source(&frame);
         out.push_sql("DELETE");
         self.from_clause.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;

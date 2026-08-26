@@ -1,5 +1,7 @@
 use alloc::string::String;
 
+use crate::table::runtime_table_display;
+
 /// Errors produced by `diesel-dynamic-schema`.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
@@ -21,5 +23,13 @@ pub enum DynamicSchemaError {
         feature: &'static str,
         /// The runtime type that needs the feature.
         sql_type: &'static str,
+    },
+    /// Reported during SQL rendering, before execution.
+    #[error("dynamic column references table {} which is not part of the query", runtime_table_display(.schema.as_deref(), .table))]
+    ForeignTable {
+        /// The schema of the referenced table, if the column carried one.
+        schema: Option<String>,
+        /// The name of the referenced table.
+        table: String,
     },
 }

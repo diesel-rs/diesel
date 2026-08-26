@@ -28,7 +28,8 @@ impl<'a, ST, QS, GB> QueryFragment<crate::sqlite::Sqlite>
 where
     BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite, GB>:
         QueryFragment<crate::sqlite::Sqlite>,
-    QS: QueryFragment<crate::sqlite::Sqlite>,
+    QS: QueryFragment<crate::sqlite::Sqlite>
+        + crate::query_builder::from_clause::FromClauseMembership,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
