@@ -51,8 +51,9 @@ where
     type SqlType = ST;
 }
 
-impl<T, U, ST> ValidGrouping<()> for Column<T, U, ST> {
-    type IsAggregate = is_aggregate::No;
+impl<T, U, ST, GB> ValidGrouping<GB> for Column<T, U, ST> {
+    // `Never` opts runtime columns out of grouping checks so they mix with aggregates.
+    type IsAggregate = is_aggregate::Never;
 }
 
 impl<T, U, ST, DB> QueryFragment<DB> for Column<T, U, ST>
