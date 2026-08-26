@@ -93,3 +93,97 @@ fn providing_custom_schema_name() {
     #[cfg(not(feature = "postgres"))]
     assert_eq!("`information_schema`.`users` -- binds: []", sql.to_string());
 }
+
+#[test]
+fn dynamic_group_by_having_filters_groups() {
+    use diesel::dsl::count;
+
+    let conn = &mut establish_connection();
+    create_user_table(conn);
+    sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Tess')")
+        .execute(conn)
+        .unwrap();
+
+    let users = table("users");
+    let id = users.column::<Integer, _>("id");
+    let name = users.column::<Text, _>("name");
+
+    let counts = users
+        .select((name, count(id)))
+        .group_by(name)
+        .having(count(id).gt(1))
+        .order(name)
+        .load::<(String, i64)>(conn);
+
+    assert_eq!(Ok(vec![("Sean".into(), 2)]), counts);
+}
+
+#[test]
+fn dynamic_group_by_multiple_columns() {
+    use diesel::dsl::count;
+
+    let conn = &mut establish_connection();
+    create_user_table(conn);
+    sql_query(
+        "INSERT INTO users (name, hair_color) VALUES \
+         ('Sean', 'black'), ('Sean', 'black'), ('Sean', 'blonde'), ('Tess', 'red')",
+    )
+    .execute(conn)
+    .unwrap();
+
+    let users = table("users");
+    let id = users.column::<Integer, _>("id");
+    let name = users.column::<Text, _>("name");
+    let hair_color = users.column::<Text, _>("hair_color");
+
+    let counts = users
+        .select((name, hair_color, count(id)))
+        .group_by((name, hair_color))
+        .order((name, hair_color))
+        .load::<(String, String, i64)>(conn);
+
+    assert_eq!(
+        Ok(vec![
+            ("Sean".into(), "black".into(), 2),
+            ("Sean".into(), "blonde".into(), 1),
+            ("Tess".into(), "red".into(), 1),
+        ]),
+        counts
+    );
+}
+
+#[test]
+fn dynamic_group_by_without_aggregate_deduplicates() {
+    let conn = &mut establish_connection();
+    create_user_table(conn);
+    sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Tess')")
+        .execute(conn)
+        .unwrap();
+
+    let users = table("users");
+    let name = users.column::<Text, _>("name");
+
+    let names = users
+        .select(name)
+        .group_by(name)
+        .order(name)
+        .load::<String>(conn);
+
+    assert_eq!(Ok(vec!["Sean".to_string(), "Tess".to_string()]), names);
+}
+
+#[test]
+fn mixed_aggregate_without_group_by_compiles() {
+    // Used to fail on `No: MixedAggregates<Yes>`, now allowed. See the `Column` docs.
+    use diesel::dsl::count;
+
+    let users = table("users");
+    let id = users.column::<Integer, _>("id");
+    let name = users.column::<Text, _>("name");
+
+    let query = users.select((name, count(id)));
+    // Quoting is backend specific.
+    let sql = diesel::debug_query::<Backend, _>(&query).to_string();
+    assert!(sql.contains("count("), "{}", sql);
+    assert!(!sql.contains("GROUP BY"), "{}", sql);
+}
