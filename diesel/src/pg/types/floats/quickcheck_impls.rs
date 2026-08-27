@@ -8,31 +8,42 @@ const SCALE_MASK: u16 = 0x3FFF;
 
 impl Arbitrary for PgNumeric {
     fn arbitrary(g: &mut Gen) -> Self {
-        let mut variant = Option::<bool>::arbitrary(g);
+        match g
+            .choose(&[0u8, 1, 2, 3, 4])
+            .copied()
+            .expect("the slice is not empty")
+        {
+            2 => return PgNumeric::NaN,
+            3 => return PgNumeric::PositiveInfinity,
+            4 => return PgNumeric::NegativeInfinity,
+            _ => {}
+        }
+
+        let mut positive = bool::arbitrary(g);
         let mut weight = -1;
         while weight < 0 {
             // Oh postgres... Don't ever change. https://bit.ly/lol-code-comments
             weight = i16::arbitrary(g);
         }
         let scale = u16::arbitrary(g) & SCALE_MASK;
-        let digits = gen_vec_of_appropriate_length_valid_digits(g, weight as u16, scale);
+        let weight_u16 = u16::try_from(weight).expect("weight is non-negative");
+        let digits = gen_vec_of_appropriate_length_valid_digits(g, weight_u16, scale);
         if digits.is_empty() {
             weight = 0;
-            variant = Some(true);
+            positive = true;
         }
 
-        match variant {
-            Some(true) => PgNumeric::Positive {
-                digits: digits,
-                weight: weight,
-                scale: scale,
+        match positive {
+            true => PgNumeric::Positive {
+                digits,
+                weight,
+                scale,
             },
-            Some(false) => PgNumeric::Negative {
-                digits: digits,
-                weight: weight,
-                scale: scale,
+            false => PgNumeric::Negative {
+                digits,
+                weight,
+                scale,
             },
-            None => PgNumeric::NaN,
         }
     }
 }
@@ -43,7 +54,7 @@ fn gen_vec_of_appropriate_length_valid_digits(g: &mut Gen, weight: u16, scale: u
         .into_iter()
         .map(|d| d.0)
         .skip_while(|d| d == &0) // drop leading zeros
-        .take(max_digits as usize)
+        .take(usize::from(max_digits))
         .collect::<Vec<_>>();
     while digits.last() == Some(&0) {
         digits.pop(); // drop trailing zeros

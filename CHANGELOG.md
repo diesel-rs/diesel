@@ -61,12 +61,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
+* `'Infinity'::numeric` and `'-Infinity'::numeric` (PostgreSQL >= 14) now decode into `PgNumeric::PositiveInfinity` and `PgNumeric::NegativeInfinity` instead of failing with an invalid sign error. `BigDecimal` has no infinity, so converting either errors
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* `PgNumeric` gained the `PositiveInfinity` and `NegativeInfinity` variants, so an exhaustive `match` on it needs updating
 
 ## [2.3.12] 2026-08-07
 
