@@ -1,5 +1,6 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use core::fmt;
+use core::num::NonZeroU32;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
@@ -49,7 +50,8 @@ where
         let mut bytes = value.as_bytes();
         let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
         let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
-        let _oid = bytes.read_i32::<NetworkEndian>()?;
+        let element_oid = NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?);
+        let element_oid_lookup = || element_oid.unwrap_or_else(|| value.get_oid());
 
         if num_dimensions == 0 {
             return Ok(Vec::new());
@@ -77,7 +79,7 @@ where
                             )
                         })?;
                     bytes = new_bytes;
-                    T::from_sql(PgValue::new_internal(elem_bytes, &value))
+                    T::from_sql(PgValue::new_internal(elem_bytes, &element_oid_lookup))
                 }
             })
             .collect()
@@ -93,7 +95,8 @@ where
         let mut bytes = value.as_bytes();
         let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
         let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
-        let _oid = bytes.read_i32::<NetworkEndian>()?;
+        let element_oid = NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?);
+        let element_oid_lookup = || element_oid.unwrap_or_else(|| value.get_oid());
 
         if num_dimensions == 0 {
             return Ok(NdArray {
@@ -138,7 +141,7 @@ where
                             )
                         })?;
                     bytes = new_bytes;
-                    T::from_sql(PgValue::new_internal(elem_bytes, &value))
+                    T::from_sql(PgValue::new_internal(elem_bytes, &element_oid_lookup))
                 }
             })
             .collect::<deserialize::Result<Vec<T>>>()?;
@@ -256,9 +259,44 @@ mod tests {
     use byteorder::{NetworkEndian, WriteBytesExt};
 
     use crate::data_types::NdArray;
-    use crate::deserialize::FromSql;
+    use crate::deserialize::{self, FromSql};
     use crate::pg::{Pg, PgValue};
     use crate::sql_types::{Array, Integer};
+
+    #[derive(Debug, PartialEq)]
+    struct ElementOid(u32);
+
+    impl FromSql<Integer, Pg> for ElementOid {
+        fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+            Ok(Self(value.get_oid().get()))
+        }
+    }
+
+    fn one_element_array_value(element_oid: u32) -> Vec<u8> {
+        let mut value = Vec::<u8>::new();
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        value.write_u32::<NetworkEndian>(element_oid).unwrap();
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        value.write_i32::<NetworkEndian>(42).unwrap();
+        value
+    }
+
+    #[test]
+    fn zero_element_oid_uses_parent_oid_lookup() {
+        let value = one_element_array_value(0);
+        let value = PgValue::for_test(&value);
+        let res = <Vec<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert_eq!(vec![ElementOid(42)], res.unwrap());
+
+        let value = one_element_array_value(0);
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value).unwrap();
+        assert_eq!(vec![1], res.dims);
+        assert_eq!(vec![ElementOid(42)], res.data);
+    }
 
     #[test]
     fn check_invalid_element_size_for_array() {

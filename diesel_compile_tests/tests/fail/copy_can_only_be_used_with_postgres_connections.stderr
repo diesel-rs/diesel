@@ -39,8 +39,8 @@ LL | |     A: CopyFromExpression<T>,
 LL | |     C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
 LL | |     Self: ExecuteCopyFromDsl<C>,
     | |________________________________^ `ExecuteCopyFromDsl<PooledConnection<...>>`
- 
-    
+
+
 error[E0277]: the trait bound `MysqlLikeConnection<...>: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:48
     |
@@ -68,8 +68,8 @@ LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = Qu
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
- 
-    
+
+
 error[E0277]: the trait bound `MysqlLikeConnection<...>: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:56:5
     |
@@ -95,8 +95,8 @@ LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = Qu
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:65:18
     |
@@ -138,8 +138,8 @@ LL | |     A: CopyFromExpression<T>,
 LL | |     C: crate::r2d2::R2D2Connection<Backend = Pg> + 'static,
 LL | |     Self: ExecuteCopyFromDsl<C>,
     | |________________________________^ `ExecuteCopyFromDsl<PooledConnection<...>>`
- 
-    
+
+
 error[E0277]: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:69:48
     |
@@ -167,8 +167,8 @@ LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = Qu
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
- 
-    
+
+
 error[E0277]: the trait bound `SqliteConnection: ExecuteCopyToConnection` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:69:5
     |

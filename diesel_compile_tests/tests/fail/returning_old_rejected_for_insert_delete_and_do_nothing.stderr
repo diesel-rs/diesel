@@ -26,8 +26,8 @@ LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, Retu
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-    
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:28:31
      |
@@ -57,8 +57,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
    --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:35:20
     |
@@ -87,8 +87,8 @@ LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, Returnin
 LL |     where
 LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
     |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
- 
-    
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
     --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:37:31
      |
@@ -118,8 +118,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
    --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:47:20
     |
@@ -148,8 +148,8 @@ LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, Retu
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-    
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:49:31
      |
@@ -179,5 +179,5 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
      For more information about this error, try `rustc --explain E0277`.

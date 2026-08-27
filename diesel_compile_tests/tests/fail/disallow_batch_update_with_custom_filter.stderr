@@ -28,8 +28,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: cannot apply a `WHERE` clause to batch updates
     --> tests/fail/disallow_batch_update_with_custom_filter.rs:37:18
      |
@@ -60,8 +60,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: cannot apply a `WHERE` clause to batch updates
     --> tests/fail/disallow_batch_update_with_custom_filter.rs:42:18
      |
@@ -92,8 +92,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: cannot apply a `WHERE` clause to batch updates
     --> tests/fail/disallow_batch_update_with_custom_filter.rs:48:18
      |
@@ -124,5 +124,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
+
      For more information about this error, try `rustc --explain E0277`.

@@ -109,6 +109,13 @@ where
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.0.collect_output_metadata(out)
+    }
 }
 
 impl<QS, DB> QueryFragment<DB> for DefaultSelectClause<QS>
@@ -119,5 +126,12 @@ where
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.default_selection.walk_ast(pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.default_selection.collect_output_metadata(out)
     }
 }

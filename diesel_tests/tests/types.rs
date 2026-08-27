@@ -30,6 +30,12 @@ table! {
     }
 }
 
+table! {
+    negative_times(time_value) {
+        time_value -> Time,
+    }
+}
+
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn errors_during_deserialization_do_not_panic() {
@@ -136,6 +142,90 @@ fn test_chrono_types_sqlite() {
     assert_eq!(result.datetime, dt);
     assert_eq!(result.date, dt.date());
     assert_eq!(result.time, dt.time());
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn insert_negative_time(connection: &mut TestConnection) {
+    use crate::schema_dsl::*;
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    create_temporary_table(
+        "negative_times",
+        (time_with_fractional_seconds("time_value").not_null(),),
+    )
+    .execute(connection)
+    .unwrap();
+
+    insert_into(negative_times::table)
+        .values(negative_times::time_value.eq(MysqlTime::new(
+            0,
+            0,
+            0,
+            10,
+            11,
+            12,
+            123456,
+            true,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        )))
+        .execute(connection)
+        .unwrap();
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_mysql_time() {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let actual = negative_times::table
+        .select(negative_times::time_value)
+        .first::<MysqlTime>(connection)
+        .unwrap();
+
+    assert!(actual.neg);
+    assert_eq!(0, actual.year);
+    assert_eq!(0, actual.month);
+    assert_eq!(0, actual.day);
+    assert_eq!(10, actual.hour);
+    assert_eq!(11, actual.minute);
+    assert_eq!(12, actual.second);
+    assert_eq!(123456, actual.second_part);
+    assert_eq!(MysqlTimestampType::MYSQL_TIMESTAMP_TIME, actual.time_type);
+    assert_eq!(0, actual.time_zone_displacement);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_chrono_time_fails() {
+    use diesel::result::Error::DeserializationError;
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let result = negative_times::table
+        .select(negative_times::time_value)
+        .first::<chrono::NaiveTime>(connection);
+
+    assert_matches!(result, Err(DeserializationError(_)));
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_time_crate_time_fails() {
+    use diesel::result::Error::DeserializationError;
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let result = negative_times::table
+        .select(negative_times::time_value)
+        .first::<time::Time>(connection);
+
+    assert_matches!(result, Err(DeserializationError(_)));
 }
 
 #[diesel_test_helper::test]
@@ -777,6 +867,59 @@ fn pg_ndim_array_from_sql() {
             "".to_string(),
             "world".to_string()
         ],
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_array_element_oid_uses_array_header() {
+    use diesel::data_types::NdArray;
+    use diesel::deserialize::FromSql;
+    use diesel::pg::PgValue;
+
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    struct ElementOidInteger;
+
+    #[derive(Debug, PartialEq)]
+    struct ElementWithOid {
+        value: i32,
+        oid: u32,
+    }
+
+    impl HasSqlType<ElementOidInteger> for Pg {
+        fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+            <Pg as HasSqlType<Integer>>::metadata(lookup)
+        }
+    }
+
+    impl FromSql<ElementOidInteger, Pg> for ElementWithOid {
+        fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+            let oid = bytes.get_oid().get();
+            let value = FromSql::<Integer, Pg>::from_sql(bytes)?;
+            Ok(Self { value, oid })
+        }
+    }
+
+    assert_eq!(
+        vec![
+            ElementWithOid { value: 1, oid: 23 },
+            ElementWithOid { value: 2, oid: 23 },
+        ],
+        query_single_value::<Array<ElementOidInteger>, Vec<ElementWithOid>>("ARRAY[1, 2]::int4[]")
+    );
+
+    let ndarray = query_single_value::<Array<ElementOidInteger>, NdArray<ElementWithOid>>(
+        "ARRAY[ARRAY[1, 2], ARRAY[3, 4]]::int4[]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(
+        vec![
+            ElementWithOid { value: 1, oid: 23 },
+            ElementWithOid { value: 2, oid: 23 },
+            ElementWithOid { value: 3, oid: 23 },
+            ElementWithOid { value: 4, oid: 23 },
+        ],
+        ndarray.data
     );
 }
 

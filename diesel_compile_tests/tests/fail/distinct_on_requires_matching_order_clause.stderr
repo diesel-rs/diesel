@@ -38,8 +38,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:127:22
     |
@@ -80,8 +80,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:134:22
     |
@@ -122,8 +122,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:139:60
     |
@@ -164,8 +164,8 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:145:22
     |
@@ -206,8 +206,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:153:22
     |
@@ -248,8 +248,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:161:22
     |
@@ -290,8 +290,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:169:22
     |
@@ -332,8 +332,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:177:22
     |
@@ -374,8 +374,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:185:19
     |
@@ -416,5 +416,5 @@ LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
 ...
 LL |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
- 
+
     For more information about this error, try `rustc --explain E0277`.

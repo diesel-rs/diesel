@@ -18,8 +18,8 @@ LL | |     Predicate: Expression,
 LL | |     Predicate::SqlType: BoolOrNullableBool,
     | |___________________________________________^
     = help: for that trait implementation, expected `diesel::query_builder::group_by_clause::GroupByClause<_>`, found `diesel::query_builder::group_by_clause::NoGroupByClause`
- 
-    
+
+
 error[E0277]: the trait bound `(): Expression` is not satisfied
   --> tests/fail/having_cant_be_used_without_group_by.rs:34:10
    |
@@ -38,7 +38,7 @@ LL |         .having(users::id.gt(1))
            and N others
    = note: required for `BoxedSelectStatement<'_, (Integer, Text), ..., _>` to implement `HavingDsl<_>`
 
-   
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:41:10
    |

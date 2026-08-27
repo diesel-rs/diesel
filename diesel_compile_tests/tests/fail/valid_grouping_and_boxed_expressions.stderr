@@ -25,8 +25,8 @@ LL | |     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Se
      | |_______________________________________________________________________________________^ `dyn BoxableExpression<..., ..., ..., ..., SqlType = ...> + Send + Sync`
      = note: required for `Box<...>` to implement `ValidGrouping<columns::id>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<Box<...>>`
-  
-     
+
+
 error[E0277]: the trait bound `dyn BoxableExpression<..., ..., SqlType = ...>: ValidGrouping<...>` is not satisfied
     --> tests/fail/valid_grouping_and_boxed_expressions.rs:74:22
      |
@@ -57,8 +57,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/valid_grouping_and_boxed_expressions.rs:93:17
    |
@@ -103,8 +103,8 @@ LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(Box<...>, ...)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(Box<...>, ...)>`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
     --> tests/fail/valid_grouping_and_boxed_expressions.rs:115:37
      |

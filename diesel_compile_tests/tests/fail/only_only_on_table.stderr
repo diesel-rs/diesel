@@ -22,7 +22,7 @@ LL | | )]
            `&mut diesel::query_builder::select_statement::SelectStatement<diesel::query_builder::from_clause::FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: Table`
            which is required by `&mut diesel::query_builder::select_statement::SelectStatement<diesel::query_builder::from_clause::FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>: diesel::dsl::OnlyDsl`
 
-   
+
 error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<table>, ..., ..., ...>`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:15:54
    |
@@ -47,7 +47,7 @@ LL | | )]
            `&mut diesel::query_builder::select_statement::SelectStatement<diesel::query_builder::from_clause::FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<BigInt, i64>>>>>: Table`
            which is required by `&mut diesel::query_builder::select_statement::SelectStatement<diesel::query_builder::from_clause::FromClause<foo::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<BigInt, i64>>>>>: diesel::dsl::OnlyDsl`
 
-   
+
 error[E0599]: the method `only` exists for struct `columns::id`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:17:31
    |
@@ -102,8 +102,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, MysqlLikeConnection<Mysql>, _>` is not satisfied
     --> tests/fail/only_only_on_table.rs:27:28
      |

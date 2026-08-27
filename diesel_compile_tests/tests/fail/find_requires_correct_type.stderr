@@ -19,7 +19,7 @@ LL |     int_primary_key::table.find("1");
    = note: required for `Eq<id, &str>` to implement `Expression`
    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
 
-   
+
 error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:20:28
    |
@@ -42,7 +42,7 @@ LL |     int_primary_key::table.find("1");
    = note: required for `Grouped<Eq<id, &str>>` to implement `NonAggregate`
    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Grouped<Eq<id, &str>>>`
 
-   
+
 error[E0277]: the trait bound `{integer}: Expression` is not satisfied
    --> tests/fail/find_requires_correct_type.rs:24:36
     |
@@ -76,7 +76,7 @@ LL |     fn find<PK>(self, id: PK) -> Find<Self, PK>
 LL |     where
 LL |         Self: methods::FindDsl<PK>,
     |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::find`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
@@ -111,5 +111,5 @@ LL |     fn find<PK>(self, id: PK) -> Find<Self, PK>
 LL |     where
 LL |         Self: methods::FindDsl<PK>,
     |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::find`
- 
+
     For more information about this error, try `rustc --explain E0277`.

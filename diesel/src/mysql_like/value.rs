@@ -92,8 +92,8 @@ impl<'a> MysqlValue<'a> {
                     // We check for that above by looking at the byte before copying
                     out.assume_init()
                 };
-                if result.neg {
-                    Err("Negative dates/times are not yet supported".into())
+                if result.neg && self.tpe != MysqlType::Time {
+                    Err("Negative date, datetime, and timestamp values are not supported".into())
                 } else {
                     Ok(result)
                 }
@@ -212,6 +212,32 @@ fn invalid_reads() {
     }
     let offset = std::mem::offset_of!(MysqlTime, neg);
     bytes[offset] = 42;
+    assert!(
+        MysqlValue::new_internal(&bytes, MysqlType::Timestamp)
+            .time_value()
+            .is_err()
+    );
+
+    let mut negative_time = v;
+    negative_time.neg = true;
+    negative_time.time_type = MysqlTimestampType::MYSQL_TIMESTAMP_TIME;
+    let bytes = negative_time.serialize();
+    assert!(
+        MysqlValue::new_internal(&bytes, MysqlType::Time)
+            .time_value()
+            .unwrap()
+            .neg
+    );
+    assert!(
+        MysqlValue::new_internal(&bytes, MysqlType::Date)
+            .time_value()
+            .is_err()
+    );
+    assert!(
+        MysqlValue::new_internal(&bytes, MysqlType::DateTime)
+            .time_value()
+            .is_err()
+    );
     assert!(
         MysqlValue::new_internal(&bytes, MysqlType::Timestamp)
             .time_value()

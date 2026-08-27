@@ -31,7 +31,7 @@ LL |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot join `posts::table` to `users::table` due to missing relation
@@ -67,7 +67,7 @@ LL |     fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
 LL |     where
 LL |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_outer_join`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot join `users::table` to `posts::table` due to missing relation

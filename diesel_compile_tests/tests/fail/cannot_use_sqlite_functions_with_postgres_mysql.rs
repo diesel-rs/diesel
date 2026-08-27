@@ -18,7 +18,9 @@ fn main() {
     let query = users::table.select(json(users::name));
 
     let _ = query.execute(pg_connection);
-    //~^ ERROR: `json<Text, name>` is no valid SQL fragment for the `Pg` backend
+    //~^ ERROR: type mismatch resolving `<PgConnection as Connection>::Backend == Sqlite`
+    //~| ERROR: type mismatch resolving `<PgConnection as Connection>::Backend == Sqlite`
     let _ = query.execute(mysql_connection);
-    //~^ ERROR: `json<Text, name>` is no valid SQL fragment for the `Mysql` backend
+    //~^ ERROR: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Sqlite`
+    //~| ERROR: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Sqlite`
 }

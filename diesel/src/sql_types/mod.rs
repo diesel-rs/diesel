@@ -20,6 +20,8 @@ mod ord;
 pub use self::fold::Foldable;
 pub use self::ord::SqlOrd;
 
+use core::any::{TypeId, type_name};
+
 use crate::backend::Backend;
 use crate::expression::TypedExpressionType;
 use crate::query_builder::QueryId;
@@ -563,6 +565,11 @@ where
     ST: SqlType,
 {
     type IsNull = is_nullable::IsNullable;
+
+    #[doc(hidden)]
+    fn type_descriptor() -> SqlTypeDescriptor {
+        SqlTypeDescriptor::nullable::<ST>()
+    }
 }
 
 #[doc(inline)]
@@ -679,6 +686,95 @@ pub use diesel_derives::DieselNumericOps;
 #[doc(inline)]
 pub use diesel_derives::SqlType;
 
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy)]
+pub struct SqlTypeDescriptor {
+    type_id: TypeId,
+    type_name: &'static str,
+    nullable: bool,
+    element: Option<fn() -> SqlTypeDescriptor>,
+}
+
+impl SqlTypeDescriptor {
+    #[doc(hidden)]
+    pub fn scalar<ST: SqlType>() -> Self {
+        Self {
+            type_id: TypeId::of::<ST>(),
+            type_name: type_name::<ST>(),
+            nullable: false,
+            element: None,
+        }
+    }
+
+    fn scalar_type<ST: 'static>() -> Self {
+        Self {
+            type_id: TypeId::of::<ST>(),
+            type_name: type_name::<ST>(),
+            nullable: false,
+            element: None,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn nullable<ST: SqlType>() -> Self {
+        let inner = ST::type_descriptor();
+        Self {
+            nullable: true,
+            ..inner
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn array<ST: 'static, ArrayST: SqlType>() -> Self {
+        Self {
+            type_id: TypeId::of::<ArrayST>(),
+            type_name: type_name::<ArrayST>(),
+            nullable: false,
+            element: Some(Self::scalar_type::<ST>),
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn is_sql_type<ST: SqlType>(&self) -> bool {
+        self.type_id == TypeId::of::<ST>()
+    }
+
+    #[doc(hidden)]
+    pub fn type_name(&self) -> &'static str {
+        self.type_name
+    }
+
+    #[doc(hidden)]
+    pub fn is_nullable(&self) -> bool {
+        self.nullable
+    }
+
+    #[doc(hidden)]
+    pub fn element(&self) -> Option<Self> {
+        self.element.map(|element| element())
+    }
+}
+
+#[doc(hidden)]
+pub trait SqlTypeOrUntyped {
+    fn type_descriptor() -> Option<SqlTypeDescriptor>;
+}
+
+impl<ST> SqlTypeOrUntyped for ST
+where
+    ST: SqlType,
+{
+    fn type_descriptor() -> Option<SqlTypeDescriptor> {
+        Some(ST::type_descriptor())
+    }
+}
+
+impl SqlTypeOrUntyped for crate::expression::expression_types::Untyped {
+    fn type_descriptor() -> Option<SqlTypeDescriptor> {
+        None
+    }
+}
+
 /// A marker trait for SQL types
 ///
 /// # Deriving
@@ -696,6 +792,14 @@ pub trait SqlType: 'static {
 
     #[doc(hidden)]
     const IS_ARRAY: bool = false;
+
+    #[doc(hidden)]
+    fn type_descriptor() -> SqlTypeDescriptor
+    where
+        Self: Sized,
+    {
+        SqlTypeDescriptor::scalar::<Self>()
+    }
 }
 
 /// A marker trait for SQL types representing database side enums

@@ -10,10 +10,10 @@ LL | | }
   |
   = note: the usage of `table!` is likely invalid in item context
 
-error: invalid `table!` syntax 
+error: invalid `table!` syntax
        help: please see the `table!` macro docs for more info
        help: docs available at: `https://docs.diesel.rs/0.1.x/diesel/macro.table.html`
-       
+
  --> tests/fail/table_invalid_syntax_1.rs:4:1
   |
 LL | / table! {

@@ -28,8 +28,8 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `users::table`
     --> tests/fail/returning_old_rejected_outside_returning_clause.rs:23:25
      |
@@ -60,8 +60,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `users::table`
    --> tests/fail/returning_old_rejected_outside_returning_clause.rs:29:10
     |
@@ -81,8 +81,8 @@ LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
     = help: for that trait implementation, expected `ReturningQuerySource<UpdateStmt, table>`, found `users::table`
     = note: required for `Nullable<Old<name>>` to implement `SelectableExpression<users::table>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<Nullable<Old<name>>>`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<OldIdent>>::Count == Once`
   --> tests/fail/returning_old_rejected_outside_returning_clause.rs:29:10
    |
@@ -95,7 +95,7 @@ LL |         .select(old(name).nullable())
    = note: required for `Nullable<Old<name>>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<Nullable<Old<name>>>`
 
-   
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<...>>::Count == Once`
   --> tests/fail/returning_old_rejected_outside_returning_clause.rs:29:10
    |
@@ -151,8 +151,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<OldIdent>>::Count == Once`
     --> tests/fail/returning_old_rejected_outside_returning_clause.rs:33:33
      |
@@ -176,8 +176,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/returning_old_rejected_outside_returning_clause.rs:33:33
      |
@@ -211,5 +211,5 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

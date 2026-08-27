@@ -2,6 +2,8 @@ pub(crate) mod batch_update;
 pub(crate) mod changeset;
 pub(super) mod target;
 
+use alloc::vec::Vec;
+
 use private::AllowFilterForUpdate;
 
 use crate::QuerySource;
@@ -292,6 +294,13 @@ where
         self.where_clause.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.returning.collect_output_metadata(out)
     }
 }
 

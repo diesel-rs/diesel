@@ -49,5 +49,5 @@ note: the above error was encountered while instantiating `fn <SelectStatement<.
 LL |         self.internal_load(conn)?.collect()
      |         ^^^^^^^^^^^^^^^^^^^^^^^^
      |
-  
+
      For more information about this error, try `rustc --explain E0080`.
