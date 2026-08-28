@@ -587,18 +587,18 @@ LL | |     for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, NoGr
 LL | | where
 LL | |     F: QuerySource,
 ...   |
-LL | |     <S::Selection as ValidGrouping<()>>::IsAggregate:
 LL | |         MixedAggregates<<Expr as ValidGrouping<()>>::IsAggregate>,
-    | |__________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+LL | |     OrderClause<(O, Expr)>: ValidOrderingForDistinct<D>,
+    | |________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<ST, F, S, D, W, O, LOf, GB, H, LC, Expr> ThenOrderDsl<Expr>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, GroupByClause<GB>, H...
 LL | | where
 LL | |     F: QuerySource,
 ...   |
-LL | |         SelectQuery<SqlType = ST>,
 LL | |     (O, Expr): ValidGrouping<GB>,
-    | |_________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+LL | |     OrderClause<(O, Expr)>: ValidOrderingForDistinct<D>,
+    | |________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
 ...
 LL | / impl<F, S, D, W, LOf, G, LC, Expr> ThenOrderDsl<Expr>
 LL | |     for SelectStatement<F, S, D, W, NoOrderClause, LOf, G, LC>

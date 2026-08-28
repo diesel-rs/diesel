@@ -10,6 +10,18 @@ table! {
     }
 }
 
+table! {
+    posts {
+        id -> Integer,
+        title -> Text,
+        user_id -> Integer,
+        body -> Text,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(users, posts);
+joinable!(posts -> users(user_id));
+
 fn main() {
     // verify that we could use distinct on without order clause
     let _ = users::table.distinct_on(users::name);
@@ -185,4 +197,81 @@ fn main() {
         .order_by(users::id)
         //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
         .into_boxed();
+
+    // verify that we cannot use `then_order_by` to
+    // add a not matching element later
+    // verify that we could use multiple columns for both order by and distinct on and distinct on has more columns than order by
+    //
+    // that works
+    let _ = users::table
+        .order_by(users::name)
+        .distinct_on((users::name, users::id));
+    // this should fail
+    let _ = users::table
+        .order_by(users::name)
+        .distinct_on((users::name, users::id))
+        .then_order_by(users::hair_color);
+    //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
+
+    // using joins works, also with more than 5 columns
+    users::table.inner_join(posts::table).order_by((
+        users::id,
+        posts::id,
+        users::name,
+        posts::title,
+        users::hair_color,
+        posts::body,
+    ));
+    // the distinct check continues to work
+    users::table
+        .inner_join(posts::table)
+        .distinct_on(users::id)
+        .order_by(posts::id);
+    //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
+
+    // we reject ordering by more than 5 columns
+    // (If we change the number, it's fine to update this example)
+    users::table
+        .inner_join(posts::table)
+        .distinct_on(users::id)
+        .order_by((
+            //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
+            users::id,
+            posts::id,
+            users::hair_color,
+            users::name,
+            posts::title,
+            posts::body,
+        ));
+    // using then_order_by doesn't allow to workaround that
+    users::table
+        .inner_join(posts::table)
+        .distinct_on((users::id, posts::id))
+        .order_by(users::id)
+        .then_order_by((
+            //~^ ERROR: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
+            posts::id,
+            users::hair_color,
+            users::name,
+            posts::title,
+            posts::body,
+            posts::user_id,
+        ));
+
+    // working around the limitation with tuples works
+    // same example as the plain tuple example above
+    // with just an extra tuple
+    users::table
+        .inner_join(posts::table)
+        .distinct_on(users::id)
+        .order_by((
+            users::id,
+            (
+                posts::id,
+                users::hair_color,
+                users::name,
+                posts::title,
+                posts::body,
+            ),
+        ));
 }
