@@ -124,6 +124,15 @@ pub trait QueryDsl: Sized {
 
     /// Adds the `DISTINCT ON` clause to a query.
     ///
+    /// Diesel performs compile time checks to verify that your `DISTINCT ON`
+    /// clause is compatible to any `ORDER BY` clause used by your query. It
+    /// requires that the first elements for both clauses are the same up to
+    /// the length of the shorter list.
+    /// By default this check allows only up to 5 columns in your `DISTINCT ON`
+    /// or `ORDER BY` clause. You can side step this limitation by wrapping
+    /// your columns same shaped tuples up to the size of 5 elements.
+    ///
+    ///
     /// # Example
     ///
     /// ```rust
@@ -160,6 +169,9 @@ pub trait QueryDsl: Sized {
     ///     .execute(connection)
     ///     .unwrap();
     /// let all_animals = animals.select((species, name, legs)).load(connection);
+    ///
+    /// // requires that `distinct_on` and `order_by` both start with the
+    /// // same column
     /// let distinct_animals = animals
     ///     .select((species, name, legs))
     ///     .order_by((species, legs))
@@ -769,6 +781,14 @@ pub trait QueryDsl: Sized {
     /// To construct an order clause of an unknown number of columns,
     /// see [`QueryDsl::then_order_by`](QueryDsl::then_order_by())
     ///
+    /// If you combine a `ORDER BY` clause with a [`DISTINCT ON`](QueryDsl::distinct_on())
+    /// clause you need to make sure that the columns used in both clauses are
+    /// the same up to the number of elements in the shorter of both clauses.
+    /// Diesel imposes a limit of 5 columns for this check. If you need to
+    /// have more order by expressions make sure to use `.order_by`
+    /// for the columns used by the `DISTINCT ON` clause and add additional
+    /// columns via  [`QueryDsl::then_order_by`](QueryDsl::then_order_by())
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -780,6 +800,7 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
+    /// #     use schema::{comments, posts};
     /// #     let connection = &mut establish_connection();
     /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
@@ -807,6 +828,23 @@ pub trait QueryDsl: Sized {
     ///     (String::from("Steve"), 4),
     /// ];
     /// assert_eq!(expected_data, data);
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// let data = users
+    ///     .inner_join(posts::table.inner_join(comments::table.on(comments::post_id.eq(posts::id))))
+    /// #    .select((name, id))
+    ///     .distinct_on(id)
+    ///     .order_by(id)
+    ///     .then_order_by((
+    ///         posts::id,
+    ///         posts::user_id,
+    ///         posts::title,
+    ///         comments::id,
+    ///         comments::body,
+    ///         comments::post_id,
+    ///     ))
+    ///     .load(connection)?;
+    /// # let _: Vec<(String, i32)> = data;
     /// #    Ok(())
     /// # }
     /// ```
@@ -834,7 +872,6 @@ pub trait QueryDsl: Sized {
     /// `.order_by(foo).order_by(bar)` is equivalent to `.order_by(bar)`.
     /// In contrast,
     /// `.order_by(foo).then_order_by(bar)` is equivalent to `.order((foo, bar))`.
-    /// This method is only present on boxed queries.
     ///
     /// # Examples
     ///
