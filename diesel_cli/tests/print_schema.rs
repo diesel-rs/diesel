@@ -612,6 +612,8 @@ fn print_schema_table_name_injecetion() {
     test_print_schema("print_schema_table_name_injection", vec![])
 }
 
+// seems like it uses lowercase table names there
+#[cfg(not(all(any(feature = "mariadb", feature = "mysql"), windows)))]
 #[test]
 fn print_schema_rust_injection() {
     test_print_schema(
@@ -621,6 +623,26 @@ fn print_schema_rust_injection() {
             "diesel::query_builder::QueryId",
             "--custom-type-derives",
             "Clone",
+            "--with-docs",
+        ],
+    );
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_rust_injection_schema() {
+    test_print_schema(
+        "print_schema_rust_injection_schema",
+        vec![
+            "--custom-type-derives",
+            "diesel::query_builder::QueryId",
+            "--custom-type-derives",
+            "Clone",
+            "--with-docs",
+            "--schema",
+            r#"x."
+include!(env!("SCHEMA")); mod y
+"#,
         ],
     )
 }
