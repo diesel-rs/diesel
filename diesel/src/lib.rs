@@ -151,11 +151,12 @@
 
 //!
 //! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
-//!   a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+//!   a compatible copy of `libsqlite3` for your target architecture. Diesel supports SQLite 3.36.0 or newer.
+//!   Alternatively, you can add `libsqlite3-sys`
 //!   with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
 //!   ```toml
 //!   [dependencies]
-//!   libsqlite3-sys = { version = "0.29", features = ["bundled"] }
+//!   libsqlite3-sys = { version = "0.30", features = ["bundled"] }
 //!   ```
 //! - `sqlite-no-std` A diesel sqlite backend for no-std environments. This is mostly the same as the `sqlite` backend,
 //!   but it doesn't enable the `std` feature flag

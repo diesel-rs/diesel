@@ -35,7 +35,7 @@ use core::{mem, ptr, slice, str};
 // `sqlite3_db_config()` option codes controlling whether ATTACH may create new
 // database files (ATTACH_CREATE) or open them in write mode (ATTACH_WRITE).
 // Introduced in SQLite 3.49.0 / `libsqlite3-sys` 0.35.0, but Diesel supports
-// `libsqlite3-sys` >= 0.17.2, so we define them here to build against any
+// `libsqlite3-sys` >= 0.30.1, so we define them here to build against any
 // supported version. On an older linked SQLite the `sqlite3_db_config()` call
 // fails at runtime, which callers already handle.
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
@@ -312,8 +312,9 @@ impl RawConnection {
             .len()
             .try_into()
             .map_err(|e| Error::DeserializationError(Box::new(e)))?;
-        // the cast for `ffi::SQLITE_DESERIALIZE_READONLY` is required for old libsqlite3-sys versions
-        #[allow(clippy::unnecessary_cast)]
+        // SAFETY: The connection pointer is valid by construction and the caller
+        // guarantees the buffer stays valid and unmodified until the connection
+        // is closed, as required by `sqlite3_deserialize` with a borrowed buffer.
         unsafe {
             let result = ffi::sqlite3_deserialize(
                 self.internal_connection.as_ptr(),
@@ -321,7 +322,7 @@ impl RawConnection {
                 data.as_ptr() as *mut u8,
                 db_size,
                 db_size,
-                ffi::SQLITE_DESERIALIZE_READONLY as u32,
+                ffi::SQLITE_DESERIALIZE_READONLY,
             );
 
             ensure_sqlite_ok(result, self.internal_connection.as_ptr())
