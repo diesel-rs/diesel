@@ -40,7 +40,7 @@ pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
 pub use self::update_hook::{
     SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
 };
-use super::SqliteAggregateFunction;
+use super::{SqliteAggregateFunction, SqliteWindowFunction};
 use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
@@ -695,6 +695,21 @@ impl SqliteConnection {
         Sqlite: HasSqlType<RetSqlType>,
     {
         functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name, behavior)
+    }
+
+    #[doc(hidden)]
+    pub fn register_window_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        &mut self,
+        fn_name: &str,
+        behavior: SqliteFunctionBehavior,
+    ) -> QueryResult<()>
+    where
+        A: SqliteWindowFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
+        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        functions::register_window::<_, _, _, _, A>(&self.raw_connection, fn_name, behavior)
     }
 
     /// Register a collation function.
@@ -2228,6 +2243,15 @@ mod tests {
         fn my_sum(expr: Integer) -> Integer;
         #[aggregate]
         fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
+        #[aggregate]
+        #[window]
+        fn my_window_sum(expr: Integer) -> Integer;
+        #[aggregate]
+        #[window]
+        fn my_weighted_sum(expr: Integer, weight: Integer) -> Integer;
+        #[aggregate]
+        #[window]
+        fn my_panicking_win(expr: Integer) -> Integer;
     }
 
     #[diesel_test_helper::test]
@@ -2464,6 +2488,259 @@ mod tests {
             .select(my_sum(value))
             .get_result::<i32>(connection);
         assert_eq!(Ok(0), result);
+    }
+
+    #[derive(Default)]
+    struct MyWindowSum {
+        sum: i32,
+    }
+
+    impl SqliteAggregateFunction<i32> for MyWindowSum {
+        type Output = i32;
+
+        fn step(&mut self, expr: i32) {
+            self.sum += expr;
+        }
+
+        fn finalize(aggregator: Option<Self>) -> Self::Output {
+            aggregator.map(|a| a.sum).unwrap_or_default()
+        }
+    }
+
+    impl SqliteWindowFunction<i32> for MyWindowSum {
+        fn value(aggregator: Option<&Self>) -> Self::Output {
+            // -1 instead of finalize's 0 for the empty case, so tests can tell
+            // which callback ran. Real implementations must keep them equal.
+            aggregator.map(|a| a.sum).unwrap_or(-1)
+        }
+
+        fn inverse(&mut self, expr: i32) {
+            self.sum -= expr;
+        }
+    }
+
+    fn setup_window_example(connection: &mut SqliteConnection, values: &str) {
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query(alloc::format!(
+            "INSERT INTO my_sum_example (value) VALUES {values}"
+        ))
+        .execute(connection)
+        .unwrap();
+    }
+
+    fn setup_partition_example(connection: &mut SqliteConnection, values: &str) {
+        crate::sql_query(
+            "CREATE TABLE my_partition_example (id integer primary key autoincrement, value integer, grp integer)",
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query(alloc::format!(
+            "INSERT INTO my_partition_example (value, grp) VALUES {values}"
+        ))
+        .execute(connection)
+        .unwrap();
+    }
+
+    #[derive(crate::deserialize::QueryableByName)]
+    struct WindowRow {
+        #[diesel(sql_type = Integer)]
+        s: i32,
+    }
+
+    #[diesel_test_helper::test]
+    fn register_window_function_sliding_frame() {
+        use self::my_sum_example::dsl::*;
+        use crate::expression_methods::{FrameBoundDsl, FrameClauseDsl, WindowExpressionMethods};
+
+        let connection = &mut connection();
+        setup_window_example(connection, "(1), (2), (3), (4), (5)");
+
+        my_window_sum_utils::register_impl::<MyWindowSum, _>(connection).unwrap();
+
+        let result = my_sum_example
+            .select(my_window_sum(value).window_order(id).frame_by(
+                crate::dsl::frame::Rows.frame_between(1.preceding(), crate::dsl::frame::CurrentRow),
+            ))
+            .load::<i32>(connection);
+        assert_eq!(Ok(vec![1, 3, 5, 7, 9]), result);
+    }
+
+    table! {
+        my_partition_example {
+            id -> Integer,
+            value -> Integer,
+            grp -> Integer,
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn register_window_function_partitioned() {
+        use self::my_partition_example::dsl::*;
+        use crate::expression_methods::WindowExpressionMethods;
+
+        let connection = &mut connection();
+        setup_partition_example(connection, "(1, 1), (2, 1), (10, 2), (20, 2)");
+
+        my_window_sum_utils::register_impl::<MyWindowSum, _>(connection).unwrap();
+
+        // the running sum must restart per partition
+        let result = my_partition_example
+            .select(my_window_sum(value).partition_by(grp).window_order(id))
+            .load::<i32>(connection);
+        assert_eq!(Ok(vec![1, 3, 10, 30]), result);
+    }
+
+    #[diesel_test_helper::test]
+    fn register_window_function_empty_frame_calls_value_without_state() {
+        let connection = &mut connection();
+        setup_window_example(connection, "(1), (2), (3)");
+
+        my_window_sum_utils::register_impl::<MyWindowSum, _>(connection).unwrap();
+
+        // The first row's frame is empty, so `value` observes `None`. Raw SQL
+        // because the typed frame DSL cannot express `N PRECEDING` end bounds.
+        let result = crate::sql_query(
+            "SELECT my_window_sum(value) OVER \
+                 (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS s \
+             FROM my_sum_example ORDER BY id",
+        )
+        .load::<WindowRow>(connection)
+        .unwrap();
+        assert_eq!(
+            vec![-1, 1, 3],
+            result.into_iter().map(|r| r.s).collect::<Vec<_>>()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn window_function_usable_as_plain_aggregate() {
+        use self::my_sum_example::dsl::*;
+
+        let connection = &mut connection();
+        setup_window_example(connection, "(1), (2), (3)");
+
+        my_window_sum_utils::register_impl_with_behavior::<MyWindowSum, _>(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+        )
+        .unwrap();
+
+        let result = my_sum_example
+            .select(my_window_sum(value))
+            .get_result::<i32>(connection);
+        assert_eq!(Ok(6), result);
+    }
+
+    #[derive(Default)]
+    struct MyWeightedSum {
+        sum: i32,
+    }
+
+    impl SqliteAggregateFunction<(i32, i32)> for MyWeightedSum {
+        type Output = i32;
+
+        fn step(&mut self, (expr, weight): (i32, i32)) {
+            self.sum += expr * weight;
+        }
+
+        fn finalize(aggregator: Option<Self>) -> Self::Output {
+            aggregator.map(|a| a.sum).unwrap_or_default()
+        }
+    }
+
+    impl SqliteWindowFunction<(i32, i32)> for MyWeightedSum {
+        fn value(aggregator: Option<&Self>) -> Self::Output {
+            aggregator.map(|a| a.sum).unwrap_or_default()
+        }
+
+        fn inverse(&mut self, (expr, weight): (i32, i32)) {
+            self.sum -= expr * weight;
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn register_multiarg_window_function() {
+        use self::my_partition_example::dsl::*;
+        use crate::expression_methods::{FrameBoundDsl, FrameClauseDsl, WindowExpressionMethods};
+
+        let connection = &mut connection();
+        setup_partition_example(connection, "(1, 2), (2, 3), (3, 4)");
+
+        my_weighted_sum_utils::register_impl::<MyWeightedSum, _, _>(connection).unwrap();
+
+        let result = my_partition_example
+            .select(my_weighted_sum(value, grp).window_order(id).frame_by(
+                crate::dsl::frame::Rows.frame_between(1.preceding(), crate::dsl::frame::CurrentRow),
+            ))
+            .load::<i32>(connection);
+        assert_eq!(Ok(vec![2, 8, 18]), result);
+    }
+
+    // wasm builds with panic=abort, so a panic cannot become a query error there
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[derive(Default)]
+    struct PanickingWin;
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    impl SqliteAggregateFunction<i32> for PanickingWin {
+        type Output = i32;
+
+        fn step(&mut self, _expr: i32) {}
+
+        fn finalize(_aggregator: Option<Self>) -> Self::Output {
+            0
+        }
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    impl SqliteWindowFunction<i32> for PanickingWin {
+        fn value(_aggregator: Option<&Self>) -> Self::Output {
+            panic!("boom")
+        }
+
+        fn inverse(&mut self, _expr: i32) {}
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn window_function_panic_in_value_becomes_query_error() {
+        use self::my_sum_example::dsl::*;
+        use crate::expression_methods::WindowExpressionMethods;
+
+        let connection = &mut connection();
+        setup_window_example(connection, "(1)");
+
+        my_panicking_win_utils::register_impl::<PanickingWin, _>(connection).unwrap();
+
+        let result = my_sum_example
+            .select(my_panicking_win(value).window_order(id))
+            .load::<i32>(connection);
+        let error = result.unwrap_err().to_string();
+        assert!(error.contains("value() panicked"), "{error}");
+    }
+
+    #[diesel_test_helper::test]
+    fn window_function_non_streamable_frame_uses_finalize() {
+        let connection = &mut connection();
+        setup_window_example(connection, "(42)");
+
+        my_window_sum_utils::register_impl::<MyWindowSum, _>(connection).unwrap();
+
+        // SQLite computes frames it cannot stream through `finalize` instead
+        // of `value` (0, not the -1 sentinel). Raw SQL because the typed
+        // frame DSL cannot express `N FOLLOWING` start bounds.
+        let result = crate::sql_query(
+            "SELECT my_window_sum(value) OVER \
+                 (ORDER BY id ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING) AS s \
+             FROM my_sum_example",
+        )
+        .load::<WindowRow>(connection)
+        .unwrap();
+        assert_eq!(vec![0], result.into_iter().map(|r| r.s).collect::<Vec<_>>());
     }
 
     #[derive(Default)]

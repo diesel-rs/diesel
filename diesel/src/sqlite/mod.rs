@@ -72,6 +72,34 @@ pub trait SqliteAggregateFunction<Args>: Default {
     fn finalize(aggregator: Option<Self>) -> Self::Output;
 }
 
+/// Trait for the implementation of a SQLite aggregate window function
+///
+/// Implementing this trait in addition to [`SqliteAggregateFunction`] lets a
+/// custom aggregate also run as a window function inside an `OVER` clause
+/// (requires SQLite 3.25.0 or newer). See the
+/// [`define_sql_function!`](super::prelude::define_sql_function!)
+/// documentation for details.
+///
+/// SQLite substitutes [`finalize`](SqliteAggregateFunction::finalize) for
+/// [`value`](Self::value) on frames it cannot compute incrementally and at
+/// partition ends, so both must return the same result for the same state.
+///
+/// Panics in `value` and `inverse` are caught at the FFI boundary and
+/// reported as query errors. The implementation must still keep the state
+/// valid (refer to [`std::panic::UnwindSafe`] for a bit more detail).
+#[diagnostic::on_unimplemented(
+    note = "implement `SqliteWindowFunction` in addition to `SqliteAggregateFunction` to register `{Self}` for a window function"
+)]
+pub trait SqliteWindowFunction<Args>: SqliteAggregateFunction<Args> {
+    /// Returns the current value of the aggregate without consuming the
+    /// state. `aggregator` is `None` when the window frame contains no rows.
+    fn value(aggregator: Option<&Self>) -> Self::Output;
+
+    /// Removes the oldest row from the window, given the same arguments
+    /// [`step`](SqliteAggregateFunction::step) received when adding it.
+    fn inverse(&mut self, args: Args);
+}
+
 /// SQLite specific sql types
 pub mod sql_types {
     #[doc(inline)]
