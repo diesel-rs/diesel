@@ -1,6 +1,10 @@
+#[cfg(feature = "sqlite")]
 use crate::schema::connection;
+#[cfg(feature = "sqlite")]
 use diesel::dsl::sql;
+#[cfg(feature = "sqlite")]
 use diesel::prelude::*;
+#[cfg(feature = "sqlite")]
 use diesel::sql_types::{Json, Jsonb};
 
 #[diesel_test_helper::test]
