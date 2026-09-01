@@ -55,6 +55,9 @@ mod bigdecimal {
                 PgNumeric::NaN => {
                     return Err(Box::from("NaN is not (yet) supported in BigDecimal"));
                 }
+                PgNumeric::PositiveInfinity | PgNumeric::NegativeInfinity => {
+                    return Err(Box::from("Infinity is not supported in BigDecimal"));
+                }
             };
 
             let mut result = BigUint::default();
@@ -195,6 +198,12 @@ mod bigdecimal {
 
         use super::*;
         use std::str::FromStr;
+
+        #[diesel_test_helper::test]
+        fn infinity_pgnumeric_does_not_convert_to_bigdecimal() {
+            assert!(BigDecimal::try_from(PgNumeric::PositiveInfinity).is_err());
+            assert!(BigDecimal::try_from(PgNumeric::NegativeInfinity).is_err());
+        }
 
         #[diesel_test_helper::test]
         fn bigdecimal_to_pgnumeric_converts_digits_to_base_10000() {

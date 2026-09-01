@@ -972,6 +972,33 @@ fn pg_numeric_from_sql() {
         expected_value,
         query_single_value::<Numeric, PgNumeric>(query)
     );
+    let query = "'Infinity'::numeric";
+    let expected_value = PgNumeric::PositiveInfinity;
+    assert_eq!(
+        expected_value,
+        query_single_value::<Numeric, PgNumeric>(query)
+    );
+    let query = "'-Infinity'::numeric";
+    let expected_value = PgNumeric::NegativeInfinity;
+    assert_eq!(
+        expected_value,
+        query_single_value::<Numeric, PgNumeric>(query)
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_numeric_infinity_to_sql() {
+    use diesel::data_types::PgNumeric;
+
+    assert!(query_to_sql_equality::<Numeric, PgNumeric>(
+        "'Infinity'::numeric",
+        PgNumeric::PositiveInfinity,
+    ));
+    assert!(query_to_sql_equality::<Numeric, PgNumeric>(
+        "'-Infinity'::numeric",
+        PgNumeric::NegativeInfinity,
+    ));
 }
 
 #[diesel_test_helper::test]
