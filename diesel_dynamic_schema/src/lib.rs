@@ -85,6 +85,7 @@ mod column;
 mod dummy_expression;
 mod dynamic_select;
 pub mod dynamic_value;
+mod error;
 mod schema;
 mod table;
 
@@ -96,6 +97,9 @@ pub use schema::Schema;
 
 /// A database table.
 pub use table::Table;
+
+/// Dynamic-schema errors.
+pub use error::DynamicSchemaError;
 
 #[doc(inline)]
 pub use self::dynamic_select::DynamicSelectClause;

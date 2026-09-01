@@ -22,8 +22,9 @@ help: the following other types implement trait `QueryFragment<DB, SP>`
   LL | | where
   LL | |     BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite, GB>:
   LL | |         QueryFragment<crate::sqlite::Sqlite>,
-  LL | |     QS: QueryFragment<crate::sqlite::Sqlite>,
-     | |_____________________________________________^ `OnConflictSelectWrapper<...>`
+  LL | |     QS: QueryFragment<crate::sqlite::Sqlite>
+  LL | |         + crate::query_builder::from_clause::FromClauseMembership,
+     | |__________________________________________________________________^ `OnConflictSelectWrapper<...>`
      = note: required for `InsertFromSelect<..., ...>` to implement `QueryFragment<Sqlite>`
      = note: 3 redundant requirements hidden
      = note: required for `InsertStatement<table, ...>` to implement `QueryFragment<Sqlite>`

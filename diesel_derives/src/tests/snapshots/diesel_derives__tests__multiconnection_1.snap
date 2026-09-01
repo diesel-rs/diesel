@@ -708,7 +708,8 @@ mod multi_connection_impl {
             GB,
         >
         where
-            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+                + diesel::internal::derives::multiconnection::FromClauseMembership,
         {
             fn walk_ast<'b>(
                 &'b self,
@@ -863,7 +864,8 @@ mod multi_connection_impl {
             GB,
         >
         where
-            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+                + diesel::internal::derives::multiconnection::FromClauseMembership,
         {
             fn walk_ast<'b>(
                 &'b self,

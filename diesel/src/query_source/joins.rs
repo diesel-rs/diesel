@@ -128,6 +128,11 @@ where
                 .append_selection(self.right.source.default_selection()),
         )
     }
+
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool {
+        self.left.source.contains_runtime_table(schema, table)
+            || self.right.source.contains_runtime_table(schema, table)
+    }
 }
 
 impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter>
@@ -157,6 +162,11 @@ where
                 .source
                 .append_selection(self.right.source.default_selection().nullable()),
         )
+    }
+
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool {
+        self.left.source.contains_runtime_table(schema, table)
+            || self.right.source.contains_runtime_table(schema, table)
     }
 }
 
@@ -189,6 +199,10 @@ where
 
     fn default_selection(&self) -> Self::DefaultSelection {
         self.join.default_selection()
+    }
+
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool {
+        self.join.contains_runtime_table(schema, table)
     }
 }
 

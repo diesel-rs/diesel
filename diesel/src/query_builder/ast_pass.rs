@@ -1,5 +1,6 @@
 use crate::backend::Backend;
 use crate::query_builder::{BindCollector, MoveableBindCollector, QueryBuilder};
+use crate::query_source::DynQuerySource;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
@@ -31,6 +32,7 @@ where
 {
     internals: AstPassInternals<'a, 'b, DB>,
     backend: &'b DB,
+    query_source: StatementContext<'a>,
 }
 
 impl<'a, 'b, DB> AstPass<'a, 'b, DB>
@@ -46,6 +48,7 @@ where
         AstPass {
             internals: AstPassInternals::ToSql(query_builder, options),
             backend,
+            query_source: StatementContext::None,
         }
     }
 
@@ -60,6 +63,7 @@ where
                 metadata_lookup,
             },
             backend,
+            query_source: StatementContext::None,
         }
     }
 
@@ -67,6 +71,7 @@ where
         AstPass {
             internals: AstPassInternals::IsSafeToCachePrepared(result),
             backend,
+            query_source: StatementContext::None,
         }
     }
 
@@ -77,6 +82,7 @@ where
         AstPass {
             internals: AstPassInternals::DebugBinds(formatter),
             backend,
+            query_source: StatementContext::None,
         }
     }
 
@@ -88,6 +94,7 @@ where
         AstPass {
             internals: AstPassInternals::IsNoop(result),
             backend,
+            query_source: StatementContext::None,
         }
     }
 
@@ -137,7 +144,54 @@ where
         AstPass {
             internals,
             backend: self.backend,
+            query_source: self.query_source,
         }
+    }
+
+    pub(crate) fn query_source_frame(
+        &self,
+        source: &'a dyn DynQuerySource,
+        correlatable: bool,
+    ) -> QuerySourceFrame<'a> {
+        QuerySourceFrame {
+            source,
+            correlatable,
+            parent: self.query_source,
+        }
+    }
+
+    pub(crate) fn push_query_source<'c>(
+        &'c mut self,
+        frame: &'c QuerySourceFrame<'c>,
+    ) -> AstPass<'c, 'b, DB> {
+        let mut pass = self.reborrow();
+        pass.query_source = StatementContext::Active(frame);
+        pass
+    }
+
+    /// Reports membership in the current statement or a correlatable outer statement.
+    #[doc(hidden)]
+    pub fn dynamic_table_membership(
+        &self,
+        schema: Option<&str>,
+        table: &str,
+    ) -> DynamicTableMembership {
+        let head = match self.query_source {
+            StatementContext::None => return DynamicTableMembership::NoStatementContext,
+            StatementContext::Active(frame) => frame,
+        };
+        if head.source.contains_runtime_table(schema, table) {
+            return DynamicTableMembership::Present;
+        }
+        let mut context = head.parent;
+        while let StatementContext::Active(frame) = context {
+            // Non-correlatable frames do not match or stop traversal.
+            if frame.correlatable && frame.source.contains_runtime_table(schema, table) {
+                return DynamicTableMembership::Present;
+            }
+            context = frame.parent;
+        }
+        DynamicTableMembership::Absent
     }
 
     /// Mark the current query being constructed as unsafe to store in the
@@ -343,6 +397,28 @@ where
     IsNoop(&'a mut bool),
 }
 
+#[derive(Clone, Copy)]
+enum StatementContext<'a> {
+    None,
+    Active(&'a QuerySourceFrame<'a>),
+}
+
+/// Linked frame that keeps nested statements allocation-free.
+pub(crate) struct QuerySourceFrame<'a> {
+    source: &'a dyn DynQuerySource,
+    /// Insert targets are not visible to nested selects.
+    correlatable: bool,
+    parent: StatementContext<'a>,
+}
+
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DynamicTableMembership {
+    NoStatementContext,
+    Present,
+    Absent,
+}
+
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
@@ -438,6 +514,7 @@ where
         AstPass {
             internals: casted_pass,
             backend: convert_backend(self.backend),
+            query_source: self.query_source,
         }
     }
 
