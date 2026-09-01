@@ -448,6 +448,12 @@ where
         )
         // we cast the returned memory here to be a pointer to the aggregate instance
         .cast::<*mut A>();
+        // sqlite3_aggregate_context returns a null pointer if the allocation fails
+        if ctx.is_null() {
+            return Err(SqliteCallbackError::Abort(
+                "sqlite3_aggregate_context failed to allocate memory for the aggregate state",
+            ));
+        }
         // we are interested in the inner pointer
         let inner = &mut *ctx;
         // if the inner pointer is null we the aggregate_step
