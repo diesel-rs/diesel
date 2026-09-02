@@ -18,6 +18,7 @@ use crate::pg::backend::FailedToLookupTypeError;
 use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::query_builder::BatchInsert;
 use crate::query_builder::QueryFragment;
+#[cfg(feature = "postgres")]
 use crate::query_builder::QueryId;
 use crate::query_builder::ValuesClause;
 use crate::serialize::IsNull;
@@ -93,6 +94,8 @@ pub struct CopyFrom<S, F> {
     p: PhantomData<S>,
 }
 
+// Same gate as the re-export, only the `postgres` connection builds this.
+#[cfg(feature = "postgres")]
 pub(crate) struct InternalCopyFromQuery<S, T> {
     pub(crate) target: S,
     p: PhantomData<T>,
@@ -108,6 +111,7 @@ impl<S, T> InternalCopyFromQuery<S, T> {
     }
 }
 
+#[cfg(feature = "postgres")]
 impl<S, T> QueryId for InternalCopyFromQuery<S, T>
 where
     S: CopyFromExpression<T>,
@@ -116,6 +120,7 @@ where
     type QueryId = ();
 }
 
+#[cfg(feature = "postgres")]
 impl<S, T> QueryFragment<Pg> for InternalCopyFromQuery<S, T>
 where
     S: CopyFromExpression<T>,

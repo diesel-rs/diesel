@@ -9,14 +9,34 @@ use crate::sqlite::SqliteConnection;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use core::ffi::{c_char, c_int};
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+type RawApiPointer = *const core::ffi::c_void;
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+type RawApiPointer = *const ffi::sqlite3_api_routines;
 
-/// The fn type `libsqlite3-sys` expects for `sqlite3_auto_extension`, used only
-/// to name the private trampoline below.
+/// SQLite's auto-extension callback type.
 type RawAutoExtension = unsafe extern "C" fn(
     db: *mut ffi::sqlite3,
     pz_err_msg: *mut *mut c_char,
-    p_api: *const ffi::sqlite3_api_routines,
+    p_api: RawApiPointer,
 ) -> c_int;
+
+// TODO: diesel 3.0 use `libsqlite3-sys` declarations after raising the minimum to 0.29.
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+mod auto_extension_ffi {
+    use super::{RawAutoExtension, c_int};
+
+    // SAFETY: These declarations match SQLite's C ABI and bypass incompatible callback types in older bindings.
+    #[allow(unsafe_code)]
+    unsafe extern "C" {
+        pub(super) fn sqlite3_auto_extension(entry_point: Option<RawAutoExtension>) -> c_int;
+        pub(super) fn sqlite3_cancel_auto_extension(entry_point: Option<RawAutoExtension>)
+        -> c_int;
+    }
+}
+
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use ffi as auto_extension_ffi;
 
 /// Registers an auto-extension that runs for every SQLite connection opened in
 /// this process, including non-Diesel ones.
@@ -67,7 +87,9 @@ pub fn register_auto_extension<F>(extension: F) -> QueryResult<()>
 where
     F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
-    let result = unsafe { ffi::sqlite3_auto_extension(Some(entry_point(extension))) };
+    // SAFETY: `entry_point` returns a stable function pointer with SQLite's callback ABI.
+    let result =
+        unsafe { auto_extension_ffi::sqlite3_auto_extension(Some(entry_point(extension))) };
     if result == ffi::SQLITE_OK {
         Ok(())
     } else {
@@ -91,7 +113,8 @@ pub fn cancel_auto_extension<F>(extension: F) -> bool
 where
     F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
-    unsafe { ffi::sqlite3_cancel_auto_extension(Some(entry_point(extension))) != 0 }
+    // SAFETY: `entry_point` returns the same stable pointer used for registration.
+    unsafe { auto_extension_ffi::sqlite3_cancel_auto_extension(Some(entry_point(extension))) != 0 }
 }
 
 /// Clears **all** registered auto-extensions ([docs][reset_docs]).
@@ -122,7 +145,7 @@ where
 unsafe extern "C" fn trampoline<F>(
     db: *mut ffi::sqlite3,
     pz_err_msg: *mut *mut c_char,
-    _p_api: *const ffi::sqlite3_api_routines,
+    _p_api: RawApiPointer,
 ) -> c_int
 where
     F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
