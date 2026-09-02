@@ -21,9 +21,13 @@ mod bigdecimal {
         fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
             match value.numeric_value()? {
                 NumericRepresentation::Tiny(x) => Ok(x.into()),
+                NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
                 NumericRepresentation::Small(x) => Ok(x.into()),
+                NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
                 NumericRepresentation::Medium(x) => Ok(x.into()),
+                NumericRepresentation::UnsignedMedium(x) => Ok(x.into()),
                 NumericRepresentation::Big(x) => Ok(x.into()),
+                NumericRepresentation::UnsignedBig(x) => Ok(x.into()),
                 NumericRepresentation::Float(x) => BigDecimal::from_f32(x)
                     .ok_or_else(|| format!("{x} is not valid decimal number ").into()),
                 NumericRepresentation::Double(x) => BigDecimal::from_f64(x)
