@@ -19,7 +19,7 @@ const _: () = {
                     diesel::sql_types::BigInt,
                     i16,
                 >(row, "value")?;
-                <i16 as ::core::convert::Into<i16>>::into(field)
+                <i16 as std::convert::Into<i16>>::into(field)
             };
             diesel::deserialize::Result::Ok(Self { value })
         }

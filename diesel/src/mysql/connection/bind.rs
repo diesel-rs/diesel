@@ -882,7 +882,10 @@ mod tests {
                     multilinestring_col MULTILINESTRING NOT NULL,
                     multipolygon_col MULTIPOLYGON NOT NULL,
                     geometry_collection GEOMETRYCOLLECTION NOT NULL,
-                    json_col JSON NOT NULL
+                    json_col JSON NOT NULL,
+                    unsigned_tiny TINYINT UNSIGNED NOT NULL,
+                    unsigned_small SMALLINT UNSIGNED NOT NULL,
+                    unsigned_big BIGINT UNSIGNED NOT NULL
             )",
         )
         .execute(conn)
@@ -922,7 +925,10 @@ mod tests {
                     ST_MultiLineStringFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))'), -- multilinestring_col
                     ST_MultiPolygonFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))'), -- multipolygon_col
                     ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))'), -- geometry_collection
-                    '{\"key1\": \"value1\", \"key2\": \"value2\"}' -- json_col
+                    '{\"key1\": \"value1\", \"key2\": \"value2\"}', -- json_col
+                    200, -- unsigned_tiny
+                    40000, -- unsigned_small
+                    18446744073709551615 -- unsigned_big
 )",
             ).execute(conn)
             .unwrap();
@@ -937,7 +943,8 @@ mod tests {
                     char_col, varchar_col, binary_col, varbinary_col, blob_col,
                     text_col, enum_col, set_col, ST_AsText(geom), ST_AsText(point_col), ST_AsText(linestring_col),
                     ST_AsText(polygon_col), ST_AsText(multipoint_col), ST_AsText(multilinestring_col),
-                    ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col
+                    ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col,
+                    unsigned_tiny, unsigned_small, unsigned_big
                  FROM all_mysql_types",
             ),
             &mut conn.statement_cache,
@@ -1304,6 +1311,43 @@ mod tests {
             to_value::<Text, String>(json_col).unwrap(),
             "{\"key1\": \"value1\", \"key2\": \"value2\"}"
         );
+
+        let unsigned_tiny_col = &results[34].0;
+        assert_eq!(
+            unsigned_tiny_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_TINY
+        );
+        assert!(unsigned_tiny_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(to_value::<BigInt, i64>(unsigned_tiny_col).unwrap(), 200);
+        assert_eq!(
+            to_value::<Unsigned<TinyInt>, u8>(unsigned_tiny_col).unwrap(),
+            200
+        );
+
+        let unsigned_small_col = &results[35].0;
+        assert_eq!(
+            unsigned_small_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_SHORT
+        );
+        assert!(unsigned_small_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(to_value::<Integer, i32>(unsigned_small_col).unwrap(), 40000);
+        assert_eq!(
+            to_value::<Unsigned<SmallInt>, u16>(unsigned_small_col).unwrap(),
+            40000
+        );
+
+        let unsigned_big_col = &results[36].0;
+        assert_eq!(
+            unsigned_big_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_LONGLONG
+        );
+        assert!(unsigned_big_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Unsigned<BigInt>, u64>(unsigned_big_col).unwrap(),
+            u64::MAX
+        );
+        // Nothing signed can hold it, so refusing beats reporting -1.
+        assert!(to_value::<BigInt, i64>(unsigned_big_col).is_err());
     }
 
     fn query_single_table(

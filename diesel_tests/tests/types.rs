@@ -328,6 +328,55 @@ fn u64_from_sql() {
     );
 }
 
+// `schema::unsigned_widths` with signed types declared over its unsigned columns.
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+table! {
+    #[sql_name = "unsigned_widths"]
+    unsigned_widths_declared_signed (id) {
+        id -> Unsigned<Integer>,
+        tiny_value -> SmallInt,
+        small_value -> Integer,
+        int_value -> BigInt,
+        big_value -> BigInt,
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn unsigned_column_read_through_signed_sql_type() {
+    let connection = &mut connection();
+    insert_into(unsigned_widths::table)
+        .values((
+            unsigned_widths::id.eq(1_u32),
+            unsigned_widths::tiny_value.eq(200_u8),
+            unsigned_widths::small_value.eq(40_000_u16),
+            unsigned_widths::int_value.eq(4_000_000_000_u32),
+            unsigned_widths::big_value.eq(u64::MAX),
+        ))
+        .execute(connection)
+        .unwrap();
+
+    let widths = unsigned_widths_declared_signed::table
+        .select((
+            unsigned_widths_declared_signed::tiny_value,
+            unsigned_widths_declared_signed::small_value,
+            unsigned_widths_declared_signed::int_value,
+        ))
+        .get_result::<(i16, i32, i64)>(connection);
+    assert_eq!(Ok((200, 40_000, 4_000_000_000)), widths);
+
+    // The one value no signed type can represent, so an error beats a wrapped -1.
+    let too_wide = unsigned_widths_declared_signed::table
+        .select(unsigned_widths_declared_signed::big_value)
+        .get_result::<i64>(connection);
+    assert!(too_wide.is_err());
+
+    let declared_unsigned = unsigned_widths::table
+        .select(unsigned_widths::big_value)
+        .get_result::<u64>(connection);
+    assert_eq!(Ok(u64::MAX), declared_unsigned);
+}
+
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn i64_from_sql() {
