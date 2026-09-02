@@ -33,7 +33,6 @@ fn main() {
         .do_update()
         .set(name.eq("Jane"))
         .execute(&mut connection);
-    
     insert_into(users)
         .values((id.eq(42), name.eq("John")))
         .on_conflict(dsl::DuplicatedKeys)

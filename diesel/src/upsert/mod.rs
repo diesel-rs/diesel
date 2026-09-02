@@ -31,7 +31,7 @@ pub fn excluded<T>(excluded: T) -> Excluded<T> {
     Excluded::new(excluded)
 }
 
-/// Reexports `excluded` as `values` for MySQL and MariaDB,
-/// where the SQL syntax is `VALUES(column)` instead of `excluded.column`.
+/// Reexports `excluded` as `values` for MySQL and MariaDB using
+/// `VALUES(column)`, which MySQL deprecates but whose replacement requires MySQL 8.0.19.
 #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 pub use excluded as values;
