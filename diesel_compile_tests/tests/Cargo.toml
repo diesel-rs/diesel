@@ -5,5 +5,7 @@ edition = "2024"
 
 [dependencies]
 diesel = { version = "2.0.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql" , "mariadb", "with-deprecated"], path = "../../diesel" }
+# Pin Diesel's declared minimum so the compile tests cover it.
+libsqlite3-sys = "=0.17.2"
 
 [workspace]

@@ -41,12 +41,13 @@ pub(crate) mod std_compat {
 #[cfg(feature = "std")]
 pub(crate) mod std_compat {
     pub(crate) use std::collections::HashMap;
+    // Used only by the statement cache, which needs a connection, not a bare backend.
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "__sqlite-shared",
-        feature = "mysql_backend",
-        feature = "mariadb_backend",
-        feature = "postgres_backend"
+        feature = "mysql",
+        feature = "mariadb",
+        feature = "postgres"
     ))]
     pub(crate) use std::collections::hash_map::Entry;
     #[cfg(feature = "__sqlite-shared")]
