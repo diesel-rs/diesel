@@ -1,5 +1,5 @@
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:49:18
+    --> tests/fail/mysql_on_conflict_tests.rs:48:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -52,7 +52,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
   
      
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:56:18
+    --> tests/fail/mysql_on_conflict_tests.rs:55:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -105,7 +105,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
   
      
 error[E0277]: the trait bound `ConflictTarget<(..., ...)>: OnConflictTarget<...>` is not satisfied
-   --> tests/fail/mysql_on_conflict_tests.rs:61:22
+   --> tests/fail/mysql_on_conflict_tests.rs:60:22
     |
  LL |         .on_conflict((dsl::DuplicatedKeys, name))
     |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -134,7 +134,7 @@ LL |         ConflictTarget<Target>: OnConflictTarget<T>,
  
     
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:64:18
+    --> tests/fail/mysql_on_conflict_tests.rs:63:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -187,7 +187,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
   
      
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:72:18
+    --> tests/fail/mysql_on_conflict_tests.rs:71:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -240,7 +240,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
   
      
 error[E0277]: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:82:18
+    --> tests/fail/mysql_on_conflict_tests.rs:81:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -275,7 +275,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
   
      
 error[E0277]: the trait bound `ConflictTarget<(name, ...)>: OnConflictTarget<...>` is not satisfied
-   --> tests/fail/mysql_on_conflict_tests.rs:87:22
+   --> tests/fail/mysql_on_conflict_tests.rs:86:22
     |
  LL |         .on_conflict((name, dsl::DuplicatedKeys))
     |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -304,7 +304,7 @@ LL |         ConflictTarget<Target>: OnConflictTarget<T>,
  
     
 error[E0277]: `ConflictTarget<(name, DuplicatedKeys)>` is no valid SQL fragment for the `Pg` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:90:18
+    --> tests/fail/mysql_on_conflict_tests.rs:89:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `ConflictTarget<(name, DuplicatedKeys)>`
@@ -338,7 +338,7 @@ LL |         Self: methods::ExecuteDsl<Conn>,
   
      
 error[E0277]: the trait bound `ConflictTarget<(..., ...)>: OnConflictTarget<...>` is not satisfied
-   --> tests/fail/mysql_on_conflict_tests.rs:95:22
+   --> tests/fail/mysql_on_conflict_tests.rs:94:22
     |
  LL |         .on_conflict((dsl::DuplicatedKeys, name))
     |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -367,7 +367,7 @@ LL |         ConflictTarget<Target>: OnConflictTarget<T>,
  
     
 error[E0277]: `ConflictTarget<(DuplicatedKeys, name)>` is no valid SQL fragment for the `Pg` backend
-    --> tests/fail/mysql_on_conflict_tests.rs:98:18
+    --> tests/fail/mysql_on_conflict_tests.rs:97:18
      |
   LL |         .execute(&mut connection);
      |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `ConflictTarget<(DuplicatedKeys, name)>`
