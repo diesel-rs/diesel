@@ -683,14 +683,25 @@ fn update_array_slice_to_expression() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mariadb"))]
 fn returning_old_column_in_update() {
     use crate::schema::users::dsl::*;
-    use diesel::pg::returning::old;
+
+    #[cfg(feature = "postgres")]
+    let old = diesel::pg::returning::old;
+
+    #[cfg(feature = "mariadb")]
+    let old = diesel::mariadb::returning::old_value;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
+    #[cfg(feature = "postgres")]
     if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    #[cfg(feature = "mariadb")]
+    if !mariadb_server_supports_update_returning(connection) {
         return;
     }
 
@@ -711,9 +722,21 @@ fn returning_old_column_in_update() {
 fn returning_old_column_in_update_via_selectable() {
     use crate::schema::users;
 
+    #[cfg(feature = "postgres")]
+    use diesel::pg::returning::old;
+
+    #[cfg(feature = "mariadb")]
+    use diesel::mariadb::returning::old_value as old;
+
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
+    #[cfg(feature = "postgres")]
     if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    #[cfg(feature = "mariadb")]
+    if !mariadb_server_supports_update_returning(connection) {
         return;
     }
 
@@ -723,7 +746,7 @@ fn returning_old_column_in_update_via_selectable() {
     #[derive(Queryable, Selectable, PartialEq, Debug)]
     #[diesel(table_name = users)]
     struct UpdateOldNew {
-        #[diesel(select_expression = diesel::pg::returning::old(users::name))]
+        #[diesel(select_expression = old(users::name))]
         was: String,
         name: String,
     }

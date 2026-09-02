@@ -27,3 +27,5 @@ pub use crate::mysql_like::NumericRepresentation;
 pub use crate::mysql_like::data_types;
 #[doc(inline)]
 pub use crate::mysql_like::sql_types;
+
+pub mod returning;

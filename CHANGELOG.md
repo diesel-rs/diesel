@@ -53,6 +53,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
+* Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
 
 ### Fixed
 
