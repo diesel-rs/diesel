@@ -274,6 +274,10 @@ fn main() {
                     "diesel_derives__tests__insertable_table_name_1.snap",
                     "With `#[diesel(table_name = crate::schema::users)]`",
                 ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_serialize_as_1.snap",
+                    "With `#[diesel(serialize_as = String)]`",
+                ),
             ],
         ),
         (
