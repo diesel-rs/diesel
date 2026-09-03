@@ -179,6 +179,17 @@ table! {
 }
 
 table! {
+    unsigned_widths (id) {
+        #[auto_increment]
+        id -> Unsigned<Integer>,
+        tiny_value -> Unsigned<TinyInt>,
+        small_value -> Unsigned<SmallInt>,
+        int_value -> Unsigned<Integer>,
+        big_value -> Unsigned<BigInt>,
+    }
+}
+
+table! {
     users (id) {
         #[auto_increment]
         id -> Integer,
@@ -237,6 +248,7 @@ allow_tables_to_appear_in_same_query!(
     special_posts,
     trees,
     unsigned_table,
+    unsigned_widths,
     users,
     users_with_name_pk,
     with_keywords,
