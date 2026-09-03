@@ -20,6 +20,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Potential stackoverflow on deeply nested JSONB values for the SQLite backend
 * Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
 * Fixed undefined behavior in `SqliteConnection::serialize_database_to_buffer` when SQLite returns a null buffer for an empty deserialized database or an allocation failure. `SerializedDatabase::as_slice` is deprecated in favor of the new `SerializedDatabase::try_as_slice`, which reports the allocation failure as an error instead of panicking.
+* Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
+* Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 
 ## [2.3.12] 2026-08-07
 

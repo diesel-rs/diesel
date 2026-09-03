@@ -94,6 +94,9 @@ pub enum Error {
 
     /// Transaction manager broken, likely due to a broken connection. No other operations are possible.
     BrokenTransactionManager,
+
+    /// Internal integer conversion failed
+    IntegerConversion(core::num::TryFromIntError),
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -366,6 +369,9 @@ impl Display for Error {
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
             }
+            Error::IntegerConversion(ref e) => {
+                write!(f, "Internal integer conversion error: {e}")
+            }
         }
     }
 }
@@ -377,6 +383,7 @@ impl StdError for Error {
             Error::QueryBuilderError(ref e) => Some(&**e),
             Error::DeserializationError(ref e) => Some(&**e),
             Error::SerializationError(ref e) => Some(&**e),
+            Error::IntegerConversion(ref e) => Some(e),
             _ => None,
         }
     }
