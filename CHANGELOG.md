@@ -43,6 +43,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for generating matching Rust enums for database enums in Diesel-CLI
 * Added `#[diesel_async]` attribute to `#[derive(MultiConnection)]` to support async MultiConnections. 
 * Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
+* Exposed `GroupByClause` and `NoGroupByClause` under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature so third-party crates can distinguish grouped and ungrouped `SelectStatement` types.
 * Added `--no-schema` CLI flag to the `migration run` subcommand
 * Added `SqliteConnection::auto_vacuum` and `SqliteConnection::set_auto_vacuum` to read and set a database's `auto_vacuum` mode through the typed `AutoVacuumMode` enum, each accepting an optional schema name to target an attached database.
 * Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
@@ -52,22 +53,28 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 * Added a `diesel::ddl` module with `DropTableStatement`, built from any table through the new prelude trait `TableDdl`, supporting `IF EXISTS` everywhere and `CASCADE` on backends implementing `SupportsDropTableCascade` (currently `Pg`)
+* Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 
 ### Fixed
 
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
+* Restore SQLite auto-extension support with `libsqlite3-sys` versions before 0.29
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
 * `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
 * Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
+* MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
+* Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
+* `FromSql` impls for PostgreSQL arrays now use the element OID from the array header instead of the array type's own OID when decoding each element, matching the behavior of the record decoder.
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 
 ## [2.3.12] 2026-08-07
 

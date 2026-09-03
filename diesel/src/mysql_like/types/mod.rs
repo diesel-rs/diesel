@@ -7,8 +7,10 @@ mod json;
 mod numeric;
 mod primitives;
 
+use self::primitives::{decimal_to_integer, f32_to_i64, f64_to_i64, narrow};
 use crate::deserialize::{self, FromSql};
 use crate::mysql_like::MysqlLikeBackend;
+use crate::mysql_like::NumericRepresentation;
 use crate::mysql_like::{MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -24,9 +26,20 @@ impl<DB: MysqlLikeBackend> ToSql<TinyInt, DB> for i8 {
 }
 
 impl<DB: MysqlLikeBackend> FromSql<TinyInt, DB> for i8 {
-    fn from_sql(value: DB::RawValue<'_>) -> deserialize::Result<Self> {
-        let bytes = value.as_bytes();
-        Ok(i8::from_be_bytes([bytes[0]]))
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => Ok(x),
+            NumericRepresentation::UnsignedTiny(x) => narrow(x),
+            NumericRepresentation::Small(x) => narrow(x),
+            NumericRepresentation::UnsignedSmall(x) => narrow(x),
+            NumericRepresentation::Medium(x) => narrow(x),
+            NumericRepresentation::UnsignedMedium(x) => narrow(x),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
+        }
     }
 }
 
@@ -74,10 +87,20 @@ impl<DB: MysqlLikeBackend> ToSql<Unsigned<TinyInt>, DB> for u8 {
 }
 
 impl<DB: MysqlLikeBackend> FromSql<Unsigned<TinyInt>, DB> for u8 {
-    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)] // that's what we want
-    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i8 = FromSql::<TinyInt, DB>::from_sql(bytes)?;
-        Ok(signed as u8)
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => narrow(x),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x),
+            NumericRepresentation::Small(x) => narrow(x),
+            NumericRepresentation::UnsignedSmall(x) => narrow(x),
+            NumericRepresentation::Medium(x) => narrow(x),
+            NumericRepresentation::UnsignedMedium(x) => narrow(x),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
+        }
     }
 }
 
@@ -88,18 +111,21 @@ impl<DB: MysqlLikeBackend> ToSql<Unsigned<SmallInt>, DB> for u16 {
     }
 }
 
-impl<DB: MysqlLikeBackend> FromSql<Unsigned<SmallInt>, DB> for u16
-where
-    i32: deserialize::FromSql<sql_types::Integer, DB>,
-{
-    #[allow(
-        clippy::cast_possible_wrap,
-        clippy::cast_sign_loss,
-        clippy::cast_possible_truncation
-    )] // that's what we want
-    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i32 = FromSql::<Integer, DB>::from_sql(bytes)?;
-        Ok(signed as u16)
+impl<DB: MysqlLikeBackend> FromSql<Unsigned<SmallInt>, DB> for u16 {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => narrow(x),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => narrow(x),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x),
+            NumericRepresentation::Medium(x) => narrow(x),
+            NumericRepresentation::UnsignedMedium(x) => narrow(x),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
+        }
     }
 }
 
@@ -110,18 +136,21 @@ impl<DB: MysqlLikeBackend> ToSql<Unsigned<Integer>, DB> for u32 {
     }
 }
 
-impl<DB: MysqlLikeBackend> FromSql<Unsigned<Integer>, DB> for u32
-where
-    i64: deserialize::FromSql<sql_types::BigInt, DB>,
-{
-    #[allow(
-        clippy::cast_possible_wrap,
-        clippy::cast_sign_loss,
-        clippy::cast_possible_truncation
-    )] // that's what we want
-    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i64 = FromSql::<BigInt, DB>::from_sql(bytes)?;
-        Ok(signed as u32)
+impl<DB: MysqlLikeBackend> FromSql<Unsigned<Integer>, DB> for u32 {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => narrow(x),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => narrow(x),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => narrow(x),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
+        }
     }
 }
 
@@ -132,18 +161,22 @@ impl<DB: MysqlLikeBackend> ToSql<Unsigned<BigInt>, DB> for u64 {
     }
 }
 
-impl<DB: MysqlLikeBackend> FromSql<Unsigned<BigInt>, DB> for u64
-where
-    i64: deserialize::FromSql<sql_types::BigInt, DB>,
-{
-    #[allow(
-        clippy::cast_possible_wrap,
-        clippy::cast_sign_loss,
-        clippy::cast_possible_truncation
-    )] // that's what we want
-    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i64 = FromSql::<BigInt, DB>::from_sql(bytes)?;
-        Ok(signed as u64)
+impl<DB: MysqlLikeBackend> FromSql<Unsigned<BigInt>, DB> for u64 {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        // No signed type covers the whole unsigned range, unlike the narrower widths.
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => narrow(x),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => narrow(x),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => narrow(x),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x.into()),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => Ok(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
+            NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
+        }
     }
 }
 
@@ -268,3 +301,171 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
 #[diesel(mysql_type(name = "DateTime"))]
 #[diesel(mariadb_type(name = "DateTime"))]
 pub struct Datetime;
+
+#[cfg(all(test, any(feature = "mysql", feature = "mariadb")))]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "mysql")]
+    type DB = crate::mysql::Mysql;
+    #[cfg(feature = "mariadb")]
+    type DB = crate::mariadb::Mariadb;
+
+    #[diesel_test_helper::test]
+    fn empty_tiny_buffer_is_an_error() {
+        let empty = MysqlValue::new_internal(&[], MysqlType::Tiny);
+        assert!(<i8 as FromSql<TinyInt, DB>>::from_sql(empty).is_err());
+
+        let empty = MysqlValue::new_internal(&[], MysqlType::UnsignedTiny);
+        assert!(<u8 as FromSql<Unsigned<TinyInt>, DB>>::from_sql(empty).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn tiny_buffers_keep_their_signedness() {
+        let signed = MysqlValue::new_internal(&[0xFF], MysqlType::Tiny);
+        assert_eq!(<i8 as FromSql<TinyInt, DB>>::from_sql(signed).unwrap(), -1);
+
+        let unsigned = MysqlValue::new_internal(&[200], MysqlType::UnsignedTiny);
+        assert_eq!(
+            <u8 as FromSql<Unsigned<TinyInt>, DB>>::from_sql(unsigned).unwrap(),
+            200
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn unsigned_tiny_above_i8_max_through_a_signed_sql_type() {
+        let raw = [200];
+
+        // Used to reinterpret the byte as -56.
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedTiny);
+        assert!(<i8 as FromSql<TinyInt, DB>>::from_sql(v).is_err());
+
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedTiny);
+        assert_eq!(<i16 as FromSql<SmallInt, DB>>::from_sql(v).unwrap(), 200);
+    }
+
+    // Both used to return those bits reinterpreted under the wrong sign.
+    #[diesel_test_helper::test]
+    fn signed_value_through_an_unsigned_sql_type_is_an_error() {
+        let raw = [0xFF];
+        let v = MysqlValue::new_internal(&raw, MysqlType::Tiny);
+        assert!(<u8 as FromSql<Unsigned<TinyInt>, DB>>::from_sql(v).is_err());
+
+        let raw = (-1i16).to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::Short);
+        assert!(<u16 as FromSql<Unsigned<SmallInt>, DB>>::from_sql(v).is_err());
+
+        let raw = (-1i32).to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::Long);
+        assert!(<u32 as FromSql<Unsigned<Integer>, DB>>::from_sql(v).is_err());
+
+        let raw = (-1i64).to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::LongLong);
+        assert!(<u64 as FromSql<Unsigned<BigInt>, DB>>::from_sql(v).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn unsigned_bigint_beyond_i64_through_a_signed_sql_type_is_an_error() {
+        let raw = u64::MAX.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert!(<i64 as FromSql<BigInt, DB>>::from_sql(v).is_err());
+
+        // The same buffer read as what it actually is still decodes.
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert_eq!(
+            <u64 as FromSql<Unsigned<BigInt>, DB>>::from_sql(v).unwrap(),
+            u64::MAX
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn unsigned_bigint_at_i64_max_boundary() {
+        // i64::MAX (9223372036854775807) fits in i64 and must succeed.
+        let raw = i64::MAX.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert_eq!(<i64 as FromSql<BigInt, DB>>::from_sql(v).unwrap(), i64::MAX);
+
+        // i64::MAX + 1 (9223372036854775808) does not fit in i64 and must fail.
+        let raw = (i64::MAX as u64 + 1).to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert!(<i64 as FromSql<BigInt, DB>>::from_sql(v).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn unsigned_bigint_beyond_i64_arriving_as_a_decimal() {
+        let v = MysqlValue::new_internal(b"18446744073709551615", MysqlType::Numeric);
+        assert_eq!(
+            <u64 as FromSql<Unsigned<BigInt>, DB>>::from_sql(v).unwrap(),
+            u64::MAX
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn unsigned_values_reaching_the_float_readers() {
+        let raw = 200u8.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedTiny);
+        assert_eq!(<f32 as FromSql<Float, DB>>::from_sql(v).unwrap(), 200.0);
+
+        let raw = 40000u16.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedShort);
+        assert_eq!(<f64 as FromSql<Double, DB>>::from_sql(v).unwrap(), 40000.0);
+
+        let raw = u32::MAX.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLong);
+        assert_eq!(
+            <f64 as FromSql<Double, DB>>::from_sql(v).unwrap(),
+            4_294_967_295.0
+        );
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLong);
+        assert_eq!(
+            <f32 as FromSql<Float, DB>>::from_sql(v).unwrap(),
+            4_294_967_296.0
+        );
+
+        let raw = u64::MAX.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert_eq!(
+            <f64 as FromSql<Double, DB>>::from_sql(v).unwrap(),
+            18_446_744_073_709_551_616.0
+        );
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert_eq!(
+            <f32 as FromSql<Float, DB>>::from_sql(v).unwrap(),
+            18_446_744_073_709_551_616.0
+        );
+    }
+
+    #[cfg(feature = "numeric")]
+    #[diesel_test_helper::test]
+    fn unsigned_values_reaching_the_decimal_reader() {
+        use bigdecimal::BigDecimal;
+
+        let raw = 200u8.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedTiny);
+        assert_eq!(
+            <BigDecimal as FromSql<Numeric, DB>>::from_sql(v).unwrap(),
+            BigDecimal::from(200u8)
+        );
+
+        let raw = 40000u16.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedShort);
+        assert_eq!(
+            <BigDecimal as FromSql<Numeric, DB>>::from_sql(v).unwrap(),
+            BigDecimal::from(40000u16)
+        );
+
+        let raw = u32::MAX.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLong);
+        assert_eq!(
+            <BigDecimal as FromSql<Numeric, DB>>::from_sql(v).unwrap(),
+            BigDecimal::from(u32::MAX)
+        );
+
+        let raw = u64::MAX.to_ne_bytes();
+        let v = MysqlValue::new_internal(&raw, MysqlType::UnsignedLongLong);
+        assert_eq!(
+            <BigDecimal as FromSql<Numeric, DB>>::from_sql(v).unwrap(),
+            BigDecimal::from(u64::MAX)
+        );
+    }
+}
