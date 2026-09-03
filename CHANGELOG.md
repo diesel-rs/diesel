@@ -67,6 +67,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
 * Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
 * Negative MySQL and MariaDB `TIME` values now load into `MysqlTime` instead of being rejected while decoding. `chrono::NaiveTime` and `time::Time` cannot represent them, so those targets report that instead
+* `FromSql` impls for PostgreSQL arrays now use the element OID from the array header instead of the array type's own OID when decoding each element, matching the behavior of the record decoder.
 
 ### Changed
 
