@@ -287,20 +287,26 @@ impl RawConnection {
     }
 
     pub(super) fn serialize(&mut self) -> SerializedDatabase {
-        unsafe {
-            let mut size: ffi::sqlite3_int64 = 0;
-            let data_ptr = ffi::sqlite3_serialize(
+        let mut size: ffi::sqlite3_int64 = 0;
+        // SAFETY: The connection is live, a null schema selects `main`, and `size` is a writable out-parameter.
+        let data_ptr = unsafe {
+            ffi::sqlite3_serialize(
                 self.internal_connection.as_ptr(),
                 core::ptr::null(),
                 &mut size as *mut _,
                 0,
-            );
-            SerializedDatabase::new(
-                data_ptr,
-                size.try_into()
-                    .expect("Cannot fit the serialized database into memory"),
             )
-        }
+        };
+        // SQLite returns null with size zero for a valid empty deserialized
+        // database and null with a nonzero size when the output allocation
+        // fails. `SerializedDatabase` reports the failure when accessed.
+        let data = match core::ptr::NonNull::new(data_ptr) {
+            Some(data) => data,
+            None if size == 0 => return SerializedDatabase::empty(),
+            None => return SerializedDatabase::allocation_failed(),
+        };
+        // SAFETY: SQLite transferred an exclusive allocation holding `size` initialized bytes.
+        unsafe { SerializedDatabase::new(data, size) }
     }
 
     // SAFETY:
