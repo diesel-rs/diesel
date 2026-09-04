@@ -66,6 +66,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
+* Fixed potential code injections in the generated schema.rs file caused by malicious database identifiers
 * MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
 * Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
 * Potential stackoverflow on deeply nested JSONB values for the SQLite backend

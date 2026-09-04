@@ -102,11 +102,15 @@ pub fn load_foreign_key_constraints(
                     } else {
                         get_primary_keys(connection, &parent_table)?
                     };
+                    let foreign_key_columns_rust = super::inference::rust_name_for_sql_name(
+                        &row.foreign_key,
+                        Some(&child_table),
+                    );
                     Ok(ForeignKeyConstraint {
                         child_table: child_table.clone(),
                         parent_table,
                         foreign_key_columns: vec![row.foreign_key.clone()],
-                        foreign_key_columns_rust: vec![row.foreign_key.clone()],
+                        foreign_key_columns_rust: vec![foreign_key_columns_rust],
                         primary_key_columns: primary_key,
                     })
                 })
