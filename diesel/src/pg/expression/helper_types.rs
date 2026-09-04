@@ -18,6 +18,22 @@ pub type NotILike<Lhs, Rhs> = Grouped<super::operators::NotILike<Lhs, AsExprOf<R
 #[doc(hidden)] // required for #[auto_type]
 pub type NotIlike<Lhs, Rhs> = NotILike<Lhs, Rhs>;
 
+/// The return type of
+/// [`lhs.like_any(rhs)`](super::expression_methods::PgTextExpressionMethods::like_any)
+#[cfg(feature = "postgres_backend")]
+pub type LikeAny<Lhs, Rhs> = super::array_comparison::LikeAny<
+    Lhs,
+    <Rhs as super::array_comparison::AsArrayExpression<SqlTypeOf<Lhs>>>::Expression,
+>;
+
+/// The return type of
+/// [`lhs.ilike_any(rhs)`](super::expression_methods::PgTextExpressionMethods::ilike_any)
+#[cfg(feature = "postgres_backend")]
+pub type ILikeAny<Lhs, Rhs> = super::array_comparison::ILikeAny<
+    Lhs,
+    <Rhs as super::array_comparison::AsArrayExpression<SqlTypeOf<Lhs>>>::Expression,
+>;
+
 /// The return type of [`lhs.similar_to(rhs)`](super::expression_methods::PgTextExpressionMethods::similar_to)
 #[cfg(feature = "postgres_backend")]
 pub type SimilarTo<Lhs, Rhs> = Grouped<super::operators::SimilarTo<Lhs, AsExprOf<Rhs, VarChar>>>;

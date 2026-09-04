@@ -3,7 +3,7 @@ use crate::expression::{AsExpression, Expression, TypedExpressionType, ValidGrou
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{Array, SqlType};
+use crate::sql_types::{Array, Bool, SqlType};
 
 /// Creates a PostgreSQL `ANY` expression.
 ///
@@ -129,6 +129,132 @@ where
 }
 
 impl_selectable_expression!(All<Expr>);
+
+/// Query dsl node for PostgreSQL `LIKE ANY(ARRAY[...])` expression
+///
+/// This allows matching a text expression against an array of patterns
+/// using `LIKE` semantics (wildcard matching with `%` and `_`).
+///
+/// This is PostgreSQL-specific and not available on other backends.
+///
+/// # Example
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// # use diesel::dsl::*;
+/// #
+/// # fn main() {
+/// #     use schema::users::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
+/// let sean = (1, "Sean".to_string());
+/// let jim = (3, "Jim".to_string());
+/// let data = users.filter(name.like_any(vec!["Se%", "J%"]));
+/// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
+/// # }
+/// ```
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[non_exhaustive]
+pub struct LikeAny<T, U> {
+    /// The expression on the left side of the `LIKE ANY` keyword
+    pub left: T,
+    /// The array of patterns to match against
+    pub values: U,
+}
+
+impl<T, U> LikeAny<T, U> {
+    pub(crate) fn new(left: T, values: U) -> Self {
+        LikeAny { left, values }
+    }
+}
+
+impl<T, U> Expression for LikeAny<T, U>
+where
+    T: Expression,
+    T::SqlType: 'static,
+    U: Expression<SqlType = Array<T::SqlType>>,
+{
+    type SqlType = Bool;
+}
+
+impl<T, U> QueryFragment<Pg> for LikeAny<T, U>
+where
+    T: QueryFragment<Pg>,
+    U: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.left.walk_ast(out.reborrow())?;
+        out.push_sql(" LIKE ANY(");
+        self.values.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(LikeAny<T, U>);
+
+/// Query dsl node for PostgreSQL `ILIKE ANY(ARRAY[...])` expression
+///
+/// This allows matching a text expression against an array of patterns
+/// using case-insensitive `ILIKE` semantics.
+///
+/// This is PostgreSQL-specific and not available on other backends.
+///
+/// # Example
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// # use diesel::dsl::*;
+/// #
+/// # fn main() {
+/// #     use schema::users::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
+/// let sean = (1, "Sean".to_string());
+/// let jim = (3, "Jim".to_string());
+/// let data = users.filter(name.ilike_any(vec!["se%", "j%"]));
+/// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
+/// # }
+/// ```
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[non_exhaustive]
+pub struct ILikeAny<T, U> {
+    /// The expression on the left side of the `ILIKE ANY` keyword
+    pub left: T,
+    /// The array of patterns to match against
+    pub values: U,
+}
+
+impl<T, U> ILikeAny<T, U> {
+    pub(crate) fn new(left: T, values: U) -> Self {
+        ILikeAny { left, values }
+    }
+}
+
+impl<T, U> Expression for ILikeAny<T, U>
+where
+    T: Expression,
+    T::SqlType: 'static,
+    U: Expression<SqlType = Array<T::SqlType>>,
+{
+    type SqlType = Bool;
+}
+
+impl<T, U> QueryFragment<Pg> for ILikeAny<T, U>
+where
+    T: QueryFragment<Pg>,
+    U: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.left.walk_ast(out.reborrow())?;
+        out.push_sql(" ILIKE ANY(");
+        self.values.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(ILikeAny<T, U>);
 
 /// Deprecated trait used for implementing `any` and `all` (which are themselves deprecated).
 ///
