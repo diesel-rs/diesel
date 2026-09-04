@@ -576,37 +576,16 @@ mod jsonb {
         n: &serde_json::Value,
         buffer: &mut Vec<u8>,
     ) -> serialize::Result {
-        if let Some(i) = n.as_i64() {
-            // Write an integer (INT type)
-            write_jsonb_int(i, buffer)
-        } else if let Some(f) = n.as_f64() {
-            // Write a float (FLOAT type)
-            write_jsonb_float(f, buffer)
+        let n = n.to_string();
+        let tpe = if n.contains('.') {
+            JSONB_FLOAT
         } else {
-            Err("Invalid JSONB number type".into())
-        }
-    }
+            JSONB_INT
+        };
+        write_jsonb_header(buffer, tpe, n.len())?;
 
-    // Write an integer in JSONB format
-    pub(super) fn write_jsonb_int(i: i64, buffer: &mut Vec<u8>) -> serialize::Result {
-        let int_str = i.to_string();
-
-        write_jsonb_header(buffer, JSONB_INT, int_str.len())?;
-
-        // Write the ASCII text representation of the integer as the payload
-        buffer.extend_from_slice(int_str.as_bytes());
-
-        Ok(IsNull::No)
-    }
-
-    // Write a floating-point number in JSONB format
-    pub(super) fn write_jsonb_float(f: f64, buffer: &mut Vec<u8>) -> serialize::Result {
-        let float_str = f.to_string();
-
-        write_jsonb_header(buffer, JSONB_FLOAT, float_str.len())?;
-
-        // Write the ASCII text representation of the float as the payload
-        buffer.extend_from_slice(float_str.as_bytes());
+        // Write the ASCII text representation of the integer/float as the payload
+        buffer.extend_from_slice(n.as_bytes());
 
         Ok(IsNull::No)
     }
