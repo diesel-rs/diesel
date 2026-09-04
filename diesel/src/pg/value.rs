@@ -90,10 +90,19 @@ impl<'a> PgValue<'a> {
         self.type_oid_lookup.lookup()
     }
 
-    pub(crate) fn subslice(&self, range: Range<usize>) -> Self {
-        Self {
-            raw_value: &self.raw_value[range],
-            ..*self
+    pub(crate) fn subslice(&self, range: Range<usize>) -> crate::deserialize::Result<Self> {
+        if range.end <= self.raw_value.len() {
+            Ok(Self {
+                raw_value: &self.raw_value[range],
+                ..*self
+            })
+        } else {
+            Err(format!(
+                "Value buffer only contains {} bytes, but requested {} bytes",
+                self.raw_value.len(),
+                range.end
+            )
+            .into())
         }
     }
 }
