@@ -3,8 +3,6 @@ use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
-use diesel::dsl::AsExprOf;
-use diesel::expression::AsExpression;
 use diesel::pg::Pg;
 use diesel::prelude::*;
 use diesel::sql_types;
@@ -25,6 +23,8 @@ extern "SQL" {
         oid: sql_types::Oid,
         catalog: sql_types::Text,
     ) -> sql_types::Nullable<sql_types::Text>;
+
+    fn quote_ident(ident: sql_types::Text) -> sql_types::Text;
 }
 
 #[tracing::instrument]
@@ -75,15 +75,20 @@ pub fn determine_column_type(
 
 diesel::postfix_operator!(Regclass, "::regclass", sql_types::Oid, backend: Pg);
 
-fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
+fn regclass<'a, QS>(
+    table: &'a TableName,
+) -> Regclass<Box<dyn BoxableExpression<QS, Pg, SqlType = sql_types::Text> + 'a>> {
     let table_name = match table.schema {
-        Some(ref schema_name) => format!("\"{}\".\"{}\"", schema_name, table.sql_name),
-        None => format!("\"{}\"", table.sql_name),
+        Some(ref schema_name) => Box::new(
+            quote_ident(schema_name)
+                .concat(".")
+                .concat(quote_ident(&table.sql_name)),
+        )
+            as Box<dyn BoxableExpression<_, _, SqlType = sql_types::Text>>,
+        None => Box::new(quote_ident(&table.sql_name)),
     };
 
-    Regclass::new(<String as AsExpression<sql_types::Text>>::as_expression(
-        table_name,
-    ))
+    Regclass::new(table_name)
 }
 
 pub fn get_table_data(

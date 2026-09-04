@@ -174,14 +174,20 @@ where
         .filter(table_type.like("BASE TABLE"))
         .load::<String>(connection)?;
     table_names.sort_unstable();
+    let schema = schema_name
+        .filter(|&schema| schema != default_schema)
+        .map(|schema| schema.to_owned());
+    let rust_schema = schema
+        .as_deref()
+        .map(|s| super::inference::rust_name_for_sql_name(s, None));
+
     Ok(table_names
         .into_iter()
         .map(|name| TableName {
             rust_name: inference::rust_name_for_sql_name(&name, None),
             sql_name: name,
-            schema: schema_name
-                .filter(|&schema| schema != default_schema)
-                .map(|schema| schema.to_owned()),
+            rust_schema: rust_schema.clone(),
+            schema: schema.clone(),
         })
         .collect())
 }

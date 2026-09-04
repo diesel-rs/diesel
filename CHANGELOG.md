@@ -26,6 +26,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
 * Fixed encoding floating point values without a decimal part in a roundtrip safe way in SQLite's jsonb encoding
 * Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
+* Fixed potential code injections in the generated schema.rs file caused by malicious database identifiers
 
 ## [2.3.12] 2026-08-07
 
