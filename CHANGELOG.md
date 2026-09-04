@@ -79,6 +79,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
+* Improved SQLite JSONB encoding performance for deeply nested values
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
