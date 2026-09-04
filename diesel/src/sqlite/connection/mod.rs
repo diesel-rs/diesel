@@ -781,7 +781,7 @@ mod tests {
         assert!(serialized.try_as_slice().unwrap().is_empty());
     }
 
-    #[cfg(all(not(all(target_family = "wasm", target_os = "unknown"))))]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     #[allow(unsafe_code)]
     mod sqlite_serialize_oom {
         use super::super::oom_test_support::{panic_message, run_in_child, with_heap_limit};
