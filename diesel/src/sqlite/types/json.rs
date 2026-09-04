@@ -207,6 +207,10 @@ mod jsonb {
         let header = read_jsonb_value_header(bytes)?;
         let payload_bytes = &bytes[header.header_size..header.total_size];
         let value = match header.element_type {
+            // sqlite writes a constant as a bare one byte header and refuses any other spelling
+            JSONB_NULL | JSONB_TRUE | JSONB_FALSE if header.total_size != 1 => {
+                Err("Invalid JSONB data: a constant must be a single byte".into())
+            }
             JSONB_NULL => Ok(serde_json::Value::Null),
             JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
             JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
@@ -641,6 +645,35 @@ mod tests {
         let mut buffer = Vec::new();
         jsonb::write_jsonb_header(&mut buffer, element_type, payload_size)?;
         Ok(buffer)
+    }
+
+    #[diesel_test_helper::test]
+    fn regression_a_constant_reads_its_declared_size() {
+        // `json_valid(?, 8)` is 0 for each of these, and sqlite reads the
+        // first two as the text `0` and `11.5` rather than as a constant
+        for blob in [
+            [0x30, 0x0D, 0x00, 0xF3].as_slice(), // null, inline size 3
+            &[0x31, 0x31, 0x2E, 0x35],           // true, inline size 3
+            &[0x10, 0x00],                       // null, inline size 1
+            &[0x11, 0x08],                       // true, inline size 1
+            &[0x12, 0xFF],                       // false, inline size 1
+            &[0xC0, 0x00],                       // null, two byte header
+            &[0xC1, 0x00],                       // true, two byte header
+            &[0x2B, 0xC1, 0x00],                 // array holding a two byte true
+            &[0x4C, 0x17, b'a', 0xC1, 0x00],     // object holding one
+        ] {
+            assert!(
+                read_jsonb_value(blob).is_err(),
+                "{blob:02X?} decoded to {:?}",
+                read_jsonb_value(blob).map(|value| value.0)
+            );
+        }
+
+        // the one byte spelling sqlite writes, where the trailing `00` is a sibling
+        assert_eq!(
+            read_jsonb_value(&[0x2B, 0x01, 0x00]).unwrap().0,
+            json!([true, null])
+        );
     }
 
     #[diesel_test_helper::test]
