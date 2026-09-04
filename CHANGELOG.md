@@ -66,6 +66,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
 * Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
+* Potential stackoverflow on deeply nested JSONB values for the SQLite backend
 * `FromSql` impls for PostgreSQL arrays now use the element OID from the array header instead of the array type's own OID when decoding each element, matching the behavior of the record decoder.
 * Fixed undefined behavior in `SqliteConnection::serialize_database_to_buffer` when SQLite returns a null buffer for an empty deserialized database or an allocation failure. `SerializedDatabase::as_slice` is deprecated in favor of the new `SerializedDatabase::try_as_slice`, which reports the allocation failure as an error instead of panicking.
 
