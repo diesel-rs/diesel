@@ -613,7 +613,11 @@ fn print_schema_table_name_injecetion() {
 }
 
 // seems like it uses lowercase table names there
-#[cfg(not(all(any(feature = "mariadb", feature = "mysql"), windows)))]
+// for postgres insta seems to struggle on windows
+#[cfg(not(all(
+    any(feature = "mariadb", feature = "mysql", feature = "postgres"),
+    windows
+)))]
 #[test]
 fn print_schema_rust_injection() {
     test_print_schema(
@@ -628,7 +632,7 @@ fn print_schema_rust_injection() {
     );
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(all(feature = "postgres", not(windows)))]
 #[test]
 fn print_schema_rust_injection_schema() {
     test_print_schema(

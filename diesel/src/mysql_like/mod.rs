@@ -62,6 +62,11 @@ where
 
 pub(crate) trait MapErrorNumber {
     /// Resolve the returned error number to a `DatabaseErrorKind`
+    // Bound on `MysqlLikeBackend` everywhere, called only by the connections.
+    #[cfg_attr(
+        not(any(feature = "mysql", feature = "mariadb")),
+        expect(dead_code, reason = "only the connections call it")
+    )]
     fn map_error_number(error_number: u32) -> DatabaseErrorKind;
 }
 

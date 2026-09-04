@@ -8,7 +8,7 @@ use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
 use core::error::Error;
 use core::str::{self, FromStr};
 
-fn decimal_to_integer<T>(bytes: &[u8]) -> deserialize::Result<T>
+pub(super) fn decimal_to_integer<T>(bytes: &[u8]) -> deserialize::Result<T>
 where
     T: FromStr,
     T::Err: Error + Send + Sync + 'static,
@@ -24,25 +24,33 @@ where
     }
 }
 
+pub(super) fn overflow() -> Box<dyn Error + Send + Sync> {
+    Box::new(DeserializationError(
+        "Numeric overflow/underflow occurred".into(),
+    ))
+}
+
+/// Converts between the integer widths MySQL transmits, reporting an error
+/// rather than wrapping when the value does not fit the target.
+pub(super) fn narrow<T, U: TryFrom<T>>(value: T) -> deserialize::Result<U> {
+    U::try_from(value).map_err(|_| overflow())
+}
+
 #[allow(clippy::cast_possible_truncation)] // that's what we want here
-fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
+pub(super) fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
     if f <= i64::MAX as f32 && f >= i64::MIN as f32 {
         Ok(f.trunc() as i64)
     } else {
-        Err(Box::new(DeserializationError(
-            "Numeric overflow/underflow occurred".into(),
-        )) as _)
+        Err(overflow())
     }
 }
 
 #[allow(clippy::cast_possible_truncation)] // that's what we want here
-fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
+pub(super) fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     if f <= i64::MAX as f64 && f >= i64::MIN as f64 {
         Ok(f.trunc() as i64)
     } else {
-        Err(Box::new(DeserializationError(
-            "Numeric overflow/underflow occurred".into(),
-        )) as _)
+        Err(overflow())
     }
 }
 
@@ -50,27 +58,15 @@ impl<DB: MysqlLikeBackend> FromSql<SmallInt, DB> for i16 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x),
-            NumericRepresentation::Medium(x) => x.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occurred".into(),
-                )) as _
-            }),
-            NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occurred".into(),
-                )) as _
-            }),
-            NumericRepresentation::Float(x) => f32_to_i64(x)?.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occurred".into(),
-                )) as _
-            }),
-            NumericRepresentation::Double(x) => f64_to_i64(x)?.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occurred".into(),
-                )) as _
-            }),
+            NumericRepresentation::UnsignedSmall(x) => narrow(x),
+            NumericRepresentation::Medium(x) => narrow(x),
+            NumericRepresentation::UnsignedMedium(x) => narrow(x),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
             NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
@@ -80,27 +76,15 @@ impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
             NumericRepresentation::Medium(x) => Ok(x),
-            NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occurred".into(),
-                )) as _
-            }),
-            NumericRepresentation::Float(x) => f32_to_i64(x).and_then(|i| {
-                i.try_into().map_err(|_| {
-                    Box::new(DeserializationError(
-                        "Numeric overflow/underflow occurred".into(),
-                    )) as _
-                })
-            }),
-            NumericRepresentation::Double(x) => f64_to_i64(x).and_then(|i| {
-                i.try_into().map_err(|_| {
-                    Box::new(DeserializationError(
-                        "Numeric overflow/underflow occurred".into(),
-                    )) as _
-                })
-            }),
+            NumericRepresentation::UnsignedMedium(x) => narrow(x),
+            NumericRepresentation::Big(x) => narrow(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
+            NumericRepresentation::Float(x) => narrow(f32_to_i64(x)?),
+            NumericRepresentation::Double(x) => narrow(f64_to_i64(x)?),
             NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
@@ -110,9 +94,13 @@ impl<DB: MysqlLikeBackend> FromSql<BigInt, DB> for i64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
             NumericRepresentation::Medium(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x.into()),
             NumericRepresentation::Big(x) => Ok(x),
+            NumericRepresentation::UnsignedBig(x) => narrow(x),
             NumericRepresentation::Float(x) => f32_to_i64(x),
             NumericRepresentation::Double(x) => f64_to_i64(x),
             NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
@@ -122,11 +110,16 @@ impl<DB: MysqlLikeBackend> FromSql<BigInt, DB> for i64 {
 
 impl<DB: MysqlLikeBackend> FromSql<Float, DB> for f32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        // Precision loss beyond the mantissa is intended for a float column.
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
             NumericRepresentation::Medium(x) => Ok(x as Self),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x as Self),
             NumericRepresentation::Big(x) => Ok(x as Self),
+            NumericRepresentation::UnsignedBig(x) => Ok(x as Self),
             NumericRepresentation::Float(x) => Ok(x),
             // there is currently no way to do this in a better way
             #[allow(clippy::cast_possible_truncation)]
@@ -138,11 +131,16 @@ impl<DB: MysqlLikeBackend> FromSql<Float, DB> for f32 {
 
 impl<DB: MysqlLikeBackend> FromSql<Double, DB> for f64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        // Precision loss beyond the mantissa is intended for a double column.
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
             NumericRepresentation::Medium(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x.into()),
             NumericRepresentation::Big(x) => Ok(x as Self),
+            NumericRepresentation::UnsignedBig(x) => Ok(x as Self),
             NumericRepresentation::Float(x) => Ok(x.into()),
             NumericRepresentation::Double(x) => Ok(x),
             NumericRepresentation::Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
