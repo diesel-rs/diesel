@@ -32,9 +32,12 @@ impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
         }
 
         // Read the JSONB value from the byte stream
-        let (jsonb, _size) = read_jsonb_value(bytes)?;
-
-        Ok(jsonb)
+        let (jsonb, size) = read_jsonb_value(bytes)?;
+        if size == bytes.len() {
+            Ok(jsonb)
+        } else {
+            Err("Payload contained more bytes than the encoded JSONB".into())
+        }
     }
 }
 
@@ -60,6 +63,8 @@ impl ToSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
 mod jsonb {
     extern crate serde_json;
 
+    use std::error::Error;
+
     use super::*;
 
     pub(super) const JSONB_NULL: u8 = 0x00;
@@ -76,20 +81,162 @@ mod jsonb {
     pub(super) const JSONB_ARRAY: u8 = 0x0B;
     pub(super) const JSONB_OBJECT: u8 = 0x0C;
 
+    #[derive(Debug)]
+    struct JsonbHeader {
+        element_type: u8,
+        payload_size: usize,
+        header_size: usize,
+        total_size: usize,
+    }
+
     // Helper function to read a JSONB value from the byte stream
+    #[allow(unsafe_code)]
     pub(super) fn read_jsonb_value(
         bytes: &[u8],
     ) -> deserialize::Result<(serde_json::Value, usize)> {
         if bytes.is_empty() {
             return Err("Empty JSONB data".into());
         }
+        let (global_header, mut global_value) = read_header_and_value(bytes)?;
 
-        // The first byte contains both the element type and potentially the payload size
+        if global_value.is_array() || global_value.is_object() {
+            // we need to use pointers here, as the borrow checker does not understand
+            // that we only modify the last value in this stack. Given that we cannot
+            // invalidate any pointer that's up in the stack
+            let mut stack = vec![(
+                &mut global_value as *mut serde_json::Value,
+                global_header.payload_size,
+            )];
+            let mut payload = &bytes[global_header.header_size..];
+            let mut total_read = 0;
+            // we must use a loop based decoding approach here instead of the much simpler recursive implementation
+            // as we otherwise run into stack overflows for deeply nested objects/arrays
+
+            while total_read < global_header.payload_size {
+                let Some((value, _size)) = stack.last().copied() else {
+                    break;
+                };
+                let value = unsafe {
+                    // SAFETY: The pointer was initialized before
+                    // We we cannot invalidate the underlying object
+                    &mut *value
+                };
+
+                if let serde_json::Value::Array(array) = value {
+                    let (header, value) = read_header_and_value(payload)?;
+
+                    array.push(value);
+                    let last_ref = array.last_mut().expect("Pushed above");
+                    let payload_size = if last_ref.is_object() || last_ref.is_array() {
+                        stack.push((last_ref as *mut _, total_read + header.total_size));
+                        header.header_size
+                    } else {
+                        header.total_size
+                    };
+                    total_read += payload_size;
+                    if payload.len() > payload_size {
+                        payload = &payload[payload_size..];
+                    } else {
+                        for (_, v) in stack {
+                            if v != total_read {
+                                return Err("Invalid size of payload declared".into());
+                            }
+                        }
+                        break;
+                    }
+                } else if let serde_json::Value::Object(object) = value {
+                    //       while total_read < payload_size {
+                    let (key_header, key) = read_header_and_value(payload)?;
+                    total_read += key_header.total_size;
+                    let serde_json::Value::String(key) = key else {
+                        return Err("Expected a string as object key".into());
+                    };
+                    if payload.len() > key_header.total_size {
+                        payload = &payload[key_header.total_size..];
+                    } else {
+                        return Err("No value found for object".into());
+                    }
+                    let (value_header, value) = read_header_and_value(payload)?;
+                    let last_ref = match object.entry(key) {
+                        serde_json::map::Entry::Vacant(vacant_entry) => vacant_entry.insert(value),
+                        serde_json::map::Entry::Occupied(occupied_entry) => {
+                            let v = occupied_entry.into_mut();
+                            *v = value;
+                            v
+                        }
+                    };
+                    let payload_size = if last_ref.is_object() || last_ref.is_array() {
+                        stack.push((last_ref as *mut _, total_read + value_header.total_size));
+                        value_header.header_size
+                    } else {
+                        value_header.total_size
+                    };
+                    total_read += payload_size;
+                    if payload.len() > payload_size {
+                        payload = &payload[payload_size..];
+                    } else {
+                        for (_, v) in stack {
+                            if v != total_read {
+                                return Err("Invalid size of payload declared".into());
+                            }
+                        }
+                        break;
+                    }
+                } else {
+                    unreachable!()
+                }
+
+                while let Some(v) = stack.last().map(|(_, v)| *v) {
+                    if v > total_read {
+                        break;
+                    } else if v == total_read {
+                        stack.pop();
+                    } else {
+                        return Err("Invalid size of payload declared".into());
+                    }
+                }
+            }
+        }
+        Ok((global_value, global_header.total_size))
+    }
+
+    // This function decodes the jsonb header
+    // and the value for non-composite values. For composite values like array and object
+    // we only decode the "value header" and leave decoding
+    // the actual child values to future calls
+    fn read_header_and_value(
+        bytes: &[u8],
+    ) -> deserialize::Result<(JsonbHeader, serde_json::Value)> {
+        let header = read_jsonb_value_header(bytes)?;
+        let payload_bytes = &bytes[header.header_size..header.total_size];
+        let value = match header.element_type {
+            JSONB_NULL => Ok(serde_json::Value::Null),
+            JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
+            JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
+            JSONB_INT => read_jsonb_int(payload_bytes, header.payload_size),
+            JSONB_INT5 => Err("INT5 is not supported".into()),
+            JSONB_FLOAT => read_jsonb_float(payload_bytes, header.payload_size),
+            JSONB_FLOAT5 => Err("FLOAT5 is not supported".into()),
+            JSONB_TEXT => read_jsonb_text(payload_bytes, header.payload_size),
+            JSONB_TEXTJ => read_jsonb_textj(payload_bytes, header.payload_size),
+            JSONB_TEXTRAW => read_jsonb_text(payload_bytes, header.payload_size),
+            JSONB_TEXT5 => Err("TEXT5 is not supported".into()),
+            JSONB_ARRAY => Ok(serde_json::Value::Array(Vec::new())),
+            JSONB_OBJECT => Ok(serde_json::Value::Object(serde_json::Map::new())),
+            _ => Err(format!(
+                "Unsupported or reserved JSONB type: {}",
+                header.element_type
+            )
+            .into()),
+        }?;
+        Ok((header, value))
+    }
+
+    fn read_jsonb_value_header(bytes: &[u8]) -> deserialize::Result<JsonbHeader> {
         let first_byte = bytes[0];
         let element_type = first_byte & 0x0F;
         let size_hint = (first_byte & 0xF0) >> 4;
-
-        let (payload_size, header_size) = match size_hint {
+        let (payload_size, header_size): (usize, usize) = match size_hint {
             0x00..=0x0B => (size_hint as usize, 1), // Payload size is directly in the upper nibble
             0x0C => {
                 if bytes.len() < 2 {
@@ -127,8 +274,9 @@ mod jsonb {
             }
             _ => return Err("Invalid payload size hint".into()),
         };
-
-        let total_size = header_size + payload_size;
+        let total_size = header_size
+            .checked_add(payload_size)
+            .ok_or("The provided payload size overflows usize")?;
         if bytes.len() < total_size {
             return Err(format!(
                 "Invalid JSONB data: insufficient bytes for value of type {}, expected {} bytes, got {}",
@@ -139,26 +287,12 @@ mod jsonb {
             .into());
         }
 
-        let payload_bytes = &bytes[header_size..total_size];
-
-        let value = match element_type {
-            JSONB_NULL => Ok(serde_json::Value::Null),
-            JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
-            JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
-            JSONB_INT => read_jsonb_int(payload_bytes, payload_size),
-            JSONB_INT5 => Err("INT5 is not supported".into()),
-            JSONB_FLOAT => read_jsonb_float(payload_bytes, payload_size),
-            JSONB_FLOAT5 => Err("FLOAT5 is not supported".into()),
-            JSONB_TEXT => read_jsonb_text(payload_bytes, payload_size),
-            JSONB_TEXTJ => read_jsonb_textj(payload_bytes, payload_size),
-            JSONB_TEXTRAW => Err("TEXTRAW is not supported".into()),
-            JSONB_TEXT5 => Err("TEXT5 is not supported".into()),
-            JSONB_ARRAY => read_jsonb_array(payload_bytes, payload_size),
-            JSONB_OBJECT => read_jsonb_object(payload_bytes, payload_size),
-            _ => Err(format!("Unsupported or reserved JSONB type: {element_type}").into()),
-        }?;
-
-        Ok((value, total_size))
+        Ok(JsonbHeader {
+            element_type,
+            payload_size,
+            header_size,
+            total_size,
+        })
     }
 
     // Read a JSON integer in canonical format (INT)
@@ -255,100 +389,17 @@ mod jsonb {
         Ok(unescaped_text)
     }
 
-    // Read a JSON array
-    pub(super) fn read_jsonb_array(
-        bytes: &[u8],
-        payload_size: usize,
-    ) -> deserialize::Result<serde_json::Value> {
-        let mut elements = Vec::new();
-        let mut total_read = 0;
-
-        while total_read < payload_size {
-            let (element, consumed) = read_jsonb_value(&bytes[total_read..payload_size])?;
-
-            elements.push(element);
-            total_read += consumed;
-        }
-
-        if total_read != payload_size {
-            return Err("Array payload size mismatch".into());
-        }
-
-        Ok(serde_json::Value::Array(elements))
-    }
-
-    pub(super) fn read_jsonb_object(
-        bytes: &[u8],
-        payload_size: usize,
-    ) -> deserialize::Result<serde_json::Value> {
-        let mut object = serde_json::Map::new();
-        let mut total_read = 0;
-
-        while total_read < payload_size {
-            // Read the key (must be a valid JSONB text type)
-            let (key_value, key_consumed) = read_jsonb_value(&bytes[total_read..])?;
-            let key_str = key_value
-                .as_str()
-                .ok_or("Invalid object key in JSONB, must be a string")?
-                .to_string();
-            total_read += key_consumed;
-
-            // Read the value associated with the key
-            let (value, value_consumed) = read_jsonb_value(&bytes[total_read..])?;
-            object.insert(key_str, value);
-            total_read += value_consumed;
-        }
-
-        // Ensure the total bytes read match the payload size
-        if total_read != payload_size {
-            return Err("Object payload size mismatch".into());
-        }
-
-        Ok(serde_json::Value::Object(object))
-    }
-
-    // Helper function to create the correct JsonbHeader based on the payload size
-    pub(super) fn create_jsonb_header(
-        element_type: u8,
-        payload_size: usize,
-    ) -> Result<Vec<u8>, String> {
-        // Check if payload size exceeds the maximum allowed size
-        if payload_size > 2_147_483_647 {
-            return Err("Payload size exceeds the maximum allowed size of 2GB".into());
-        }
-
-        let header = if payload_size <= 0x0B {
-            // Small payloads, 0 additional byte for size
-            vec![((u8::try_from(payload_size).map_err(|e| e.to_string())?) << 4) | element_type]
-        } else if payload_size <= 0xFF {
-            // Medium payloads, 1 additional byte for size
-            vec![
-                (0x0C << 4) | element_type,
-                u8::try_from(payload_size).map_err(|e| e.to_string())?,
-            ]
-        } else if payload_size <= 0xFFFF {
-            let mut header = Vec::with_capacity(3);
-
-            // Larger payloads, 2 additional bytes for size
-            header.push((0x0D << 4) | element_type);
-            header.extend_from_slice(
-                &(u16::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
-            );
-
-            header
-        } else {
-            let mut header = Vec::with_capacity(5);
-
-            // Very large payloads, 4 additional bytes for size (up to 2 GiB)
-            header.push((0x0E << 4) | element_type);
-            header.extend_from_slice(
-                &(u32::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
-            );
-
-            header
-        };
-
-        Ok(header)
+    enum JsonValuePtr<'a> {
+        Value(&'a serde_json::Value),
+        Array {
+            values: &'a [serde_json::Value],
+            serialized_buffer: Vec<u8>,
+        },
+        Object {
+            object: &'a serde_json::map::Map<String, serde_json::Value>,
+            keys: serde_json::map::Keys<'a>,
+            serialized_buffer: Vec<u8>,
+        },
     }
 
     pub(super) fn write_jsonb_header(
@@ -356,9 +407,59 @@ mod jsonb {
         element_type: u8,
         payload_size: usize,
     ) -> serialize::Result {
-        // Create the header and append it to the buffer
-        let header = create_jsonb_header(element_type, payload_size)?;
-        buffer.extend(header);
+        // Check if payload size exceeds the maximum allowed size
+        if payload_size > 2_147_483_647 {
+            return Err("Payload size exceeds the maximum allowed size of 2GB".into());
+        }
+
+        if payload_size <= 0x0B {
+            // Small payloads, 0 additional byte for size
+            buffer.push(
+                ((u8::try_from(payload_size).map_err(|e| e.to_string())?) << 4) | element_type,
+            );
+        } else if payload_size <= 0xFF {
+            // Medium payloads, 1 additional byte for size
+            buffer.extend_from_slice(&[
+                (0x0C << 4) | element_type,
+                u8::try_from(payload_size).map_err(|e| e.to_string())?,
+            ]);
+        } else if payload_size <= 0xFFFF {
+            // Larger payloads, 2 additional bytes for size
+            buffer.push((0x0D << 4) | element_type);
+            buffer.extend_from_slice(
+                &(u16::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
+            );
+        } else {
+            // Very large payloads, 4 additional bytes for size (up to 2 GiB)
+            buffer.push((0x0E << 4) | element_type);
+            buffer.extend_from_slice(
+                &(u32::try_from(payload_size).map_err(|e| e.to_string())?).to_be_bytes(),
+            );
+        };
+
+        Ok(IsNull::No)
+    }
+
+    fn place_composite_value(
+        buffer: &mut Vec<u8>,
+        stack: &mut [JsonValuePtr<'_>],
+        serialized_buffer: Vec<u8>,
+        tpe: u8,
+    ) -> serialize::Result {
+        let buffer = match stack.last_mut() {
+            None | Some(JsonValuePtr::Value(_)) => buffer,
+            Some(
+                JsonValuePtr::Array {
+                    serialized_buffer, ..
+                }
+                | JsonValuePtr::Object {
+                    serialized_buffer, ..
+                },
+            ) => serialized_buffer,
+        };
+        write_jsonb_header(buffer, tpe, serialized_buffer.len())?;
+        buffer.extend(serialized_buffer);
+
         Ok(IsNull::No)
     }
 
@@ -367,27 +468,91 @@ mod jsonb {
         value: &serde_json::Value,
         buffer: &mut Vec<u8>,
     ) -> serialize::Result {
-        if value.is_null() {
-            write_jsonb_null(buffer)
-        } else if value.is_boolean() {
-            write_jsonb_bool(value.as_bool().ok_or("Failed to read JSONB value")?, buffer)
-        } else if value.is_number() {
-            write_jsonb_number(value, buffer)
-        } else if value.is_string() {
-            write_jsonb_string(value.as_str().ok_or("Failed to read JSONB value")?, buffer)
-        } else if value.is_array() {
-            write_jsonb_array(
-                value.as_array().ok_or("Failed to read JSONB value")?,
-                buffer,
-            )
-        } else if value.is_object() {
-            write_jsonb_object(
-                value.as_object().ok_or("Failed to read JSONB value")?,
-                buffer,
-            )
-        } else {
-            Err("Unsupported JSONB value type".into())
+        let mut stack = vec![JsonValuePtr::Value(value)];
+
+        while let Some(value) = stack.pop() {
+            let add_to_stack = match value {
+                JsonValuePtr::Value(value) => write_plain_jsonb_value(buffer, value)?,
+                JsonValuePtr::Array {
+                    values,
+                    mut serialized_buffer,
+                } => {
+                    if let Some((el, tail)) = values.split_first() {
+                        let ret = write_plain_jsonb_value(&mut serialized_buffer, el)?;
+                        stack.push(JsonValuePtr::Array {
+                            values: tail,
+                            serialized_buffer,
+                        });
+                        ret
+                    } else {
+                        place_composite_value(buffer, &mut stack, serialized_buffer, JSONB_ARRAY)?;
+                        None
+                    }
+                }
+                JsonValuePtr::Object {
+                    object,
+                    mut keys,
+                    mut serialized_buffer,
+                } => {
+                    if let Some(next_key) = keys.next() {
+                        let value = object
+                            .get(next_key)
+                            .ok_or_else(|| format!("Missing value for object key: `{next_key}`"))?;
+                        write_jsonb_string(next_key, &mut serialized_buffer)?;
+                        let ret = write_plain_jsonb_value(&mut serialized_buffer, value)?;
+                        stack.push(JsonValuePtr::Object {
+                            object,
+                            keys,
+                            serialized_buffer,
+                        });
+                        ret
+                    } else {
+                        place_composite_value(buffer, &mut stack, serialized_buffer, JSONB_OBJECT)?;
+                        None
+                    }
+                }
+            };
+            if let Some(next) = add_to_stack {
+                stack.push(next);
+            }
         }
+
+        Ok(IsNull::No)
+    }
+
+    fn write_plain_jsonb_value<'a>(
+        buffer: &mut Vec<u8>,
+        value: &'a serde_json::Value,
+    ) -> Result<Option<JsonValuePtr<'a>>, Box<dyn Error + Send + Sync>> {
+        let ret = if value.is_null() {
+            write_jsonb_null(buffer)?;
+            None
+        } else if value.is_boolean() {
+            write_jsonb_bool(value.as_bool().ok_or("Failed to read JSONB value")?, buffer)?;
+            None
+        } else if value.is_number() {
+            write_jsonb_number(value, buffer)?;
+            None
+        } else if value.is_string() {
+            write_jsonb_string(value.as_str().ok_or("Failed to read JSONB value")?, buffer)?;
+            None
+        } else if value.is_array() {
+            let array = value.as_array().ok_or("Failed to read JSONB value")?;
+            Some(JsonValuePtr::Array {
+                values: array,
+                serialized_buffer: Vec::new(),
+            })
+        } else if value.is_object() {
+            let object = value.as_object().ok_or("Failed to read JSONB value")?;
+            Some(JsonValuePtr::Object {
+                object,
+                keys: object.keys(),
+                serialized_buffer: Vec::new(),
+            })
+        } else {
+            return Err("Unsupported JSONB value type".into());
+        };
+        Ok(ret)
     }
 
     // Write a JSON null
@@ -471,48 +636,6 @@ mod jsonb {
 
         Ok(IsNull::No)
     }
-
-    // Write a JSON array
-    pub(super) fn write_jsonb_array(
-        arr: &[serde_json::Value],
-        buffer: &mut Vec<u8>,
-    ) -> serialize::Result {
-        let mut tmp_buffer = Vec::new();
-
-        // Recursively write each element of the array
-        for element in arr {
-            write_jsonb_value(element, &mut tmp_buffer)?;
-        }
-
-        write_jsonb_header(buffer, JSONB_ARRAY, tmp_buffer.len())?;
-
-        buffer.extend_from_slice(&tmp_buffer);
-
-        Ok(IsNull::No)
-    }
-
-    // Write a JSON object
-    pub(super) fn write_jsonb_object(
-        obj: &serde_json::Map<String, serde_json::Value>,
-        buffer: &mut Vec<u8>,
-    ) -> serialize::Result {
-        let mut tmp_buffer = Vec::new();
-
-        // Recursively write each key-value pair of the object
-        for (key, value) in obj {
-            // Write the key (which must be a string)
-            write_jsonb_string(key, &mut tmp_buffer)?;
-
-            // Write the value
-            write_jsonb_value(value, &mut tmp_buffer)?;
-        }
-
-        write_jsonb_header(buffer, JSONB_OBJECT, tmp_buffer.len())?;
-
-        buffer.extend_from_slice(&tmp_buffer);
-
-        Ok(IsNull::No)
-    }
 }
 
 #[cfg(test)]
@@ -520,14 +643,29 @@ mod jsonb {
 mod tests {
     use super::jsonb::*;
     use super::*;
+    #[cfg(not(miri))] // ffi call
     use crate::query_dsl::RunQueryDsl;
+    #[cfg(not(miri))] // ffi call
     use crate::test_helpers::connection;
+    #[cfg(not(miri))] // ffi call
     use crate::ExpressionMethods;
+    #[cfg(not(miri))] // ffi call
     use crate::{dsl::sql, IntoSql};
     use serde_json::{json, Value};
     use sql_types::{Json, Jsonb};
 
+    // Helper function to create the correct JsonbHeader based on the payload size
+    pub(super) fn create_jsonb_header(
+        element_type: u8,
+        payload_size: usize,
+    ) -> Result<Vec<u8>, Box<dyn core::error::Error + Send + Sync>> {
+        let mut buffer = Vec::new();
+        jsonb::write_jsonb_header(&mut buffer, element_type, payload_size)?;
+        Ok(buffer)
+    }
+
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn json_to_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('true')")))
@@ -588,6 +726,31 @@ mod tests {
 
         let result = read_jsonb_value(&data).unwrap().0;
         assert_eq!(result, json!("foo"));
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_textraw() {
+        // JSONB_TEXTRAW with payload "foo"
+        let mut data = Vec::new();
+        data.extend(create_jsonb_header(JSONB_TEXTRAW, 0x03).unwrap());
+        data.extend_from_slice(b"foo");
+
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!("foo"));
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_object_with_textraw_key() {
+        // JSONB_OBJECT with a TEXTRAW key and value
+        let mut data = Vec::new();
+        data.extend(create_jsonb_header(JSONB_OBJECT, 0x06).unwrap());
+        data.extend(create_jsonb_header(JSONB_TEXTRAW, 0x01).unwrap());
+        data.extend_from_slice(b"a");
+        data.extend(create_jsonb_header(JSONB_TEXTRAW, 0x03).unwrap());
+        data.extend_from_slice(b"bar");
+
+        let result = read_jsonb_value(&data).unwrap().0;
+        assert_eq!(result, json!({"a": "bar"}));
     }
 
     #[diesel_test_helper::test]
@@ -767,6 +930,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_bool() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('true')")))
@@ -776,6 +940,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_null() {
         let conn = &mut connection();
         let res = diesel::select(json!(null).into_sql::<Jsonb>().eq(&sql("jsonb('null')")))
@@ -785,6 +950,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_integer() {
         let conn = &mut connection();
         let res = diesel::select(json!(42).into_sql::<Jsonb>().eq(&sql("jsonb('42')")))
@@ -794,6 +960,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_float() {
         let conn = &mut connection();
         let res = diesel::select(json!(42.23).into_sql::<Jsonb>().eq(&sql("jsonb('42.23')")))
@@ -803,6 +970,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_text() {
         let conn = &mut connection();
 
@@ -819,6 +987,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_textj() {
         let conn = &mut connection();
 
@@ -835,6 +1004,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_array() {
         let conn = &mut connection();
         let res = diesel::select(
@@ -848,6 +1018,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_object() {
         let conn = &mut connection();
         let res = diesel::select(
@@ -861,6 +1032,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_object_in_object() {
         let conn = &mut connection();
         let json_value = json!({
@@ -871,6 +1043,7 @@ mod tests {
                 },
             }
         });
+
         let res = diesel::select(json_value.into_sql::<Jsonb>().eq(&sql(
             r#"jsonb('{"outer_key": {"additional_key": true, "inner_key": {"nested_key": 42}}}')"#,
         )))
@@ -880,6 +1053,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_array_in_object() {
         let conn = &mut connection();
         let json_value = json!({
@@ -897,6 +1071,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_to_sql_object_in_array() {
         let conn = &mut connection();
         let json_value = json!([
@@ -916,6 +1091,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_null() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('null')"))
@@ -925,6 +1101,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_true() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('true')"))
@@ -934,6 +1111,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_false() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('false')"))
@@ -943,6 +1121,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_int() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('42')"))
@@ -952,6 +1131,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_float() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('42.23')"))
@@ -961,6 +1141,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_object() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('{\"key\": \"value\"}')"))
@@ -970,6 +1151,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_array() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('[1, 2, 3]')"))
@@ -979,6 +1161,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_nested_objects() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('{\"outer\": {\"inner\": 42}}')"))
@@ -988,6 +1171,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_nested_arrays() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('[[1, 2], [3, 4]]')"))
@@ -997,6 +1181,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_nested_arrays_in_objects() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('{\"array\": [1, 2, 3]}')"))
@@ -1006,6 +1191,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_nested_objects_in_arrays() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>(
@@ -1020,6 +1206,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_text() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\"')"))
@@ -1029,6 +1216,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_textj() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\\nworld\"')"))
@@ -1038,6 +1226,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn bad_json_from_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('boom')")))
@@ -1046,6 +1235,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn bad_jsonb_from_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('boom')")))
@@ -1069,5 +1259,128 @@ mod tests {
             uuid.unwrap_err().to_string(),
             "Unexpected null for non-null column"
         );
+    }
+
+    #[cfg(all(
+        not(miri),
+        not(all(target_family = "wasm", target_os = "unknown")),
+        unix
+    ))]
+    const RECURSION_DEPTH: usize = 2000;
+
+    #[cfg(all(
+        not(miri),
+        any(windows, all(target_family = "wasm", target_os = "unknown"))
+    ))]
+    const RECURSION_DEPTH: usize = 1000;
+
+    #[cfg(any(
+        miri,
+        all(
+            not(unix),
+            not(windows),
+            not(all(target_family = "wasm", target_os = "unknown"))
+        )
+    ))]
+    const RECURSION_DEPTH: usize = 10;
+
+    #[diesel_test_helper::test]
+    fn guard_against_stackoverflow_array() {
+        let mut value = serde_json::Value::Number(42.into());
+        for i in 0..RECURSION_DEPTH {
+            value = serde_json::Value::Array(vec![value, serde_json::Value::Number(i.into())]);
+        }
+        // We compare the encoded buffer for both values here
+        // as serde_json otherwise runs into stackoverflows itself
+        let mut expected_buffer = Vec::new();
+        write_jsonb_value(&value, &mut expected_buffer).unwrap();
+        let res = read_jsonb_value(&expected_buffer).unwrap().0;
+
+        let mut buffer = Vec::new();
+        write_jsonb_value(&res, &mut buffer).unwrap();
+        assert_eq!(expected_buffer, buffer);
+    }
+
+    #[diesel_test_helper::test]
+    fn guard_against_stackoverflow_object() {
+        let mut value = serde_json::Value::Number(42.into());
+        for i in 0..RECURSION_DEPTH {
+            let mut map = serde_json::Map::new();
+            map.insert(format!("key_{i}"), value);
+            value = serde_json::Value::Object(map);
+        }
+
+        // We compare the encoded buffer for both values here
+        // as serde_json otherwise runs into stackoverflows itself
+        let mut expected_buffer = Vec::new();
+        write_jsonb_value(&value, &mut expected_buffer).unwrap();
+
+        let res = read_jsonb_value(&expected_buffer).unwrap().0;
+
+        let mut buffer = Vec::new();
+        write_jsonb_value(&res, &mut buffer).unwrap();
+        assert_eq!(expected_buffer, buffer);
+    }
+
+    #[diesel_test_helper::test]
+    fn guard_against_stackoverflow_mixed() {
+        let mut value = serde_json::Value::Number(42.into());
+        for i in 0_usize..2000 {
+            if i.is_multiple_of(2) {
+                let mut map = serde_json::Map::new();
+                map.insert(format!("key_{i}"), value);
+                value = serde_json::Value::Object(map);
+            } else {
+                value = serde_json::Value::Array(vec![value]);
+            }
+        }
+        // We compare the encoded buffer for both values here
+        // as serde_json otherwise runs into stackoverflows itself
+        let mut expected_buffer = Vec::new();
+        write_jsonb_value(&value, &mut expected_buffer).unwrap();
+        let res = read_jsonb_value(&expected_buffer).unwrap().0;
+        let mut buffer = Vec::new();
+        write_jsonb_value(&res, &mut buffer).unwrap();
+        assert_eq!(expected_buffer, buffer);
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn dangling_bytes_result_in_error() {
+        let mut value = Vec::<u8>::new();
+        value.extend(create_jsonb_header(JSONB_INT, 1).unwrap());
+        value.push(b'1');
+        value.push(42);
+        assert_eq!(value.len(), 3);
+        let conn = &mut connection();
+        let res = diesel::select(
+            crate::dsl::sql::<sql_types::Jsonb>("jsonb(?)").bind::<sql_types::Binary, _>(value),
+        )
+        .get_result::<serde_json::Value>(conn);
+        assert!(res.is_err(), "{:?}", res.unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn object_key_without_value_results_in_error() {
+        let mut value = Vec::new();
+        value.extend(create_jsonb_header(JSONB_OBJECT, 2).unwrap());
+        value.extend(create_jsonb_header(JSONB_TEXT, 1).unwrap());
+        value.push(b'a');
+        let res = read_jsonb_value(&value);
+        assert!(res.is_err(), "{:?}", res.unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn check_invalid_size_header() {
+        // 9-byte JSONB blob: first byte 0xFB (size_hint nibble = 0x0F),
+        // bytes 1..9 = 0xFF -> encoded payload length = u64::MAX.
+        let res = read_jsonb_value(&[0xFB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]);
+        assert!(res.is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn nested_container_cannot_cross_parent_boundary() {
+        let res = read_jsonb_value(&[0x3B, 0x1B, 0x1B, JSONB_NULL]);
+        assert!(res.is_err(), "{:?}", res.unwrap());
     }
 }

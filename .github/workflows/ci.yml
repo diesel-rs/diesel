@@ -85,8 +85,8 @@ jobs:
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev postgresql
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libpq-dev postgresql
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
@@ -96,15 +96,15 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libsqlite3-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libsqlite3-dev
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'mysql'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libtirpc-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libtirpc-dev
           sudo systemctl start mysql.service
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo "MYSQL_DATABASE_URL=mysql://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
@@ -190,10 +190,17 @@ jobs:
           mkdir "C:\\Program Files\\MySQL\\MySQL Server 8.0\\data\\"
           "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console --initialize --initialize-insecure
           "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console &
-          sleep 15
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test;" -u root
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_unit_test;" -u root
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e 'grant all on `diesel_%`.* to 'root'@'localhost';' -uroot
+          # Wait until the server actually accepts connections instead of a fixed
+          # sleep, which races a slow startup on the Windows runner.
+          for i in $(seq 1 60); do
+            if "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqladmin" ping -u root --silent >/dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for MySQL to accept connections ($i)..."
+            sleep 2
+          done
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqladmin" ping -u root --silent >/dev/null 2>&1 || { echo "MySQL did not become ready in time"; exit 1; }
+          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
           # remove doxygen because mysqlclient build otherwise breaks?
           rm "C:/Strawberry/c/bin/doxygen.exe"
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
@@ -288,8 +295,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev
 
       - name: Run compile tests
         shell: bash
@@ -324,8 +331,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
 
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
@@ -420,8 +427,8 @@ jobs:
 
       - name: Install postgres (Linux)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev postgresql valgrind
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libpq-dev postgresql valgrind
           echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
@@ -465,8 +472,8 @@ jobs:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Mysql (Linux)
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libmysqlclient-dev llvm libtirpc-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libmysqlclient-dev llvm libtirpc-dev
           sudo systemctl start mysql.service
           sleep 5
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot

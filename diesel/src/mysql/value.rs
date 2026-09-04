@@ -1,5 +1,5 @@
-use super::MysqlType;
 use super::types::date_and_time::MysqlTime;
+use super::MysqlType;
 
 use crate::deserialize;
 use std::error::Error;
@@ -253,23 +253,17 @@ fn invalid_reads() {
         .numeric_value()
         .is_err());
 
-    assert!(
-        MysqlValue::new_internal(&[1], MysqlType::Tiny)
-            .numeric_value()
-            .is_ok()
-    );
+    assert!(MysqlValue::new_internal(&[1], MysqlType::Tiny)
+        .numeric_value()
+        .is_ok());
 
-    assert!(
-        MysqlValue::new_internal(&[], MysqlType::Tiny)
-            .numeric_value()
-            .is_err()
-    );
+    assert!(MysqlValue::new_internal(&[], MysqlType::Tiny)
+        .numeric_value()
+        .is_err());
 
-    assert!(
-        MysqlValue::new_internal(&[], MysqlType::UnsignedTiny)
-            .numeric_value()
-            .is_err()
-    );
+    assert!(MysqlValue::new_internal(&[], MysqlType::UnsignedTiny)
+        .numeric_value()
+        .is_err());
 
     // Every arm reads the leading bytes it needs and ignores any trailing ones.
     assert!(
