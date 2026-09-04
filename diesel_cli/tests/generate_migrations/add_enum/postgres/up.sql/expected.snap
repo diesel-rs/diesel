@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: add_enum"
+---
+-- Your SQL goes here
+CREATE TYPE "some_enum3" AS enum('ABC_DEF');
+CREATE TYPE "some_enum2" AS enum('FOOBAR', 'BAZBOOM');
+CREATE TYPE "some_enum" AS enum('a', 'b', 'c''c');
+CREATE TABLE "resource"(
+	"resource_id" INT4 NOT NULL PRIMARY KEY,
+	"some_field" "some_enum" NOT NULL,
+	"some_field2" "some_enum2" NOT NULL
+);

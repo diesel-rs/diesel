@@ -7,7 +7,7 @@ pub fn create_user_table(conn: &mut diesel::PgConnection) {
         .unwrap();
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 pub fn create_user_table(conn: &mut diesel::SqliteConnection) {
     use diesel::*;
 
@@ -25,7 +25,16 @@ pub fn create_user_table(conn: &mut diesel::MysqlConnection) {
         .unwrap();
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "mariadb")]
+pub fn create_user_table(conn: &mut diesel::MariadbConnection) {
+    use diesel::*;
+
+    diesel::sql_query("CREATE TEMPORARY TABLE users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name TEXT NOT NULL, hair_color TEXT)")
+        .execute(conn)
+        .unwrap();
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 pub fn establish_connection() -> diesel::SqliteConnection {
     use diesel::*;
 
@@ -55,6 +64,22 @@ pub fn establish_connection() -> diesel::MysqlConnection {
         &dotenvy::var("DATABASE_URL")
             .or_else(|_| dotenvy::var("MYSQL_DATABASE_URL"))
             .expect("Set either `DATABASE_URL` or `MYSQL_DATABASE_URL`"),
+    )
+    .unwrap();
+
+    conn.begin_test_transaction().unwrap();
+
+    conn
+}
+
+#[cfg(feature = "mariadb")]
+pub fn establish_connection() -> diesel::MariadbConnection {
+    use diesel::*;
+
+    let mut conn = MariadbConnection::establish(
+        &dotenvy::var("DATABASE_URL")
+            .or_else(|_| dotenvy::var("MARIADB_DATABASE_URL"))
+            .expect("Set either `DATABASE_URL` or `MARIADB_DATABASE_URL`"),
     )
     .unwrap();
 

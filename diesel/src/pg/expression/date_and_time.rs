@@ -2,7 +2,7 @@ use crate::expression::{Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{is_nullable, Date, Nullable, SqlType, Timestamp, Timestamptz, VarChar};
+use crate::sql_types::{Date, Nullable, SqlType, Timestamp, Timestamptz, VarChar, is_nullable};
 
 /// Marker trait for types which are valid in `AT TIME ZONE` expressions
 pub trait DateTimeLike {}

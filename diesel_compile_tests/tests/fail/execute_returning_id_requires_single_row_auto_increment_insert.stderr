@@ -1,0 +1,103 @@
+error[E0277]: `BatchInsert<Vec<...>, ..., (), false>` may insert zero or several rows
+   --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:24:10
+    |
+ LL |         .execute_returning_id(&mut conn)
+    |          ^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `BatchInsert<Vec<...>, ..., (), false>`
+    = note: the database client reports one generated id per statement, so this operation supports only single-row inserts
+help: the following other types implement trait `SingleRowInsertValues<Tab>`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |   impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::ValuesClause<V, Tab>`
+...
+LL |   impl<Tab> SingleRowInsertValues<Tab> for DefaultValues {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::DefaultValues`
+...
+LL | / impl<V, Tab, Target, Action, WhereClause> SingleRowInsertValues<Tab>
+LL | |     for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+LL | |         V,
+LL | |         Target,
+...   |
+LL | | where
+LL | |     V: SingleRowInsertValues<Tab>,
+    | |__________________________________^ `OnConflictValues<V, Target, Action, WhereClause>`
+note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
+   --> DIESEL/diesel/diesel/src/mysql_like/query_builder/insert_returning_id.rs
+    |
+ LL |     pub fn execute_returning_id<DB>(
+    |            -------------------- required by a bound in this associated function
+...
+ LL |         U: SingleRowInsertValues<T>,
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
+ 
+    
+error[E0277]: `plain_items::table` has no column marked `#[auto_increment]`
+  --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:31:10
+   |
+LL |         .execute_returning_id(&mut conn)
+   |          ^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `AutoIncrementTable` is not implemented for `plain_items::table`
+  --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:11:1
+   |
+LL | / table! {
+LL | |     plain_items {
+   | |_______________^
+   = note: annotate the generated column in your `table!` definition with `#[auto_increment]`, or regenerate your schema with a diesel CLI that emits it, if the database table has an `AUTO_INCREMENT` column
+help: the trait `AutoIncrementTable` is implemented for `users::table`
+  --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:3:1
+   |
+ LL | / table! {
+ LL | |     users {
+ LL | |         #[auto_increment]
+ LL | |         id -> Integer,
+...  |
+ LL | | }
+   | |_^
+note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
+  --> DIESEL/diesel/diesel/src/mysql_like/query_builder/insert_returning_id.rs
+   |
+LL |     pub fn execute_returning_id<DB>(
+   |            -------------------- required by a bound in this associated function
+...
+LL |         T: AutoIncrementTable,
+   |            ^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `InsertFromSelect<SelectStatement<..., ...>, ...>` may insert zero or several rows
+   --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:40:10
+    |
+ LL |         .execute_returning_id(&mut conn)
+    |          ^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |
+    = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `InsertFromSelect<SelectStatement<..., ...>, ...>`
+    = note: the database client reports one generated id per statement, so this operation supports only single-row inserts
+help: the following other types implement trait `SingleRowInsertValues<Tab>`
+   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    |
+LL |   impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::ValuesClause<V, Tab>`
+...
+LL |   impl<Tab> SingleRowInsertValues<Tab> for DefaultValues {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::DefaultValues`
+...
+LL | / impl<V, Tab, Target, Action, WhereClause> SingleRowInsertValues<Tab>
+LL | |     for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+LL | |         V,
+LL | |         Target,
+...   |
+LL | | where
+LL | |     V: SingleRowInsertValues<Tab>,
+    | |__________________________________^ `OnConflictValues<V, Target, Action, WhereClause>`
+note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
+   --> DIESEL/diesel/diesel/src/mysql_like/query_builder/insert_returning_id.rs
+    |
+ LL |     pub fn execute_returning_id<DB>(
+    |            -------------------- required by a bound in this associated function
+...
+ LL |         U: SingleRowInsertValues<T>,
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
+ 
+    For more information about this error, try `rustc --explain E0277`.

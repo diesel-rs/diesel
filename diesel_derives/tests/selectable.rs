@@ -239,6 +239,27 @@ fn check_for_backend_with_deserialize_as() {
 
 #[allow(dead_code)] // that's essentially a compile test
 #[test]
+fn deserialize_as_with_tuple_type() {
+    table! {
+        tuple_test {
+            id -> Integer,
+            value_1 -> Integer,
+            value_2 -> Text,
+        }
+    }
+
+    #[derive(Queryable, Selectable)]
+    #[diesel(table_name = tuple_test)]
+    #[diesel(check_for_backend(crate::helpers::TestBackend))]
+    struct MyStruct {
+        id: i32,
+        #[diesel(deserialize_as = (i32, String), select_expression = (tuple_test::value_1, tuple_test::value_2), select_expression_type = (tuple_test::value_1, tuple_test::value_2))]
+        val: (i32, String),
+    }
+}
+
+#[allow(dead_code)] // that's essentially a compile test
+#[test]
 fn check_with_lifetime_and_type_param() {
     use std::borrow::Cow;
     table! {

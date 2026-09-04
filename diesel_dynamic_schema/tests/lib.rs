@@ -15,7 +15,9 @@ use connection_setup::{create_user_table, establish_connection};
 type Backend = diesel::pg::Pg;
 #[cfg(feature = "mysql")]
 type Backend = diesel::mysql::Mysql;
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "mariadb")]
+type Backend = diesel::mariadb::Mariadb;
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 type Backend = diesel::sqlite::Sqlite;
 
 #[test]
@@ -71,6 +73,13 @@ fn columns_used_in_where_clause() {
 }
 
 #[test]
+#[cfg(any(
+    feature = "postgres",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "sqlite",
+    feature = "sqlite-no-std"
+))]
 fn providing_custom_schema_name() {
     let table = schema("information_schema").table("users");
     let sql = debug_query::<Backend, _>(&table);

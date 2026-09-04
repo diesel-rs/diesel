@@ -9,3 +9,51 @@ pub trait TupleAppend<T> {
 pub trait TupleSize {
     const SIZE: usize;
 }
+
+#[cfg(not(feature = "std"))]
+pub(crate) mod std_compat {
+    pub(crate) type Entry<'a, K, V> =
+        hashbrown::hash_map::Entry<'a, K, V, hashbrown::DefaultHashBuilder>;
+    pub(crate) use hashbrown::HashMap;
+
+    pub(crate) fn catch_unwind<R>(f: impl FnOnce() -> R) -> Result<R, ()> {
+        Ok(f())
+    }
+    pub(crate) fn panicking() -> bool {
+        false
+    }
+
+    pub(crate) fn abort() -> ! {
+        struct DropBomb;
+
+        impl Drop for DropBomb {
+            fn drop(&mut self) {
+                panic!("Abort");
+            }
+        }
+
+        let _guard = DropBomb;
+
+        panic!("Abort");
+    }
+}
+
+#[cfg(feature = "std")]
+pub(crate) mod std_compat {
+    pub(crate) use std::collections::HashMap;
+    // Used only by the statement cache, which needs a connection, not a bare backend.
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "__sqlite-shared",
+        feature = "mysql",
+        feature = "mariadb",
+        feature = "postgres"
+    ))]
+    pub(crate) use std::collections::hash_map::Entry;
+    #[cfg(feature = "__sqlite-shared")]
+    pub(crate) use std::panic::catch_unwind;
+    #[cfg(feature = "__sqlite-shared")]
+    pub(crate) use std::process::abort;
+    #[cfg(feature = "__sqlite-shared")]
+    pub(crate) use std::thread::panicking;
+}

@@ -1,8 +1,10 @@
+use alloc::boxed::Box;
+use core::fmt::{Debug, Display};
+use core::num::NonZeroU32;
+use core::ops::DerefMut;
 use downcast_rs::Downcast;
-use std::fmt::{Debug, Display};
-use std::num::NonZeroU32;
-use std::ops::{Deref, DerefMut};
 
+#[cfg(feature = "std")]
 static GLOBAL_INSTRUMENTATION: std::sync::RwLock<fn() -> Option<Box<dyn Instrumentation>>> =
     std::sync::RwLock::new(|| None);
 
@@ -34,8 +36,9 @@ impl<'query> StrQueryHelper<'query> {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn new(s: &'query str) -> Self {
@@ -44,13 +47,13 @@ impl<'query> StrQueryHelper<'query> {
 }
 
 impl Debug for StrQueryHelper<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         Debug::fmt(self.s, f)
     }
 }
 
 impl Display for StrQueryHelper<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         Display::fmt(&self.s, f)
     }
 }
@@ -254,10 +257,13 @@ downcast_rs::impl_downcast!(Instrumentation);
 /// This function is mostly useful for crates implementing
 /// their own connection types
 pub fn get_default_instrumentation() -> Option<Box<dyn Instrumentation>> {
+    #[cfg(feature = "std")]
     match GLOBAL_INSTRUMENTATION.read() {
         Ok(f) => (*f)(),
         Err(_) => None,
     }
+    #[cfg(not(feature = "std"))]
+    None
 }
 
 /// Set a custom constructor for the default [`Instrumentation`]
@@ -277,6 +283,7 @@ pub fn get_default_instrumentation() -> Option<Box<dyn Instrumentation>> {
 ///
 /// set_default_instrumentation(simple_logger);
 /// ```
+#[cfg(feature = "std")]
 pub fn set_default_instrumentation(
     default: fn() -> Option<Box<dyn Instrumentation>>,
 ) -> crate::QueryResult<()> {
@@ -321,6 +328,13 @@ where
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 /// An optional dyn instrumentation.
 ///
 /// For ease of use, this type implements [`Deref`] and [`DerefMut`] to `&dyn Instrumentation`,
@@ -335,7 +349,14 @@ pub(crate) struct DynInstrumentation {
     inner: Option<Box<dyn Instrumentation>>,
 }
 
-impl Deref for DynInstrumentation {
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
+impl core::ops::Deref for DynInstrumentation {
     type Target = dyn Instrumentation;
 
     fn deref(&self) -> &Self::Target {
@@ -343,6 +364,13 @@ impl Deref for DynInstrumentation {
     }
 }
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl DerefMut for DynInstrumentation {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.inner
@@ -351,6 +379,13 @@ impl DerefMut for DynInstrumentation {
     }
 }
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl DynInstrumentation {
     /// Create a instance of the default instrumentation provider
     #[diesel_derives::__diesel_public_if(
@@ -358,8 +393,9 @@ impl DynInstrumentation {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn default_instrumentation() -> Self {
@@ -375,8 +411,9 @@ impl DynInstrumentation {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn none() -> Self {
@@ -392,8 +429,9 @@ impl DynInstrumentation {
     )]
     #[cfg(any(
         feature = "postgres",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
         feature = "mysql",
+        feature = "mariadb",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     ))]
     pub(crate) fn on_connection_event(&mut self, event: InstrumentationEvent<'_>) {
@@ -406,6 +444,13 @@ impl DynInstrumentation {
     }
 }
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl<I: Instrumentation> From<I> for DynInstrumentation {
     fn from(instrumentation: I) -> Self {
         Self {
@@ -414,14 +459,34 @@ impl<I: Instrumentation> From<I> for DynInstrumentation {
         }
     }
 }
-
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 struct NoInstrumentation;
 
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 impl Instrumentation for NoInstrumentation {
     fn on_connection_event(&mut self, _: InstrumentationEvent<'_>) {}
 }
 
 /// Unwrap unnecessary boxing levels
+#[cfg(any(
+    feature = "postgres",
+    feature = "__sqlite-shared",
+    feature = "mysql",
+    feature = "mariadb",
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+))]
 fn unpack_instrumentation(
     mut instrumentation: Box<dyn Instrumentation>,
 ) -> Box<dyn Instrumentation> {

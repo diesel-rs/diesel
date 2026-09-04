@@ -195,13 +195,13 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .unwrap();
 
     // cannot load results from more than one table via
@@ -209,26 +209,26 @@ fn main() {
     let _ = diesel::update(users::table)
         .set(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .unwrap();
 
     // cannot load results from more than one table via
     // returning clauses
     let _ = diesel::delete(users::table)
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `users::table`
-        //~| ERROR: cannot select `posts::columns::title` from `users::table`
-        //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
         .unwrap();
 
     // cannot use this method without deriving selectable

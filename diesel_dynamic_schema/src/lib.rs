@@ -77,6 +77,9 @@
 
 // Built-in Lints
 #![warn(missing_docs)]
+#![no_std]
+
+extern crate alloc;
 
 mod column;
 mod dummy_expression;

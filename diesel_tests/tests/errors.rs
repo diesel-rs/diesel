@@ -3,6 +3,8 @@ use crate::schema::*;
 use diesel::result::DatabaseErrorKind::CheckViolation;
 use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, NotNullViolation, UniqueViolation};
 use diesel::result::Error::DatabaseError;
+#[cfg(feature = "sqlite")]
+use diesel::sql_query;
 use diesel::*;
 
 #[diesel_test_helper::test]
@@ -268,4 +270,68 @@ fn check_constraints_correct_constraint_name() {
         }
         _ => panic!("{failure:?} did not match Err(DatabaseError(CheckViolation, e))"),
     };
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "sqlite")]
+fn foreign_key_restrict_violation_detected() {
+    use diesel::connection::SimpleConnection;
+
+    let connection = &mut connection_without_transaction();
+
+    // Enable foreign keys for SQLite
+    connection
+        .batch_execute("PRAGMA foreign_keys = ON")
+        .unwrap();
+
+    // Create test tables with ON DELETE RESTRICT
+    sql_query("DROP TABLE IF EXISTS fk_restrict_child")
+        .execute(connection)
+        .unwrap();
+    sql_query("DROP TABLE IF EXISTS fk_restrict_parent")
+        .execute(connection)
+        .unwrap();
+
+    sql_query(
+        r#"
+        CREATE TABLE fk_restrict_parent (
+            id INTEGER PRIMARY KEY NOT NULL
+        )
+    "#,
+    )
+    .execute(connection)
+    .unwrap();
+
+    sql_query(
+        r#"
+        CREATE TABLE fk_restrict_child (
+            id INTEGER PRIMARY KEY NOT NULL,
+            parent_id INTEGER NOT NULL,
+            FOREIGN KEY (parent_id) REFERENCES fk_restrict_parent(id) ON DELETE RESTRICT
+        )
+    "#,
+    )
+    .execute(connection)
+    .unwrap();
+
+    // Insert parent and child records
+    sql_query("INSERT INTO fk_restrict_parent (id) VALUES (1)")
+        .execute(connection)
+        .unwrap();
+    sql_query("INSERT INTO fk_restrict_child (id, parent_id) VALUES (1, 1)")
+        .execute(connection)
+        .unwrap();
+
+    // Attempt to delete the parent should fail with ForeignKeyViolation
+    let failure = sql_query("DELETE FROM fk_restrict_parent WHERE id = 1").execute(connection);
+
+    assert_matches!(failure, Err(DatabaseError(ForeignKeyViolation, _)));
+
+    // Cleanup
+    sql_query("DROP TABLE IF EXISTS fk_restrict_child")
+        .execute(connection)
+        .unwrap();
+    sql_query("DROP TABLE IF EXISTS fk_restrict_parent")
+        .execute(connection)
+        .unwrap();
 }

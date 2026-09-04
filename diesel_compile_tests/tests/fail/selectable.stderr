@@ -88,6 +88,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
@@ -119,6 +120,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
@@ -196,6 +198,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
      = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
@@ -239,6 +242,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
      = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
@@ -357,7 +361,7 @@ LL |     impl MixedAggregates<Never> for No {
     = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>>` to implement `SelectDsl<SelectBy<UserWithPostCount, Pg>>`
  
     
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -365,23 +369,24 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::id`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
-    = note: `posts::columns::id` is no valid selection for `users::table`
+    = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<..., ...>`
     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<query_source::joins::JoinOn<Join, On>>
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -394,7 +399,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -402,23 +407,24 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::title`
    --> tests/fail/selectable.rs:15:9
     |
  LL |         title -> Text,
     |         ^^^^^
-    = note: `posts::columns::title` is no valid selection for `users::table`
+    = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<..., ...>`
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<query_source::joins::JoinOn<Join, On>>
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -431,7 +437,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
    --> tests/fail/selectable.rs:197:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -439,17 +445,17 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<users::table>`
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -462,7 +468,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
     --> tests/fail/selectable.rs:201:15
      |
  LL |         .load(&mut conn)
@@ -470,23 +476,24 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::id`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
-     = note: `posts::columns::id` is no valid selection for `users::table`
+     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<..., ...>`
      = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
                SelectableExpression<Join<Left, Right, LeftOuter>>
                SelectableExpression<query_source::joins::JoinOn<Join, On>>
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -500,7 +507,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
     --> tests/fail/selectable.rs:201:15
      |
  LL |         .load(&mut conn)
@@ -508,23 +515,24 @@ error[E0277]: cannot select `posts::columns::title` from `users::table`
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `posts::columns::title`
     --> tests/fail/selectable.rs:15:9
      |
   LL |         title -> Text,
      |         ^^^^^
-     = note: `posts::columns::title` is no valid selection for `users::table`
+     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<..., ...>`
      = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
                SelectableExpression<Join<Left, Right, LeftOuter>>
                SelectableExpression<query_source::joins::JoinOn<Join, On>>
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -538,7 +546,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/selectable.rs:201:15
      |
  LL |         .load(&mut conn)
@@ -546,17 +554,17 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<users::table>`
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -570,7 +578,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -578,23 +586,24 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `posts::columns::id`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
-    = note: `posts::columns::id` is no valid selection for `users::table`
+    = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<query_source::joins::JoinOn<Join, On>>
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -607,7 +616,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -615,23 +624,24 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `posts::columns::title`
    --> tests/fail/selectable.rs:15:9
     |
  LL |         title -> Text,
     |         ^^^^^
-    = note: `posts::columns::title` is no valid selection for `users::table`
+    = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<query_source::joins::JoinOn<Join, On>>
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -644,7 +654,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
    --> tests/fail/selectable.rs:211:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -652,17 +662,17 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<users::table>`
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -675,7 +685,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
     --> tests/fail/selectable.rs:215:15
      |
  LL |         .load(&mut conn)
@@ -683,23 +693,24 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `posts::columns::id`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
-     = note: `posts::columns::id` is no valid selection for `users::table`
+     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
      = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
                SelectableExpression<Join<Left, Right, LeftOuter>>
                SelectableExpression<query_source::joins::JoinOn<Join, On>>
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -713,7 +724,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
     --> tests/fail/selectable.rs:215:15
      |
  LL |         .load(&mut conn)
@@ -721,23 +732,24 @@ error[E0277]: cannot select `posts::columns::title` from `users::table`
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `posts::columns::title`
     --> tests/fail/selectable.rs:15:9
      |
   LL |         title -> Text,
      |         ^^^^^
-     = note: `posts::columns::title` is no valid selection for `users::table`
+     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
      = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
                SelectableExpression<Join<Left, Right, LeftOuter>>
                SelectableExpression<query_source::joins::JoinOn<Join, On>>
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -751,7 +763,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/selectable.rs:215:15
      |
  LL |         .load(&mut conn)
@@ -759,17 +771,17 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<users::table>`
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -783,7 +795,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -791,35 +803,37 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, users::table>>` is not implemented for `posts::columns::id`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
-    = note: `posts::columns::id` is no valid selection for `users::table`
+    = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
     = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<query_source::joins::JoinOn<Join, On>>
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
 LL |     where
-LL |         E: SelectableExpression<T>,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -827,35 +841,37 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, users::table>>` is not implemented for `posts::columns::title`
    --> tests/fail/selectable.rs:15:9
     |
  LL |         title -> Text,
     |         ^^^^^
-    = note: `posts::columns::title` is no valid selection for `users::table`
+    = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<query_source::joins::JoinOn<Join, On>>
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
 LL |     where
-LL |         E: SelectableExpression<T>,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
    --> tests/fail/selectable.rs:224:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
@@ -863,28 +879,30 @@ LL |         .returning(UserWithEmbeddedPost::as_select())
     |          |
     |          required by a bound introduced by this call
     |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
    --> tests/fail/selectable.rs:14:9
     |
  LL |         id -> Integer,
     |         ^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<users::table>`
-    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+    = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: 2 redundant requirements hidden
-    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+    = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
 LL |     where
-LL |         E: SelectableExpression<T>,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
-    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::id` from `users::table`
+error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
     --> tests/fail/selectable.rs:228:15
      |
  LL |         .load(&mut conn)
@@ -892,23 +910,24 @@ error[E0277]: cannot select `posts::columns::id` from `users::table`
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, users::table>>` is not implemented for `posts::columns::id`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
-     = note: `posts::columns::id` is no valid selection for `users::table`
+     = note: `posts::columns::id` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
      = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
                SelectableExpression<Join<Left, Right, LeftOuter>>
                SelectableExpression<query_source::joins::JoinOn<Join, On>>
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -922,7 +941,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `posts::columns::title` from `users::table`
+error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
     --> tests/fail/selectable.rs:228:15
      |
  LL |         .load(&mut conn)
@@ -930,23 +949,24 @@ error[E0277]: cannot select `posts::columns::title` from `users::table`
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, users::table>>` is not implemented for `posts::columns::title`
     --> tests/fail/selectable.rs:15:9
      |
   LL |         title -> Text,
      |         ^^^^^
-     = note: `posts::columns::title` is no valid selection for `users::table`
+     = note: `posts::columns::title` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
      = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
                SelectableExpression<Only<posts::table>>
                SelectableExpression<Tablesample<posts::table, TSM>>
+               SelectableExpression<ReturningQuerySource<..., ...>>
                SelectableExpression<SelectStatement<...>>
                SelectableExpression<posts::table>
                SelectableExpression<Join<Left, Right, Inner>>
                SelectableExpression<Join<Left, Right, LeftOuter>>
                SelectableExpression<query_source::joins::JoinOn<Join, On>>
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
@@ -960,7 +980,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
     --> tests/fail/selectable.rs:228:15
      |
  LL |         .load(&mut conn)
@@ -968,17 +988,17 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
      |          |
      |          required by a bound introduced by this call
      |
-note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
     --> tests/fail/selectable.rs:14:9
      |
   LL |         id -> Integer,
      |         ^^
      = note: associated types for the current `impl` cannot be restricted in `where` clauses
      = note: 1 redundant requirement hidden
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<users::table>`
-     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
+     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 2 redundant requirements hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
+     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, ...>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`

@@ -60,7 +60,7 @@ extern "SQL" {
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// assert_eq!(
     ///     Ok(Some(4i64)),
     ///     animals
@@ -104,7 +104,7 @@ extern "SQL" {
     /// #     }
     /// # }
     /// #
-    /// # #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite"))))]
+    /// # #[cfg(all(feature = "numeric", any(feature = "postgres", not(feature = "__sqlite-shared"))))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use bigdecimal::BigDecimal;
     /// #     use self::numbers::dsl::*;
@@ -119,7 +119,7 @@ extern "SQL" {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(all(feature = "numeric", any(feature = "postgres", not(feature = "sqlite")))))]
+    /// # #[cfg(not(all(feature = "numeric", any(feature = "postgres", not(feature = "__sqlite-shared")))))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     Ok(())
     /// # }

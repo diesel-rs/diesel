@@ -56,7 +56,8 @@ use proc_macro::TokenStream;
 /// #
 /// # #[cfg(feature = "sqlite")]
 /// # fn migration_connection() -> diesel::SqliteConnection {
-/// #    let connection_url = database_url_from_env("SQLITE_DATABASE_URL");
+/// #    // An in-memory database avoids lock races between concurrently running doctests.
+/// #    let connection_url = String::from(":memory:");
 /// #    let mut conn = diesel::SqliteConnection::establish(&connection_url).unwrap();
 /// #    conn.begin_test_transaction().unwrap();
 /// #    conn
@@ -68,13 +69,19 @@ use proc_macro::TokenStream;
 /// #    let mut conn = diesel::MysqlConnection::establish(&connection_url).unwrap();
 /// #    conn
 /// # }
+///#[cfg(feature = "mariadb")]
+/// # fn migration_connection() -> diesel::MariadbConnection {
+/// #    let connection_url = database_url_from_env("MARIADB_DATABASE_URL");
+/// #    let mut conn = diesel::MariadbConnection::establish(&connection_url).unwrap();
+/// #    conn
+/// # }
 /// #
 /// #
 /// # #[cfg(feature = "postgres")]
 /// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/postgres");
-/// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
+/// # #[cfg(all(any(feature = "mysql", feature = "mariadb"), not(feature = "postgres")))]
 /// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/mysql");
-/// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
+/// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql", feature = "mariadb"))))]
 /// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/sqlite");
 ///
 /// # fn main() {

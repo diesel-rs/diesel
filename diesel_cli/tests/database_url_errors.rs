@@ -9,12 +9,16 @@ fn missing_sqlite_panic_bare() {
         .command_without_database_url("setup")
         .env("DATABASE_URL", "example.db")
         .run();
-    assert!(result
-        .stderr()
-        .contains("`example.db` is not a valid database URL. It should start with "));
-    assert!(result
-        .stderr()
-        .contains("or maybe you meant to use the `sqlite` feature which is not enabled."));
+    assert!(
+        result
+            .stderr()
+            .contains("`example.db` is not a valid database URL. It should start with ")
+    );
+    assert!(
+        result
+            .stderr()
+            .contains("or maybe you meant to use the `sqlite` feature which is not enabled.")
+    );
 }
 
 #[test]
@@ -70,11 +74,26 @@ fn missing_mysql_panic() {
 }
 
 #[test]
+#[cfg(not(feature = "mariadb"))]
+fn missing_mariadb_panic() {
+    let p = project("missing_mariadb_panic").build();
+    let result = p
+        .command_without_database_url("setup")
+        .env("DATABASE_URL", "mariadb://localhost")
+        .run();
+    assert!(result.stderr().contains(
+        "Database url `mariadb://localhost` requires the `mariadb` feature but it's not enabled."
+    ));
+}
+
+#[test]
 fn broken_dotenv_file_results_in_error() {
     #[cfg(feature = "postgres")]
     let url = "postgres://localhost";
     #[cfg(feature = "mysql")]
     let url = "mysql://localhost";
+    #[cfg(feature = "mariadb")]
+    let url = "mariadb://localhost";
     #[cfg(feature = "sqlite")]
     let url = ":memory:";
 
@@ -85,8 +104,10 @@ fn broken_dotenv_file_results_in_error() {
     p.skip_drop_db();
 
     let result = p.command_without_database_url("setup").run();
-    assert!(result
-        .stderr()
-        .contains("Initializing `.env` file failed: Error parsing line"));
+    assert!(
+        result
+            .stderr()
+            .contains("Initializing `.env` file failed: Error parsing line")
+    );
     assert!(!result.is_success());
 }

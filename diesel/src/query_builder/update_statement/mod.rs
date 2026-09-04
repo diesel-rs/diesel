@@ -1,27 +1,34 @@
+pub(crate) mod batch_update;
 pub(crate) mod changeset;
 pub(super) mod target;
 
+use private::AllowFilterForUpdate;
+
+use crate::QuerySource;
 use crate::backend::DieselReserveSpecialization;
-use crate::dsl::{Filter, IntoBoxed};
+use crate::dsl::{Filter, IntoBoxed, IntoBoxedClone};
 use crate::expression::{
-    is_aggregate, AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping,
+    AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
 };
-use crate::query_builder::returning_clause::*;
+use crate::query_builder::returning::{
+    NoReturningClause, ReturningClause, ReturningQuerySource, UpdateStmt,
+};
 use crate::query_builder::where_clause::*;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
-use crate::query_dsl::RunQueryDsl;
+use crate::query_builder::*;
+use crate::query_dsl::RunQueryDslSupport;
+use crate::query_dsl::methods::{BoxedCloneDsl, BoxedDsl, FilterDsl};
 use crate::query_source::Table;
 use crate::result::EmptyChangeset;
 use crate::result::Error::QueryBuilderError;
-use crate::{query_builder::*, QuerySource};
 
-pub(crate) use self::private::UpdateAutoTypeHelper;
+pub(crate) use self::private::SetAutoTypeHelper;
 
 impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
         UpdateStatement {
             from_clause: target.table.from_clause(),
             where_clause: target.where_clause,
+            set_clause: SetClause::Immediate,
             values: SetNotCalled,
             returning: NoReturningClause,
         }
@@ -32,7 +39,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     /// See [`update`](crate::update()) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
-    pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+    pub fn set<V>(self, values: V) -> crate::dsl::Set<Self, V>
     where
         T: Table,
         V: changeset::AsChangeset<Target = T>,
@@ -41,6 +48,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause,
+            set_clause: <V as AsChangeset>::SET_CLAUSE,
             values: values.as_changeset(),
             returning: self.returning,
         }
@@ -57,6 +65,7 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
 pub struct UpdateStatement<T: QuerySource, U, V = SetNotCalled, Ret = NoReturningClause> {
     from_clause: T::FromClause,
     where_clause: U,
+    set_clause: SetClause,
     values: V,
     returning: Ret,
 }
@@ -64,6 +73,10 @@ pub struct UpdateStatement<T: QuerySource, U, V = SetNotCalled, Ret = NoReturnin
 /// An `UPDATE` statement with a boxed `WHERE` clause.
 pub type BoxedUpdateStatement<'a, DB, T, V = SetNotCalled, Ret = NoReturningClause> =
     UpdateStatement<T, BoxedWhereClause<'a, DB>, V, Ret>;
+
+/// An `UPDATE` statement with a boxed cloneable `WHERE` clause.
+pub type BoxedCloneUpdateStatement<'a, DB, T, V = SetNotCalled, Ret = NoReturningClause> =
+    UpdateStatement<T, BoxedCloneWhereClause<'a, DB>, V, Ret>;
 
 impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// Adds the given predicate to the `WHERE` clause of the statement being
@@ -149,6 +162,57 @@ impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     {
         BoxedDsl::internal_into_boxed(self)
     }
+
+    /// Wraps the `WHERE` clause of this update statement in an [`Arc`](alloc::sync::Arc).
+    ///
+    /// This is useful for cases where you want to clone and conditionally
+    /// modify a query, but need the type to remain the same. The backend
+    /// must be specified as part of this. It is not possible to box a query
+    /// and have it be useable on multiple backends.
+    ///
+    /// A cloneable boxed query will incur a slightly greater performance penalty
+    /// than a standard boxed query. In both cases, the query builder can no longer
+    /// be inlined by the compiler. For most applications this cost will be minimal.
+    ///
+    /// ### Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use std::collections::HashMap;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     let mut params = HashMap::new();
+    /// #     params.insert("tess_has_been_a_jerk", false);
+    /// let query = diesel::update(users).set(name.eq("Jerk")).into_boxed_clone();
+    /// let mut query = query.clone();
+    ///
+    /// if !params["tess_has_been_a_jerk"] {
+    ///     query = query.filter(name.ne("Tess"));
+    /// }
+    ///
+    /// let updated_rows = query.execute(connection)?;
+    /// assert_eq!(1, updated_rows);
+    ///
+    /// let expected_names = vec!["Jerk", "Tess"];
+    /// let names = users.select(name).order(id).load::<String>(connection)?;
+    ///
+    /// assert_eq!(expected_names, names);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn into_boxed_clone<'a, DB>(self) -> IntoBoxedClone<'a, Self, DB>
+    where
+        DB: Backend,
+        Self: BoxedCloneDsl<'a, DB>,
+    {
+        BoxedCloneDsl::internal_into_boxed_clone(self)
+    }
 }
 
 impl<T, U, V, Ret, Predicate> FilterDsl<Predicate> for UpdateStatement<T, U, V, Ret>
@@ -163,6 +227,7 @@ where
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.and(predicate),
+            set_clause: self.set_clause,
             values: self.values,
             returning: self.returning,
         }
@@ -180,6 +245,25 @@ where
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause.into(),
+            set_clause: self.set_clause,
+            values: self.values,
+            returning: self.returning,
+        }
+    }
+}
+
+impl<'a, T, U, V, Ret, DB> BoxedCloneDsl<'a, DB> for UpdateStatement<T, U, V, Ret>
+where
+    T: QuerySource,
+    U: Into<BoxedCloneWhereClause<'a, DB>>,
+{
+    type Output = BoxedCloneUpdateStatement<'a, DB, T, V, Ret>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
+        UpdateStatement {
+            from_clause: self.from_clause,
+            where_clause: self.where_clause.into(),
+            set_clause: self.set_clause,
             values: self.values,
             returning: self.returning,
         }
@@ -192,7 +276,7 @@ where
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: QueryFragment<DB>,
-    V: QueryFragment<DB>,
+    V: QueryFragment<DB> + AllowFilterForUpdate<U>,
     Ret: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -203,7 +287,7 @@ where
         out.unsafe_to_cache_prepared();
         out.push_sql("UPDATE ");
         self.from_clause.walk_ast(out.reborrow())?;
-        out.push_sql(" SET ");
+        self.set_clause.walk_ast(out.reborrow())?;
         self.values.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
@@ -224,7 +308,7 @@ impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
 where
     T: Table,
     UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>: Query,
-    T::AllColumns: ValidGrouping<()>,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<UpdateStmt, T>> + ValidGrouping<()>,
     <T::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
@@ -239,13 +323,13 @@ where
 impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: Expression + SelectableExpression<T> + ValidGrouping<()>,
+    Ret: SelectableExpression<ReturningQuerySource<UpdateStmt, T>> + ValidGrouping<()>,
     Ret::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
-impl<T: QuerySource, U, V, Ret, Conn> RunQueryDsl<Conn> for UpdateStatement<T, U, V, Ret> {}
+impl<T: QuerySource, U, V, Ret> RunQueryDslSupport for UpdateStatement<T, U, V, Ret> {}
 
 impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// Specify what expression is returned after execution of the `update`.
@@ -269,6 +353,35 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}
     /// ```
+    ///
+    /// ### Returning the pre-update value (PostgreSQL 18+):
+    ///
+    /// `RETURNING old.col` — exposed via [`diesel::pg::returning::old()`] —
+    /// returns the value of the column **before** the update was applied.
+    /// This requires PostgreSQL 18 or newer.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     use diesel::pg::returning::old;
+    /// #     let connection = &mut establish_connection();
+    /// #     // `RETURNING old.col` requires PostgreSQL 18+
+    /// #     let pg_version: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
+    /// #         "SELECT current_setting('server_version_num')::int",
+    /// #     ).get_result(connection).unwrap();
+    /// #     if pg_version < 180000 { return; }
+    /// let was_and_now = diesel::update(users.filter(id.eq(1)))
+    ///     .set(name.eq("Dean"))
+    ///     .returning((old(name), name))
+    ///     .get_result::<(String, String)>(connection);
+    /// assert_eq!(Ok(("Sean".to_string(), "Dean".to_string())), was_and_now);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     where
         T: Table,
@@ -277,6 +390,7 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
         UpdateStatement {
             from_clause: self.from_clause,
             where_clause: self.where_clause,
+            set_clause: self.set_clause,
             values: self.values,
             returning: ReturningClause(returns),
         }
@@ -287,19 +401,93 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 #[derive(Debug, Clone, Copy)]
 pub struct SetNotCalled;
 
-mod private {
-    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+pub(crate) mod private {
+    use crate::backend::Backend;
+    use crate::query_builder::where_clause::{
+        BoxedCloneWhereClause, BoxedWhereClause, NoWhereClause, WhereClause,
+    };
+
+    use super::changeset::Assign;
+
+    /// Helper trait for `#[auto_type]`
+    ///
+    /// This trait allows inferring the return type of `UpdateStatement::set` and
+    /// `IncompleteDoUpdate::set` (via `IntoUpdateTarget`). It is used to define the
+    /// `Set` type alias in `diesel::dsl`.
     #[allow(unreachable_pub)]
-    pub trait UpdateAutoTypeHelper {
-        type Table;
-        type Where;
+    pub trait SetAutoTypeHelper<Changes> {
+        type Out;
     }
 
-    impl<T, W> UpdateAutoTypeHelper for crate::query_builder::UpdateStatement<T, W>
+    impl<T, W, Changes> SetAutoTypeHelper<Changes> for crate::query_builder::UpdateStatement<T, W>
     where
         T: crate::QuerySource,
+        Changes: crate::AsChangeset,
     {
-        type Table = T;
-        type Where = W;
+        type Out = crate::query_builder::UpdateStatement<T, W, Changes::Changeset>;
+    }
+
+    /// A helper trait to mark values clauses as compatible with a given filter syntax
+    #[diagnostic::on_unimplemented(
+        message = "cannot apply a `WHERE` clause to batch updates",
+        note = "the information about which rows to update are provided as part of the values"
+    )]
+    pub trait AllowFilterForUpdate<P> {}
+
+    impl<U> AllowFilterForUpdate<NoWhereClause> for U {}
+
+    impl<W, C, B> AllowFilterForUpdate<WhereClause<W>> for Assign<C, B> {}
+    impl<W, T> AllowFilterForUpdate<WhereClause<W>> for Option<T> where
+        T: AllowFilterForUpdate<WhereClause<W>>
+    {
+    }
+
+    impl<'a, DB, C, B> AllowFilterForUpdate<BoxedWhereClause<'a, DB>> for Assign<C, B> where DB: Backend {}
+    impl<'a, DB, T> AllowFilterForUpdate<BoxedWhereClause<'a, DB>> for Option<T>
+    where
+        DB: Backend,
+        T: AllowFilterForUpdate<BoxedWhereClause<'a, DB>>,
+    {
+    }
+
+    impl<'a, DB, C, B> AllowFilterForUpdate<BoxedCloneWhereClause<'a, DB>> for Assign<C, B> where
+        DB: Backend
+    {
+    }
+    impl<'a, DB, T> AllowFilterForUpdate<BoxedCloneWhereClause<'a, DB>> for Option<T>
+    where
+        DB: Backend,
+        T: AllowFilterForUpdate<BoxedCloneWhereClause<'a, DB>>,
+    {
+    }
+}
+
+/// Determines when the `SET` part of an update statement will be added to the sql.
+///
+/// Usual single row updates default to [SetClause::Immediate]. Batch row updates
+/// will use [SetClause::Delegated].
+///
+/// - [SetClause::Immediate]
+///   will add `SET` right after the [UpdateStatement::from_clause] `QueryFragment`. \
+///   `Update users SET ... ;`
+/// - [SetClause::Delegated]
+///   hands over the control of adding `SET` to [UpdateStatement::values] `QueryFragment`. \
+///   `Update users ... SET ... ; ` will then be permitted.  \
+///   Batch update for mysql requires this behavior.
+#[derive(Clone, Copy, Debug)]
+pub enum SetClause {
+    Immediate,
+    Delegated,
+}
+
+impl<DB> QueryFragment<DB> for SetClause
+where
+    DB: Backend,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        if let SetClause::Immediate = self {
+            out.push_sql(" SET ");
+        }
+        Ok(())
     }
 }

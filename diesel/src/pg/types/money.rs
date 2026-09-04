@@ -1,5 +1,5 @@
 //! Support for Money values under PostgreSQL.
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use core::ops::{Add, AddAssign, Sub, SubAssign};
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
@@ -18,7 +18,7 @@ use crate::sql_types::{BigInt, Money};
 /// use diesel::data_types::PgMoney as Pence; // 1/100th unit of Pound
 /// use diesel::data_types::PgMoney as Fils; // 1/1000th unit of Dinar
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Money)]
 pub struct PgMoney(pub i64);
 

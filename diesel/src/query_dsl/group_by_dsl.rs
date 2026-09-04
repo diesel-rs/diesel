@@ -4,7 +4,7 @@ use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
 use crate::query_builder::FromClause;
 use crate::query_builder::{AsQuery, SelectStatement};
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 
 /// The `group_by` method
 ///
@@ -25,7 +25,7 @@ pub trait GroupByDsl<Expr: Expression> {
 impl<T, Expr> GroupByDsl<Expr> for T
 where
     Expr: Expression,
-    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
     T::Query: GroupByDsl<Expr>,

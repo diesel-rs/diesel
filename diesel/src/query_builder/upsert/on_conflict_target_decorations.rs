@@ -10,12 +10,60 @@ pub trait UndecoratedConflictTarget {}
 impl UndecoratedConflictTarget for NoConflictTarget {}
 impl<T> UndecoratedConflictTarget for ConflictTarget<T> {}
 
-/// Interface to add information to conflict targets.
-/// Designed to be open for further additions to conflict targets like constraints
+/// Adds a `WHERE` predicate to an `ON CONFLICT` target.
+///
+/// This enables the `ON CONFLICT (target) WHERE predicate DO ...` SQL syntax
+/// on PostgreSQL. PostgreSQL uses the predicate to select which unique index
+/// to match against. Any unique index whose `WHERE` clause is implied by
+/// the predicate qualifies.
+///
+/// Calling `.filter_target()` multiple times combines the predicates with `AND`.
 pub trait DecoratableTarget<P> {
-    /// Output type of filter_target operation
+    /// The type returned by [`filter_target`](DecoratableTarget::filter_target).
     type FilterOutput;
-    /// equivalent to filter of FilterDsl but aimed at conflict targets
+    /// Adds a `WHERE` predicate to the `ON CONFLICT` target, telling PostgreSQL
+    /// which unique index to check for conflicts (PostgreSQL only).
+    ///
+    /// This generates `ON CONFLICT (target) WHERE predicate DO ...` SQL.
+    /// PostgreSQL selects unique indexes whose `WHERE` clause is implied by
+    /// the predicate; an exact match is not required.
+    ///
+    /// Calling `.filter_target()` multiple times combines predicates with `AND`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../upsert/on_conflict_docs_setup.rs");
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("CREATE UNIQUE INDEX users_name_idx ON users (name)")
+    /// #         .execute(conn)?;
+    /// diesel::insert_into(users)
+    ///     .values(name.eq("Sam"))
+    ///     .execute(conn)?;
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(name.eq("Sam"))
+    ///     .on_conflict(name)
+    ///     .filter_target(name.like("S%"))
+    ///     .do_update()
+    ///     .set(name.eq("Updated"))
+    ///     .execute(conn)?;
+    ///
+    /// let count = users.filter(name.eq("Updated")).count().get_result::<i64>(conn)?;
+    /// assert_eq!(count, 1);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn main() {}
+    /// ```
+    ///
+    /// For more examples including predicate chaining, see [`IncompleteOnConflict`]'s
+    /// implementation of this trait.
+    ///
+    /// [`IncompleteOnConflict`]: crate::upsert::IncompleteOnConflict
     fn filter_target(self, predicate: P) -> Self::FilterOutput;
 }
 

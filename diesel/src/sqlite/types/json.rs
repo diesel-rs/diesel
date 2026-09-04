@@ -4,15 +4,18 @@ use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 use crate::sqlite::{Sqlite, SqliteValue};
+use alloc::boxed::Box;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 
-#[cfg(all(feature = "sqlite", feature = "serde_json"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 impl FromSql<sql_types::Json, Sqlite> for serde_json::Value {
     fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         serde_json::from_str(value.read_text()).map_err(|_| "Invalid Json".into())
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "serde_json"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 impl ToSql<sql_types::Json, Sqlite> for serde_json::Value {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(serde_json::to_string(self)?);
@@ -20,7 +23,7 @@ impl ToSql<sql_types::Json, Sqlite> for serde_json::Value {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "serde_json"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
     fn from_sql(mut value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         use self::jsonb::*;
@@ -41,7 +44,7 @@ impl FromSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "serde_json"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 impl ToSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         use self::jsonb::*;
@@ -59,11 +62,11 @@ impl ToSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "serde_json"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 mod jsonb {
     extern crate serde_json;
 
-    use std::error::Error;
+    use core::error::Error;
 
     use super::*;
 
@@ -215,9 +218,9 @@ mod jsonb {
             JSONB_TEXTJ => read_jsonb_textj(payload_bytes, header.payload_size),
             JSONB_TEXTRAW => read_jsonb_text(payload_bytes, header.payload_size),
             JSONB_TEXT5 => Err("TEXT5 is not supported".into()),
-            JSONB_ARRAY => Ok(serde_json::Value::Array(Vec::new())),
+            JSONB_ARRAY => Ok(serde_json::Value::Array(alloc::vec::Vec::new())),
             JSONB_OBJECT => Ok(serde_json::Value::Object(serde_json::Map::new())),
-            _ => Err(format!(
+            _ => Err(alloc::format!(
                 "Unsupported or reserved JSONB type: {}",
                 header.element_type
             )
@@ -272,7 +275,7 @@ mod jsonb {
             .checked_add(payload_size)
             .ok_or("The provided payload size overflows usize")?;
         if bytes.len() < total_size {
-            return Err(format!(
+            return Err(alloc::format!(
                 "Invalid JSONB data: insufficient bytes for value of type {}, expected {} bytes, got {}",
                 element_type,
                 total_size,
@@ -296,7 +299,7 @@ mod jsonb {
     ) -> deserialize::Result<serde_json::Value> {
         // Ensure the bytes are at least as large as the payload size
         if bytes.len() < payload_size {
-            return Err(format!(
+            return Err(alloc::format!(
                 "Expected payload of size {}, but got {}",
                 payload_size,
                 bytes.len()
@@ -305,7 +308,7 @@ mod jsonb {
         }
 
         // Read only the number of bytes specified by the payload size
-        let int_str = std::str::from_utf8(bytes).map_err(|_| "Invalid ASCII in JSONB integer")?;
+        let int_str = core::str::from_utf8(bytes).map_err(|_| "Invalid ASCII in JSONB integer")?;
         let int_value = serde_json::from_str(int_str)
             .map_err(|_| "Failed to parse JSONB")
             .and_then(|v: serde_json::Value| {
@@ -323,7 +326,7 @@ mod jsonb {
         payload_size: usize,
     ) -> deserialize::Result<serde_json::Value> {
         if bytes.len() < payload_size {
-            return Err(format!(
+            return Err(alloc::format!(
                 "Expected payload of size {}, but got {}",
                 payload_size,
                 bytes.len()
@@ -331,7 +334,7 @@ mod jsonb {
             .into());
         }
 
-        let float_str = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB float")?;
+        let float_str = core::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB float")?;
         let float_value = serde_json::from_str(float_str)
             .map_err(|_| "Failed to parse JSONB")
             .and_then(|v: serde_json::Value| {
@@ -349,7 +352,7 @@ mod jsonb {
         payload_size: usize,
     ) -> deserialize::Result<serde_json::Value> {
         if bytes.len() < payload_size {
-            return Err(format!(
+            return Err(alloc::format!(
                 "Expected payload of size {}, but got {}",
                 payload_size,
                 bytes.len()
@@ -357,7 +360,7 @@ mod jsonb {
             .into());
         }
 
-        let text = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
+        let text = core::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
         Ok(serde_json::Value::String(text.to_string()))
     }
 
@@ -366,7 +369,7 @@ mod jsonb {
         payload_size: usize,
     ) -> deserialize::Result<serde_json::Value> {
         if bytes.len() < payload_size {
-            return Err(format!(
+            return Err(alloc::format!(
                 "Expected payload of size {}, but got {}",
                 payload_size,
                 bytes.len()
@@ -374,10 +377,10 @@ mod jsonb {
             .into());
         }
 
-        let text = std::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
+        let text = core::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB string")?;
 
         // Unescape JSON escape sequences (e.g., "\n", "\u0020")
-        let unescaped_text = serde_json::from_str(&format!("\"{text}\""))
+        let unescaped_text = serde_json::from_str(&alloc::format!("\"{text}\""))
             .map_err(|_| "Failed to parse JSON-escaped text in TEXTJ")?;
 
         Ok(unescaped_text)
@@ -612,19 +615,19 @@ mod jsonb {
 }
 
 #[cfg(test)]
-#[cfg(all(feature = "sqlite", feature = "serde_json"))]
+#[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
 mod tests {
     use super::jsonb::*;
     use super::*;
+    #[cfg(not(miri))] // ffi call
+    use crate::ExpressionMethods;
     #[cfg(not(miri))] // ffi call
     use crate::query_dsl::RunQueryDsl;
     #[cfg(not(miri))] // ffi call
     use crate::test_helpers::connection;
     #[cfg(not(miri))] // ffi call
-    use crate::ExpressionMethods;
-    #[cfg(not(miri))] // ffi call
-    use crate::{dsl::sql, IntoSql};
-    use serde_json::{json, Value};
+    use crate::{IntoSql, dsl::sql};
+    use serde_json::{Value, json};
     use sql_types::{Json, Jsonb};
 
     // Helper function to create the correct JsonbHeader based on the payload size

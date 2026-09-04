@@ -42,3 +42,9 @@ libtirpc-dev = '*'
 x86_64-apple-darwin = "macos-15-intel"
 aarch64-apple-darwin = "macos-15"
 aarch64-unknown-linux-gnu = "ubuntu-22.04-arm"
+
+[dist.github-action-commits]
+"actions/checkout" = "8e8c483db84b4bee98b60c0593521ed34d9990e8"
+"actions/attest" = "508db95dd578ae2727ebd6217d5ba78e4fbda05d"
+"actions/upload-artifact" = "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+"actions/download-artifact" = "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"

@@ -1,5 +1,6 @@
 use super::QueryFragment;
-use std::any::{Any, TypeId};
+use alloc::boxed::Box;
+use core::any::{Any, TypeId};
 
 /// Uniquely identifies queries by their type for the purpose of prepared
 /// statement caching.
@@ -78,6 +79,22 @@ impl QueryId for () {
 }
 
 impl<T: QueryId + ?Sized> QueryId for Box<T> {
+    type QueryId = T::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+
+    const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
+}
+
+impl<T: QueryId + ?Sized> QueryId for alloc::rc::Rc<T> {
+    type QueryId = T::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
+
+    const IS_WINDOW_FUNCTION: bool = T::IS_WINDOW_FUNCTION;
+}
+
+impl<T: QueryId + ?Sized> QueryId for alloc::sync::Arc<T> {
     type QueryId = T::QueryId;
 
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;

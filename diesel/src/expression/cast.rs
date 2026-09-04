@@ -5,7 +5,7 @@ use crate::query_source::aliasing::{AliasSource, FieldAliasMapper};
 use crate::result::QueryResult;
 use crate::{query_builder, query_source, sql_types};
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 pub(crate) mod private {
     use super::*;
@@ -125,8 +125,18 @@ type_name! {
         Uuid => "uuid",
         Json => "json",
         Jsonb => "jsonb",
+        Inet => "inet",
+        Cidr => "cidr",
     }
     diesel::mysql::Mysql: "mysql_backend" {
+        Int8 => "signed",
+        Text => "char",
+        Date => "date",
+        Datetime => "datetime",
+        Decimal => "decimal",
+        Time => "time",
+    }
+    diesel::mariadb::Mariadb: "mariadb_backend" {
         Int8 => "signed",
         Text => "char",
         Date => "date",
@@ -137,6 +147,7 @@ type_name! {
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
         Int8 => "bigint",
+        Double => "real",
         Text => "text",
         Json => "json",
         Jsonb => "jsonb",
@@ -162,7 +173,7 @@ where
 pub trait FallibleCastsTo<ST> {}
 
 impl<ST1, ST2> FallibleCastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> where
-    ST1: CastsTo<ST2>
+    ST1: FallibleCastsTo<ST2>
 {
 }
 
@@ -176,13 +187,13 @@ impl<ST1, ST2> CastsTo<sql_types::Nullable<ST2>> for sql_types::Nullable<ST1> wh
 macro_rules! casts_impl {
     (
         $(
-            $($feature: literal : )? ($to: tt <- $from: tt),
+            $($($feature: literal),+ : )? ($to: tt <- $from: tt),
         )+
     ) => {
         $(
-            $(#[cfg(feature = $feature)])?
+            $(#[cfg(any($(feature = $feature,)+))])?
             impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
-            $(#[cfg(feature = $feature)])?
+            $(#[cfg(any($(feature = $feature,)+))])?
             impl CastsTo<sql_types::$to> for sql_types::$from {}
         )+
     };
@@ -190,16 +201,20 @@ macro_rules! casts_impl {
 
 casts_impl!(
     (Bool <- Int4),
+    (Int4 <- Bool),
+    (Int4 <- Float4),
+    (Int8 <- Int4),
+    (Int8 <- Float4),
+    (Int8 <- Float8),
     (Float4 <- Int4),
     (Float4 <- Int8),
     (Float8 <- Float4),
     (Float8 <- Int4),
     (Float8 <- Int8),
-    (Int8 <- Int4),
-    (Int8 <- Float4),
-    (Int8 <- Float8),
-    (Int4 <- Bool),
-    (Int4 <- Float4),
+    (Decimal <- Int4),
+    (Decimal <- Int8),
+    (Decimal <- Float4),
+    (Decimal <- Float8),
     (Text <- Bool),
     (Text <- Float4),
     (Text <- Float8),
@@ -211,18 +226,22 @@ casts_impl!(
     (Text <- Time),
     (Json <- Jsonb),
     (Jsonb <- Json),
-    "mysql_backend": (Text <- Datetime),
+    "mysql_backend","mariadb_backend": (Text <- Datetime),
     "postgres_backend": (Text <- Uuid),
+    "postgres_backend": (Text <- Inet),
+    "postgres_backend": (Text <- Cidr),
+    "postgres_backend": (Inet <- Cidr),
+    "postgres_backend": (Cidr <- Inet),
 );
 
 macro_rules! fallible_casts_impl {
     (
         $(
-            $($feature: literal : )? ($to: tt <- $from: tt),
+            $($($feature: literal),+ : )? ($to: tt <- $from: tt),
         )+
     ) => {
         $(
-            $(#[cfg(feature = $feature)])?
+            $(#[cfg(any($(feature = $feature,)+))])?
             impl FallibleCastsTo<sql_types::$to> for sql_types::$from {}
         )+
     };
@@ -232,15 +251,22 @@ fallible_casts_impl!(
     (Int4 <- Int8),
     (Int4 <- Float8),
     (Int4 <- Text),
+    (Int4 <- Decimal),
     (Int8 <- Text),
+    (Int8 <- Decimal),
     (Float4 <- Float8),
     (Float4 <- Text),
+    (Float4 <- Decimal),
     (Float8 <- Text),
+    (Float8 <- Decimal),
     (Json <- Text),
     (Jsonb <- Text),
     (Bool <- Text),
     (Date <- Text),
     (Time <- Text),
-    "mysql_backend": (Datetime <- Text),
+    (Decimal <- Text),
+    "mysql_backend","mariadb_backend": (Datetime <- Text),
     "postgres_backend": (Uuid <- Text),
+    "postgres_backend": (Inet <- Text),
+    "postgres_backend": (Cidr <- Text),
 );

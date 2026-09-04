@@ -6,7 +6,7 @@ use std::str::FromStr;
 use super::data_structures::ColumnDefinition;
 use super::inference;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableName {
     pub sql_name: String,
     pub rust_name: String,
@@ -94,7 +94,7 @@ impl FromStr for TableName {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableData {
     pub name: TableName,
     pub primary_key: Vec<String>,
@@ -102,11 +102,20 @@ pub struct TableData {
     pub comment: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ViewData {
+    pub name: TableName,
+    pub column_data: Vec<ColumnDefinition>,
+    pub comment: Option<String>,
+    #[expect(dead_code, reason = "Will be used later")]
+    pub sql_definition: String,
+}
+
 mod serde_impls {
     extern crate serde;
 
     use self::serde::de::Visitor;
-    use self::serde::{de, Deserialize, Deserializer};
+    use self::serde::{Deserialize, Deserializer, de};
     use super::TableName;
     use std::fmt;
 

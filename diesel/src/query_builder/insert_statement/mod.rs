@@ -11,20 +11,22 @@ pub(crate) use self::private::Insert;
 )]
 pub(crate) use self::private::{InsertOrIgnore, Replace};
 
-use super::returning_clause::*;
-use crate::backend::{sql_dialect, DieselReserveSpecialization, SqlDialect};
+use crate::backend::{DieselReserveSpecialization, SqlDialect, sql_dialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::query_builder::returning::{
+    InsertStmtKind, NoReturningClause, ReturningClause, ReturningQuerySource,
+};
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_source::{Column, Table};
-use crate::{insertable::*, QuerySource};
-use std::marker::PhantomData;
+use crate::{QuerySource, insertable::*};
+use core::marker::PhantomData;
 
 pub(crate) use self::private::InsertAutoTypeHelper;
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 mod insert_with_default_for_sqlite;
 
 /// The structure returned by [`insert_into`].
@@ -285,7 +287,9 @@ where
 impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
 where
     T: Table,
+    U: InsertStmtKind,
     InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: SelectableExpression<ReturningQuerySource<U::StmtKind, T>>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = InsertStatement<T, U, Op, ReturningClause<T::AllColumns>>;
@@ -298,12 +302,13 @@ where
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
     T: QuerySource,
-    Ret: Expression + SelectableExpression<T> + NonAggregate,
+    U: InsertStmtKind,
+    Ret: SelectableExpression<ReturningQuerySource<U::StmtKind, T>> + NonAggregate,
 {
-    type SqlType = Ret::SqlType;
+    type SqlType = <Ret as Expression>::SqlType;
 }
 
-impl<T: QuerySource, U, Op, Ret, Conn> RunQueryDsl<Conn> for InsertStatement<T, U, Op, Ret> {}
+impl<T: QuerySource, U, Op, Ret> RunQueryDslSupport for InsertStatement<T, U, Op, Ret> {}
 
 impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     /// Specify what expression is returned after execution of the `insert`.
@@ -423,6 +428,36 @@ impl<Tab> Insertable<Tab> for &DefaultValues {
     }
 }
 
+/// Insert values that produce exactly one row: a single record's values,
+/// [`default_values`](InsertStatement::default_values), or an upsert wrapping
+/// either. Batch inserts and `INSERT ... SELECT` do not qualify.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` may insert zero or several rows",
+    note = "the database client reports one generated id per statement, \
+            so this operation supports only single-row inserts"
+)]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+pub trait SingleRowInsertValues<Tab> {}
+
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
+
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+impl<Tab> SingleRowInsertValues<Tab> for DefaultValues {}
+
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+impl<V, Tab, Target, Action, WhereClause> SingleRowInsertValues<Tab>
+    for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
+        V,
+        Target,
+        Action,
+        WhereClause,
+    >
+where
+    V: SingleRowInsertValues<Tab>,
+{
+}
+
 impl<DB> QueryFragment<DB> for DefaultValues
 where
     DB: Backend,
@@ -509,9 +544,11 @@ where
 }
 
 mod private {
+    use super::InsertStatement;
+    use crate::QueryResult;
+    use crate::QuerySource;
     use crate::backend::{Backend, DieselReserveSpecialization};
     use crate::query_builder::{AstPass, QueryFragment, QueryId};
-    use crate::QueryResult;
 
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Insert;
@@ -530,7 +567,7 @@ mod private {
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct InsertOrIgnore;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
         fn walk_ast<'b>(
             &'b self,
@@ -541,12 +578,10 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql_backend")]
-    impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
-        fn walk_ast<'b>(
-            &'b self,
-            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
-        ) -> QueryResult<()> {
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    #[diagnostic::do_not_recommend]
+    impl<DB: crate::mysql_like::MysqlLikeBackend> QueryFragment<DB> for InsertOrIgnore {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
             out.push_sql("INSERT IGNORE");
             Ok(())
         }
@@ -556,7 +591,7 @@ mod private {
     #[derive(Debug, Copy, Clone, QueryId)]
     pub struct Replace;
 
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
     impl QueryFragment<crate::sqlite::Sqlite> for Replace {
         fn walk_ast<'b>(
             &'b self,
@@ -567,12 +602,10 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql_backend")]
-    impl QueryFragment<crate::mysql::Mysql> for Replace {
-        fn walk_ast<'b>(
-            &'b self,
-            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
-        ) -> QueryResult<()> {
+    #[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+    #[diagnostic::do_not_recommend]
+    impl<DB: crate::mysql_like::MysqlLikeBackend> QueryFragment<DB> for Replace {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
             out.push_sql("REPLACE");
             Ok(())
         }
@@ -583,10 +616,24 @@ mod private {
     pub trait InsertAutoTypeHelper {
         type Table;
         type Op;
+        type Values;
+        type Ret;
     }
 
     impl<T, Op> InsertAutoTypeHelper for crate::query_builder::IncompleteInsertStatement<T, Op> {
         type Table = T;
         type Op = Op;
+        type Values = ();
+        type Ret = crate::query_builder::returning::NoReturningClause;
+    }
+
+    impl<T, U, Op, Ret> InsertAutoTypeHelper for InsertStatement<T, U, Op, Ret>
+    where
+        T: QuerySource,
+    {
+        type Table = T;
+        type Op = Op;
+        type Values = U;
+        type Ret = Ret;
     }
 }

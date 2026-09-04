@@ -10,19 +10,20 @@
 
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;
-use crate::expression::subselect::ValidSubselect;
 use crate::expression::IntoSql;
 use crate::expression::NonAggregate;
+use crate::expression::subselect::ValidSubselect;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
 use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
+use crate::query_dsl::RunQueryDslSupport;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::positional_order_dsl::{IntoPositionalOrderExpr, PositionalOrderDsl};
 use crate::sql_types::BigInt;
-use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, RunQueryDsl, Table};
+use crate::{CombineDsl, Insertable, QueryDsl, QueryResult, Table};
 
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -99,7 +100,7 @@ where
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, O, LOf, Conn> RunQueryDsl<Conn>
+impl<Combinator, Rule, Source, Rhs, O, LOf> RunQueryDslSupport
     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 {
 }
@@ -389,13 +390,17 @@ mod postgres {
     impl SupportsCombinationClause<Except, All> for Pg {}
 }
 
-#[cfg(feature = "mysql_backend")]
-mod mysql {
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+mod mysql_like {
     use super::*;
-    use crate::mysql::Mysql;
+    use crate::mysql_like::MysqlLikeBackend;
 
-    impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for ParenthesisWrapper<T> {
-        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+    impl<DB, T> QueryFragment<DB> for ParenthesisWrapper<T>
+    where
+        DB: MysqlLikeBackend,
+        T: QueryFragment<DB>,
+    {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
             out.push_sql("(");
             self.inner.walk_ast(out.reborrow())?;
             out.push_sql(")");
@@ -403,11 +408,22 @@ mod mysql {
         }
     }
 
-    impl SupportsCombinationClause<Union, Distinct> for Mysql {}
-    impl SupportsCombinationClause<Union, All> for Mysql {}
+    impl<DB: MysqlLikeBackend> SupportsCombinationClause<Union, Distinct> for DB {}
+    impl<DB: MysqlLikeBackend> SupportsCombinationClause<Union, All> for DB {}
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "mariadb_backend")]
+mod mariadb {
+    use super::*;
+    use crate::mariadb::Mariadb;
+
+    impl SupportsCombinationClause<Intersect, Distinct> for Mariadb {}
+    impl SupportsCombinationClause<Intersect, All> for Mariadb {}
+    impl SupportsCombinationClause<Except, Distinct> for Mariadb {}
+    impl SupportsCombinationClause<Except, All> for Mariadb {}
+}
+
+#[cfg(feature = "__sqlite-shared")]
 mod sqlite {
     use super::*;
     use crate::sqlite::Sqlite;

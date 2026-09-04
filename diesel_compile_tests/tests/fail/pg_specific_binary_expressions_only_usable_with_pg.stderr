@@ -51,7 +51,7 @@ help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
      = note: required for `Like<name, Bound<Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`
      = note: 6 redundant requirements hidden
      = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `QueryFragment<Mysql>`
-     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
+     = note: required for `SelectStatement<FromClause<table>, ..., ..., ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, Vec<u8>>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

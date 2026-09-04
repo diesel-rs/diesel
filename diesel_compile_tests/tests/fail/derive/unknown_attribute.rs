@@ -3,7 +3,7 @@ extern crate diesel;
 
 #[derive(Queryable)]
 #[diesel(what = true)]
-//~^ ERROR: unknown attribute, expected one of `aggregate`, `not_sized`, `foreign_derive`, `table_name`, `sql_type`, `treat_none_as_default_value`, `treat_none_as_null`, `belongs_to`, `mysql_type`, `sqlite_type`, `postgres_type`, `primary_key`, `check_for_backend`
+//~^ ERROR: unknown attribute, expected one of `aggregate`, `not_sized`, `foreign_derive`, `table_name`, `sql_type`, `treat_none_as_default_value`, `treat_none_as_null`, `belongs_to`, `mysql_type`, `mariadb_type`, `sqlite_type`, `postgres_type`, `primary_key`, `check_for_backend`
 struct User1 {
     id: i32,
 }

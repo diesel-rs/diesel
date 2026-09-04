@@ -1,9 +1,10 @@
-use diesel::result::Error::NotFound;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use super::data_structures::*;
+use diesel::result::Error::NotFound;
+
 use super::table_data::*;
+use super::{SchemaResolverImpl, data_structures::*};
 
 use crate::config::{Filtering, PrintSchema};
 
@@ -71,28 +72,43 @@ pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) ->
 pub fn load_table_names(
     connection: &mut InferConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, crate::errors::Error> {
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     let tables = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref mut c) => super::sqlite::load_table_names(c, schema_name),
+        InferConnection::Sqlite(c) => super::sqlite::load_table_names(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref mut c) => {
-            super::information_schema::load_table_names(c, schema_name)
-        }
+        InferConnection::Pg(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => {
-            super::information_schema::load_table_names(c, schema_name)
-        }
+        InferConnection::Mysql(c) => super::information_schema::load_table_names(c, schema_name),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(c) => super::information_schema::load_table_names(c, schema_name),
     }?;
 
     tracing::info!(?tables, "Loaded tables");
     Ok(tables)
 }
 
-pub fn filter_table_names(table_names: Vec<TableName>, table_filter: &Filtering) -> Vec<TableName> {
+pub fn filter_column_structure(
+    table_names: &[(SupportedQueryRelationStructures, TableName)],
+    structure: SupportedQueryRelationStructures,
+) -> Vec<TableName> {
     table_names
-        .into_iter()
-        .filter(|t| !table_filter.should_ignore_table(t))
+        .iter()
+        .filter_map(|(s, t)| if *s == structure { Some(t) } else { None })
+        .cloned()
+        .collect()
+}
+
+pub fn filter_table_names(
+    table_names: &[(SupportedQueryRelationStructures, TableName)],
+    table_filter: &Filtering,
+    include_views: bool,
+) -> Vec<(SupportedQueryRelationStructures, TableName)> {
+    table_names
+        .iter()
+        .filter(|(a, _)| include_views || matches!(a, SupportedQueryRelationStructures::Table))
+        .filter(|(_, t)| !table_filter.should_ignore_table(t))
+        .cloned()
         .collect::<_>()
 }
 
@@ -107,7 +123,9 @@ fn get_table_comment(
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => super::pg::get_table_comment(c, table),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => super::mysql::get_table_comment(c, table),
+        InferConnection::Mysql(ref mut c) => super::mysql_like::get_table_comment(c, table),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(ref mut c) => super::mysql_like::get_table_comment(c, table),
     };
     if let Err(NotFound) = table_comment {
         Err(crate::errors::Error::NoTableFound(table.clone()))
@@ -123,26 +141,44 @@ fn get_column_information(
     table: &TableName,
     column_sorting: &ColumnSorting,
     pg_domains_as_custom_types: &[&regex::Regex],
+    kind: SupportedQueryRelationStructures,
 ) -> Result<Vec<ColumnInformation>, crate::errors::Error> {
     #[cfg(not(feature = "postgres"))]
     let _ = pg_domains_as_custom_types;
+    #[cfg(not(feature = "sqlite"))]
+    let _ = kind;
 
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => {
-            super::sqlite::get_table_data(c, table, column_sorting)
+            super::sqlite::get_table_data(c, table, column_sorting, kind)
         }
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => {
             super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
+        InferConnection::Mysql(ref mut c) => {
+            super::mysql_like::get_table_data(c, table, column_sorting)
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(ref mut c) => {
+            super::mysql_like::get_table_data(c, table, column_sorting)
+        }
     };
     if let Err(NotFound) = column_info {
         Err(crate::errors::Error::NoTableFound(table.clone()))
     } else {
-        let column_info = column_info?;
+        let mut column_info = column_info?;
+        if matches!(kind, SupportedQueryRelationStructures::View) {
+            // we don't support max_length for views yet
+            column_info
+                .iter_mut()
+                .map(|a| {
+                    a.max_length = None;
+                })
+                .for_each(|_| {});
+        }
         tracing::info!(?column_info, "Load column information for table {table}");
         Ok(column_info)
     }
@@ -152,7 +188,7 @@ fn determine_column_type(
     attr: &ColumnInformation,
     conn: &mut InferConnection,
     #[allow(unused_variables)] table: &TableName,
-    #[allow(unused_variables)] primary_keys: &[String],
+    #[allow(unused_variables)] primary_keys: Option<&[String]>,
     #[allow(unused_variables)] foreign_keys: &HashMap<String, ForeignKeyConstraint>,
     #[allow(unused_variables)] config: &PrintSchema,
 ) -> Result<ColumnType, crate::errors::Error> {
@@ -173,7 +209,9 @@ fn determine_column_type(
             super::pg::determine_column_type(attr, diesel::pg::Pg::default_schema(conn)?)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(_) => super::mysql::determine_column_type(attr),
+        InferConnection::Mysql(_) => super::mysql_like::determine_column_type(attr),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => super::mysql_like::determine_column_type(attr),
     }
 }
 
@@ -189,6 +227,10 @@ pub(crate) fn get_primary_keys(
         InferConnection::Pg(ref mut c) => super::information_schema::get_primary_keys(c, table),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref mut c) => super::information_schema::get_primary_keys(c, table),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(ref mut c) => {
+            super::information_schema::get_primary_keys(c, table)
+        }
     }?;
     if primary_keys.is_empty() {
         Err(crate::errors::Error::NoPrimaryKeyFound(table.clone()))
@@ -205,16 +247,18 @@ pub fn load_foreign_key_constraints(
 ) -> Result<Vec<ForeignKeyConstraint>, crate::errors::Error> {
     let constraints = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref mut c) => {
-            super::sqlite::load_foreign_key_constraints(c, schema_name)
-        }
+        InferConnection::Sqlite(c) => super::sqlite::load_foreign_key_constraints(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref mut c) => {
+        InferConnection::Pg(c) => {
             super::pg::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => {
+        InferConnection::Mysql(c) => {
             super::mysql::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(c) => {
+            super::mariadb::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
     };
 
@@ -233,25 +277,26 @@ pub fn load_foreign_key_constraints(
 }
 
 #[tracing::instrument(skip(connection))]
-pub fn load_table_data(
+fn load_column_structure_data(
     connection: &mut InferConnection,
-    name: TableName,
+    name: &TableName,
     config: &PrintSchema,
-) -> Result<TableData, crate::errors::Error> {
+    primary_key: Option<&[String]>,
+    kind: SupportedQueryRelationStructures,
+) -> Result<(Option<String>, Vec<ColumnDefinition>), crate::errors::Error> {
     // No point in loading table comments if they are not going to be displayed
     let table_comment = match config.with_docs {
         DocConfig::NoDocComments => None,
         DocConfig::OnlyDatabaseComments
         | DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment => {
-            get_table_comment(connection, &name)?
+            get_table_comment(connection, name)?
         }
     };
 
-    let primary_key = get_primary_keys(connection, &name)?;
     let foreign_keys = load_foreign_key_constraints(connection, name.schema.as_deref())?
         .into_iter()
         .filter_map(|c| {
-            if c.child_table == name && c.foreign_key_columns.len() == 1 {
+            if c.child_table == *name && c.foreign_key_columns.len() == 1 {
                 Some((c.foreign_key_columns_rust[0].clone(), c))
             } else {
                 None
@@ -265,41 +310,136 @@ pub fn load_table_data(
         .map(|regex| regex as &regex::Regex)
         .collect::<Vec<_>>();
 
-    let column_data = get_column_information(
+    get_column_information(
         connection,
-        &name,
+        name,
         &config.column_sorting,
         &pg_domains_as_custom_types,
+        kind,
     )?
     .into_iter()
     .map(|c| {
-        let ty = determine_column_type(&c, connection, &name, &primary_key, &foreign_keys, config)?;
+        let ty = determine_column_type(&c, connection, name, primary_key, &foreign_keys, config)?;
 
         let ColumnInformation {
             column_name,
             comment,
+            auto_increment,
             ..
         } = c;
-        let rust_name = rust_name_for_sql_name(&column_name, Some(&name));
+        let rust_name = rust_name_for_sql_name(&column_name, Some(name));
 
         Ok(ColumnDefinition {
             sql_name: column_name,
             ty,
             rust_name,
             comment,
+            auto_increment,
         })
     })
-    .collect::<Result<_, crate::errors::Error>>()?;
+    .collect::<Result<_, crate::errors::Error>>()
+    .map(|data| (table_comment, data))
+}
 
+#[tracing::instrument(skip(connection))]
+pub fn load_table_data(
+    connection: &mut InferConnection,
+    name: TableName,
+    config: &PrintSchema,
+    tpe: SupportedQueryRelationStructures,
+) -> Result<TableData, crate::errors::Error> {
+    let primary_key = match tpe {
+        SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
+        SupportedQueryRelationStructures::View => Vec::new(),
+    };
+    let (table_comment, column_data) =
+        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
     let primary_key = primary_key
         .iter()
         .map(|k| rust_name_for_sql_name(k, Some(&name)))
         .collect::<Vec<_>>();
-
     Ok(TableData {
         name,
         primary_key,
         column_data,
         comment: table_comment,
     })
+}
+
+#[tracing::instrument(skip(resolver))]
+pub fn load_view_data(
+    resolver: &mut SchemaResolverImpl,
+    name: TableName,
+) -> Result<ViewData, crate::errors::Error> {
+    let (table_comment, mut column_data) = load_column_structure_data(
+        resolver.connection,
+        &name,
+        resolver.config,
+        None,
+        SupportedQueryRelationStructures::View,
+    )?;
+    let sql_definition = load_view_sql_definition(resolver.connection, &name)?;
+    if resolver.config.experimental_infer_nullable_for_views {
+        tracing::debug!("Infer nullability for view fields");
+        match diesel_infer_query::parse_view_def(&sql_definition) {
+            Ok(mut data) => {
+                if data
+                    .resolve_references(resolver)
+                    .map_err(|e| {
+                        tracing::debug!(view = %name, ?data, ?e, "Failed to resolve references");
+                        e
+                    })
+                    .is_ok()
+                {
+                    tracing::debug!(view = %name, ?data, "Inferred data");
+                    if data.field_count() == column_data.len() {
+                        for (column_data, is_nullable) in column_data
+                            .iter_mut()
+                            .zip(data.infer_nullability(resolver)?)
+                        {
+                            tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                            if let Some(is_nullable) = is_nullable {
+                                column_data.ty.is_nullable = is_nullable;
+                            }
+                        }
+                    } else {
+                        tracing::warn!(view = %name, ?data, ?column_data, "Field count mismatch between what the database returned and what we inferred");
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!(view = %name, error = %e, "Failed to infer nullablity for view fields")
+            }
+        }
+    }
+    Ok(ViewData {
+        name,
+        column_data,
+        comment: table_comment,
+        sql_definition,
+    })
+}
+
+fn load_view_sql_definition(
+    connection: &mut InferConnection,
+    name: &TableName,
+) -> Result<String, crate::errors::Error> {
+    match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(pg_connection) => Ok(
+            super::information_schema::load_view_sql_definition(pg_connection, name)?,
+        ),
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(sqlite_connection) => {
+            super::sqlite::load_view_sql_definition(sqlite_connection, name)
+        }
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(mysql_connection) => Ok(
+            super::information_schema::load_view_sql_definition(mysql_connection, name)?,
+        ),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(mariadb_connection) => Ok(
+            super::information_schema::load_view_sql_definition(mariadb_connection, name)?,
+        ),
+    }
 }

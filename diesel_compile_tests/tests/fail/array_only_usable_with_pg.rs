@@ -10,5 +10,5 @@ fn main() {
 
     let mut connection = MysqlConnection::establish("").unwrap();
     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
-    //~^ ERROR: type mismatch resolving `<MysqlConnection as Connection>::Backend == Pg`
+    //~^ ERROR: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Pg`
 }

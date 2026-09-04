@@ -1,3 +1,4 @@
+use diesel::associations::HasTable;
 use diesel::*;
 
 #[cfg(feature = "postgres")]
@@ -9,6 +10,8 @@ include!("pg_schema.rs");
 include!("sqlite_schema.rs");
 #[cfg(feature = "mysql")]
 include!("mysql_schema.rs");
+#[cfg(feature = "mariadb")]
+include!("mariadb_schema.rs");
 
 #[derive(
     PartialEq,
@@ -49,6 +52,44 @@ impl User {
     pub fn new_post(&self, title: &str, body: Option<&str>) -> NewPost {
         NewPost::new(self.id, title, body)
     }
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserRcString {
+    pub id: i32,
+    pub name: std::rc::Rc<String>,
+    pub hair_color: Option<std::rc::Rc<String>>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserArcString {
+    pub id: i32,
+    pub name: std::sync::Arc<String>,
+    pub hair_color: Option<std::sync::Arc<String>>,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
@@ -117,6 +158,14 @@ pub struct NewUser {
     pub hair_color: Option<String>,
 }
 
+impl HasTable for NewUser {
+    type Table = users::table;
+
+    fn table() -> Self::Table {
+        users::table
+    }
+}
+
 impl NewUser {
     pub fn new(name: &str, hair_color: Option<&str>) -> Self {
         NewUser {
@@ -124,6 +173,72 @@ impl NewUser {
             hair_color: hair_color.map(|s| s.to_string()),
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserRcString {
+    pub name: std::rc::Rc<String>,
+    pub hair_color: Option<std::rc::Rc<String>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserArcString {
+    pub name: std::sync::Arc<String>,
+    pub hair_color: Option<std::sync::Arc<String>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserRcStr {
+    pub name: std::rc::Rc<str>,
+    pub hair_color: Option<std::rc::Rc<str>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
+#[diesel(table_name = users)]
+pub struct NewUserArcStr {
+    pub name: std::sync::Arc<str>,
+    pub hair_color: Option<std::sync::Arc<str>>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserRcStr {
+    pub id: i32,
+    pub name: std::rc::Rc<str>,
+    pub hair_color: Option<std::rc::Rc<str>>,
+}
+
+#[derive(
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
+)]
+#[diesel(table_name = users)]
+pub struct UserArcStr {
+    pub id: i32,
+    pub name: std::sync::Arc<str>,
+    pub hair_color: Option<std::sync::Arc<str>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Insertable)]
@@ -205,24 +320,47 @@ pub type TestConnection = PgConnection;
 pub type TestConnection = SqliteConnection;
 #[cfg(feature = "mysql")]
 pub type TestConnection = MysqlConnection;
+#[cfg(feature = "mariadb")]
+pub type TestConnection = MariadbConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(feature = "sqlite"))]
 pub struct DropTable<'a> {
     pub connection: &'a mut TestConnection,
-    pub table_name: &'static str,
+    pub table_name: &'a str,
     pub can_drop: bool,
 }
 
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(feature = "sqlite"))]
 impl Drop for DropTable<'_> {
     fn drop(&mut self) {
         if self.can_drop {
-            diesel::sql_query(format!("DROP TABLE {}", self.table_name))
+            diesel::sql_query(format!("DROP TABLE IF EXISTS {}", self.table_name))
                 .execute(self.connection)
                 .unwrap();
+        }
+    }
+}
+
+//Used to ensure cleanup of one-off tables in order, e.g. for tables created for a single test with fk constraints
+#[cfg(feature = "postgres")]
+pub struct DropTableInOrder<'a, const N: usize> {
+    pub connection: &'a mut TestConnection,
+    pub table_names: [&'a str; N],
+    pub can_drop: bool,
+}
+
+#[cfg(feature = "postgres")]
+impl<const N: usize> Drop for DropTableInOrder<'_, N> {
+    fn drop(&mut self) {
+        if self.can_drop {
+            for table_name in self.table_names {
+                diesel::sql_query(format!("DROP TABLE IF EXISTS {}", table_name))
+                    .execute(self.connection)
+                    .unwrap();
+            }
         }
     }
 }
@@ -238,6 +376,10 @@ const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
 #[cfg(feature = "mysql")]
 const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
     diesel_migrations::embed_migrations!("../migrations/mysql");
+
+#[cfg(feature = "mariadb")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/mariadb");
 
 pub fn connection() -> TestConnection {
     let mut result = connection_without_transaction();
@@ -296,6 +438,14 @@ pub fn backend_specific_connection() -> TestConnection {
     MysqlConnection::establish(&connection_url).unwrap()
 }
 
+#[cfg(feature = "mariadb")]
+pub fn backend_specific_connection() -> TestConnection {
+    let connection_url = dotenvy::var("MARIADB_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
+    MariadbConnection::establish(&connection_url).unwrap()
+}
+
 #[cfg(feature = "postgres")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
     diesel::sql_query("SET CONSTRAINTS ALL DEFERRED")
@@ -310,23 +460,16 @@ pub fn disable_foreign_keys(connection: &mut TestConnection) {
         .unwrap();
 }
 
+#[cfg(feature = "mariadb")]
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
+        .execute(connection)
+        .unwrap();
+}
+
 #[cfg(feature = "sqlite")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
     diesel::sql_query("PRAGMA defer_foreign_keys = ON")
-        .execute(connection)
-        .unwrap();
-}
-
-#[cfg(feature = "sqlite")]
-pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(format!("DROP TABLE {table}"))
-        .execute(connection)
-        .unwrap();
-}
-
-#[cfg(feature = "postgres")]
-pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(format!("DROP TABLE {table} CASCADE"))
         .execute(connection)
         .unwrap();
 }
@@ -402,4 +545,37 @@ pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
         .filter(users::name.eq(name))
         .first(connection)
         .unwrap()
+}
+
+/// `RETURNING old.col` was introduced in PostgreSQL 18; on older servers
+/// the query will be rejected at execution time, so we just skip.
+///
+/// Returns `true` if the connected PostgreSQL server is version 18 or newer.
+/// On non-postgres backends this always returns `false`.
+#[cfg(feature = "postgres")]
+pub fn pg_server_supports_returning_old(connection: &mut TestConnection) -> bool {
+    diesel::dsl::sql::<diesel::sql_types::Integer>(
+        "SELECT current_setting('server_version_num')::int",
+    )
+    .get_result::<i32>(connection)
+    .expect("Failed to get PostgreSQL server version")
+        >= 180000
+}
+
+/// `UPDATE ... RETURNING` was introduced in Mariadb 13.0; on older servers
+/// the query will be rejected at execution time, so we just skip.
+///
+/// Returns `true` if the connected Mariadb server is version 13.0 or newer.
+/// On non-mariadb backends this always returns `false`.
+#[cfg(feature = "mariadb")]
+pub fn mariadb_server_supports_update_returning(connection: &mut TestConnection) -> bool {
+    diesel::dsl::sql::<diesel::sql_types::VarChar>("SELECT VERSION();")
+        .get_result::<String>(connection)
+        .expect("Failed to get Mariadb server version")
+        .split('.')
+        .next()
+        .map(|str| str.parse::<u32>())
+        .expect("Failed to split Mariadb server version")
+        .expect("Failed to parse Mariadb server version")
+        >= 13
 }

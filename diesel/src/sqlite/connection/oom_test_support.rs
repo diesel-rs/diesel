@@ -1,6 +1,7 @@
 //! Test support for forcing SQLite allocation failures.
 
 use super::ffi;
+use alloc::string::String;
 
 const CHILD_ENV: &str = "DIESEL_SQLITE_OOM_CHILD";
 

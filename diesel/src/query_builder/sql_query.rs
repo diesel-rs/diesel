@@ -1,13 +1,16 @@
-use std::marker::PhantomData;
-
 use super::Query;
 use crate::backend::{Backend, DieselReserveSpecialization};
-use crate::connection::Connection;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, Untyped};
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -137,8 +140,76 @@ impl<Inner> SqlQuery<Inner> {
     ///
     /// This allows doing things you otherwise couldn't do, e.g. `bind`ing in a
     /// loop.
+    ///
+    /// Boxed queries are not cloneable.
+    /// If you need cloning, use [`into_boxed_clone`] to create a [`BoxedCloneSqlQuery`].
+    ///
+    /// [`into_boxed_clone`]: SqlQuery::into_boxed_clone()
     pub fn into_boxed<'f, DB: Backend>(self) -> BoxedSqlQuery<'f, DB, Self> {
         BoxedSqlQuery::new(self)
+    }
+
+    /// Internally wraps the query in an [`Arc`], which allows to  calls `bind` and `sql` so that
+    /// they don't change the type nor the instance. This allows to clone the query and call
+    /// `bind` or `sql` in a loop, e.g.:
+    ///
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # use schema::users;
+    /// #
+    /// # #[derive(QueryableByName, Debug, PartialEq)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use diesel::sql_query;
+    /// #     use diesel::sql_types::{Integer};
+    /// #
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::insert_into(users::table)
+    /// #         .values(users::name.eq("Jim"))
+    /// #         .execute(connection).unwrap();
+    /// let q = diesel::sql_query("SELECT * FROM users WHERE id IN(").into_boxed_clone();
+    /// let mut q = q.clone();
+    /// for (idx, user_id) in [3, 4, 5].into_iter().enumerate() {
+    ///     if idx != 0 {
+    ///         q = q.sql(", ");
+    ///     }
+    /// # #[cfg(feature = "postgres")]
+    /// # {
+    ///     q = q
+    ///         // postgresql bind syntax
+    ///         .sql(format!("${}", idx + 1))
+    ///         .bind::<Integer, _>(user_id);
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # {
+    /// #   q = q
+    /// #       .sql(format!("?"))
+    /// #       .bind::<Integer, _>(user_id);
+    /// # }
+    /// }
+    /// let users = q.sql(");").get_results(connection);
+    /// let expected_users = vec![User {
+    ///     id: 3,
+    ///     name: "Jim".into(),
+    /// }];
+    /// assert_eq!(Ok(expected_users), users);
+    /// # }
+    /// ```
+    ///
+    /// This allows doing things you otherwise couldn't do, e.g. `bind`ing in a
+    /// loop.
+    ///
+    /// In cases where the query does not need to be cloned, [`BoxedSqlQuery`] (created with
+    /// [`into_boxed`]) provides better performance.
+    ///
+    /// [`into_boxed`]: SqlQuery::into_boxed()
+    pub fn into_boxed_clone<'f, DB: Backend>(self) -> BoxedCloneSqlQuery<'f, DB, Self> {
+        BoxedCloneSqlQuery::new(self)
     }
 
     /// Appends a piece of SQL code at the end.
@@ -180,7 +251,7 @@ impl<Inner> Query for SqlQuery<Inner> {
     type SqlType = Untyped;
 }
 
-impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
+impl<Inner> RunQueryDslSupport for SqlQuery<Inner> {}
 
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -206,6 +277,10 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
 
     pub fn into_boxed<'f, DB: Backend>(self) -> BoxedSqlQuery<'f, DB, Self> {
         BoxedSqlQuery::new(self)
+    }
+
+    pub fn into_boxed_clone<'f, DB: Backend>(self) -> BoxedCloneSqlQuery<'f, DB, Self> {
+        BoxedCloneSqlQuery::new(self)
     }
 
     /// Construct a full SQL query using raw SQL.
@@ -300,7 +375,7 @@ impl<Q, Value, ST> Query for UncheckedBind<Q, Value, ST> {
     type SqlType = Untyped;
 }
 
-impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}
+impl<Query, Value, ST> RunQueryDslSupport for UncheckedBind<Query, Value, ST> {}
 
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// See [`SqlQuery::into_boxed`].
@@ -311,6 +386,18 @@ pub struct BoxedSqlQuery<'f, DB: Backend, Query> {
     query: Query,
     sql: String,
     binds: Vec<Box<dyn QueryFragment<DB> + Send + 'f>>,
+}
+
+#[derive(Clone)]
+#[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
+/// See [`SqlQuery::into_boxed_clone`].
+///
+/// [`SqlQuery::into_boxed_clone`]: SqlQuery::into_boxed_clone()
+#[allow(missing_debug_implementations)]
+pub struct BoxedCloneSqlQuery<'f, DB: Backend, Query> {
+    query: Query,
+    sql: String,
+    binds: Vec<Arc<dyn QueryFragment<DB> + Send + Sync + 'f>>,
 }
 
 struct RawBind<ST, U> {
@@ -333,7 +420,7 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
         BoxedSqlQuery {
             query,
             sql: "".to_string(),
-            binds: vec![],
+            binds: alloc::vec![],
         }
     }
 
@@ -392,7 +479,73 @@ where
     type SqlType = Untyped;
 }
 
-impl<Conn: Connection, Query> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Query> {}
+impl<DB: Backend, Query> RunQueryDslSupport for BoxedSqlQuery<'_, DB, Query> {}
+
+impl<'f, DB: Backend, Query> BoxedCloneSqlQuery<'f, DB, Query> {
+    pub(crate) fn new(query: Query) -> Self {
+        BoxedCloneSqlQuery {
+            query,
+            sql: "".to_string(),
+            binds: alloc::vec![],
+        }
+    }
+
+    /// See [`SqlQuery::bind`].
+    ///
+    /// [`SqlQuery::bind`]: SqlQuery::bind()
+    pub fn bind<BindSt, Value>(mut self, b: Value) -> Self
+    where
+        DB: HasSqlType<BindSt>,
+        Value: ToSql<BindSt, DB> + Send + Sync + 'f,
+        BindSt: Send + Sync + 'f,
+    {
+        self.binds.push(Arc::new(RawBind {
+            value: b,
+            p: PhantomData,
+        }) as Arc<_>);
+        self
+    }
+
+    /// See [`SqlQuery::sql`].
+    ///
+    /// [`SqlQuery::sql`]: SqlQuery::sql()
+    pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
+        self.sql += sql.as_ref();
+        self
+    }
+}
+
+impl<DB, Query> QueryFragment<DB> for BoxedCloneSqlQuery<'_, DB, Query>
+where
+    DB: Backend + DieselReserveSpecialization,
+    Query: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.query.walk_ast(out.reborrow())?;
+        out.push_sql(&self.sql);
+
+        for b in &self.binds {
+            b.walk_ast(out.reborrow())?;
+        }
+        Ok(())
+    }
+}
+
+impl<DB: Backend, Query> QueryId for BoxedCloneSqlQuery<'_, DB, Query> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<DB, Q> Query for BoxedCloneSqlQuery<'_, DB, Q>
+where
+    DB: Backend,
+{
+    type SqlType = Untyped;
+}
+
+impl<DB: Backend, Query> RunQueryDslSupport for BoxedCloneSqlQuery<'_, DB, Query> {}
 
 mod private {
     use crate::backend::{Backend, DieselReserveSpecialization};

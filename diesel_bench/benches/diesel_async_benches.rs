@@ -1,9 +1,10 @@
 use super::Bencher;
+use super::consts;
 use diesel::insert_into;
 use diesel::prelude::{
-    allow_tables_to_appear_in_same_query, joinable, table, AsChangeset, Associations,
-    BelongingToDsl, ExpressionMethods, GroupedBy, Identifiable, Insertable, QueryDsl, Queryable,
-    QueryableByName,
+    AsChangeset, Associations, BelongingToDsl, ExpressionMethods, GroupedBy, Identifiable,
+    Insertable, QueryDsl, Queryable, QueryableByName, allow_tables_to_appear_in_same_query,
+    joinable, table,
 };
 use diesel_async::AsyncConnection;
 use diesel_async::RunQueryDsl;
@@ -127,26 +128,9 @@ async fn connection() -> TestConnection {
     let mut conn = diesel_async::AsyncMysqlConnection::establish(&connection_url)
         .await
         .unwrap();
-    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0;")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE comments")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE posts")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE users")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 1;")
-        .execute(&mut conn)
-        .await
-        .unwrap();
+    for query in consts::mysql::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).await.unwrap();
+    }
     conn
 }
 
@@ -159,18 +143,9 @@ async fn connection() -> TestConnection {
     let mut conn = diesel_async::AsyncPgConnection::establish(&connection_url)
         .await
         .unwrap();
-    diesel::sql_query("TRUNCATE TABLE comments CASCADE")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE posts CASCADE")
-        .execute(&mut conn)
-        .await
-        .unwrap();
-    diesel::sql_query("TRUNCATE TABLE users CASCADE")
-        .execute(&mut conn)
-        .await
-        .unwrap();
+    for query in consts::postgres::CLEANUP_QUERIES {
+        diesel::sql_query(*query).execute(&mut conn).await.unwrap();
+    }
     conn
 }
 
@@ -242,25 +217,20 @@ async fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
 }
 
 #[cfg(feature = "sqlite")]
-async fn insert_users<F: Fn(usize) -> Option<&'static str> + Send, const N: usize>(
+async fn insert_users<F: Fn(usize) -> Option<&'static str> + Send + Sync, const N: usize>(
     conn: &mut TestConnection,
     hair_color_init: F,
 ) {
-    use diesel_async::scoped_futures::ScopedFutureExt;
-
-    conn.transaction(|conn| {
-        async move {
-            for idx in 0..N {
-                let user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
-                insert_into(users::table)
-                    .values(user)
-                    .execute(conn)
-                    .await
-                    .unwrap();
-            }
-            diesel::result::QueryResult::Ok(())
+    conn.transaction(async |conn| {
+        for idx in 0..N {
+            let user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+            insert_into(users::table)
+                .values(user)
+                .execute(conn)
+                .await
+                .unwrap();
         }
-        .scope_boxed()
+        diesel::result::QueryResult::Ok(())
     })
     .await
     .unwrap();

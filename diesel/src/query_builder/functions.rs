@@ -6,8 +6,9 @@ use super::{
     AsQuery, IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement,
     IncompleteReplaceStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
 };
-use crate::expression::Expression;
 use crate::Table;
+use crate::expression::Expression;
+use alloc::string::String;
 
 /// Creates an `UPDATE` statement.
 ///
@@ -36,6 +37,7 @@ use crate::Table;
 /// // to have `RETURNING *` automatically appended to the query. Alternatively, you
 /// // can explicitly return an expression by using the `returning` method before
 /// // getting the result.
+/// // Note for backend `mariadb`: support for `UPDATE ... RETURNING` was introduced with version 13.0
 /// assert_eq!(Ok((1, "James".to_string())), updated_row);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
@@ -73,6 +75,138 @@ use crate::Table;
 ///     .get_result(connection);
 ///
 /// assert_eq!(Ok((1, "James".to_string(), "Bond".to_string())), updated_row);
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
+///
+/// <br/>
+///
+/// # Batch Update
+///
+/// To update a batch of rows, provide [`set`] a slice or a reference to a vector
+/// as an argument. You cannot call [`filter`], since a special `WHERE` clause
+/// will be auto-generated instead. The `WHERE` clause will use the PRIMARY KEY
+/// as an identifier to apply the changes. The update struct requires both derive
+/// macros [`AsChangeset`] and [`Identifiable`].
+///
+/// [`AsChangeset`]: crate::diesel_derives::AsChangeset
+/// [`Identifiable`]: crate::diesel_derives::Identifiable
+///
+/// Batch update using `id` as the PRIMARY KEY:
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// table! {
+///     users {
+///         id -> Integer,
+///         name -> VarChar,
+///         surname -> VarChar,
+///     }
+/// }
+/// # #[cfg(feature = "postgres")]
+/// # fn main() {
+/// # let connection = &mut establish_connection();
+/// # diesel::sql_query("DROP TABLE users").execute(connection).unwrap();
+/// # diesel::sql_query("CREATE TABLE users (
+/// #     id SERIAL PRIMARY KEY,
+/// #     name VARCHAR,
+/// #     surname VARCHAR)").execute(connection).unwrap();
+/// # diesel::sql_query(
+/// #     "INSERT INTO users(name, surname) VALUES
+/// #      ('Sage', 'Griffin'), ('Jim', 'Brown'), ('Tom', 'Smith'),
+/// #      ('Lea', 'Kemp'), ('Malik', 'Wu'), ('Xavier', 'Giles')"
+/// # ).execute(connection).unwrap();
+///
+/// #[derive(Debug, Clone, AsChangeset, Identifiable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+///     surname: String,
+/// }
+///
+/// let users_batch = [
+///    User { id: 1, name: "James".to_string(), surname: "Bond".to_string() },
+///    User { id: 6, name: "Mev".to_string(), surname: "Sane".to_string() },
+///    User { id: 3, name: "Kody".to_string(), surname: "Pineda".to_string() },
+///    // Previous update of `id = 6` will be overwritten in the database.
+///    User { id: 6, name: "Mev2".to_string(), surname: "Sane2".to_string() },
+/// ];
+///
+/// diesel::update(users::table).set(&users_batch).execute(connection).unwrap();
+///
+/// let updated_rows = users::table.order(users::id).load(connection);
+///
+/// assert_eq!(
+///     Ok(vec![
+///         (1, "James".to_string(), "Bond".to_string()), // updated
+///         (2, "Jim".to_string(), "Brown".to_string()),
+///         (3, "Kody".to_string(), "Pineda".to_string()), // updated
+///         (4, "Lea".to_string(), "Kemp".to_string()),
+///         (5, "Malik".to_string(), "Wu".to_string()),
+///         (6, "Mev2".to_string(), "Sane2".to_string()) // updated
+///     ]),
+///     updated_rows
+/// );
+/// # }
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn main() {}
+/// ```
+///
+/// Batch update using `(id, name)` as the grouped PRIMARY KEY:
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// table! {
+///     users (id, name) { // define grouped primary key
+///         id -> Integer,
+///         name -> VarChar,
+///         surname -> VarChar,
+///     }
+/// }
+/// # #[cfg(feature = "postgres")]
+/// # fn main() {
+/// # let connection = &mut establish_connection();
+/// # diesel::sql_query("DROP TABLE users").execute(connection).unwrap();
+/// # diesel::sql_query("CREATE TABLE users (
+/// #     id SERIAL PRIMARY KEY,
+/// #     name VARCHAR,
+/// #     surname VARCHAR)").execute(connection).unwrap();
+/// # diesel::sql_query(
+/// #     "INSERT INTO users(name, surname) VALUES
+/// #      ('Sage', 'Griffin'), ('Jim', 'Brown'), ('Tom', 'Smith'),
+/// #      ('Lea', 'Kemp'), ('Malik', 'Wu'), ('Xavier', 'Giles')"
+/// # ).execute(connection).unwrap();
+///
+/// #[derive(Debug, Clone, AsChangeset, Identifiable)]
+/// #[diesel(primary_key(id, name))] // mandatory: provide grouped primary key
+/// struct User {
+///     id: i32,
+///     name: String,
+///     surname: String,
+/// }
+///
+/// let users_batch = vec![
+///     User { id: 1, name: "J".to_string(), surname: "Bond".to_string() },
+///     User { id: 3, name: "K".to_string(), surname: "Pineda".to_string() },
+///     User { id: 6, name: "Xavier".to_string(), surname: "Mev".to_string() }
+/// ];
+///
+/// diesel::update(users::table).set(&users_batch).execute(connection).unwrap();
+///
+/// let updated_rows = users::table.order(users::id).load(connection);
+///
+/// assert_eq!(
+///     Ok(vec![
+///         (1, "Sage".to_string(), "Griffin".to_string()), // not updated
+///         (2, "Jim".to_string(), "Brown".to_string()),
+///         (3, "Tom".to_string(), "Smith".to_string()), // not updated
+///         (4, "Lea".to_string(), "Kemp".to_string()),
+///         (5, "Malik".to_string(), "Wu".to_string()),
+///         (6, "Xavier".to_string(), "Mev".to_string()) // updated
+///     ]),
+///     updated_rows
+/// );
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
@@ -254,17 +388,17 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # use schema::brands;
 /// #
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// #[derive(Insertable)]
 /// #[diesel(table_name = brands)]
 /// struct NewBrand {
 ///     color: Option<String>,
 /// }
 ///
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # fn main() {
 /// #     use schema::brands::dsl::*;
 /// #     let connection = &mut establish_connection();
@@ -286,7 +420,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///     .execute(connection)
 ///     .unwrap();
 /// # }
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(feature = "__sqlite-shared")]
 /// # fn main() {}
 /// ```
 ///
@@ -302,17 +436,17 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # use schema::brands;
 /// #
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// #[derive(Insertable)]
 /// #[diesel(table_name = brands)]
 /// struct NewBrand {
 ///     accent: Option<Option<String>>,
 /// }
 ///
-/// # #[cfg(not(feature = "sqlite"))]
+/// # #[cfg(not(feature = "__sqlite-shared"))]
 /// # fn main() {
 /// #     use schema::brands::dsl::*;
 /// #     let connection = &mut establish_connection();
@@ -342,7 +476,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///     .execute(connection)
 ///     .unwrap();
 /// # }
-/// # #[cfg(feature = "sqlite")]
+/// # #[cfg(feature = "__sqlite-shared")]
 /// # fn main() {}
 /// ```
 ///

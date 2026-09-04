@@ -1,4 +1,4 @@
-use crate::sql_types::{self, is_nullable, SqlType};
+use crate::sql_types::{self, SqlType, is_nullable};
 
 /// Marker trait for types which can be used with `MAX` and `MIN`
 #[diagnostic::on_unimplemented(
@@ -25,11 +25,11 @@ impl SqlOrd for sql_types::Citext {}
 #[cfg(feature = "postgres_backend")]
 impl<T: SqlOrd> SqlOrd for sql_types::Array<T> {}
 
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl SqlOrd for sql_types::Datetime {}
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl SqlOrd for sql_types::Unsigned<sql_types::SmallInt> {}
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl SqlOrd for sql_types::Unsigned<sql_types::Integer> {}
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 impl SqlOrd for sql_types::Unsigned<sql_types::BigInt> {}

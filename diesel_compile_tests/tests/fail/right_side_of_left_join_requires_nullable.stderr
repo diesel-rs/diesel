@@ -45,6 +45,7 @@ LL |         title -> Text,
    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -108,6 +109,7 @@ LL |         title -> Text,
    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -141,8 +143,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -171,8 +177,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
  
     
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -222,6 +232,7 @@ LL |         title -> Text,
    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -285,6 +296,7 @@ LL |         title -> Text,
    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -318,8 +330,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -348,8 +364,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
  
     
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -399,6 +419,7 @@ LL |         title -> Text,
    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -462,6 +483,7 @@ LL |         title -> Text,
    = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
+             SelectableExpression<ReturningQuerySource<..., ...>>
              SelectableExpression<SelectStatement<...>>
              SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
@@ -495,8 +517,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -525,8 +551,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
  
     
 error[E0271]: type mismatch resolving `<SelectStatement<...> as AppearsInFromClause<...>>::Count == Never`
@@ -566,6 +596,7 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
@@ -619,6 +650,7 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
@@ -652,8 +684,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -682,8 +718,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
  
     
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -733,6 +773,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
@@ -796,6 +837,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
     = help: `posts::columns::title` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<posts::table>>
               SelectableExpression<Tablesample<posts::table, TSM>>
+              SelectableExpression<ReturningQuerySource<..., ...>>
               SelectableExpression<SelectStatement<...>>
               SelectableExpression<posts::table>
               SelectableExpression<Join<Left, Right, Inner>>
@@ -829,8 +871,12 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -859,5 +905,9 @@ LL | pub struct Nullable<ST>(ST);
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others

@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use crate::backend::sql_dialect::on_conflict_clause;
 use crate::expression::{AppearsOnTable, Expression};

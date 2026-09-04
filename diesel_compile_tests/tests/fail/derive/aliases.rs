@@ -34,7 +34,7 @@ pub fn check(conn: &mut PgConnection) {
     // wrong fields
 
     user_alias.field(posts::id);
-    //~^ ERROR: type mismatch resolving `<id as Column>::Table == table`
+    //~^ ERROR: type mismatch resolving `<id as QueryRelationField>::QueryRelation == table`
 
     // joining the same alias twice
 

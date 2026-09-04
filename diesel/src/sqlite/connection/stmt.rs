@@ -1,22 +1,25 @@
 #![allow(unsafe_code)] // fii code
-use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
+use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
-use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
 use crate::connection::Instrumentation;
+use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::{Sqlite, SqliteType};
+use alloc::boxed::Box;
+use alloc::ffi::CString;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::cell::OnceCell;
+use core::ffi as libc;
+use core::ffi::CStr;
+use core::ptr::{self, NonNull};
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
-use std::cell::OnceCell;
-use std::ffi::{CStr, CString};
-use std::io::{stderr, Write};
-use std::os::raw as libc;
-use std::ptr::{self, NonNull};
 
 pub(super) struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
@@ -76,15 +79,15 @@ impl Statement {
     unsafe fn bind(
         &mut self,
         tpe: SqliteType,
-        value: InternalSqliteBindValue<'_>,
+        value: SqliteBindValueRef<'_>,
         bind_index: i32,
     ) -> QueryResult<Option<NonNull<[u8]>>> {
         let mut ret_ptr = None;
         let result = match (tpe, value) {
-            (_, InternalSqliteBindValue::Null) => unsafe {
+            (_, SqliteBindValueRef::Null) => unsafe {
                 ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), bind_index)
             },
-            (SqliteType::Binary, InternalSqliteBindValue::BorrowedBinary(bytes)) => {
+            (SqliteType::Binary, SqliteBindValueRef::BorrowedBinary(bytes)) => {
                 let n = bytes
                     .len()
                     .try_into()
@@ -99,7 +102,7 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Binary, InternalSqliteBindValue::Binary(mut bytes)) => {
+            (SqliteType::Binary, SqliteBindValueRef::Binary(mut bytes)) => {
                 let len = bytes
                     .len()
                     .try_into()
@@ -119,7 +122,7 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Text, InternalSqliteBindValue::BorrowedString(bytes)) => {
+            (SqliteType::Text, SqliteBindValueRef::BorrowedString(bytes)) => {
                 let len = bytes
                     .len()
                     .try_into()
@@ -134,7 +137,7 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Text, InternalSqliteBindValue::String(bytes)) => {
+            (SqliteType::Text, SqliteBindValueRef::String(bytes)) => {
                 let mut bytes = Box::<[u8]>::from(bytes);
                 let len = bytes
                     .len()
@@ -155,25 +158,25 @@ impl Statement {
                     )
                 }
             }
-            (SqliteType::Float, InternalSqliteBindValue::F64(value))
-            | (SqliteType::Double, InternalSqliteBindValue::F64(value)) => unsafe {
+            (SqliteType::Float, SqliteBindValueRef::F64(value))
+            | (SqliteType::Double, SqliteBindValueRef::F64(value)) => unsafe {
                 ffi::sqlite3_bind_double(
                     self.inner_statement.as_ptr(),
                     bind_index,
                     value as libc::c_double,
                 )
             },
-            (SqliteType::SmallInt, InternalSqliteBindValue::I32(value))
-            | (SqliteType::Integer, InternalSqliteBindValue::I32(value)) => unsafe {
+            (SqliteType::SmallInt, SqliteBindValueRef::I32(value))
+            | (SqliteType::Integer, SqliteBindValueRef::I32(value)) => unsafe {
                 ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), bind_index, value)
             },
-            (SqliteType::Long, InternalSqliteBindValue::I64(value)) => unsafe {
+            (SqliteType::Long, SqliteBindValueRef::I64(value)) => unsafe {
                 ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), bind_index, value)
             },
             (t, b) => {
                 return Err(Error::SerializationError(
-                    format!("Type mismatch: Expected {t:?}, got {b}").into(),
-                ))
+                    alloc::format!("Type mismatch: Expected {t:?}, got {b}").into(),
+                ));
             }
         };
         match ensure_sqlite_ok(result, self.raw_connection()) {
@@ -183,7 +186,7 @@ impl Statement {
                     // This is a `NonNul` ptr so it cannot be null
                     // It points to a slice internally as we did not apply
                     // any cast above.
-                    std::mem::drop(unsafe { Box::from_raw(ptr.as_ptr()) })
+                    core::mem::drop(unsafe { Box::from_raw(ptr.as_ptr()) })
                 }
                 Err(e)
             }
@@ -212,16 +215,25 @@ pub(super) fn ensure_sqlite_ok(
 
 fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
     let error_message = last_error_message(raw_connection);
-    let error_information = Box::new(error_message);
-    let error_kind = match last_error_code(raw_connection) {
+    let error_code = last_error_code(raw_connection);
+    let error_kind = match error_code {
         ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY => {
             DatabaseErrorKind::UniqueViolation
         }
         ffi::SQLITE_CONSTRAINT_FOREIGNKEY => DatabaseErrorKind::ForeignKeyViolation,
+        // SQLITE_CONSTRAINT_TRIGGER is returned for ON DELETE RESTRICT violations,
+        // which are actually foreign key violations. We check the error message
+        // to distinguish from user-defined trigger failures.
+        ffi::SQLITE_CONSTRAINT_TRIGGER
+            if error_message.contains("FOREIGN KEY constraint failed") =>
+        {
+            DatabaseErrorKind::ForeignKeyViolation
+        }
         ffi::SQLITE_CONSTRAINT_NOTNULL => DatabaseErrorKind::NotNullViolation,
         ffi::SQLITE_CONSTRAINT_CHECK => DatabaseErrorKind::CheckViolation,
         _ => DatabaseErrorKind::Unknown,
     };
+    let error_information = Box::new(error_message);
     DatabaseError(error_kind, error_information)
 }
 
@@ -236,17 +248,14 @@ fn last_error_code(conn: *mut ffi::sqlite3) -> libc::c_int {
 
 impl Drop for Statement {
     fn drop(&mut self) {
-        use std::thread::panicking;
+        use crate::util::std_compat::panicking;
 
         let raw_connection = self.raw_connection();
         let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
         if let Err(e) = ensure_sqlite_ok(finalize_result, raw_connection) {
             if panicking() {
-                write!(
-                    stderr(),
-                    "Error finalizing SQLite prepared statement: {e:?}"
-                )
-                .expect("Error writing to `stderr`");
+                #[cfg(feature = "std")]
+                eprintln!("Error finalizing SQLite prepared statement: {e:?}");
             } else {
                 panic!("Error finalizing SQLite prepared statement: {e:?}");
             }
@@ -319,7 +328,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     // This hopefully prevents binary bloat.
     fn bind_buffers(
         &mut self,
-        binds: Vec<(InternalSqliteBindValue<'_>, SqliteType)>,
+        binds: Vec<(SqliteBindValueRef<'_>, SqliteType)>,
     ) -> QueryResult<()> {
         // It is useful to preallocate `binds_to_free` because it
         // - Guarantees that pushing inside it cannot panic, which guarantees the `Drop`
@@ -331,10 +340,10 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
                 .filter(|&(b, _)| {
                     matches!(
                         b,
-                        InternalSqliteBindValue::BorrowedBinary(_)
-                            | InternalSqliteBindValue::BorrowedString(_)
-                            | InternalSqliteBindValue::String(_)
-                            | InternalSqliteBindValue::Binary(_)
+                        SqliteBindValueRef::BorrowedBinary(_)
+                            | SqliteBindValueRef::BorrowedString(_)
+                            | SqliteBindValueRef::String(_)
+                            | SqliteBindValueRef::Binary(_)
                     )
                 })
                 .count(),
@@ -342,8 +351,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         for (bind_idx, (bind, tpe)) in (1..).zip(binds) {
             let is_borrowed_bind = matches!(
                 bind,
-                InternalSqliteBindValue::BorrowedString(_)
-                    | InternalSqliteBindValue::BorrowedBinary(_)
+                SqliteBindValueRef::BorrowedString(_) | SqliteBindValueRef::BorrowedBinary(_)
             );
 
             // It's safe to call bind here as:
@@ -389,11 +397,11 @@ impl Drop for BoundStatement<'_, '_> {
         // below will fails
         self.statement.reset();
 
-        for (idx, buffer) in std::mem::take(&mut self.binds_to_free) {
+        for (idx, buffer) in core::mem::take(&mut self.binds_to_free) {
             unsafe {
                 // It's always safe to bind null values, as there is no buffer that needs to outlife something
                 self.statement
-                    .bind(SqliteType::Text, InternalSqliteBindValue::Null, idx)
+                    .bind(SqliteType::Text, SqliteBindValueRef::Null, idx)
                     .expect(
                         "Binding a null value should never fail. \
                              If you ever see this error message please open \
@@ -406,7 +414,7 @@ impl Drop for BoundStatement<'_, '_> {
                 unsafe {
                     // Constructing the `Box` here is safe as we
                     // got the pointer from a box + it is guaranteed to be not null.
-                    std::mem::drop(Box::from_raw(buffer.as_ptr()));
+                    core::mem::drop(Box::from_raw(buffer.as_ptr()));
                 }
             }
         }
@@ -425,7 +433,7 @@ impl Drop for BoundStatement<'_, '_> {
                     },
                 );
             }
-            std::mem::drop(query);
+            core::mem::drop(query);
             self.query = None;
         }
     }

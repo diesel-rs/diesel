@@ -1,0 +1,36 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT 1 AS foo, 'foo' AS bar, NULL"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "foo",
+            ),
+            kind: Literal {
+                value: None,
+                is_null: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "bar",
+            ),
+            kind: Literal {
+                value: Some(
+                    "foo",
+                ),
+                is_null: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Literal {
+                value: None,
+                is_null: true,
+            },
+        },
+    ],
+}

@@ -29,13 +29,13 @@ LL |     id: String,
    |
    = help: the following other types implement trait `AsExpression<T>`:
              `&std::string::String` implements `AsExpression<Citext>`
+             `&std::string::String` implements `AsExpression<diesel::sql_types::Bpchar>`
              `&std::string::String` implements `AsExpression<diesel::sql_types::Date>`
              `&std::string::String` implements `AsExpression<diesel::sql_types::Text>`
              `&std::string::String` implements `AsExpression<diesel::sql_types::Time>`
              `&std::string::String` implements `AsExpression<diesel::sql_types::Timestamp>`
              `std::string::String` implements `AsExpression<Citext>`
              `std::string::String` implements `AsExpression<Nullable<Citext>>`
-             `std::string::String` implements `AsExpression<Nullable<diesel::sql_types::Date>>`
            and N others
    = note: this error originates in the derive macro `Insertable` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

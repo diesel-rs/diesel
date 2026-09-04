@@ -1,0 +1,12 @@
+@@ -7,8 +7,9 @@
+ }
+
+ diesel::table! {
+-    users2 (id) {
+-        id -> Integer,
++    users2 (myid) {
++        #[sql_name = "id"]
++        myid -> Integer,
+     }
+ }
+

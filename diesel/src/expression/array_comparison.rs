@@ -1,8 +1,7 @@
 //! This module contains the query dsl node definitions
 //! for array comparison operations like `IN` and `NOT IN`
-
 use super::expression_types::NotSelectable;
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::backend::{Backend, SqlDialect, sql_dialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
@@ -15,7 +14,8 @@ use crate::query_builder::{
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::{self, HasSqlType, SingleValue, SqlType};
-use std::marker::PhantomData;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 /// Query dsl node that represents a `left IN (values)`
 /// expression

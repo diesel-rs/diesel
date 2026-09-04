@@ -6,6 +6,7 @@ mod database_reset;
 mod database_setup;
 mod database_url_errors;
 mod exit_codes;
+mod help_snapshots;
 mod migration_generate;
 mod migration_list;
 mod migration_redo;

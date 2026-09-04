@@ -1,6 +1,8 @@
 use crate::schema::*;
 use diesel::sql_types::VarChar;
 use diesel::*;
+use std::rc::Rc;
+use std::sync::Arc;
 
 macro_rules! assert_sets_eq {
     ($set1:expr, $set2:expr) => {
@@ -37,6 +39,64 @@ fn filter_by_int_equality() {
     assert_eq!(
         Err(NotFound),
         users.filter(id.eq(unused_id)).first::<User>(connection)
+    );
+}
+
+#[diesel_test_helper::test]
+fn filter_rc_by_int_equality() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean_id = find_user_by_name("Sean", connection).id;
+    let tess_id = find_user_by_name("Tess", connection).id;
+    let unused_id = sean_id + tess_id;
+
+    let sean = UserRcString {
+        id: sean_id,
+        name: Rc::new("Sean".to_string()),
+        hair_color: None,
+    };
+    let tess = UserRcString {
+        id: tess_id,
+        name: Rc::new("Tess".to_string()),
+        hair_color: None,
+    };
+    assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(connection));
+    assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(connection));
+    assert_eq!(
+        Err(NotFound),
+        users
+            .filter(id.eq(unused_id))
+            .first::<UserRcString>(connection)
+    );
+}
+
+#[diesel_test_helper::test]
+fn filter_arc_by_int_equality() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean_id = find_user_by_name("Sean", connection).id;
+    let tess_id = find_user_by_name("Tess", connection).id;
+    let unused_id = sean_id + tess_id;
+
+    let sean = UserArcString {
+        id: sean_id,
+        name: Arc::new("Sean".to_string()),
+        hair_color: None,
+    };
+    let tess = UserArcString {
+        id: tess_id,
+        name: Arc::new("Tess".to_string()),
+        hair_color: None,
+    };
+    assert_eq!(Ok(sean), users.filter(id.eq(sean_id)).first(connection));
+    assert_eq!(Ok(tess), users.filter(id.eq(tess_id)).first(connection));
+    assert_eq!(
+        Err(NotFound),
+        users
+            .filter(id.eq(unused_id))
+            .first::<UserArcString>(connection)
     );
 }
 
@@ -436,6 +496,42 @@ fn filter_by_boxed_predicate() {
 }
 
 #[diesel_test_helper::test]
+fn filter_by_rc_boxed_predicate() {
+    fn by_name(
+        name: &str,
+    ) -> Rc<dyn BoxableExpression<users::table, TestBackend, SqlType = sql_types::Bool>> {
+        Rc::new(lower(users::name).eq(name.to_string()))
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let queried_sean = users::table.filter(by_name("sean")).first(connection);
+    let queried_tess = users::table.filter(by_name("tess")).first(connection);
+
+    assert_eq!(Ok(sean), queried_sean);
+    assert_eq!(Ok(tess), queried_tess);
+}
+
+#[diesel_test_helper::test]
+fn filter_by_arc_boxed_predicate() {
+    fn by_name(
+        name: &str,
+    ) -> Arc<dyn BoxableExpression<users::table, TestBackend, SqlType = sql_types::Bool>> {
+        Arc::new(lower(users::name).eq(name.to_string()))
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = User::new(1, "Sean");
+    let tess = User::new(2, "Tess");
+    let queried_sean = users::table.filter(by_name("sean")).first(connection);
+    let queried_tess = users::table.filter(by_name("tess")).first(connection);
+
+    assert_eq!(Ok(sean), queried_sean);
+    assert_eq!(Ok(tess), queried_tess);
+}
+
+#[diesel_test_helper::test]
 fn filter_like_nullable_column() {
     use crate::schema::users::dsl::*;
 
@@ -497,7 +593,7 @@ fn filter_subselect_with_boxed_query() {
 
 #[diesel_test_helper::test]
 // FIXME: this test shouldn't need to modify schema each run
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 // https://github.com/rust-lang/rust/issues/124396
 #[allow(unknown_lints, non_local_definitions)]
 fn filter_subselect_with_nullable_column() {
@@ -526,7 +622,7 @@ fn filter_subselect_with_nullable_column() {
     }
     let connection = &mut connection();
 
-    create_table(
+    create_temporary_table(
         "home_worlds",
         (
             integer("id").primary_key().auto_increment(),
@@ -536,7 +632,7 @@ fn filter_subselect_with_nullable_column() {
     .execute(connection)
     .unwrap();
 
-    create_table(
+    create_temporary_table(
         "heroes",
         (
             integer("id").primary_key().auto_increment(),

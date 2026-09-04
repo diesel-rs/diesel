@@ -5,10 +5,11 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use crate::result::{DatabaseErrorKind, Error};
-use crate::QueryResult;
-use std::ops::Deref;
-use std::ptr::NonNull;
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
+use alloc::boxed::Box;
+use alloc::string::ToString;
+use core::ops::Deref;
+use core::ptr::NonNull;
 
 /// Owns a database serialization returned by `sqlite3_serialize` and releases any allocated buffer with `sqlite3_free`.
 #[derive(Debug)]
@@ -61,11 +62,6 @@ impl SerializedDatabase {
         self.expect_slice()
     }
 
-    #[cfg(not(all(feature = "with-deprecated", not(feature = "without-deprecated"))))]
-    fn as_slice(&self) -> &[u8] {
-        self.expect_slice()
-    }
-
     /// Returns a slice of the serialized database, the out of memory error if
     /// SQLite failed to allocate the buffer holding it, or a conversion error
     /// if SQLite reported a size this platform cannot address.
@@ -97,9 +93,13 @@ impl SerializedDatabase {
 impl Deref for SerializedDatabase {
     type Target = [u8];
 
-    #[allow(deprecated)] // no other way to implement this
+    /// Returns a slice of the serialized database.
+    ///
+    /// Panics if SQLite failed to allocate the buffer holding the serialized
+    /// database or reported a size this platform cannot address, use
+    /// [`try_as_slice`](Self::try_as_slice) to handle those failures instead.
     fn deref(&self) -> &Self::Target {
-        self.as_slice()
+        self.expect_slice()
     }
 }
 
@@ -117,7 +117,7 @@ impl Drop for SerializedDatabase {
 
 #[cfg(all(test, target_pointer_width = "32"))]
 mod tests {
-    use super::{ffi, SerializedDatabase};
+    use super::{SerializedDatabase, ffi};
     use crate::result::Error;
     use core::ptr::NonNull;
 

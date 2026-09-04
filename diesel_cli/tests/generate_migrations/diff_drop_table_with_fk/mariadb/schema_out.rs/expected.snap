@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 337
+description: "Test: diff_drop_table_with_fk"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        name -> Text,
+    }
+}
+

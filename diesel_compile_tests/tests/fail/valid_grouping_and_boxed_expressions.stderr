@@ -12,14 +12,17 @@ error[E0277]: the trait bound `dyn BoxableExpression<..., ..., SqlType = ...>: V
   LL |         .select(some_ungrouped_expression(true))
      |          ^^^^^^ unsatisfied trait bound
      |
-help: the trait `ValidGrouping<columns::id>` is not implemented for `dyn BoxableExpression<table, Pg, SqlType = ...>`
-      but trait `ValidGrouping<()>` is implemented for it
+     = help: the trait `ValidGrouping<columns::id>` is not implemented for `dyn BoxableExpression<table, Pg, SqlType = ...>`
+help: the following other types implement trait `ValidGrouping<GroupByClause>`
     --> DIESEL/diesel/diesel/src/expression/mod.rs
      |
 LL | / impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
 LL | |     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
-     | |_________________________________________________________________________^
-     = help: for that trait implementation, expected `()`, found `columns::id`
+     | |_________________________________________________________________________^ `dyn BoxableExpression<..., ..., ..., ..., SqlType = ...>`
+...
+LL | / impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+LL | |     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Send + Sync + '_
+     | |_______________________________________________________________________________________^ `dyn BoxableExpression<..., ..., ..., ..., SqlType = ...> + Send + Sync`
      = note: required for `Box<...>` to implement `ValidGrouping<columns::id>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<Box<...>>`
   
@@ -32,14 +35,17 @@ error[E0277]: the trait bound `dyn BoxableExpression<..., ..., SqlType = ...>: V
      |          |
      |          required by a bound introduced by this call
      |
-help: the trait `ValidGrouping<columns::id>` is not implemented for `dyn BoxableExpression<table, Pg, SqlType = ...>`
-      but trait `ValidGrouping<()>` is implemented for it
+     = help: the trait `ValidGrouping<columns::id>` is not implemented for `dyn BoxableExpression<table, Pg, SqlType = ...>`
+help: the following other types implement trait `ValidGrouping<GroupByClause>`
     --> DIESEL/diesel/diesel/src/expression/mod.rs
      |
 LL | / impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
 LL | |     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + '_
-     | |_________________________________________________________________________^
-     = help: for that trait implementation, expected `()`, found `columns::id`
+     | |_________________________________________________________________________^ `dyn BoxableExpression<..., ..., ..., ..., SqlType = ...>`
+...
+LL | / impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+LL | |     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Send + Sync + '_
+     | |_______________________________________________________________________________________^ `dyn BoxableExpression<..., ..., ..., ..., SqlType = ...> + Send + Sync`
      = note: required for `Box<...>` to implement `ValidGrouping<columns::id>`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `Query`
      = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `LoadQuery<'_, _, i32>`

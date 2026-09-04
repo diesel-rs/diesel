@@ -12,6 +12,69 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+
+* Add support for Batch-Update for PostgreSQL, MySQL and SQLite
+* Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
+* Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
+* Added `InsertStatement::execute_returning_id` for MySQL and MariaDB, returning the `AUTO_INCREMENT` value that a single-row insert sets (`None` if it sets none) without the extra `SELECT LAST_INSERT_ID()` round trip. It is available for tables whose `table!` definition marks a column with the new `#[auto_increment]` attribute, which `diesel print-schema` now emits for those backends.
+* Added `SqliteConnection::with_raw_connection` to provide safe, callback-based access to the raw `*mut sqlite3` handle for advanced SQLite C APIs (session extension, hooks, etc.)
+* Added `SqliteConnection::on_commit` and `SqliteConnection::remove_commit_hook` to register a callback invoked when a transaction is about to be committed, wrapping `sqlite3_commit_hook`
+* Added `SqliteConnection::on_authorize` and `SqliteConnection::remove_authorizer` to register an authorizer callback that allows, denies, or ignores SQL actions during statement compilation, wrapping `sqlite3_set_authorizer`, along with the `AuthorizerContext` and `AuthorizerDecision` types
+* Added `SqliteConnection::on_trace` and `SqliteConnection::remove_trace` to register a callback for SQL execution tracing (statement, profile, and row events), wrapping `sqlite3_trace_v2`, along with the `SqliteTraceEvent` and `SqliteTraceFlags` types
+* Added `SqliteConnection::on_update` and `SqliteConnection::remove_update_hook` to register row-change callbacks (insert, update, or delete) through a `SqliteUpdateRouter`, wrapping `sqlite3_update_hook`, together with the `SqliteUpdateRouter`, `SqliteChangeEvent`, `SqliteChangeOp`, `SqliteChangeOps`, and `DynamicChangeTable` types. `SqliteUpdateRouter::on` accepts a `table!` table (including a schema-qualified one), and `SqliteUpdateRouter::on_dynamic` accepts a runtime `diesel_dynamic_schema` table
+* Added `SqliteConnection::on_collation_needed` and `SqliteConnection::remove_collation_needed_hook` to register a callback invoked when SQLite encounters an unknown collation sequence, wrapping `sqlite3_collation_needed`, along with the `CollationNeededContext` and `SqliteTextRep` types
+* Added `json_extract` and `jsonb_extract` SQL function support for the SQLite backend
+* Added `json_insert` and `jsonb_insert` SQL function support for the SQLite backend
+* Added `json_replace`, `jsonb_replace`, `json_set`, and `jsonb_set` SQL function support for the SQLite backend
+* Added `SqliteConnection::get_read_only_blob` method to stream blob's from a SQLite database to Rust via `std::io::Read`
+* Added support for casting to `REAL` in SQLite.
+* Added `ToSql`, `FromSql`, `Queryable`, and `AsExpression` impls for `Rc<T>`, `Arc<T>`, and `Box<T>` (including `Rc/Arc<dyn BoxableExpression>` for cloneable dynamic query fragments and the `<str>` / `<[u8]>` unsized variants).
+* Added `diesel::pg::returning::old` to refer to a column's pre-update value using the `RETURNING old.col` syntax in a PostgreSQL `UPDATE` or `INSERT ... ON CONFLICT ... DO UPDATE` statement (requires PostgreSQL >=18).
+* Added a `custom-count-column-tables` feature that allows you to configure the maximal number of supported columns per table via the `DIESEL_MAX_COLUMN_COUNT` environment variable
+* Added `register_auto_extension`, `cancel_auto_extension`, and `reset_auto_extension` for the SQLite backend to register statically linked extensions that run for every new connection.
+* Added `SqliteConnection::set_limit`, `SqliteConnection::get_limit`, and `SqliteConnection::set_recommended_security_limits` to configure SQLite's per-connection runtime limits (`sqlite3_limit`) via the new `SqliteLimit` enum.
+* Added support for `#[cfg(...)]` attributes on individual columns inside the `table!` macro, so a schema whose columns vary by enabled crate features can live in a single `table!` block instead of duplicated feature gated modules.
+* Added `SqliteConnection` methods to configure SQLite's per-connection `sqlite3_db_config` options: `set_defensive`/`is_defensive`, `set_trusted_schema`/`is_trusted_schema`, `with_load_extension_enabled`, `set_fts3_tokenizer_enabled`/`is_fts3_tokenizer_enabled`, `set_writable_schema`/`is_writable_schema`, `set_attach_create_enabled`/`is_attach_create_enabled`, `set_attach_write_enabled`/`is_attach_write_enabled`, `set_triggers_enabled`/`are_triggers_enabled`, `set_views_enabled`/`are_views_enabled`, `set_foreign_keys_enabled`/`are_foreign_keys_enabled`, and `set_double_quoted_strings_dml`/`are_double_quoted_strings_dml_enabled` (plus the `_ddl` variants).
+* Added `SqliteConnection::attach_database` and `SqliteConnection::detach_database` helpers that run `ATTACH DATABASE`/`DETACH DATABASE` with the file path and schema name passed as bound parameters, avoiding hand-assembled statements and path escaping. They pair with the `set_attach_create_enabled` and `set_attach_write_enabled` hardening knobs.
+* Added `SqliteFunctionBehavior` and a `register_impl_with_behavior` function (generated next to `register_impl`/`register_nondeterministic_impl` by `#[declare_sql_function]`) to register custom SQLite functions with explicit behavior flags (`DETERMINISTIC`, `INNOCUOUS`, `DIRECTONLY`, `SUBTYPE`).
+* Added a `RunQueryDslSupport` trait to indicate types that should implement `RunQueryDsl` in a sync/async agnostic way
+* Added a `#[derive(diesel::Enum)]` proc-macro to easily map Rust enums to database enums.
+* Added support for generating matching Rust enums for database enums in Diesel-CLI
+* Added `#[diesel_async]` attribute to `#[derive(MultiConnection)]` to support async MultiConnections. 
+* Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
+* Exposed `GroupByClause` and `NoGroupByClause` under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature so third-party crates can distinguish grouped and ungrouped `SelectStatement` types.
+* Added `--no-schema` CLI flag to the `migration run` subcommand
+* Added `SqliteConnection::auto_vacuum` and `SqliteConnection::set_auto_vacuum` to read and set a database's `auto_vacuum` mode through the typed `AutoVacuumMode` enum, each accepting an optional schema name to target an attached database.
+* Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
+* Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
+* Added `SqliteConnection::vacuum` and `SqliteConnection::vacuum_into` to rebuild a database or write a vacuumed copy of it to a new file, each accepting an optional schema name to target an attached database, with the destination path passed as a bind parameter.
+* Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
+* Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
+* Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
+* Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
+
+### Fixed
+
+* Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
+* Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
+* `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
+* Restore SQLite auto-extension support with `libsqlite3-sys` versions before 0.29
+* Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
+* `diesel_derives` does now correctly handle feature flag unification in mixed build/target dependency situations
+* Fixed several panics in the serialization and deserialization code for PostgreSQL and MySQL
+* Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
+* `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
+* Fixed several Tests using schema modifications for `mysql` and `mariadb`
+
+### Changed
+
+* The minimal supported Rust version is now 1.88.0
+* Add support for no-std environments using the SQLite backend
+* Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
+* A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
+
+
 ## [2.3.13] 2026-09-4
 
 * Fixed interaction between `then_order_by` and `distinct_on` to reject otherwise broken SQL queries

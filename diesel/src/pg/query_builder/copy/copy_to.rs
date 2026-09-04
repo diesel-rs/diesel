@@ -1,23 +1,23 @@
+use core::marker::PhantomData;
 use std::io::BufRead;
-use std::marker::PhantomData;
 
 use super::CommonOptions;
 use super::CopyFormat;
 use super::CopyTarget;
-use crate::deserialize::FromSqlRow;
-#[cfg(feature = "postgres")]
-use crate::pg::value::TypeOidLookup;
-use crate::pg::Pg;
-use crate::query_builder::QueryFragment;
-use crate::query_builder::QueryId;
-use crate::row::Row;
-#[cfg(feature = "postgres")]
-use crate::row::{self, Field, PartialRow, RowIndex, RowSealed};
 use crate::AppearsOnTable;
 use crate::Connection;
 use crate::Expression;
 use crate::QueryResult;
 use crate::Selectable;
+use crate::deserialize::FromSqlRow;
+use crate::pg::Pg;
+#[cfg(feature = "postgres")]
+use crate::pg::value::TypeOidLookup;
+use crate::query_builder::QueryFragment;
+use crate::query_builder::QueryId;
+use crate::row::Row;
+#[cfg(feature = "postgres")]
+use crate::row::{self, Field, PartialRow, RowIndex, RowSealed};
 
 #[derive(Default, Debug)]
 pub struct CopyToOptions {
@@ -153,7 +153,7 @@ impl<'f> Field<'f, Pg> for CopyField<'f> {
 
 #[cfg(feature = "postgres")]
 impl TypeOidLookup for CopyField<'_> {
-    fn lookup(&self) -> std::num::NonZeroU32 {
+    fn lookup(&self) -> core::num::NonZeroU32 {
         self.result.column_type(self.col_idx)
     }
 }
@@ -209,7 +209,7 @@ impl<'a> Row<'a, Pg> for CopyRow<'_> {
 
     fn partial_row(
         &self,
-        range: std::ops::Range<usize>,
+        range: core::ops::Range<usize>,
     ) -> row::PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
@@ -341,7 +341,7 @@ where
         .map_err(|e| crate::result::Error::DeserializationError(Box::new(e)))?;
         out.consume(super::COPY_MAGIC_HEADER.len() + 8 + header_size);
         let mut len = None;
-        Ok(std::iter::from_fn(move || {
+        Ok(core::iter::from_fn(move || {
             if let Some(len) = len {
                 out.consume(len);
                 if let Err(e) = out.fill_buf().map_err(io_result_mapper) {
@@ -356,7 +356,7 @@ where
                 let tuple_count = match usize::try_from(tuple_count) {
                     Ok(o) => o,
                     Err(e) => {
-                        return Some(Err(crate::result::Error::DeserializationError(Box::new(e))))
+                        return Some(Err(crate::result::Error::DeserializationError(Box::new(e))));
                     }
                 };
                 let mut buffers = Vec::with_capacity(tuple_count);

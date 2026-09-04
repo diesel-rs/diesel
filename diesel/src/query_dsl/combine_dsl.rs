@@ -1,9 +1,9 @@
+use crate::Table;
 use crate::dsl;
 use crate::query_builder::combination_clause::{
     All, CombinationClause, Distinct, Except, Intersect, Union,
 };
 use crate::query_builder::{AsQuery, Query};
-use crate::Table;
 
 /// Extension trait to combine queries using a combinator like `UNION`, `INTERSECT` or `EXCEPT`
 /// with or without `ALL` rule for duplicates

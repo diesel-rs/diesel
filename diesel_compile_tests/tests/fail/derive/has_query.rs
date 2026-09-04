@@ -37,10 +37,12 @@ struct UserMixedUp {
 struct TypeMismatch {
     id: String,
     //~^ ERROR: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Mysql>` is not satisfied
+    //~| ERROR: the trait bound `String: FromSqlRow<Integer, Mariadb>` is not satisfied
     //~| ERROR: the trait bound `String: FromSqlRow<Integer, Sqlite>` is not satisfied
     //~| ERROR: the trait bound `std::string::String: FromSqlRow<diesel::sql_types::Integer, Pg>` is not satisfied
     name: i32,
     //~^ ERROR: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Mysql>` is not satisfied
+    //~| ERROR: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Mariadb>` is not satisfied
     //~| ERROR: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Sqlite>` is not satisfied
     //~| ERROR: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is not satisfied
 }

@@ -1,5 +1,5 @@
-use std::num::NonZeroU32;
-use std::ops::Range;
+use core::num::NonZeroU32;
+use core::ops::Range;
 
 /// Raw postgres value as received from the database
 #[derive(Clone, Copy)]

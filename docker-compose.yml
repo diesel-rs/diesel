@@ -20,8 +20,22 @@ services:
       - "./docker/postgres/init:/docker-entrypoint-initdb.d"
     ports:
       - "5432:5432"
+  mariadb:
+    image: mariadb
+    container_name: diesel.mariadb
+    volumes:
+      - "mariadb-data:/var/lib/mariadb/:delegated"
+      - "./docker/mariadb/init:/docker-entrypoint-initdb.d"
+    ports:
+      - "3307:3306"
+    environment:
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true
 volumes:
   mysql-data:
     driver: local
   postgres-data:
     driver: local
+  mariadb-data:
+    driver: local
+
+

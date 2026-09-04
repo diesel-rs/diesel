@@ -4,29 +4,49 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+pub mod authorizer;
 mod bind_collector;
+mod collation_needed;
 mod functions;
-#[cfg(all(test, not(all(target_family = "wasm", target_os = "unknown"))))]
+mod hooks;
+mod limits;
+#[cfg(all(
+    test,
+    feature = "std",
+    not(all(target_family = "wasm", target_os = "unknown"))
+))]
 #[allow(unsafe_code)]
 mod oom_test_support;
 mod owned_row;
 mod raw;
 mod row;
 mod serialized_database;
+pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+mod trace;
+mod update_hook;
 
+pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::bind_collector::{OwnedSqliteBindValue, SqliteBindCollectorData, SqliteBindValueRef};
+pub use self::collation_needed::{CollationNeededContext, SqliteTextRep};
+pub use self::limits::SqliteLimit;
+use self::raw::RawConnection;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
-
-use std::os::raw as libc;
-
-use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
+pub use self::update_hook::{
+    SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
+};
 use super::SqliteAggregateFunction;
 use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
@@ -34,10 +54,18 @@ use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
 use crate::query_builder::*;
+use crate::query_dsl::RunQueryDslSupport;
+use crate::query_source::{ColumnHasTable, NamedTable};
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::{HasSqlType, TypeMetadata};
-use crate::sqlite::Sqlite;
+use crate::sqlite::{Sqlite, SqliteFunctionBehavior};
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+use core::ffi as libc;
+use core::marker::PhantomData;
+use core::num::NonZeroI64;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
 /// connection URLs are:
@@ -145,6 +173,7 @@ use crate::sqlite::Sqlite;
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users;
 /// use diesel::connection::SimpleConnection;
+/// use diesel::sqlite::WalCheckpointMode;
 /// let conn = &mut establish_connection();
 /// // see https://fractaledmind.github.io/2023/09/07/enhancing-rails-sqlite-fine-tuning/
 /// // sleep if the database is busy, this corresponds to up to 2 seconds sleeping time.
@@ -157,12 +186,12 @@ use crate::sqlite::Sqlite;
 /// // May affect readers if number is increased
 /// conn.batch_execute("PRAGMA wal_autocheckpoint = 1000;")?;
 /// // free some space by truncating possibly massive WAL files from the last run
-/// conn.batch_execute("PRAGMA wal_checkpoint(TRUNCATE);")?;
+/// conn.wal_checkpoint(None, WalCheckpointMode::Truncate)?;
 /// #   Ok(())
 /// # }
 /// ```
 #[allow(missing_debug_implementations)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub struct SqliteConnection {
     // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the
@@ -318,15 +347,113 @@ impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
 impl MultiConnectionHelper for SqliteConnection {
     fn to_any<'a>(
         lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
-    ) -> &mut (dyn std::any::Any + 'a) {
+    ) -> &mut (dyn core::any::Any + 'a) {
         lookup
     }
 
     fn from_any(
-        lookup: &mut dyn std::any::Any,
+        lookup: &mut dyn core::any::Any,
     ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
         lookup.downcast_mut()
     }
+}
+
+/// The decision returned by an [`on_commit`](SqliteConnection::on_commit)
+/// callback, controlling whether a pending commit completes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitDecision {
+    /// Let the commit proceed normally.
+    Proceed,
+    /// Convert the commit into a rollback.
+    Rollback,
+}
+
+/// The decision returned by an [`on_progress`](SqliteConnection::on_progress)
+/// callback, controlling whether a long-running query keeps executing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProgressDecision {
+    /// Let the query continue executing.
+    Continue,
+    /// Interrupt the query (causes `SQLITE_INTERRUPT`).
+    Interrupt,
+}
+
+/// The decision returned by an [`on_busy`](SqliteConnection::on_busy)
+/// callback when the database is locked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BusyDecision {
+    /// Retry the locked operation.
+    Retry,
+    /// Give up, returning `SQLITE_BUSY` to the caller.
+    GiveUp,
+}
+
+/// The `auto_vacuum` mode of a database, controlling whether and when SQLite
+/// reclaims freed pages back to the file.
+///
+/// The mode is stored in the database file, not the connection. [`Full`] and
+/// [`Incremental`] can be switched between at any time, but changing from or to
+/// [`None`] only takes effect on a database with no tables yet, or after a
+/// subsequent `VACUUM` rewrites the file.
+///
+/// [`None`]: AutoVacuumMode::None
+/// [`Full`]: AutoVacuumMode::Full
+/// [`Incremental`]: AutoVacuumMode::Incremental
+#[derive(Debug, Clone, Copy, PartialEq, Eq, crate::types::Enum)]
+#[diesel(sql_type = crate::sql_types::Integer)]
+#[non_exhaustive]
+#[repr(i32)]
+pub enum AutoVacuumMode {
+    /// Freed pages stay on the freelist and the file never shrinks (default).
+    None = 0,
+    /// Freed pages are reclaimed and the file truncated at every commit.
+    Full = 1,
+    /// Freelist bookkeeping is kept, pages are reclaimed only when
+    /// `incremental_vacuum` runs.
+    Incremental = 2,
+}
+
+/// The mode of a [`wal_checkpoint`](SqliteConnection::wal_checkpoint) run,
+/// matching the modes of
+/// [`sqlite3_wal_checkpoint_v2`](https://www.sqlite.org/c3ref/wal_checkpoint_v2.html).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum WalCheckpointMode {
+    /// Checkpoint what is possible without waiting on readers or writers.
+    Passive,
+    /// Wait until there is no writer and every reader reads from the most
+    /// recent snapshot, then checkpoint every frame.
+    Full,
+    /// Like [`Full`](Self::Full), then wait until no reader uses the WAL, so
+    /// the next writer restarts the log.
+    Restart,
+    /// Like [`Restart`](Self::Restart), then truncate the WAL file to zero
+    /// bytes.
+    Truncate,
+    /// Report the WAL state without checkpointing anything.
+    ///
+    /// Requires SQLite 3.51.0 or later. Older versions do not know this
+    /// mode and silently run a [`Passive`](Self::Passive) checkpoint
+    /// instead.
+    Noop,
+}
+
+/// The result of a [`wal_checkpoint`](SqliteConnection::wal_checkpoint) run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct WalCheckpointOutcome {
+    /// Whether a busy reader or writer stopped the checkpoint early. Only
+    /// the blocking modes set it: [`Passive`](WalCheckpointMode::Passive)
+    /// reports `false` even when it left frames behind.
+    pub busy: bool,
+    /// Frames in the WAL after the checkpoint, `None` when the database is
+    /// not in WAL mode.
+    pub log_frames: Option<i64>,
+    /// Frames of the WAL moved into the database file, `None` when the
+    /// database is not in WAL mode. Counted within the current log, so a
+    /// [`Truncate`](WalCheckpointMode::Truncate) run reports `Some(0)`
+    /// because the log was emptied, not because nothing was moved.
+    pub checkpointed_frames: Option<i64>,
 }
 
 impl SqliteConnection {
@@ -388,6 +515,93 @@ impl SqliteConnection {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
     }
 
+    /// Returns the rowid of the most recent successful INSERT on this connection.
+    ///
+    /// Returns `None` if no successful INSERT into a rowid table has been performed
+    /// on this connection, and `Some(rowid)` otherwise.
+    ///
+    /// See [the SQLite documentation](https://www.sqlite.org/c3ref/last_insert_rowid.html)
+    /// for details.
+    ///
+    /// # Caveats
+    /// - Inserts into `WITHOUT ROWID` tables are not recorded
+    /// - Failed `INSERT` (constraint violations) do not change the value
+    /// - `INSERT OR REPLACE` always updates the value
+    /// - Within triggers, returns the rowid of the trigger's INSERT;
+    ///   reverts after the trigger completes
+    ///
+    /// # Example
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use core::num::NonZeroI64;
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")?;
+    /// conn.batch_execute("INSERT INTO users (name) VALUES ('Sean')")?;
+    /// let rowid = conn.last_insert_rowid();
+    /// assert_eq!(rowid, NonZeroI64::new(1));
+    /// conn.batch_execute("INSERT INTO users (name) VALUES ('Tess')")?;
+    /// let rowid = conn.last_insert_rowid();
+    /// assert_eq!(rowid, NonZeroI64::new(2));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn last_insert_rowid(&self) -> Option<NonZeroI64> {
+        NonZeroI64::new(self.raw_connection.last_insert_rowid())
+    }
+
+    /// Returns an object that can be used to stream a BLOB from the database
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # table! {
+    /// #     myblobs {
+    /// #         id -> Integer,
+    /// #         mydata -> Blob,
+    /// #     }
+    /// # }
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
+    /// use std::io::Read;
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.batch_execute("CREATE TABLE myblobs (id INTEGER PRIMARY KEY, mydata BLOB)")?;
+    /// conn.batch_execute("INSERT INTO myblobs (mydata) VALUES ('abc')")?;
+    /// let mut data = conn.get_read_only_blob(myblobs::mydata, 1)?;
+    /// let mut buf = vec![];
+    /// data.read_to_end(&mut buf)?;
+    /// assert_eq!(buf, b"abc");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn get_read_only_blob<'conn, 'query, U>(
+        &'conn self,
+        blob_column: U,
+        row_id: i64,
+    ) -> Result<sqlite_blob::SqliteReadOnlyBlob<'conn>, Error>
+    where
+        'query: 'conn,
+        U: ColumnHasTable,
+        U::Table: NamedTable,
+    {
+        let table = blob_column.table();
+
+        let database_name = table.schema().unwrap_or("main");
+        let column_name = blob_column.name();
+        let table_name = table.table();
+
+        self.raw_connection
+            .blob_open(database_name, table_name, column_name, row_id)
+    }
+
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
         F: FnOnce(&mut Self) -> Result<T, E>,
@@ -446,50 +660,48 @@ impl SqliteConnection {
     pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
         &mut self,
         fn_name: &str,
-        deterministic: bool,
+        behavior: SqliteFunctionBehavior,
         mut f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
+        F: FnMut(Args) -> Ret + core::panic::UnwindSafe + Send + 'static,
         Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register(
-            &self.raw_connection,
-            fn_name,
-            deterministic,
-            move |_, args| f(args),
-        )
+        functions::register(&self.raw_connection, fn_name, behavior, move |_, args| {
+            f(args)
+        })
     }
 
     #[doc(hidden)]
     pub fn register_noarg_sql_function<RetSqlType, Ret, F>(
-        &self,
+        &mut self,
         fn_name: &str,
-        deterministic: bool,
+        behavior: SqliteFunctionBehavior,
         f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+        F: FnMut() -> Ret + core::panic::UnwindSafe + Send + 'static,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register_noargs(&self.raw_connection, fn_name, deterministic, f)
+        functions::register_noargs(&self.raw_connection, fn_name, behavior, f)
     }
 
     #[doc(hidden)]
     pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
         &mut self,
         fn_name: &str,
+        behavior: SqliteFunctionBehavior,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
         Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
+        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name, behavior)
     }
 
     /// Register a collation function.
@@ -529,7 +741,7 @@ impl SqliteConnection {
     /// ```
     pub fn register_collation<F>(&mut self, collation_name: &str, collation: F) -> QueryResult<()>
     where
-        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static + std::panic::UnwindSafe,
+        F: Fn(&str, &str) -> core::cmp::Ordering + Send + 'static + core::panic::UnwindSafe,
     {
         self.raw_connection
             .register_collation_function(collation_name, collation)
@@ -604,6 +816,922 @@ impl SqliteConnection {
         }
     }
 
+    /// Provides temporary access to the raw SQLite database connection handle.
+    ///
+    /// This method provides a way to access the underlying `sqlite3` pointer,
+    /// enabling direct use of the SQLite C API for advanced features that
+    /// Diesel does not wrap, such as the [session extension](https://www.sqlite.org/sessionintro.html),
+    /// [hooks](https://www.sqlite.org/c3ref/update_hook.html), or other advanced APIs.
+    ///
+    /// # Why Diesel Doesn't Wrap These APIs
+    ///
+    /// Certain SQLite features, such as the session extension, are **optional** and only
+    /// available when SQLite is compiled with specific flags (e.g., `-DSQLITE_ENABLE_SESSION`
+    /// and `-DSQLITE_ENABLE_PREUPDATE_HOOK` for sessions). These compile-time options determine
+    /// whether the corresponding C API functions exist in the SQLite library's ABI.
+    ///
+    /// Because Diesel must work with any SQLite library at runtime—including system-provided
+    /// libraries that may lack these optional features—it **cannot safely provide wrappers**
+    /// for APIs that may or may not exist. Doing so would either:
+    ///
+    /// - Cause **linker errors** at compile time if the user's `libsqlite3-sys` wasn't compiled
+    ///   with the required flags, or
+    /// - Cause **undefined behavior** at runtime if Diesel called functions that don't exist
+    ///   in the linked library.
+    ///
+    /// While feature gates could theoretically solve this problem, Diesel already has an
+    /// extensive API surface with many existing feature combinations. Each new feature gate
+    /// adds a **combinatorial explosion** of test configurations that must be validated,
+    /// making the library increasingly difficult to maintain. Therefore, exposing the raw
+    /// connection is the preferred approach for niche SQLite features.
+    ///
+    /// By exposing the raw connection handle, Diesel allows users who **know** they have
+    /// access to a properly configured SQLite build to use these advanced features directly
+    /// through their own FFI bindings.
+    ///
+    /// # Safety
+    ///
+    /// This method is marked `unsafe` because improper use of the raw connection handle
+    /// can lead to undefined behavior. The caller must ensure that:
+    ///
+    /// - The connection handle is **not closed** during the callback.
+    /// - The connection handle is **not stored** beyond the callback's scope.
+    /// - Concurrent access rules are respected (SQLite connections are not thread-safe
+    ///   unless using serialized threading mode).
+    /// - **Transaction state is not modified** — do not execute `BEGIN`, `COMMIT`,
+    ///   `ROLLBACK`, or `SAVEPOINT` statements via the raw handle. Diesel's
+    ///   [`AnsiTransactionManager`] tracks transaction nesting internally, and
+    ///   bypassing it will cause Diesel's view of the transaction state to diverge
+    ///   from SQLite's actual state.
+    /// - **Diesel's prepared statements are not disturbed** — do not call
+    ///   `sqlite3_finalize()` or `sqlite3_reset()` on statements that belong to
+    ///   Diesel's `StatementCache`. Doing so will cause use-after-free or
+    ///   double-free when Diesel later accesses those statements.
+    ///
+    /// [`AnsiTransactionManager`]: crate::connection::AnsiTransactionManager
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::sqlite::SqliteConnection;
+    /// use diesel::Connection;
+    ///
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // SAFETY: We do not close or store the connection handle,
+    /// // and we do not modify Diesel-managed state (transactions, cached statements).
+    /// let is_valid = unsafe {
+    ///     conn.with_raw_connection(|raw_conn| {
+    ///         // The raw connection pointer can be passed to SQLite C API functions
+    ///         // from your own `libsqlite3-sys` (native) or `sqlite-wasm-rs` (WASM)
+    ///         // dependency — for example, `sqlite3_get_autocommit(raw_conn)` or
+    ///         // `sqlite3session_create(raw_conn, ...)`.
+    ///         !raw_conn.is_null()
+    ///     })
+    /// };
+    /// assert!(is_valid);
+    /// ```
+    ///
+    /// # Platform Notes
+    ///
+    /// This method works identically on both native and WASM targets. However,
+    /// you must depend on the appropriate FFI crate for your target:
+    ///
+    /// - **Native**: Add `libsqlite3-sys` as a dependency
+    /// - **WASM** (`wasm32-unknown-unknown`): Add `sqlite-wasm-rs` as a dependency
+    ///
+    /// Both crates expose a compatible `sqlite3` type that can be used with the
+    /// pointer returned by this method.
+    #[allow(unsafe_code)]
+    pub unsafe fn with_raw_connection<R, F>(&mut self, f: F) -> R
+    where
+        F: FnOnce(*mut ffi::sqlite3) -> R,
+    {
+        f(self.raw_connection.internal_connection.as_ptr())
+    }
+
+    /// Runs `f` with a borrowed `SqliteConnection` wrapping `db`, giving SQLite
+    /// callbacks the full connection API. Statements prepared during `f` are
+    /// finalized on return, but `db` is left open, since SQLite owns it.
+    ///
+    /// # Safety
+    ///
+    /// `db` must be a valid `sqlite3` handle that stays open for the duration
+    /// of the call.
+    #[allow(unsafe_code)]
+    pub(crate) unsafe fn with_borrowed_connection<R>(
+        db: core::ptr::NonNull<ffi::sqlite3>,
+        f: impl FnOnce(&mut SqliteConnection) -> R,
+    ) -> R {
+        // Tears the borrowed connection down on every exit path, including a
+        // panic unwinding out of `f`.
+        struct Borrowed(core::mem::ManuallyDrop<SqliteConnection>);
+
+        impl Drop for Borrowed {
+            fn drop(&mut self) {
+                // SAFETY: `self.0` is not touched again after this take.
+                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
+                let SqliteConnection {
+                    statement_cache,
+                    raw_connection,
+                    ..
+                } = conn;
+                // Finalize prepared statements, but do not run `RawConnection`'s
+                // `Drop`, which would close a handle we do not own.
+                drop(statement_cache);
+                core::mem::forget(raw_connection);
+            }
+        }
+
+        let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
+            statement_cache: StatementCache::new(),
+            raw_connection: RawConnection::from_ptr(db),
+            transaction_state: AnsiTransactionManager::default(),
+            metadata_lookup: (),
+            instrumentation: DynInstrumentation::default_instrumentation(),
+            serialized_data: Vec::new(),
+        }));
+
+        let result = f(&mut conn.0);
+
+        // The borrowed connection is discarded without committing or rolling
+        // back, so a transaction left open by `f` would leak onto the handle.
+        debug_assert!(
+            matches!(
+                AnsiTransactionManager::transaction_manager_status_mut(&mut *conn.0)
+                    .transaction_depth(),
+                Ok(None)
+            ),
+            "callback must not leave an open transaction on the borrowed connection"
+        );
+
+        result
+    }
+
+    /// Set a runtime limit for this connection, returning its previous value.
+    ///
+    /// Lowering these limits is a way to harden a connection against untrusted
+    /// SQL. See the [SQLite documentation](https://www.sqlite.org/c3ref/limit.html)
+    /// for the meaning of each [`SqliteLimit`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() { run_test(); }
+    /// # fn run_test() {
+    /// use diesel::sqlite::SqliteLimit;
+    ///
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // Cap SQL statement length at 1 KiB, keeping the previous value.
+    /// let previous = conn.set_limit(SqliteLimit::SqlLength, 1024);
+    /// assert!(previous > 0);
+    /// assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 1024);
+    /// # }
+    /// ```
+    pub fn set_limit(&mut self, limit: SqliteLimit, value: i32) -> i32 {
+        self.raw_connection.set_limit(limit, value)
+    }
+
+    /// Get the current value of a runtime limit for this connection.
+    ///
+    /// See the [SQLite documentation](https://www.sqlite.org/c3ref/limit.html)
+    /// for the meaning of each [`SqliteLimit`].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() { run_test(); }
+    /// # fn run_test() {
+    /// use diesel::sqlite::SqliteLimit;
+    ///
+    /// let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// assert!(conn.get_limit(SqliteLimit::SqlLength) > 0);
+    /// # }
+    /// ```
+    pub fn get_limit(&self, limit: SqliteLimit) -> i32 {
+        self.raw_connection.get_limit(limit)
+    }
+
+    /// Apply SQLite's recommended limits for hardening against untrusted SQL.
+    ///
+    /// These are the values from the "Untrusted SQL Inputs" table of SQLite's
+    /// [security documentation](https://sqlite.org/security.html). They are
+    /// intentionally restrictive, so call [`set_limit`](Self::set_limit)
+    /// afterwards to relax any that are too aggressive for your application.
+    ///
+    /// | Limit | Value |
+    /// |-------|-------|
+    /// | `Length` | 1,000,000 |
+    /// | `SqlLength` | 100,000 |
+    /// | `ColumnCount` | 100 |
+    /// | `ExprDepth` | 10 |
+    /// | `CompoundSelect` | 3 |
+    /// | `VdbeOp` | 25,000 |
+    /// | `FunctionArg` | 8 |
+    /// | `Attached` | 0 |
+    /// | `LikePatternLength` | 50 |
+    /// | `VariableNumber` | 10 |
+    /// | `TriggerDepth` | 10 |
+    ///
+    /// The table's `PARSER_DEPTH` recommendation is omitted because it is a
+    /// compile-time only setting with no runtime `sqlite3_limit()` category.
+    /// `WorkerThreads` is left untouched (its default of 0 is already safe).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() { run_test(); }
+    /// # fn run_test() {
+    /// use diesel::sqlite::SqliteLimit;
+    ///
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_recommended_security_limits();
+    /// assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 100_000);
+    ///
+    /// // Relax an individual limit that is too strict for this application.
+    /// conn.set_limit(SqliteLimit::VariableNumber, 999);
+    /// assert_eq!(conn.get_limit(SqliteLimit::VariableNumber), 999);
+    /// # }
+    /// ```
+    pub fn set_recommended_security_limits(&mut self) {
+        self.set_limit(SqliteLimit::Length, SqliteLimit::SAFE_LENGTH_LIMIT);
+        self.set_limit(SqliteLimit::SqlLength, SqliteLimit::SAFE_SQL_LENGTH_LIMIT);
+        self.set_limit(
+            SqliteLimit::ColumnCount,
+            SqliteLimit::SAFE_COLUMN_COUNT_LIMIT,
+        );
+        self.set_limit(SqliteLimit::ExprDepth, SqliteLimit::SAFE_EXPR_DEPTH_LIMIT);
+        self.set_limit(
+            SqliteLimit::CompoundSelect,
+            SqliteLimit::SAFE_COMPOUND_SELECT_LIMIT,
+        );
+        self.set_limit(SqliteLimit::VdbeOp, SqliteLimit::SAFE_VDBE_OP_LIMIT);
+        self.set_limit(
+            SqliteLimit::FunctionArg,
+            SqliteLimit::SAFE_FUNCTION_ARG_LIMIT,
+        );
+        self.set_limit(SqliteLimit::Attached, SqliteLimit::SAFE_ATTACHED_LIMIT);
+        self.set_limit(
+            SqliteLimit::LikePatternLength,
+            SqliteLimit::SAFE_LIKE_PATTERN_LENGTH_LIMIT,
+        );
+        self.set_limit(
+            SqliteLimit::VariableNumber,
+            SqliteLimit::SAFE_VARIABLE_NUMBER_LIMIT,
+        );
+        self.set_limit(
+            SqliteLimit::TriggerDepth,
+            SqliteLimit::SAFE_TRIGGER_DEPTH_LIMIT,
+        );
+    }
+
+    /// Enable or disable SQLite defensive mode.
+    ///
+    /// When enabled, defensive mode prevents direct writes to shadow tables
+    /// (FTS5, R-Tree, etc.), dangerous PRAGMAs like `writable_schema`,
+    /// `sqlite3_deserialize()` from opening unsafe database images, and other
+    /// potentially dangerous operations. Enable it for any connection that may
+    /// process untrusted data. It is the single most important hardening flag.
+    ///
+    /// Requires SQLite 3.26.0 or later, otherwise returns an error.
+    ///
+    /// # Security Hardening Recipe
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_defensive(true).unwrap();
+    /// conn.set_trusted_schema(false).unwrap();
+    /// conn.set_recommended_security_limits();
+    /// # }
+    /// ```
+    ///
+    /// Extension loading is off by default. Enable it only when needed via
+    /// [`with_load_extension_enabled`][Self::with_load_extension_enabled]. See
+    /// [`set_recommended_security_limits`][Self::set_recommended_security_limits]
+    /// to harden the SQLite resource limits as well.
+    pub fn set_defensive(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_DEFENSIVE, enabled)
+    }
+
+    /// Check if defensive mode is enabled.
+    ///
+    /// See [`set_defensive`][Self::set_defensive] for details.
+    pub fn is_defensive(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_DEFENSIVE)
+    }
+
+    /// Enable or disable trusted schema mode.
+    ///
+    /// When disabled (untrusted), SQL functions called from schema objects
+    /// (views, triggers, CHECK constraints, DEFAULT expressions, generated
+    /// columns, expression indexes) are restricted to those marked
+    /// [`INNOCUOUS`][crate::sqlite::SqliteFunctionBehavior::INNOCUOUS]. Disable
+    /// it when opening database files from untrusted sources, and register your
+    /// custom functions with appropriate
+    /// [`SqliteFunctionBehavior`][crate::sqlite::SqliteFunctionBehavior] flags.
+    ///
+    /// Requires SQLite 3.31.0 or later, otherwise returns an error.
+    pub fn set_trusted_schema(&mut self, trusted: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_TRUSTED_SCHEMA, trusted)
+    }
+
+    /// Check if trusted schema mode is enabled.
+    ///
+    /// See [`set_trusted_schema`][Self::set_trusted_schema] for details.
+    pub fn is_trusted_schema(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_TRUSTED_SCHEMA)
+    }
+
+    /// Runs the given closure with the `load_extension()` SQL function enabled,
+    /// disabling it again afterwards.
+    ///
+    /// This controls the [`load_extension()`](https://www.sqlite.org/lang_corefunc.html#load_extension)
+    /// **SQL function**, not the `sqlite3_load_extension()` C API (which Diesel
+    /// does not expose). Extension loading is off by default, and scoping it to a
+    /// closure keeps the window in which it is enabled as small as possible.
+    ///
+    /// Requires SQLite 3.13.0 or later, otherwise returns an error. Has no effect
+    /// if SQLite was compiled with `SQLITE_OMIT_LOAD_EXTENSION`.
+    ///
+    /// # Panics
+    ///
+    /// If `f` panics, extension loading is disabled again before the panic
+    /// resumes. no-std builds cannot catch the unwind, so there the flag is
+    /// restored only on a normal return.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// let result: QueryResult<()> = conn.with_load_extension_enabled(|_conn| Ok(()));
+    /// result.unwrap();
+    /// # }
+    /// ```
+    pub fn with_load_extension_enabled<R, E>(
+        &mut self,
+        f: impl FnOnce(&mut Self) -> Result<R, E>,
+    ) -> Result<R, E>
+    where
+        E: From<crate::result::Error>,
+    {
+        self.set_load_extension_enabled(true)?;
+
+        // On std builds, catch a panic from `f` so extension loading is restored
+        // before the panic is resumed. no-std cannot catch unwinding, so there
+        // the flag is restored only on a normal return.
+        #[cfg(feature = "std")]
+        {
+            match std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| f(self))) {
+                Ok(r) => {
+                    self.set_load_extension_enabled(false)?;
+                    r
+                }
+                Err(panic) => {
+                    let _ = self.set_load_extension_enabled(false);
+                    std::panic::resume_unwind(panic);
+                }
+            }
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            let r = f(self);
+            self.set_load_extension_enabled(false)?;
+            r
+        }
+    }
+
+    fn set_load_extension_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, enabled)
+    }
+
+    #[cfg(test)]
+    fn is_load_extension_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION)
+    }
+
+    /// Enable or disable the `fts3_tokenizer()` SQL function.
+    ///
+    /// The [`fts3_tokenizer()`](https://www.sqlite.org/fts3.html#f3tknzr) function
+    /// allows overloading the default FTS3/FTS4 tokenizer, which can be exploited
+    /// if an attacker can execute arbitrary SQL. Disable it unless you need custom
+    /// FTS3 tokenizers.
+    ///
+    /// Requires SQLite 3.12.0 or later, otherwise returns an error.
+    pub fn set_fts3_tokenizer_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, enabled)
+    }
+
+    /// Check if the `fts3_tokenizer()` SQL function is enabled.
+    ///
+    /// See [`set_fts3_tokenizer_enabled`][Self::set_fts3_tokenizer_enabled] for details.
+    pub fn is_fts3_tokenizer_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER)
+    }
+
+    /// Enable or disable direct writes to `sqlite_master`.
+    ///
+    /// When enabled, allows direct modification of the `sqlite_master` table,
+    /// which can corrupt the database if misused. Keep it disabled unless you
+    /// need to repair or modify the schema directly. Defensive mode
+    /// ([`set_defensive`][Self::set_defensive]) also prevents this.
+    ///
+    /// Requires SQLite 3.28.0 or later, otherwise returns an error.
+    pub fn set_writable_schema(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_WRITABLE_SCHEMA, enabled)
+    }
+
+    /// Check if direct writes to `sqlite_master` are enabled.
+    ///
+    /// See [`set_writable_schema`][Self::set_writable_schema] for details.
+    pub fn is_writable_schema(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_WRITABLE_SCHEMA)
+    }
+
+    /// Enable or disable ATTACH from creating new database files.
+    ///
+    /// When disabled, [`ATTACH`](https://www.sqlite.org/lang_attach.html) can only
+    /// open existing database files, not create new ones. Disable it where
+    /// database file creation should be restricted.
+    ///
+    /// Requires SQLite 3.49.0 or later, otherwise returns an error.
+    pub fn set_attach_create_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(raw::SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE, enabled)
+    }
+
+    /// Check if ATTACH can create new database files.
+    ///
+    /// See [`set_attach_create_enabled`][Self::set_attach_create_enabled] for details.
+    pub fn is_attach_create_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(raw::SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE)
+    }
+
+    /// Enable or disable ATTACH from opening databases in write mode.
+    ///
+    /// When disabled, all attached databases are opened as read-only. Disable it
+    /// to restrict write access to attached databases.
+    ///
+    /// Requires SQLite 3.49.0 or later, otherwise returns an error.
+    pub fn set_attach_write_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(raw::SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE, enabled)
+    }
+
+    /// Check if ATTACH can open databases in write mode.
+    ///
+    /// See [`set_attach_write_enabled`][Self::set_attach_write_enabled] for details.
+    pub fn is_attach_write_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(raw::SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE)
+    }
+
+    /// Attach the database file at `path` under `schema_name`.
+    ///
+    /// Runs [`ATTACH DATABASE ? AS ?`](https://www.sqlite.org/lang_attach.html) with
+    /// both operands bound as parameters, so no SQL string escaping is needed.
+    /// Diesel always opens connections with `SQLITE_OPEN_URI`, so a path beginning
+    /// with `file:` is interpreted as a URI exactly as it is in
+    /// [`SqliteConnection::establish`].
+    ///
+    /// A missing file is created as an empty database unless
+    /// [`set_attach_create_enabled(false)`][Self::set_attach_create_enabled] is set,
+    /// and [`set_attach_write_enabled(false)`][Self::set_attach_write_enabled] attaches
+    /// read-only. The attach count is bounded (10 by default). A transaction across the
+    /// main and an attached file is crash-atomic per file only under WAL.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.attach_database(":memory:", "aux")?;
+    /// conn.detach_database("aux")?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn attach_database(&mut self, path: &str, schema_name: &str) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+        AttachDatabase { path, schema_name }
+            .execute(self)
+            .map(|_| ())
+    }
+
+    /// Detach the database previously attached under `schema_name`.
+    ///
+    /// Runs [`DETACH DATABASE ?`](https://www.sqlite.org/lang_detach.html) with the
+    /// schema name bound as a parameter. Detaching a schema still in use fails with an
+    /// ordinary error.
+    pub fn detach_database(&mut self, schema_name: &str) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+        DetachDatabase { schema_name }.execute(self).map(|_| ())
+    }
+
+    /// Enable or disable trigger execution.
+    ///
+    /// When disabled, triggers will not fire for any DML operations.
+    ///
+    /// Requires SQLite 3.8.7 or later, otherwise returns an error.
+    pub fn set_triggers_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_TRIGGER, enabled)
+    }
+
+    /// Check if trigger execution is enabled.
+    ///
+    /// See [`set_triggers_enabled`][Self::set_triggers_enabled] for details.
+    pub fn are_triggers_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_TRIGGER)
+    }
+
+    /// Enable or disable view expansion.
+    ///
+    /// When disabled, queries against views will fail.
+    ///
+    /// Requires SQLite 3.30.0 or later, otherwise returns an error.
+    pub fn set_views_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_VIEW, enabled)
+    }
+
+    /// Check if view expansion is enabled.
+    ///
+    /// See [`set_views_enabled`][Self::set_views_enabled] for details.
+    pub fn are_views_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_VIEW)
+    }
+
+    /// Enable or disable foreign key constraint enforcement.
+    ///
+    /// This is equivalent to `PRAGMA foreign_keys = ON/OFF`.
+    ///
+    /// Requires SQLite 3.8.7 or later, otherwise returns an error.
+    pub fn set_foreign_keys_enabled(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FKEY, enabled)
+    }
+
+    /// Check if foreign key constraints are enabled.
+    ///
+    /// See [`set_foreign_keys_enabled`][Self::set_foreign_keys_enabled] for details.
+    pub fn are_foreign_keys_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FKEY)
+    }
+
+    /// Enable or disable double-quoted strings in DML statements.
+    ///
+    /// When enabled, double-quoted strings are interpreted as string literals
+    /// rather than identifiers, a legacy behavior that can cause issues. Disable
+    /// it for stricter SQL compliance.
+    ///
+    /// Requires SQLite 3.29.0 or later, otherwise returns an error.
+    pub fn set_double_quoted_strings_dml(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DML, enabled)
+    }
+
+    /// Check if double-quoted strings in DML are enabled.
+    ///
+    /// See [`set_double_quoted_strings_dml`][Self::set_double_quoted_strings_dml] for details.
+    pub fn are_double_quoted_strings_dml_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DML)
+    }
+
+    /// Enable or disable double-quoted strings in DDL statements.
+    ///
+    /// When enabled, double-quoted strings are interpreted as string literals
+    /// rather than identifiers, a legacy behavior that can cause issues. Disable
+    /// it for stricter SQL compliance.
+    ///
+    /// Requires SQLite 3.29.0 or later, otherwise returns an error.
+    pub fn set_double_quoted_strings_ddl(&mut self, enabled: bool) -> QueryResult<()> {
+        self.raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL, enabled)
+    }
+
+    /// Check if double-quoted strings in DDL are enabled.
+    ///
+    /// See [`set_double_quoted_strings_ddl`][Self::set_double_quoted_strings_ddl] for details.
+    pub fn are_double_quoted_strings_ddl_enabled(&self) -> QueryResult<bool> {
+        self.raw_connection
+            .get_db_config_bool(ffi::SQLITE_DBCONFIG_DQS_DDL)
+    }
+
+    /// Read the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::None);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn auto_vacuum(&mut self, schema: Option<&str>) -> QueryResult<AutoVacuumMode> {
+        use crate::query_dsl::RunQueryDsl;
+        let query: Pragma<'_, crate::sql_types::Integer> = Pragma::new("auto_vacuum", schema);
+        query.get_result(self)
+    }
+
+    /// Set the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`.
+    /// Changing from or to [`AutoVacuumMode::None`] only takes effect on a
+    /// database with no tables yet, or after a subsequent `VACUUM`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::Incremental);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn set_auto_vacuum(
+        &mut self,
+        schema: Option<&str>,
+        mode: AutoVacuumMode,
+    ) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+        // #[repr(i32)] guarantees the discriminant fits exactly in i32.
+        SetPragmaInt {
+            schema,
+            name: "auto_vacuum",
+            value: mode as i32,
+        }
+        .execute(self)
+        .map(|_| ())
+    }
+
+    /// Total number of pages in a database, via `PRAGMA page_count`.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`.
+    /// Multiply by the page size for the size the database accounts for.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// // An empty database occupies no pages until something is written.
+    /// assert_eq!(conn.page_count(None)?, 0);
+    /// conn.batch_execute("CREATE TABLE items (id INTEGER PRIMARY KEY)")?;
+    /// assert!(conn.page_count(None)? > 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn page_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
+        self.read_pragma_count("page_count", schema)
+    }
+
+    /// Unused pages on a database's freelist, via `PRAGMA freelist_count`.
+    ///
+    /// `schema` selects an attached database by name, `None` reads `main`. A
+    /// growing freelist is reclaimable space, freed by `VACUUM`.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// assert_eq!(conn.freelist_count(None)?, 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn freelist_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
+        self.read_pragma_count("freelist_count", schema)
+    }
+
+    fn read_pragma_count(
+        &mut self,
+        pragma: &'static str,
+        schema: Option<&str>,
+    ) -> QueryResult<i64> {
+        use crate::query_dsl::RunQueryDsl;
+
+        let query: Pragma<'_, crate::sql_types::BigInt> = Pragma::new(pragma, schema);
+        query.get_result(self)
+    }
+
+    /// Shrink a database by releasing freelist pages, without the full rewrite
+    /// [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`. `pages`
+    /// bounds how many pages are reclaimed. As SQLite specifies, `None` or a value
+    /// below one clears the whole freelist, as does a bound larger than it. Only
+    /// databases in [`AutoVacuumMode::Incremental`] have anything to reclaim, on any
+    /// other mode this succeeds and does nothing.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::sqlite::AutoVacuumMode;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+    /// // Reclaim at most 8 pages, then whatever is left.
+    /// conn.incremental_vacuum(None, Some(8))?;
+    /// conn.incremental_vacuum(None, None)?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn incremental_vacuum(
+        &mut self,
+        schema: Option<&str>,
+        pages: Option<u32>,
+    ) -> QueryResult<()> {
+        use crate::connection::SimpleConnection;
+        use crate::query_builder::QueryBuilder;
+        use crate::sqlite::SqliteQueryBuilder;
+
+        // SQLite frees one page per step of this statement, so it only empties the
+        // freelist when run to completion. `batch_execute` uses `sqlite3_exec`, which
+        // does that. A prepared statement would not: `StatementUse::run` steps once,
+        // which frees a single page and silently leaves the rest.
+        let mut query = SqliteQueryBuilder::new();
+        query.push_sql("PRAGMA ");
+        query.push_identifier(schema.unwrap_or("main"))?;
+        query.push_sql(".incremental_vacuum");
+        if let Some(pages) = pages {
+            query.push_sql("(");
+            query.push_sql(&pages.to_string());
+            query.push_sql(")");
+        }
+        self.batch_execute(&query.finish())
+    }
+
+    /// Rebuild a database, repacking it into the smallest space it can occupy.
+    ///
+    /// `schema` selects an attached database by name, `None` targets `main`.
+    ///
+    /// This cannot run inside a transaction, needs free space of up to twice the size
+    /// of the database while it runs, and renumbers the implicit `rowid` of any table
+    /// declared without an `INTEGER PRIMARY KEY`.
+    ///
+    /// Naming a schema requires SQLite 3.24.0 or later, otherwise returns an error.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.vacuum(None)?;
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn vacuum(&mut self, schema: Option<&str>) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+
+        Vacuum { schema, into: None }.execute(self).map(|_| ())
+    }
+
+    /// Write a vacuumed copy of a database to `path`, leaving the original untouched.
+    ///
+    /// This is SQLite's online backup: the copy is consistent, defragmented, and taken
+    /// without blocking readers. `schema` selects an attached database by name, `None`
+    /// copies `main`. The path is a bind parameter, so it needs no quoting.
+    ///
+    /// `path` may name a file that does not exist or one that is empty, but writing
+    /// over an existing database fails rather than replacing it.
+    ///
+    /// Requires SQLite 3.27.0 or later, otherwise returns an error.
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let backup = dir.path().join("backup.db");
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.vacuum_into(None, backup.to_str().unwrap())?;
+    /// # assert!(backup.exists());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn vacuum_into(&mut self, schema: Option<&str>, path: &str) -> QueryResult<()> {
+        use crate::query_dsl::RunQueryDsl;
+
+        Vacuum {
+            schema,
+            into: Some(path),
+        }
+        .execute(self)
+        .map(|_| ())
+    }
+
+    /// Checkpoint the [write-ahead log](https://www.sqlite.org/wal.html),
+    /// moving committed frames from the WAL file into the database file.
+    ///
+    /// `schema` selects one attached database by name. Unlike the other
+    /// maintenance helpers, `None` does not mean `main`: SQLite defines the
+    /// unqualified pragma to checkpoint every attached database. With
+    /// `None` and several attached databases the C API leaves the frame
+    /// counts undefined.
+    ///
+    /// A checkpoint stopped early by a reader or writer on another
+    /// connection is not an error: it sets
+    /// [`busy`](WalCheckpointOutcome::busy). On a database that is not in
+    /// WAL mode the call succeeds with both frame counts `None`, so it is
+    /// safe to issue unconditionally. Inside a transaction on its own
+    /// connection it fails with `SQLITE_LOCKED`.
+    ///
+    /// The mode argument requires SQLite 3.7.6 or later,
+    /// [`Truncate`](WalCheckpointMode::Truncate) requires 3.8.8 or later,
+    /// and [`Noop`](WalCheckpointMode::Noop) requires 3.51.0 or later.
+    /// Older versions do not report an error and treat an unrecognized
+    /// mode as [`Passive`](WalCheckpointMode::Passive).
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// use diesel::connection::SimpleConnection;
+    /// use diesel::sqlite::WalCheckpointMode;
+    /// # let dir = tempfile::tempdir().unwrap();
+    /// # let path = dir.path().join("app.db");
+    /// let conn = &mut SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+    /// conn.batch_execute("PRAGMA journal_mode = WAL")?;
+    /// conn.batch_execute("CREATE TABLE logs (line TEXT NOT NULL)")?;
+    ///
+    /// let outcome = conn.wal_checkpoint(None, WalCheckpointMode::Truncate)?;
+    /// assert!(!outcome.busy);
+    /// // The whole WAL was moved into the database file and the log truncated.
+    /// assert_eq!(outcome.log_frames, Some(0));
+    /// assert_eq!(outcome.checkpointed_frames, Some(0));
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn wal_checkpoint(
+        &mut self,
+        schema: Option<&str>,
+        mode: WalCheckpointMode,
+    ) -> QueryResult<WalCheckpointOutcome> {
+        use crate::query_dsl::RunQueryDsl;
+
+        let (busy, log_frames, checkpointed_frames) =
+            WalCheckpoint { schema, mode }.get_result::<(i32, i64, i64)>(self)?;
+        Ok(WalCheckpointOutcome {
+            busy: busy != 0,
+            // On a database not in WAL mode both counts come back as -1.
+            log_frames: (log_frames >= 0).then_some(log_frames),
+            checkpointed_frames: (checkpointed_frames >= 0).then_some(checkpointed_frames),
+        })
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -613,9 +1741,9 @@ impl SqliteConnection {
         functions::register::<Text, Integer, _, _, _>(
             &self.raw_connection,
             "diesel_manage_updated_at",
-            false,
+            SqliteFunctionBehavior::DIRECTONLY,
             |conn, table_name: String| {
-                conn.exec(&format!(
+                conn.exec(&alloc::format!(
                     include_str!("diesel_manage_updated_at.sql"),
                     table_name = table_name
                 ))
@@ -646,15 +1774,456 @@ fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
 }
 
+#[derive(QueryId)]
+struct AttachDatabase<'a> {
+    path: &'a str,
+    schema_name: &'a str,
+}
+
+impl QueryFragment<Sqlite> for AttachDatabase<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("ATTACH DATABASE ");
+        out.push_bind_param::<crate::sql_types::Text, _>(self.path)?;
+        out.push_sql(" AS ");
+        out.push_bind_param::<crate::sql_types::Text, _>(self.schema_name)?;
+        Ok(())
+    }
+}
+
+impl RunQueryDslSupport for AttachDatabase<'_> {}
+
+#[derive(QueryId)]
+struct DetachDatabase<'a> {
+    schema_name: &'a str,
+}
+
+impl QueryFragment<Sqlite> for DetachDatabase<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("DETACH DATABASE ");
+        out.push_bind_param::<crate::sql_types::Text, _>(self.schema_name)?;
+        Ok(())
+    }
+}
+
+impl RunQueryDslSupport for DetachDatabase<'_> {}
+
+// A `PRAGMA` accepts no bind parameters, neither for the schema it targets nor for the
+// value it assigns, so the schema is rendered as a quoted identifier by the query
+// builder. `name` is always a constant chosen here, never caller data.
+struct Pragma<'a, ST> {
+    schema: Option<&'a str>,
+    name: &'static str,
+    sql_type: PhantomData<ST>,
+}
+
+impl<'a, ST> Pragma<'a, ST> {
+    fn new(name: &'static str, schema: Option<&'a str>) -> Self {
+        Pragma {
+            schema,
+            name,
+            sql_type: PhantomData,
+        }
+    }
+}
+
+impl<ST> QueryFragment<Sqlite> for Pragma<'_, ST> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        out.push_sql(".");
+        out.push_sql(self.name);
+        Ok(())
+    }
+}
+
+// The schema name is runtime data, so the rendered SQL is not determined by the type.
+impl<ST> QueryId for Pragma<'_, ST> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<ST> Query for Pragma<'_, ST> {
+    type SqlType = ST;
+}
+
+impl<ST> RunQueryDslSupport for Pragma<'_, ST> {}
+
+// `PRAGMA name = value` takes no bind parameter for the value either, so the integer is
+// rendered as a literal.
+struct SetPragmaInt<'a> {
+    schema: Option<&'a str>,
+    name: &'static str,
+    value: i32,
+}
+
+impl QueryFragment<Sqlite> for SetPragmaInt<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        out.push_sql(".");
+        out.push_sql(self.name);
+        out.push_sql(" = ");
+        out.push_sql(&self.value.to_string());
+        Ok(())
+    }
+}
+
+impl QueryId for SetPragmaInt<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for SetPragmaInt<'_> {}
+
+// `VACUUM` names its schema as an identifier, so that operand is quoted by the query
+// builder, while the `INTO` destination is an expression and binds normally.
+struct Vacuum<'a> {
+    schema: Option<&'a str>,
+    into: Option<&'a str>,
+}
+
+impl QueryFragment<Sqlite> for Vacuum<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("VACUUM ");
+        out.push_identifier(self.schema.unwrap_or("main"))?;
+        if let Some(into) = self.into {
+            out.push_sql(" INTO ");
+            out.push_bind_param::<crate::sql_types::Text, _>(into)?;
+        }
+        Ok(())
+    }
+}
+
+// The schema name is runtime data, so the rendered SQL is not determined by the type.
+impl QueryId for Vacuum<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl RunQueryDslSupport for Vacuum<'_> {}
+
+// Like `Pragma`, no operand can be a bind parameter. Unlike `Pragma`, a
+// `None` schema stays unqualified on purpose: the unqualified pragma
+// checkpoints every attached database, while a qualified one targets a
+// single schema. The whole checkpoint runs on the first step of the
+// statement and yields exactly one row, so a prepared statement works here
+// (unlike `incremental_vacuum`).
+struct WalCheckpoint<'a> {
+    schema: Option<&'a str>,
+    mode: WalCheckpointMode,
+}
+
+impl QueryFragment<Sqlite> for WalCheckpoint<'_> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        out.push_sql("PRAGMA ");
+        if let Some(schema) = self.schema {
+            out.push_identifier(schema)?;
+            out.push_sql(".");
+        }
+        out.push_sql(match self.mode {
+            WalCheckpointMode::Passive => "wal_checkpoint(PASSIVE)",
+            WalCheckpointMode::Full => "wal_checkpoint(FULL)",
+            WalCheckpointMode::Restart => "wal_checkpoint(RESTART)",
+            WalCheckpointMode::Truncate => "wal_checkpoint(TRUNCATE)",
+            WalCheckpointMode::Noop => "wal_checkpoint(NOOP)",
+        });
+        Ok(())
+    }
+}
+
+// The schema name and mode are runtime data, so the rendered SQL is not determined by the type.
+impl QueryId for WalCheckpoint<'_> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl Query for WalCheckpoint<'_> {
+    type SqlType = (
+        crate::sql_types::Integer,
+        crate::sql_types::BigInt,
+        crate::sql_types::BigInt,
+    );
+}
+
+impl RunQueryDslSupport for WalCheckpoint<'_> {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::{Integer, Text};
+    use crate::sqlite::SqliteFunctionBehavior;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_return_values() {
+        let connection = &mut connection();
+
+        // SAFETY: We only read connection status, which doesn't modify state.
+        let autocommit_status = unsafe {
+            connection.with_raw_connection(|raw_conn| ffi::sqlite3_get_autocommit(raw_conn))
+        };
+
+        // Outside a transaction, autocommit should be enabled (returns non-zero)
+        assert_ne!(autocommit_status, 0, "Expected autocommit to be enabled");
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_works_after_diesel_operations() {
+        let connection = &mut connection();
+
+        // First, do some Diesel operations
+        crate::sql_query("CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)")
+            .execute(connection)
+            .unwrap();
+        crate::sql_query("INSERT INTO test_table (value) VALUES ('hello')")
+            .execute(connection)
+            .unwrap();
+
+        // SAFETY: We only read the last insert rowid, which is a read-only operation.
+        let last_rowid = unsafe {
+            connection.with_raw_connection(|raw_conn| ffi::sqlite3_last_insert_rowid(raw_conn))
+        };
+
+        assert_eq!(last_rowid, 1, "Last insert rowid should be 1");
+
+        // Verify Diesel still works after using raw connection
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM test_table")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_execute_raw_sql() {
+        let connection = &mut connection();
+
+        // Create a table using Diesel first
+        crate::sql_query("CREATE TABLE raw_test (id INTEGER PRIMARY KEY, name TEXT)")
+            .execute(connection)
+            .unwrap();
+
+        // SAFETY: We execute a simple INSERT via raw SQLite API.
+        // This modifies the database but in a way compatible with Diesel.
+        let result = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let sql = c"INSERT INTO raw_test (name) VALUES ('from_raw')";
+                let mut err_msg: *mut libc::c_char = core::ptr::null_mut();
+                let rc = ffi::sqlite3_exec(
+                    raw_conn,
+                    sql.as_ptr(),
+                    None,
+                    core::ptr::null_mut(),
+                    &mut err_msg,
+                );
+                if rc != ffi::SQLITE_OK && !err_msg.is_null() {
+                    ffi::sqlite3_free(err_msg as *mut libc::c_void);
+                }
+                rc
+            })
+        };
+
+        assert_eq!(result, ffi::SQLITE_OK, "Raw SQL execution should succeed");
+
+        // Verify the insert worked using Diesel
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM raw_test")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1);
+
+        let name: String = sql::<Text>("SELECT name FROM raw_test WHERE id = 1")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(name, "from_raw");
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_works_within_transaction() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE txn_test (id INTEGER PRIMARY KEY, value INTEGER)")
+            .execute(connection)
+            .unwrap();
+
+        connection
+            .transaction::<_, crate::result::Error, _>(|conn| {
+                crate::sql_query("INSERT INTO txn_test (value) VALUES (42)")
+                    .execute(conn)
+                    .unwrap();
+
+                // SAFETY: We only read the autocommit status inside a transaction.
+                let autocommit = unsafe {
+                    conn.with_raw_connection(|raw_conn| ffi::sqlite3_get_autocommit(raw_conn))
+                };
+
+                // Inside a transaction, autocommit should be disabled (returns 0)
+                assert_eq!(
+                    autocommit, 0,
+                    "Autocommit should be disabled inside transaction"
+                );
+
+                Ok(())
+            })
+            .unwrap();
+
+        // After transaction commits, autocommit should be re-enabled
+        let autocommit = unsafe {
+            connection.with_raw_connection(|raw_conn| ffi::sqlite3_get_autocommit(raw_conn))
+        };
+        assert_ne!(
+            autocommit, 0,
+            "Autocommit should be enabled after transaction"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_read_database_filename() {
+        let connection = &mut connection();
+
+        // SAFETY: We only read the database filename, which is a read-only operation.
+        let filename = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let db_name = c"main";
+                let filename_ptr = ffi::sqlite3_db_filename(raw_conn, db_name.as_ptr());
+                if filename_ptr.is_null() {
+                    None
+                } else {
+                    // For :memory: databases, this might return empty string or special value
+                    let cstr = core::ffi::CStr::from_ptr(filename_ptr);
+                    Some(cstr.to_string_lossy().into_owned())
+                }
+            })
+        };
+
+        // For in-memory databases, sqlite3_db_filename returns a non-null pointer
+        // to an empty string
+        assert_eq!(
+            filename,
+            Some(String::new()),
+            "In-memory database filename should be an empty string"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_changes_count() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE changes_test (id INTEGER PRIMARY KEY, value INTEGER)")
+            .execute(connection)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO changes_test (value) VALUES (1), (2), (3)")
+            .execute(connection)
+            .unwrap();
+
+        // Update all rows using raw connection
+        let changes = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let sql = c"UPDATE changes_test SET value = value + 10";
+                let mut err_msg: *mut libc::c_char = core::ptr::null_mut();
+                let rc = ffi::sqlite3_exec(
+                    raw_conn,
+                    sql.as_ptr(),
+                    None,
+                    core::ptr::null_mut(),
+                    &mut err_msg,
+                );
+                if rc != ffi::SQLITE_OK && !err_msg.is_null() {
+                    ffi::sqlite3_free(err_msg as *mut libc::c_void);
+                    return -1;
+                }
+                ffi::sqlite3_changes(raw_conn)
+            })
+        };
+
+        assert_eq!(changes, 3, "Should have updated 3 rows");
+
+        // Verify the updates using Diesel
+        let values: Vec<i32> = sql::<Integer>("SELECT value FROM changes_test ORDER BY id")
+            .load(connection)
+            .unwrap();
+        assert_eq!(values, vec![11, 12, 13]);
+    }
+
+    // catch_unwind is not available in WASM (panic = "abort")
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn with_raw_connection_recovers_after_panic() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE panic_test (id INTEGER PRIMARY KEY, value TEXT)")
+            .execute(connection)
+            .unwrap();
+
+        // Panic inside the callback
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
+            connection.with_raw_connection(|_raw_conn| {
+                panic!("intentional panic inside with_raw_connection");
+            })
+        }));
+        assert!(result.is_err(), "Should have caught the panic");
+
+        // Connection should still be usable after the panic
+        crate::sql_query("INSERT INTO panic_test (value) VALUES ('after_panic')")
+            .execute(connection)
+            .unwrap();
+
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM panic_test")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1, "Connection should work after panic in callback");
+    }
+
+    // Filesystem access is not available in WASM
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn with_raw_connection_can_read_file_database_filename() {
+        let dir = std::env::temp_dir().join("diesel_test_filename.db");
+        let db_path = dir.to_str().unwrap();
+
+        // Clean up from any previous run
+        let _ = std::fs::remove_file(db_path);
+
+        let connection = &mut SqliteConnection::establish(db_path).unwrap();
+
+        // SAFETY: We only read the database filename, which is a read-only operation.
+        let filename = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let db_name = c"main";
+                let filename_ptr = ffi::sqlite3_db_filename(raw_conn, db_name.as_ptr());
+                if filename_ptr.is_null() {
+                    None
+                } else {
+                    let cstr = core::ffi::CStr::from_ptr(filename_ptr);
+                    Some(cstr.to_string_lossy().into_owned())
+                }
+            })
+        };
+
+        let filename = filename.expect("File-based database should have a filename");
+        assert!(
+            filename.contains("diesel_test_filename.db"),
+            "Filename should contain the database name, got: {filename}"
+        );
+
+        // Clean up
+        let _ = std::fs::remove_file(db_path);
     }
 
     #[declare_sql_function]
@@ -781,11 +2350,14 @@ mod tests {
         assert!(serialized.try_as_slice().unwrap().is_empty());
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown"))
+    ))]
     #[allow(unsafe_code)]
     mod sqlite_serialize_oom {
         use super::super::oom_test_support::{panic_message, run_in_child, with_heap_limit};
-        use super::super::{ffi, SerializedDatabase};
+        use super::super::{SerializedDatabase, ffi};
         use crate::connection::{Connection, SimpleConnection};
         use crate::sqlite::SqliteConnection;
 
@@ -977,7 +2549,11 @@ mod tests {
             .execute(connection)
             .unwrap();
 
-        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl_with_behavior::<MySum, _>(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+        )
+        .unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -996,7 +2572,11 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl_with_behavior::<MySum, _>(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+        )
+        .unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -1063,7 +2643,11 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
+        range_max_utils::register_impl_with_behavior::<RangeMax<i32>, _, _, _>(
+            connection,
+            SqliteFunctionBehavior::DETERMINISTIC,
+        )
+        .unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
             .get_result::<Option<i32>>(connection)
@@ -1222,6 +2806,247 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    fn last_insert_rowid_returns_none_on_fresh_connection() {
+        let conn = &mut connection();
+        assert_eq!(conn.last_insert_rowid(), None);
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_returns_rowid_after_insert() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO li_test (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+
+        crate::sql_query("INSERT INTO li_test (val) VALUES ('b')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(2));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_unchanged_after_failed_insert() {
+        let conn = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE li_test2 (id INTEGER PRIMARY KEY, val TEXT NOT NULL UNIQUE)",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::sql_query("INSERT INTO li_test2 (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        let rowid = conn.last_insert_rowid();
+        assert_eq!(rowid, NonZeroI64::new(1));
+
+        // This should fail due to UNIQUE constraint
+        let result = crate::sql_query("INSERT INTO li_test2 (val) VALUES ('a')").execute(conn);
+        assert!(result.is_err());
+
+        // rowid should be unchanged
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_with_explicit_rowid() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test3 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO li_test3 (id, val) VALUES (42, 'a')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(42));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_unchanged_after_delete_and_update() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test4 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO li_test4 (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        let rowid = conn.last_insert_rowid();
+        assert_eq!(rowid, NonZeroI64::new(1));
+
+        crate::sql_query("UPDATE li_test4 SET val = 'b' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+
+        crate::sql_query("DELETE FROM li_test4 WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+    }
+
+    #[diesel_test_helper::test]
+    fn read_bytes_from_blob() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+                data2 -> Blob,
+            }
+        }
+
+        use std::io::Read;
+
+        let conn = &mut connection();
+
+        let _ =
+            crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB, data2 BLOB)")
+                .execute(conn);
+
+        let _ = crate::sql_query(
+            "INSERT INTO blobs (data, data2) VALUES ('abc', 'def'), ('123', '456')",
+        )
+        .execute(conn);
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        let mut buf = vec![];
+        data.read_to_end(&mut buf).unwrap();
+
+        assert_eq!(buf, b"abc");
+
+        let mut data2 = conn.get_read_only_blob(blobs::data2, 1).unwrap();
+        let mut buf = vec![];
+        data2.read_to_end(&mut buf).unwrap();
+
+        assert_eq!(buf, b"def");
+    }
+
+    #[diesel_test_helper::test]
+    fn read_seek_bytes() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::Read;
+        use std::io::Seek;
+        use std::io::SeekFrom;
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abcdefghi')").execute(conn);
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek one forward
+        assert_eq!(data.seek(SeekFrom::Current(1)).unwrap(), 2);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"c");
+
+        // Seek back to start
+        assert_eq!(data.seek(SeekFrom::Start(0)).unwrap(), 0);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek before start
+        assert_eq!(data.seek(SeekFrom::Current(-10)).unwrap(), 0);
+
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 1);
+        assert_eq!(&buf, b"a");
+
+        // Seek after end
+        data.seek(SeekFrom::Current(100)).unwrap();
+
+        // Now we don't get any bytes back
+        let mut buf = [0; 1];
+        assert_eq!(data.read(&mut buf).unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn use_conn_after_blob_drop() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
+
+        let data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        drop(data);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('def')").execute(conn);
+    }
+
+    #[diesel_test_helper::test]
+    fn blob_transaction() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::Read;
+
+        let conn = &mut connection();
+
+        let _ = crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn);
+
+        let _ = crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')").execute(conn);
+
+        {
+            let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+            let mut buf = vec![];
+            data.read_to_end(&mut buf).unwrap();
+            assert_eq!(buf, b"abc");
+        }
+
+        let res = conn.exclusive_transaction(|conn| {
+            crate::sql_query("UPDATE blobs SET data = 'def' WHERE id = 1").execute(conn)?;
+
+            let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+            let mut buf = vec![];
+            data.read_to_end(&mut buf).unwrap();
+            assert_eq!(buf, b"def");
+
+            Result::<(), _>::Err(Error::RollbackTransaction)
+        });
+
+        assert_eq!(res.unwrap_err(), Error::RollbackTransaction);
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        let mut buf = vec![];
+        data.read_to_end(&mut buf).unwrap();
+        assert_eq!(buf, b"abc");
+    }
+
+    #[diesel_test_helper::test]
     fn aggregate_function_works_with_aligned_data() {
         #[derive(Debug, Default)]
         #[repr(align(64))]
@@ -1337,5 +3162,1892 @@ mod tests {
             .load::<(Option<i32>, Option<String>)>(&mut conn)
             .unwrap();
         assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_returns_previous_value() {
+        let mut conn = connection();
+        let original = conn.get_limit(SqliteLimit::SqlLength);
+
+        // Setting a new value returns the old one, and a second set returns the
+        // value installed by the first.
+        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 1024), original);
+        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 2048), 1024);
+        assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 2048);
+    }
+
+    #[diesel_test_helper::test]
+    fn get_limit_does_not_mutate() {
+        let conn = connection();
+        let first = conn.get_limit(SqliteLimit::ExprDepth);
+        // Querying is implemented by passing -1 to sqlite3_limit, which must
+        // leave the limit unchanged.
+        assert!(first > 0);
+        assert_eq!(conn.get_limit(SqliteLimit::ExprDepth), first);
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_length() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::Length, 100);
+
+        assert!(
+            crate::sql_query("SELECT length(randomblob(50))")
+                .execute(&mut conn)
+                .is_ok()
+        );
+        // A 500-byte blob exceeds the 100-byte row/value limit ("string or blob too big").
+        assert!(
+            crate::sql_query("SELECT length(randomblob(500))")
+                .execute(&mut conn)
+                .is_err()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_column_count() {
+        // A wide result set runs under the default column limit but fails once the limit is
+        // lowered below its column count ("too many columns in result set").
+        let wide = format!(
+            "SELECT {}",
+            (1..=30)
+                .map(|i| i.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+
+        let mut unconstrained = connection();
+        assert!(crate::sql_query(&wide).execute(&mut unconstrained).is_ok());
+
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::ColumnCount, 10);
+        assert!(crate::sql_query(&wide).execute(&mut conn).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_expr_depth() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::ExprDepth, 5);
+
+        assert!(crate::sql_query("SELECT 1+1").execute(&mut conn).is_ok());
+        // A 40-deep addition tree exceeds the parse-tree depth of five.
+        let deep = format!("SELECT {}1", "1+".repeat(40));
+        assert!(crate::sql_query(&deep).execute(&mut conn).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_compound_select() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::CompoundSelect, 2);
+
+        assert!(
+            crate::sql_query("SELECT 1 UNION SELECT 2")
+                .execute(&mut conn)
+                .is_ok()
+        );
+        // Five UNION terms exceed the limit of two ("too many terms in compound SELECT").
+        assert!(
+            crate::sql_query(
+                "SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5"
+            )
+            .execute(&mut conn)
+            .is_err()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_vdbe_op() {
+        // The same heavy statement runs under the default opcode budget but fails once that
+        // budget is restricted to a tiny value (reported as SQLITE_NOMEM).
+        let heavy = "SELECT count(*) FROM sqlite_master a, sqlite_master b, sqlite_master c";
+
+        let mut unconstrained = connection();
+        assert!(crate::sql_query(heavy).execute(&mut unconstrained).is_ok());
+
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::VdbeOp, 5);
+        assert!(crate::sql_query(heavy).execute(&mut conn).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_function_arg() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::FunctionArg, 3);
+
+        assert!(
+            crate::sql_query("SELECT max(1, 2, 3)")
+                .execute(&mut conn)
+                .is_ok()
+        );
+        // Eight arguments exceed the limit of three ("too many arguments on function max").
+        assert!(
+            crate::sql_query("SELECT max(1, 2, 3, 4, 5, 6, 7, 8)")
+                .execute(&mut conn)
+                .is_err()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_attached() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::Attached, 0);
+
+        // With zero attachments allowed, any ATTACH is rejected ("too many attached databases").
+        assert!(
+            crate::sql_query("ATTACH DATABASE ':memory:' AS aux_db")
+                .execute(&mut conn)
+                .is_err()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_variable_number() {
+        let mut conn = connection();
+        // The published default sits below the bundled ceiling, so it is applied verbatim and
+        // acts as the boundary: a parameter index at the limit is accepted, one past it is
+        // rejected ("variable number must be between ?1 and ?N").
+        conn.set_limit(
+            SqliteLimit::VariableNumber,
+            SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT,
+        );
+        let at_limit = format!("SELECT ?{}", SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT);
+        let past_limit = format!(
+            "SELECT ?{}",
+            SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT as i64 + 1
+        );
+        assert!(crate::sql_query(&at_limit).execute(&mut conn).is_ok());
+        assert!(crate::sql_query(&past_limit).execute(&mut conn).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_trigger_depth() {
+        use crate::connection::SimpleConnection;
+
+        // A recursive trigger that terminates on its own at x = 100.
+        let setup = "PRAGMA recursive_triggers = ON;\
+             CREATE TABLE recur (x INTEGER);\
+             CREATE TRIGGER recur_tr AFTER INSERT ON recur WHEN NEW.x < 100 \
+             BEGIN INSERT INTO recur VALUES (NEW.x + 1); END;";
+
+        // Under the default depth the recursion completes.
+        let mut unconstrained = connection();
+        unconstrained.batch_execute(setup).unwrap();
+        assert!(
+            crate::sql_query("INSERT INTO recur VALUES (1)")
+                .execute(&mut unconstrained)
+                .is_ok()
+        );
+
+        // A tiny depth limit is hit before the recursion can terminate
+        // ("too many levels of trigger recursion").
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::TriggerDepth, 3);
+        conn.batch_execute(setup).unwrap();
+        assert!(
+            crate::sql_query("INSERT INTO recur VALUES (1)")
+                .execute(&mut conn)
+                .is_err()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn worker_threads_limit_has_no_runtime_error_path() {
+        // Unlike the other categories, WorkerThreads only caps the number of auxiliary sort
+        // threads a statement may start. Lowering it never raises an error, it only affects
+        // performance. There is therefore no enforcement failure to assert, only that the value
+        // is applied and ordinary queries keep working.
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::WorkerThreads, 0);
+        assert_eq!(conn.get_limit(SqliteLimit::WorkerThreads), 0);
+        assert!(crate::sql_query("SELECT 1").execute(&mut conn).is_ok());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_sql_length() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::SqlLength, 20);
+
+        // A statement longer than 20 bytes is rejected by SQLite.
+        let result =
+            crate::sql_query("SELECT * FROM sqlite_master WHERE type = 'table'").execute(&mut conn);
+        assert!(result.is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_enforces_like_pattern_length() {
+        let mut conn = connection();
+        conn.set_limit(SqliteLimit::LikePatternLength, 100);
+
+        assert!(
+            crate::sql_query("SELECT 'test' LIKE 'te%'")
+                .execute(&mut conn)
+                .is_ok()
+        );
+
+        let long_pattern = "%".repeat(200);
+        let query = format!("SELECT 'test' LIKE '{long_pattern}'");
+        assert!(crate::sql_query(&query).execute(&mut conn).is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn set_limit_clamps_above_compile_time_maximum() {
+        let mut conn = connection();
+        // SQLite clamps a requested value to its hard compile-time ceiling
+        // rather than accepting it verbatim.
+        conn.set_limit(SqliteLimit::Length, i32::MAX);
+        let clamped = conn.get_limit(SqliteLimit::Length);
+        assert!(clamped > 0 && clamped < i32::MAX);
+    }
+
+    #[diesel_test_helper::test]
+    fn set_recommended_security_limits_applies_documented_table() {
+        let mut conn = connection();
+        conn.set_recommended_security_limits();
+
+        assert_eq!(conn.get_limit(SqliteLimit::Length), 1_000_000);
+        assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 100_000);
+        assert_eq!(conn.get_limit(SqliteLimit::ColumnCount), 100);
+        assert_eq!(conn.get_limit(SqliteLimit::ExprDepth), 10);
+        assert_eq!(conn.get_limit(SqliteLimit::CompoundSelect), 3);
+        assert_eq!(conn.get_limit(SqliteLimit::VdbeOp), 25_000);
+        assert_eq!(conn.get_limit(SqliteLimit::FunctionArg), 8);
+        assert_eq!(conn.get_limit(SqliteLimit::Attached), 0);
+        assert_eq!(conn.get_limit(SqliteLimit::LikePatternLength), 50);
+        assert_eq!(conn.get_limit(SqliteLimit::VariableNumber), 10);
+        assert_eq!(conn.get_limit(SqliteLimit::TriggerDepth), 10);
+    }
+
+    #[diesel_test_helper::test]
+    fn safe_limit_constants_do_not_exceed_defaults() {
+        // The hardened value for each category is a tightening of SQLite's published default, so
+        // it must never be larger. This is asserted instead of comparing the `DEFAULT_*`
+        // constants to a fresh connection, because the runtime default of categories such as
+        // `FunctionArg` and `VariableNumber` is build-dependent (the bundled libsqlite3-sys
+        // raises several of them), while these published constants are fixed.
+        let pairs = [
+            (
+                SqliteLimit::SAFE_LENGTH_LIMIT,
+                SqliteLimit::DEFAULT_LENGTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_SQL_LENGTH_LIMIT,
+                SqliteLimit::DEFAULT_SQL_LENGTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_COLUMN_COUNT_LIMIT,
+                SqliteLimit::DEFAULT_COLUMN_COUNT_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_EXPR_DEPTH_LIMIT,
+                SqliteLimit::DEFAULT_EXPR_DEPTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_COMPOUND_SELECT_LIMIT,
+                SqliteLimit::DEFAULT_COMPOUND_SELECT_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_VDBE_OP_LIMIT,
+                SqliteLimit::DEFAULT_VDBE_OP_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_FUNCTION_ARG_LIMIT,
+                SqliteLimit::DEFAULT_FUNCTION_ARG_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_ATTACHED_LIMIT,
+                SqliteLimit::DEFAULT_ATTACHED_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_LIKE_PATTERN_LENGTH_LIMIT,
+                SqliteLimit::DEFAULT_LIKE_PATTERN_LENGTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_VARIABLE_NUMBER_LIMIT,
+                SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_TRIGGER_DEPTH_LIMIT,
+                SqliteLimit::DEFAULT_TRIGGER_DEPTH_LIMIT,
+            ),
+            (
+                SqliteLimit::SAFE_WORKER_THREADS_LIMIT,
+                SqliteLimit::DEFAULT_WORKER_THREADS_LIMIT,
+            ),
+        ];
+        for (safe, default) in pairs {
+            assert!(
+                safe <= default,
+                "safe value {safe} exceeds default {default}"
+            );
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn safe_limit_constants_match_recommended_setter() {
+        let mut conn = connection();
+        conn.set_recommended_security_limits();
+
+        assert_eq!(
+            conn.get_limit(SqliteLimit::Length),
+            SqliteLimit::SAFE_LENGTH_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::SqlLength),
+            SqliteLimit::SAFE_SQL_LENGTH_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::ColumnCount),
+            SqliteLimit::SAFE_COLUMN_COUNT_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::ExprDepth),
+            SqliteLimit::SAFE_EXPR_DEPTH_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::CompoundSelect),
+            SqliteLimit::SAFE_COMPOUND_SELECT_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::VdbeOp),
+            SqliteLimit::SAFE_VDBE_OP_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::FunctionArg),
+            SqliteLimit::SAFE_FUNCTION_ARG_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::Attached),
+            SqliteLimit::SAFE_ATTACHED_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::LikePatternLength),
+            SqliteLimit::SAFE_LIKE_PATTERN_LENGTH_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::VariableNumber),
+            SqliteLimit::SAFE_VARIABLE_NUMBER_LIMIT
+        );
+        assert_eq!(
+            conn.get_limit(SqliteLimit::TriggerDepth),
+            SqliteLimit::SAFE_TRIGGER_DEPTH_LIMIT
+        );
+        // The recommended setter leaves `WorkerThreads` untouched because its default is already
+        // safe, so assert that the documented safe value matches what the connection reports.
+        assert_eq!(
+            conn.get_limit(SqliteLimit::WorkerThreads),
+            SqliteLimit::SAFE_WORKER_THREADS_LIMIT
+        );
+    }
+
+    // ---- db_config tests ----
+
+    #[diesel_test_helper::test]
+    fn db_config_defensive_roundtrip() {
+        let conn = &mut connection();
+        conn.set_defensive(true).unwrap();
+        assert!(conn.is_defensive().unwrap());
+        conn.set_defensive(false).unwrap();
+        assert!(!conn.is_defensive().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_trusted_schema_roundtrip() {
+        let conn = &mut connection();
+        conn.set_trusted_schema(false).unwrap();
+        assert!(!conn.is_trusted_schema().unwrap());
+        conn.set_trusted_schema(true).unwrap();
+        assert!(conn.is_trusted_schema().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_with_load_extension_enabled_scopes_the_flag() {
+        let conn = &mut connection();
+        conn.with_load_extension_enabled(|conn| {
+            // Enabled for the duration of the closure.
+            assert!(conn.is_load_extension_enabled().unwrap());
+            QueryResult::Ok(())
+        })
+        .unwrap();
+        // Disabled again afterwards.
+        assert!(!conn.is_load_extension_enabled().unwrap());
+    }
+
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown"))
+    ))]
+    #[diesel_test_helper::test]
+    fn with_load_extension_enabled_disables_after_panic() {
+        let conn = &mut connection();
+        let outcome = std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| {
+            conn.with_load_extension_enabled(|_conn| -> QueryResult<()> {
+                panic!("boom inside closure");
+            })
+        }));
+        assert!(outcome.is_err(), "panic should propagate");
+        assert!(
+            !conn.is_load_extension_enabled().unwrap(),
+            "extension loading must be disabled again after a panic"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_triggers_roundtrip() {
+        let conn = &mut connection();
+        conn.set_triggers_enabled(false).unwrap();
+        assert!(!conn.are_triggers_enabled().unwrap());
+        conn.set_triggers_enabled(true).unwrap();
+        assert!(conn.are_triggers_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_views_roundtrip() {
+        let conn = &mut connection();
+        conn.set_views_enabled(false).unwrap();
+        assert!(!conn.are_views_enabled().unwrap());
+        conn.set_views_enabled(true).unwrap();
+        assert!(conn.are_views_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_foreign_keys_roundtrip() {
+        let conn = &mut connection();
+        conn.set_foreign_keys_enabled(true).unwrap();
+        assert!(conn.are_foreign_keys_enabled().unwrap());
+        conn.set_foreign_keys_enabled(false).unwrap();
+        assert!(!conn.are_foreign_keys_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_dqs_dml_roundtrip() {
+        let conn = &mut connection();
+        conn.set_double_quoted_strings_dml(false).unwrap();
+        assert!(!conn.are_double_quoted_strings_dml_enabled().unwrap());
+        conn.set_double_quoted_strings_dml(true).unwrap();
+        assert!(conn.are_double_quoted_strings_dml_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_dqs_ddl_roundtrip() {
+        let conn = &mut connection();
+        conn.set_double_quoted_strings_ddl(false).unwrap();
+        assert!(!conn.are_double_quoted_strings_ddl_enabled().unwrap());
+        conn.set_double_quoted_strings_ddl(true).unwrap();
+        assert!(conn.are_double_quoted_strings_ddl_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_fts3_tokenizer_roundtrip() {
+        let conn = &mut connection();
+        conn.set_fts3_tokenizer_enabled(false).unwrap();
+        assert!(!conn.is_fts3_tokenizer_enabled().unwrap());
+        conn.set_fts3_tokenizer_enabled(true).unwrap();
+        assert!(conn.is_fts3_tokenizer_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_writable_schema_roundtrip() {
+        let conn = &mut connection();
+        conn.set_writable_schema(false).unwrap();
+        assert!(!conn.is_writable_schema().unwrap());
+        conn.set_writable_schema(true).unwrap();
+        assert!(conn.is_writable_schema().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_attach_create_roundtrip() {
+        let conn = &mut connection();
+        // ATTACH_CREATE requires SQLite 3.46.0+; skip if unsupported
+        if conn.set_attach_create_enabled(false).is_err() {
+            return;
+        }
+        assert!(!conn.is_attach_create_enabled().unwrap());
+        conn.set_attach_create_enabled(true).unwrap();
+        assert!(conn.is_attach_create_enabled().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn db_config_attach_write_roundtrip() {
+        let conn = &mut connection();
+        // ATTACH_WRITE requires SQLite 3.46.0+; skip if unsupported
+        if conn.set_attach_write_enabled(false).is_err() {
+            return;
+        }
+        assert!(!conn.is_attach_write_enabled().unwrap());
+        conn.set_attach_write_enabled(true).unwrap();
+        assert!(conn.is_attach_write_enabled().unwrap());
+    }
+
+    // ---- behavioral db_config tests ----
+
+    #[diesel_test_helper::test]
+    fn defensive_mode_blocks_writable_schema() {
+        let conn = &mut connection();
+        conn.set_defensive(true).unwrap();
+        // In defensive mode, writable_schema should remain off even if we try to set it
+        let _ = crate::sql_query("PRAGMA writable_schema = ON").execute(conn);
+        assert!(!conn.is_writable_schema().unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn foreign_keys_enabled_enforces_constraints() {
+        let conn = &mut connection();
+        conn.set_foreign_keys_enabled(true).unwrap();
+
+        crate::sql_query("CREATE TABLE parent (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE child (id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES parent(id))",
+        )
+        .execute(conn)
+        .unwrap();
+
+        // Insert a child row with no matching parent — should fail with FK enabled
+        let result =
+            crate::sql_query("INSERT INTO child (id, parent_id) VALUES (1, 999)").execute(conn);
+        assert!(result.is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn views_disabled_blocks_view_queries() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE base (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO base (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("CREATE VIEW base_view AS SELECT id FROM base")
+            .execute(conn)
+            .unwrap();
+
+        // Enabled (default): the view can be queried.
+        conn.set_views_enabled(true).unwrap();
+        assert!(
+            crate::sql_query("SELECT id FROM base_view")
+                .execute(conn)
+                .is_ok()
+        );
+
+        // Disabled: queries that reference the view fail.
+        conn.set_views_enabled(false).unwrap();
+        assert!(
+            crate::sql_query("SELECT id FROM base_view")
+                .execute(conn)
+                .is_err()
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn triggers_disabled_prevents_firing() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE source (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("CREATE TABLE trigger_log (n INTEGER)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("CREATE TRIGGER log_insert AFTER INSERT ON source BEGIN INSERT INTO trigger_log (n) VALUES (1); END")
+            .execute(conn)
+            .unwrap();
+
+        // Disabled: inserting into `source` must not fire the trigger.
+        conn.set_triggers_enabled(false).unwrap();
+        crate::sql_query("INSERT INTO source (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM trigger_log")
+            .get_result(conn)
+            .unwrap();
+        assert_eq!(0, count, "trigger should not fire while disabled");
+
+        // Enabled: the trigger fires and writes one row.
+        conn.set_triggers_enabled(true).unwrap();
+        crate::sql_query("INSERT INTO source (id) VALUES (2)")
+            .execute(conn)
+            .unwrap();
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM trigger_log")
+            .get_result(conn)
+            .unwrap();
+        assert_eq!(1, count, "trigger should fire while enabled");
+    }
+
+    #[diesel_test_helper::test]
+    fn dqs_dml_controls_double_quoted_string_literals() {
+        let conn = &mut connection();
+
+        // Disabled: a double-quoted token in DML is parsed as an identifier, so a
+        // bare `"text"` that is not a column errors.
+        conn.set_double_quoted_strings_dml(false).unwrap();
+        let disabled = sql::<Text>(r#"SELECT "bare_token""#).get_result::<String>(conn);
+        assert!(disabled.is_err());
+
+        // Enabled: the same token is accepted as a string literal.
+        conn.set_double_quoted_strings_dml(true).unwrap();
+        let enabled = sql::<Text>(r#"SELECT "bare_token""#).get_result::<String>(conn);
+        assert_eq!(Ok("bare_token".to_owned()), enabled);
+    }
+
+    #[diesel_test_helper::test]
+    fn dqs_ddl_controls_double_quoted_string_literals() {
+        let conn = &mut connection();
+
+        // Disabled: a double-quoted token in a CHECK constraint is parsed as an
+        // identifier. As there is no such column, creating the table errors.
+        conn.set_double_quoted_strings_ddl(false).unwrap();
+        let disabled =
+            crate::sql_query(r#"CREATE TABLE dqs_off (name TEXT, CHECK (name <> "not_a_column"))"#)
+                .execute(conn);
+        assert!(disabled.is_err());
+
+        // Enabled: the same token is accepted as a string literal, so the CHECK
+        // constraint (and the table) are created successfully.
+        conn.set_double_quoted_strings_ddl(true).unwrap();
+        let enabled =
+            crate::sql_query(r#"CREATE TABLE dqs_on (name TEXT, CHECK (name <> "not_a_column"))"#)
+                .execute(conn);
+        assert!(enabled.is_ok());
+    }
+
+    #[diesel_test_helper::test]
+    fn writable_schema_controls_direct_sqlite_master_writes() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE protected (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+
+        let update =
+            "UPDATE sqlite_master SET sql = sql WHERE type = 'table' AND name = 'protected'";
+
+        // Disabled (default): a direct write to sqlite_master is rejected.
+        conn.set_writable_schema(false).unwrap();
+        assert!(crate::sql_query(update).execute(conn).is_err());
+
+        // Enabled: the same write is permitted.
+        conn.set_writable_schema(true).unwrap();
+        assert!(crate::sql_query(update).execute(conn).is_ok());
+    }
+
+    #[diesel_test_helper::test]
+    fn fts3_tokenizer_disabled_blocks_the_function() {
+        let conn = &mut connection();
+
+        // Enable first to detect whether FTS3 is compiled into this SQLite build.
+        conn.set_fts3_tokenizer_enabled(true).unwrap();
+        let enabled = sql::<crate::sql_types::Binary>("SELECT fts3_tokenizer('simple')")
+            .get_result::<Vec<u8>>(conn);
+        if enabled.is_err() {
+            // FTS3 is not available in this build, so there is nothing to assert.
+            return;
+        }
+
+        // Disabled: the `fts3_tokenizer()` SQL function is no longer callable.
+        conn.set_fts3_tokenizer_enabled(false).unwrap();
+        let disabled = sql::<crate::sql_types::Binary>("SELECT fts3_tokenizer('simple')")
+            .get_result::<Vec<u8>>(conn);
+        assert!(disabled.is_err());
+    }
+
+    // These ATTACH tests need a real filesystem (temp files), which is not
+    // available on the wasm target, where SQLite is in-memory only.
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn temp_db_path(name: &str) -> (tempfile::TempDir, std::path::PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(name);
+        (dir, path)
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_create_disabled_blocks_new_database_files() {
+        let conn = &mut connection();
+
+        // The ATTACH_CREATE option was added in SQLite 3.49.0; skip on older
+        // libraries (e.g. the system SQLite on the Ubuntu 24.04 CI runners).
+        if conn.set_attach_create_enabled(false).is_err() {
+            return;
+        }
+
+        let (_dir, path) = temp_db_path("create.db");
+
+        // Disabled: attaching a path that does not exist yet must fail.
+        assert!(
+            conn.attach_database(path.to_str().unwrap(), "aux_create")
+                .is_err()
+        );
+
+        // Enabled: the same ATTACH now creates and opens the file.
+        conn.set_attach_create_enabled(true).unwrap();
+        conn.attach_database(path.to_str().unwrap(), "aux_create")
+            .unwrap();
+        conn.detach_database("aux_create").unwrap();
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_write_disabled_opens_attached_databases_read_only() {
+        let conn = &mut connection();
+
+        // The ATTACH_WRITE option was added in SQLite 3.49.0; skip on older
+        // libraries (e.g. the system SQLite on the Ubuntu 24.04 CI runners).
+        // This guard also leaves ATTACH_WRITE disabled for the first check below.
+        if conn.set_attach_write_enabled(false).is_err() {
+            return;
+        }
+
+        // Seed an existing on-disk database with a table to write into.
+        let (_dir, path) = temp_db_path("write.db");
+        {
+            let mut seed = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+            crate::sql_query("CREATE TABLE t (id INTEGER)")
+                .execute(&mut seed)
+                .unwrap();
+        }
+
+        // Disabled: the attached database is opened read-only, so writes fail.
+        conn.attach_database(path.to_str().unwrap(), "aux_write")
+            .unwrap();
+        assert!(
+            crate::sql_query("INSERT INTO aux_write.t (id) VALUES (1)")
+                .execute(conn)
+                .is_err()
+        );
+        conn.detach_database("aux_write").unwrap();
+
+        // Enabled: the attached database is writable again.
+        conn.set_attach_write_enabled(true).unwrap();
+        conn.attach_database(path.to_str().unwrap(), "aux_write")
+            .unwrap();
+        crate::sql_query("INSERT INTO aux_write.t (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+        conn.detach_database("aux_write").unwrap();
+    }
+
+    // Tables used by the ATTACH round-trip tests below. Their CREATE statements are
+    // DDL (raw SQL), but rows and reads go through the typed query DSL.
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    table! {
+        attach_owners (id) {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    table! {
+        aux.attach_pets (id) {
+            id -> Integer,
+            owner_id -> Integer,
+            name -> Text,
+        }
+    }
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    allow_tables_to_appear_in_same_query!(attach_owners, attach_pets);
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    table! {
+        attach_marker (id) {
+            id -> Integer,
+        }
+    }
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    table! {
+        ro.readonly_marker (id) {
+            id -> Integer,
+        }
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_database_supports_cross_schema_join_then_detach() {
+        use crate::connection::SimpleConnection;
+
+        let conn = &mut connection();
+
+        conn.attach_database(":memory:", "aux").unwrap();
+
+        // Schema-qualified CREATE is DDL and stays raw SQL. The rows and the join
+        // below use the typed query DSL.
+        conn.batch_execute(
+            "CREATE TABLE attach_owners (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+             CREATE TABLE aux.attach_pets (id INTEGER PRIMARY KEY, owner_id INTEGER, name TEXT NOT NULL);",
+        )
+        .unwrap();
+
+        crate::insert_into(attach_owners::table)
+            .values(&[
+                (attach_owners::id.eq(1), attach_owners::name.eq("Sean")),
+                (attach_owners::id.eq(2), attach_owners::name.eq("Tess")),
+            ])
+            .execute(conn)
+            .unwrap();
+        crate::insert_into(attach_pets::table)
+            .values((
+                attach_pets::id.eq(1),
+                attach_pets::owner_id.eq(1),
+                attach_pets::name.eq("Ferris"),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        let pet_owner = attach_owners::table
+            .inner_join(attach_pets::table.on(attach_pets::owner_id.eq(attach_owners::id)))
+            .filter(attach_pets::name.eq("Ferris"))
+            .select(attach_owners::name)
+            .get_result::<String>(conn)
+            .unwrap();
+        assert_eq!(pet_owner, "Sean");
+
+        conn.detach_database("aux").unwrap();
+
+        // The attached schema is gone, so querying it now fails.
+        assert!(
+            attach_pets::table
+                .select(attach_pets::name)
+                .get_result::<String>(conn)
+                .is_err()
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_database_binds_path_verbatim_without_quoting() {
+        // A single quote in the path would break a hand-assembled ATTACH statement.
+        // Bound parameters take the path verbatim.
+        let (_dir, path) = temp_db_path("o'brien.db");
+
+        conn_attach_roundtrip(&path);
+
+        // The table created through ATTACH persisted to the literal file, so a
+        // fresh connection to that exact path can read it.
+        let mut direct = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+        let count = attach_marker::table
+            .count()
+            .get_result::<i64>(&mut direct)
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn conn_attach_roundtrip(path: &std::path::Path) {
+        use crate::connection::SimpleConnection;
+
+        let conn = &mut connection();
+        conn.attach_database(path.to_str().unwrap(), "verbatim")
+            .unwrap();
+        conn.batch_execute("CREATE TABLE verbatim.attach_marker (id INTEGER PRIMARY KEY)")
+            .unwrap();
+        conn.detach_database("verbatim").unwrap();
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_database_interprets_file_uri_query_parameters() {
+        // Seed a database with a row to read through the attached schema.
+        let (_dir, path) = temp_db_path("uri_seed.db");
+        {
+            let mut seed = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+            crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+                .execute(&mut seed)
+                .unwrap();
+            crate::sql_query("INSERT INTO t (id) VALUES (1)")
+                .execute(&mut seed)
+                .unwrap();
+        }
+
+        // Attach with a `file:` URI and `mode=ro`. If SQLite treated the bound
+        // string as a literal filename it would fail to find the file; interpreting
+        // it as a URI opens the real file in read-only mode instead.
+        let uri = format!("file:{}?mode=ro", path.display());
+        let conn = &mut connection();
+        conn.attach_database(&uri, "ro_schema").unwrap();
+
+        // Read from the attached schema: proves the ATTACH opened a real file.
+        let id: i64 = sql::<crate::sql_types::BigInt>("SELECT id FROM ro_schema.t")
+            .get_result(conn)
+            .unwrap();
+        assert_eq!(id, 1);
+
+        // Write fails: the URI `mode=ro` parameter took effect.
+        assert!(
+            crate::sql_query("INSERT INTO ro_schema.t (id) VALUES (2)")
+                .execute(conn)
+                .is_err()
+        );
+
+        conn.detach_database("ro_schema").unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn attach_and_detach_surface_errors_without_panicking() {
+        let conn = &mut connection();
+
+        // A duplicate schema name on attach is an error, not a panic.
+        conn.attach_database(":memory:", "dup").unwrap();
+        assert!(conn.attach_database(":memory:", "dup").is_err());
+        conn.detach_database("dup").unwrap();
+
+        // Detaching an unknown schema is likewise an error. Detaching one still in
+        // use cannot occur through the safe API: an in-flight iterator holds
+        // `&mut conn`, so no detach can overlap it.
+        assert!(conn.detach_database("never_attached").is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn attach_database_binds_schema_name_verbatim_without_identifier_quoting() {
+        use crate::connection::SimpleConnection;
+
+        let conn = &mut connection();
+
+        // A space or quote in the schema name would need identifier quoting in a
+        // hand-assembled statement. Bound as a parameter it is taken verbatim. The
+        // reference below stays raw SQL: such a schema is not expressible via `table!`.
+        let schema = "weird 'schema";
+        conn.attach_database(":memory:", schema).unwrap();
+
+        conn.batch_execute(
+            r#"CREATE TABLE "weird 'schema".t (id INTEGER PRIMARY KEY);
+             INSERT INTO "weird 'schema".t (id) VALUES (7);"#,
+        )
+        .unwrap();
+        let id = sql::<Integer>(r#"SELECT id FROM "weird 'schema".t"#)
+            .get_result::<i32>(conn)
+            .unwrap();
+        assert_eq!(id, 7);
+
+        conn.detach_database(schema).unwrap();
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn attach_database_honors_create_and_write_hardening_knobs() {
+        use crate::connection::SimpleConnection;
+
+        let conn = &mut connection();
+
+        // ATTACH_CREATE and ATTACH_WRITE need SQLite 3.49.0+, so skip on older libraries.
+        if conn.set_attach_create_enabled(false).is_err() {
+            return;
+        }
+
+        // Create disabled: attaching a nonexistent path fails and materializes nothing.
+        let (_dir_missing, missing) = temp_db_path("nocreate.db");
+        assert!(
+            conn.attach_database(missing.to_str().unwrap(), "missing")
+                .is_err()
+        );
+        assert!(!missing.exists());
+
+        // Write disabled: an existing database attaches read-only, so writes fail.
+        conn.set_attach_write_enabled(false).unwrap();
+        let (_dir_existing, existing) = temp_db_path("readonly.db");
+        {
+            let mut seed = SqliteConnection::establish(existing.to_str().unwrap()).unwrap();
+            seed.batch_execute("CREATE TABLE readonly_marker (id INTEGER)")
+                .unwrap();
+        }
+        conn.attach_database(existing.to_str().unwrap(), "ro")
+            .unwrap();
+        assert!(
+            crate::insert_into(readonly_marker::table)
+                .values(readonly_marker::id.eq(1))
+                .execute(conn)
+                .is_err()
+        );
+        conn.detach_database("ro").unwrap();
+    }
+
+    // ---- DIRECTONLY / INNOCUOUS function behavior tests ----
+
+    #[declare_sql_function]
+    extern "SQL" {
+        fn directonly_fn() -> Integer;
+        fn innocuous_fn() -> Integer;
+    }
+
+    #[diesel_test_helper::test]
+    fn directonly_function_blocked_from_view() {
+        let conn = &mut connection();
+
+        // Register a DIRECTONLY function
+        directonly_fn_utils::register_impl_with_behavior(
+            conn,
+            SqliteFunctionBehavior::DIRECTONLY,
+            || 42,
+        )
+        .unwrap();
+
+        // Direct call works
+        let result = crate::select(directonly_fn()).get_result::<i32>(conn);
+        assert_eq!(Ok(42), result);
+
+        // Create a view that calls the function
+        crate::sql_query("CREATE VIEW test_view AS SELECT directonly_fn() AS val")
+            .execute(conn)
+            .unwrap();
+
+        // Disable trusted schema so DIRECTONLY is enforced from schema objects
+        conn.set_trusted_schema(false).unwrap();
+
+        // Querying the view should fail because the function is DIRECTONLY
+        let result = crate::sql_query("SELECT val FROM test_view").execute(conn);
+        assert!(result.is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn innocuous_function_allowed_from_view_with_untrusted_schema() {
+        let conn = &mut connection();
+
+        // Register an INNOCUOUS function
+        innocuous_fn_utils::register_impl_with_behavior(
+            conn,
+            SqliteFunctionBehavior::DETERMINISTIC | SqliteFunctionBehavior::INNOCUOUS,
+            || 99,
+        )
+        .unwrap();
+
+        // Create a view that calls the function
+        crate::sql_query("CREATE VIEW innocuous_view AS SELECT innocuous_fn() AS val")
+            .execute(conn)
+            .unwrap();
+
+        // Disable trusted schema
+        conn.set_trusted_schema(false).unwrap();
+
+        // Querying the view should succeed because the function is INNOCUOUS
+        let result = crate::sql_query("SELECT val FROM innocuous_view").execute(conn);
+        assert!(result.is_ok());
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_all_modes_roundtrip_on_fresh_database() {
+        for mode in [
+            AutoVacuumMode::None,
+            AutoVacuumMode::Full,
+            AutoVacuumMode::Incremental,
+        ] {
+            let conn = &mut connection();
+            conn.set_auto_vacuum(None, mode).unwrap();
+            assert_eq!(mode, conn.auto_vacuum(None).unwrap());
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_incremental_sticks_across_schema_creation() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::Incremental, conn.auto_vacuum(None).unwrap());
+
+        crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            AutoVacuumMode::Incremental,
+            conn.auto_vacuum(None).unwrap(),
+            "the mode survives once the schema exists"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_change_from_none_requires_vacuum_on_populated_database() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO t (id) VALUES (1)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::None, conn.auto_vacuum(None).unwrap());
+
+        // On a populated database the switch away from `None` is silently
+        // deferred until a full rewrite.
+        conn.set_auto_vacuum(None, AutoVacuumMode::Full).unwrap();
+        assert_eq!(
+            AutoVacuumMode::None,
+            conn.auto_vacuum(None).unwrap(),
+            "the change does not take effect without a VACUUM"
+        );
+
+        crate::sql_query("VACUUM").execute(conn).unwrap();
+        assert_eq!(
+            AutoVacuumMode::Full,
+            conn.auto_vacuum(None).unwrap(),
+            "VACUUM rewrites the file and applies the mode"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        crate::sql_query("ATTACH DATABASE ':memory:' AS aux")
+            .execute(conn)
+            .unwrap();
+
+        conn.set_auto_vacuum(Some("aux"), AutoVacuumMode::Full)
+            .unwrap();
+        assert_eq!(AutoVacuumMode::Full, conn.auto_vacuum(Some("aux")).unwrap());
+        assert_eq!(
+            AutoVacuumMode::None,
+            conn.auto_vacuum(None).unwrap(),
+            "main keeps its own default"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn auto_vacuum_schema_name_with_double_quote_is_handled() {
+        let conn = &mut connection();
+        let schema = r#"we"ird"#;
+        crate::sql_query(alloc::format!(
+            r#"ATTACH DATABASE ':memory:' AS "{}""#,
+            schema.replace('"', "\"\"")
+        ))
+        .execute(conn)
+        .unwrap();
+
+        conn.set_auto_vacuum(Some(schema), AutoVacuumMode::Incremental)
+            .unwrap();
+        assert_eq!(
+            AutoVacuumMode::Incremental,
+            conn.auto_vacuum(Some(schema)).unwrap()
+        );
+    }
+
+    table! {
+        pragma_probe (id) {
+            id -> Integer,
+            payload -> Text,
+        }
+    }
+
+    table! {
+        aux.aux_pragma_probe (id) {
+            id -> Integer,
+            payload -> Text,
+        }
+    }
+
+    const PROBE_TABLE: &str =
+        "CREATE TABLE pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)";
+
+    const AUX_PROBE_TABLE: &str =
+        "CREATE TABLE aux.aux_pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)";
+
+    // Large enough to spill onto overflow pages, so the database outgrows a single page
+    // and leaves reclaimable pages behind once the row is deleted.
+    fn overflowing_payload() -> String {
+        "x".repeat(64 * 1024)
+    }
+
+    fn insert_overflowing_row(conn: &mut SqliteConnection) {
+        crate::insert_into(pragma_probe::table)
+            .values((
+                pragma_probe::id.eq(1),
+                pragma_probe::payload.eq(overflowing_payload()),
+            ))
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn page_count_is_positive_and_grows() {
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        let initial = conn.page_count(None).unwrap();
+        assert!(initial > 0, "an initialized database has at least one page");
+
+        insert_overflowing_row(conn);
+
+        assert!(
+            conn.page_count(None).unwrap() > initial,
+            "a row spanning overflow pages grows the page count"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn freelist_count_tracks_reclaimable_space() {
+        let conn = &mut connection();
+        assert_eq!(
+            0,
+            conn.freelist_count(None).unwrap(),
+            "a fresh database has an empty freelist"
+        );
+
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        insert_overflowing_row(conn);
+
+        crate::delete(pragma_probe::table).execute(conn).unwrap();
+        assert!(
+            conn.freelist_count(None).unwrap() > 0,
+            "deleting the row leaves reclaimable pages on the freelist"
+        );
+
+        // `VACUUM` has no query DSL equivalent.
+        crate::sql_query("VACUUM").execute(conn).unwrap();
+        assert_eq!(
+            0,
+            conn.freelist_count(None).unwrap(),
+            "VACUUM reclaims the freelist"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn schema_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        conn.attach_database(":memory:", "aux").unwrap();
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(1),
+                aux_pragma_probe::payload.eq(overflowing_payload()),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        let main_pages = conn.page_count(None).unwrap();
+        let aux_pages = conn.page_count(Some("aux")).unwrap();
+        assert!(
+            aux_pages > main_pages,
+            "the attached database holds the data, main stays small"
+        );
+        assert_eq!(
+            main_pages,
+            conn.page_count(Some("main")).unwrap(),
+            "an explicit main matches the default"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn schema_name_with_backtick_is_escaped() {
+        // The query builder quotes SQLite identifiers with backticks, so a backtick is
+        // the character that has to be doubled.
+        let conn = &mut connection();
+        let schema = "back`tick";
+        conn.attach_database(":memory:", schema).unwrap();
+        conn.batch_execute("CREATE TABLE `back``tick`.probe (id INTEGER PRIMARY KEY)")
+            .unwrap();
+
+        assert!(conn.page_count(Some(schema)).unwrap() > 0);
+        assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn unknown_schema_is_reported_as_an_error() {
+        let conn = &mut connection();
+
+        assert!(conn.page_count(Some("nope")).is_err());
+        assert!(conn.freelist_count(Some("nope")).is_err());
+    }
+
+    // Leaves many pages on the freelist, so `incremental_vacuum` has something to
+    // reclaim and a bound smaller than the freelist is meaningful.
+    fn grow_then_empty_freelist(conn: &mut SqliteConnection) {
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        let rows = (1..=200)
+            .map(|id| {
+                (
+                    pragma_probe::id.eq(id),
+                    pragma_probe::payload.eq("x".repeat(4000)),
+                )
+            })
+            .collect::<Vec<_>>();
+        crate::insert_into(pragma_probe::table)
+            .values(rows)
+            .execute(conn)
+            .unwrap();
+        crate::delete(pragma_probe::table).execute(conn).unwrap();
+    }
+
+    // The same, in an attached schema.
+    fn grow_then_empty_aux_freelist(conn: &mut SqliteConnection) {
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        let rows = (1..=200)
+            .map(|id| {
+                (
+                    aux_pragma_probe::id.eq(id),
+                    aux_pragma_probe::payload.eq("x".repeat(4000)),
+                )
+            })
+            .collect::<Vec<_>>();
+        crate::insert_into(aux_pragma_probe::table)
+            .values(rows)
+            .execute(conn)
+            .unwrap();
+        crate::delete(aux_pragma_probe::table)
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_clears_the_whole_freelist() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        grow_then_empty_freelist(conn);
+        assert!(
+            conn.freelist_count(None).unwrap() > 1,
+            "the deleted rows should leave many pages on the freelist"
+        );
+
+        conn.incremental_vacuum(None, None).unwrap();
+
+        // Stepping the pragma only once would free a single page and leave the rest, so
+        // this also pins that the statement is driven to completion.
+        assert_eq!(0, conn.freelist_count(None).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_reclaims_at_most_the_requested_pages() {
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        grow_then_empty_freelist(conn);
+        let before = conn.freelist_count(None).unwrap();
+        assert!(before > 10, "the bound has to be smaller than the freelist");
+
+        conn.incremental_vacuum(None, Some(10)).unwrap();
+
+        let after = conn.freelist_count(None).unwrap();
+        assert!(after >= before - 10, "at most ten pages may be reclaimed");
+        assert!(after < before, "some pages should have been reclaimed");
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_is_a_no_op_outside_incremental_mode() {
+        let conn = &mut connection();
+        assert_eq!(AutoVacuumMode::None, conn.auto_vacuum(None).unwrap());
+        grow_then_empty_freelist(conn);
+        let before = conn.freelist_count(None).unwrap();
+        assert!(before > 0);
+
+        conn.incremental_vacuum(None, None).unwrap();
+
+        assert_eq!(
+            before,
+            conn.freelist_count(None).unwrap(),
+            "a database that is not in incremental mode keeps its freelist"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        conn.attach_database(":memory:", "aux").unwrap();
+        conn.set_auto_vacuum(Some("aux"), AutoVacuumMode::Incremental)
+            .unwrap();
+
+        grow_then_empty_aux_freelist(conn);
+        assert!(conn.freelist_count(Some("aux")).unwrap() > 0);
+
+        conn.incremental_vacuum(Some("aux"), None).unwrap();
+
+        assert_eq!(0, conn.freelist_count(Some("aux")).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_escapes_a_backtick_in_the_schema_name() {
+        // An unquoted identifier would be a syntax error, and the wrong quoting would
+        // address a different database.
+        let conn = &mut connection();
+        let schema = "back`tick";
+        conn.attach_database(":memory:", schema).unwrap();
+
+        conn.incremental_vacuum(Some(schema), None).unwrap();
+
+        assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_of_zero_pages_clears_everything() {
+        // SQLite specifies that a bound below one clears the whole freelist.
+        let conn = &mut connection();
+        conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
+            .unwrap();
+        grow_then_empty_freelist(conn);
+        assert!(conn.freelist_count(None).unwrap() > 0);
+
+        conn.incremental_vacuum(None, Some(0)).unwrap();
+
+        assert_eq!(0, conn.freelist_count(None).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn incremental_vacuum_of_an_unknown_schema_is_an_error() {
+        let conn = &mut connection();
+
+        assert!(conn.incremental_vacuum(Some("nope"), None).is_err());
+    }
+
+    // Leaves the database holding one small row but occupying many pages, so a rebuild
+    // has something to reclaim.
+    fn fill_then_delete(conn: &mut SqliteConnection) {
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((
+                pragma_probe::id.eq(1),
+                pragma_probe::payload.eq("x".repeat(256 * 1024)),
+            ))
+            .execute(conn)
+            .unwrap();
+        crate::delete(pragma_probe::table).execute(conn).unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((pragma_probe::id.eq(2), pragma_probe::payload.eq("kept")))
+            .execute(conn)
+            .unwrap();
+    }
+
+    // The same, in an attached schema.
+    fn fill_then_delete_aux(conn: &mut SqliteConnection) {
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(1),
+                aux_pragma_probe::payload.eq("x".repeat(256 * 1024)),
+            ))
+            .execute(conn)
+            .unwrap();
+        crate::delete(aux_pragma_probe::table)
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_repacks_the_database() {
+        let conn = &mut connection();
+        fill_then_delete(conn);
+        let before = conn.page_count(None).unwrap();
+        assert!(before > 1);
+
+        conn.vacuum(None).unwrap();
+
+        assert!(
+            conn.page_count(None).unwrap() < before,
+            "rebuilding should release the pages the deleted row occupied"
+        );
+        assert_eq!(
+            1,
+            pragma_probe::table.count().get_result::<i64>(conn).unwrap(),
+            "the surviving row is still there"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_targets_the_named_attached_database() {
+        let conn = &mut connection();
+        conn.attach_database(":memory:", "aux").unwrap();
+        fill_then_delete_aux(conn);
+        let before = conn.page_count(Some("aux")).unwrap();
+        assert!(before > 1);
+
+        conn.vacuum(Some("aux")).unwrap();
+
+        assert!(conn.page_count(Some("aux")).unwrap() < before);
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_inside_a_transaction_is_an_error() {
+        use crate::connection::Connection;
+
+        let conn = &mut connection();
+        let result: QueryResult<()> = conn.transaction(|conn| conn.vacuum(None));
+
+        assert!(result.is_err());
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_writes_a_readable_copy_through_a_quoted_path() {
+        let dir = tempfile::tempdir().unwrap();
+        // A quote in the path would break a hand-assembled statement. It is a bind
+        // parameter, so it is taken verbatim.
+        let destination = dir.path().join("o'brien backup.db");
+
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((pragma_probe::id.eq(1), pragma_probe::payload.eq("copied")))
+            .execute(conn)
+            .unwrap();
+
+        conn.vacuum_into(None, destination.to_str().unwrap())
+            .unwrap();
+
+        let copy = &mut SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+        assert_eq!(
+            "copied",
+            pragma_probe::table
+                .select(pragma_probe::payload)
+                .get_result::<String>(copy)
+                .unwrap()
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_refuses_to_overwrite_an_existing_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let destination = dir.path().join("occupied.db");
+        {
+            let occupied = &mut SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+            occupied.batch_execute(PROBE_TABLE).unwrap();
+        }
+
+        let conn = &mut connection();
+        conn.batch_execute(PROBE_TABLE).unwrap();
+
+        assert!(
+            conn.vacuum_into(None, destination.to_str().unwrap())
+                .is_err()
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_copies_the_named_attached_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let destination = dir.path().join("aux copy.db");
+
+        let conn = &mut connection();
+        conn.attach_database(":memory:", "aux").unwrap();
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(7),
+                aux_pragma_probe::payload.eq("copied"),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        conn.vacuum_into(Some("aux"), destination.to_str().unwrap())
+            .unwrap();
+
+        let copy = &mut SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+        // In the copy the table sits in `main`, while `aux_pragma_probe` is declared
+        // schema-qualified, so this one read cannot go through it.
+        let id = sql::<Integer>("SELECT id FROM aux_pragma_probe")
+            .get_result::<i32>(copy)
+            .unwrap();
+        assert_eq!(7, id);
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuum_escapes_a_backtick_in_the_schema_name() {
+        let conn = &mut connection();
+        let schema = "back`tick";
+        conn.attach_database(":memory:", schema).unwrap();
+
+        conn.vacuum(Some(schema)).unwrap();
+    }
+
+    #[diesel_test_helper::test]
+    fn vacuuming_two_schemas_rebuilds_each_of_them() {
+        // The schema is part of the rendered SQL, so the two calls must not share a
+        // prepared statement. If they did, the second would rebuild the first's
+        // database again and leave this one untouched.
+        let conn = &mut connection();
+        fill_then_delete(conn);
+        conn.attach_database(":memory:", "aux").unwrap();
+        fill_then_delete_aux(conn);
+
+        let main_before = conn.page_count(None).unwrap();
+        let aux_before = conn.page_count(Some("aux")).unwrap();
+
+        conn.vacuum(None).unwrap();
+        conn.vacuum(Some("aux")).unwrap();
+
+        assert!(
+            conn.page_count(None).unwrap() < main_before,
+            "main was rebuilt"
+        );
+        assert!(
+            conn.page_count(Some("aux")).unwrap() < aux_before,
+            "aux was rebuilt too, not main a second time"
+        );
+    }
+
+    // WAL requires a real file.
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn wal_connection(path: &std::path::Path) -> SqliteConnection {
+        let mut conn = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+        conn.batch_execute("PRAGMA journal_mode = WAL").unwrap();
+        conn
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_truncate_reports_an_emptied_wal() {
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut wal_connection(&dir.path().join("wal.db"));
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        insert_overflowing_row(conn);
+
+        let outcome = conn
+            .wal_checkpoint(None, WalCheckpointMode::Truncate)
+            .unwrap();
+
+        assert!(!outcome.busy);
+        assert_eq!(Some(0), outcome.log_frames, "the WAL file was truncated");
+        assert_eq!(Some(0), outcome.checkpointed_frames);
+    }
+
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_outside_wal_mode_reports_no_frames() {
+        let conn = &mut connection();
+
+        let outcome = conn
+            .wal_checkpoint(None, WalCheckpointMode::Truncate)
+            .unwrap();
+
+        assert!(!outcome.busy);
+        assert_eq!(None, outcome.log_frames);
+        assert_eq!(None, outcome.checkpointed_frames);
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_accepts_every_mode() {
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut wal_connection(&dir.path().join("modes.db"));
+        conn.batch_execute(PROBE_TABLE).unwrap();
+
+        for (row, mode) in [
+            WalCheckpointMode::Passive,
+            WalCheckpointMode::Full,
+            WalCheckpointMode::Restart,
+            WalCheckpointMode::Truncate,
+            WalCheckpointMode::Noop,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            // A fresh row per round gives every mode frames to move.
+            crate::insert_into(pragma_probe::table)
+                .values((
+                    pragma_probe::id.eq(i32::try_from(row).unwrap() + 1),
+                    pragma_probe::payload.eq("row"),
+                ))
+                .execute(conn)
+                .unwrap();
+
+            let outcome = conn.wal_checkpoint(None, mode).unwrap();
+            assert!(!outcome.busy, "{mode:?} had no competing readers");
+            assert!(
+                outcome.log_frames.is_some(),
+                "{mode:?} ran on a WAL database"
+            );
+            assert!(outcome.checkpointed_frames.is_some());
+            assert!(
+                outcome.checkpointed_frames <= outcome.log_frames,
+                "{mode:?}: checkpointed frames cannot exceed the log size"
+            );
+        }
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_noop_reports_state_without_moving_frames() {
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut wal_connection(&dir.path().join("noop.db"));
+
+        // NOOP exists since SQLite 3.51.0, older versions run PASSIVE instead.
+        let version = crate::select(sql::<Text>("sqlite_version()"))
+            .get_result::<String>(conn)
+            .unwrap();
+        let mut parts = version.split('.').map(|part| part.parse::<u32>().unwrap());
+        if (parts.next().unwrap(), parts.next().unwrap()) < (3, 51) {
+            return;
+        }
+
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        conn.wal_checkpoint(None, WalCheckpointMode::Truncate)
+            .unwrap();
+        crate::insert_into(pragma_probe::table)
+            .values((pragma_probe::id.eq(1), pragma_probe::payload.eq("noop")))
+            .execute(conn)
+            .unwrap();
+
+        let first = conn.wal_checkpoint(None, WalCheckpointMode::Noop).unwrap();
+        let second = conn.wal_checkpoint(None, WalCheckpointMode::Noop).unwrap();
+
+        assert!(!first.busy, "NOOP never blocks");
+        assert!(first.log_frames > Some(0), "the insert sits in the WAL");
+        assert_eq!(Some(0), first.checkpointed_frames, "nothing was moved");
+        assert_eq!(first, second, "a second NOOP reports the same state");
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_reports_busy_while_a_reader_holds_an_old_snapshot() {
+        use crate::connection::Connection;
+
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("busy.db");
+        let writer = &mut wal_connection(&path);
+        writer.batch_execute(PROBE_TABLE).unwrap();
+        insert_overflowing_row(writer);
+
+        let reader = &mut SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+        reader
+            .transaction::<_, crate::result::Error, _>(|reader| {
+                // Take the read snapshot, BEGIN alone defers it to the first read.
+                let _ = pragma_probe::table.count().get_result::<i64>(reader)?;
+
+                // Grow the WAL past the reader's snapshot, so a blocking
+                // checkpoint cannot complete.
+                crate::insert_into(pragma_probe::table)
+                    .values((pragma_probe::id.eq(2), pragma_probe::payload.eq("late")))
+                    .execute(writer)?;
+
+                // Passive is never reported busy, it checkpoints up to the
+                // reader's snapshot and leaves the rest.
+                let outcome = writer.wal_checkpoint(None, WalCheckpointMode::Passive)?;
+                assert!(!outcome.busy, "PASSIVE never reports busy");
+                assert!(
+                    outcome.checkpointed_frames < outcome.log_frames,
+                    "the frames past the reader's snapshot stay in the WAL"
+                );
+
+                for mode in [
+                    WalCheckpointMode::Full,
+                    WalCheckpointMode::Restart,
+                    WalCheckpointMode::Truncate,
+                ] {
+                    let outcome = writer.wal_checkpoint(None, mode)?;
+                    assert!(outcome.busy, "the open reader blocks a {mode:?} checkpoint");
+                }
+                Ok(())
+            })
+            .unwrap();
+
+        let outcome = writer
+            .wal_checkpoint(None, WalCheckpointMode::Truncate)
+            .unwrap();
+        assert!(
+            !outcome.busy,
+            "the checkpoint completes once the reader is done"
+        );
+        assert_eq!(Some(0), outcome.log_frames);
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_targets_the_named_attached_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut connection();
+        conn.attach_database(dir.path().join("aux.db").to_str().unwrap(), "aux")
+            .unwrap();
+        conn.batch_execute("PRAGMA aux.journal_mode = WAL").unwrap();
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(1),
+                aux_pragma_probe::payload.eq("row"),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        let outcome = conn
+            .wal_checkpoint(Some("aux"), WalCheckpointMode::Truncate)
+            .unwrap();
+        assert!(!outcome.busy);
+        assert_eq!(
+            Some(0),
+            outcome.log_frames,
+            "the attached database was checkpointed"
+        );
+
+        // `main` is not in WAL mode, so a checkpoint naming it reports no frames.
+        let outcome = conn
+            .wal_checkpoint(Some("main"), WalCheckpointMode::Truncate)
+            .unwrap();
+        assert_eq!(None, outcome.log_frames);
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_unqualified_covers_every_attached_database() {
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut wal_connection(&dir.path().join("main.db"));
+        conn.batch_execute(PROBE_TABLE).unwrap();
+        insert_overflowing_row(conn);
+        conn.attach_database(dir.path().join("aux.db").to_str().unwrap(), "aux")
+            .unwrap();
+        conn.batch_execute("PRAGMA aux.journal_mode = WAL").unwrap();
+        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+        crate::insert_into(aux_pragma_probe::table)
+            .values((
+                aux_pragma_probe::id.eq(1),
+                aux_pragma_probe::payload.eq("row"),
+            ))
+            .execute(conn)
+            .unwrap();
+
+        conn.wal_checkpoint(None, WalCheckpointMode::Truncate)
+            .unwrap();
+
+        // Both WALs are empty afterwards, which a qualified passive
+        // checkpoint reports without moving anything.
+        let main_after = conn
+            .wal_checkpoint(Some("main"), WalCheckpointMode::Passive)
+            .unwrap();
+        assert_eq!(Some(0), main_after.log_frames, "main was checkpointed");
+        let aux_after = conn
+            .wal_checkpoint(Some("aux"), WalCheckpointMode::Passive)
+            .unwrap();
+        assert_eq!(Some(0), aux_after.log_frames, "aux was checkpointed too");
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_escapes_a_double_quote_in_the_schema_name() {
+        // An unquoted identifier would be a syntax error, and the wrong quoting
+        // would address a different database.
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut connection();
+        let schema = r#"we"ird"#;
+        let quoted = schema.replace('"', "\"\"");
+        conn.attach_database(dir.path().join("weird.db").to_str().unwrap(), schema)
+            .unwrap();
+        conn.batch_execute(&alloc::format!(r#"PRAGMA "{quoted}".journal_mode = WAL"#))
+            .unwrap();
+        conn.batch_execute(&alloc::format!(
+            r#"CREATE TABLE "{quoted}".t (id INTEGER PRIMARY KEY)"#
+        ))
+        .unwrap();
+
+        let outcome = conn
+            .wal_checkpoint(Some(schema), WalCheckpointMode::Truncate)
+            .unwrap();
+        assert_eq!(Some(0), outcome.log_frames, "the quoted schema was reached");
+    }
+
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_of_an_unknown_schema_is_an_error() {
+        let conn = &mut connection();
+
+        assert!(
+            conn.wal_checkpoint(Some("nope"), WalCheckpointMode::Passive)
+                .is_err()
+        );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[diesel_test_helper::test]
+    fn wal_checkpoint_inside_a_transaction_is_an_error() {
+        use crate::connection::Connection;
+
+        let dir = tempfile::tempdir().unwrap();
+        let conn = &mut wal_connection(&dir.path().join("txn.db"));
+        conn.batch_execute(PROBE_TABLE).unwrap();
+
+        let result: QueryResult<WalCheckpointOutcome> = conn.transaction(|conn| {
+            crate::insert_into(pragma_probe::table)
+                .values((pragma_probe::id.eq(1), pragma_probe::payload.eq("txn")))
+                .execute(conn)?;
+            conn.wal_checkpoint(None, WalCheckpointMode::Truncate)
+        });
+
+        assert!(result.is_err(), "SQLite reports SQLITE_LOCKED");
     }
 }

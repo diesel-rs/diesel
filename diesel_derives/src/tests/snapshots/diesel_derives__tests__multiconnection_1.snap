@@ -9,11 +9,15 @@ mod multi_connection_impl {
     mod backend {
         use super::*;
         pub enum MultiBackend {
-            Pg(<PgConnection as diesel::Connection>::Backend),
-            Sqlite(<diesel::SqliteConnection as diesel::Connection>::Backend),
+            Pg(<PgConnection as diesel::connection::Connection>::Backend),
+            Sqlite(
+                <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+            ),
         }
         impl MultiBackend {
-            pub(super) fn pg(&self) -> &<PgConnection as diesel::Connection>::Backend {
+            pub(super) fn pg(
+                &self,
+            ) -> &<PgConnection as diesel::connection::Connection>::Backend {
                 match self {
                     Self::Pg(b) => b,
                     _ => unreachable!(),
@@ -21,7 +25,7 @@ mod multi_connection_impl {
             }
             pub(super) fn sqlite(
                 &self,
-            ) -> &<diesel::SqliteConnection as diesel::Connection>::Backend {
+            ) -> &<diesel::SqliteConnection as diesel::connection::Connection>::Backend {
                 match self {
                     Self::Sqlite(b) => b,
                     _ => unreachable!(),
@@ -31,10 +35,10 @@ mod multi_connection_impl {
                 lookup: &mut dyn std::any::Any,
             ) -> MultiTypeMetadata
             where
-                <PgConnection as diesel::Connection>::Backend: diesel::sql_types::HasSqlType<
+                <PgConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
                     ST,
                 >,
-                <diesel::SqliteConnection as diesel::Connection>::Backend: diesel::sql_types::HasSqlType<
+                <diesel::SqliteConnection as diesel::connection::Connection>::Backend: diesel::sql_types::HasSqlType<
                     ST,
                 >,
             {
@@ -43,7 +47,7 @@ mod multi_connection_impl {
                     lookup,
                 ) {
                     ret.Pg = Some(
-                        <<PgConnection as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<
+                        <<PgConnection as diesel::connection::Connection>::Backend as diesel::sql_types::HasSqlType<
                             ST,
                         >>::metadata(lookup),
                     );
@@ -52,7 +56,7 @@ mod multi_connection_impl {
                     lookup,
                 ) {
                     ret.Sqlite = Some(
-                        <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::sql_types::HasSqlType<
+                        <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::sql_types::HasSqlType<
                             ST,
                         >>::metadata(lookup),
                     );
@@ -67,10 +71,10 @@ mod multi_connection_impl {
             ) -> diesel::QueryResult<()>
             where
                 T: diesel::query_builder::QueryFragment<
-                    <PgConnection as diesel::Connection>::Backend,
+                    <PgConnection as diesel::connection::Connection>::Backend,
                 >,
                 T: diesel::query_builder::QueryFragment<
-                    <diesel::SqliteConnection as diesel::Connection>::Backend,
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
                 >,
             {
                 use diesel::internal::derives::multiconnection::AstPassHelper;
@@ -122,12 +126,12 @@ mod multi_connection_impl {
         }
         pub enum MultiRawValue<'a> {
             Pg(
-                <<PgConnection as diesel::Connection>::Backend as diesel::backend::Backend>::RawValue<
+                <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::RawValue<
                     'a,
                 >,
             ),
             Sqlite(
-                <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::backend::Backend>::RawValue<
+                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::RawValue<
                     'a,
                 >,
             ),
@@ -137,24 +141,24 @@ mod multi_connection_impl {
             where
                 T: diesel::deserialize::FromSql<
                     ST,
-                    <PgConnection as diesel::Connection>::Backend,
+                    <PgConnection as diesel::connection::Connection>::Backend,
                 >,
                 T: diesel::deserialize::FromSql<
                     ST,
-                    <diesel::SqliteConnection as diesel::Connection>::Backend,
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
                 >,
             {
                 match self {
                     Self::Pg(b) => {
                         <T as diesel::deserialize::FromSql<
                             ST,
-                            <PgConnection as diesel::Connection>::Backend,
+                            <PgConnection as diesel::connection::Connection>::Backend,
                         >>::from_sql(b)
                     }
                     Self::Sqlite(b) => {
                         <T as diesel::deserialize::FromSql<
                             ST,
-                            <diesel::SqliteConnection as diesel::Connection>::Backend,
+                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
                         >>::from_sql(b)
                     }
                 }
@@ -169,10 +173,10 @@ mod multi_connection_impl {
         #[allow(non_snake_case)]
         pub struct MultiTypeMetadata {
             pub(super) Pg: Option<
-                <<PgConnection as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
+                <<PgConnection as diesel::connection::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
             >,
             pub(super) Sqlite: Option<
-                <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
+                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::sql_types::TypeMetadata>::TypeMetadata,
             >,
         }
         impl diesel::sql_types::TypeMetadata for MultiBackend {
@@ -182,6 +186,7 @@ mod multi_connection_impl {
         pub struct MultiReturningClause;
         pub struct MultiInsertWithDefaultKeyword;
         pub struct MultiBatchInsertSupport;
+        pub struct MultiBatchUpdateSupport;
         pub struct MultiDefaultValueClauseForInsert;
         pub struct MultiEmptyFromClauseSyntax;
         pub struct MultiExistsSyntax;
@@ -198,6 +203,7 @@ mod multi_connection_impl {
             type OnConflictClause = diesel::internal::derives::multiconnection::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
             type InsertWithDefaultKeyword = MultiInsertWithDefaultKeyword;
             type BatchInsertSupport = MultiBatchInsertSupport;
+            type BatchUpdateSupport = MultiBatchUpdateSupport;
             type DefaultValueClauseForInsert = MultiDefaultValueClauseForInsert;
             type EmptyFromClauseSyntax = MultiEmptyFromClauseSyntax;
             type ExistsSyntax = MultiExistsSyntax;
@@ -291,10 +297,10 @@ mod multi_connection_impl {
         use super::*;
         pub enum MultiQueryBuilder {
             Pg(
-                <<PgConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
+                <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
             ),
             Sqlite(
-                <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
+                <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder,
             ),
         }
         impl MultiQueryBuilder {
@@ -308,7 +314,7 @@ mod multi_connection_impl {
         impl MultiQueryBuilder {
             pub(super) fn pg(
                 &mut self,
-            ) -> &mut <<PgConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+            ) -> &mut <<PgConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
                 match self {
                     Self::Pg(qb) => qb,
                     _ => unreachable!(),
@@ -316,7 +322,7 @@ mod multi_connection_impl {
             }
             pub(super) fn sqlite(
                 &mut self,
-            ) -> &mut <<diesel::SqliteConnection as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+            ) -> &mut <<diesel::SqliteConnection as diesel::connection::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
                 match self {
                     Self::Sqlite(qb) => qb,
                     _ => unreachable!(),
@@ -587,6 +593,30 @@ mod multi_connection_impl {
             }
         }
         impl<
+            I,
+            C,
+            PK,
+            Tab,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiBatchUpdateSupport,
+        > for diesel::internal::derives::multiconnection::BatchUpdate<I, C, PK, Tab>
+        where
+            Self: diesel::query_builder::QueryFragment<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
+                + diesel::query_builder::QueryFragment<
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
+                >,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                super::backend::MultiBackend::walk_variant_ast(self, pass)
+            }
+        }
+        impl<
             S,
         > diesel::query_builder::QueryFragment<
             super::backend::MultiBackend,
@@ -697,10 +727,10 @@ mod multi_connection_impl {
                 &'b self,
                 mut pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
             ) -> diesel::QueryResult<()> {
-                if let Some(ref limit) = self.limit {
+                if let Some(limit) = &self.limit {
                     limit.walk_ast(pass.reborrow())?;
                 }
-                if let Some(ref offset) = self.offset {
+                if let Some(offset) = &self.offset {
                     offset.walk_ast(pass.reborrow())?;
                 }
                 Ok(())
@@ -813,6 +843,163 @@ mod multi_connection_impl {
                 diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
                     limit: Some(Box::new(self.limit_clause)),
                     offset: Some(Box::new(self.offset_clause)),
+                }
+            }
+        }
+        impl<
+            'a,
+            ST,
+            QS,
+            GB,
+        > diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiSelectStatementSyntax,
+        >
+        for diesel::internal::derives::multiconnection::BoxedCloneSelectStatement<
+            'a,
+            ST,
+            QS,
+            super::backend::MultiBackend,
+            GB,
+        >
+        where
+            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::BoxedCloneQueryHelper;
+                self.build_query(pass, |where_clause, pass| where_clause.walk_ast(pass))
+            }
+        }
+        impl diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+        for diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause<
+            '_,
+            super::backend::MultiBackend,
+        > {
+            fn walk_ast<'b>(
+                &'b self,
+                mut pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                if let Some(limit) = &self.limit {
+                    limit.walk_ast(pass.reborrow())?;
+                }
+                if let Some(offset) = &self.offset {
+                    offset.walk_ast(pass.reborrow())?;
+                }
+                Ok(())
+            }
+        }
+        impl<
+            'a,
+        > diesel::query_builder::IntoBoxedCloneClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::NoLimitClause,
+            diesel::internal::derives::multiconnection::NoOffsetClause,
+        > {
+            type BoxedCloneClause = diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+                diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause {
+                    limit: None,
+                    offset: None,
+                }
+            }
+        }
+        impl<
+            'a,
+            L,
+        > diesel::query_builder::IntoBoxedCloneClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::LimitClause<L>,
+            diesel::internal::derives::multiconnection::NoOffsetClause,
+        >
+        where
+            diesel::internal::derives::multiconnection::LimitClause<
+                L,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + Sync + 'static,
+        {
+            type BoxedCloneClause = diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+                diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause {
+                    limit: Some(std::sync::Arc::new(self.limit_clause)),
+                    offset: None,
+                }
+            }
+        }
+        impl<
+            'a,
+            O,
+        > diesel::query_builder::IntoBoxedCloneClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::NoLimitClause,
+            diesel::internal::derives::multiconnection::OffsetClause<O>,
+        >
+        where
+            diesel::internal::derives::multiconnection::OffsetClause<
+                O,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + Sync + 'static,
+        {
+            type BoxedCloneClause = diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+                diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause {
+                    limit: None,
+                    offset: Some(std::sync::Arc::new(self.offset_clause)),
+                }
+            }
+        }
+        impl<
+            'a,
+            L,
+            O,
+        > diesel::query_builder::IntoBoxedCloneClause<
+            'a,
+            super::multi_connection_impl::backend::MultiBackend,
+        >
+        for diesel::internal::derives::multiconnection::LimitOffsetClause<
+            diesel::internal::derives::multiconnection::LimitClause<L>,
+            diesel::internal::derives::multiconnection::OffsetClause<O>,
+        >
+        where
+            L: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + Sync + 'a,
+            O: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send
+                + Sync + 'a,
+            diesel::internal::derives::multiconnection::LimitClause<
+                L,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            diesel::internal::derives::multiconnection::OffsetClause<
+                O,
+            >: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+        {
+            type BoxedCloneClause = diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause<
+                'a,
+                super::multi_connection_impl::backend::MultiBackend,
+            >;
+            fn into_boxed_clone(self) -> Self::BoxedCloneClause {
+                diesel::internal::derives::multiconnection::BoxedCloneLimitOffsetClause {
+                    limit: Some(std::sync::Arc::new(self.limit_clause)),
+                    offset: Some(std::sync::Arc::new(self.offset_clause)),
                 }
             }
         }
@@ -1036,15 +1223,17 @@ mod multi_connection_impl {
             }
         }
         trait PushBoundValueToCollector: PushBoundValueToCollectorDB<
-                <PgConnection as diesel::Connection>::Backend,
+                <PgConnection as diesel::connection::Connection>::Backend,
             > + PushBoundValueToCollectorDB<
-                <diesel::SqliteConnection as diesel::Connection>::Backend,
+                <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
             > {}
         impl<T> PushBoundValueToCollector for T
         where
-            T: PushBoundValueToCollectorDB<<PgConnection as diesel::Connection>::Backend>
+            T: PushBoundValueToCollectorDB<
+                    <PgConnection as diesel::connection::Connection>::Backend,
+                >
                 + PushBoundValueToCollectorDB<
-                    <diesel::SqliteConnection as diesel::Connection>::Backend,
+                    <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
                 >,
         {}
         #[derive(Default)]
@@ -1146,13 +1335,13 @@ mod multi_connection_impl {
                         >>::metadata(metadata_lookup);
                         match (self, metadata) {
                             (
-                                Self::Pg(ref mut bc),
+                                Self::Pg(bc),
                                 super::backend::MultiTypeMetadata { Pg: Some(metadata), .. },
                             ) => {
                                 bc.push_null_value(metadata)?;
                             }
                             (
-                                Self::Sqlite(ref mut bc),
+                                Self::Sqlite(bc),
                                 super::backend::MultiTypeMetadata {
                                     Sqlite: Some(metadata),
                                     ..
@@ -1168,7 +1357,7 @@ mod multi_connection_impl {
                     }
                 };
                 match self {
-                    Self::Pg(ref mut bc) => {
+                    Self::Pg(bc) => {
                         let out = out
                             .inner
                             .expect(
@@ -1177,7 +1366,7 @@ mod multi_connection_impl {
                         let callback = out.push_bound_value_to_collector;
                         let value = out.value;
                         <_ as PushBoundValueToCollectorDB<
-                            <PgConnection as diesel::Connection>::Backend,
+                            <PgConnection as diesel::connection::Connection>::Backend,
                         >>::push_bound_value(
                             callback,
                             value,
@@ -1190,7 +1379,7 @@ mod multi_connection_impl {
                                 ),
                         )?
                     }
-                    Self::Sqlite(ref mut bc) => {
+                    Self::Sqlite(bc) => {
                         let out = out
                             .inner
                             .expect(
@@ -1199,7 +1388,7 @@ mod multi_connection_impl {
                         let callback = out.push_bound_value_to_collector;
                         let value = out.value;
                         <_ as PushBoundValueToCollectorDB<
-                            <diesel::SqliteConnection as diesel::Connection>::Backend,
+                            <diesel::SqliteConnection as diesel::connection::Connection>::Backend,
                         >>::push_bound_value(
                             callback,
                             value,
@@ -1221,13 +1410,13 @@ mod multi_connection_impl {
             ) -> diesel::QueryResult<()> {
                 match (self, metadata) {
                     (
-                        Self::Pg(ref mut bc),
+                        Self::Pg(bc),
                         super::backend::MultiTypeMetadata { Pg: Some(metadata), .. },
                     ) => {
                         bc.push_null_value(metadata)?;
                     }
                     (
-                        Self::Sqlite(ref mut bc),
+                        Self::Sqlite(bc),
                         super::backend::MultiTypeMetadata { Sqlite: Some(metadata), .. },
                     ) => {
                         bc.push_null_value(metadata)?;
@@ -1517,6 +1706,63 @@ mod multi_connection_impl {
                 bytes.from_sql::<Self, diesel::sql_types::Date>()
             }
         }
+        impl<
+            T,
+            ST,
+        > diesel::internal::derives::multiconnection::EnumMapping<super::MultiBackend>
+        for diesel::internal::derives::multiconnection::IntMapping<T, ST>
+        where
+            ST: Default,
+            T: diesel::deserialize::FromSql<ST, super::MultiBackend> + 'static
+                + diesel::internal::derives::multiconnection::IntegerMappingHelper,
+            for<'a> BindValue<'a>: From<(ST, &'a T)>,
+            i128: TryFrom<T, Error: core::fmt::Display>,
+        {
+            fn map_to_database_value<'b>(
+                output: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+                variant: &'static diesel::internal::derives::multiconnection::EnumVariant,
+            ) -> diesel::serialize::Result {
+                let v = <T as diesel::internal::derives::multiconnection::IntegerMappingHelper>::as_ref(
+                    &variant.discriminant,
+                )?;
+                output.set_value((ST::default(), v));
+                Ok(diesel::serialize::IsNull::No)
+            }
+            fn map_from_database_value(
+                raw: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+                type_name: &'static str,
+                variants: &'static [diesel::internal::derives::multiconnection::EnumVariant],
+            ) -> diesel::deserialize::Result<usize> {
+                let i = <T as diesel::deserialize::FromSql<
+                    ST,
+                    super::MultiBackend,
+                >>::from_sql(raw)?;
+                Self::from_discriminant(type_name, variants, i)
+            }
+        }
+        impl diesel::internal::derives::multiconnection::EnumMapping<super::MultiBackend>
+        for diesel::internal::derives::multiconnection::StringMapping {
+            fn map_to_database_value<'b>(
+                output: &mut diesel::serialize::Output<'b, '_, super::MultiBackend>,
+                variant: &'static diesel::internal::derives::multiconnection::EnumVariant,
+            ) -> diesel::serialize::Result {
+                <&str as diesel::serialize::ToSql<
+                    diesel::sql_types::Text,
+                    super::MultiBackend,
+                >>::to_sql(&variant.sql_name, output)
+            }
+            fn map_from_database_value(
+                raw: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
+                type_name: &'static str,
+                variants: &'static [diesel::internal::derives::multiconnection::EnumVariant],
+            ) -> diesel::deserialize::Result<usize> {
+                let s = <String as diesel::deserialize::FromSql<
+                    diesel::sql_types::Text,
+                    super::MultiBackend,
+                >>::from_sql(raw)?;
+                Self::from_variant_name(type_name, variants, &s)
+            }
+        }
     }
     mod row {
         use super::*;
@@ -1650,9 +1896,8 @@ mod multi_connection_impl {
     }
     mod connection {
         use super::*;
-        use diesel::connection::*;
         pub(super) use super::DbConnection as MultiConnection;
-        impl SimpleConnection for MultiConnection {
+        impl diesel::connection::SimpleConnection for MultiConnection {
             fn batch_execute(&mut self, query: &str) -> diesel::result::QueryResult<()> {
                 match self {
                     Self::Pg(conn) => conn.batch_execute(query),
@@ -1668,7 +1913,7 @@ mod multi_connection_impl {
             query_builder: super::query_builder::MultiQueryBuilder,
             p: std::marker::PhantomData<C>,
         }
-        trait BindParamHelper: Connection {
+        trait BindParamHelper: diesel::connection::Connection {
             fn handle_inner_pass<'a, 'b: 'a>(
                 collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<
                     'a,
@@ -1769,7 +2014,7 @@ mod multi_connection_impl {
         {
             type SqlType = diesel::sql_types::Untyped;
         }
-        impl Connection for MultiConnection {
+        impl diesel::connection::Connection for MultiConnection {
             type Backend = super::MultiBackend;
             type TransactionManager = Self;
             fn establish(database_url: &str) -> diesel::ConnectionResult<Self> {
@@ -1820,7 +2065,7 @@ mod multi_connection_impl {
             }
             fn transaction_state(
                 &mut self,
-            ) -> &mut <Self::TransactionManager as TransactionManager<
+            ) -> &mut <Self::TransactionManager as diesel::connection::TransactionManager<
                 Self,
             >>::TransactionStateData {
                 self
@@ -1829,10 +2074,10 @@ mod multi_connection_impl {
                 &mut self,
             ) -> &mut dyn diesel::connection::Instrumentation {
                 match self {
-                    DbConnection::Pg(conn) => {
+                    Self::Pg(conn) => {
                         diesel::connection::Connection::instrumentation(conn)
                     }
-                    DbConnection::Sqlite(conn) => {
+                    Self::Sqlite(conn) => {
                         diesel::connection::Connection::instrumentation(conn)
                     }
                 }
@@ -1842,13 +2087,13 @@ mod multi_connection_impl {
                 instrumentation: impl diesel::connection::Instrumentation,
             ) {
                 match self {
-                    DbConnection::Pg(conn) => {
+                    Self::Pg(conn) => {
                         diesel::connection::Connection::set_instrumentation(
                             conn,
                             instrumentation,
                         );
                     }
-                    DbConnection::Sqlite(conn) => {
+                    Self::Sqlite(conn) => {
                         diesel::connection::Connection::set_instrumentation(
                             conn,
                             instrumentation,
@@ -1861,13 +2106,13 @@ mod multi_connection_impl {
                 size: diesel::connection::CacheSize,
             ) {
                 match self {
-                    DbConnection::Pg(conn) => {
+                    Self::Pg(conn) => {
                         diesel::connection::Connection::set_prepared_statement_cache_size(
                             conn,
                             size,
                         );
                     }
-                    DbConnection::Sqlite(conn) => {
+                    Self::Sqlite(conn) => {
                         diesel::connection::Connection::set_prepared_statement_cache_size(
                             conn,
                             size,
@@ -1882,7 +2127,7 @@ mod multi_connection_impl {
                 }
             }
         }
-        impl LoadConnection for MultiConnection {
+        impl diesel::connection::LoadConnection for MultiConnection {
             type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
             type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
             fn load<'conn, 'query, T>(
@@ -1896,7 +2141,7 @@ mod multi_connection_impl {
                 Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
             {
                 match self {
-                    DbConnection::Pg(conn) => {
+                    Self::Pg(conn) => {
                         let query = SerializedQuery {
                             inner: source,
                             backend: MultiBackend::Pg(Default::default()),
@@ -1908,10 +2153,10 @@ mod multi_connection_impl {
                         let r = <PgConnection as diesel::connection::LoadConnection>::load(
                             conn,
                             query,
-                        )?;
-                        Ok(super::row::MultiCursor::Pg(r))
+                        );
+                        Ok(super::row::MultiCursor::Pg(r?))
                     }
-                    DbConnection::Sqlite(conn) => {
+                    Self::Sqlite(conn) => {
                         let query = SerializedQuery {
                             inner: source,
                             backend: MultiBackend::Sqlite(Default::default()),
@@ -1923,23 +2168,24 @@ mod multi_connection_impl {
                         let r = <diesel::SqliteConnection as diesel::connection::LoadConnection>::load(
                             conn,
                             query,
-                        )?;
-                        Ok(super::row::MultiCursor::Sqlite(r))
+                        );
+                        Ok(super::row::MultiCursor::Sqlite(r?))
                     }
                 }
             }
         }
-        impl TransactionManager<MultiConnection> for MultiConnection {
+        impl diesel::connection::TransactionManager<MultiConnection>
+        for MultiConnection {
             type TransactionStateData = Self;
             fn begin_transaction(conn: &mut MultiConnection) -> diesel::QueryResult<()> {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as Connection>::TransactionManager::begin_transaction(
+                        <PgConnection as diesel::connection::Connection>::TransactionManager::begin_transaction(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as Connection>::TransactionManager::begin_transaction(
+                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::begin_transaction(
                             conn,
                         )
                     }
@@ -1950,12 +2196,12 @@ mod multi_connection_impl {
             ) -> diesel::QueryResult<()> {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as Connection>::TransactionManager::rollback_transaction(
+                        <PgConnection as diesel::connection::Connection>::TransactionManager::rollback_transaction(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as Connection>::TransactionManager::rollback_transaction(
+                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::rollback_transaction(
                             conn,
                         )
                     }
@@ -1966,12 +2212,12 @@ mod multi_connection_impl {
             ) -> diesel::QueryResult<()> {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as Connection>::TransactionManager::commit_transaction(
+                        <PgConnection as diesel::connection::Connection>::TransactionManager::commit_transaction(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as Connection>::TransactionManager::commit_transaction(
+                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::commit_transaction(
                             conn,
                         )
                     }
@@ -1982,12 +2228,12 @@ mod multi_connection_impl {
             ) -> &mut diesel::connection::TransactionManagerStatus {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as Connection>::TransactionManager::transaction_manager_status_mut(
+                        <PgConnection as diesel::connection::Connection>::TransactionManager::transaction_manager_status_mut(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as Connection>::TransactionManager::transaction_manager_status_mut(
+                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::transaction_manager_status_mut(
                             conn,
                         )
                     }
@@ -1996,12 +2242,12 @@ mod multi_connection_impl {
             fn is_broken_transaction_manager(conn: &mut MultiConnection) -> bool {
                 match conn {
                     Self::Pg(conn) => {
-                        <PgConnection as Connection>::TransactionManager::is_broken_transaction_manager(
+                        <PgConnection as diesel::connection::Connection>::TransactionManager::is_broken_transaction_manager(
                             conn,
                         )
                     }
                     Self::Sqlite(conn) => {
-                        <diesel::SqliteConnection as Connection>::TransactionManager::is_broken_transaction_manager(
+                        <diesel::SqliteConnection as diesel::connection::Connection>::TransactionManager::is_broken_transaction_manager(
                             conn,
                         )
                     }
@@ -2018,6 +2264,30 @@ mod multi_connection_impl {
                     Self::Sqlite(conn) => {
                         use diesel::migration::MigrationConnection;
                         conn.setup()
+                    }
+                }
+            }
+            fn read_search_path(&mut self) -> diesel::QueryResult<Option<String>> {
+                match self {
+                    Self::Pg(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.read_search_path()
+                    }
+                    Self::Sqlite(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.read_search_path()
+                    }
+                }
+            }
+            fn set_search_path(&mut self, search_path: &str) -> diesel::QueryResult<()> {
+                match self {
+                    Self::Pg(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.set_search_path(search_path)
+                    }
+                    Self::Sqlite(conn) => {
+                        use diesel::migration::MigrationConnection;
+                        conn.set_search_path(search_path)
                     }
                 }
             }

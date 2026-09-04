@@ -246,11 +246,11 @@ pub trait AggregateExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
@@ -288,16 +288,16 @@ pub trait AggregateExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;
     /// #     let connection = &mut establish_connection();
-    /// #     #[cfg(feature = "sqlite")]
+    /// #     #[cfg(feature = "__sqlite-shared")]
     /// #     assert_version!(connection, 3, 44, 0);
     /// // This example is not meaningful yet,
     /// // modify it as soon as we support more
@@ -363,11 +363,11 @@ pub trait WindowExpressionMethods: Sized {
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     #[cfg(not(feature = "mysql"))]
+    /// #     #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// #     run_test().unwrap();
     /// # }
     /// #
-    /// # #[cfg(not(feature = "mysql"))]
+    /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::dsl;

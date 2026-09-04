@@ -1,4 +1,4 @@
-use super::{AppearsInFromClause, Plus};
+use super::{AppearsInFromClause, Plus, QueryRelation};
 use crate::backend::Backend;
 use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
@@ -43,15 +43,15 @@ where
 {
 }
 
-impl<Left, Right, Kind> std::fmt::Debug for Join<Left, Right, Kind>
+impl<Left, Right, Kind> core::fmt::Debug for Join<Left, Right, Kind>
 where
     Left: QuerySource,
-    FromClause<Left>: std::fmt::Debug,
+    FromClause<Left>: core::fmt::Debug,
     Right: QuerySource,
-    FromClause<Right>: std::fmt::Debug,
-    Kind: std::fmt::Debug,
+    FromClause<Right>: core::fmt::Debug,
+    Kind: core::fmt::Debug,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Join")
             .field("left", &self.left)
             .field("right", &self.right)
@@ -248,7 +248,10 @@ pub trait AppendSelection<Selection> {
     fn append_selection(&self, selection: Selection) -> Self::Output;
 }
 
-impl<T: Table, Selection> AppendSelection<Selection> for T {
+impl<T, Selection> AppendSelection<Selection> for T
+where
+    T: QueryRelation,
+{
     type Output = (T::AllColumns, Selection);
 
     fn append_selection(&self, selection: Selection) -> Self::Output {
@@ -365,7 +368,7 @@ impl<Source, On> OnClauseWrapper<Source, On> {
 
 impl<Lhs, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Lhs
 where
-    Lhs: Table,
+    Lhs: QueryRelation,
 {
     type FromClause = Rhs;
     type OnClause = On;

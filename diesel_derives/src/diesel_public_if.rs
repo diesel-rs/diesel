@@ -1,6 +1,6 @@
 use quote::quote;
 use syn::Token;
-use syn::{punctuated::Punctuated, DeriveInput};
+use syn::{DeriveInput, punctuated::Punctuated};
 
 pub(crate) fn expand(cfg: CfgInput, item: EntryWithVisibility) -> proc_macro2::TokenStream {
     item.hide_for_cfg(cfg.cfg, cfg.field_list)
@@ -16,21 +16,12 @@ impl syn::parse::Parse for CfgInput {
         let mut cfg = Punctuated::<syn::Meta, Token![,]>::parse_terminated(input)?;
         if cfg.len() == 1 {
             Ok(Self {
-                cfg: cfg
-                    .pop()
-                    .expect("There is exactly one element")
-                    .into_value(),
+                cfg: cfg.pop().expect("There is exactly one element"),
                 field_list: Vec::new(),
             })
         } else if cfg.len() == 2 {
-            let value_1 = cfg
-                .pop()
-                .expect("There is exactly one element")
-                .into_value();
-            let value_2 = cfg
-                .pop()
-                .expect("There is exactly one element")
-                .into_value();
+            let value_1 = cfg.pop().expect("There is exactly one element");
+            let value_2 = cfg.pop().expect("There is exactly one element");
             let (cfg, fields) = if matches!(&value_1, syn::Meta::List(v) if v.path.is_ident("public_fields"))
             {
                 (value_2, value_1)

@@ -6,9 +6,9 @@ use crate::dsl;
 use crate::expression::SelectableExpression;
 use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
 use crate::expression_methods::EqAll;
-use crate::query_builder::{combination_clause, AsQuery, FromClause, Query, SelectStatement};
+use crate::query_builder::{AsQuery, FromClause, Query, SelectStatement, combination_clause};
 use crate::query_dsl::methods::*;
-use crate::query_dsl::{CombineDsl, QueryDsl, RunQueryDsl};
+use crate::query_dsl::{CombineDsl, QueryDsl, RunQueryDslSupport};
 use crate::query_source::{QuerySource, Table};
 
 impl<S: AliasSource> QueryDsl for Alias<S> {}
@@ -72,6 +72,21 @@ where
 
     fn internal_into_boxed(self) -> Self::Output {
         self.as_query().internal_into_boxed()
+    }
+}
+
+impl<'a, S, DB> BoxedCloneDsl<'a, DB> for Alias<S>
+where
+    Alias<S>: QuerySource + AsQuery<Query = SelectStatement<FromClause<Alias<S>>>>,
+    SelectStatement<FromClause<Alias<S>>>: BoxedCloneDsl<'a, DB>,
+    <Alias<S> as QuerySource>::DefaultSelection:
+        Expression<SqlType = <Alias<S> as AsQuery>::SqlType> + ValidGrouping<()>,
+    <Alias<S> as AsQuery>::SqlType: TypedExpressionType,
+{
+    type Output = dsl::IntoBoxedClone<'a, SelectStatement<FromClause<Alias<S>>>, DB>;
+
+    fn internal_into_boxed_clone(self) -> Self::Output {
+        self.as_query().internal_into_boxed_clone()
     }
 }
 
@@ -228,7 +243,7 @@ where
     }
 }
 
-impl<S: AliasSource, Conn> RunQueryDsl<Conn> for Alias<S> {}
+impl<S: AliasSource> RunQueryDslSupport for Alias<S> {}
 
 impl<S> OffsetDsl for Alias<S>
 where

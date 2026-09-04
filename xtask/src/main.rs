@@ -46,11 +46,17 @@ enum Backend {
     Postgres,
     Sqlite,
     Mysql,
+    Mariadb,
     All,
 }
 
 impl Backend {
-    const ALL: &'static [Self] = &[Backend::Postgres, Backend::Sqlite, Backend::Mysql];
+    const ALL: &'static [Self] = &[
+        Backend::Postgres,
+        Backend::Sqlite,
+        Backend::Mysql,
+        Backend::Mariadb,
+    ];
 }
 
 impl Display for Backend {
@@ -59,6 +65,7 @@ impl Display for Backend {
             Backend::Postgres => write!(f, "postgres"),
             Backend::Sqlite => write!(f, "sqlite"),
             Backend::Mysql => write!(f, "mysql"),
+            Backend::Mariadb => write!(f, "mariadb"),
             Backend::All => write!(f, "all"),
         }
     }

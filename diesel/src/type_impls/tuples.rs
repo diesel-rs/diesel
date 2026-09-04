@@ -4,10 +4,17 @@ use crate::deserialize::{
     self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
 };
 use crate::expression::{
-    is_contained_in_group_by, AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates,
-    QueryMetadata, Selectable, SelectableExpression, TypedExpressionType, ValidGrouping,
+    AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable,
+    SelectableExpression, TypedExpressionType, ValidGrouping, is_contained_in_group_by,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
+#[cfg(any(
+    feature = "__sqlite-shared",
+    feature = "postgres_backend",
+    feature = "mysql_backend",
+    feature = "mariadb_backend"
+))]
+use crate::query_builder::update_statement::batch_update::{BatchKeyHelper, BatchValueHelper};
 use crate::query_builder::*;
 use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::*;
@@ -15,6 +22,7 @@ use crate::result::QueryResult;
 use crate::row::*;
 use crate::sql_types::{HasSqlType, IntoNullable, Nullable, OneIsNullable, SqlType};
 use crate::util::{TupleAppend, TupleSize};
+use alloc::vec::Vec;
 
 impl<T> TupleSize for T
 where
@@ -246,6 +254,100 @@ macro_rules! tuple_impls {
                     $($T: AppearsOnTable<QS>,)+
                     ($($T,)+): Expression,
                 {
+                }
+            }
+
+            #[cfg(any(feature = "__sqlite-shared", feature = "postgres_backend", feature = "mysql_backend", feature = "mariadb_backend"))]
+            impl<$($T,)+  __DB> BatchValueHelper<__DB> for ($($T,)+)
+            where
+                $($T: BatchValueHelper<__DB>,)+
+                __DB: Backend
+            {
+                fn assign<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                     $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.assign(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+                fn column_name<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                     $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.column_name(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+                fn bind_value<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.bind_value(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+            }
+
+            #[cfg(any(feature = "__sqlite-shared", feature = "postgres_backend", feature = "mysql_backend", feature = "mariadb_backend"))]
+            impl<$($T,)+ $($ST,)+ __DB> BatchKeyHelper<($($ST,)*), __DB> for ($($T,)+)
+            where
+                __DB: Backend,
+               $($T: BatchKeyHelper<$ST, __DB>,)+
+            {
+                fn bind_value<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.bind_value(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+
+                fn column_name<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                     $(
+                        if $idx != 0 {
+                            out.push_sql(", ");
+                        }
+                        self.$idx.column_name(out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+
+                fn assign<'b>(pk: &'b ($($ST,)+), mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()> {
+                    $(
+                        if $idx != 0 {
+                            out.push_sql(" AND ");
+                        }
+                        <$T as BatchKeyHelper<$ST, __DB>>::assign(&pk.$idx, out.reborrow())?;
+                    )+
+                    Ok(())
+                }
+            }
+
+            impl<$($T,)* W> crate::query_builder::update_statement::private::AllowFilterForUpdate<crate::query_builder::where_clause::WhereClause<W>>
+                for ($($T,)*)
+            where $($T: crate::query_builder::update_statement::private::AllowFilterForUpdate<crate::query_builder::where_clause::WhereClause<W>>,)* {
+            }
+
+            impl<'a, $($T,)* DB> crate::query_builder::update_statement::private::AllowFilterForUpdate<crate::query_builder::where_clause::BoxedWhereClause<'a, DB>>
+                for ($($T,)*)
+            where
+                DB: crate::backend::Backend,
+                $($T: crate::query_builder::update_statement::private::AllowFilterForUpdate<crate::query_builder::where_clause::BoxedWhereClause<'a, DB>>,)* {
+            }
+
+            impl<'a, $($T,)*> crate::query_builder::update_statement::changeset::IntoOwned for ($(&'a $T,)*)
+            where $(&'a $T: crate::query_builder::update_statement::changeset::IntoOwned,)*
+            {
+                type Owned = ($(<&'a $T as crate::query_builder::update_statement::changeset::IntoOwned>::Owned,)*);
+
+                fn into_owned(self) -> Self::Owned {
+                    ($(<&'a $T as crate::query_builder::update_statement::changeset::IntoOwned>::into_owned(&self.$idx),)*)
                 }
             }
 
@@ -522,7 +624,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
         }
 
         impl<$T1, $($T,)* Col> IsContainedInGroupBy<Col> for ($T1, $($T,)*)
-        where Col: Column,
+        where Col: QueryRelationField,
               ($($T,)*): IsContainedInGroupBy<Col>,
               $T1: IsContainedInGroupBy<Col>,
               $T1::Output: is_contained_in_group_by::IsAny<<($($T,)*) as IsContainedInGroupBy<Col>>::Output>
@@ -532,7 +634,7 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
     };
     ($T1: ident,) => {
         impl<$T1, Col> IsContainedInGroupBy<Col> for ($T1,)
-        where Col: Column,
+        where Col: QueryRelationField,
               $T1: IsContainedInGroupBy<Col>
         {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;
@@ -600,4 +702,4 @@ macro_rules! impl_sql_type {
     }
 }
 
-diesel_derives::__diesel_for_each_tuple!(tuple_impls);
+crate::for_each_tuple!(tuple_impls);

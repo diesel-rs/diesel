@@ -12,18 +12,21 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
-use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
-use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
+use crate::sqlite::SqliteFunctionBehavior;
 use crate::sqlite::SqliteValue;
+use crate::sqlite::connection::bind_collector::SqliteBindValueRef;
+use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
+use alloc::boxed::Box;
+use alloc::string::ToString;
 
 pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
     fn_name: &str,
-    deterministic: bool,
+    behavior: SqliteFunctionBehavior,
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut(&RawConnection, Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
+    F: FnMut(&RawConnection, Args) -> Ret + core::panic::UnwindSafe + Send + 'static,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -36,7 +39,7 @@ where
         ));
     }
 
-    conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
+    conn.register_sql_function(fn_name, fields_needed, behavior, move |conn, args| {
         let args = build_sql_function_args::<ArgsSqlType, Args>(args, conn.internal_connection)?;
 
         Ok(f(conn, args))
@@ -47,24 +50,25 @@ where
 pub(super) fn register_noargs<RetSqlType, Ret, F>(
     conn: &RawConnection,
     fn_name: &str,
-    deterministic: bool,
+    behavior: SqliteFunctionBehavior,
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+    F: FnMut() -> Ret + core::panic::UnwindSafe + Send + 'static,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    conn.register_sql_function(fn_name, 0, deterministic, move |_, _| Ok(f()))?;
+    conn.register_sql_function(fn_name, 0, behavior, move |_, _| Ok(f()))?;
     Ok(())
 }
 
 pub(super) fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     conn: &RawConnection,
     fn_name: &str,
+    behavior: SqliteFunctionBehavior,
 ) -> QueryResult<()>
 where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -80,6 +84,7 @@ where
     conn.register_aggregate_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(
         fn_name,
         fields_needed,
+        behavior,
     )?;
 
     Ok(())
@@ -101,20 +106,20 @@ where
 #[allow(clippy::let_unit_value)]
 pub(super) fn process_sql_function_result<RetSqlType, Ret>(
     result: &'_ Ret,
-) -> QueryResult<InternalSqliteBindValue<'_>>
+) -> QueryResult<SqliteBindValueRef<'_>>
 where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     let mut metadata_lookup = ();
     let value = SqliteBindValue {
-        inner: InternalSqliteBindValue::Null,
+        inner: SqliteBindValueRef::Null,
     };
     let mut buf = Output::new(value, &mut metadata_lookup);
     let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
 
     if let IsNull::Yes = is_null {
-        Ok(InternalSqliteBindValue::Null)
+        Ok(SqliteBindValueRef::Null)
     } else {
         Ok(buf.into_inner().inner)
     }
@@ -188,7 +193,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+    fn partial_row(&self, range: core::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
