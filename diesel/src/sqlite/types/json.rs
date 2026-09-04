@@ -669,6 +669,27 @@ mod tests {
 
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
+    fn regression_float_without_a_fraction_is_written_invalid() {
+        let conn = &mut connection();
+        for value in [json!(3.0), json!(-0.0), json!(1.5e300)] {
+            let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
+                .get_result::<Vec<u8>>(conn)
+                .unwrap();
+            let valid = diesel::select(
+                sql::<sql_types::Integer>("json_valid(")
+                    .bind::<sql_types::Binary, _>(blob.clone())
+                    .sql(", 8)"),
+            )
+            .get_result::<i32>(conn)
+            .unwrap();
+            assert_eq!(
+                valid, 1,
+                "sqlite rejects the blob written for {value}: {blob:02X?}"
+            );
+        }
+    }
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn json_to_sql() {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('true')")))
