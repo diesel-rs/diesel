@@ -577,7 +577,7 @@ mod jsonb {
         buffer: &mut Vec<u8>,
     ) -> serialize::Result {
         let n = n.to_string();
-        let tpe = if n.contains('.') {
+        let tpe = if n.chars().any(|c| !c.is_ascii_digit()) {
             JSONB_FLOAT
         } else {
             JSONB_INT
