@@ -207,6 +207,10 @@ mod jsonb {
         let header = read_jsonb_value_header(bytes)?;
         let payload_bytes = &bytes[header.header_size..header.total_size];
         let value = match header.element_type {
+            // sqlite writes a constant as a bare one byte header and refuses any other spelling
+            JSONB_NULL | JSONB_TRUE | JSONB_FALSE if header.total_size != 1 => {
+                Err("Invalid JSONB data: a constant must be a single byte".into())
+            }
             JSONB_NULL => Ok(serde_json::Value::Null),
             JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
             JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
@@ -641,6 +645,54 @@ mod tests {
         let mut buffer = Vec::new();
         jsonb::write_jsonb_header(&mut buffer, element_type, payload_size)?;
         Ok(buffer)
+    }
+
+    fn value_with_payload(element_type: u8, payload: &[u8]) -> Vec<u8> {
+        let mut buffer = create_jsonb_header(element_type, payload.len()).unwrap();
+        buffer.extend_from_slice(payload);
+        buffer
+    }
+
+    #[diesel_test_helper::test]
+    fn regression_a_constant_reads_its_declared_size() {
+        let blobs: Vec<Vec<u8>> = vec![
+            value_with_payload(JSONB_NULL, &[0x0D, 0x00, 0xF3]), // null, inline size 3
+            value_with_payload(JSONB_TRUE, b"1.5"),              // true, inline size 3
+            value_with_payload(JSONB_NULL, &[0x00]),             // null, inline size 1
+            value_with_payload(JSONB_TRUE, &[0x08]),             // true, inline size 1
+            value_with_payload(JSONB_FALSE, &[0xFF]),            // false, inline size 1
+            // not buildable with create_jsonb_header because the writer takes the narrowest size spelling
+            vec![0xC0, 0x00], // null, two byte header
+            vec![0xC1, 0x00], // true, two byte header
+            {
+                // array holding a two byte true
+                let mut blob = create_jsonb_header(JSONB_ARRAY, 2).unwrap();
+                blob.extend_from_slice(&[0xC1, 0x00]);
+                blob
+            },
+            {
+                // object holding one
+                let mut blob = create_jsonb_header(JSONB_OBJECT, 4).unwrap();
+                blob.extend(create_jsonb_header(JSONB_TEXT, 1).unwrap());
+                blob.extend_from_slice(b"a");
+                blob.extend_from_slice(&[0xC1, 0x00]);
+                blob
+            },
+        ];
+        for blob in blobs {
+            let blob: &[u8] = &blob;
+            assert!(
+                read_jsonb_value(blob).is_err(),
+                "{blob:02X?} decoded to {:?}",
+                read_jsonb_value(blob).map(|value| value.0)
+            );
+        }
+
+        // the one byte spelling sqlite writes
+        let mut blob = create_jsonb_header(JSONB_ARRAY, 2).unwrap();
+        blob.extend(create_jsonb_header(JSONB_TRUE, 0).unwrap());
+        blob.extend(create_jsonb_header(JSONB_NULL, 0).unwrap());
+        assert_eq!(read_jsonb_value(&blob).unwrap().0, json!([true, null]));
     }
 
     #[diesel_test_helper::test]
