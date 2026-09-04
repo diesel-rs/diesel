@@ -471,7 +471,12 @@ where
         &mut **inner
     };
 
-    let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
+    // SAFETY: SQLite passes a live context for the duration of this callback.
+    let connection = unsafe { NonNull::new(ffi::sqlite3_context_db_handle(ctx)) };
+    let connection = connection.ok_or(SqliteCallbackError::Abort(
+        "sqlite3_context_db_handle returned a null pointer. This should never happen",
+    ))?;
+    let args = build_sql_function_args::<ArgsSqlType, Args>(args, connection)?;
 
     aggregator.step(args);
     Ok(())

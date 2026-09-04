@@ -6,6 +6,9 @@ use sqlite_wasm_rs as ffi;
 
 mod bind_collector;
 mod functions;
+#[cfg(all(test, not(all(target_family = "wasm", target_os = "unknown"))))]
+#[allow(unsafe_code)]
+mod oom_test_support;
 mod owned_row;
 mod raw;
 mod row;
@@ -539,7 +542,9 @@ impl SqliteConnection {
     ///
     /// # Returns
     ///
-    /// This function returns a byte slice representing the serialized database.
+    /// This function returns a [`SerializedDatabase`] wrapping the serialized
+    /// bytes. If SQLite fails to allocate the buffer holding them, the failure
+    /// is reported by [`SerializedDatabase::try_as_slice`].
     pub fn serialize_database_to_buffer(&mut self) -> SerializedDatabase {
         self.raw_connection.serialize()
     }
@@ -576,7 +581,7 @@ impl SqliteConnection {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
     /// // Deserialize the byte vector into the new database
-    /// connection.deserialize_readonly_database_from_buffer(serialized_db.as_slice()).unwrap();
+    /// connection.deserialize_readonly_database_from_buffer(serialized_db.try_as_slice().unwrap()).unwrap();
     /// #
     /// # }
     /// ```
@@ -602,6 +607,9 @@ impl SqliteConnection {
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
+        // This function has side effects (creates triggers), so it should not
+        // be deterministic. We use DIRECTONLY to prevent it from being called
+        // from malicious schema objects in untrusted databases.
         functions::register::<Text, Integer, _, _, _>(
             &self.raw_connection,
             "diesel_manage_updated_at",
@@ -688,7 +696,9 @@ mod tests {
             let serialized_database = conn1.serialize_database_to_buffer();
             let conn2 = &mut connection();
             conn2
-                .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
+                .deserialize_readonly_database_from_buffer(
+                    serialized_database.try_as_slice().unwrap(),
+                )
                 .unwrap();
 
             let query =
@@ -758,6 +768,110 @@ mod tests {
             r.unwrap_err().to_string(),
             "database disk image is malformed"
         );
+    }
+
+    #[diesel_test_helper::test]
+    fn database_serializes_empty_deserialized_database() {
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+        conn.deserialize_readonly_database_from_buffer(&[]).unwrap();
+
+        let serialized = conn.serialize_database_to_buffer();
+
+        assert!(serialized.is_empty());
+        assert!(serialized.try_as_slice().unwrap().is_empty());
+    }
+
+    #[cfg(all(not(all(target_family = "wasm", target_os = "unknown"))))]
+    #[allow(unsafe_code)]
+    mod sqlite_serialize_oom {
+        use super::super::oom_test_support::{panic_message, run_in_child, with_heap_limit};
+        use super::super::{ffi, SerializedDatabase};
+        use crate::connection::{Connection, SimpleConnection};
+        use crate::sqlite::SqliteConnection;
+
+        const MIN_DATABASE_BYTES: i64 = 1_048_576;
+
+        // 64 KiB covers statement setup but cannot hold the 1 MiB serialization,
+        // pinning the failure to output allocation after SQLite reports its size.
+        fn with_failing_serialize<R>(f: impl FnOnce() -> R) -> R {
+            with_heap_limit(65_536, f)
+        }
+
+        #[test]
+        fn sqlite_serialize_oom_is_contained() {
+            run_in_child(|| {
+                let mut conn = large_database();
+
+                let (baseline_size, baseline) = serialize_direct(&conn);
+                assert!(
+                    baseline_size >= MIN_DATABASE_BYTES,
+                    "the serialized database is smaller than 1 MiB"
+                );
+                assert!(
+                    !baseline.is_null(),
+                    "SQLite refused to serialize a valid database"
+                );
+                // SAFETY: `sqlite3_serialize` returned this buffer and no wrapper owns it.
+                unsafe { ffi::sqlite3_free(baseline as _) };
+
+                let (reported_size, data) = with_failing_serialize(|| serialize_direct(&conn));
+                if !data.is_null() {
+                    // SAFETY: `sqlite3_serialize` returned this buffer and no wrapper owns it.
+                    unsafe { ffi::sqlite3_free(data as _) };
+                }
+                assert!(
+                    data.is_null(),
+                    "SQLite did not fail the output allocation of the serialization"
+                );
+                // SQLite reports the required size before attempting output allocation.
+                assert!(
+                    reported_size >= MIN_DATABASE_BYTES,
+                    "SQLite reported a serialization size of {reported_size} with a null buffer"
+                );
+
+                let serialized: SerializedDatabase =
+                    with_failing_serialize(|| conn.serialize_database_to_buffer());
+                let error = serialized
+                    .try_as_slice()
+                    .expect_err("the failed output allocation must surface as an error");
+                assert_eq!(error.to_string(), "out of memory");
+
+                let payload = std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| {
+                    core::hint::black_box(serialized[0]);
+                }))
+                .expect_err("the serialized database access did not panic");
+                let message = panic_message(&*payload);
+                assert!(
+                    message.contains("Cannot access the serialized database: out of memory"),
+                    "SQLite serialization allocation failure surfaced as `{message}` instead \
+                     of a caught allocation panic"
+                );
+            });
+        }
+
+        fn large_database() -> SqliteConnection {
+            let mut conn = SqliteConnection::establish(":memory:").unwrap();
+            conn.batch_execute(&format!(
+                "CREATE TABLE blobs (id INTEGER PRIMARY KEY, payload BLOB);
+                 INSERT INTO blobs (payload) VALUES (zeroblob({MIN_DATABASE_BYTES}));"
+            ))
+            .unwrap();
+            conn
+        }
+
+        fn serialize_direct(conn: &SqliteConnection) -> (ffi::sqlite3_int64, *mut u8) {
+            // SAFETY: The connection is live, a null schema selects `main`, and `size` is a writable out-parameter.
+            unsafe {
+                let mut size: ffi::sqlite3_int64 = 0;
+                let data = ffi::sqlite3_serialize(
+                    conn.raw_connection.internal_connection.as_ptr(),
+                    core::ptr::null(),
+                    &mut size as *mut _,
+                    0,
+                );
+                (size, data)
+            }
+        }
     }
 
     #[diesel_test_helper::test]

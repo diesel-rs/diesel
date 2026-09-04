@@ -6,6 +6,7 @@ use super::owned_row::OwnedSqliteRow;
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
 use crate::backend::Backend;
+use crate::result::QueryResult;
 use crate::row::{Field, IntoOwnedRow, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
 
@@ -37,7 +38,7 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
     pub(super) fn duplicate(
         &mut self,
         column_names: &mut Option<Rc<[Option<String>]>>,
-    ) -> PrivateSqliteRow<'stmt, 'query> {
+    ) -> QueryResult<PrivateSqliteRow<'stmt, 'query>> {
         match self {
             PrivateSqliteRow::Direct(stmt) => {
                 let column_names = if let Some(column_names) = column_names {
@@ -51,26 +52,32 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
                     *column_names = Some(c.clone());
                     c
                 };
-                PrivateSqliteRow::Duplicated {
+                Ok(PrivateSqliteRow::Duplicated {
                     values: (0..stmt.column_count())
                         .map(|idx| stmt.copy_value(idx))
-                        .collect(),
+                        .collect::<QueryResult<Vec<_>>>()?,
                     column_names,
-                }
+                })
             }
             PrivateSqliteRow::Duplicated {
                 values,
                 column_names,
-            } => PrivateSqliteRow::Duplicated {
+            } => Ok(PrivateSqliteRow::Duplicated {
                 values: values
                     .iter()
-                    .map(|v| v.as_ref().map(|v| v.duplicate()))
-                    .collect(),
+                    .map(|v| v.as_ref().map(OwnedSqliteValue::duplicate).transpose())
+                    .collect::<QueryResult<Vec<_>>>()?,
                 column_names: column_names.clone(),
-            },
+            }),
         }
     }
 
+    /// Copies the row out of the statement, so that it outlives it.
+    ///
+    /// # Panics
+    ///
+    /// Panics if SQLite cannot allocate the copies, as `IntoOwnedRow::into_owned`
+    /// cannot report an error.
     pub(super) fn moveable(
         &self,
         column_name_cache: &mut Option<Arc<[Option<String>]>>,
@@ -93,7 +100,8 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
                 OwnedSqliteRow::new(
                     (0..stmt.column_count())
                         .map(|idx| stmt.copy_value(idx))
-                        .collect(),
+                        .collect::<QueryResult<Vec<_>>>()
+                        .unwrap_or_else(|e| panic!("{e}")),
                     column_names,
                 )
             }
@@ -118,8 +126,9 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
                 OwnedSqliteRow::new(
                     values
                         .iter()
-                        .map(|v| v.as_ref().map(|v| v.duplicate()))
-                        .collect(),
+                        .map(|v| v.as_ref().map(OwnedSqliteValue::duplicate).transpose())
+                        .collect::<QueryResult<Vec<_>>>()
+                        .unwrap_or_else(|e| panic!("{e}")),
                     column_names,
                 )
             }
