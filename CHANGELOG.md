@@ -24,6 +24,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * Fixed broken prepared statement caching for queries using positional ordering and window functions with frame offset clauses
 * Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
+* Fixed encoding floating point values without a decimal part in a roundtrip safe way in SQLite's jsonb encoding
+* Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
 
 ## [2.3.12] 2026-08-07
 

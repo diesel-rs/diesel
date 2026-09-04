@@ -573,37 +573,16 @@ mod jsonb {
         n: &serde_json::Value,
         buffer: &mut Vec<u8>,
     ) -> serialize::Result {
-        if let Some(i) = n.as_i64() {
-            // Write an integer (INT type)
-            write_jsonb_int(i, buffer)
-        } else if let Some(f) = n.as_f64() {
-            // Write a float (FLOAT type)
-            write_jsonb_float(f, buffer)
+        let n = n.to_string();
+        let tpe = if n.chars().any(|c| !c.is_ascii_digit()) {
+            JSONB_FLOAT
         } else {
-            Err("Invalid JSONB number type".into())
-        }
-    }
+            JSONB_INT
+        };
+        write_jsonb_header(buffer, tpe, n.len())?;
 
-    // Write an integer in JSONB format
-    pub(super) fn write_jsonb_int(i: i64, buffer: &mut Vec<u8>) -> serialize::Result {
-        let int_str = i.to_string();
-
-        write_jsonb_header(buffer, JSONB_INT, int_str.len())?;
-
-        // Write the ASCII text representation of the integer as the payload
-        buffer.extend_from_slice(int_str.as_bytes());
-
-        Ok(IsNull::No)
-    }
-
-    // Write a floating-point number in JSONB format
-    pub(super) fn write_jsonb_float(f: f64, buffer: &mut Vec<u8>) -> serialize::Result {
-        let float_str = f.to_string();
-
-        write_jsonb_header(buffer, JSONB_FLOAT, float_str.len())?;
-
-        // Write the ASCII text representation of the float as the payload
-        buffer.extend_from_slice(float_str.as_bytes());
+        // Write the ASCII text representation of the integer/float as the payload
+        buffer.extend_from_slice(n.as_bytes());
 
         Ok(IsNull::No)
     }
@@ -664,6 +643,38 @@ mod tests {
         Ok(buffer)
     }
 
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_float_without_a_fraction_is_written_invalid() {
+        let conn = &mut connection();
+        for value in [
+            json!(3.0),
+            json!(-0.0),
+            json!(1.5e300),
+            // an exponent and no fraction digit, so the text carries no `.`
+            json!(1e-7),
+            json!(1e300),
+        ] {
+            let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
+                .get_result::<Vec<u8>>(conn)
+                .unwrap();
+            let valid = diesel::select(
+                sql::<sql_types::Integer>("json_valid(")
+                    .bind::<sql_types::Binary, _>(blob.clone())
+                    .sql(", 8)"),
+            )
+            .get_result::<i32>(conn)
+            .unwrap();
+            assert_eq!(
+                valid, 1,
+                "sqlite rejects the blob written for {value}: {blob:02X?}"
+            );
+            let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob.clone()))
+                .get_result::<Value>(conn)
+                .unwrap_or_else(|error| panic!("{value} does not read back: {error}"));
+            assert_eq!(back, value, "{blob:02X?}");
+        }
+    }
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
     fn json_to_sql() {
