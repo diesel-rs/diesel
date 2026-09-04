@@ -106,10 +106,16 @@ mod bigdecimal {
         let (mut integer, scale) = decimal.as_bigint_and_exponent();
 
         // Handling of negative scale
-        let scale = if scale < 0 {
-            for _ in 0..(-scale) {
-                integer = integer * 10;
-            }
+        let scale = if scale < -131064 {
+            // that's a guard avoiding the potential expensive calculation below
+            // by returning the error early on that beginning with this scale would
+            // be emitted anyway
+            return Err("Max digit number is expect to fit into 16 bit".into());
+        } else if scale < 0 {
+            integer = BigDecimal::new(integer, scale)
+                .with_scale(0)
+                .as_bigint_and_exponent()
+                .0;
             0
         } else {
             scale
@@ -386,6 +392,27 @@ mod bigdecimal {
             let mut output = Output::test(output);
             let r = <BigDecimal as ToSql<Numeric, Pg>>::to_sql(&decimal, &mut output);
             assert!(r.is_err());
+        }
+
+        #[diesel_test_helper::test]
+        fn bigdecimal_negative_scale_doesnt_burn_cpu_time() {
+            let d = BigDecimal::from_str("1E+130000").expect("parse bigdecimal");
+            let n: PgNumeric = d.into();
+            assert_eq!(
+                n,
+                PgNumeric::Positive {
+                    weight: 32500,
+                    scale: 0,
+                    digits: vec![1]
+                }
+            );
+        }
+
+        #[diesel_test_helper::test]
+        #[should_panic]
+        fn bigdecimal_negative_scale_doesnt_burn_cpu_time_fast_error() {
+            let d = BigDecimal::from_str("1E+131064").expect("parse bigdecimal");
+            let _n: PgNumeric = d.into();
         }
     }
 }
