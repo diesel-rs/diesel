@@ -56,6 +56,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
+* Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
+* Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
 * Restore SQLite auto-extension support with `libsqlite3-sys` versions before 0.29
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
@@ -70,6 +72,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `FromSql` impls for PostgreSQL arrays now use the element OID from the array header instead of the array type's own OID when decoding each element, matching the behavior of the record decoder.
 * Fixed undefined behavior in `SqliteConnection::serialize_database_to_buffer` when SQLite returns a null buffer for an empty deserialized database or an allocation failure. `SerializedDatabase::as_slice` is deprecated in favor of the new `SerializedDatabase::try_as_slice`, which reports the allocation failure as an error instead of panicking.
 * Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
+* Fixed broken prepared statement caching for queries using positional ordering and window functions with frame offset clauses
 
 ### Changed
 
