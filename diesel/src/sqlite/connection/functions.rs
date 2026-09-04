@@ -40,7 +40,7 @@ where
     }
 
     conn.register_sql_function(fn_name, fields_needed, behavior, move |conn, args| {
-        let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
+        let args = build_sql_function_args::<ArgsSqlType, Args>(args, conn.internal_connection)?;
 
         Ok(f(conn, args))
     })?;
@@ -92,11 +92,12 @@ where
 
 pub(super) fn build_sql_function_args<ArgsSqlType, Args>(
     args: &mut [*mut ffi::sqlite3_value],
+    connection: core::ptr::NonNull<ffi::sqlite3>,
 ) -> Result<Args, Error>
 where
     Args: FromSqlRow<ArgsSqlType, Sqlite>,
 {
-    let row = FunctionRow::new(args);
+    let row = FunctionRow::new(args, connection);
     Args::build_from_row(&row).map_err(Error::DeserializationError)
 }
 
@@ -127,11 +128,15 @@ where
 struct FunctionRow<'a> {
     args: &'a [Option<OwnedSqliteValue>],
     field_count: usize,
+    connection: core::ptr::NonNull<ffi::sqlite3>,
 }
 
 impl FunctionRow<'_> {
     #[allow(unsafe_code)] // complicated ptr cast
-    fn new(args: &mut [*mut ffi::sqlite3_value]) -> Self {
+    fn new(
+        args: &mut [*mut ffi::sqlite3_value],
+        connection: core::ptr::NonNull<ffi::sqlite3>,
+    ) -> Self {
         let lengths = args.len();
         let args = unsafe {
             core::slice::from_raw_parts(
@@ -156,6 +161,7 @@ impl FunctionRow<'_> {
         Self {
             field_count: lengths,
             args,
+            connection,
         }
     }
 }
@@ -183,6 +189,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         Some(FunctionArgument {
             args: self.args,
             col_idx,
+            connection: self.connection,
         })
     }
 
@@ -210,6 +217,7 @@ impl<'a> RowIndex<&'a str> for FunctionRow<'_> {
 struct FunctionArgument<'a> {
     args: &'a [Option<OwnedSqliteValue>],
     col_idx: usize,
+    connection: core::ptr::NonNull<ffi::sqlite3>,
 }
 
 impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
@@ -222,6 +230,6 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
     }
 
     fn value(&self) -> Option<<Sqlite as Backend>::RawValue<'_>> {
-        SqliteValue::from_function_row(self.args, self.col_idx)
+        SqliteValue::from_function_row(self.args, self.col_idx, self.connection)
     }
 }

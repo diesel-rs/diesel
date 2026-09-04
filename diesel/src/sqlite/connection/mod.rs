@@ -10,6 +10,13 @@ mod collation_needed;
 mod functions;
 mod hooks;
 mod limits;
+#[cfg(all(
+    test,
+    feature = "std",
+    not(all(target_family = "wasm", target_os = "unknown"))
+))]
+#[allow(unsafe_code)]
+mod oom_test_support;
 mod owned_row;
 mod raw;
 mod row;
@@ -2349,39 +2356,22 @@ mod tests {
     ))]
     #[allow(unsafe_code)]
     mod sqlite_serialize_oom {
+        use super::super::oom_test_support::{panic_message, run_in_child, with_heap_limit};
         use super::super::{SerializedDatabase, ffi};
         use crate::connection::{Connection, SimpleConnection};
         use crate::sqlite::SqliteConnection;
 
-        const CHILD_ENV: &str = "DIESEL_SQLITE_SERIALIZE_OOM_CHILD";
         const MIN_DATABASE_BYTES: i64 = 1_048_576;
-
-        struct HardHeapLimit(i64);
-
-        impl Drop for HardHeapLimit {
-            fn drop(&mut self) {
-                // SAFETY: SQLite accepts every i64 and does not retain Rust memory.
-                unsafe {
-                    ffi::sqlite3_hard_heap_limit64(self.0);
-                }
-            }
-        }
 
         // 64 KiB covers statement setup but cannot hold the 1 MiB serialization,
         // pinning the failure to output allocation after SQLite reports its size.
         fn with_failing_serialize<R>(f: impl FnOnce() -> R) -> R {
-            // SAFETY: These process-global SQLite APIs do not dereference Rust memory.
-            let previous = unsafe {
-                let current = ffi::sqlite3_memory_used();
-                ffi::sqlite3_hard_heap_limit64(current + 65_536)
-            };
-            let _guard = HardHeapLimit(previous);
-            f()
+            with_heap_limit(65_536, f)
         }
 
         #[test]
         fn sqlite_serialize_oom_is_contained() {
-            run_in_child("serialize", || {
+            run_in_child(|| {
                 let mut conn = large_database();
 
                 let (baseline_size, baseline) = serialize_direct(&conn);
@@ -2418,53 +2408,17 @@ mod tests {
                     .expect_err("the failed output allocation must surface as an error");
                 assert_eq!(error.to_string(), "out of memory");
 
-                let outcome = std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| {
+                let payload = std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| {
                     core::hint::black_box(serialized[0]);
-                }));
-                let message = panic_message(&outcome);
+                }))
+                .expect_err("the serialized database access did not panic");
+                let message = panic_message(&*payload);
                 assert!(
                     message.contains("Cannot access the serialized database: out of memory"),
                     "SQLite serialization allocation failure surfaced as `{message}` instead \
                      of a caught allocation panic"
                 );
             });
-        }
-
-        // The SQLite heap limit is process-global, so a child process keeps the
-        // artificially induced allocation failures away from concurrent tests.
-        fn run_in_child(case: &str, f: impl FnOnce()) {
-            if std::env::var_os(CHILD_ENV).as_deref() == Some(std::ffi::OsStr::new(case)) {
-                f();
-                return;
-            }
-
-            let current_thread = std::thread::current();
-            let test_name = current_thread
-                .name()
-                .expect("the test harness names every test thread");
-            let output = std::process::Command::new(
-                std::env::current_exe().expect("the test binary has a path"),
-            )
-            .arg("--exact")
-            .arg(test_name)
-            .arg("--nocapture")
-            .env(CHILD_ENV, case)
-            .output()
-            .expect("the child test process starts");
-
-            assert!(
-                output.status.success(),
-                "child test failed\nstdout:\n{}\nstderr:\n{}",
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr)
-            );
-            // libtest exits successfully when an exact filter matches no tests.
-            assert!(
-                String::from_utf8_lossy(&output.stdout).contains("test result: ok. 1 passed"),
-                "child test did not run exactly one test\nstdout:\n{}\nstderr:\n{}",
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr)
-            );
         }
 
         fn large_database() -> SqliteConnection {
@@ -2488,17 +2442,6 @@ mod tests {
                     0,
                 );
                 (size, data)
-            }
-        }
-
-        fn panic_message(outcome: &std::thread::Result<()>) -> String {
-            match outcome {
-                Ok(()) => "the call returned without a panic".to_string(),
-                Err(payload) => payload
-                    .downcast_ref::<&str>()
-                    .map(|s| (*s).to_string())
-                    .or_else(|| payload.downcast_ref::<String>().cloned())
-                    .unwrap_or_else(|| "non-string panic payload".to_string()),
             }
         }
     }

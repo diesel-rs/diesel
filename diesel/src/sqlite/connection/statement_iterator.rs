@@ -37,7 +37,11 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
                 }
             };
             let last_row = &mut *last_row;
-            let duplicated = last_row.duplicate(column_names);
+            let duplicated = match last_row.duplicate(column_names) {
+                Ok(duplicated) => duplicated,
+                // The statement is not advanced, so the row it holds stays current.
+                Err(e) => return Some(Err(e)),
+            };
             core::mem::replace(last_row, duplicated)
         };
         if let PrivateSqliteRow::Direct(mut stmt) = last_row {
