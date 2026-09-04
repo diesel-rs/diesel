@@ -650,7 +650,14 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     fn regression_float_without_a_fraction_is_written_invalid() {
         let conn = &mut connection();
-        for value in [json!(3.0), json!(-0.0), json!(1.5e300)] {
+        for value in [
+            json!(3.0),
+            json!(-0.0),
+            json!(1.5e300),
+            // an exponent and no fraction digit, so the text carries no `.`
+            json!(1e-7),
+            json!(1e300),
+        ] {
             let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
                 .get_result::<Vec<u8>>(conn)
                 .unwrap();
@@ -665,6 +672,10 @@ mod tests {
                 valid, 1,
                 "sqlite rejects the blob written for {value}: {blob:02X?}"
             );
+            let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob.clone()))
+                .get_result::<Value>(conn)
+                .unwrap_or_else(|error| panic!("{value} does not read back: {error}"));
+            assert_eq!(back, value, "{blob:02X?}");
         }
     }
     #[diesel_test_helper::test]
