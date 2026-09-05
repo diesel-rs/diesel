@@ -163,14 +163,8 @@ mod jsonb {
                         return Err("No value found for object".into());
                     }
                     let (value_header, value) = read_header_and_value(payload)?;
-                    let last_ref = match object.entry(key) {
-                        serde_json::map::Entry::Vacant(vacant_entry) => vacant_entry.insert(value),
-                        serde_json::map::Entry::Occupied(occupied_entry) => {
-                            let v = occupied_entry.into_mut();
-                            *v = value;
-                            v
-                        }
-                    };
+                    object.insert(key.clone(), value);
+                    let last_ref = object.get_mut(&key).expect("We inserted it above");
                     let payload_size = if last_ref.is_object() || last_ref.is_array() {
                         stack.push((last_ref as *mut _, total_read + value_header.total_size));
                         value_header.header_size
@@ -517,7 +511,10 @@ mod jsonb {
                 }
                 JsonbVisit::Value(serde_json::Value::Number(value)) => {
                     let value = value.to_string();
-                    let element_type = if value.chars().any(|c| !c.is_ascii_digit()) {
+                    let element_type = if value
+                        .char_indices()
+                        .any(|(idx, c)| !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+'))))
+                    {
                         JSONB_FLOAT
                     } else {
                         JSONB_INT
@@ -1406,5 +1403,14 @@ mod tests {
     fn nested_container_cannot_cross_parent_boundary() {
         let res = read_jsonb_value(&[0x3B, 0x1B, 0x1B, JSONB_NULL]);
         assert!(res.is_err(), "{:?}", res.unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn check_signed_integer() {
+        let mut buf = Vec::new();
+        write_jsonb_value(&json!(-42), &mut buf).unwrap();
+        let mut expected = create_jsonb_header(JSONB_INT, 3).unwrap();
+        expected.extend(b"-42");
+        assert_eq!(buf, expected);
     }
 }
