@@ -24,6 +24,32 @@ mod tests {
     use super::*;
     use crate::mysql::Mysql;
     #[diesel_test_helper::test]
+    fn regression_json_float_survives_a_round_trip() {
+        use crate::mysql::{MysqlType, MysqlValue};
+        use crate::query_builder::bind_collector::ByteWrapper;
+
+        for float in [
+            8.829872855928286e-308f64,
+            -0.20221894534048165,
+            1.7383394626966921e-307,
+            6.178787134922198e305,
+            0.1,
+            f64::MIN_POSITIVE,
+            f64::MAX,
+        ] {
+            let value = serde_json::Value::from(float);
+            let mut buffer = Vec::new();
+            let mut bytes = Output::test(ByteWrapper(&mut buffer));
+            ToSql::<sql_types::Json, Mysql>::to_sql(&value, &mut bytes).unwrap();
+            let back: serde_json::Value = FromSql::<sql_types::Json, Mysql>::from_sql(
+                MysqlValue::new_internal(&buffer, MysqlType::String),
+            )
+            .unwrap();
+            assert_eq!(back.as_f64().map(f64::to_bits), Some(float.to_bits()));
+        }
+    }
+
+    #[diesel_test_helper::test]
     fn json_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;
 

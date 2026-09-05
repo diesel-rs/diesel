@@ -66,6 +66,18 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
+* Fixed potential code injections in the generated schema.rs file caused by malicious database identifiers
+* MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
+* Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
+* Potential stackoverflow on deeply nested JSONB values for the SQLite backend
+* `FromSql` impls for PostgreSQL arrays now use the element OID from the array header instead of the array type's own OID when decoding each element, matching the behavior of the record decoder.
+* Fixed undefined behavior in `SqliteConnection::serialize_database_to_buffer` when SQLite returns a null buffer for an empty deserialized database or an allocation failure. `SerializedDatabase::as_slice` is deprecated in favor of the new `SerializedDatabase::try_as_slice`, which reports the allocation failure as an error instead of panicking.
+* Fixed encoding floating point values without a decimal part in a roundtrip safe way in SQLite's jsonb encoding
+* Fixed reading a floating point value from `Json` and `Jsonb` as the neighbouring double, which affected about 29% of all finite `f64` values on every backend, by enabling `serde_json`'s `float_roundtrip` feature
+* The minimum supported `serde_json` version is now 1.0.54, which is where that feature was added
+* Fixed reading floating point values from SQLite's jsonb encoding as the neighbouring double, which affected about 30% of all finite `f64` values
+* Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
+* Fixed broken prepared statement caching for queries using positional ordering and window functions with frame offset clauses
 
 ### Changed
 

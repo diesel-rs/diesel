@@ -645,6 +645,124 @@ mod tests {
 
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
+    fn regression_json_text_float_survives_a_round_trip() {
+        let conn = &mut connection();
+        for float in [
+            8.829872855928286e-308f64,
+            -0.20221894534048165,
+            1.7383394626966921e-307,
+            6.178787134922198e305,
+        ] {
+            let value = json!(float);
+            let text = diesel::select(sql::<sql_types::Text>("").bind::<sql_types::Json, _>(value))
+                .get_result::<String>(conn)
+                .unwrap();
+            let back = diesel::select(sql::<sql_types::Json>("").bind::<sql_types::Text, _>(text))
+                .get_result::<Value>(conn)
+                .unwrap();
+            assert_eq!(back.as_f64().map(f64::to_bits), Some(float.to_bits()));
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_float_keeps_its_bits_through_the_writers_text() {
+        let conn = &mut connection();
+        let mut assert_roundtrip = |value: Value| {
+            let expected = value.as_f64().unwrap();
+            let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value))
+                .get_result::<Vec<u8>>(conn)
+                .unwrap();
+            let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob))
+                .get_result::<Value>(conn)
+                .unwrap();
+            assert_eq!(
+                back.as_f64().unwrap().to_bits(),
+                expected.to_bits(),
+                "{expected:?} came back as {back}"
+            );
+        };
+
+        // json text, so `serde_json` parses before diesel writes what it parsed
+        assert_roundtrip(serde_json::from_str("-922333372720360.5975808").unwrap());
+
+        for f in [
+            // written as a text that reads back as the neighbouring double
+            -0.20221894534048165,
+            6.178787134922198e305,
+            -5.276099561814224e214,
+            3.587959730897931e-246,
+            9.136353238902674e-45,
+            2.4261860608815182e-160,
+            -2.5496151068102186e-175,
+            5.0513463356317975e-231,
+            // these already survive and must keep doing so
+            0.1,
+            1e-7,
+            5e-324,
+            -0.0,
+            f64::MAX,
+            f64::MIN_POSITIVE,
+        ] {
+            assert_roundtrip(json!(f));
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn regression_every_float_text_reads_back_as_the_same_double() {
+        let mut drifted = Vec::new();
+        let mut check = |bits: u64| {
+            let f = f64::from_bits(bits);
+            if !f.is_finite() {
+                return;
+            }
+            let mut buffer = Vec::new();
+            write_jsonb_number(&json!(f), &mut buffer).unwrap();
+            let back = read_jsonb_value(&buffer).unwrap().0;
+            if back.as_f64().map(f64::to_bits) != Some(bits) {
+                drifted.push(alloc::format!("{bits:#018x} {f:?} -> {back}"));
+            }
+        };
+
+        // every exponent class against every mantissa class, both signs
+        for exponent in [0, 1, 2, 512, 1021, 1022, 1023, 1024, 1075, 2045, 2046] {
+            for mantissa in [0, 1, 2, 1 << 26, 1 << 51, (1 << 52) - 2, (1 << 52) - 1] {
+                for sign in [0, 1u64 << 63] {
+                    check(sign | (exponent << 52) | mantissa);
+                }
+            }
+        }
+
+        // the doubles either side of the value the fuzzer first reported,
+        // taken from the text so it is the double `serde_json` parsed
+        let witness = serde_json::from_str::<Value>("-922333372720360.5975808")
+            .unwrap()
+            .as_f64()
+            .unwrap()
+            .to_bits();
+        for bits in witness - 2..=witness + 2 {
+            check(bits);
+        }
+
+        // and a deterministic xorshift, since about three in ten doubles drift
+        let mut state: u64 = 0x2545F4914F6CDD1D;
+        for _ in 0..256 {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            check(state);
+        }
+
+        assert!(
+            drifted.is_empty(),
+            "{} floats drifted, first {:?}",
+            drifted.len(),
+            &drifted[..drifted.len().min(4)]
+        );
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
     fn regression_float_without_a_fraction_is_written_invalid() {
         let conn = &mut connection();
         for value in [
