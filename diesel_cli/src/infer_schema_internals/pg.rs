@@ -118,9 +118,7 @@ diesel::postfix_operator!(Regclass, "::regclass", sql_types::Oid, backend: Pg);
 
 fn regclass<'a, QS>(
     table: &'a TableName,
-) -> Regclass<Box<dyn BoxableExpression<QS, Pg, SqlType = sql_types::Text> + 'a>>
-where
-{
+) -> Regclass<Box<dyn BoxableExpression<QS, Pg, SqlType = sql_types::Text> + 'a>> {
     let table_name = match table.schema {
         Some(ref schema_name) => Box::new(
             quote_ident(schema_name)
