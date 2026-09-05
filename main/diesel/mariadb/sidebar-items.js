@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["NumericRepresentation"],"mod":["data_types","sql_types"],"struct":["Mariadb"],"type":["MariadbConnection","MariadbQueryBuilder","MariadbType","MariadbValue"]};

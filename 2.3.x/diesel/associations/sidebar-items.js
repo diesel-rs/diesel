@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["Associations","Identifiable"],"struct":["TryGroupedByError"],"trait":["BelongsTo","GroupedBy","HasTable","Identifiable"]};

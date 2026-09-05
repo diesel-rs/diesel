@@ -1,0 +1,111 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates an `UPDATE` statement."><title>update in diesel - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.100.0-nightly (0ed41eb41 2026-09-04)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">update</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel/index.html">diesel</a><span class="version">2.3.13</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">update</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#batch-update" title="Batch Update">Batch Update</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate diesel</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">diesel</a></div><h1>Function <span class="fn">update</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/diesel/query_builder/functions.rs.html#214-216">Source</a> </span></div><pre class="rust item-decl"><code>pub fn update&lt;T: <a class="trait" href="query_builder/trait.IntoUpdateTarget.html" title="trait diesel::query_builder::IntoUpdateTarget">IntoUpdateTarget</a>&gt;(
+    source: T,
+) -&gt; <a class="struct" href="query_builder/struct.UpdateStatement.html" title="struct diesel::query_builder::UpdateStatement">UpdateStatement</a>&lt;T::<a class="associatedtype" href="associations/trait.HasTable.html#associatedtype.Table" title="type diesel::associations::HasTable::Table">Table</a>, T::<a class="associatedtype" href="query_builder/trait.IntoUpdateTarget.html#associatedtype.WhereClause" title="type diesel::query_builder::IntoUpdateTarget::WhereClause">WhereClause</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates an <code>UPDATE</code> statement.</p>
+<p>When a table is passed to <code>update</code>, every row in the table will be updated.
+You can narrow this scope by calling <a href="query_builder/struct.UpdateStatement.html#method.filter" title="method diesel::query_builder::UpdateStatement::filter"><code>filter</code></a> on the table before passing it in,
+which will result in <code>UPDATE your_table SET ... WHERE args_to_filter</code>.</p>
+<p>Passing a type which implements <code>Identifiable</code> is the same as passing
+<code>some_table.find(some_struct.id())</code>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>updated_row = diesel::update(users.filter(id.eq(<span class="number">1</span>)))
+    .set(name.eq(<span class="string">"James"</span>))
+    .get_result(connection);
+<span class="comment">// On backends that support it, you can call `get_result` instead of `execute`
+// to have `RETURNING *` automatically appended to the query. Alternatively, you
+// can explicitly return an expression by using the `returning` method before
+// getting the result.
+// Note for backend `mariadb`: support for `UPDATE ... RETURNING` was introduced with version 13.0
+</span><span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>((<span class="number">1</span>, <span class="string">"James"</span>.to_string())), updated_row);</code></pre></div>
+<p>To update multiple columns, give <a href="query_builder/struct.UpdateStatement.html#method.set" title="method diesel::query_builder::UpdateStatement::set"><code>set</code></a> a tuple argument:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>updated_row = diesel::update(users.filter(id.eq(<span class="number">1</span>)))
+    .set((name.eq(<span class="string">"James"</span>), surname.eq(<span class="string">"Bond"</span>)))
+    .get_result(connection);
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>((<span class="number">1</span>, <span class="string">"James"</span>.to_string(), <span class="string">"Bond"</span>.to_string())), updated_row);</code></pre></div><br/>
+<h2 id="batch-update"><a class="doc-anchor" href="#batch-update">§</a>Batch Update</h2>
+<p>To update a batch of rows, provide <a href="query_builder/struct.UpdateStatement.html#method.set" title="method diesel::query_builder::UpdateStatement::set"><code>set</code></a> a slice or a reference to a vector
+as an argument. You cannot call <a href="query_builder/struct.UpdateStatement.html#method.filter" title="method diesel::query_builder::UpdateStatement::filter"><code>filter</code></a>, since a special <code>WHERE</code> clause
+will be auto-generated instead. The <code>WHERE</code> clause will use the PRIMARY KEY
+as an identifier to apply the changes. The update struct requires both derive
+macros <a href="query_builder/derive.AsChangeset.html" title="derive diesel::query_builder::AsChangeset"><code>AsChangeset</code></a> and <a href="associations/derive.Identifiable.html" title="derive diesel::associations::Identifiable"><code>Identifiable</code></a>.</p>
+<p>Batch update using <code>id</code> as the PRIMARY KEY:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">table!</span> {
+    users {
+        id -&gt; Integer,
+        name -&gt; VarChar,
+        surname -&gt; VarChar,
+    }
+}
+
+<span class="attr">#[derive(Debug, Clone, AsChangeset, Identifiable)]
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+    surname: String,
+}
+
+<span class="kw">let </span>users_batch = [
+   User { id: <span class="number">1</span>, name: <span class="string">"James"</span>.to_string(), surname: <span class="string">"Bond"</span>.to_string() },
+   User { id: <span class="number">6</span>, name: <span class="string">"Mev"</span>.to_string(), surname: <span class="string">"Sane"</span>.to_string() },
+   User { id: <span class="number">3</span>, name: <span class="string">"Kody"</span>.to_string(), surname: <span class="string">"Pineda"</span>.to_string() },
+   <span class="comment">// Previous update of `id = 6` will be overwritten in the database.
+   </span>User { id: <span class="number">6</span>, name: <span class="string">"Mev2"</span>.to_string(), surname: <span class="string">"Sane2"</span>.to_string() },
+];
+
+diesel::update(users::table).set(<span class="kw-2">&amp;</span>users_batch).execute(connection).unwrap();
+
+<span class="kw">let </span>updated_rows = users::table.order(users::id).load(connection);
+
+<span class="macro">assert_eq!</span>(
+    <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[
+        (<span class="number">1</span>, <span class="string">"James"</span>.to_string(), <span class="string">"Bond"</span>.to_string()), <span class="comment">// updated
+        </span>(<span class="number">2</span>, <span class="string">"Jim"</span>.to_string(), <span class="string">"Brown"</span>.to_string()),
+        (<span class="number">3</span>, <span class="string">"Kody"</span>.to_string(), <span class="string">"Pineda"</span>.to_string()), <span class="comment">// updated
+        </span>(<span class="number">4</span>, <span class="string">"Lea"</span>.to_string(), <span class="string">"Kemp"</span>.to_string()),
+        (<span class="number">5</span>, <span class="string">"Malik"</span>.to_string(), <span class="string">"Wu"</span>.to_string()),
+        (<span class="number">6</span>, <span class="string">"Mev2"</span>.to_string(), <span class="string">"Sane2"</span>.to_string()) <span class="comment">// updated
+    </span>]),
+    updated_rows
+);</code></pre></div>
+<p>Batch update using <code>(id, name)</code> as the grouped PRIMARY KEY:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">table!</span> {
+    users (id, name) { <span class="comment">// define grouped primary key
+        </span>id -&gt; Integer,
+        name -&gt; VarChar,
+        surname -&gt; VarChar,
+    }
+}
+
+<span class="attr">#[derive(Debug, Clone, AsChangeset, Identifiable)]
+#[diesel(primary_key(id, name))] </span><span class="comment">// mandatory: provide grouped primary key
+</span><span class="kw">struct </span>User {
+    id: i32,
+    name: String,
+    surname: String,
+}
+
+<span class="kw">let </span>users_batch = <span class="macro">vec!</span>[
+    User { id: <span class="number">1</span>, name: <span class="string">"J"</span>.to_string(), surname: <span class="string">"Bond"</span>.to_string() },
+    User { id: <span class="number">3</span>, name: <span class="string">"K"</span>.to_string(), surname: <span class="string">"Pineda"</span>.to_string() },
+    User { id: <span class="number">6</span>, name: <span class="string">"Xavier"</span>.to_string(), surname: <span class="string">"Mev"</span>.to_string() }
+];
+
+diesel::update(users::table).set(<span class="kw-2">&amp;</span>users_batch).execute(connection).unwrap();
+
+<span class="kw">let </span>updated_rows = users::table.order(users::id).load(connection);
+
+<span class="macro">assert_eq!</span>(
+    <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[
+        (<span class="number">1</span>, <span class="string">"Sage"</span>.to_string(), <span class="string">"Griffin"</span>.to_string()), <span class="comment">// not updated
+        </span>(<span class="number">2</span>, <span class="string">"Jim"</span>.to_string(), <span class="string">"Brown"</span>.to_string()),
+        (<span class="number">3</span>, <span class="string">"Tom"</span>.to_string(), <span class="string">"Smith"</span>.to_string()), <span class="comment">// not updated
+        </span>(<span class="number">4</span>, <span class="string">"Lea"</span>.to_string(), <span class="string">"Kemp"</span>.to_string()),
+        (<span class="number">5</span>, <span class="string">"Malik"</span>.to_string(), <span class="string">"Wu"</span>.to_string()),
+        (<span class="number">6</span>, <span class="string">"Xavier"</span>.to_string(), <span class="string">"Mev"</span>.to_string()) <span class="comment">// updated
+    </span>]),
+    updated_rows
+);</code></pre></div></div></details></section></div></main></body></html>

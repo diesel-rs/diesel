@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["data_types","expression","sql_types"],"struct":["DistinctOnClause","FailedToLookupTypeError","Pg","PgConnection","PgMetadataCache","PgMetadataCacheKey","PgQueryBuilder","PgRowByRowLoadingMode","PgTypeMetadata","PgValue","TransactionBuilder"],"trait":["GetPgMetadataCache","PgMetadataLookup","TypeOidLookup"]};

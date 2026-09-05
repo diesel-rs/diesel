@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["empty_shrinker","quickcheck","single_shrinker"],"macro":[["quickcheck",1]],"struct":["Gen","NoShrink","QuickCheck","TestResult"],"trait":["Arbitrary","Testable"]};
