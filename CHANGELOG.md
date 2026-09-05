@@ -66,6 +66,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
+* Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
+* Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
 
 ### Changed
 
