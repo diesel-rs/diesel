@@ -90,7 +90,7 @@ fn bench_size_array_scalars(c: &mut Criterion) {
     group.warm_up_time(Duration::from_millis(300));
     group.measurement_time(Duration::from_millis(700));
     group.sample_size(30);
-    for &size in &[10, 100, 1000, 10000] {
+    for &size in &[10, 100, 1000, 10000, 100000, 1000000] {
         let val = build_flat_array_scalars(size);
         group.bench_with_input(BenchmarkId::from_parameter(size), &val, |b, val| {
             b.iter(|| encode_jsonb(black_box(val)));
