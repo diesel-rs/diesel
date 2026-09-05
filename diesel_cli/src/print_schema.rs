@@ -1,6 +1,7 @@
 use crate::config::{self, Config};
 use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
+use clap::parser::ValueSource;
 use clap::{ArgAction, ArgMatches, Args, FromArgMatches};
 use diesel::QueryResult;
 use serde::{Deserialize, Serialize};
@@ -32,6 +33,9 @@ pub struct PrintSchemaArgs {
     pub include_views_indices: Option<Vec<usize>>,
     pub experimental_infer_nullable_for_views_indices: Option<Vec<usize>>,
     pub custom_rust_enum_type_derives_indices: Option<Vec<usize>>,
+    /// True when `--schema-key` was actually passed on the command line.
+    /// Clap's default `default` value must not restrict which toml sections print.
+    pub schema_key_from_cli: bool,
 }
 
 impl PrintSchemaArgs {
@@ -76,6 +80,7 @@ impl PrintSchemaArgs {
             include_views_indices,
             experimental_infer_nullable_for_views_indices,
             custom_rust_enum_type_derives_indices,
+            schema_key_from_cli: _,
         } = self;
         let mapping = [
             (schema_indices, Self::SCHEMA),
@@ -140,6 +145,8 @@ impl FromArgMatches for PrintSchemaArgs {
             include_views_indices: None,
             experimental_infer_nullable_for_views_indices: None,
             custom_rust_enum_type_derives_indices: None,
+            schema_key_from_cli: matches.value_source(Self::SCHEMA_KEY)
+                == Some(ValueSource::CommandLine),
         };
         out.populate_indices(matches);
         Ok(out)
@@ -148,6 +155,8 @@ impl FromArgMatches for PrintSchemaArgs {
     fn update_from_arg_matches(&mut self, matches: &ArgMatches) -> Result<(), clap::Error> {
         self.inner.update_from_arg_matches(matches)?;
         self.populate_indices(matches);
+        self.schema_key_from_cli =
+            matches.value_source(Self::SCHEMA_KEY) == Some(ValueSource::CommandLine);
         Ok(())
     }
 }
@@ -335,10 +344,17 @@ pub fn run_infer_schema(
     use crate::print_schema::*;
 
     let mut conn = InferConnection::from_maybe_url(database_url)?;
-    let root_config = Config::read(config_file)?
+    let schema_key_from_cli = args.schema_key_from_cli;
+    let selected_schema_keys = args.inner.schema_key.clone();
+    let mut root_config = Config::read(config_file)?
         .set_filter(&args)?
         .update_config(args)?
         .print_schema;
+    if schema_key_from_cli {
+        root_config
+            .all_configs
+            .retain(|key, _| selected_schema_keys.iter().any(|k| k == key));
+    }
     let multi_schema_safe_tables = if root_config.has_multiple_schema() {
         Some(all_safe_tables_for_multi_schema(&mut conn, &root_config)?)
     } else {
