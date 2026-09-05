@@ -588,8 +588,13 @@ mod jsonb {
     }
 
     pub(super) fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        if s.chars().any(|c| c.is_control()) {
-            // If the string contains control characters, treat it as TEXTJ (escaped JSON)
+        // `TEXT` only holds a payload that renders as json unchanged, so a string
+        // carrying a character json escapes goes down the `TEXTJ` path, which is
+        // also the element sqlite's own `jsonb()` writes for such a string.
+        // Scanning bytes rather than chars is deliberate: json escapes nothing
+        // above `0x1F`, while `char::is_control` also covers `U+007F..=U+009F`,
+        // which sqlite stores as plain `TEXT`
+        if s.bytes().any(|b| b < 0x20 || b == b'"' || b == b'\\') {
             write_jsonb_textj(s, buffer)
         } else {
             write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
@@ -601,8 +606,10 @@ mod jsonb {
 
     pub(super) fn write_jsonb_textj(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
         // Escaping the string for JSON (e.g., \n, \uXXXX)
-        let escaped_string = serde_json::to_string(&String::from(s))
-            .map_err(|_| "Failed to serialize string for TEXTJ")?;
+        // `&s` infers the sized `&str`, which the declared minimum `serde_json`
+        // bound of 0.8.0 requires of `to_string`
+        let escaped_string =
+            serde_json::to_string(&s).map_err(|_| "Failed to serialize string for TEXTJ")?;
 
         // Remove the surrounding quotes from serde_json::to_string result
         let escaped_string = &escaped_string[1..escaped_string.len() - 1];
@@ -675,6 +682,110 @@ mod tests {
             assert_eq!(back, value, "{blob:02X?}");
         }
     }
+
+    // writes a value as jsonb, then asks sqlite whether the blob is well formed
+    // and diesel whether it reads back unchanged
+    #[cfg(not(miri))] // ffi call
+    fn jsonb_survives(conn: &mut crate::SqliteConnection, value: &Value) -> Result<(), String> {
+        let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
+            .get_result::<Vec<u8>>(conn)
+            .unwrap();
+        let valid = diesel::select(
+            sql::<sql_types::Integer>("json_valid(")
+                .bind::<sql_types::Binary, _>(blob.clone())
+                .sql(", 8)"),
+        )
+        .get_result::<i32>(conn)
+        .unwrap();
+        let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob.clone()))
+            .get_result::<Value>(conn);
+        if valid != 1 {
+            return Err(alloc::format!(
+                "sqlite calls {value} malformed as {blob:02X?}"
+            ));
+        }
+        match back {
+            Ok(ref back) if back == value => Ok(()),
+            Ok(back) => Err(alloc::format!("{value} came back as {back}")),
+            Err(e) => Err(alloc::format!("{value} came back as {e}")),
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_string_needing_an_escape_is_written_valid() {
+        let conn = &mut connection();
+        for value in [
+            // json must escape these two, so `TEXT` cannot hold them raw
+            json!("a\"b"),
+            json!("a\\b"),
+            json!("a\"\\b"),
+            json!("\""),
+            json!("\\"),
+            json!("\\\""),
+            json!("\"leading"),
+            json!("trailing\""),
+            // long enough to need a wider header
+            json!("aaaaaaaaaaaa\"bbbbbbbbbbbb"),
+            // the same string nested, since containers use the same writer
+            json!({ "k": "a\"b" }),
+            json!(["a\\b"]),
+            json!({ "a\"b": 1 }),
+            // these already survive and must keep doing so
+            json!(""),
+            json!("abc"),
+            json!("a\nb"),
+            json!("a\"\nb"),
+        ] {
+            jsonb_survives(conn, &value).unwrap_or_else(|e| panic!("{e}"));
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_every_char_is_written_valid() {
+        let conn = &mut connection();
+        let mut offenders = Vec::new();
+        // every scalar value, batched into arrays so one query covers a chunk
+        // and only a failing chunk is walked character by character
+        let mut chunk = Vec::new();
+        for code in 0u32..=0x10FFFF {
+            if let Some(c) = char::from_u32(code) {
+                let mut s = alloc::string::String::from('a');
+                s.push(c);
+                s.push('b');
+                chunk.push(json!(s));
+            }
+            if chunk.len() < 2048 && code != 0x10FFFF {
+                continue;
+            }
+            let batch = Value::Array(core::mem::take(&mut chunk));
+            if let Err(batch_error) = jsonb_survives(conn, &batch) {
+                let Value::Array(values) = batch else {
+                    unreachable!()
+                };
+                let known = offenders.len();
+                for value in values {
+                    if let Err(e) = jsonb_survives(conn, &value) {
+                        offenders.push(e);
+                    }
+                }
+                // a batch no single element explains points at the array itself,
+                // for example an aggregate size or a container header the changed
+                // child payloads got wrong, so keep its failure
+                if offenders.len() == known {
+                    offenders.push(batch_error);
+                }
+            }
+        }
+        assert!(
+            offenders.is_empty(),
+            "{} values broke the blob, first {:?}",
+            offenders.len(),
+            &offenders[..offenders.len().min(4)]
+        );
+    }
+
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
     fn json_to_sql() {
@@ -910,6 +1021,33 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    fn test_write_jsonb_textj_quote_and_backslash() {
+        let mut buffer = Vec::new();
+        let input_string = "a\"b\\c"; // A quote and a backslash also require escaping
+        write_jsonb_string(input_string, &mut buffer).unwrap();
+
+        let mut expected_buffer = Vec::new();
+        expected_buffer.extend(create_jsonb_header(JSONB_TEXTJ, 7).unwrap());
+        expected_buffer.extend_from_slice(br#"a\"b\\c"#);
+
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[diesel_test_helper::test]
+    fn test_write_jsonb_text_keeps_high_control_free_text() {
+        // U+007F is a unicode control character but json never escapes it, and
+        // sqlite writes it as `TEXT` too
+        let mut buffer = Vec::new();
+        write_jsonb_string("a\u{7f}b", &mut buffer).unwrap();
+
+        let mut expected_buffer = Vec::new();
+        expected_buffer.extend(create_jsonb_header(JSONB_TEXT, 3).unwrap());
+        expected_buffer.extend_from_slice("a\u{7f}b".as_bytes());
+
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[diesel_test_helper::test]
     fn test_write_jsonb_array() {
         let value = json!([1, true]);
         let mut buffer = Vec::new();
@@ -1007,6 +1145,24 @@ mod tests {
             json!("hello\nworld")
                 .into_sql::<Jsonb>()
                 .eq(&sql("jsonb('\"hello\\nworld\"')")), // The string is JSON-escaped
+        )
+        .get_result::<bool>(conn)
+        .unwrap();
+
+        assert!(res);
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn jsonb_to_sql_textj_quote_and_backslash() {
+        let conn = &mut connection();
+
+        // A quote and a backslash are the other two characters json escapes, and
+        // sqlite writes them as `TEXTJ` as well
+        let res = diesel::select(
+            json!("a\"b\\c")
+                .into_sql::<Jsonb>()
+                .eq(&sql(r#"jsonb('"a\"b\\c"')"#)),
         )
         .get_result::<bool>(conn)
         .unwrap();
