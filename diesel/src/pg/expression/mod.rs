@@ -5,7 +5,6 @@
 //! kept separate purely for documentation purposes.
 
 pub(crate) mod array;
-#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub(crate) mod array_comparison;
 pub(crate) mod expression_methods;
 pub mod extensions;
