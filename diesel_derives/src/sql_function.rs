@@ -987,21 +987,19 @@ fn generate_tokens_for_aggregate_functions(
         collect_types_for_sqlite_impl(arg_type, return_type);
     let types_for_sqlite_impl = &types_for_sqlite_impl;
 
-    // we do not support custom window functions for sqlite yet
-    if !contains_none && !is_window {
-        // tokens = quote! {
-        //     #tokens
+    let (trait_path, register_fn) = if is_window {
+        (
+            quote! { diesel::sqlite::SqliteWindowFunction },
+            quote! { register_window_function },
+        )
+    } else {
+        (
+            quote! { diesel::sqlite::SqliteAggregateFunction },
+            quote! { register_aggregate_function },
+        )
+    };
 
-        //     diesel::internal::sql_functions::expand_sqlite_function! {
-        //         [#(#types_for_sqlite_impl,)*],
-        //         use diesel::sqlite::{Sqlite, SqliteConnection};
-        //         use diesel::serialize::ToSql;
-        //         use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
-        //         use diesel::sqlite::SqliteAggregateFunction;
-        //         use diesel::sql_types::IntoNullable;
-        //     }
-        // };
-
+    if !contains_none {
         match arg_name.len() {
             x if x > 1 => {
                 tokens = quote! {
@@ -1019,7 +1017,7 @@ fn generate_tokens_for_aggregate_functions(
                             conn: &mut diesel::sqlite::SqliteConnection,
                         ) -> diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
+                            A: #trait_path<(#(#arg_name,)*)>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
@@ -1051,7 +1049,7 @@ fn generate_tokens_for_aggregate_functions(
                             behavior: diesel::sqlite::SqliteFunctionBehavior,
                         ) -> diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
+                            A: #trait_path<(#(#arg_name,)*)>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
@@ -1061,7 +1059,7 @@ fn generate_tokens_for_aggregate_functions(
                             diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
-                            conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name, behavior)
+                            conn.#register_fn::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name, behavior)
                         }
                     }
                 };
@@ -1086,7 +1084,7 @@ fn generate_tokens_for_aggregate_functions(
                             conn: &mut diesel::sqlite::SqliteConnection,
                         ) -> diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
+                            A: #trait_path<#arg_name>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
@@ -1118,7 +1116,7 @@ fn generate_tokens_for_aggregate_functions(
                             behavior: diesel::sqlite::SqliteFunctionBehavior,
                         ) -> diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
+                            A: #trait_path<#arg_name>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
@@ -1128,7 +1126,7 @@ fn generate_tokens_for_aggregate_functions(
                             diesel::deserialize::StaticallySizedRow<#arg_type, diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
-                            conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name, behavior)
+                            conn.#register_fn::<#arg_type, #return_type, _, _, A>(#sql_name, behavior)
                         }
                     }
                 };

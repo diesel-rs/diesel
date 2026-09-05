@@ -15,7 +15,7 @@ use super::stmt::ensure_sqlite_ok;
 use super::trace::{SqliteTraceEvent, SqliteTraceFlags, TRACE_PROFILE, TRACE_ROW, TRACE_STMT};
 use super::update_hook::{SqliteChangeEvent, SqliteChangeOp};
 use super::{BusyDecision, CommitDecision, ProgressDecision};
-use super::{Sqlite, SqliteAggregateFunction};
+use super::{Sqlite, SqliteAggregateFunction, SqliteWindowFunction};
 use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -246,6 +246,44 @@ impl RawConnection {
                 None,
                 Some(run_aggregator_step_function::<_, _, _, _, A>),
                 Some(run_aggregator_final_function::<_, _, _, _, A>),
+                None,
+            )
+        };
+
+        Self::process_sql_function_result(result)
+    }
+
+    pub(super) fn register_window_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        &self,
+        fn_name: &str,
+        num_args: usize,
+        behavior: SqliteFunctionBehavior,
+    ) -> QueryResult<()>
+    where
+        A: SqliteWindowFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
+        Args: FromSqlRow<ArgsSqlType, Sqlite>,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        let fn_name = Self::get_fn_name(fn_name)?;
+        let flags = behavior.to_flags();
+        let num_args = num_args
+            .try_into()
+            .map_err(|e| Error::SerializationError(Box::new(e)))?;
+
+        // SAFETY: The connection and name pointers are valid for the call and
+        // all four callbacks are non-null, as the API requires.
+        let result = unsafe {
+            ffi::sqlite3_create_window_function(
+                self.internal_connection.as_ptr(),
+                fn_name.as_ptr(),
+                num_args,
+                flags,
+                core::ptr::null_mut(),
+                Some(run_aggregator_step_function::<_, _, _, _, A>),
+                Some(run_aggregator_final_function::<_, _, _, _, A>),
+                Some(run_window_value_function::<_, _, _, _, A>),
+                Some(run_window_inverse_function::<_, _, A>),
                 None,
             )
         };
@@ -1109,6 +1147,64 @@ where
     Ok(())
 }
 
+extern "C" fn run_window_inverse_function<ArgsSqlType, Args, A>(
+    ctx: *mut ffi::sqlite3_context,
+    num_args: libc::c_int,
+    value_ptr: *mut *mut ffi::sqlite3_value,
+) where
+    A: SqliteWindowFunction<Args> + core::panic::UnwindSafe,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>,
+{
+    let result = crate::util::std_compat::catch_unwind(move || {
+        let num_args = usize::try_from(num_args)
+            .map_err(|_| SqliteCallbackError::Abort("SQLite passed a negative argument count"))?;
+        // SAFETY: SQLite passes `num_args` valid values for the duration of
+        // this callback.
+        let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args) };
+        run_window_inverse::<A, Args, ArgsSqlType>(ctx, args)
+    })
+    .unwrap_or_else(|_e| {
+        Err(SqliteCallbackError::Panic(alloc::format!(
+            "{}::inverse() panicked",
+            core::any::type_name::<A>()
+        )))
+    });
+
+    match result {
+        Ok(()) => {}
+        Err(e) => e.emit(ctx),
+    }
+}
+
+fn run_window_inverse<A, Args, ArgsSqlType>(
+    ctx: *mut ffi::sqlite3_context,
+    args: &mut [*mut ffi::sqlite3_value],
+) -> Result<(), SqliteCallbackError>
+where
+    A: SqliteWindowFunction<Args>,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>,
+{
+    // SAFETY: A zero sized request never allocates, so null means `xStep`
+    // never ran, which SQLite rules out for `xInverse`. A non-null inner
+    // pointer is owned by the context until `xFinal` reclaims it, so
+    // borrowing it mutably here is sound.
+    let aggregator = unsafe {
+        let ctx = ffi::sqlite3_aggregate_context(ctx, 0).cast::<*mut A>();
+        if ctx.is_null() || (*ctx).is_null() {
+            return Err(SqliteCallbackError::Abort(
+                "SQLite invoked `xInverse` without prior `xStep`. \
+                 This should never happen, please open an issue against diesel",
+            ));
+        }
+        &mut **ctx
+    };
+
+    let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
+
+    aggregator.inverse(args);
+    Ok(())
+}
+
 extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
     ctx: *mut ffi::sqlite3_context,
 ) where
@@ -1167,6 +1263,49 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     .unwrap_or_else(|_e| {
         Err(SqliteCallbackError::Panic(alloc::format!(
             "{}::finalize() panicked",
+            core::any::type_name::<A>()
+        )))
+    });
+    if let Err(e) = result {
+        e.emit(ctx);
+    }
+}
+
+extern "C" fn run_window_value_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+    ctx: *mut ffi::sqlite3_context,
+) where
+    A: SqliteWindowFunction<Args, Output = Ret> + 'static + Send,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>,
+    Ret: ToSql<RetSqlType, Sqlite>,
+    Sqlite: HasSqlType<RetSqlType>,
+{
+    let result = crate::util::std_compat::catch_unwind(|| {
+        // SAFETY: A zero sized request never allocates, so null means an
+        // empty frame. The inner pointer is owned by the context until
+        // `xFinal` reclaims it and must stay in place for later `xStep` and
+        // `xInverse` calls, so only a shared borrow is taken.
+        let aggregator = unsafe {
+            let ctx = ffi::sqlite3_aggregate_context(ctx, 0).cast::<*mut A>();
+            if ctx.is_null() {
+                None
+            } else {
+                let inner = *ctx;
+                if inner.is_null() { None } else { Some(&*inner) }
+            }
+        };
+
+        let res = A::value(aggregator);
+        let value = process_sql_function_result(&res)?;
+        // SAFETY: `ctx` is the live context pointer for this callback.
+        let r = unsafe { value.result_of(&mut *ctx) };
+        r.map_err(|e| {
+            SqliteCallbackError::DieselError(crate::result::Error::SerializationError(Box::new(e)))
+        })?;
+        Ok(())
+    })
+    .unwrap_or_else(|_e| {
+        Err(SqliteCallbackError::Panic(alloc::format!(
+            "{}::value() panicked",
             core::any::type_name::<A>()
         )))
     });
