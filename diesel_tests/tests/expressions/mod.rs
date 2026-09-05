@@ -1,6 +1,7 @@
 use bigdecimal;
 
 mod date_and_time;
+mod json_operators;
 mod ops;
 
 use self::bigdecimal::BigDecimal;
