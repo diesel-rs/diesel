@@ -511,10 +511,9 @@ mod jsonb {
                 }
                 JsonbVisit::Value(serde_json::Value::Number(value)) => {
                     let value = value.to_string();
-                    let element_type = if value
-                        .char_indices()
-                        .any(|(idx, c)| !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+'))))
-                    {
+                    let element_type = if value.char_indices().any(|(idx, c)| {
+                        !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+')))
+                    }) {
                         JSONB_FLOAT
                     } else {
                         JSONB_INT

@@ -14,6 +14,7 @@ rust-version.workspace = true
 include = [
     "src/**/*.rs",
     "tests/**/*.rs",
+    "benches/**/*.rs",
     "LICENSE-*",
     "README.md",
     "src/sqlite/connection/diesel_manage_updated_at.sql",
@@ -69,6 +70,12 @@ ipnetwork = ">=0.12.2, <0.22.0"
 quickcheck = "1.0.3"
 tempfile = "3.10.1"
 diesel_test_helper = { path = "../diesel_test_helper" }
+criterion = { version = "0.6", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "sqlite_jsonb"
+harness = false
+required-features = ["sqlite", "serde_json"]
 
 [features]
 default = ["with-deprecated", "32-column-tables", "std"]
