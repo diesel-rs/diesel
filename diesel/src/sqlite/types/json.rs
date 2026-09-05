@@ -335,7 +335,7 @@ mod jsonb {
         }
 
         let float_str = core::str::from_utf8(bytes).map_err(|_| "Invalid UTF-8 in JSONB float")?;
-        serde_json::from_str(float_str)
+        let float_value = serde_json::from_str(float_str)
             .map_err(|_| "Failed to parse JSONB")
             .and_then(|v: serde_json::Value| {
                 v.is_f64()
@@ -343,15 +343,7 @@ mod jsonb {
                     .ok_or("Failed to parse JSONB number")
             })?;
 
-        // `serde_json` parses floats approximately unless `float_roundtrip` is
-        // on, so the text is validated above and the value taken from `core`
-        let float_value = float_str
-            .parse::<f64>()
-            .ok()
-            .and_then(serde_json::Number::from_f64)
-            .ok_or("Failed to parse JSONB number")?;
-
-        Ok(serde_json::Value::Number(float_value))
+        Ok(float_value)
     }
 
     // Read a JSON string
@@ -649,6 +641,27 @@ mod tests {
         let mut buffer = Vec::new();
         jsonb::write_jsonb_header(&mut buffer, element_type, payload_size)?;
         Ok(buffer)
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_json_text_float_survives_a_round_trip() {
+        let conn = &mut connection();
+        for float in [
+            8.829872855928286e-308f64,
+            -0.20221894534048165,
+            1.7383394626966921e-307,
+            6.178787134922198e305,
+        ] {
+            let value = json!(float);
+            let text = diesel::select(sql::<sql_types::Text>("").bind::<sql_types::Json, _>(value))
+                .get_result::<String>(conn)
+                .unwrap();
+            let back = diesel::select(sql::<sql_types::Json>("").bind::<sql_types::Text, _>(text))
+                .get_result::<Value>(conn)
+                .unwrap();
+            assert_eq!(back.as_f64().map(f64::to_bits), Some(float.to_bits()));
+        }
     }
 
     #[diesel_test_helper::test]

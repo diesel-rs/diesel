@@ -29,7 +29,11 @@ mysqlclient-src = { version = ">=0.1.0, <0.3", optional = true }
 pq-sys = { version = ">=0.4.0, <0.8.0", optional = true }
 pq-src = { version = "0.3", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
-serde_json = { version = ">=0.8.0, <2.0", optional = true, default-features = false, features = ["alloc"] }
+serde_json = { version = ">=1.0.54, <2.0", optional = true, default-features = false, features = [
+    # correctly rounded float parsing, so a value survives a round trip
+    "float_roundtrip",
+    "alloc",
+] }
 url = { version = "2.1.0", optional = true }
 percent-encoding = { version = "2.1.0", optional = true }
 uuid = { version = ">=0.7.0, <2.0.0", optional = true }
