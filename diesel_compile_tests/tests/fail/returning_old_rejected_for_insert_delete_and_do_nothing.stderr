@@ -1,4 +1,4 @@
-error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+error[E0277]: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
    --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:26:20
     |
  LL |         .returning(old(name))
@@ -6,8 +6,8 @@ error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `Retu
     |          |
     |          required by a bound introduced by this call
     |
-    = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+    = note: `diesel::pg::returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `diesel::pg::returning::old_impl::Old<columns::name>`
       but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
    --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
     |
@@ -28,7 +28,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
-error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+error[E0277]: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:28:31
      |
   LL |         .get_result::<String>(&mut connection)
@@ -36,8 +36,8 @@ error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `Retu
      |          |
      |          required by a bound introduced by this call
      |
-     = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+     = note: `diesel::pg::returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `diesel::pg::returning::old_impl::Old<columns::name>`
       but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
     --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
      |
@@ -59,7 +59,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
+error[E0277]: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
    --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:35:20
     |
  LL |         .returning(old(name))
@@ -67,8 +67,8 @@ error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `Retu
     |          |
     |          required by a bound introduced by this call
     |
-    = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+    = note: `diesel::pg::returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, _>>` is not implemented for `diesel::pg::returning::old_impl::Old<columns::name>`
       but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
    --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
     |
@@ -89,7 +89,7 @@ LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
     |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
  
     
-error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
+error[E0277]: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
     --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:37:31
      |
   LL |         .get_result::<String>(&mut connection)
@@ -97,8 +97,8 @@ error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `Retu
      |          |
      |          required by a bound introduced by this call
      |
-     = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+     = note: `diesel::pg::returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::DeleteStmt, _>>` is not implemented for `diesel::pg::returning::old_impl::Old<columns::name>`
       but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
     --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
      |
@@ -120,7 +120,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+error[E0277]: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
    --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:47:20
     |
  LL |         .returning(old(name))
@@ -128,8 +128,8 @@ error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `Retu
     |          |
     |          required by a bound introduced by this call
     |
-    = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+    = note: `diesel::pg::returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `diesel::pg::returning::old_impl::Old<columns::name>`
       but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
    --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
     |
@@ -150,7 +150,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
-error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+error[E0277]: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/returning_old_rejected_for_insert_delete_and_do_nothing.rs:49:31
      |
   LL |         .get_result::<String>(&mut connection)
@@ -158,8 +158,8 @@ error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `Retu
      |          |
      |          required by a bound introduced by this call
      |
-     = note: `returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `returning::old_impl::Old<columns::name>`
+     = note: `diesel::pg::returning::old_impl::Old<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithoutOnConflictDoUpdate, _>>` is not implemented for `diesel::pg::returning::old_impl::Old<columns::name>`
       but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
     --> DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
      |

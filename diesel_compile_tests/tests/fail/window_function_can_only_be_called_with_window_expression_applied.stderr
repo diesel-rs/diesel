@@ -10,11 +10,11 @@ error[E0277]: the trait bound `lag<Text, name>: ValidGrouping<()>` is not satisf
               AliasedField<S, C>
               columns::id
               columns::name
+              diesel::mariadb::returning::old_impl::OldValue<C>
+              diesel::pg::returning::old_impl::Old<C>
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
               pg::metadata_lookup::pg_type::columns::oid
-              pg::metadata_lookup::pg_type::columns::typarray
-              pg::metadata_lookup::pg_type::columns::typname
             and N others
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<lag<Text, name>>`
     = note: 1 redundant requirement hidden
@@ -42,11 +42,11 @@ error[E0277]: the trait bound `rank: ValidGrouping<()>` is not satisfied
               AliasedField<S, C>
               columns::id
               columns::name
+              diesel::mariadb::returning::old_impl::OldValue<C>
+              diesel::pg::returning::old_impl::Old<C>
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
               pg::metadata_lookup::pg_type::columns::oid
-              pg::metadata_lookup::pg_type::columns::typarray
-              pg::metadata_lookup::pg_type::columns::typname
             and N others
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<rank>`
     = note: 1 redundant requirement hidden
