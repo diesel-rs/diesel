@@ -5,7 +5,7 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 use crate::sqlite::{Sqlite, SqliteValue};
 use alloc::boxed::Box;
-use alloc::string::{String, ToString};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 
 #[cfg(all(feature = "__sqlite-shared", feature = "serde_json"))]
@@ -66,9 +66,12 @@ impl ToSql<sql_types::Jsonb, Sqlite> for serde_json::Value {
 mod jsonb {
     extern crate serde_json;
 
+    use alloc::vec;
     use core::error::Error;
 
     use super::*;
+
+    type JsonbResult<T> = core::result::Result<T, Box<dyn Error + Send + Sync>>;
 
     pub(super) const JSONB_NULL: u8 = 0x00;
     pub(super) const JSONB_TRUE: u8 = 0x01;
@@ -386,17 +389,18 @@ mod jsonb {
         Ok(unescaped_text)
     }
 
-    enum JsonValuePtr<'a> {
-        Value(&'a serde_json::Value),
-        Array {
-            values: &'a [serde_json::Value],
-            serialized_buffer: Vec<u8>,
-        },
-        Object {
-            object: &'a serde_json::value::Map<String, serde_json::Value>,
-            keys: Box<dyn Iterator<Item = &'a String> + 'a>,
-            serialized_buffer: Vec<u8>,
-        },
+    fn jsonb_header_size(payload_size: usize) -> JsonbResult<usize> {
+        if payload_size > 2_147_483_647 {
+            Err("Payload size exceeds the maximum allowed size of 2GB".into())
+        } else if payload_size <= 0x0B {
+            Ok(1)
+        } else if payload_size <= 0xFF {
+            Ok(2)
+        } else if payload_size <= 0xFFFF {
+            Ok(3)
+        } else {
+            Ok(5)
+        }
     }
 
     pub(super) fn write_jsonb_header(
@@ -404,10 +408,7 @@ mod jsonb {
         element_type: u8,
         payload_size: usize,
     ) -> serialize::Result {
-        // Check if payload size exceeds the maximum allowed size
-        if payload_size > 2_147_483_647 {
-            return Err("Payload size exceeds the maximum allowed size of 2GB".into());
-        }
+        jsonb_header_size(payload_size)?;
 
         if payload_size <= 0x0B {
             // Small payloads, 0 additional byte for size
@@ -437,27 +438,170 @@ mod jsonb {
         Ok(IsNull::No)
     }
 
-    fn place_composite_value(
-        buffer: &mut Vec<u8>,
-        stack: &mut [JsonValuePtr<'_>],
-        serialized_buffer: Vec<u8>,
-        tpe: u8,
-    ) -> serialize::Result {
-        let buffer = match stack.last_mut() {
-            None | Some(JsonValuePtr::Value(_)) => buffer,
-            Some(
-                JsonValuePtr::Array {
-                    serialized_buffer, ..
-                }
-                | JsonValuePtr::Object {
-                    serialized_buffer, ..
-                },
-            ) => serialized_buffer,
-        };
-        write_jsonb_header(buffer, tpe, serialized_buffer.len())?;
-        buffer.extend(serialized_buffer);
+    #[inline]
+    fn u64_len(n: u64) -> usize {
+        if n == 0 { 1 } else { (n.ilog10() + 1) as usize }
+    }
 
+    #[inline]
+    fn i64_len(n: i64) -> usize {
+        if n >= 0 {
+            u64_len(n.unsigned_abs())
+        } else {
+            1 + u64_len(n.unsigned_abs())
+        }
+    }
+
+    fn jsonb_number_size(value: &serde_json::Number) -> (u8, usize) {
+        if let Some(i) = value.as_i64() {
+            (JSONB_INT, i64_len(i))
+        } else if let Some(u) = value.as_u64() {
+            (JSONB_INT, u64_len(u))
+        } else {
+            let value_str = value.to_string();
+            let element_type = if value_str
+                .char_indices()
+                .any(|(idx, c)| !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+'))))
+            {
+                JSONB_FLOAT
+            } else {
+                JSONB_INT
+            };
+            (element_type, value_str.len())
+        }
+    }
+
+    fn jsonb_string_size(value: &str) -> JsonbResult<(u8, usize)> {
+        if value.chars().any(|c| c.is_control()) {
+            let mut escaped_len = 0usize;
+            for c in value.chars() {
+                let char_len = match c {
+                    '"' | '\\' | '\x08' | '\x0C' | '\n' | '\r' | '\t' => 2,
+                    c if c.is_control() => 6,
+                    _ => c.len_utf8(),
+                };
+                escaped_len = escaped_len
+                    .checked_add(char_len)
+                    .ok_or("The encoded JSONB size overflows usize")?;
+            }
+            Ok((JSONB_TEXTJ, escaped_len))
+        } else {
+            Ok((JSONB_TEXT, value.len()))
+        }
+    }
+
+    fn jsonb_scalar_encoded_size(value: &serde_json::Value) -> JsonbResult<usize> {
+        let payload_size = match value {
+            serde_json::Value::Null | serde_json::Value::Bool(_) => 0,
+            serde_json::Value::Number(n) => jsonb_number_size(n).1,
+            serde_json::Value::String(s) => jsonb_string_size(s)?.1,
+            serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+                unreachable!("Not a scalar")
+            }
+        };
+        let header_len = jsonb_header_size(payload_size)?;
+        header_len
+            .checked_add(payload_size)
+            .ok_or_else(|| "The encoded JSONB size overflows usize".into())
+    }
+
+    fn jsonb_string_encoded_size(value: &str) -> JsonbResult<usize> {
+        let (_, payload_size) = jsonb_string_size(value)?;
+        let header_len = jsonb_header_size(payload_size)?;
+        header_len
+            .checked_add(payload_size)
+            .ok_or_else(|| "The encoded JSONB size overflows usize".into())
+    }
+
+    #[inline]
+    fn write_u64_bytes(buffer: &mut Vec<u8>, mut n: u64) {
+        if n == 0 {
+            buffer.push(b'0');
+            return;
+        }
+        let mut buf = [0u8; 20];
+        let mut i = 20;
+        while n > 0 {
+            i -= 1;
+            buf[i] = b'0' + (n % 10) as u8;
+            n /= 10;
+        }
+        buffer.extend_from_slice(&buf[i..]);
+    }
+
+    #[inline]
+    fn write_i64_bytes(buffer: &mut Vec<u8>, n: i64) {
+        if n >= 0 {
+            write_u64_bytes(buffer, n.unsigned_abs());
+        } else {
+            buffer.push(b'-');
+            write_u64_bytes(buffer, n.unsigned_abs());
+        }
+    }
+
+    fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
+        if s.chars().any(|c| c.is_control()) {
+            let escaped =
+                serde_json::to_string(s).map_err(|_| "Failed to serialize string for TEXTJ")?;
+            let payload = &escaped[1..escaped.len() - 1];
+            write_jsonb_header(buffer, JSONB_TEXTJ, payload.len())?;
+            buffer.extend_from_slice(payload.as_bytes());
+        } else {
+            write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
+            buffer.extend_from_slice(s.as_bytes());
+        }
         Ok(IsNull::No)
+    }
+
+    fn write_jsonb_scalar(value: &serde_json::Value, buffer: &mut Vec<u8>) -> serialize::Result {
+        match value {
+            serde_json::Value::Null => {
+                write_jsonb_header(buffer, JSONB_NULL, 0)?;
+            }
+            serde_json::Value::Bool(b) => {
+                write_jsonb_header(buffer, if *b { JSONB_TRUE } else { JSONB_FALSE }, 0)?;
+            }
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    let len = i64_len(i);
+                    write_jsonb_header(buffer, JSONB_INT, len)?;
+                    write_i64_bytes(buffer, i);
+                } else if let Some(u) = n.as_u64() {
+                    let len = u64_len(u);
+                    write_jsonb_header(buffer, JSONB_INT, len)?;
+                    write_u64_bytes(buffer, u);
+                } else {
+                    let n_str = n.to_string();
+                    let element_type = if n_str.char_indices().any(|(idx, c)| {
+                        !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+')))
+                    }) {
+                        JSONB_FLOAT
+                    } else {
+                        JSONB_INT
+                    };
+                    write_jsonb_header(buffer, element_type, n_str.len())?;
+                    buffer.extend_from_slice(n_str.as_bytes());
+                }
+            }
+            serde_json::Value::String(s) => {
+                write_jsonb_string(s, buffer)?;
+            }
+            serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+                unreachable!("Not a scalar")
+            }
+        }
+        Ok(IsNull::No)
+    }
+
+    enum ContainerIter<'a> {
+        Array(core::slice::Iter<'a, serde_json::Value>),
+        Object(serde_json::map::Iter<'a>),
+    }
+
+    struct SizeFrame<'a> {
+        composite_idx: usize,
+        iter: ContainerIter<'a>,
+        running_payload_size: usize,
     }
 
     // Helper function to write a JSON value into a JSONB binary format
@@ -465,153 +609,250 @@ mod jsonb {
         value: &serde_json::Value,
         buffer: &mut Vec<u8>,
     ) -> serialize::Result {
-        let mut stack = vec![JsonValuePtr::Value(value)];
+        let (root_elem_type, root_iter) = match value {
+            serde_json::Value::Array(values) => (JSONB_ARRAY, ContainerIter::Array(values.iter())),
+            serde_json::Value::Object(object) => {
+                (JSONB_OBJECT, ContainerIter::Object(object.iter()))
+            }
+            scalar => {
+                let total_size = jsonb_scalar_encoded_size(scalar)?;
+                buffer
+                    .try_reserve(total_size)
+                    .map_err(|error| error.to_string())?;
+                write_jsonb_scalar(scalar, buffer)?;
+                return Ok(IsNull::No);
+            }
+        };
 
-        while let Some(value) = stack.pop() {
-            let add_to_stack = match value {
-                JsonValuePtr::Value(value) => write_plain_jsonb_value(buffer, value)?,
-                JsonValuePtr::Array {
-                    values,
-                    mut serialized_buffer,
-                } => {
-                    if let Some((el, tail)) = values.split_first() {
-                        let ret = write_plain_jsonb_value(&mut serialized_buffer, el)?;
-                        stack.push(JsonValuePtr::Array {
-                            values: tail,
-                            serialized_buffer,
-                        });
-                        ret
-                    } else {
-                        place_composite_value(buffer, &mut stack, serialized_buffer, JSONB_ARRAY)?;
-                        None
+        // Pass 1: Calculate composite container payload sizes using stack frames bounded
+        // by the nesting depth. Empty composites have size 0 and do not require entries in
+        // composite_sizes, ensuring auxiliary memory for wide shallow inputs (such as [[], [], ...])
+        // remains O(depth) rather than O(total composites).
+        let mut composite_sizes = vec![0];
+        let mut stack = vec![SizeFrame {
+            composite_idx: 0,
+            iter: root_iter,
+            running_payload_size: 0,
+        }];
+        let mut total_size = 0;
+
+        while let Some(frame) = stack.last_mut() {
+            match &mut frame.iter {
+                ContainerIter::Array(iter) => match iter.next() {
+                    Some(serde_json::Value::Array(nested_values)) => {
+                        if nested_values.is_empty() {
+                            let sz = jsonb_header_size(0)?;
+                            frame.running_payload_size = frame
+                                .running_payload_size
+                                .checked_add(sz)
+                                .ok_or("The encoded JSONB size overflows usize")?;
+                        } else {
+                            let composite_idx = composite_sizes.len();
+                            composite_sizes.push(0);
+                            stack.push(SizeFrame {
+                                composite_idx,
+                                iter: ContainerIter::Array(nested_values.iter()),
+                                running_payload_size: 0,
+                            });
+                        }
                     }
-                }
-                JsonValuePtr::Object {
-                    object,
-                    mut keys,
-                    mut serialized_buffer,
-                } => {
-                    if let Some(next_key) = keys.next() {
-                        let value = object
-                            .get(next_key)
-                            .ok_or_else(|| format!("Missing value for object key: `{next_key}`"))?;
-                        write_jsonb_string(next_key, &mut serialized_buffer)?;
-                        let ret = write_plain_jsonb_value(&mut serialized_buffer, value)?;
-                        stack.push(JsonValuePtr::Object {
-                            object,
-                            keys,
-                            serialized_buffer,
-                        });
-                        ret
-                    } else {
-                        place_composite_value(buffer, &mut stack, serialized_buffer, JSONB_OBJECT)?;
-                        None
+                    Some(serde_json::Value::Object(nested_object)) => {
+                        if nested_object.is_empty() {
+                            let sz = jsonb_header_size(0)?;
+                            frame.running_payload_size = frame
+                                .running_payload_size
+                                .checked_add(sz)
+                                .ok_or("The encoded JSONB size overflows usize")?;
+                        } else {
+                            let composite_idx = composite_sizes.len();
+                            composite_sizes.push(0);
+                            stack.push(SizeFrame {
+                                composite_idx,
+                                iter: ContainerIter::Object(nested_object.iter()),
+                                running_payload_size: 0,
+                            });
+                        }
                     }
-                }
-            };
-            if let Some(next) = add_to_stack {
-                stack.push(next);
+                    Some(scalar) => {
+                        let sz = jsonb_scalar_encoded_size(scalar)?;
+                        frame.running_payload_size = frame
+                            .running_payload_size
+                            .checked_add(sz)
+                            .ok_or("The encoded JSONB size overflows usize")?;
+                    }
+                    None => {
+                        let finished = stack.pop().expect("frame exists");
+                        composite_sizes[finished.composite_idx] = finished.running_payload_size;
+                        let encoded_sz = jsonb_header_size(finished.running_payload_size)?
+                            .checked_add(finished.running_payload_size)
+                            .ok_or("The encoded JSONB size overflows usize")?;
+
+                        if let Some(parent) = stack.last_mut() {
+                            parent.running_payload_size = parent
+                                .running_payload_size
+                                .checked_add(encoded_sz)
+                                .ok_or("The encoded JSONB size overflows usize")?;
+                        } else {
+                            total_size = encoded_sz;
+                            break;
+                        }
+                    }
+                },
+                ContainerIter::Object(iter) => match iter.next() {
+                    Some((key, val)) => {
+                        let key_sz = jsonb_string_encoded_size(key)?;
+                        frame.running_payload_size = frame
+                            .running_payload_size
+                            .checked_add(key_sz)
+                            .ok_or("The encoded JSONB size overflows usize")?;
+
+                        match val {
+                            serde_json::Value::Array(nested_values) => {
+                                if nested_values.is_empty() {
+                                    let sz = jsonb_header_size(0)?;
+                                    frame.running_payload_size = frame
+                                        .running_payload_size
+                                        .checked_add(sz)
+                                        .ok_or("The encoded JSONB size overflows usize")?;
+                                } else {
+                                    let composite_idx = composite_sizes.len();
+                                    composite_sizes.push(0);
+                                    stack.push(SizeFrame {
+                                        composite_idx,
+                                        iter: ContainerIter::Array(nested_values.iter()),
+                                        running_payload_size: 0,
+                                    });
+                                }
+                            }
+                            serde_json::Value::Object(nested_object) => {
+                                if nested_object.is_empty() {
+                                    let sz = jsonb_header_size(0)?;
+                                    frame.running_payload_size = frame
+                                        .running_payload_size
+                                        .checked_add(sz)
+                                        .ok_or("The encoded JSONB size overflows usize")?;
+                                } else {
+                                    let composite_idx = composite_sizes.len();
+                                    composite_sizes.push(0);
+                                    stack.push(SizeFrame {
+                                        composite_idx,
+                                        iter: ContainerIter::Object(nested_object.iter()),
+                                        running_payload_size: 0,
+                                    });
+                                }
+                            }
+                            scalar => {
+                                let val_sz = jsonb_scalar_encoded_size(scalar)?;
+                                frame.running_payload_size = frame
+                                    .running_payload_size
+                                    .checked_add(val_sz)
+                                    .ok_or("The encoded JSONB size overflows usize")?;
+                            }
+                        }
+                    }
+                    None => {
+                        let finished = stack.pop().expect("frame exists");
+                        composite_sizes[finished.composite_idx] = finished.running_payload_size;
+                        let encoded_sz = jsonb_header_size(finished.running_payload_size)?
+                            .checked_add(finished.running_payload_size)
+                            .ok_or("The encoded JSONB size overflows usize")?;
+
+                        if let Some(parent) = stack.last_mut() {
+                            parent.running_payload_size = parent
+                                .running_payload_size
+                                .checked_add(encoded_sz)
+                                .ok_or("The encoded JSONB size overflows usize")?;
+                        } else {
+                            total_size = encoded_sz;
+                            break;
+                        }
+                    }
+                },
             }
         }
 
-        Ok(IsNull::No)
-    }
+        buffer
+            .try_reserve(total_size)
+            .map_err(|error| error.to_string())?;
 
-    fn write_plain_jsonb_value<'a>(
-        buffer: &mut Vec<u8>,
-        value: &'a serde_json::Value,
-    ) -> Result<Option<JsonValuePtr<'a>>, Box<dyn Error + Send + Sync>> {
-        let ret = if value.is_null() {
-            write_jsonb_null(buffer)?;
-            None
-        } else if value.is_boolean() {
-            write_jsonb_bool(value.as_bool().ok_or("Failed to read JSONB value")?, buffer)?;
-            None
-        } else if value.is_number() {
-            write_jsonb_number(value, buffer)?;
-            None
-        } else if value.is_string() {
-            write_jsonb_string(value.as_str().ok_or("Failed to read JSONB value")?, buffer)?;
-            None
-        } else if value.is_array() {
-            let array = value.as_array().ok_or("Failed to read JSONB value")?;
-            Some(JsonValuePtr::Array {
-                values: array,
-                serialized_buffer: Vec::new(),
-            })
-        } else if value.is_object() {
-            let object = value.as_object().ok_or("Failed to read JSONB value")?;
-            Some(JsonValuePtr::Object {
-                object,
-                keys: Box::new(object.keys()),
-                serialized_buffer: Vec::new(),
-            })
-        } else {
-            return Err("Unsupported JSONB value type".into());
-        };
-        Ok(ret)
-    }
+        // Pass 2: Traverse the borrowed Value again in identical order, emitting precomputed
+        // composite headers and scalar payloads directly into the pre-reserved destination.
+        let mut composite_idx = 0;
+        let payload_size = composite_sizes[composite_idx];
+        composite_idx += 1;
+        write_jsonb_header(buffer, root_elem_type, payload_size)?;
 
-    // Write a JSON null
-    pub(super) fn write_jsonb_null(buffer: &mut Vec<u8>) -> serialize::Result {
-        write_jsonb_header(buffer, JSONB_NULL, 0x0)?;
-        Ok(IsNull::No)
-    }
+        let mut write_stack = vec![match value {
+            serde_json::Value::Array(values) => ContainerIter::Array(values.iter()),
+            serde_json::Value::Object(object) => ContainerIter::Object(object.iter()),
+            _ => unreachable!(),
+        }];
 
-    // Write a JSON boolean
-    pub(super) fn write_jsonb_bool(b: bool, buffer: &mut Vec<u8>) -> serialize::Result {
-        // Use the constants for true and false
-        write_jsonb_header(buffer, if b { JSONB_TRUE } else { JSONB_FALSE }, 0x0)?;
-        Ok(IsNull::No)
-    }
-
-    // Write a JSON number (integers and floats)
-    pub(super) fn write_jsonb_number(
-        n: &serde_json::Value,
-        buffer: &mut Vec<u8>,
-    ) -> serialize::Result {
-        let n = n.to_string();
-        let tpe = if n
-            .char_indices()
-            .any(|(idx, c)| !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+'))))
-        {
-            JSONB_FLOAT
-        } else {
-            JSONB_INT
-        };
-        write_jsonb_header(buffer, tpe, n.len())?;
-
-        // Write the ASCII text representation of the integer/float as the payload
-        buffer.extend_from_slice(n.as_bytes());
-
-        Ok(IsNull::No)
-    }
-
-    pub(super) fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        if s.chars().any(|c| c.is_control()) {
-            // If the string contains control characters, treat it as TEXTJ (escaped JSON)
-            write_jsonb_textj(s, buffer)
-        } else {
-            write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
-            // Write the UTF-8 text of the string as the payload (no delimiters)
-            buffer.extend_from_slice(s.as_bytes());
-            Ok(IsNull::No)
+        while let Some(iter) = write_stack.last_mut() {
+            match iter {
+                ContainerIter::Array(it) => match it.next() {
+                    Some(serde_json::Value::Array(nested_values)) => {
+                        if nested_values.is_empty() {
+                            write_jsonb_header(buffer, JSONB_ARRAY, 0)?;
+                        } else {
+                            let payload_size = composite_sizes[composite_idx];
+                            composite_idx += 1;
+                            write_jsonb_header(buffer, JSONB_ARRAY, payload_size)?;
+                            write_stack.push(ContainerIter::Array(nested_values.iter()));
+                        }
+                    }
+                    Some(serde_json::Value::Object(nested_object)) => {
+                        if nested_object.is_empty() {
+                            write_jsonb_header(buffer, JSONB_OBJECT, 0)?;
+                        } else {
+                            let payload_size = composite_sizes[composite_idx];
+                            composite_idx += 1;
+                            write_jsonb_header(buffer, JSONB_OBJECT, payload_size)?;
+                            write_stack.push(ContainerIter::Object(nested_object.iter()));
+                        }
+                    }
+                    Some(scalar) => {
+                        write_jsonb_scalar(scalar, buffer)?;
+                    }
+                    None => {
+                        write_stack.pop();
+                    }
+                },
+                ContainerIter::Object(it) => match it.next() {
+                    Some((key, val)) => {
+                        write_jsonb_string(key, buffer)?;
+                        match val {
+                            serde_json::Value::Array(nested_values) => {
+                                if nested_values.is_empty() {
+                                    write_jsonb_header(buffer, JSONB_ARRAY, 0)?;
+                                } else {
+                                    let payload_size = composite_sizes[composite_idx];
+                                    composite_idx += 1;
+                                    write_jsonb_header(buffer, JSONB_ARRAY, payload_size)?;
+                                    write_stack.push(ContainerIter::Array(nested_values.iter()));
+                                }
+                            }
+                            serde_json::Value::Object(nested_object) => {
+                                if nested_object.is_empty() {
+                                    write_jsonb_header(buffer, JSONB_OBJECT, 0)?;
+                                } else {
+                                    let payload_size = composite_sizes[composite_idx];
+                                    composite_idx += 1;
+                                    write_jsonb_header(buffer, JSONB_OBJECT, payload_size)?;
+                                    write_stack.push(ContainerIter::Object(nested_object.iter()));
+                                }
+                            }
+                            scalar => {
+                                write_jsonb_scalar(scalar, buffer)?;
+                            }
+                        }
+                    }
+                    None => {
+                        write_stack.pop();
+                    }
+                },
+            }
         }
-    }
-
-    pub(super) fn write_jsonb_textj(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        // Escaping the string for JSON (e.g., \n, \uXXXX)
-        let escaped_string = serde_json::to_string(&String::from(s))
-            .map_err(|_| "Failed to serialize string for TEXTJ")?;
-
-        // Remove the surrounding quotes from serde_json::to_string result
-        let escaped_string = &escaped_string[1..escaped_string.len() - 1];
-
-        // Write the header (JSONB_TEXTJ) and the length of the escaped string
-        write_jsonb_header(buffer, JSONB_TEXTJ, escaped_string.len())?;
-
-        // Write the escaped string as the payload
-        buffer.extend_from_slice(escaped_string.as_bytes());
 
         Ok(IsNull::No)
     }
@@ -887,7 +1128,7 @@ mod tests {
     fn test_write_jsonb_text() {
         let mut buffer = Vec::new();
         let input_string = "hello";
-        write_jsonb_string(input_string, &mut buffer).unwrap();
+        write_jsonb_value(&json!(input_string), &mut buffer).unwrap();
 
         let mut expected_buffer = Vec::new();
         expected_buffer.extend(create_jsonb_header(JSONB_TEXT, 0x05).unwrap());
@@ -900,7 +1141,7 @@ mod tests {
     fn test_write_jsonb_textj() {
         let mut buffer = Vec::new();
         let input_string = "hello\nworld"; // Contains a newline, requires escaping
-        write_jsonb_string(input_string, &mut buffer).unwrap();
+        write_jsonb_value(&json!(input_string), &mut buffer).unwrap();
 
         let mut expected_buffer = Vec::new();
         expected_buffer.extend(create_jsonb_header(JSONB_TEXTJ, 12).unwrap());
