@@ -55,6 +55,14 @@ fn build_flat_object_keys(size: usize) -> serde_json::Value {
     serde_json::Value::Object(map)
 }
 
+fn build_flat_array_nested_composites(size: usize) -> serde_json::Value {
+    serde_json::Value::Array(
+        (0..size)
+            .map(|_| serde_json::Value::Array(vec![serde_json::Value::Null]))
+            .collect(),
+    )
+}
+
 use std::time::Duration;
 
 fn bench_depth_nested_arrays(c: &mut Criterion) {
@@ -127,6 +135,20 @@ fn bench_size_object_keys(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_size_array_nested_composites(c: &mut Criterion) {
+    let mut group = c.benchmark_group("jsonb_size_array_nested_composites");
+    group.warm_up_time(Duration::from_millis(300));
+    group.measurement_time(Duration::from_millis(700));
+    group.sample_size(30);
+    for &size in &[10, 100, 1000, 10000, 100000] {
+        let val = build_flat_array_nested_composites(size);
+        group.bench_with_input(BenchmarkId::from_parameter(size), &val, |b, val| {
+            b.iter(|| encode_jsonb(black_box(val)));
+        });
+    }
+    group.finish();
+}
+
 criterion_group!(
     benches,
     bench_depth_nested_arrays,
@@ -134,5 +156,6 @@ criterion_group!(
     bench_size_array_scalars,
     bench_size_array_objects,
     bench_size_object_keys,
+    bench_size_array_nested_composites,
 );
 criterion_main!(benches);

@@ -471,13 +471,13 @@ mod jsonb {
         }
     }
 
-    fn jsonb_string_size(value: &str) -> JsonbResult<(u8, usize)> {
-        if value.chars().any(|c| c.is_control()) {
+    pub(super) fn jsonb_string_size(value: &str) -> JsonbResult<(u8, usize)> {
+        if value.chars().any(|c| c <= '\u{1f}') {
             let mut escaped_len = 0usize;
             for c in value.chars() {
                 let char_len = match c {
                     '"' | '\\' | '\x08' | '\x0C' | '\n' | '\r' | '\t' => 2,
-                    c if c.is_control() => 6,
+                    c if c <= '\u{1f}' => 6,
                     _ => c.len_utf8(),
                 };
                 escaped_len = escaped_len
@@ -540,7 +540,7 @@ mod jsonb {
     }
 
     fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        if s.chars().any(|c| c.is_control()) {
+        if s.chars().any(|c| c <= '\u{1f}') {
             let escaped =
                 serde_json::to_string(s).map_err(|_| "Failed to serialize string for TEXTJ")?;
             let payload = &escaped[1..escaped.len() - 1];
@@ -625,9 +625,16 @@ mod jsonb {
         };
 
         // Pass 1: Calculate composite container payload sizes using stack frames bounded
-        // by the nesting depth. Empty composites have size 0 and do not require entries in
-        // composite_sizes, ensuring auxiliary memory for wide shallow inputs (such as [[], [], ...])
-        // remains O(depth) rather than O(total composites).
+        // by the nesting depth (O(depth) stack space).
+        //
+        // Precomputed payload sizes are recorded in `composite_sizes` for non-empty composites
+        // (O(number of non-empty composites) auxiliary memory, retaining one usize per non-empty
+        // container). Scalars and empty containers []/{} have known or zero payload sizes and do not
+        // allocate entries in `composite_sizes`.
+        //
+        // Retaining sibling sizes across Pass 1 avoids re-traversing subtrees in Pass 2 (which
+        // would degrade runtime from O(N) to O(N * depth)) and avoids dynamic buffer memmoves
+        // caused by variable-length JSONB headers (1, 2, 3, or 5 bytes).
         let mut composite_sizes = vec![0];
         let mut stack = vec![SizeFrame {
             composite_idx: 0,
@@ -895,6 +902,45 @@ mod tests {
             // an exponent and no fraction digit, so the text carries no `.`
             json!(1e-7),
             json!(1e300),
+        ] {
+            let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
+                .get_result::<Vec<u8>>(conn)
+                .unwrap();
+            let valid = diesel::select(
+                sql::<sql_types::Integer>("json_valid(")
+                    .bind::<sql_types::Binary, _>(blob.clone())
+                    .sql(", 8)"),
+            )
+            .get_result::<i32>(conn)
+            .unwrap();
+            assert_eq!(
+                valid, 1,
+                "sqlite rejects the blob written for {value}: {blob:02X?}"
+            );
+            let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob.clone()))
+                .get_result::<Value>(conn)
+                .unwrap_or_else(|error| panic!("{value} does not read back: {error}"));
+            assert_eq!(back, value, "{blob:02X?}");
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn nested_json_control_chars_round_trip() {
+        let conn = &mut connection();
+        for value in [
+            json!(["\u{7f}"]),
+            json!(["\u{80}"]),
+            json!(["\u{9f}"]),
+            json!(["\u{00}"]),
+            json!(["\n"]),
+            json!(["\r"]),
+            json!(["\t"]),
+            json!(["\u{1f}"]),
+            json!(["\u{7f}", "\u{80}", "\u{9f}", "\u{1f}"]),
+            json!([{"key\u{7f}": "val\u{80}"}]),
+            json!([{"nested": ["\u{7f}", "hello\nworld", "\u{00}"]}]),
+            json!({"a": [{"b": "\u{7f}"}, {"c": "\u{9f}"}]}),
         ] {
             let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
                 .get_result::<Vec<u8>>(conn)
@@ -1643,5 +1689,45 @@ mod tests {
         let mut expected = create_jsonb_header(JSONB_INT, 3).unwrap();
         expected.extend(b"-42");
         assert_eq!(buf, expected);
+    }
+
+    #[diesel_test_helper::test]
+    fn test_jsonb_string_size_all_ascii_and_control_chars() {
+        for b in 0u8..=255 {
+            let s = if let Ok(valid_str) = core::str::from_utf8(&[b]) {
+                valid_str.to_string()
+            } else {
+                continue;
+            };
+            let (elem_type, size) = jsonb::jsonb_string_size(&s).unwrap();
+            if s.chars().any(|c| c <= '\u{1f}') {
+                assert_eq!(elem_type, jsonb::JSONB_TEXTJ);
+                let escaped = serde_json::to_string(&s).unwrap();
+                let payload = &escaped[1..escaped.len() - 1];
+                assert_eq!(size, payload.len(), "Mismatch for byte 0x{:02X}", b);
+            } else {
+                assert_eq!(elem_type, jsonb::JSONB_TEXT);
+                assert_eq!(size, s.len(), "Mismatch for byte 0x{:02X}", b);
+            }
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(feature = "quickcheck")]
+    fn quickcheck_jsonb_string_size() {
+        fn prop(s: String) -> bool {
+            let (elem_type, size) = jsonb::jsonb_string_size(&s).unwrap();
+            if s.chars().any(|c| c <= '\u{1f}') {
+                assert_eq!(elem_type, jsonb::JSONB_TEXTJ);
+                let escaped = serde_json::to_string(&s).unwrap();
+                let payload = &escaped[1..escaped.len() - 1];
+                assert_eq!(size, payload.len(), "Mismatch for string: {:?}", s);
+            } else {
+                assert_eq!(elem_type, jsonb::JSONB_TEXT);
+                assert_eq!(size, s.len());
+            }
+            true
+        }
+        quickcheck::quickcheck(prop as fn(String) -> bool);
     }
 }
