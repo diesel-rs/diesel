@@ -22,6 +22,7 @@ use crate::query_builder::*;
 use crate::query_dsl::RunQueryDslSupport;
 use crate::query_source::{Column, Table};
 use crate::{QuerySource, insertable::*};
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 pub(crate) use self::private::InsertAutoTypeHelper;
@@ -281,6 +282,13 @@ where
             &self.operator,
             &self.returning,
         )
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.returning.collect_output_metadata(out)
     }
 }
 

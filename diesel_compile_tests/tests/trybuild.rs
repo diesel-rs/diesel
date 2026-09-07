@@ -38,6 +38,14 @@ fn main() -> ui_test::color_eyre::Result<()> {
             }
         }
     }
+    config.filter(
+        "DIESEL\\/[^\\/]+\\/diesel\\/",
+        "DIESEL/diesel/diesel/",
+    );
+    config.filter(
+        "DIESEL\\/[^\\/]+\\/diesel_compile_tests\\/target\\/",
+        "DIESEL/diesel/diesel_compile_tests/target/",
+    );
     config.filter("and [0-9]* others", "and N others");
     config.filter(
         "= note: consider using `--verbose` to print the full type name to the console\n",
@@ -76,6 +84,7 @@ fn main() -> ui_test::color_eyre::Result<()> {
         "long-type-[0-9]+.txt'",
         "long-type-0000000000000000000.txt'",
     );
+    config.filter("[ \\t]+\\n", "\n");
 
     config
         .comment_defaults

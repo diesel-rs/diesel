@@ -5,7 +5,7 @@ error[E0277]: `diesel::query_builder::locking_clause::ForUpdate` is no valid SQL
      |               ^^^^^^^^^ unsatisfied trait bound
      |
      = help: the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Pg>` is implemented for `diesel::query_builder::locking_clause::ForUpdate`
     --> DIESEL/diesel/diesel/src/pg/query_builder/query_fragment_impls.rs
@@ -24,5 +24,5 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
      For more information about this error, try `rustc --explain E0277`.

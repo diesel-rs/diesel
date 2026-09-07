@@ -14,7 +14,7 @@ error[E0277]: `Any<Bound<Array<Text>, Vec<String>>>` is no valid SQL fragment fo
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `Any<Bound<Array<Text>, Vec<String>>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -37,8 +37,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0277]: `IsNotDistinctFrom<name, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:37:22
      |
@@ -47,7 +47,7 @@ error[E0277]: `IsNotDistinctFrom<name, Bound<Text, &str>>` is no valid SQL fragm
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `IsNotDistinctFrom<name, Bound<Text, &str>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -75,7 +75,7 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
           = note: this error originates in the macro `$crate::__diesel_operator_body` which comes from the expansion of the macro `__diesel_infix_operator` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: `AtTimeZone<now, Bound<Text, &str>>` is no valid SQL fragment for the `Sqlite` backend
@@ -86,7 +86,7 @@ error[E0277]: `AtTimeZone<now, Bound<Text, &str>>` is no valid SQL fragment for 
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `AtTimeZone<now, Bound<Text, &str>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -110,8 +110,8 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
-     
+
+
 error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<..., ...>`, but its trait bounds were not satisfied
    --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:47:10
     |

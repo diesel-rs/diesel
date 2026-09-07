@@ -18,7 +18,9 @@ fn main() {
     let query = users::table.select(to_json(users::name));
 
     let _ = query.execute(sqlite_connection);
-    //~^ ERROR: `to_json<Text, name>` is no valid SQL fragment for the `Sqlite` backend
+    //~^ ERROR: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
+    //~| ERROR: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
     let _ = query.execute(mysql_connection);
-    //~^ ERROR: `to_json<Text, name>` is no valid SQL fragment for the `Mysql` backend
+    //~^ ERROR: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Pg`
+    //~| ERROR: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Pg`
 }

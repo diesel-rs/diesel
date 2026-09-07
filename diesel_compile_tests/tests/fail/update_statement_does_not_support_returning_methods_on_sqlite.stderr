@@ -7,7 +7,7 @@ error[E0277]: `ReturningClause<(id, name)>` is no valid SQL fragment for the `Sq
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Sqlite, backend::sql_dialect::returning_clause::DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(id, name)>`
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
@@ -15,6 +15,7 @@ help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
   LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
   LL | | where
   LL | |     DB: Backend,
+  LL | |     Expr: QueryFragment<DB>,
   LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
      | |_________________________________________________^ `QueryFragment<DB>`
 ...
@@ -55,8 +56,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: `ReturningClause<name>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/update_statement_does_not_support_returning_methods_on_sqlite.rs:24:21
      |
@@ -66,7 +67,7 @@ error[E0277]: `ReturningClause<name>` is no valid SQL fragment for the `Sqlite` 
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Sqlite, backend::sql_dialect::returning_clause::DoesNotSupportReturningClause>` is not implemented for `ReturningClause<name>`
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
@@ -74,6 +75,7 @@ help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
   LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
   LL | | where
   LL | |     DB: Backend,
+  LL | |     Expr: QueryFragment<DB>,
   LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
      | |_________________________________________________^ `QueryFragment<DB>`
 ...
@@ -114,5 +116,5 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
      For more information about this error, try `rustc --explain E0277`.

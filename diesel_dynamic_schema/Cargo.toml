@@ -18,6 +18,16 @@ version = "~2.3.0"
 path = "../diesel/"
 default-features = false
 
+[dependencies]
+thiserror = { version = "2.0.0", default-features = false }
+chrono = { version = "0.4.20", optional = true, default-features = false }
+time = { version = "0.3.9", optional = true }
+bigdecimal = { version = ">=0.0.13, < 0.5.0", optional = true }
+uuid = { version = ">=0.7.0, <2.0.0", optional = true }
+serde_json = { version = ">=0.8.0, <2.0", optional = true, default-features = false, features = ["alloc"] }
+ipnetwork = { version = ">=0.12.2, <0.22.0", optional = true }
+ipnet = { version = "2.5.0", optional = true }
+
 [dev-dependencies]
 dotenvy = "0.15"
 
@@ -49,11 +59,20 @@ required-features = ["sqlite"]
 
 [features]
 default = []
-postgres = ["diesel/postgres_backend"]
+postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
 sqlite-no-std = ["diesel/sqlite-no-std"]
-mysql = ["diesel/mysql_backend"]
-mariadb = ["diesel/mariadb_backend"]
+mysql = ["diesel/mysql"]
+mariadb = ["diesel/mariadb"]
+chrono = ["dep:chrono", "diesel/chrono"]
+time = ["dep:time", "diesel/time"]
+numeric = ["dep:bigdecimal", "diesel/numeric"]
+uuid = ["dep:uuid", "diesel/uuid"]
+serde_json = ["dep:serde_json", "diesel/serde_json"]
+network-address = ["dep:ipnetwork", "diesel/network-address"]
+ipnet-address = ["dep:ipnet", "diesel/ipnet-address"]
+returning_clauses_for_sqlite_3_35 = ["sqlite", "diesel/returning_clauses_for_sqlite_3_35"]
+i-implement-a-third-party-backend-and-opt-into-breaking-changes = ["diesel/i-implement-a-third-party-backend-and-opt-into-breaking-changes"]
 
 [lints]
 workspace = true

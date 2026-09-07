@@ -1,0 +1,60 @@
+error[E0277]: `ReturningClause<id>` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/mysql_does_not_support_returning_methods.rs:22:28
+     |
+  LL |         .get_result::<i32>(&mut connection);
+     |          ----------        ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mysql, backend::sql_dialect::returning_clause::DoesNotSupportReturningClause>` is not implemented for `ReturningClause<id>`
+     = note: this usually means that the `Mysql` database system does not support
+             this SQL syntax
+help: `ReturningClause<Expr>` implements trait `QueryFragment<DB, SP>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_clause.rs
+     |
+  LL | / impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
+  LL | | where
+  LL | |     DB: Backend,
+  LL | |     Expr: QueryFragment<DB>,
+  LL | |     Self: QueryFragment<DB, DB::ReturningClause>,
+     | |_________________________________________________^ `QueryFragment<DB>`
+...
+  LL | / impl<Expr, DB>
+  LL | |     QueryFragment<DB, crate::backend::sql_dialect::returning_clause::PgLikeReturningClause>
+  LL | |     for ReturningClause<Expr>
+  LL | | where
+...    |
+  LL | |     >,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `QueryFragment<DB, PgLikeReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/mariadb/query_fragment_impls.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, crate::mariadb::backend::MariadbReturningClause>
+   LL | |     for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = crate::mariadb::backend::MariadbReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `QueryFragment<DB, mariadb::backend::MariadbReturningClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/sqlite/query_builder/returning.rs
+     |
+   LL | / impl<Expr, DB> QueryFragment<DB, SqliteReturningClause> for ReturningClause<Expr>
+   LL | | where
+   LL | |     DB: Backend<ReturningClause = SqliteReturningClause>,
+  LL | |     Expr: QueryFragment<DB>,
+     | |____________________________^ `QueryFragment<DB, sqlite::backend::SqliteReturningClause>`
+     = note: required for `ReturningClause<id>` to implement `QueryFragment<Mysql>`
+     = note: 1 redundant requirement hidden
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `QueryFragment<Mysql>`
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, i32>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+
+     For more information about this error, try `rustc --explain E0277`.

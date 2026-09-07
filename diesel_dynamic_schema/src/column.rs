@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::marker::PhantomData;
 use diesel::backend::Backend;
@@ -55,17 +57,34 @@ impl<T, U, ST> ValidGrouping<()> for Column<T, U, ST> {
     type IsAggregate = is_aggregate::No;
 }
 
-impl<T, U, ST, DB> QueryFragment<DB> for Column<T, U, ST>
+impl<T, S, U, ST, DB> QueryFragment<DB> for Column<crate::Table<T, S>, U, ST>
 where
     DB: Backend,
-    T: QueryFragment<DB>,
+    T: Borrow<str>,
+    S: Borrow<str>,
     U: Borrow<str>,
+    ST: diesel::sql_types::SqlTypeOrUntyped,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.table.walk_ast(out.reborrow())?;
         out.push_sql(".");
         out.push_identifier(self.name.borrow())?;
+        Ok(())
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        out.push(OutputFieldMetadata {
+            origin: Some(OutputColumnOrigin {
+                schema: self.table.schema().map(Borrow::borrow),
+                table: self.table.name().borrow(),
+                column: self.name.borrow(),
+            }),
+            declared_sql_type: ST::type_descriptor(),
+        });
         Ok(())
     }
 }

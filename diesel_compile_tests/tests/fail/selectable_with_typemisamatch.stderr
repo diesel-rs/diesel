@@ -95,7 +95,7 @@ error[E0277]: the trait bound `SelectBy<User, _>: CompatibleType<_, _>` is not s
      = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<_, _>` is not implemented for `diesel::expression::select_by::SelectBy<User, _>`
      = note: this is a mismatch between what your query returns and what your type expects the query to return
      = note: the fields in your struct need to match the fields returned by your query in count, order and type
-     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]`
              on your struct `_` and in your query `.select(_::as_select())` to get a better error message
 help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is conditionally implemented for `diesel::expression::select_by::SelectBy<U, DB>`
     --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
@@ -121,5 +121,5 @@ LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
-  
+
      For more information about this error, try `rustc --explain E0277`.

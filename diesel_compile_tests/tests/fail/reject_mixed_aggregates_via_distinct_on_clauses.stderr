@@ -21,8 +21,8 @@ LL | |     (Selection, S::Selection): ValidGrouping<G::Expressions>,
     |                                  |
     |                                  unsatisfied requirement introduced here: `(_, <diesel::query_builder::select_clause::DefaultSelectClause<diesel::query_builder::from_clause::FromClause<posts::table>> as diesel::query_builder::select_clause::SelectClauseExpression<diesel::query_builder::from_clause::FromClause<posts::table>>>::Selection): ValidGrouping<<diesel::query_builder::group_by_clause::GroupByClause<columns::user_id> as diesel::query_builder::group_by_clause::ValidGroupByClause>::Expressions>`
     |                                  unsatisfied requirement introduced here: `(_, <diesel::query_builder::select_clause::DefaultSelectClause<diesel::query_builder::from_clause::FromClause<posts::table>> as diesel::query_builder::select_clause::SelectClauseExpression<diesel::query_builder::from_clause::FromClause<posts::table>>>::Selection): ValidGrouping<<diesel::query_builder::group_by_clause::GroupByClause<columns::user_id> as diesel::query_builder::group_by_clause::ValidGroupByClause>::Expressions>`
- 
-    
+
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<_>` is not satisfied
    --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:34:10
     |
@@ -49,8 +49,8 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:40:17
     |
@@ -82,8 +82,8 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:46:22
     |
@@ -114,8 +114,8 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
-    
+
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ...>: SelectDsl<...>` is not satisfied
    --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:52:10
     |
@@ -143,8 +143,8 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/reject_mixed_aggregates_via_distinct_on_clauses.rs:58:22
     |
@@ -175,5 +175,5 @@ LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
 LL |     where
 LL |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
- 
+
     For more information about this error, try `rustc --explain E0277`.

@@ -29,8 +29,8 @@ LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, Retu
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-    
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:37:37
      |
@@ -63,8 +63,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
    --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:48:20
     |
@@ -93,8 +93,8 @@ LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, Retu
 LL |     where
 LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-    
+
+
 error[E0277]: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/old_in_insert_on_conflict_do_update_requires_nullable.rs:50:31
      |
@@ -124,5 +124,5 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
      For more information about this error, try `rustc --explain E0277`.

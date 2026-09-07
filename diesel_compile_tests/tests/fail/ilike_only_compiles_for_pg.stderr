@@ -6,7 +6,7 @@ error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the 
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -34,7 +34,7 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
+
           = note: this error originates in the macro `$crate::__diesel_operator_body` which comes from the expansion of the macro `infix_operator` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the `Mysql` backend
@@ -45,7 +45,7 @@ error[E0277]: `ILike<name, Bound<Text, &str>>` is no valid SQL fragment for the 
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `ILike<name, Bound<Text, &str>>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -73,6 +73,6 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
+
           = note: this error originates in the macro `$crate::__diesel_operator_body` which comes from the expansion of the macro `infix_operator` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

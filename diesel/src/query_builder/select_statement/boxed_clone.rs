@@ -22,6 +22,7 @@ use crate::query_source::joins::*;
 use crate::query_source::{QuerySource, Table};
 use crate::sql_types::{BigInt, BoolOrNullableBool, IntoNullable};
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 // This is used by the table macro internally
 /// This type represents a boxed select query
@@ -228,6 +229,13 @@ where
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::SelectStatementSyntax>>::walk_ast(self, pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.select.collect_output_metadata(out)
     }
 }
 

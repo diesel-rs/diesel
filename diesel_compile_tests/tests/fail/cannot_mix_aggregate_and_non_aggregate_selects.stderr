@@ -18,8 +18,8 @@ LL |     impl MixedAggregates<Never> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(columns::id, diesel::dsl::CountStar)` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(columns::id, diesel::dsl::CountStar)>`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:26:24
     |
@@ -40,8 +40,8 @@ LL |     impl MixedAggregates<Never> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `Add<nullable_int_col, max<Nullable<Integer>, ...>>` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<Add<nullable_int_col, max<..., ...>>>`
- 
-    
+
+
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
    --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:29:24
     |
@@ -67,6 +67,6 @@ note: required for `__Derived<nullable_int_col, max<..., ...>>` to implement `Va
     | ^^^^^^^^^^^^^^^^^^^^^^^ type parameter would need to implement `ValidGrouping<()>`
     = help: consider manually implementing `ValidGrouping<()>` to avoid undesired bounds
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<f<nullable_int_col, max<..., ...>>>`
- 
+
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

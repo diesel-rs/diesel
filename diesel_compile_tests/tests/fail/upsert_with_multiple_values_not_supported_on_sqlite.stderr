@@ -19,8 +19,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: `BatchInsert<Vec<...>, ..., (), false>` is no valid SQL fragment for the `Sqlite` backend
     --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:33:18
      |
@@ -30,7 +30,7 @@ error[E0277]: `BatchInsert<Vec<...>, ..., (), false>` is no valid SQL fragment f
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `BatchInsert<Vec<...>, ..., (), false>`
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/insert_statement/batch_insert.rs

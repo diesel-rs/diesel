@@ -20,4 +20,5 @@ fn main() {
         .returning(old(name))
         .get_result::<String>(&mut connection);
     //~^ ERROR: `ReturningClause<Old<name>>` is no valid SQL fragment for the `Sqlite` backend
+    //~| ERROR: `returning::old_impl::Old<columns::name>` is no valid SQL fragment for the `Sqlite` backend
 }

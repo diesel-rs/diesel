@@ -101,8 +101,8 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:54:10
    |
@@ -112,7 +112,7 @@ LL |         .group_by(post_alias.field(posts::id))
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<table>>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
 
-   
+
 error[E0277]: the trait bound `AliasedField<post1, id>: IsContainedInGroupBy<id>` is not satisfied
   --> tests/fail/invalid_group_by.rs:56:10
    |
@@ -151,7 +151,7 @@ LL |         .group_by(post_alias.field(posts::id))
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
    = note: required for `SelectStatement<FromClause<Alias<user1>>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
 
-   
+
 error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<...>` is not satisfied
    --> tests/fail/invalid_group_by.rs:64:17
     |
@@ -186,8 +186,8 @@ LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Select
 ...
 LL |         Self: methods::SelectDsl<Selection>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:71:10
    |
@@ -213,7 +213,7 @@ LL |         .group_by(post_alias.field(posts::id))
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<table>>`
    = note: required for `SelectStatement<FromClause<table>, ...>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
 
-   
+
 error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:85:10
    |

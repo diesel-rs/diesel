@@ -63,7 +63,7 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
+
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `i32: FromSqlRow<diesel::sql_types::Text, Pg>` is not satisfied
@@ -308,7 +308,7 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
+
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
@@ -347,7 +347,7 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
   LL | / table! {
   LL | |     users {
     | |_________^
-    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
+    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
             call if both are tables
 help: the following other types implement trait `TableNotEqual<T>`
    --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
@@ -402,7 +402,7 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
+
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
@@ -441,7 +441,7 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
   LL | / table! {
   LL | |     users {
     | |_________^
-    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
+    = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!`
             call if both are tables
 help: the following other types implement trait `TableNotEqual<T>`
    --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
@@ -496,7 +496,7 @@ LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expr
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
     | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
- 
+
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`

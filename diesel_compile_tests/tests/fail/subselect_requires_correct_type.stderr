@@ -26,5 +26,5 @@ LL |     fn eq_any<T>(self, values: T) -> dsl::EqAny<Self, T>
 ...
 LL |         T: AsInExpression<Self::SqlType>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `ExpressionMethods::eq_any`
- 
+
     For more information about this error, try `rustc --explain E0277`.

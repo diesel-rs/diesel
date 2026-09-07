@@ -1,7 +1,10 @@
+use alloc::vec::Vec;
+
 use crate::QuerySource;
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::query_builder::{
-    AstPass, DeleteStatement, InsertStatement, QueryFragment, QueryId, UpdateStatement,
+    AstPass, DeleteStatement, InsertStatement, OutputFieldMetadata, QueryFragment, QueryId,
+    UpdateStatement,
 };
 use crate::result::QueryResult;
 
@@ -38,10 +41,18 @@ pub struct ReturningClause<Expr>(pub Expr);
 impl<Expr, DB> QueryFragment<DB> for ReturningClause<Expr>
 where
     DB: Backend,
+    Expr: QueryFragment<DB>,
     Self: QueryFragment<DB, DB::ReturningClause>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::ReturningClause>>::walk_ast(self, pass)
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.0.collect_output_metadata(out)
     }
 }
 
@@ -58,6 +69,13 @@ where
         out.push_sql(" RETURNING ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())
+    }
+
+    fn collect_output_metadata<'b>(
+        &'b self,
+        out: &mut Vec<OutputFieldMetadata<'b>>,
+    ) -> QueryResult<()> {
+        self.0.collect_output_metadata(out)
     }
 }
 

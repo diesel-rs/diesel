@@ -22,8 +22,8 @@ LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
             which is required by `&IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
             `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: RunQueryDslSupport`
             which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(diesel::insertable::DefaultableColumnInsertValue<diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
    --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:52:14
     |
@@ -60,7 +60,7 @@ LL |     pub fn set<Changes>(self, changes: Changes) -> crate::dsl::Set<Self, Ch
 ...
 LL |         Changes: AsChangeset<Target = T>,
     |                              ^^^^^^^^^^ required by this bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret>, Target>::set`
- 
+
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`

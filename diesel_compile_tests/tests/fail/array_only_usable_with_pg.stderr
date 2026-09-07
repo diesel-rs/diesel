@@ -15,8 +15,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0271]: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection>::Backend == Pg`
     --> tests/fail/array_only_usable_with_pg.rs:12:48
      |
@@ -34,5 +34,5 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
      For more information about this error, try `rustc --explain E0271`.

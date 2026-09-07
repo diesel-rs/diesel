@@ -125,6 +125,14 @@ macro_rules! tuple_impls {
                         )+
                             Ok(())
                     }
+
+                    fn collect_output_metadata<'b>(&'b self, out: &mut Vec<OutputFieldMetadata<'b>>) -> QueryResult<()>
+                    {
+                        $(
+                            self.$idx.collect_output_metadata(out)?;
+                        )+
+                        Ok(())
+                    }
                 }
             }
 

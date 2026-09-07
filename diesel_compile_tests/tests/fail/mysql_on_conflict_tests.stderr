@@ -7,7 +7,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
@@ -49,8 +49,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_on_conflict_tests.rs:49:18
      |
@@ -60,7 +60,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
@@ -102,8 +102,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: the trait bound `ConflictTarget<(..., ...)>: OnConflictTarget<...>` is not satisfied
    --> tests/fail/mysql_on_conflict_tests.rs:54:22
     |
@@ -131,8 +131,8 @@ LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConfl
 LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
- 
-    
+
+
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_on_conflict_tests.rs:57:18
      |
@@ -142,7 +142,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
@@ -184,8 +184,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_on_conflict_tests.rs:65:18
      |
@@ -195,7 +195,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
@@ -237,8 +237,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/mysql_on_conflict_tests.rs:74:18
      |
@@ -248,7 +248,7 @@ error[E0277]: `OnConflictValues<ValuesClause<..., ...>, ..., ...>` is no valid S
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Mysql, mysql_like::query_fragments::MysqlOnConflictClause>` is not implemented for `OnConflictValues<ValuesClause<..., ...>, ..., ...>`
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/query_builder/upsert/on_conflict_clause.rs
@@ -290,8 +290,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
     --> tests/fail/mysql_on_conflict_tests.rs:84:18
      |
@@ -301,7 +301,7 @@ error[E0277]: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no vali
      |          required by a bound introduced by this call
      |
      = help: the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::ConflictTarget<DuplicatedKeys>`
-     = note: this usually means that the `Pg` database system does not support 
+     = note: this usually means that the `Pg` database system does not support
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                C
@@ -325,8 +325,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: the trait bound `ConflictTarget<(name, ...)>: OnConflictTarget<...>` is not satisfied
    --> tests/fail/mysql_on_conflict_tests.rs:89:22
     |
@@ -354,8 +354,8 @@ LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConfl
 LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
- 
-    
+
+
 error[E0277]: `ConflictTarget<(name, DuplicatedKeys)>` is no valid SQL fragment for the `Pg` backend
     --> tests/fail/mysql_on_conflict_tests.rs:92:18
      |
@@ -364,7 +364,7 @@ error[E0277]: `ConflictTarget<(name, DuplicatedKeys)>` is no valid SQL fragment 
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Pg` database system does not support 
+     = note: this usually means that the `Pg` database system does not support
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `diesel::query_builder::ConflictTarget<(T,)>` implements `QueryFragment<DB, SP>`
@@ -388,8 +388,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0277]: the trait bound `ConflictTarget<(..., ...)>: OnConflictTarget<...>` is not satisfied
    --> tests/fail/mysql_on_conflict_tests.rs:97:22
     |
@@ -417,8 +417,8 @@ LL |     pub fn on_conflict<Target>(self, target: Target) -> crate::dsl::OnConfl
 LL |     where
 LL |         ConflictTarget<Target>: OnConflictTarget<T>,
     |                                 ^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::upsert::on_conflict_extension::<impl InsertStatement<T, U, Op, Ret>>::on_conflict`
- 
-    
+
+
 error[E0277]: `ConflictTarget<(DuplicatedKeys, name)>` is no valid SQL fragment for the `Pg` backend
     --> tests/fail/mysql_on_conflict_tests.rs:100:18
      |
@@ -427,7 +427,7 @@ error[E0277]: `ConflictTarget<(DuplicatedKeys, name)>` is no valid SQL fragment 
      |          |
      |          required by a bound introduced by this call
      |
-     = note: this usually means that the `Pg` database system does not support 
+     = note: this usually means that the `Pg` database system does not support
              this SQL syntax
      = help: the following other types implement trait `QueryFragment<DB, SP>`:
                `diesel::query_builder::ConflictTarget<(T,)>` implements `QueryFragment<DB, SP>`
@@ -451,5 +451,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
+
      For more information about this error, try `rustc --explain E0277`.

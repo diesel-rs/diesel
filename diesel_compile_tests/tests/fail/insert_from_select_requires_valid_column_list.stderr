@@ -20,8 +20,8 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
-     
+
+
 error[E0271]: type mismatch resolving `<post_id as ColumnList>::Table == table`
    --> tests/fail/insert_from_select_requires_valid_column_list.rs:65:23
     |
@@ -92,8 +92,8 @@ LL |     pub fn into_columns<C2>(
 ...
 LL |         C2: ColumnList<Table = T> + Expression,
     |             ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
- 
-    
+
+
 error[E0271]: type mismatch resolving `<post_id as ColumnList>::Table == table`
    --> tests/fail/insert_from_select_requires_valid_column_list.rs:83:23
     |

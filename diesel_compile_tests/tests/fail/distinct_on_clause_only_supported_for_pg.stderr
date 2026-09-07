@@ -6,7 +6,7 @@ error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the
      |                             |
      |                             required by a bound introduced by this call
      |
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Sqlite, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -29,8 +29,8 @@ LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
-  
-     
+
+
 error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the `Mysql` backend
     --> tests/fail/distinct_on_clause_only_supported_for_pg.rs:21:41
      |
@@ -39,7 +39,7 @@ error[E0277]: `DistinctOnClause<columns::name>` is no valid SQL fragment for the
      |                             |
      |                             required by a bound introduced by this call
      |
-     = note: this usually means that the `Mysql` database system does not support 
+     = note: this usually means that the `Mysql` database system does not support
              this SQL syntax
 help: the trait `QueryFragment<Mysql, diesel::query_builder::private::NotSpecialized>` is not implemented for `DistinctOnClause<columns::name>`
       but trait `QueryFragment<Pg, diesel::query_builder::private::NotSpecialized>` is implemented for it
@@ -62,5 +62,5 @@ LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
-  
+
      For more information about this error, try `rustc --explain E0277`.

@@ -70,6 +70,11 @@ impl<'a> PgValue<'a> {
         Self::new_internal(raw_value, type_oid_lookup)
     }
 
+    #[doc(hidden)]
+    pub fn new_dynamic(raw_value: &'a [u8], type_oid_lookup: &'a dyn TypeOidLookup) -> Self {
+        Self::new_internal(raw_value, type_oid_lookup)
+    }
+
     pub(in crate::pg) fn new_internal(
         raw_value: &'a [u8],
         type_oid_lookup: &'a dyn TypeOidLookup,

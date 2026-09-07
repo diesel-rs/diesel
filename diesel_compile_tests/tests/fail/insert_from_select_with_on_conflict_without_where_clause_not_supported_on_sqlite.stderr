@@ -5,7 +5,7 @@ error[E0277]: `OnConflictSelectWrapper<SelectStatement<..., ...>>` is no valid S
      |                  ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |
      = help: the trait `QueryFragment<Sqlite>` is not implemented for `OnConflictSelectWrapper<SelectStatement<..., ...>>`
-     = note: this usually means that the `Sqlite` database system does not support 
+     = note: this usually means that the `Sqlite` database system does not support
              this SQL syntax
 help: the following other types implement trait `QueryFragment<DB, SP>`
     --> DIESEL/diesel/diesel/src/sqlite/query_builder/query_fragment_impls.rs
@@ -36,5 +36,5 @@ LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
 ...
 LL |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
-  
+
      For more information about this error, try `rustc --explain E0277`.

@@ -44,8 +44,8 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
-     
+
+
 error[E0277]: cannot deserialize a value of the database type `diesel::sql_types::Binary` as `Test2`
     --> tests/fail/derive/enum2_.rs:42:30
      |
@@ -85,7 +85,7 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
           = note: this error originates in the derive macro `Enum` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: `types::enum_::EnumTypeMapping` is no valid strategy to map an enum for backend `Sqlite`
@@ -138,5 +138,5 @@ LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-  
+
      For more information about this error, try `rustc --explain E0277`.

@@ -25,7 +25,7 @@ note: required by a bound in `diesel::update`
     |
 LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
- 
+
     help: consider removing this method call, as the receiver has type `users::table` and `users::table: IntoUpdateTarget` trivially holds
     |
  23 -     update(users::table.filter(posts::id.eq(1)));

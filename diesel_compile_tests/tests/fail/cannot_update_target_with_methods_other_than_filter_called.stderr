@@ -23,8 +23,8 @@ note: required by a bound in `diesel::update`
     |
 LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
- 
-    
+
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ...>: IntoUpdateTarget` is not satisfied
    --> tests/fail/cannot_update_target_with_methods_other_than_filter_called.rs:18:26
     |
@@ -50,8 +50,8 @@ note: required by a bound in `diesel::update`
     |
 LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
- 
-    
+
+
 error[E0277]: the trait bound `SelectStatement<..., ...>: Identifiable` is not satisfied
    --> tests/fail/cannot_update_target_with_methods_other_than_filter_called.rs:15:19
     |
@@ -69,8 +69,8 @@ LL | |     Self: HasTable,
 LL | |     W: ValidWhereClause<F>,
     | |___________________________^
     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `IntoUpdateTarget`
- 
-    
+
+
 error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ...>: Identifiable` is not satisfied
    --> tests/fail/cannot_update_target_with_methods_other_than_filter_called.rs:18:19
     |
@@ -88,5 +88,5 @@ LL | |     Self: HasTable,
 LL | |     W: ValidWhereClause<F>,
     | |___________________________^
     = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `IntoUpdateTarget`
- 
+
     For more information about this error, try `rustc --explain E0277`.
