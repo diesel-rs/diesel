@@ -322,6 +322,7 @@ pub mod backend;
 pub mod collation;
 pub mod connection;
 pub mod data_types;
+pub mod ddl;
 pub mod deserialize;
 #[macro_use]
 pub mod expression;
@@ -835,6 +836,8 @@ pub mod prelude {
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     pub use crate::expression::functions::sql_function;
 
+    #[doc(inline)]
+    pub use crate::ddl::TableDdl;
     #[doc(inline)]
     pub use crate::expression::SelectableHelper;
     #[doc(inline)]
