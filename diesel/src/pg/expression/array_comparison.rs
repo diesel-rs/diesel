@@ -1,9 +1,14 @@
 use crate::expression::subselect::Subselect;
-use crate::expression::{AsExpression, Expression, TypedExpressionType, ValidGrouping};
+use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{Array, Bool, SqlType};
+use crate::sql_types::{Array, Bool};
+
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+use crate::expression::TypedExpressionType;
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+use crate::sql_types::SqlType;
 
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 /// Creates a PostgreSQL `ANY` expression.
