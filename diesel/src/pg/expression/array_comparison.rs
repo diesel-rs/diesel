@@ -5,6 +5,7 @@ use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::{Array, Bool, SqlType};
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 /// Creates a PostgreSQL `ANY` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
@@ -34,6 +35,7 @@ where
     Any::new(vals.as_expression())
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 /// Creates a PostgreSQL `ALL` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
@@ -62,18 +64,21 @@ where
     All::new(vals.as_expression())
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct Any<Expr> {
     expr: Expr,
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> Any<Expr> {
     fn new(expr: Expr) -> Self {
         Any { expr: expr }
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr, ST> Expression for Any<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
@@ -82,6 +87,7 @@ where
     type SqlType = ST;
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> QueryFragment<Pg> for Any<Expr>
 where
     Expr: QueryFragment<Pg>,
@@ -94,20 +100,24 @@ where
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl_selectable_expression!(Any<Expr>);
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct All<Expr> {
     expr: Expr,
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> All<Expr> {
     fn new(expr: Expr) -> Self {
         All { expr: expr }
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr, ST> Expression for All<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
@@ -116,6 +126,7 @@ where
     type SqlType = ST;
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> QueryFragment<Pg> for All<Expr>
 where
     Expr: QueryFragment<Pg>,
@@ -128,6 +139,7 @@ where
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl_selectable_expression!(All<Expr>);
 
 /// Query dsl node for PostgreSQL `LIKE ANY(ARRAY[...])` expression
@@ -155,7 +167,7 @@ impl_selectable_expression!(All<Expr>);
 /// ```
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
-pub struct LikeAny<T, U> {
+pub(crate) struct LikeAny<T, U> {
     /// The expression on the left side of the `LIKE ANY` keyword
     pub left: T,
     /// The array of patterns to match against
@@ -218,7 +230,7 @@ impl_selectable_expression!(LikeAny<T, U>);
 /// ```
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
-pub struct ILikeAny<T, U> {
+pub(crate) struct ILikeAny<T, U> {
     /// The expression on the left side of the `ILIKE ANY` keyword
     pub left: T,
     /// The array of patterns to match against
