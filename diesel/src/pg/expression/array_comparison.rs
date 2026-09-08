@@ -167,7 +167,8 @@ impl_selectable_expression!(All<Expr>);
 /// ```
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
-pub(crate) struct LikeAny<T, U> {
+#[allow(unreachable_pub)]
+pub struct LikeAny<T, U> {
     /// The expression on the left side of the `LIKE ANY` keyword
     pub left: T,
     /// The array of patterns to match against
@@ -230,7 +231,8 @@ impl_selectable_expression!(LikeAny<T, U>);
 /// ```
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
-pub(crate) struct ILikeAny<T, U> {
+#[allow(unreachable_pub)]
+pub struct ILikeAny<T, U> {
     /// The expression on the left side of the `ILIKE ANY` keyword
     pub left: T,
     /// The array of patterns to match against
