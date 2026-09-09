@@ -61,6 +61,38 @@ mod tests {
     use crate::sql_types;
 
     #[diesel_test_helper::test]
+    fn regression_json_float_survives_a_round_trip() {
+        // `serde_json` prints the shortest text that round trips, and parses it
+        // back approximately unless `float_roundtrip` is on, so about three in
+        // ten floats used to come back as the neighbouring double
+        for float in [
+            8.829872855928286e-308f64,
+            -0.20221894534048165,
+            1.7383394626966921e-307,
+            6.178787134922198e305,
+            0.1,
+            f64::MIN_POSITIVE,
+            f64::MAX,
+        ] {
+            let value = serde_json::Value::from(float);
+
+            let mut buffer = Vec::new();
+            let mut bytes = Output::test(ByteWrapper(&mut buffer));
+            ToSql::<sql_types::Json, Pg>::to_sql(&value, &mut bytes).unwrap();
+            let json: serde_json::Value =
+                FromSql::<sql_types::Json, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
+            assert_eq!(json.as_f64().map(f64::to_bits), Some(float.to_bits()));
+
+            let mut buffer = Vec::new();
+            let mut bytes = Output::test(ByteWrapper(&mut buffer));
+            ToSql::<sql_types::Jsonb, Pg>::to_sql(&value, &mut bytes).unwrap();
+            let jsonb: serde_json::Value =
+                FromSql::<sql_types::Jsonb, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
+            assert_eq!(jsonb.as_f64().map(f64::to_bits), Some(float.to_bits()));
+        }
+    }
+
+    #[diesel_test_helper::test]
     fn json_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));

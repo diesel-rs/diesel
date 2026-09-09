@@ -68,6 +68,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* Fixed reading a floating point value from `Json` and `Jsonb` as the neighbouring double, which affected about 29% of all finite `f64` values on every backend, by enabling `serde_json`'s `float_roundtrip` feature
+* The minimum supported `serde_json` version is now 1.0.54, which is where that feature was added
+* Fixed reading floating point values from SQLite's jsonb encoding as the neighbouring double, which affected about 30% of all finite `f64` values
 
 ### Changed
 
