@@ -309,10 +309,22 @@ mod jsonb {
 
         // Read only the number of bytes specified by the payload size
         let int_str = core::str::from_utf8(bytes).map_err(|_| "Invalid ASCII in JSONB integer")?;
+        // An INT payload is integer text, so fractional and exponent forms are malformed.
+        // `serde_json` reports a non-finite `1e999` as neither float nor integer.
+        if int_str.contains(['.', 'e', 'E']) {
+            return Err("Failed to parse JSONB integer".into());
+        }
+        // `-0` is the one integer text `serde_json` turns into a float, and a signed
+        // zero only carries meaning for floats, so decode the integer it denotes.
+        if int_str == "-0" {
+            return Ok(serde_json::Value::Number(serde_json::Number::from(0)));
+        }
         let int_value = serde_json::from_str(int_str)
             .map_err(|_| "Failed to parse JSONB")
             .and_then(|v: serde_json::Value| {
-                v.is_i64()
+                // Without `arbitrary_precision` an integer wider than 64 bits parses as
+                // a lossy float, which must not pass as the stored value.
+                (v.is_number() && !v.is_f64())
                     .then_some(v)
                     .ok_or("Failed to parse JSONB integer")
             })?;
@@ -645,19 +657,43 @@ mod tests {
 
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
-    fn regression_float_without_a_fraction_is_written_invalid() {
+    fn every_jsonb_number_is_written_valid_and_round_trips() {
         let conn = &mut connection();
-        for value in [
-            json!(3.0),
-            json!(-0.0),
-            json!(1.5e300),
-            // an exponent and no fraction digit, so the text carries no `.`
-            json!(1e-7),
-            json!(1e300),
-        ] {
+
+        // `1 << 63` is `i64::MAX + 1`, `1e21` is where Rust switches to exponent
+        // notation, and an exponent without a fraction digit carries no `.`.
+        let numbers = [
+            (json!(0), JSONB_INT),
+            (json!(1), JSONB_INT),
+            (json!(-1), JSONB_INT),
+            (json!(-5), JSONB_INT),
+            (json!(u64::from(u32::MAX)), JSONB_INT),
+            (json!(i64::MAX), JSONB_INT),
+            (json!(i64::MIN), JSONB_INT),
+            (json!(1u64 << 63), JSONB_INT),
+            (json!(u64::MAX), JSONB_INT),
+            (json!(3.0), JSONB_FLOAT),
+            (json!(-0.0), JSONB_FLOAT),
+            (json!(-2.5), JSONB_FLOAT),
+            (json!(1e-7), JSONB_FLOAT),
+            (json!(1e300), JSONB_FLOAT),
+            (json!(-1e300), JSONB_FLOAT),
+            (json!(1.5e300), JSONB_FLOAT),
+            (json!(1e21), JSONB_FLOAT),
+            (json!(f64::MIN), JSONB_FLOAT),
+            (json!(f64::MAX), JSONB_FLOAT),
+            (json!(f64::MIN_POSITIVE), JSONB_FLOAT),
+        ];
+
+        for (value, element_type) in numbers {
             let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
                 .get_result::<Vec<u8>>(conn)
                 .unwrap();
+            assert_eq!(
+                blob[0] & 0x0F,
+                element_type,
+                "{value} was written with the wrong element type: {blob:02X?}"
+            );
             let valid = diesel::select(
                 sql::<sql_types::Integer>("json_valid(")
                     .bind::<sql_types::Binary, _>(blob.clone())
@@ -675,6 +711,176 @@ mod tests {
             assert_eq!(back, value, "{blob:02X?}");
         }
     }
+
+    #[diesel_test_helper::test]
+    fn test_write_jsonb_number_classifies_by_integer_text() {
+        // `serde_json` writes an exponent with a sign, so the payload is `1e+300`.
+        for (value, element_type, payload) in [
+            (json!(0), JSONB_INT, "0"),
+            (json!(-1), JSONB_INT, "-1"),
+            (json!(i64::MIN), JSONB_INT, "-9223372036854775808"),
+            (json!(u64::MAX), JSONB_INT, "18446744073709551615"),
+            (json!(3.0), JSONB_FLOAT, "3.0"),
+            (json!(-0.0), JSONB_FLOAT, "-0.0"),
+            (json!(-2.5), JSONB_FLOAT, "-2.5"),
+            (json!(1e-7), JSONB_FLOAT, "1e-7"),
+            (json!(1e300), JSONB_FLOAT, "1e+300"),
+        ] {
+            let mut buffer = Vec::new();
+            write_jsonb_value(&value, &mut buffer).unwrap();
+
+            let mut expected = create_jsonb_header(element_type, payload.len()).unwrap();
+            expected.extend_from_slice(payload.as_bytes());
+
+            assert_eq!(buffer, expected, "{value} was not written as {payload}");
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn numbers_nested_in_containers_are_written_valid() {
+        let conn = &mut connection();
+        let value = json!({"a": -1, "b": [-2, -2.5, 1e-7, 0, u64::MAX], "c": {"d": i64::MIN}});
+
+        let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
+            .get_result::<Vec<u8>>(conn)
+            .unwrap();
+        let valid = diesel::select(
+            sql::<sql_types::Integer>("json_valid(")
+                .bind::<sql_types::Binary, _>(blob.clone())
+                .sql(", 8)"),
+        )
+        .get_result::<i32>(conn)
+        .unwrap();
+        assert_eq!(valid, 1, "sqlite rejects {blob:02X?}");
+
+        let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob))
+            .get_result::<Value>(conn)
+            .unwrap();
+        assert_eq!(back, value);
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_int_decodes_the_whole_representable_range() {
+        for (payload, expected) in [
+            (&b"0"[..], json!(0)),
+            (&b"1"[..], json!(1)),
+            (&b"-1"[..], json!(-1)),
+            // sqlite stores `-0` as an integer and `json_extract` reads it as one
+            (&b"-0"[..], json!(0)),
+            (&b"9223372036854775807"[..], json!(i64::MAX)),
+            (&b"-9223372036854775808"[..], json!(i64::MIN)),
+            (&b"9223372036854775808"[..], json!(1u64 << 63)),
+            (&b"18446744073709551615"[..], json!(u64::MAX)),
+        ] {
+            let mut data = create_jsonb_header(JSONB_INT, payload.len()).unwrap();
+            data.extend_from_slice(payload);
+
+            let payload = core::str::from_utf8(payload).unwrap();
+            assert_eq!(
+                read_jsonb_value(&data).unwrap().0,
+                expected,
+                "{payload} did not decode to itself"
+            );
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_int_rejects_non_integer_payloads() {
+        for payload in [
+            // fractions and exponents belong to a FLOAT element
+            &b"1.5"[..],
+            &b"1e5"[..],
+            // parses as neither an integer nor a finite float
+            &b"1e999"[..],
+            // not canonical JSON integer text
+            &b"+1"[..],
+            &b"01"[..],
+            &b""[..],
+            &b"-"[..],
+            &b"0x10"[..],
+            &b"nan"[..],
+            &b"Infinity"[..],
+        ] {
+            let mut data = create_jsonb_header(JSONB_INT, payload.len()).unwrap();
+            data.extend_from_slice(payload);
+
+            let payload = core::str::from_utf8(payload).unwrap();
+            assert!(
+                read_jsonb_value(&data).is_err(),
+                "{payload} is not a JSONB integer"
+            );
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_int_decodes_a_wide_integer_exactly_or_not_at_all() {
+        // `Number::from_u128` succeeds only when `serde_json` can hold the value
+        // exactly, which depends on its `arbitrary_precision` feature, and any
+        // dependency can enable that.
+        for payload in [
+            &b"18446744073709551616"[..],
+            &b"123456789012345678901234567890"[..],
+        ] {
+            let mut data = create_jsonb_header(JSONB_INT, payload.len()).unwrap();
+            data.extend_from_slice(payload);
+
+            let payload = core::str::from_utf8(payload).unwrap();
+            let exact = serde_json::Number::from_u128(payload.parse().unwrap()).map(Value::Number);
+            let decoded = read_jsonb_value(&data);
+
+            match exact {
+                Some(expected) => assert_eq!(
+                    decoded.unwrap().0,
+                    expected,
+                    "{payload} is representable and must decode"
+                ),
+                None => assert!(decoded.is_err(), "{payload} would decode rounded"),
+            }
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn test_read_jsonb_int_above_i64_max_inside_containers() {
+        let mut element = create_jsonb_header(JSONB_INT, 20).unwrap();
+        element.extend_from_slice(b"18446744073709551615");
+
+        let mut array = create_jsonb_header(JSONB_ARRAY, element.len()).unwrap();
+        array.extend_from_slice(&element);
+        assert_eq!(read_jsonb_value(&array).unwrap().0, json!([u64::MAX]));
+
+        let mut key = create_jsonb_header(JSONB_TEXT, 1).unwrap();
+        key.extend_from_slice(b"a");
+        let mut object = create_jsonb_header(JSONB_OBJECT, key.len() + element.len()).unwrap();
+        object.extend_from_slice(&key);
+        object.extend_from_slice(&element);
+        assert_eq!(read_jsonb_value(&object).unwrap().0, json!({"a": u64::MAX}));
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_unsigned_above_i64_reads_a_blob_sqlite_wrote() {
+        let conn = &mut connection();
+
+        let back = diesel::select(sql::<Jsonb>("jsonb('18446744073709551615')"))
+            .get_result::<Value>(conn)
+            .unwrap();
+
+        assert_eq!(back, json!(u64::MAX));
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_negative_zero_reads_a_blob_sqlite_wrote() {
+        let conn = &mut connection();
+
+        let back = diesel::select(sql::<Jsonb>("jsonb('-0')"))
+            .get_result::<Value>(conn)
+            .unwrap();
+
+        assert_eq!(back, json!(0));
+    }
+
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
     fn json_to_sql() {
