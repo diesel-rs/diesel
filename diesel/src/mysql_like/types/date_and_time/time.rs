@@ -10,7 +10,9 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
 use super::{MysqlTime, MysqlTimestampType};
 
+// Callers reject a negative `MysqlTime` first, the sign has nowhere to go here.
 fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn core::error::Error>> {
+    debug_assert!(!dt.neg);
     for (name, field) in [
         ("year", dt.year),
         ("month", dt.month),
@@ -161,6 +163,9 @@ impl<DB: MysqlLikeBackend> ToSql<Time, DB> for NaiveTime {
 impl<DB: MysqlLikeBackend> FromSql<Time, DB> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Time, DB>>::from_sql(bytes)?;
+        if mysql_time.neg {
+            return Err("Negative times cannot be deserialized as time::Time".into());
+        }
 
         to_time(mysql_time)
             .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())
