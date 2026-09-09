@@ -32,6 +32,12 @@ pub enum PgNumeric {
         /// The digits in this number, stored in base 10000
         digits: Vec<i16>,
     },
+    /// Positive infinity, requires PostgreSQL >= 14
+    ///
+    /// See [the PostgreSQL documentation](https://www.postgresql.org/docs/current/datatype-numeric.html#DATATYPE-NUMERIC-DECIMAL)
+    PositiveInfinity,
+    /// Negative infinity, requires PostgreSQL >= 14
+    NegativeInfinity,
     /// Not a number
     #[default]
     NaN,
@@ -43,7 +49,7 @@ struct InvalidNumericSign(u16);
 
 impl core::fmt::Display for InvalidNumericSign {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.write_str("sign for numeric field was not one of 0, 0x4000, 0xC000")
+        f.write_str("sign for numeric field was not one of 0, 0x4000, 0xC000, 0xD000, 0xF000")
     }
 }
 
@@ -54,7 +60,7 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = bytes.as_bytes();
         let digit_count = bytes.read_u16::<NetworkEndian>()?;
-        let mut digits = Vec::with_capacity(digit_count as usize);
+        let mut digits = Vec::with_capacity(usize::from(digit_count));
         let weight = bytes.read_i16::<NetworkEndian>()?;
         let sign = bytes.read_u16::<NetworkEndian>()?;
         let scale = bytes.read_u16::<NetworkEndian>()?;
@@ -74,6 +80,8 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
                 digits,
             }),
             0xC000 => Ok(PgNumeric::NaN),
+            0xD000 => Ok(PgNumeric::PositiveInfinity),
+            0xF000 => Ok(PgNumeric::NegativeInfinity),
             invalid => Err(Box::new(InvalidNumericSign(invalid))),
         }
     }
@@ -86,21 +94,22 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,
             PgNumeric::NaN => 0xC000,
+            PgNumeric::PositiveInfinity => 0xD000,
+            PgNumeric::NegativeInfinity => 0xF000,
         };
-        let empty_vec = Vec::new();
-        let digits = match *self {
+        let digits: &[i16] = match *self {
             PgNumeric::Positive { ref digits, .. } | PgNumeric::Negative { ref digits, .. } => {
                 digits
             }
-            PgNumeric::NaN => &empty_vec,
+            PgNumeric::NaN | PgNumeric::PositiveInfinity | PgNumeric::NegativeInfinity => &[],
         };
         let weight = match *self {
             PgNumeric::Positive { weight, .. } | PgNumeric::Negative { weight, .. } => weight,
-            PgNumeric::NaN => 0,
+            PgNumeric::NaN | PgNumeric::PositiveInfinity | PgNumeric::NegativeInfinity => 0,
         };
         let scale = match *self {
             PgNumeric::Positive { scale, .. } | PgNumeric::Negative { scale, .. } => scale,
-            PgNumeric::NaN => 0,
+            PgNumeric::NaN | PgNumeric::PositiveInfinity | PgNumeric::NegativeInfinity => 0,
         };
         out.write_u16::<NetworkEndian>(digits.len().try_into()?)?;
         out.write_i16::<NetworkEndian>(weight)?;

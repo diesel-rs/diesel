@@ -68,6 +68,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* `'Infinity'::numeric` and `'-Infinity'::numeric` (PostgreSQL >= 14) now decode into `PgNumeric::PositiveInfinity` and `PgNumeric::NegativeInfinity` instead of failing with an invalid sign error. `BigDecimal` has no infinity, so converting either errors
 
 ### Changed
 
@@ -75,6 +76,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
+* `PgNumeric` gained the `PositiveInfinity` and `NegativeInfinity` variants, so an exhaustive `match` on it needs updating
 
 
 ## [2.3.13] 2026-09-4
