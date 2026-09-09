@@ -44,7 +44,7 @@ pub fn load_foreign_key_constraints(
             HashMap::new(),
             |mut acc, (child_table, parent_table, foreign_key, primary_key, fk_constraint_name)| {
                 let entry = acc
-                    .entry((parent_table.clone(), fk_constraint_name))
+                    .entry((child_table.clone(), fk_constraint_name))
                     .or_insert_with(|| (child_table, parent_table, Vec::new(), Vec::new()));
                 entry.2.push(foreign_key);
                 entry.3.push(primary_key);
@@ -293,5 +293,52 @@ mod test {
         );
         let enum_variants_c = super::get_enum_variants(&c);
         assert!(enum_variants_c.is_none());
+    }
+
+    #[test]
+    fn foreign_keys_reusing_a_constraint_name_stay_separate() {
+        let mut connection = connection();
+
+        for table in ["fk_dup_child_a", "fk_dup_child_b", "fk_dup_parent"] {
+            diesel::sql_query(format!("DROP TABLE IF EXISTS {table}"))
+                .execute(&mut connection)
+                .unwrap();
+        }
+        diesel::sql_query("CREATE TABLE fk_dup_parent (id INT PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+            "CREATE TABLE fk_dup_child_a (id INT PRIMARY KEY, parent_id INT, \
+             CONSTRAINT fk_dup FOREIGN KEY (parent_id) REFERENCES fk_dup_parent (id))",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        // Reusing a constraint name in a second table needs MariaDB 12.1, before that names are
+        // unique per database and the case this guards against cannot arise.
+        let second_child = diesel::sql_query(
+            "CREATE TABLE fk_dup_child_b (id INT PRIMARY KEY, parent_id INT, \
+             CONSTRAINT fk_dup FOREIGN KEY (parent_id) REFERENCES fk_dup_parent (id))",
+        )
+        .execute(&mut connection);
+        if second_child.is_err() {
+            return;
+        }
+
+        let mut constraints = load_foreign_key_constraints(&mut connection, None)
+            .unwrap()
+            .into_iter()
+            .filter(|fk| fk.parent_table.sql_name == "fk_dup_parent")
+            .collect::<Vec<_>>();
+        constraints.sort_by(|a, b| a.child_table.sql_name.cmp(&b.child_table.sql_name));
+
+        let children = constraints
+            .iter()
+            .map(|fk| fk.child_table.sql_name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(children, ["fk_dup_child_a", "fk_dup_child_b"]);
+        for fk in &constraints {
+            assert_eq!(fk.foreign_key_columns, ["parent_id"]);
+            assert_eq!(fk.primary_key_columns, ["id"]);
+        }
     }
 }
