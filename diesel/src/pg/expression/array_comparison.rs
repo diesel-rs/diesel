@@ -189,10 +189,15 @@ impl<T, U> LikeAny<T, U> {
 impl<T, U> Expression for LikeAny<T, U>
 where
     T: Expression,
-    T::SqlType: 'static,
+    T::SqlType: crate::sql_types::SqlType,
     U: Expression<SqlType = Array<T::SqlType>>,
+    crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        crate::sql_types::MaybeNullableType<Bool>,
 {
-    type SqlType = Bool;
+    type SqlType = crate::sql_types::is_nullable::MaybeNullable<
+        crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        Bool,
+    >;
 }
 
 impl<T, U> QueryFragment<Pg> for LikeAny<T, U>
@@ -253,10 +258,15 @@ impl<T, U> ILikeAny<T, U> {
 impl<T, U> Expression for ILikeAny<T, U>
 where
     T: Expression,
-    T::SqlType: 'static,
+    T::SqlType: crate::sql_types::SqlType,
     U: Expression<SqlType = Array<T::SqlType>>,
+    crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        crate::sql_types::MaybeNullableType<Bool>,
 {
-    type SqlType = Bool;
+    type SqlType = crate::sql_types::is_nullable::MaybeNullable<
+        crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        Bool,
+    >;
 }
 
 impl<T, U> QueryFragment<Pg> for ILikeAny<T, U>
