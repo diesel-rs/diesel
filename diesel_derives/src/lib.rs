@@ -2124,7 +2124,7 @@ fn auto_type_inner(
         attr,
         input,
         dsl_auto_type::DeriveSettings::builder()
-            .default_dsl_path(parse_quote!(diesel::dsl))
+            .default_dsl_path(parse_quote!(::diesel::dsl))
             .default_generate_type_alias(true)
             .default_method_type_case(AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE)
             .default_function_type_case(AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE)

@@ -8,13 +8,10 @@ use crate::model::Model;
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
     quote! {
         const _: () = {
-            // This import is not actually redundant. When using diesel_derives
-            // inside of diesel, `diesel` doesn't exist as an extern crate, and
-            // to work around that it contains a private
-            // `mod diesel { pub use super::*; }` that this import will then
-            // refer to. In all other cases, this imports refers to the extern
-            // crate diesel.
-            use diesel;
+            // Rooted so that a module or item named `diesel` in the caller's
+            // scope cannot capture it. Inside diesel itself this resolves
+            // through `extern crate self as diesel`.
+            use ::diesel;
 
             #item
         };

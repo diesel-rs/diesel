@@ -5,7 +5,7 @@ info:
   input: "#[derive(Identifiable)]\n#[diesel(table_name = crate::schema::admin_users)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl diesel::associations::HasTable for User {
         type Table = crate::schema::admin_users::table;
         fn table() -> <Self as diesel::associations::HasTable>::Table {

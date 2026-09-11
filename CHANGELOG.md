@@ -68,6 +68,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* Generated code now reaches diesel through `::diesel`, so the derive macros, `define_sql_function!`, `#[declare_sql_function]`, `#[auto_type]` and `#[derive(MultiConnection)]` all expand correctly in a module where the name `diesel` resolves to something else. `#[auto_type(dsl_path = ...)]` also keeps a leading `::` on the path it is given, which it previously discarded for method derived types.
 
 ### Changed
 
