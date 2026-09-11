@@ -781,7 +781,7 @@ fn returning_subselect_and_old_in_update() {
 
     #[cfg(feature = "postgres")]
     type Backend = diesel::pg::Pg;
-    
+
     #[cfg(feature = "mariadb")]
     type Backend = diesel::mariadb::Mariadb;
 
