@@ -718,7 +718,7 @@ fn returning_old_column_in_update() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mariadb"))]
 fn returning_old_column_in_update_via_selectable() {
     use crate::schema::users;
 
@@ -769,14 +769,31 @@ fn returning_old_column_in_update_via_selectable() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mariadb"))]
 fn returning_subselect_and_old_in_update() {
     use crate::schema::{posts, users};
+
+    #[cfg(feature = "postgres")]
     use diesel::pg::returning::old;
+
+    #[cfg(feature = "mariadb")]
+    use diesel::mariadb::returning::old_value as old;
+
+    #[cfg(feature = "postgres")]
+    type Backend = diesel::pg::Pg;
+    
+    #[cfg(feature = "mariadb")]
+    type Backend = diesel::mariadb::Mariadb;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
+    #[cfg(feature = "postgres")]
     if !pg_server_supports_returning_old(connection) {
+        return;
+    }
+
+    #[cfg(feature = "mariadb")]
+    if !mariadb_server_supports_update_returning(connection) {
         return;
     }
 
@@ -791,7 +808,7 @@ fn returning_subselect_and_old_in_update() {
     // to correlate with the pre-update row, and that boxed expressions work even
     // if the QS type does not involve `ReturningQuerySource<UpdateStmt, ...>`.
     let boxed_expr: Box<
-        dyn BoxableExpression<users::table, diesel::pg::Pg, SqlType = diesel::sql_types::Text>,
+        dyn BoxableExpression<users::table, Backend, SqlType = diesel::sql_types::Text>,
     > = Box::new(users::name);
     let (was, now, post_by_new_id, post_by_old_id, now_boxed): (
         String,
