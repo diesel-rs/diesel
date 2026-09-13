@@ -760,7 +760,8 @@ fn filter_like_any() {
         .unwrap();
     assert_eq!(vec![None, None], data);
 
-    // Empty pattern array returns FALSE for non-NULL values, NULL for NULL values
+    // Empty pattern array: PostgreSQL returns FALSE for ALL values (including NULL).
+    // An empty array has zero patterns to match, so the result is always FALSE.
     insert_into(users::table)
         .values(&NewUser::new("Dave", Some("brown")))
         .execute(conn)
@@ -770,10 +771,8 @@ fn filter_like_any() {
         .select(hair_color.like_any(Vec::<Option<&str>>::new()))
         .load(conn)
         .unwrap();
-    // Dave has non-NULL hair_color -> FALSE (no patterns to match)
-    // Sean and Tess have NULL hair_color -> NULL
     assert_eq!(
-        vec![None, None, Some(false)],
+        vec![Some(false), Some(false), Some(false)],
         data
     );
 }
