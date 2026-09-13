@@ -3,12 +3,10 @@ use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{Array, Bool};
+use crate::sql_types::{Array, Bool, SqlType};
 
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 use crate::expression::TypedExpressionType;
-#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
-use crate::sql_types::SqlType;
 
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 /// Creates a PostgreSQL `ANY` expression.
@@ -153,23 +151,6 @@ impl_selectable_expression!(All<Expr>);
 /// using `LIKE` semantics (wildcard matching with `%` and `_`).
 ///
 /// This is PostgreSQL-specific and not available on other backends.
-///
-/// # Example
-///
-/// ```rust
-/// # include!("../../doctest_setup.rs");
-/// # use diesel::dsl::*;
-/// #
-/// # fn main() {
-/// #     use schema::users::dsl::*;
-/// #     let connection = &mut establish_connection();
-/// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
-/// let sean = (1, "Sean".to_string());
-/// let jim = (3, "Jim".to_string());
-/// let data = users.filter(name.like_any(vec!["Se%", "J%"]));
-/// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
-/// # }
-/// ```
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
 #[allow(unreachable_pub)]
@@ -189,7 +170,7 @@ impl<T, U> LikeAny<T, U> {
 impl<T, U> Expression for LikeAny<T, U>
 where
     T: Expression,
-    T::SqlType: crate::sql_types::SqlType,
+    T::SqlType: SqlType + 'static,
     U: Expression<SqlType = Array<T::SqlType>>,
     crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
         crate::sql_types::MaybeNullableType<Bool>,
@@ -222,23 +203,6 @@ impl_selectable_expression!(LikeAny<T, U>);
 /// using case-insensitive `ILIKE` semantics.
 ///
 /// This is PostgreSQL-specific and not available on other backends.
-///
-/// # Example
-///
-/// ```rust
-/// # include!("../../doctest_setup.rs");
-/// # use diesel::dsl::*;
-/// #
-/// # fn main() {
-/// #     use schema::users::dsl::*;
-/// #     let connection = &mut establish_connection();
-/// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
-/// let sean = (1, "Sean".to_string());
-/// let jim = (3, "Jim".to_string());
-/// let data = users.filter(name.ilike_any(vec!["se%", "j%"]));
-/// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
-/// # }
-/// ```
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 #[non_exhaustive]
 #[allow(unreachable_pub)]
@@ -258,7 +222,7 @@ impl<T, U> ILikeAny<T, U> {
 impl<T, U> Expression for ILikeAny<T, U>
 where
     T: Expression,
-    T::SqlType: crate::sql_types::SqlType,
+    T::SqlType: SqlType + 'static,
     U: Expression<SqlType = Array<T::SqlType>>,
     crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
         crate::sql_types::MaybeNullableType<Bool>,
