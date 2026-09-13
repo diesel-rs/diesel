@@ -759,4 +759,21 @@ fn filter_like_any() {
         .load(conn)
         .unwrap();
     assert_eq!(vec![None, None], data);
+
+    // Empty pattern array returns FALSE for non-NULL values, NULL for NULL values
+    insert_into(users::table)
+        .values(&NewUser::new("Dave", Some("brown")))
+        .execute(conn)
+        .unwrap();
+    let data: Vec<Option<bool>> = users
+        .order(id)
+        .select(hair_color.like_any(Vec::<Option<&str>>::new()))
+        .load(conn)
+        .unwrap();
+    // Dave has non-NULL hair_color -> FALSE (no patterns to match)
+    // Sean and Tess have NULL hair_color -> NULL
+    assert_eq!(
+        vec![None, None, Some(false)],
+        data
+    );
 }
