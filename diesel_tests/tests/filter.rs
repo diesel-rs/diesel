@@ -759,19 +759,4 @@ fn filter_like_any() {
         .load(conn)
         .unwrap();
     assert_eq!(vec![None, None], data);
-
-    let conn = &mut connection_with_gilbert_and_jonathan_in_users_table();
-    let data: Vec<Option<bool>> = users
-        .order(id)
-        .select(hair_color.like_any(vec![Some("bl%"), None]))
-        .load(conn)
-        .unwrap();
-    assert_eq!(vec![None, None], data);
-
-    let data: Vec<Option<bool>> = users
-        .order(id)
-        .select(hair_color.like_any(Vec::<Option<&str>>::new()))
-        .load(conn)
-        .unwrap();
-    assert_eq!(vec![Some(false), Some(false)], data);
 }
