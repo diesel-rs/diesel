@@ -1,4 +1,4 @@
-use diesel_fuzz::{pg, sqlite};
+use diesel_fuzz::{mysql, pg, sqlite};
 use std::num::NonZeroU32;
 
 #[test]
@@ -8,6 +8,19 @@ fn every_pg_case_decodes_without_panicking() {
         let selector = u8::try_from(selector).expect("under 256 cases");
         for bytes in [&[][..], &[0x00], &[0xFF; 4], &[0x7F; 16], &[0xAA; 64]] {
             pg::decode_case(selector, oid, bytes);
+        }
+    }
+}
+
+#[test]
+fn every_mysql_case_decodes_without_panicking() {
+    for selector in 0..mysql::CASES.len() {
+        let selector = u8::try_from(selector).expect("under 256 cases");
+        for tpe in 0..mysql::TYPES.len() {
+            let tpe = u8::try_from(tpe).expect("under 256 types");
+            for bytes in [&[][..], &[0x00], &[0xFF; 4], &[0x30; 12]] {
+                mysql::decode_case(selector, tpe, bytes);
+            }
         }
     }
 }
