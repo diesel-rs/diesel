@@ -52,6 +52,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
+
+[[package]]
 name = "cc"
 version = "1.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -143,9 +149,14 @@ version = "2.3.13"
 dependencies = [
  "bigdecimal",
  "bitflags",
+ "byteorder",
  "chrono",
  "diesel_derives",
  "downcast-rs",
+ "ipnet",
+ "ipnetwork",
+ "itoa",
+ "libc",
  "libsqlite3-sys",
  "num-bigint",
  "num-integer",
@@ -153,6 +164,7 @@ dependencies = [
  "serde_json",
  "sqlite-wasm-rs",
  "time",
+ "uuid",
 ]
 
 [[package]]
@@ -163,10 +175,13 @@ dependencies = [
  "bigdecimal",
  "chrono",
  "diesel",
+ "ipnet",
+ "ipnetwork",
  "libfuzzer-sys",
  "libsqlite3-sys",
  "serde_json",
  "time",
+ "uuid",
 ]
 
 [[package]]
@@ -312,6 +327,18 @@ name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
+
+[[package]]
+name = "ipnet"
+version = "2.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "791930b43c0d5973160d90a8f3894509f2b273430f5c5c73b668636d0287c5c0"
+
+[[package]]
+name = "ipnetwork"
+version = "0.21.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf370abdafd54d13e54a620e8c3e1145f28e46cc9d704bc6d94414559df41763"
 
 [[package]]
 name = "itoa"
@@ -632,6 +659,16 @@ name = "unicode-ident"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
+
+[[package]]
+name = "uuid"
+version = "1.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ef6dac1e96601b4fb3acccccff2139741fcb757cb9a36089bf5be91cfb285ce"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "vcpkg"
