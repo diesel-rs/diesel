@@ -1,0 +1,56 @@
+[package]
+name = "diesel-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
+time = "0.3.9"
+bigdecimal = "0.4"
+libsqlite3-sys = { version = "0.38", features = ["bundled"] }
+
+[dependencies.diesel]
+path = "../diesel"
+default-features = false
+features = [
+    "chrono",
+    "numeric",
+    "serde_json",
+    "sqlite",
+    "time",
+]
+
+[profile.release]
+debug = 1
+
+# the fuzz crate is its own workspace, so diesel's does not build it
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "sqlite_jsonb_decode"
+path = "fuzz_targets/sqlite_jsonb_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sqlite_jsonb_roundtrip"
+path = "fuzz_targets/sqlite_jsonb_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sqlite_from_sql"
+path = "fuzz_targets/sqlite_from_sql.rs"
+test = false
+doc = false
+bench = false
