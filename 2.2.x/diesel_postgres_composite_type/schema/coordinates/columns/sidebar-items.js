@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["coord_id","star","xcoord","ycoord"]};
