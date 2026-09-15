@@ -14,6 +14,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Add `like_any()` and `ilike_any()` expression methods for PostgreSQL, enabling `LIKE ANY(ARRAY[...])` and `ILIKE ANY(ARRAY[...])` queries with proper nullable type propagation
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources

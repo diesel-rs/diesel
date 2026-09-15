@@ -1523,6 +1523,66 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     fn is_not_json_scalar(self) -> dsl::IsNotJsonScalar<Self> {
         IsNotJsonScalar::new(self)
     }
+
+    /// Creates a PostgreSQL `LIKE ANY(ARRAY[...])` expression.
+    ///
+    /// This is a non-deprecated alternative to `like(dsl::any(...))`.
+    /// It allows matching a text expression against an array of patterns
+    /// using `LIKE` semantics (wildcard matching with `%` and `_`).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # use diesel::dsl::*;
+    /// #
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
+    /// let sean = (1, "Sean".to_string());
+    /// let jim = (3, "Jim".to_string());
+    /// let data = users.filter(name.like_any(vec!["Se%", "J%"]));
+    /// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
+    /// # }
+    /// ```
+    fn like_any<T>(self, values: T) -> dsl::LikeAny<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: super::array_comparison::AsArrayExpression<Self::SqlType>,
+    {
+        super::array_comparison::LikeAny::new(self, values.as_expression())
+    }
+
+    /// Creates a PostgreSQL `ILIKE ANY(ARRAY[...])` expression.
+    ///
+    /// This is a non-deprecated alternative to `ilike(dsl::any(...))`.
+    /// It allows matching a text expression against an array of patterns
+    /// using case-insensitive `ILIKE` semantics.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # use diesel::dsl::*;
+    /// #
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
+    /// let sean = (1, "Sean".to_string());
+    /// let jim = (3, "Jim".to_string());
+    /// let data = users.filter(name.ilike_any(vec!["se%", "j%"]));
+    /// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
+    /// # }
+    /// ```
+    fn ilike_any<T>(self, values: T) -> dsl::ILikeAny<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: super::array_comparison::AsArrayExpression<Self::SqlType>,
+    {
+        super::array_comparison::ILikeAny::new(self, values.as_expression())
+    }
 }
 
 impl<T> PgTextExpressionMethods for T
