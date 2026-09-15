@@ -5,7 +5,7 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use super::raw::RawConnection;
-use super::{Sqlite, SqliteAggregateFunction, SqliteBindValue};
+use super::{Sqlite, SqliteAggregateFunction, SqliteBindValue, SqliteWindowFunction};
 use crate::backend::Backend;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
@@ -82,6 +82,34 @@ where
     }
 
     conn.register_aggregate_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        fn_name,
+        fields_needed,
+        behavior,
+    )?;
+
+    Ok(())
+}
+
+pub(super) fn register_window<ArgsSqlType, RetSqlType, Args, Ret, A>(
+    conn: &RawConnection,
+    fn_name: &str,
+    behavior: SqliteFunctionBehavior,
+) -> QueryResult<()>
+where
+    A: SqliteWindowFunction<Args, Output = Ret> + 'static + Send + core::panic::UnwindSafe,
+    Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
+    Ret: ToSql<RetSqlType, Sqlite>,
+    Sqlite: HasSqlType<RetSqlType>,
+{
+    let fields_needed = Args::FIELD_COUNT;
+    if fields_needed > 127 {
+        return Err(Error::DatabaseError(
+            DatabaseErrorKind::UnableToSendCommand,
+            Box::new("SQLite functions cannot take more than 127 parameters".to_string()),
+        ));
+    }
+
+    conn.register_window_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(
         fn_name,
         fields_needed,
         behavior,
