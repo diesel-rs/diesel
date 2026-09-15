@@ -1,4 +1,16 @@
-use diesel_fuzz::sqlite;
+use diesel_fuzz::{pg, sqlite};
+use std::num::NonZeroU32;
+
+#[test]
+fn every_pg_case_decodes_without_panicking() {
+    let oid = NonZeroU32::MIN;
+    for selector in 0..pg::CASES.len() {
+        let selector = u8::try_from(selector).expect("under 256 cases");
+        for bytes in [&[][..], &[0x00], &[0xFF; 4], &[0x7F; 16], &[0xAA; 64]] {
+            pg::decode_case(selector, oid, bytes);
+        }
+    }
+}
 
 #[test]
 fn every_sqlite_case_decodes_without_panicking() {

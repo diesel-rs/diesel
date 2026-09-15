@@ -8,6 +8,7 @@ cargo +nightly fuzz run --fuzz-dir fuzz <target>   # from the repository root
 
 | Target | Property |
 |---|---|
+| `pg_from_sql` | 48 postgres decoders never panic |
 | `sqlite_from_sql` | 26 sqlite decoders never panic, in every storage class |
 | `sqlite_jsonb_decode` | decoding a blob never panics |
 | `sqlite_jsonb_roundtrip` | diesel reads back what it wrote as jsonb and json text, and sqlite calls both valid |
