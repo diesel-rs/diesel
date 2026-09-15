@@ -415,6 +415,12 @@ fn test_pg_returning_old() -> _ {
     diesel::pg::returning::old(users::id)
 }
 
+#[cfg(feature = "mariadb")]
+#[auto_type]
+fn test_mariadb_returning_old() -> _ {
+    diesel::mariadb::returning::old_value(users::id)
+}
+
 #[cfg(feature = "sqlite")]
 #[auto_type]
 fn test_sqlite_expression_methods() -> _ {
