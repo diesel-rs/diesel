@@ -10,6 +10,13 @@ use diesel::query_source::NamedTable;
 use crate::column::Column;
 use crate::dummy_expression::*;
 
+pub(crate) fn runtime_table_display(schema: Option<&str>, table: &str) -> String {
+    match schema {
+        Some(schema) => alloc::format!("{schema}.{table}"),
+        None => table.into(),
+    }
+}
+
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 /// A database table.
 /// This type is created by the [`table`](crate::table()) function.
@@ -86,6 +93,8 @@ impl<T, U> Table<T, U> {
 impl<T, U> QuerySource for Table<T, U>
 where
     Self: Clone,
+    T: Borrow<str>,
+    U: Borrow<str>,
 {
     type FromClause = Self;
     type DefaultSelection = DummyExpression;
@@ -97,12 +106,16 @@ where
     fn default_selection(&self) -> Self::DefaultSelection {
         DummyExpression::new()
     }
+
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool {
+        self.name.borrow() == table && self.schema.as_ref().map(Borrow::borrow) == schema
+    }
 }
 
 impl<T, U> AsQuery for Table<T, U>
 where
-    T: Clone,
-    U: Clone,
+    T: Clone + Borrow<str>,
+    U: Clone + Borrow<str>,
     SelectStatement<FromClause<Self>>: Query<SqlType = expression_types::NotSelectable>,
 {
     type SqlType = expression_types::NotSelectable;

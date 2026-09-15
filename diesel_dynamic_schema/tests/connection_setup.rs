@@ -7,11 +7,31 @@ pub fn create_user_table(conn: &mut diesel::PgConnection) {
         .unwrap();
 }
 
+#[cfg(feature = "postgres")]
+pub fn create_posts_table(conn: &mut diesel::PgConnection) {
+    use diesel::*;
+
+    diesel::sql_query(
+        "CREATE TEMPORARY TABLE posts (id Serial PRIMARY KEY, user_id INTEGER NOT NULL)",
+    )
+    .execute(conn)
+    .unwrap();
+}
+
 #[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 pub fn create_user_table(conn: &mut diesel::SqliteConnection) {
     use diesel::*;
 
     diesel::sql_query("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL DEFAULT '', hair_color TEXT)")
+        .execute(conn)
+        .unwrap();
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
+pub fn create_posts_table(conn: &mut diesel::SqliteConnection) {
+    use diesel::*;
+
+    diesel::sql_query("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL)")
         .execute(conn)
         .unwrap();
 }
@@ -25,11 +45,29 @@ pub fn create_user_table(conn: &mut diesel::MysqlConnection) {
         .unwrap();
 }
 
+#[cfg(feature = "mysql")]
+pub fn create_posts_table(conn: &mut diesel::MysqlConnection) {
+    use diesel::*;
+
+    diesel::sql_query("CREATE TEMPORARY TABLE posts (id INTEGER PRIMARY KEY AUTO_INCREMENT, user_id INTEGER NOT NULL)")
+        .execute(conn)
+        .unwrap();
+}
+
 #[cfg(feature = "mariadb")]
 pub fn create_user_table(conn: &mut diesel::MariadbConnection) {
     use diesel::*;
 
     diesel::sql_query("CREATE TEMPORARY TABLE users (id INTEGER PRIMARY KEY AUTO_INCREMENT, name TEXT NOT NULL, hair_color TEXT)")
+        .execute(conn)
+        .unwrap();
+}
+
+#[cfg(feature = "mariadb")]
+pub fn create_posts_table(conn: &mut diesel::MariadbConnection) {
+    use diesel::*;
+
+    diesel::sql_query("CREATE TEMPORARY TABLE posts (id INTEGER PRIMARY KEY AUTO_INCREMENT, user_id INTEGER NOT NULL)")
         .execute(conn)
         .unwrap();
 }

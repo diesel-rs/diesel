@@ -235,6 +235,7 @@ impl<T: QuerySource, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, O
 // slightly adjusted types
 pub(super) fn walk_ast_intern<'b, T, U, Op, Ret, DB>(
     mut out: AstPass<'_, 'b, DB>,
+    target: &'b T,
     records: &'b U,
     into_clause: &'b T::FromClause,
     operator: &'b Op,
@@ -248,6 +249,9 @@ where
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
+    // Insert targets are not visible to nested selects.
+    let frame = out.query_source_frame(target, false);
+    let mut out = out.push_query_source(&frame);
     if records.rows_to_insert() == Some(0) {
         out.push_sql("SELECT 1 FROM ");
         into_clause.walk_ast(out.reborrow())?;
@@ -276,6 +280,7 @@ where
     fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         walk_ast_intern::<T, U, Op, Ret, DB>(
             out,
+            &self.target,
             &self.records,
             &self.into_clause,
             &self.operator,

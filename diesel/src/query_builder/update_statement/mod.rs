@@ -10,6 +10,7 @@ use crate::dsl::{Filter, IntoBoxed, IntoBoxedClone};
 use crate::expression::{
     AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping, is_aggregate,
 };
+use crate::query_builder::from_clause::AsQuerySource;
 use crate::query_builder::returning::{
     NoReturningClause, ReturningClause, ReturningQuerySource, UpdateStmt,
 };
@@ -26,7 +27,7 @@ pub(crate) use self::private::SetAutoTypeHelper;
 impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
         UpdateStatement {
-            from_clause: target.table.from_clause(),
+            from_clause: FromClause::new(target.table),
             where_clause: target.where_clause,
             set_clause: SetClause::Immediate,
             values: SetNotCalled,
@@ -55,7 +56,6 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     }
 }
 
-#[derive(Clone, Debug)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a complete `UPDATE` statement.
 ///
@@ -63,11 +63,49 @@ impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
 /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
 /// set of examples.
 pub struct UpdateStatement<T: QuerySource, U, V = SetNotCalled, Ret = NoReturningClause> {
-    from_clause: T::FromClause,
+    from_clause: FromClause<T>,
     where_clause: U,
     set_clause: SetClause,
     values: V,
     returning: Ret,
+}
+
+impl<T, U, V, Ret> Clone for UpdateStatement<T, U, V, Ret>
+where
+    T: QuerySource + Clone,
+    T::FromClause: Clone,
+    U: Clone,
+    V: Clone,
+    Ret: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            from_clause: self.from_clause.clone(),
+            where_clause: self.where_clause.clone(),
+            set_clause: self.set_clause,
+            values: self.values.clone(),
+            returning: self.returning.clone(),
+        }
+    }
+}
+
+impl<T, U, V, Ret> core::fmt::Debug for UpdateStatement<T, U, V, Ret>
+where
+    T: QuerySource,
+    T::FromClause: core::fmt::Debug,
+    U: core::fmt::Debug,
+    V: core::fmt::Debug,
+    Ret: core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("UpdateStatement")
+            .field("from_clause", &self.from_clause.from_clause)
+            .field("where_clause", &self.where_clause)
+            .field("set_clause", &self.set_clause)
+            .field("values", &self.values)
+            .field("returning", &self.returning)
+            .finish()
+    }
 }
 
 /// An `UPDATE` statement with a boxed `WHERE` clause.
@@ -284,9 +322,11 @@ where
             return Err(QueryBuilderError(Box::new(EmptyChangeset)));
         }
 
+        let frame = out.query_source_frame(self.from_clause.as_query_source(), true);
+        let mut out = out.push_query_source(&frame);
         out.unsafe_to_cache_prepared();
         out.push_sql("UPDATE ");
-        self.from_clause.walk_ast(out.reborrow())?;
+        self.from_clause.from_clause.walk_ast(out.reborrow())?;
         self.set_clause.walk_ast(out.reborrow())?;
         self.values.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;

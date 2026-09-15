@@ -51,18 +51,29 @@ where
     type SqlType = ST;
 }
 
-impl<T, U, ST> ValidGrouping<()> for Column<T, U, ST> {
-    type IsAggregate = is_aggregate::No;
+impl<T, U, ST, GB> ValidGrouping<GB> for Column<T, U, ST> {
+    // `Never` opts runtime columns out of grouping checks so they mix with aggregates.
+    type IsAggregate = is_aggregate::Never;
 }
 
 impl<T, U, ST, DB> QueryFragment<DB> for Column<T, U, ST>
 where
     DB: Backend,
-    T: QueryFragment<DB>,
+    T: QueryFragment<DB> + diesel::query_source::NamedTable,
     U: Borrow<str>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
+        let schema = diesel::query_source::NamedTable::schema(&self.table);
+        let table = diesel::query_source::NamedTable::table(&self.table);
+        if out.dynamic_table_membership(schema, table) == DynamicTableMembership::Absent {
+            return Err(diesel::result::Error::QueryBuilderError(
+                alloc::boxed::Box::new(crate::DynamicSchemaError::ForeignTable {
+                    schema: schema.map(Into::into),
+                    table: table.into(),
+                }),
+            ));
+        }
         self.table.walk_ast(out.reborrow())?;
         out.push_sql(".");
         out.push_identifier(self.name.borrow())?;
