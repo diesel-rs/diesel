@@ -26,6 +26,7 @@ features = [
     "chrono",
     "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     "ipnet-address",
+    "mysql_backend",
     "network-address",
     "numeric",
     "postgres_backend",
@@ -66,6 +67,13 @@ bench = false
 [[bin]]
 name = "pg_from_sql"
 path = "fuzz_targets/pg_from_sql.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "mysql_from_sql"
+path = "fuzz_targets/mysql_from_sql.rs"
 test = false
 doc = false
 bench = false
