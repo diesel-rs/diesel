@@ -162,52 +162,8 @@
 //! [`grouped_by`]: GroupedBy::grouped_by
 //! [`belonging_to`]: crate::query_dsl::BelongingToDsl::belonging_to
 //!
-//! ```rust
-//! # include!("../doctest_setup.rs");
-//! # use schema::{posts, users};
-//! #
-//! # #[derive(Identifiable, Queryable)]
-//! # pub struct User {
-//! #     id: i32,
-//! #     name: String,
-//! # }
-//! #
-//! # #[derive(Debug, PartialEq)]
-//! # #[derive(Identifiable, Queryable, Associations)]
-//! # #[diesel(belongs_to(User))]
-//! # pub struct Post {
-//! #     id: i32,
-//! #     user_id: i32,
-//! #     title: String,
-//! # }
-//! #
-//! # fn main() {
-//! #     run_test();
-//! # }
-//! #
-//! # fn run_test() -> QueryResult<()> {
-//! #     let connection = &mut establish_connection();
-//! #     use self::users::dsl::*;
-//! #     use self::posts::dsl::{posts, title};
-//! let sean = users.filter(name.eq("Sean")).first::<User>(connection)?;
-//! let tess = users.filter(name.eq("Tess")).first::<User>(connection)?;
-//!
-//! let seans_posts = Post::belonging_to(&sean)
-//!     .select(title)
-//!     .load::<String>(connection)?;
-//! assert_eq!(vec!["My first post", "About Rust"], seans_posts);
-//!
-//! // A vec or slice can be passed as well
-//! let more_posts = Post::belonging_to(&vec![sean, tess])
-//!     .select(title)
-//!     .load::<String>(connection)?;
-//! assert_eq!(
-//!     vec!["My first post", "About Rust", "My first post too"],
-//!     more_posts
-//! );
-//! #     Ok(())
-//! # }
-//! ```
+//! [`belonging_to`] accepts a single parent or a collection of them,
+//! and its documentation carries a runnable example.
 //!
 //! Typically you will want to group up the children with their parents.
 //! In other ORMs, this is often called a `has_many` relationship.
@@ -219,73 +175,7 @@
 //! Or to put it another way, the returned data can be passed to `zip`,
 //! and it will be combined with its parent.
 //!
-//! ```rust
-//! # include!("../doctest_setup.rs");
-//! # use schema::{posts, users};
-//! #
-//! # #[derive(Identifiable, Queryable, PartialEq, Debug)]
-//! # pub struct User {
-//! #     id: i32,
-//! #     name: String,
-//! # }
-//! #
-//! # #[derive(Debug, PartialEq)]
-//! # #[derive(Identifiable, Queryable, Associations)]
-//! # #[diesel(belongs_to(User))]
-//! # pub struct Post {
-//! #     id: i32,
-//! #     user_id: i32,
-//! #     title: String,
-//! # }
-//! #
-//! # fn main() {
-//! #     run_test();
-//! # }
-//! #
-//! # fn run_test() -> QueryResult<()> {
-//! #     let connection = &mut establish_connection();
-//! let users = users::table.load::<User>(connection)?;
-//! let posts = Post::belonging_to(&users)
-//!     .load::<Post>(connection)?
-//!     .grouped_by(&users);
-//! let data = users.into_iter().zip(posts).collect::<Vec<_>>();
-//!
-//! let expected_data = vec![
-//!     (
-//!         User {
-//!             id: 1,
-//!             name: "Sean".into(),
-//!         },
-//!         vec![
-//!             Post {
-//!                 id: 1,
-//!                 user_id: 1,
-//!                 title: "My first post".into(),
-//!             },
-//!             Post {
-//!                 id: 2,
-//!                 user_id: 1,
-//!                 title: "About Rust".into(),
-//!             },
-//!         ],
-//!     ),
-//!     (
-//!         User {
-//!             id: 2,
-//!             name: "Tess".into(),
-//!         },
-//!         vec![Post {
-//!             id: 3,
-//!             user_id: 2,
-//!             title: "My first post too".into(),
-//!         }],
-//!     ),
-//! ];
-//!
-//! assert_eq!(expected_data, data);
-//! #     Ok(())
-//! # }
-//! ```
+//! A runnable example lives on [`GroupedBy`].
 //!
 //! [`grouped_by`] can be called multiple times
 //! if you have multiple children or grandchildren.
