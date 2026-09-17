@@ -70,6 +70,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
 * The SQLite JSONB reader now rejects a `null`, `true` or `false` element that declares a payload or uses a multi byte header, instead of decoding a value that SQLite either refuses or reads differently
 * Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
+* Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
+* Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
 
 ### Changed
 
