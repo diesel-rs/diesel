@@ -10,7 +10,8 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 arbitrary = { version = "1", features = ["derive"] }
-serde_json = "1"
+# bit exact json float round trips in the fuzzer
+serde_json = { version = "1.0.54", features = ["float_roundtrip"] }
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
 time = "0.3.9"
 bigdecimal = "0.4"
