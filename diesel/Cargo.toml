@@ -29,6 +29,7 @@ mysqlclient-src = { version = ">=0.1.0, <0.3", optional = true }
 pq-sys = { version = ">=0.4.0, <0.8.0", optional = true }
 pq-src = { version = "0.3", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
+# Bump the minimal version to 1.0.54 and enable `float_roundtrip` with diesel 3.0
 serde_json = { version = ">=0.8.0, <2.0", optional = true, default-features = false, features = ["alloc"] }
 url = { version = "2.1.0", optional = true }
 percent-encoding = { version = "2.1.0", optional = true }
@@ -67,6 +68,8 @@ cfg-if = "1"
 dotenvy = "0.15"
 ipnetwork = ">=0.12.2, <0.22.0"
 quickcheck = "1.0.3"
+# bit exact json float round trips in tests
+serde_json = { version = "1.0.54", features = ["float_roundtrip"] }
 tempfile = "3.10.1"
 diesel_test_helper = { path = "../diesel_test_helper" }
 

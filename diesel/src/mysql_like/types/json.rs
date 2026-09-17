@@ -24,6 +24,20 @@ mod tests {
     use super::*;
     use crate::mysql::Mysql;
     #[diesel_test_helper::test]
+    fn regression_json_float_survives_a_round_trip() {
+        use crate::mysql::MysqlType;
+
+        crate::test_helpers::assert_floats_survive_a_json_round_trip::<sql_types::Json, Mysql>(
+            |bytes| {
+                FromSql::<sql_types::Json, Mysql>::from_sql(MysqlValue::new_internal(
+                    bytes,
+                    MysqlType::String,
+                ))
+            },
+        );
+    }
+
+    #[diesel_test_helper::test]
     fn json_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;
 
