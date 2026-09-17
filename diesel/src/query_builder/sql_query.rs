@@ -213,6 +213,15 @@ impl<Inner> SqlQuery<Inner> {
     }
 
     /// Appends a piece of SQL code at the end.
+    ///
+    /// # Safety
+    ///
+    /// Diesel passes the given string to the database as written. It must
+    /// therefore never contain values that come from outside your own code,
+    /// because anything interpolated into the SQL text can carry an SQL
+    /// injection. Pass such values with [`bind`] instead.
+    ///
+    /// [`bind`]: SqlQuery::bind()
     pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
         self.query += sql.as_ref();
         self
@@ -283,26 +292,18 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
         BoxedCloneSqlQuery::new(self)
     }
 
-    /// Construct a full SQL query using raw SQL.
+    /// Append raw SQL after this query and the values bound to it.
     ///
-    /// This function exists for cases where a query needs to be written that is not
-    /// supported by the query builder. Unlike most queries in Diesel, `sql_query`
-    /// will deserialize its data by name, not by index. That means that you cannot
-    /// deserialize into a tuple, and structs which you deserialize from this
-    /// function will need to have `#[derive(QueryableByName)]`.
-    ///
-    /// This function is intended for use when you want to write the entire query
-    /// using raw SQL. If you only need a small bit of raw SQL in your query, use
-    /// [`sql`](dsl::sql()) instead.
-    ///
-    /// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
+    /// The wrapped query renders first, then the given SQL text. This allows
+    /// interleaving raw SQL fragments with [`bind`] calls when the query
+    /// builder cannot express the statement as a whole.
     ///
     /// # Safety
     ///
-    /// The implementation of `QueryableByName` will assume that columns with a
-    /// given name will have a certain type. The compiler will be unable to verify
-    /// that the given type is correct. If your query returns a column of an
-    /// unexpected type, the result may have the wrong value, or return an error.
+    /// Diesel passes the given string to the database as written. It must
+    /// therefore never contain values that come from outside your own code,
+    /// because anything interpolated into the SQL text can carry an SQL
+    /// injection. Pass such values with [`bind`] instead.
     ///
     /// # Examples
     ///
@@ -319,30 +320,37 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// #
     /// # fn main() {
     /// #     use diesel::sql_query;
-    /// #     use diesel::sql_types::{Integer, Text};
+    /// #     use diesel::sql_types::Integer;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     diesel::insert_into(users::table)
-    /// #         .values(users::name.eq("Jim"))
-    /// #         .execute(connection).unwrap();
     /// # #[cfg(feature = "postgres")]
-    /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
+    /// # let base = sql_query("SELECT id, name FROM users WHERE id >= $1");
     /// # #[cfg(not(feature = "postgres"))]
-    /// // sqlite/mysql bind syntax
-    /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
-    /// # ;
-    /// # let users = users
+    /// // Checkout the documentation of your database for the correct
+    /// // bind placeholder
+    /// let base = sql_query("SELECT id, name FROM users WHERE id >= ?");
+    /// // The appended fragment decides the order of the returned rows.
+    /// let users = base
     ///     .bind::<Integer, _>(1)
-    ///     .bind::<Text, _>("Tess")
-    ///     .get_results(connection);
-    /// let expected_users = vec![User {
-    ///     id: 3,
-    ///     name: "Jim".into(),
-    /// }];
-    /// assert_eq!(Ok(expected_users), users);
+    ///     .sql(" ORDER BY id DESC")
+    ///     .load::<User>(connection);
+    /// assert_eq!(
+    ///     Ok(vec![
+    ///         User {
+    ///             id: 2,
+    ///             name: "Tess".into()
+    ///         },
+    ///         User {
+    ///             id: 1,
+    ///             name: "Sean".into()
+    ///         }
+    ///     ]),
+    ///     users
+    /// );
     /// # }
     /// ```
-    /// [`SqlQuery::bind()`]: query_builder::SqlQuery::bind()
+    ///
+    /// [`bind`]: Self::bind()
     pub fn sql<T: Into<String>>(self, sql: T) -> SqlQuery<Self> {
         SqlQuery::new(self, sql.into())
     }

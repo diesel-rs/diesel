@@ -107,17 +107,18 @@ where
         UncheckedBind::new(self, bind_value.as_expression())
     }
 
-    /// Use literal SQL in the query builder
+    /// Append raw SQL to this literal.
     ///
-    /// This function is intended for use when you need a small bit of raw SQL in
-    /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](crate::sql_query()) instead.
+    /// The SQL built so far renders first, then the given SQL text. This
+    /// allows interleaving raw SQL fragments with [`bind`] calls when the
+    /// expression DSL cannot express the fragment.
     ///
     /// # Safety
     ///
-    /// This function should be used with care, as Diesel cannot validate that
-    /// the value is of the right type nor can it validate that you have passed
-    /// the correct number of parameters.
+    /// Diesel passes the given string to the database as written. It must
+    /// therefore never contain values that come from outside your own code,
+    /// because anything interpolated into the SQL text can carry an SQL
+    /// injection. Pass such values with [`bind`] instead.
     ///
     /// # Examples
     ///
@@ -146,6 +147,8 @@ where
     /// assert_eq!(Ok(expected), query);
     /// # }
     /// ```
+    ///
+    /// [`bind`]: Self::bind()
     pub fn sql(self, sql: &str) -> SqlLiteral<ST, Self> {
         SqlLiteral::new(sql.into(), self)
     }
@@ -211,6 +214,11 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// The compiler will be unable to verify the correctness of the annotated type.
 /// If you give the wrong type, it'll either return an error when deserializing
 /// the query result or produce unexpected values.
+///
+/// Diesel also passes the given string to the database as written. It must
+/// therefore never contain values that come from outside your own code,
+/// because anything interpolated into the SQL text can carry an SQL
+/// injection. Pass such values with [`SqlLiteral::bind()`] instead.
 ///
 /// # Examples
 ///
@@ -280,17 +288,19 @@ where
         UncheckedBind { query, value }
     }
 
-    /// Use literal SQL in the query builder.
+    /// Append raw SQL after this literal and the values bound to it.
     ///
-    /// This function is intended for use when you need a small bit of raw SQL in
-    /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](crate::sql_query()) instead.
+    /// The literal and its bound values render first, then the given SQL
+    /// text. This allows interleaving raw SQL fragments with
+    /// [`SqlLiteral::bind()`] calls when the expression DSL cannot express
+    /// the fragment.
     ///
     /// # Safety
     ///
-    /// This function should be used with care, as Diesel cannot validate that
-    /// the value is of the right type nor can it validate that you have passed
-    /// the correct number of parameters.
+    /// Diesel passes the given string to the database as written. It must
+    /// therefore never contain values that come from outside your own code,
+    /// because anything interpolated into the SQL text can carry an SQL
+    /// injection. Pass such values with [`SqlLiteral::bind()`] instead.
     ///
     /// # Examples
     ///
