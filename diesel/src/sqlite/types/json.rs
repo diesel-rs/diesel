@@ -207,6 +207,10 @@ mod jsonb {
         let header = read_jsonb_value_header(bytes)?;
         let payload_bytes = &bytes[header.header_size..header.total_size];
         let value = match header.element_type {
+            // sqlite writes a constant as a bare one byte header and refuses any other spelling
+            JSONB_NULL | JSONB_TRUE | JSONB_FALSE if header.total_size != 1 => {
+                Err("Invalid JSONB data: a constant must be a single byte".into())
+            }
             JSONB_NULL => Ok(serde_json::Value::Null),
             JSONB_TRUE => Ok(serde_json::Value::Bool(true)),
             JSONB_FALSE => Ok(serde_json::Value::Bool(false)),
@@ -588,29 +592,26 @@ mod jsonb {
     }
 
     pub(super) fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        if s.chars().any(|c| c.is_control()) {
-            // If the string contains control characters, treat it as TEXTJ (escaped JSON)
+        // strings needing a json escape go down TEXTJ, matching what sqlite's own jsonb() writes
+        // the scan is over bytes because json escapes nothing above 0x1F, unlike char::is_control
+        if s.bytes().any(|b| b < 0x20 || b == b'"' || b == b'\\') {
             write_jsonb_textj(s, buffer)
         } else {
             write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
-            // Write the UTF-8 text of the string as the payload (no delimiters)
             buffer.extend_from_slice(s.as_bytes());
             Ok(IsNull::No)
         }
     }
 
     pub(super) fn write_jsonb_textj(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        // Escaping the string for JSON (e.g., \n, \uXXXX)
-        let escaped_string = serde_json::to_string(&String::from(s))
-            .map_err(|_| "Failed to serialize string for TEXTJ")?;
+        // &s passes a sized &str, required by the serde_json 0.8.0 to_string bound
+        let escaped_string =
+            serde_json::to_string(&s).map_err(|_| "Failed to serialize string for TEXTJ")?;
 
-        // Remove the surrounding quotes from serde_json::to_string result
         let escaped_string = &escaped_string[1..escaped_string.len() - 1];
 
-        // Write the header (JSONB_TEXTJ) and the length of the escaped string
         write_jsonb_header(buffer, JSONB_TEXTJ, escaped_string.len())?;
 
-        // Write the escaped string as the payload
         buffer.extend_from_slice(escaped_string.as_bytes());
 
         Ok(IsNull::No)
@@ -625,7 +626,11 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     use crate::ExpressionMethods;
     #[cfg(not(miri))] // ffi call
+    use crate::dsl::json_valid_with_flags;
+    #[cfg(not(miri))] // ffi call
     use crate::query_dsl::RunQueryDsl;
+    #[cfg(not(miri))] // ffi call
+    use crate::sqlite::JsonValidFlag;
     #[cfg(not(miri))] // ffi call
     use crate::test_helpers::connection;
     #[cfg(not(miri))] // ffi call
@@ -643,6 +648,54 @@ mod tests {
         Ok(buffer)
     }
 
+    fn value_with_payload(element_type: u8, payload: &[u8]) -> Vec<u8> {
+        let mut buffer = create_jsonb_header(element_type, payload.len()).unwrap();
+        buffer.extend_from_slice(payload);
+        buffer
+    }
+
+    #[diesel_test_helper::test]
+    fn regression_a_constant_reads_its_declared_size() {
+        let blobs: Vec<Vec<u8>> = vec![
+            value_with_payload(JSONB_NULL, &[0x0D, 0x00, 0xF3]), // null, inline size 3
+            value_with_payload(JSONB_TRUE, b"1.5"),              // true, inline size 3
+            value_with_payload(JSONB_NULL, &[0x00]),             // null, inline size 1
+            value_with_payload(JSONB_TRUE, &[0x08]),             // true, inline size 1
+            value_with_payload(JSONB_FALSE, &[0xFF]),            // false, inline size 1
+            // not buildable with create_jsonb_header because the writer takes the narrowest size spelling
+            vec![0xC0, 0x00], // null, two byte header
+            vec![0xC1, 0x00], // true, two byte header
+            {
+                // array holding a two byte true
+                let mut blob = create_jsonb_header(JSONB_ARRAY, 2).unwrap();
+                blob.extend_from_slice(&[0xC1, 0x00]);
+                blob
+            },
+            {
+                // object holding one
+                let mut blob = create_jsonb_header(JSONB_OBJECT, 4).unwrap();
+                blob.extend(create_jsonb_header(JSONB_TEXT, 1).unwrap());
+                blob.extend_from_slice(b"a");
+                blob.extend_from_slice(&[0xC1, 0x00]);
+                blob
+            },
+        ];
+        for blob in blobs {
+            let blob: &[u8] = &blob;
+            assert!(
+                read_jsonb_value(blob).is_err(),
+                "{blob:02X?} decoded to {:?}",
+                read_jsonb_value(blob).map(|value| value.0)
+            );
+        }
+
+        // the one byte spelling sqlite writes
+        let mut blob = create_jsonb_header(JSONB_ARRAY, 2).unwrap();
+        blob.extend(create_jsonb_header(JSONB_TRUE, 0).unwrap());
+        blob.extend(create_jsonb_header(JSONB_NULL, 0).unwrap());
+        assert_eq!(read_jsonb_value(&blob).unwrap().0, json!([true, null]));
+    }
+
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
     fn regression_float_without_a_fraction_is_written_invalid() {
@@ -658,15 +711,14 @@ mod tests {
             let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
                 .get_result::<Vec<u8>>(conn)
                 .unwrap();
-            let valid = diesel::select(
-                sql::<sql_types::Integer>("json_valid(")
-                    .bind::<sql_types::Binary, _>(blob.clone())
-                    .sql(", 8)"),
-            )
-            .get_result::<i32>(conn)
+            let valid = diesel::select(json_valid_with_flags::<sql_types::Binary, _, _>(
+                blob.as_slice(),
+                JsonValidFlag::JsonbStrict,
+            ))
+            .get_result::<bool>(conn)
             .unwrap();
-            assert_eq!(
-                valid, 1,
+            assert!(
+                valid,
                 "sqlite rejects the blob written for {value}: {blob:02X?}"
             );
             let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob.clone()))
@@ -675,6 +727,101 @@ mod tests {
             assert_eq!(back, value, "{blob:02X?}");
         }
     }
+
+    // asserts a written blob is well formed to sqlite and reads back unchanged
+    #[cfg(not(miri))] // ffi call
+    fn jsonb_survives(conn: &mut crate::SqliteConnection, value: &Value) -> Result<(), String> {
+        let blob = diesel::select(sql::<sql_types::Binary>("").bind::<Jsonb, _>(value.clone()))
+            .get_result::<Vec<u8>>(conn)
+            .unwrap();
+        let valid = diesel::select(json_valid_with_flags::<sql_types::Binary, _, _>(
+            blob.as_slice(),
+            JsonValidFlag::JsonbStrict,
+        ))
+        .get_result::<bool>(conn)
+        .unwrap();
+        let back = diesel::select(sql::<Jsonb>("").bind::<sql_types::Binary, _>(blob.clone()))
+            .get_result::<Value>(conn);
+        if !valid {
+            return Err(alloc::format!(
+                "sqlite calls {value} malformed as {blob:02X?}"
+            ));
+        }
+        match back {
+            Ok(ref back) if back == value => Ok(()),
+            Ok(back) => Err(alloc::format!("{value} came back as {back}")),
+            Err(e) => Err(alloc::format!("{value} came back as {e}")),
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_string_needing_an_escape_is_written_valid() {
+        let conn = &mut connection();
+        for value in [
+            json!(r#"a"b"#),
+            json!(r#"a\b"#),
+            json!(r#"a"\b"#),
+            json!(r#"""#),
+            json!(r#"\"#),
+            json!(r#"\""#),
+            json!(r#""leading"#),
+            json!(r#"trailing""#),
+            json!(r#"aaaaaaaaaaaa"bbbbbbbbbbbb"#),
+            json!({ "k": r#"a"b"# }),
+            json!([r#"a\b"#]),
+            json!({ r#"a"b"#: 1 }),
+            json!(""),
+            json!("abc"),
+            json!("a\nb"),
+            json!("a\"\nb"),
+        ] {
+            jsonb_survives(conn, &value).unwrap_or_else(|e| panic!("{e}"));
+        }
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn regression_every_char_is_written_valid() {
+        let conn = &mut connection();
+        let mut offenders = Vec::new();
+        // batch scalars into arrays so one query covers a chunk, then walk only a failing chunk
+        let mut chunk = Vec::new();
+        for code in 0u32..=0x10FFFF {
+            if let Some(c) = char::from_u32(code) {
+                let mut s = alloc::string::String::from('a');
+                s.push(c);
+                s.push('b');
+                chunk.push(json!(s));
+            }
+            if chunk.len() < 2048 && code != 0x10FFFF {
+                continue;
+            }
+            let batch = Value::Array(core::mem::take(&mut chunk));
+            if let Err(batch_error) = jsonb_survives(conn, &batch) {
+                let Value::Array(values) = batch else {
+                    unreachable!()
+                };
+                let known = offenders.len();
+                for value in values {
+                    if let Err(e) = jsonb_survives(conn, &value) {
+                        offenders.push(e);
+                    }
+                }
+                // a batch no element explains means the array header itself is wrong, so keep it
+                if offenders.len() == known {
+                    offenders.push(batch_error);
+                }
+            }
+        }
+        assert!(
+            offenders.is_empty(),
+            "{} values broke the blob, first {:?}",
+            offenders.len(),
+            &offenders[..offenders.len().min(4)]
+        );
+    }
+
     #[diesel_test_helper::test]
     #[cfg(not(miri))] // ffi call
     fn json_to_sql() {
@@ -910,6 +1057,32 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    fn test_write_jsonb_textj_quote_and_backslash() {
+        let mut buffer = Vec::new();
+        let input_string = r#"a"b\c"#;
+        write_jsonb_string(input_string, &mut buffer).unwrap();
+
+        let mut expected_buffer = Vec::new();
+        expected_buffer.extend(create_jsonb_header(JSONB_TEXTJ, 7).unwrap());
+        expected_buffer.extend_from_slice(br#"a\"b\\c"#);
+
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[diesel_test_helper::test]
+    fn test_write_jsonb_text_keeps_high_control_free_text() {
+        // U+007F is a control character json never escapes, so it stays plain TEXT
+        let mut buffer = Vec::new();
+        write_jsonb_string("a\u{7f}b", &mut buffer).unwrap();
+
+        let mut expected_buffer = Vec::new();
+        expected_buffer.extend(create_jsonb_header(JSONB_TEXT, 3).unwrap());
+        expected_buffer.extend_from_slice("a\u{7f}b".as_bytes());
+
+        assert_eq!(buffer, expected_buffer);
+    }
+
+    #[diesel_test_helper::test]
     fn test_write_jsonb_array() {
         let value = json!([1, true]);
         let mut buffer = Vec::new();
@@ -989,7 +1162,7 @@ mod tests {
         let res = diesel::select(
             json!("hello")
                 .into_sql::<Jsonb>()
-                .eq(&sql("jsonb('\"hello\"')")),
+                .eq(&sql(r#"jsonb('"hello"')"#)),
         )
         .get_result::<bool>(conn)
         .unwrap();
@@ -1006,7 +1179,24 @@ mod tests {
         let res = diesel::select(
             json!("hello\nworld")
                 .into_sql::<Jsonb>()
-                .eq(&sql("jsonb('\"hello\\nworld\"')")), // The string is JSON-escaped
+                .eq(&sql(r#"jsonb('"hello\nworld"')"#)), // The string is JSON-escaped
+        )
+        .get_result::<bool>(conn)
+        .unwrap();
+
+        assert!(res);
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi call
+    fn jsonb_to_sql_textj_quote_and_backslash() {
+        let conn = &mut connection();
+
+        // a quote and a backslash are the other two characters sqlite writes as TEXTJ
+        let res = diesel::select(
+            json!(r#"a"b\c"#)
+                .into_sql::<Jsonb>()
+                .eq(&sql(r#"jsonb('"a\"b\\c"')"#)),
         )
         .get_result::<bool>(conn)
         .unwrap();
@@ -1021,7 +1211,7 @@ mod tests {
         let res = diesel::select(
             json!([1, true, "foo"])
                 .into_sql::<Jsonb>()
-                .eq(&sql("jsonb('[1, true, \"foo\"]')")),
+                .eq(&sql(r#"jsonb('[1, true, "foo"]')"#)),
         )
         .get_result::<bool>(conn)
         .unwrap();
@@ -1035,7 +1225,7 @@ mod tests {
         let res = diesel::select(
             json!({"key": "value"})
                 .into_sql::<Jsonb>()
-                .eq(&sql("jsonb('{\"key\": \"value\"}')")),
+                .eq(&sql(r#"jsonb('{"key": "value"}')"#)),
         )
         .get_result::<bool>(conn)
         .unwrap();
@@ -1155,7 +1345,7 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_object() {
         let conn = &mut connection();
-        let res = diesel::select(sql::<Jsonb>("jsonb('{\"key\": \"value\"}')"))
+        let res = diesel::select(sql::<Jsonb>(r#"jsonb('{"key": "value"}')"#))
             .get_result::<serde_json::Value>(conn)
             .unwrap();
         assert_eq!(res, serde_json::json!({"key": "value"}));
@@ -1175,7 +1365,7 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_nested_objects() {
         let conn = &mut connection();
-        let res = diesel::select(sql::<Jsonb>("jsonb('{\"outer\": {\"inner\": 42}}')"))
+        let res = diesel::select(sql::<Jsonb>(r#"jsonb('{"outer": {"inner": 42}}')"#))
             .get_result::<serde_json::Value>(conn)
             .unwrap();
         assert_eq!(res, serde_json::json!({"outer": {"inner": 42}}));
@@ -1195,7 +1385,7 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_nested_arrays_in_objects() {
         let conn = &mut connection();
-        let res = diesel::select(sql::<Jsonb>("jsonb('{\"array\": [1, 2, 3]}')"))
+        let res = diesel::select(sql::<Jsonb>(r#"jsonb('{"array": [1, 2, 3]}')"#))
             .get_result::<serde_json::Value>(conn)
             .unwrap();
         assert_eq!(res, serde_json::json!({"array": [1, 2, 3]}));
@@ -1206,7 +1396,7 @@ mod tests {
     fn jsonb_from_sql_nested_objects_in_arrays() {
         let conn = &mut connection();
         let res = diesel::select(sql::<Jsonb>(
-            "jsonb('[{\"key1\": \"value1\"}, {\"key2\": \"value2\"}]')",
+            r#"jsonb('[{"key1": "value1"}, {"key2": "value2"}]')"#,
         ))
         .get_result::<serde_json::Value>(conn)
         .unwrap();
@@ -1220,7 +1410,7 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_text() {
         let conn = &mut connection();
-        let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\"')"))
+        let res = diesel::select(sql::<Jsonb>(r#"jsonb('"hello"')"#))
             .get_result::<serde_json::Value>(conn)
             .unwrap();
         assert_eq!(res, serde_json::json!("hello"));
@@ -1230,7 +1420,7 @@ mod tests {
     #[cfg(not(miri))] // ffi call
     fn jsonb_from_sql_textj() {
         let conn = &mut connection();
-        let res = diesel::select(sql::<Jsonb>("jsonb('\"hello\\nworld\"')"))
+        let res = diesel::select(sql::<Jsonb>(r#"jsonb('"hello\nworld"')"#))
             .get_result::<serde_json::Value>(conn)
             .unwrap();
         assert_eq!(res, serde_json::json!("hello\nworld"));
