@@ -15,7 +15,7 @@ use sqlparser::parser::ParserOptions;
 #[derive(Debug, PartialEq)]
 pub struct ViewData {
     pub(crate) fields: Vec<SelectField>,
-    pub(crate) subqueries: Vec<(String, SubQuery)>,
+    pub(crate) subqueries: Vec<(Option<String>, SubQuery)>,
 }
 
 impl ViewData {
@@ -26,13 +26,13 @@ impl ViewData {
 
     /// Infer the nullablity of all VIEW fields
     ///
-    /// This function returns a vector of optional booleans.
-    /// The number and order of elements in this vector corresponds to
-    /// the number and order of fields returned by this VIEW.
+    /// This function returns one `IsNull` per field, in the same number and
+    /// order as the fields returned by this VIEW.
     ///
-    /// Each value indicates whether the field is nullable (`Some(true)`),
-    /// not nullable (`Some(false)`) or if the nullablity could
-    /// not be inferred (`None`)
+    /// Each value indicates whether the field is definitely nullable
+    /// (`IsNull::IsNullable`), definitely not nullable
+    /// (`IsNull::NotNullable`), or whether its nullability could not be
+    /// determined (`IsNull::Unknown`)
     ///
     /// This method accepts a generic [`SchemaResolver`]
     /// to query information about relations used in this
@@ -50,34 +50,11 @@ impl ViewData {
     ///
     /// This needs to be called before any other operation is performed with this view definition
     pub fn resolve_references(&mut self, resolver: &mut dyn SchemaResolver) -> Result<()> {
-        let mut resolver = CombinedResolver::new(&self.subqueries, resolver)?;
-        let fields = std::mem::take(&mut self.fields);
-        self.fields.reserve(fields.len());
-        for f in fields {
-            if let Expression::Wildcard {
-                schema,
-                relation,
-                is_left_joined,
-            } = &f.kind
-            {
-                let resolved_fields = resolver
-                    .list_fields(schema.as_deref(), relation)
-                    .map_err(|e| Error::ResolverFailure { inner: e })?;
-                for f in resolved_fields {
-                    self.fields.push(SelectField {
-                        ident: None,
-                        kind: Expression::Field {
-                            schema: schema.clone(),
-                            query_source: relation.clone(),
-                            field_name: f.name().ok_or(Error::UnnamedField)?.to_owned(),
-                            via_left_join: *is_left_joined,
-                        },
-                    });
-                }
-            } else {
-                self.fields.push(f);
-            }
+        for (_, subquery) in &mut self.subqueries {
+            resolve_wildcards(&mut subquery.fields, resolver)?;
         }
+        let mut resolver = CombinedResolver::new(&self.subqueries, resolver)?;
+        resolve_wildcards(&mut self.fields, &mut resolver)?;
         Ok(())
     }
 }
@@ -112,7 +89,7 @@ pub fn parse_view_def(definition: &str) -> Result<ViewData> {
     })
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) struct SubQuery {
     fields: Vec<SelectField>,
 }
@@ -123,7 +100,7 @@ impl SubQuery {
     }
 }
 
-fn collect_subqueries(query: &Query) -> Result<Vec<(String, SubQuery)>> {
+fn collect_subqueries(query: &Query) -> Result<Vec<(Option<String>, SubQuery)>> {
     let mut subqueries = if let Some(with) = &query.with {
         with.cte_tables
             .iter()
@@ -147,7 +124,9 @@ fn collect_subqueries(query: &Query) -> Result<Vec<(String, SubQuery)>> {
     Ok(subqueries)
 }
 
-fn extract_cte_subqueries(t: &sqlparser::ast::Cte) -> Result<Vec<(String, SubQuery)>, Error> {
+fn extract_cte_subqueries(
+    t: &sqlparser::ast::Cte,
+) -> Result<Vec<(Option<String>, SubQuery)>, Error> {
     let name = t.alias.name.value.as_str();
     let mut subqueries = collect_subqueries(&t.query)?;
 
@@ -169,23 +148,61 @@ fn extract_cte_subqueries(t: &sqlparser::ast::Cte) -> Result<Vec<(String, SubQue
         }
     }
 
-    subqueries.push((name.to_owned(), SubQuery { fields }));
+    subqueries.push((Some(name.to_owned()), SubQuery { fields }));
     Ok(subqueries)
 }
 
 fn extract_subqueries_from_table_factor(
     s: &sqlparser::ast::TableFactor,
-    subqueries: &mut Vec<(String, SubQuery)>,
+    subqueries: &mut Vec<(Option<String>, SubQuery)>,
 ) -> Result<()> {
     if let sqlparser::ast::TableFactor::Derived {
         lateral: false,
         subquery,
-        alias: Some(alias),
+        alias,
         sample: None,
     } = s
     {
         let fields = crate::select::parse_query(subquery, None)?;
-        subqueries.push((alias.name.value.clone(), SubQuery { fields }));
+        subqueries.push((
+            alias.as_ref().map(|a| a.name.value.clone()),
+            SubQuery { fields },
+        ));
+    }
+
+    Ok(())
+}
+
+fn resolve_wildcards(
+    fields: &mut Vec<SelectField>,
+    resolver: &mut dyn SchemaResolver,
+) -> Result<()> {
+    let old_fields = std::mem::take(fields);
+    fields.reserve(fields.len());
+    for f in old_fields {
+        if let Expression::Wildcard {
+            schema,
+            relation,
+            is_left_joined,
+        } = &f.kind
+        {
+            let resolved_fields = resolver
+                .list_fields(schema.as_deref(), relation.as_deref())
+                .map_err(|e| Error::ResolverFailure { inner: e })?;
+            for f in resolved_fields {
+                fields.push(SelectField {
+                    ident: f.name().map(|n| n.to_owned()),
+                    kind: Expression::Field {
+                        schema: schema.clone(),
+                        query_source: relation.clone(),
+                        field_name: f.name().ok_or(Error::UnnamedField)?.to_owned(),
+                        via_left_join: *is_left_joined,
+                    },
+                });
+            }
+        } else {
+            fields.push(f);
+        }
     }
 
     Ok(())

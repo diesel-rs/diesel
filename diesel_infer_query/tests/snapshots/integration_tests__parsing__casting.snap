@@ -24,7 +24,9 @@ ViewData {
             kind: Cast {
                 inner: Field {
                     schema: None,
-                    query_source: "items",
+                    query_source: Some(
+                        "items",
+                    ),
                     field_name: "price",
                     via_left_join: false,
                 },
@@ -38,7 +40,9 @@ ViewData {
             kind: Cast {
                 inner: Field {
                     schema: None,
-                    query_source: "items",
+                    query_source: Some(
+                        "items",
+                    ),
                     field_name: "name",
                     via_left_join: false,
                 },

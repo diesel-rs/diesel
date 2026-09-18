@@ -10,7 +10,7 @@ use crate::query_source::QuerySource;
 use sqlparser::ast::{SelectItem, SelectItemQualifiedWildcardKind};
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) struct SelectField {
     pub(crate) ident: Option<String>,
     pub(crate) kind: Expression,
@@ -25,7 +25,7 @@ impl SelectField {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 /// WHEN [condition] THEN [result]` exrpession
 pub(crate) struct CaseCondition {
     pub(crate) condition: Expression,
@@ -33,7 +33,7 @@ pub(crate) struct CaseCondition {
 }
 
 /// Different kind of expressions in a SELECT clause
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[non_exhaustive]
 pub enum Expression {
     /// A literal value like `1` or `'foo'`
@@ -48,7 +48,7 @@ pub enum Expression {
         /// the schema of the query source
         schema: Option<String>,
         /// the name of the query source
-        query_source: String,
+        query_source: Option<String>,
         /// the name of the field
         field_name: String,
         /// is this field coming from a query source joined via a `LEFT JOIN`
@@ -87,7 +87,7 @@ pub enum Expression {
     /// A wild card `*` expression
     Wildcard {
         schema: Option<String>,
-        relation: String,
+        relation: Option<String>,
         is_left_joined: bool,
     },
     /// A `left BETWEEN low AND high` expression
@@ -170,7 +170,7 @@ impl Expression {
                 field_name,
                 ..
             } => Ok(resolver
-                .resolve_field(schema.as_deref(), table, field_name)
+                .resolve_field(schema.as_deref(), table.as_deref(), field_name)
                 .map_err(|inner| Error::ResolverFailure { inner })?
                 .is_nullable()),
             Self::Cast { inner, .. } => inner.infer_nullability(resolver),
@@ -199,10 +199,25 @@ impl Expression {
                     expr.infer_nullability(resolver)
                 }
             }
-            Expression::Function { name, schema, .. } => {
+            Expression::Function {
+                name,
+                schema,
+                arguments,
+            } => {
                 match name.to_lowercase().as_str() {
                     // we consider count as only not nullable function for now
                     "count" if schema.is_none() => Ok(IsNull::NotNullable),
+                    // coalesce is not nullable if any argument cannot contain
+                    // null values as it returns the first non-null value
+                    "coalesce" if schema.is_none() => {
+                        for arg in arguments {
+                            match arg.infer_nullability(resolver)? {
+                                IsNull::NotNullable => return Ok(IsNull::NotNullable),
+                                IsNull::IsNullable | IsNull::Unknown => {}
+                            }
+                        }
+                        Ok(IsNull::IsNullable)
+                    }
                     _ => Ok(IsNull::IsNullable),
                 }
             }
@@ -244,9 +259,9 @@ impl Expression {
             Expression::InSubQuery { left, subquery, .. } => {
                 match subquery.as_slice() {
                     [s] => {
-                        // postgresql does not generate null values at all for in statements with subqueries
-                        // sqlite does generate a null valuue if either the left or the right side is nullable
-                        // To be safe we follow the sqlite way
+                        // `x IN (SELECT y …)` yields NULL when x matches no row and the
+                        // subquery contains a NULL, so the result is nullable whenever
+                        // either side is nullable
                         Ok(left
                             .infer_nullability(resolver)?
                             .or(s.infer_nullability(resolver)?))
@@ -294,15 +309,15 @@ impl Expression {
                 };
                 Ok(ret)
             }
-            Expression::Wildcard { .. } => unreachable!(),
-            Expression::Unknown => Ok(IsNull::NotNullable),
+            Expression::Wildcard { .. } => Err(Error::UnresolvedWildcard),
+            Expression::Unknown => Ok(IsNull::Unknown),
         }
     }
 }
 
 pub(crate) fn infer_from_select(
     select: &sqlparser::ast::Select,
-    outer_lookup: Option<&HashMap<&str, QuerySource>>,
+    outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
 ) -> Result<Vec<SelectField>> {
     let mut query_source_lookup = collect_query_sources(&select.from)?;
     if let Some(outer) = outer_lookup {
@@ -322,7 +337,7 @@ pub(crate) fn infer_from_select(
 
 pub(crate) fn collect_query_sources<'a>(
     sources: &'a [sqlparser::ast::TableWithJoins],
-) -> Result<HashMap<&'a str, QuerySource<'a>>> {
+) -> Result<HashMap<Option<&'a str>, QuerySource<'a>>> {
     let mut out = HashMap::with_capacity(sources.len());
     for s in sources {
         QuerySource::fill_from_table_with_joins(&mut out, s)?;
@@ -332,7 +347,7 @@ pub(crate) fn collect_query_sources<'a>(
 
 pub(crate) fn infer_projection(
     item: &SelectItem,
-    query_source_lookup: &HashMap<&str, QuerySource>,
+    query_source_lookup: &HashMap<Option<&str>, QuerySource>,
 ) -> Result<SelectField> {
     match item {
         SelectItem::UnnamedExpr(expr) => {
@@ -357,14 +372,14 @@ pub(crate) fn infer_projection(
                 .last()
                 .and_then(|a| a.as_ident())
                 .map(|a| a.value.as_str())
-                .and_then(|k| query_source_lookup.get(k))
+                .and_then(|k| query_source_lookup.get(&Some(k)))
             {
                 let is_left_joined = item.contains_left_join(query_source_lookup)?;
                 Ok(SelectField {
                     ident: None,
                     kind: Expression::Wildcard {
                         schema: item.schema.map(|s| s.to_owned()),
-                        relation: item.name.to_owned(),
+                        relation: item.name.map(|c| c.to_owned()),
                         is_left_joined,
                     },
                 })
@@ -378,7 +393,7 @@ pub(crate) fn infer_projection(
                 ident: None,
                 kind: Expression::Wildcard {
                     schema: wildcard.schema.map(|c| c.to_owned()),
-                    relation: wildcard.name.to_owned(),
+                    relation: wildcard.name.map(|c| c.to_owned()),
                     is_left_joined: false,
                 },
             })
@@ -400,14 +415,14 @@ pub(crate) fn infer_projection(
 
 pub(crate) fn parse_query(
     select: &sqlparser::ast::Query,
-    outer_lookup: Option<&HashMap<&str, QuerySource>>,
+    outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
 ) -> Result<Vec<SelectField>> {
     let expr = &select.body;
     parse_from_set_expr(outer_lookup, expr)
 }
 
 fn parse_from_set_expr(
-    outer_lookup: Option<&HashMap<&str, QuerySource<'_>>>,
+    outer_lookup: Option<&HashMap<Option<&str>, QuerySource<'_>>>,
     expr: &sqlparser::ast::SetExpr,
 ) -> Result<Vec<SelectField>> {
     match expr {

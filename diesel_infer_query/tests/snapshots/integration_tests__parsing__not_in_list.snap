@@ -10,7 +10,9 @@ ViewData {
             kind: In {
                 left: Field {
                     schema: None,
-                    query_source: "users",
+                    query_source: Some(
+                        "users",
+                    ),
                     field_name: "name",
                     via_left_join: false,
                 },

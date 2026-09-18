@@ -110,12 +110,15 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
     fn resolve_field(
         &mut self,
         schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<
         &dyn diesel_infer_query::SchemaField,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
+        let Some(query_relation) = query_relation else {
+            return Err("Unnamed query source cannot be resolved".into());
+        };
         let (table_name, relation) = self.load_relation_data(schema, query_relation)?;
         Ok(relation
             .columns()
@@ -130,8 +133,11 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
     fn list_fields<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let Some(query_relation) = query_relation else {
+            return Err("Unnamed query source cannot be resolved".into());
+        };
         let (_table_name, relation) = self.load_relation_data(relation_schema, query_relation)?;
         let ret = relation
             .columns()

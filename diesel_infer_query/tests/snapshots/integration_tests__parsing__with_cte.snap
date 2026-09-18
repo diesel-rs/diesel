@@ -11,7 +11,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "users",
+                query_source: Some(
+                    "users",
+                ),
                 field_name: "col1",
                 via_left_join: false,
             },
@@ -22,7 +24,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "source",
+                query_source: Some(
+                    "source",
+                ),
                 field_name: "b",
                 via_left_join: false,
             },
@@ -40,7 +44,9 @@ ViewData {
     ],
     subqueries: [
         (
-            "source",
+            Some(
+                "source",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -49,7 +55,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "table1",
+                            query_source: Some(
+                                "table1",
+                            ),
                             field_name: "a",
                             via_left_join: false,
                         },
@@ -60,7 +68,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "table1",
+                            query_source: Some(
+                                "table1",
+                            ),
                             field_name: "b",
                             via_left_join: false,
                         },

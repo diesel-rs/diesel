@@ -11,7 +11,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte_nested",
+                query_source: Some(
+                    "cte_nested",
+                ),
                 field_name: "a",
                 via_left_join: false,
             },
@@ -22,7 +24,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte_nested",
+                query_source: Some(
+                    "cte_nested",
+                ),
                 field_name: "b",
                 via_left_join: false,
             },
@@ -33,7 +37,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte_nested",
+                query_source: Some(
+                    "cte_nested",
+                ),
                 field_name: "c",
                 via_left_join: false,
             },
@@ -44,7 +50,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte_nested",
+                query_source: Some(
+                    "cte_nested",
+                ),
                 field_name: "d",
                 via_left_join: false,
             },
@@ -55,7 +63,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte_nested",
+                query_source: Some(
+                    "cte_nested",
+                ),
                 field_name: "col1",
                 via_left_join: false,
             },
@@ -66,7 +76,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte_nested",
+                query_source: Some(
+                    "cte_nested",
+                ),
                 field_name: "col2",
                 via_left_join: false,
             },
@@ -74,7 +86,9 @@ ViewData {
     ],
     subqueries: [
         (
-            "stage1",
+            Some(
+                "stage1",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -83,7 +97,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "sources",
+                            query_source: Some(
+                                "sources",
+                            ),
                             field_name: "a",
                             via_left_join: false,
                         },
@@ -94,7 +110,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "sources",
+                            query_source: Some(
+                                "sources",
+                            ),
                             field_name: "b",
                             via_left_join: false,
                         },
@@ -105,7 +123,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "sources",
+                            query_source: Some(
+                                "sources",
+                            ),
                             field_name: "c",
                             via_left_join: false,
                         },
@@ -116,7 +136,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "sources",
+                            query_source: Some(
+                                "sources",
+                            ),
                             field_name: "d",
                             via_left_join: false,
                         },
@@ -125,7 +147,9 @@ ViewData {
             },
         ),
         (
-            "stage2",
+            Some(
+                "stage2",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -134,7 +158,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "other_sources",
+                            query_source: Some(
+                                "other_sources",
+                            ),
                             field_name: "a",
                             via_left_join: false,
                         },
@@ -145,7 +171,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "other_sources",
+                            query_source: Some(
+                                "other_sources",
+                            ),
                             field_name: "b",
                             via_left_join: false,
                         },
@@ -156,7 +184,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "other_sources",
+                            query_source: Some(
+                                "other_sources",
+                            ),
                             field_name: "c",
                             via_left_join: false,
                         },
@@ -167,7 +197,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "other_sources",
+                            query_source: Some(
+                                "other_sources",
+                            ),
                             field_name: "d",
                             via_left_join: false,
                         },
@@ -176,7 +208,9 @@ ViewData {
             },
         ),
         (
-            "union_set",
+            Some(
+                "union_set",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -186,13 +220,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "stage1",
+                                query_source: Some(
+                                    "stage1",
+                                ),
                                 field_name: "a",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "stage2",
+                                query_source: Some(
+                                    "stage2",
+                                ),
                                 field_name: "a",
                                 via_left_join: false,
                             },
@@ -206,13 +244,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "stage1",
+                                query_source: Some(
+                                    "stage1",
+                                ),
                                 field_name: "b",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "stage2",
+                                query_source: Some(
+                                    "stage2",
+                                ),
                                 field_name: "b",
                                 via_left_join: false,
                             },
@@ -226,13 +268,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "stage1",
+                                query_source: Some(
+                                    "stage1",
+                                ),
                                 field_name: "c",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "stage2",
+                                query_source: Some(
+                                    "stage2",
+                                ),
                                 field_name: "c",
                                 via_left_join: false,
                             },
@@ -246,13 +292,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "stage1",
+                                query_source: Some(
+                                    "stage1",
+                                ),
                                 field_name: "d",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "stage2",
+                                query_source: Some(
+                                    "stage2",
+                                ),
                                 field_name: "d",
                                 via_left_join: false,
                             },
@@ -263,7 +313,9 @@ ViewData {
             },
         ),
         (
-            "s",
+            Some(
+                "s",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -272,7 +324,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "small_table",
+                            query_source: Some(
+                                "small_table",
+                            ),
                             field_name: "col1",
                             via_left_join: false,
                         },
@@ -283,7 +337,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "small_table",
+                            query_source: Some(
+                                "small_table",
+                            ),
                             field_name: "col2",
                             via_left_join: false,
                         },
@@ -292,7 +348,9 @@ ViewData {
             },
         ),
         (
-            "cte_nested",
+            Some(
+                "cte_nested",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -301,7 +359,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "union_set",
+                            query_source: Some(
+                                "union_set",
+                            ),
                             field_name: "a",
                             via_left_join: false,
                         },
@@ -312,7 +372,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "union_set",
+                            query_source: Some(
+                                "union_set",
+                            ),
                             field_name: "b",
                             via_left_join: false,
                         },
@@ -323,7 +385,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "union_set",
+                            query_source: Some(
+                                "union_set",
+                            ),
                             field_name: "c",
                             via_left_join: false,
                         },
@@ -334,7 +398,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "union_set",
+                            query_source: Some(
+                                "union_set",
+                            ),
                             field_name: "d",
                             via_left_join: false,
                         },
@@ -345,7 +411,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "s",
+                            query_source: Some(
+                                "s",
+                            ),
                             field_name: "col1",
                             via_left_join: false,
                         },
@@ -356,7 +424,9 @@ ViewData {
                         ),
                         kind: Field {
                             schema: None,
-                            query_source: "s",
+                            query_source: Some(
+                                "s",
+                            ),
                             field_name: "col2",
                             via_left_join: false,
                         },

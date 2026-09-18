@@ -12,13 +12,17 @@ ViewData {
             kind: Combined {
                 left: Field {
                     schema: None,
-                    query_source: "content_vault",
+                    query_source: Some(
+                        "content_vault",
+                    ),
                     field_name: "owner_id",
                     via_left_join: false,
                 },
                 right: Field {
                     schema: None,
-                    query_source: "recent_uploads",
+                    query_source: Some(
+                        "recent_uploads",
+                    ),
                     field_name: "creator_id",
                     via_left_join: false,
                 },
@@ -32,13 +36,17 @@ ViewData {
             kind: Combined {
                 left: Field {
                     schema: None,
-                    query_source: "content_vault",
+                    query_source: Some(
+                        "content_vault",
+                    ),
                     field_name: "file_hash",
                     via_left_join: false,
                 },
                 right: Field {
                     schema: None,
-                    query_source: "recent_uploads",
+                    query_source: Some(
+                        "recent_uploads",
+                    ),
                     field_name: "sha256",
                     via_left_join: false,
                 },

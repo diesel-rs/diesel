@@ -11,7 +11,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "employees",
+                query_source: Some(
+                    "employees",
+                ),
                 field_name: "user_id",
                 via_left_join: false,
             },
@@ -22,7 +24,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "employees",
+                query_source: Some(
+                    "employees",
+                ),
                 field_name: "name",
                 via_left_join: false,
             },

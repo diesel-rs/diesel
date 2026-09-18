@@ -77,12 +77,18 @@ impl SchemaResolver for Resolver {
     fn resolve_field<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<
         &'s dyn diesel_infer_query::SchemaField,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
+        let Some(query_relation) = query_relation else {
+            panic!(
+                "Expected to get unnamed query relation from {:?}",
+                self.data.keys()
+            )
+        };
         let key = Key {
             schema: relation_schema.map(|s| s.to_owned()),
             table: query_relation.to_string(),
@@ -98,8 +104,14 @@ impl SchemaResolver for Resolver {
     fn list_fields<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let Some(query_relation) = query_relation else {
+            panic!(
+                "Expected to get unnamed query relation from {:?}",
+                self.data.keys()
+            )
+        };
         let mut res = self
             .data
             .iter()
@@ -754,4 +766,57 @@ fn complex_cte_subquery_set_ops() {
             ("small_table", "col2", IsNull::IsNullable),
         ]
        );
+}
+
+#[test]
+fn coalesce_function() {
+    // COALESCE should be NOT NULL if all arguments are NOT NULL
+    // (returns the first non-null value)
+    check_infer(
+        "CREATE VIEW test AS SELECT coalesce(foo.is_null, NULL, 3) AS result FROM foo",
+        [IsNull::NotNullable],
+        [("foo", "is_null", IsNull::IsNullable)],
+    );
+}
+
+#[test]
+fn unnamed_query_source() {
+    check_infer(
+        "SELECT * FROM (SELECT 1 as dummy)",
+        [IsNull::NotNullable],
+        (),
+    );
+}
+
+#[test]
+fn cte_with_wildcard() {
+    check_infer(
+        "CREATE VIEW test AS WITH c AS (SELECT * FROM users) SELECT id, name FROM c",
+        [IsNull::NotNullable, IsNull::IsNullable],
+        [
+            ("users", "id", IsNull::NotNullable),
+            ("users", "name", IsNull::IsNullable),
+        ],
+    );
+}
+
+#[test]
+fn from_subquery_with_wildcard() {
+    check_infer(
+        "CREATE VIEW test AS SELECT u.id FROM (SELECT * FROM users) u",
+        [IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn nested_subqueries_with_same_name() {
+    check_infer(
+        "CREATE VIEW test AS WITH \
+                  query_1 AS (SELECT dummy.id FROM (SELECT 1 AS id) as dummy), \
+                  query_2 AS (SELECT dummy.id FROM (SELECT NULL AS id) as dummy) \
+              SELECT id FROM query_1 UNION SELECT id FROM query_2",
+        [IsNull::IsNullable],
+        (),
+    );
 }

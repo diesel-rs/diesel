@@ -9,7 +9,9 @@ ViewData {
             ident: None,
             kind: Wildcard {
                 schema: None,
-                relation: "users",
+                relation: Some(
+                    "users",
+                ),
                 is_left_joined: false,
             },
         },
@@ -17,7 +19,9 @@ ViewData {
             ident: None,
             kind: Wildcard {
                 schema: None,
-                relation: "posts",
+                relation: Some(
+                    "posts",
+                ),
                 is_left_joined: true,
             },
         },

@@ -14,7 +14,7 @@ pub trait SchemaResolver {
     fn resolve_field<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<&'s dyn SchemaField, Box<dyn std::error::Error + Send + Sync + 'static>>;
 
@@ -23,7 +23,7 @@ pub trait SchemaResolver {
     fn list_fields<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>>;
 }
 
@@ -36,13 +36,13 @@ pub trait SchemaField {
 }
 
 pub(crate) struct CombinedResolver<'b> {
-    subqueries: HashMap<String, Vec<ResolvedField>>,
+    subqueries: HashMap<Option<String>, Vec<ResolvedField>>,
     fallback: &'b mut dyn SchemaResolver,
 }
 
 impl<'b> CombinedResolver<'b> {
     pub(crate) fn new(
-        subqueries: &[(String, SubQuery)],
+        subqueries: &[(Option<String>, SubQuery)],
         fallback: &'b mut dyn SchemaResolver,
     ) -> Result<Self> {
         let mut resolver = Self {
@@ -71,11 +71,11 @@ impl<'b> SchemaResolver for CombinedResolver<'b> {
     fn resolve_field<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<&'s dyn SchemaField, Box<dyn std::error::Error + Send + Sync + 'static>> {
         if relation_schema.is_none()
-            && let Some(fields) = self.subqueries.get(query_relation)
+            && let Some(fields) = self.subqueries.get(&query_relation.map(|s| s.to_owned()))
         {
             fields
                 .iter()
@@ -89,7 +89,7 @@ impl<'b> SchemaResolver for CombinedResolver<'b> {
                 .ok_or_else(|| {
                     Box::new(Error::UnknownField {
                         relation_schema: relation_schema.map(|c| c.to_owned()),
-                        query_relation: query_relation.to_owned(),
+                        query_relation: query_relation.map(|c| c.to_owned()),
                         field_name: field_name.to_owned(),
                     })
                     .into()
@@ -103,10 +103,10 @@ impl<'b> SchemaResolver for CombinedResolver<'b> {
     fn list_fields<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
         if relation_schema.is_none()
-            && let Some(fields) = self.subqueries.get(query_relation)
+            && let Some(fields) = self.subqueries.get(&query_relation.map(|c| c.to_owned()))
         {
             Ok(fields.iter().map(|f| f as &dyn SchemaField).collect())
         } else {

@@ -12,13 +12,17 @@ ViewData {
             kind: Combined {
                 left: Field {
                     schema: None,
-                    query_source: "old_users",
+                    query_source: Some(
+                        "old_users",
+                    ),
                     field_name: "id",
                     via_left_join: false,
                 },
                 right: Field {
                     schema: None,
-                    query_source: "new_members",
+                    query_source: Some(
+                        "new_members",
+                    ),
                     field_name: "user_id",
                     via_left_join: false,
                 },
@@ -32,13 +36,17 @@ ViewData {
             kind: Combined {
                 left: Field {
                     schema: None,
-                    query_source: "old_users",
+                    query_source: Some(
+                        "old_users",
+                    ),
                     field_name: "name",
                     via_left_join: false,
                 },
                 right: Field {
                     schema: None,
-                    query_source: "new_members",
+                    query_source: Some(
+                        "new_members",
+                    ),
                     field_name: "display_name",
                     via_left_join: false,
                 },
