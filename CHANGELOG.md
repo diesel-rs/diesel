@@ -58,6 +58,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Fixed
 
 * Fixed `SqliteReadOnlyBlob::close` closing the underlying SQLite handle twice.
+* Fixed `SqliteReadOnlyBlob` seeks before byte zero to return `InvalidInput` without changing the cursor, instead of overflowing or clamping to zero.
 * Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
 * Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.

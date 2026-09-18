@@ -2965,12 +2965,12 @@ mod tests {
         assert_eq!(data.read(&mut buf).unwrap(), 1);
         assert_eq!(&buf, b"a");
 
-        // Seek before start
-        assert_eq!(data.seek(SeekFrom::Current(-10)).unwrap(), 0);
+        // Seek relative to end
+        assert_eq!(data.seek(SeekFrom::End(-2)).unwrap(), 7);
 
         let mut buf = [0; 1];
         assert_eq!(data.read(&mut buf).unwrap(), 1);
-        assert_eq!(&buf, b"a");
+        assert_eq!(&buf, b"h");
 
         // Seek after end
         data.seek(SeekFrom::Current(100)).unwrap();
@@ -2978,6 +2978,51 @@ mod tests {
         // Now we don't get any bytes back
         let mut buf = [0; 1];
         assert_eq!(data.read(&mut buf).unwrap(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn before_start_blob_seeks_return_errors_without_moving_cursor() {
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        use std::io::{ErrorKind, Read, Seek, SeekFrom};
+
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')")
+            .execute(conn)
+            .unwrap();
+
+        let mut data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        for position in [
+            SeekFrom::End(-4),
+            SeekFrom::Current(-2),
+            SeekFrom::End(i64::MIN),
+            SeekFrom::Current(i64::MIN),
+        ] {
+            assert_eq!(data.seek(SeekFrom::Start(1)).unwrap(), 1);
+            assert_eq!(
+                data.seek(position).unwrap_err().kind(),
+                ErrorKind::InvalidInput
+            );
+            assert_eq!(data.stream_position().unwrap(), 1);
+
+            let mut buf = [0; 1];
+            data.read_exact(&mut buf).unwrap();
+            assert_eq!(&buf, b"b");
+        }
+
+        assert_eq!(data.seek(SeekFrom::End(-3)).unwrap(), 0);
+        let mut buf = [0; 1];
+        data.read_exact(&mut buf).unwrap();
+        assert_eq!(&buf, b"a");
+        assert_eq!(data.seek(SeekFrom::Current(-1)).unwrap(), 0);
     }
 
     #[diesel_test_helper::test]

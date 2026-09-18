@@ -138,18 +138,19 @@ impl std::io::Seek for SqliteReadOnlyBlob<'_> {
                 self.read_index = if n.is_positive() {
                     self.blob_size
                 } else {
-                    self.blob_size - usize::try_from(n.unsigned_abs()).map_err(to_io_error)?
+                    self.blob_size
+                        .checked_sub(usize::try_from(n.unsigned_abs()).map_err(to_io_error)?)
+                        .ok_or(std::io::ErrorKind::InvalidInput)?
                 };
             }
             std::io::SeekFrom::Current(n) => {
                 let n = isize::try_from(n).map_err(to_io_error)?;
 
                 if n.is_negative() {
-                    self.read_index = if self.read_index < n.unsigned_abs() {
-                        0
-                    } else {
-                        self.read_index - n.unsigned_abs()
-                    };
+                    self.read_index = self
+                        .read_index
+                        .checked_sub(n.unsigned_abs())
+                        .ok_or(std::io::ErrorKind::InvalidInput)?;
                 } else {
                     self.read_index = (self.read_index + n.unsigned_abs()).min(self.blob_size);
                 }
