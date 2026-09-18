@@ -16,7 +16,7 @@ pub fn filter_foreign_keys_for_grouping(
         .iter()
         .filter(|fk| {
             if fk.parent_table == fk.child_table {
-                tracing::debug!(?fk, "Remove foreign key constraint because it's self referential")
+                tracing::debug!(?fk, "Remove foreign key constraint because it's self referential");
             }
             fk.parent_table != fk.child_table
         })

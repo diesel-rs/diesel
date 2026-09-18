@@ -1,0 +1,80 @@
+[package]
+name = "diesel-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+# bit exact json float round trips in the fuzzer
+serde_json = { version = "1.0.54", features = ["float_roundtrip"] }
+chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
+time = "0.3.9"
+bigdecimal = "0.4"
+ipnet = "2.5.0"
+ipnetwork = "0.21"
+uuid = "1"
+libsqlite3-sys = { version = "0.38", features = ["bundled"] }
+
+[dependencies.diesel]
+path = "../diesel"
+default-features = false
+features = [
+    "chrono",
+    "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    "ipnet-address",
+    "mysql_backend",
+    "network-address",
+    "numeric",
+    "postgres_backend",
+    "serde_json",
+    "sqlite",
+    "time",
+    "uuid",
+]
+
+[profile.release]
+debug = 1
+
+# the fuzz crate is its own workspace, so diesel's does not build it
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "sqlite_jsonb_decode"
+path = "fuzz_targets/sqlite_jsonb_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sqlite_jsonb_roundtrip"
+path = "fuzz_targets/sqlite_jsonb_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sqlite_from_sql"
+path = "fuzz_targets/sqlite_from_sql.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "pg_from_sql"
+path = "fuzz_targets/pg_from_sql.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "mysql_from_sql"
+path = "fuzz_targets/mysql_from_sql.rs"
+test = false
+doc = false
+bench = false

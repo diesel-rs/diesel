@@ -278,6 +278,10 @@ fn main() {
                     "diesel_derives__tests__insertable_embed_1.snap",
                     "With `#[diesel(embed)]`",
                 ),
+                Example::with_heading(
+                    "diesel_derives__tests__insertable_serialize_as_1.snap",
+                    "With `#[diesel(serialize_as = String)]`",
+                ),
             ],
         ),
         (

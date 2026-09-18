@@ -61,6 +61,16 @@ mod tests {
     use crate::sql_types;
 
     #[diesel_test_helper::test]
+    fn regression_json_float_survives_a_round_trip() {
+        crate::test_helpers::assert_floats_survive_a_json_round_trip::<sql_types::Json, Pg>(
+            |bytes| FromSql::<sql_types::Json, Pg>::from_sql(PgValue::for_test(bytes)),
+        );
+        crate::test_helpers::assert_floats_survive_a_json_round_trip::<sql_types::Jsonb, Pg>(
+            |bytes| FromSql::<sql_types::Jsonb, Pg>::from_sql(PgValue::for_test(bytes)),
+        );
+    }
+
+    #[diesel_test_helper::test]
     fn json_to_sql() {
         let mut buffer = Vec::new();
         let mut bytes = Output::test(ByteWrapper(&mut buffer));

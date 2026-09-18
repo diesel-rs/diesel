@@ -612,6 +612,12 @@ fn print_schema_table_name_injecetion() {
     test_print_schema("print_schema_table_name_injection", vec![])
 }
 
+// seems like it uses lowercase table names there
+// for postgres insta seems to struggle on windows
+#[cfg(not(all(
+    any(feature = "mariadb", feature = "mysql", feature = "postgres"),
+    windows
+)))]
 #[test]
 fn print_schema_rust_injection() {
     test_print_schema(
@@ -621,6 +627,26 @@ fn print_schema_rust_injection() {
             "diesel::query_builder::QueryId",
             "--custom-type-derives",
             "Clone",
+            "--with-docs",
+        ],
+    );
+}
+
+#[cfg(all(feature = "postgres", not(windows)))]
+#[test]
+fn print_schema_rust_injection_schema() {
+    test_print_schema(
+        "print_schema_rust_injection_schema",
+        vec![
+            "--custom-type-derives",
+            "diesel::query_builder::QueryId",
+            "--custom-type-derives",
+            "Clone",
+            "--with-docs",
+            "--schema",
+            r#"x."
+include!(env!("SCHEMA")); mod y
+"#,
         ],
     )
 }
