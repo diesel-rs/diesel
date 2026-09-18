@@ -66,6 +66,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "sqlite_blob_state"
+path = "fuzz_targets/sqlite_blob_state.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "pg_from_sql"
 path = "fuzz_targets/pg_from_sql.rs"
 test = false

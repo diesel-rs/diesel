@@ -1,5 +1,5 @@
 use arbitrary::Arbitrary;
-use diesel_fuzz::{document, mysql, pg, sqlite};
+use diesel_fuzz::{document, mysql, pg, sqlite, sqlite_blob};
 use std::num::NonZeroU32;
 
 #[test]
@@ -41,6 +41,30 @@ fn every_sqlite_case_decodes_without_panicking() {
                 sqlite::decode_case(selector, kind, bytes);
             }
         }
+    }
+}
+
+#[test]
+fn blob_operations_match_byte_slice_model() {
+    let operations = [
+        1, 1, 0, // Seek from start to 1
+        0, 1, 0, // Read "b"
+        3, 0xFB, 0xFF, // Reject a seek before start from current
+        0, 1, 0, // Still read "c"
+        2, 0xFF, 0xFF, // Seek one byte before end
+        2, 0xFC, 0xFF, // Reject a seek before start from end
+        0, 64, 0, // Still read "c"
+        1, 0, 0, // Seek to start
+        0, 3, 0, // Read "abc"
+    ];
+
+    for close_explicitly in [true, false, true] {
+        let input = sqlite_blob::BlobInput {
+            data: b"abc",
+            operations: &operations,
+            close_explicitly,
+        };
+        sqlite_blob::run_case(&input).expect("blob operations match the model");
     }
 }
 
