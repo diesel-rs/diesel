@@ -55,7 +55,7 @@ pub(crate) struct QuerySource<'a> {
     /// The schema of the query source
     pub(crate) schema: Option<&'a str>,
     /// The name of the query source
-    pub(crate) name: &'a str,
+    pub(crate) name: Option<&'a str>,
     /// The alias that is used to refer to this query source in the query
     #[expect(dead_code, reason = "its there for later")]
     pub(crate) alias: Option<&'a str>,
@@ -69,7 +69,7 @@ impl<'a> QuerySource<'a> {
     /// The `out` map contains a lookup list indexed by the name of the query source
     /// as used in the query
     pub(crate) fn fill_from_table_with_joins(
-        out: &mut HashMap<&'a str, QuerySource<'a>>,
+        out: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
         table_with_joins: &'a sqlparser::ast::TableWithJoins,
     ) -> Result<()> {
         // first resolve the table itself
@@ -85,16 +85,16 @@ impl<'a> QuerySource<'a> {
     /// used to include this query source is joined via a `LEFT JOIN`
     pub(crate) fn contains_left_join(
         &self,
-        query_source_lookup: &HashMap<&str, QuerySource<'_>>,
+        query_source_lookup: &HashMap<Option<&str>, QuerySource<'_>>,
     ) -> Result<bool> {
         if let Some(join) = &self.join {
             match join.kind {
                 JoinKind::Inner => {
-                    let source = query_source_lookup.get(join.to.as_str()).ok_or_else(|| {
-                        Error::InvalidQuerySource {
+                    let source = query_source_lookup
+                        .get(&Some(join.to.as_str()))
+                        .ok_or_else(|| Error::InvalidQuerySource {
                             query_source: join.to.clone(),
-                        }
-                    })?;
+                        })?;
                     source.contains_left_join(query_source_lookup)
                 }
                 JoinKind::Left => Ok(true),
@@ -106,7 +106,7 @@ impl<'a> QuerySource<'a> {
 
     fn fill_from_table_factor(
         s: &'a sqlparser::ast::TableFactor,
-        out: &mut HashMap<&'a str, QuerySource<'a>>,
+        out: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
     ) -> Result<()> {
         match s {
             sqlparser::ast::TableFactor::Table {
@@ -155,10 +155,10 @@ impl<'a> QuerySource<'a> {
                 // So use the name of the alias in that case, otherwise the name of the table.
                 let lookup = alias.unwrap_or(name);
                 out.insert(
-                    lookup,
+                    Some(lookup),
                     QuerySource {
                         schema,
-                        name,
+                        name: Some(name),
                         alias,
                         join: None,
                     },
@@ -173,15 +173,23 @@ impl<'a> QuerySource<'a> {
                 Ok(())
             }
             sqlparser::ast::TableFactor::Derived { lateral: false,  alias: Some(alias), sample: None, .. } => {
-                out.insert(&alias.name.value, QuerySource {
+                out.insert(Some(&alias.name.value), QuerySource {
                     schema: None,
-                    name: &alias.name.value,
+                    name: Some(&alias.name.value),
                     alias: Some(&alias.name.value),
                     join: None
                 });
                 Ok(())
             },
-
+            sqlparser::ast::TableFactor::Derived { lateral: false, alias: None, ..} => {
+                out.insert(None, QuerySource {
+                    schema: None,
+                    name: None,
+                    alias: None,
+                    join: None
+                });
+                Ok(())
+            },
             s => Err(Error::UnsupportedSql {
                 msg: format!("Unsupported query source: `{s}`"),
             }),
@@ -189,7 +197,7 @@ impl<'a> QuerySource<'a> {
     }
 
     fn fill_from_join(
-        out: &mut HashMap<&'a str, QuerySource<'a>>,
+        out: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
         join: &'a sqlparser::ast::Join,
     ) -> Result<()> {
         use sqlparser::ast::Visit;
@@ -235,7 +243,7 @@ impl<'a> QuerySource<'a> {
         // remove the query source used in the join directly
         // So for `INNER JOIN posts ON posts.user_id = users.id`
         // remove `posts`
-        for inner in inner.keys() {
+        for inner in inner.keys().flatten() {
             join_expr.remove(*inner);
         }
         // we should now have only one table left

@@ -11,7 +11,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte",
+                query_source: Some(
+                    "cte",
+                ),
                 field_name: "id",
                 via_left_join: false,
             },
@@ -22,7 +24,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte",
+                query_source: Some(
+                    "cte",
+                ),
                 field_name: "name",
                 via_left_join: false,
             },
@@ -33,7 +37,9 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "cte",
+                query_source: Some(
+                    "cte",
+                ),
                 field_name: "parent_id",
                 via_left_join: false,
             },
@@ -41,7 +47,9 @@ ViewData {
     ],
     subqueries: [
         (
-            "cte",
+            Some(
+                "cte",
+            ),
             SubQuery {
                 fields: [
                     SelectField {
@@ -51,13 +59,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "employees",
+                                query_source: Some(
+                                    "employees",
+                                ),
                                 field_name: "employee_id",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "employees",
+                                query_source: Some(
+                                    "employees",
+                                ),
                                 field_name: "employee_id",
                                 via_left_join: false,
                             },
@@ -71,13 +83,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "employees",
+                                query_source: Some(
+                                    "employees",
+                                ),
                                 field_name: "employee_name",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "employees",
+                                query_source: Some(
+                                    "employees",
+                                ),
                                 field_name: "employee_name",
                                 via_left_join: false,
                             },
@@ -91,13 +107,17 @@ ViewData {
                         kind: Combined {
                             left: Field {
                                 schema: None,
-                                query_source: "employees",
+                                query_source: Some(
+                                    "employees",
+                                ),
                                 field_name: "parent_id",
                                 via_left_join: false,
                             },
                             right: Field {
                                 schema: None,
-                                query_source: "employees",
+                                query_source: Some(
+                                    "employees",
+                                ),
                                 field_name: "parent_id",
                                 via_left_join: false,
                             },

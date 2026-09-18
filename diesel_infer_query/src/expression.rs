@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 pub(crate) fn infer_expr(
     expr: &sqlparser::ast::Expr,
-    query_source_lookup: &HashMap<&str, QuerySource>,
+    query_source_lookup: &HashMap<Option<&str>, QuerySource>,
 ) -> Result<Expression> {
     match expr {
         Expr::Value(v) => Ok(Expression::Literal {
@@ -27,7 +27,7 @@ pub(crate) fn infer_expr(
                     .expect("We checked there is only one value");
                 Ok(Expression::Field {
                     schema: table.schema.map(|s| s.to_owned()),
-                    query_source: table.name.to_owned(),
+                    query_source: table.name.map(|s| s.to_owned()),
                     field_name: id.value.clone(),
                     // no joins here so we should be fine
                     via_left_join: false,
@@ -43,7 +43,7 @@ pub(crate) fn infer_expr(
         s @ Expr::CompoundIdentifier(ids) => match ids.as_slice() {
             [table, field] => {
                 let table = query_source_lookup
-                    .get(table.value.as_str())
+                    .get(&Some(table.value.as_str()))
                     .ok_or_else(|| Error::InvalidQuerySource {
                         query_source: table.value.clone(),
                     })?;
@@ -51,7 +51,7 @@ pub(crate) fn infer_expr(
                 let via_left_join = table.contains_left_join(query_source_lookup)?;
                 Ok(Expression::Field {
                     schema: table.schema.map(|s| s.to_owned()),
-                    query_source: table.name.to_owned(),
+                    query_source: table.name.map(|s| s.to_owned()),
                     field_name: field.value.clone(),
                     via_left_join,
                 })
@@ -296,16 +296,14 @@ pub(crate) fn infer_expr(
         | Expr::OuterJoin(..)
         | Expr::Prior(..)
         | Expr::Lambda(..)
-        | Expr::MemberOf(..) => {
-            dbg!(expr);
-            Ok(Expression::Unknown)
-        }
+        | Expr::MemberOf(..)
+        | Expr::IsJson { .. } => Ok(Expression::Unknown),
     }
 }
 
 fn infer_functions(
     f: &sqlparser::ast::Function,
-    query_source_lookup: &HashMap<&str, QuerySource<'_>>,
+    query_source_lookup: &HashMap<Option<&str>, QuerySource<'_>>,
 ) -> Result<Expression> {
     let (name, schema) = match f.name.0.as_slice() {
         [ObjectNamePart::Identifier(name)] => (&name.value, None),
@@ -330,12 +328,12 @@ fn infer_functions(
                             .last()
                             .and_then(|a| a.as_ident())
                             .map(|a| a.value.as_str())
-                            .and_then(|k| query_source_lookup.get(k))
+                            .and_then(|k| query_source_lookup.get(&Some(k)))
                         {
                             let is_left_joined = item.contains_left_join(query_source_lookup)?;
                             Ok(Expression::Wildcard {
                                 is_left_joined,
-                                relation: item.name.to_string(),
+                                relation: item.name.map(|s| s.to_owned()),
                                 schema: item.schema.map(|t| t.to_owned()),
                             })
                         } else {
@@ -349,7 +347,7 @@ fn infer_functions(
                             .expect("We have exactly one element");
                         Ok(Expression::Wildcard {
                             is_left_joined: false,
-                            relation: query_source_lookup.name.to_string(),
+                            relation: query_source_lookup.name.map(|s| s.to_owned()),
                             schema: query_source_lookup.schema.map(|t| t.to_owned()),
                         })
                     }

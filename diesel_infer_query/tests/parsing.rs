@@ -303,3 +303,8 @@ fn except() {
          SELECT creator_id, sha256 FROM recent_uploads",
     );
 }
+
+#[test]
+fn unnamed_query_source() {
+    check_parse_view("unnamed_query_source", "SELECT * FROM (SELECT 1 as dummy)");
+}
