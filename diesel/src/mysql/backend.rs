@@ -60,6 +60,9 @@ impl SqlDialect for Mysql {
         sql_dialect::aggregate_function_expressions::NoAggregateFunctionExpressions;
 
     type BuiltInWindowFunctionRequireOrder = MysqlRequiresOrderForWindowFunctions;
+
+    type SqlFunctionParameterNotation =
+        sql_dialect::sql_function_parameter_notation::PositionalNotationOnly;
 }
 
 impl DieselReserveSpecialization for Mysql {}

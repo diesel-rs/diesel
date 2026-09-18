@@ -26,6 +26,7 @@ pub(crate) fn expand(
     input: Vec<SqlFunctionDecl>,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
 ) -> TokenStream {
     let mut result = TokenStream::new();
     let mut return_type_helper_module_paths = vec![];
@@ -35,6 +36,7 @@ pub(crate) fn expand(
             decl,
             legacy_helper_type_and_module,
             generate_return_type_helpers,
+            named_parameters,
         );
         let expanded = match expanded {
             Err(err) => err.into_compile_error(),
@@ -79,6 +81,7 @@ fn expand_one(
     mut input: SqlFunctionDecl,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
 ) -> syn::Result<ExpandedSqlFunction> {
     let attributes = &mut input.attributes;
 
@@ -104,6 +107,7 @@ fn expand_one(
             sql_name,
             legacy_helper_type_and_module,
             generate_return_type_helpers,
+            named_parameters,
         );
     };
 
@@ -121,6 +125,7 @@ fn expand_one(
             input.clone(),
             legacy_helper_type_and_module,
             generate_return_type_helpers,
+            named_parameters,
             variadic_argument_count,
             variant_no,
             variadic_span,
@@ -171,6 +176,7 @@ fn expand_variadic(
     mut input: SqlFunctionDecl,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
     variadic_argument_count: usize,
     variant_no: usize,
     variadic_span: Span,
@@ -298,6 +304,7 @@ fn expand_variadic(
         sql_name,
         legacy_helper_type_and_module,
         generate_return_type_helpers,
+        named_parameters,
     )
 }
 
@@ -370,6 +377,7 @@ fn expand_nonvariadic(
     sql_name: String,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
 ) -> syn::Result<ExpandedSqlFunction> {
     let SqlFunctionDecl {
         attributes,
@@ -389,6 +397,19 @@ fn expand_nonvariadic(
     let skip_return_type_helper = attributes
         .iter()
         .any(|attr| matches!(attr.item, SqlFunctionAttribute::SkipReturnTypeHelper { .. }));
+
+    // Override the block-level `named_parameters` attribute value if it's also specified on an
+    // individual function
+    let named_parameters = attributes
+        .iter()
+        .find_map(|attr| {
+            if let SqlFunctionAttribute::NamedParameters { ref value, .. } = attr.item {
+                Some(value.value)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(named_parameters);
 
     let window_attrs = attributes
         .iter()
@@ -470,6 +491,15 @@ fn expand_nonvariadic(
             &fn_name,
         ));
 
+    let fn_fragment_impl = generate_function_fragment_tokens(
+        arg_name,
+        &impl_generics_internal,
+        &fn_name,
+        &ty_generics,
+        &sql_name,
+        named_parameters,
+    );
+
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
@@ -517,30 +547,7 @@ fn expand_nonvariadic(
         {
         }
 
-        impl #impl_generics_internal FunctionFragment<__DieselInternal>
-            for #fn_name #ty_generics
-        where
-            __DieselInternal: diesel::backend::Backend,
-            #(#arg_name: QueryFragment<__DieselInternal>,)*
-        {
-            const FUNCTION_NAME: &'static str = #sql_name;
-
-            #[allow(unused_assignments)]
-            fn walk_arguments<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
-                // we unroll the arguments manually here, to prevent borrow check issues
-                let mut needs_comma = false;
-                #(
-                    if !self.#arg_name.is_noop(out.backend())? {
-                        if needs_comma {
-                            out.push_sql(", ");
-                        }
-                        self.#arg_name.walk_ast(out.reborrow())?;
-                        needs_comma = true;
-                    }
-                )*
-                Ok(())
-            }
-        }
+        #fn_fragment_impl
 
         #query_fragment_impl
     };
@@ -693,6 +700,91 @@ fn expand_nonvariadic(
         tokens,
         return_type_helper_module_path,
     })
+}
+
+fn generate_function_fragment_tokens(
+    arg_name: &Vec<&Ident>,
+    impl_generics_internal: &ImplGenerics,
+    fn_name: &Ident,
+    ty_generics: &TypeGenerics,
+    sql_name: &str,
+    named_parameters: bool,
+) -> TokenStream {
+    let generate_specialized_fn_fragment_tokens =
+        |named_parameters: bool, specialization: TokenStream| {
+            let push_parameter_name = arg_name.iter().map(|name| {
+                if named_parameters {
+                    Some(quote! {
+                        out.push_sql(stringify!(#name));
+                        out.push_sql("=>");
+                    })
+                } else {
+                    // If `named_parameters == false`, we will pass the parameter by position so we
+                    // don't need to generate any additional tokens
+                    None
+                }
+            });
+
+            quote! {
+                impl #impl_generics_internal FunctionFragment<__DieselInternal, #specialization>
+                    for #fn_name #ty_generics
+                where
+                    __DieselInternal: diesel::backend::Backend + diesel::backend::SqlDialect<SqlFunctionParameterNotation = #specialization>,
+                    #(#arg_name: QueryFragment<__DieselInternal>,)*
+                {
+                    const FUNCTION_NAME: &'static str = <Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME;
+
+                    #[allow(unused_assignments)]
+                    fn walk_arguments<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
+                        // we unroll the arguments manually here, to prevent borrow check issues
+                        let mut needs_comma = false;
+                        #(
+                            if !self.#arg_name.is_noop(out.backend())? {
+                                if needs_comma {
+                                    out.push_sql(", ");
+                                }
+                                #push_parameter_name
+                                self.#arg_name.walk_ast(out.reborrow())?;
+                                needs_comma = true;
+                            }
+                        )*
+                        Ok(())
+                    }
+                }
+            }
+        };
+
+    let positional_notation_only_impl = generate_specialized_fn_fragment_tokens(
+        // Backends with the `PositionalNotationOnly` marker type do not support named notation, so
+        // this impl will always pass parameters by position
+        false,
+        quote!(diesel::internal::sql_functions::PositionalNotationOnly),
+    );
+    let positional_or_named_notation_impl = generate_specialized_fn_fragment_tokens(
+        named_parameters,
+        quote!(diesel::internal::sql_functions::PositionalOrNamedNotation),
+    );
+
+    quote! {
+        impl #impl_generics_internal FunctionFragment<__DieselInternal>
+            for #fn_name #ty_generics
+        where
+            __DieselInternal: diesel::backend::Backend,
+            Self: FunctionFragment<__DieselInternal, __DieselInternal::SqlFunctionParameterNotation>,
+            #(#arg_name: QueryFragment<__DieselInternal>,)*
+        {
+            const FUNCTION_NAME: &'static str = #sql_name;
+
+            #[allow(unused_assignments)]
+            fn walk_arguments<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
+                <Self as FunctionFragment<__DieselInternal, __DieselInternal::SqlFunctionParameterNotation>>::walk_arguments(self, out)
+            }
+        }
+
+        #positional_notation_only_impl
+
+        #positional_or_named_notation_impl
+    }
 }
 
 fn generate_window_function_tokens(
@@ -1383,6 +1475,22 @@ fn parse_attribute(attr: syn::Attribute) -> Result<AttributeSpanWrapper<SqlFunct
                 },
             })
         }
+        syn::Meta::NameValue(syn::MetaNameValue {
+            path,
+            value:
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Bool(value),
+                    ..
+                }),
+            ..
+        }) if path.is_ident("named_parameters") => Ok(AttributeSpanWrapper {
+            attribute_span: attr.span(),
+            ident_span: value.span(),
+            item: SqlFunctionAttribute::NamedParameters {
+                ident: path.require_ident()?.clone(),
+                value: value.clone(),
+            },
+        }),
         syn::Meta::Path(path) if path.is_ident("window") => Ok(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: path.span(),
@@ -1817,13 +1925,14 @@ impl BackendRestriction {
             impl #impl_generics QueryFragment<#backend, #dialect>
                 for #fn_name #ty_generics
             where
+                Self: FunctionFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
                 #backend_bound
             #(#arg_name: QueryFragment<#backend>,)*
             {
                 fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, #backend>) -> QueryResult<()>{
-                    out.push_sql(<Self as FunctionFragment<#backend>>::FUNCTION_NAME);
+                    out.push_sql(<Self as FunctionFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>>::FUNCTION_NAME);
                     out.push_sql("(");
-                    self.walk_arguments(out.reborrow())?;
+                    <Self as FunctionFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>>::walk_arguments(self, out.reborrow())?;
                     out.push_sql(")");
                     Ok(())
                 }
@@ -1876,6 +1985,10 @@ enum SqlFunctionAttribute {
     SkipReturnTypeHelper {
         ident: Ident,
     },
+    NamedParameters {
+        ident: Ident,
+        value: LitBool,
+    },
     Other(Attribute),
 }
 
@@ -1898,6 +2011,7 @@ impl MySpanned for SqlFunctionAttribute {
             | SqlFunctionAttribute::Window { ident, .. }
             | SqlFunctionAttribute::Variadic { ident, .. }
             | SqlFunctionAttribute::SkipReturnTypeHelper { ident, .. }
+            | SqlFunctionAttribute::NamedParameters { ident, .. }
             | SqlFunctionAttribute::SqlName { ident, .. } => ident.span(),
             SqlFunctionAttribute::Restriction {
                 restriction: BackendRestriction::None,
@@ -2084,34 +2198,57 @@ impl SqlFunctionAttribute {
 #[derive(Default)]
 pub(crate) struct DeclareSqlFunctionArgs {
     pub(crate) generate_return_type_helpers: bool,
+    pub(crate) named_parameters: bool,
 }
 
-impl DeclareSqlFunctionArgs {
-    pub(crate) fn parse_from_macro_input(input: TokenStream) -> syn::Result<Self> {
-        if input.is_empty() {
-            return Ok(Self::default());
-        }
-        let input_span = input.span();
-        let parsed: syn::MetaNameValue = syn::parse2(input).map_err(|e| {
-            let span = e.span();
-            syn::Error::new(
-                span,
-                format!("{e}, the correct format is `generate_return_type_helpers = true/false`"),
-            )
+const DECLARE_SQL_FUNCTION_ERR_MSG: &str = "the correct format is `generate_return_type_helpers = true/false, named_parameters = true/false`";
+
+impl Parse for DeclareSqlFunctionArgs {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut generate_return_type_helpers = false;
+        let mut named_parameters = false;
+
+        let parsed =
+            Punctuated::<MetaNameValue, Token![,]>::parse_terminated(input).map_err(|e| {
+                let span = e.span();
+                syn::Error::new(span, format!("{e}, {DECLARE_SQL_FUNCTION_ERR_MSG}"))
+            })?;
+
+        parsed.into_iter().try_for_each(|parsed| {
+            match parsed {
+                MetaNameValue {
+                    path,
+                    value:
+                        syn::Expr::Lit(syn::ExprLit {
+                            lit: syn::Lit::Bool(b),
+                            ..
+                        }),
+                    ..
+                } => {
+                    if path.is_ident("generate_return_type_helpers") {
+                        generate_return_type_helpers = b.value;
+                    } else if path.is_ident("named_parameters") {
+                        named_parameters = b.value;
+                    } else {
+                        return Err(syn::Error::new(
+                            path.span(),
+                            format!("Unrecognized parameter, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(syn::Error::new(
+                        parsed.span(),
+                        format!("Invalid config, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
+                    ));
+                }
+            }
+            Ok(())
         })?;
-        match parsed {
-            syn::MetaNameValue {
-                path,
-                value:
-                    syn::Expr::Lit(syn::ExprLit {
-                        lit: syn::Lit::Bool(b),
-                        ..
-                    }),
-                ..
-            } if path.is_ident("generate_return_type_helpers") => Ok(Self {
-                generate_return_type_helpers: b.value,
-            }),
-            _ => Err(syn::Error::new(input_span, "Invalid config")),
-        }
+
+        Ok(Self {
+            generate_return_type_helpers,
+            named_parameters,
+        })
     }
 }

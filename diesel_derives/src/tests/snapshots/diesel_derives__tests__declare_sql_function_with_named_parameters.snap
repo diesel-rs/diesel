@@ -2,7 +2,7 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "define_sql_function! {\n    fn lower(input : Text) -> Text;\n}\n"
+  input: "#[diesel::declare_sql_function]\nextern \"SQL\" {\n    #[named_parameters = true]\n    fn lower(input: Text) -> Text;\n}\n"
 ---
 #[allow(non_camel_case_types)]
 pub fn lower<input>(input: input) -> lower<input>
@@ -133,6 +133,8 @@ pub(crate) mod lower_utils {
                 if needs_comma {
                     out.push_sql(", ");
                 }
+                out.push_sql(stringify!(input));
+                out.push_sql("=>");
                 self.input.walk_ast(out.reborrow())?;
                 needs_comma = true;
             }
