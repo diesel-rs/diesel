@@ -45,14 +45,14 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
     |
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               AliasedField<S, C>
+              diesel::mariadb::returning::old_impl::OldValue<C>
+              diesel::pg::returning::old_impl::Old<C>
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
               pg::metadata_lookup::pg_type::columns::oid
               pg::metadata_lookup::pg_type::columns::typarray
               pg::metadata_lookup::pg_type::columns::typname
-              pg::metadata_lookup::pg_type::columns::typnamespace
-              SkipSelectableExpressionBoundCheckWrapper<T>
-              returning::old_impl::Old<C>
+            and N others
     = note: required for `(f64,)` to implement `ValidGrouping<()>`
     = note: 2 redundant requirements hidden
     = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `ValidGrouping<()>`
@@ -115,14 +115,14 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
      |
      = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
                AliasedField<S, C>
+               diesel::mariadb::returning::old_impl::OldValue<C>
+               diesel::pg::returning::old_impl::Old<C>
                pg::metadata_lookup::pg_namespace::columns::nspname
                pg::metadata_lookup::pg_namespace::columns::oid
                pg::metadata_lookup::pg_type::columns::oid
                pg::metadata_lookup::pg_type::columns::typarray
                pg::metadata_lookup::pg_type::columns::typname
-               pg::metadata_lookup::pg_type::columns::typnamespace
-               SkipSelectableExpressionBoundCheckWrapper<T>
-               returning::old_impl::Old<C>
+             and N others
      = note: required for `(f64,)` to implement `ValidGrouping<()>`
      = note: 2 redundant requirements hidden
      = note: required for `ArrayLiteral<(Bound<Integer, i32>, f64), Integer>` to implement `ValidGrouping<()>`
@@ -277,14 +277,14 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
     |
     = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
               AliasedField<S, C>
+              diesel::mariadb::returning::old_impl::OldValue<C>
+              diesel::pg::returning::old_impl::Old<C>
               pg::metadata_lookup::pg_namespace::columns::nspname
               pg::metadata_lookup::pg_namespace::columns::oid
               pg::metadata_lookup::pg_type::columns::oid
               pg::metadata_lookup::pg_type::columns::typarray
               pg::metadata_lookup::pg_type::columns::typname
-              pg::metadata_lookup::pg_type::columns::typnamespace
-              SkipSelectableExpressionBoundCheckWrapper<T>
-              returning::old_impl::Old<C>
+            and N others
     = note: required for `({integer}, Bound<Double, f64>)` to implement `ValidGrouping<()>`
     = note: 1 redundant requirement hidden
     = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), ...>` to implement `ValidGrouping<()>`
@@ -347,14 +347,14 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
      |
      = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
                AliasedField<S, C>
+               diesel::mariadb::returning::old_impl::OldValue<C>
+               diesel::pg::returning::old_impl::Old<C>
                pg::metadata_lookup::pg_namespace::columns::nspname
                pg::metadata_lookup::pg_namespace::columns::oid
                pg::metadata_lookup::pg_type::columns::oid
                pg::metadata_lookup::pg_type::columns::typarray
                pg::metadata_lookup::pg_type::columns::typname
-               pg::metadata_lookup::pg_type::columns::typnamespace
-               SkipSelectableExpressionBoundCheckWrapper<T>
-               returning::old_impl::Old<C>
+             and N others
      = note: required for `({integer}, Bound<Double, f64>)` to implement `ValidGrouping<()>`
      = note: 1 redundant requirement hidden
      = note: required for `ArrayLiteral<({integer}, Bound<Double, f64>), ...>` to implement `ValidGrouping<()>`

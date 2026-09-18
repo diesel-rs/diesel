@@ -24,18 +24,18 @@ fn main() {
     insert_into(users)
         .values(&NewUser("Hello".into()))
         .returning(old(name))
-        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .unwrap();
 
     // DELETE: `old(col)` is pointless because all columns already refer to the
     // row being deleted — `RETURNING col` suffices.
     delete(users.filter(id.eq(1)))
         .returning(old(name))
-        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<DeleteStmt, table>`
         .unwrap();
 
     // INSERT ... ON CONFLICT DO NOTHING: conflicting rows are never returned,
@@ -45,8 +45,8 @@ fn main() {
         .on_conflict(id)
         .do_nothing()
         .returning(old(name))
-        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
         .unwrap();
 }
