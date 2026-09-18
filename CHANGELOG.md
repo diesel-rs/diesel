@@ -79,6 +79,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
+* Encoding a `serde_json::Value` as a SQLite JSONB literal now uses an iterative two-pass approach instead of building intermediate per-container `Vec<u8>` scratch buffers. Pass 1 computes exact payload sizes for all nested containers; Pass 2 emits headers and values directly into the pre-reserved output buffer. This removes the O(depth²) byte-copy work that the previous implementation incurred on deeply nested JSON and replaces it with a single O(n) traversal.
 
 
 ## [2.3.13] 2026-09-4
