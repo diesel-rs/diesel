@@ -115,10 +115,10 @@ where
     ///
     /// # Safety
     ///
-    /// Diesel passes the given string to the database as written. It must
-    /// therefore never contain values that come from outside your own code,
-    /// because anything interpolated into the SQL text can carry an SQL
-    /// injection. Pass such values with [`bind`] instead.
+    /// Diesel passes the given string to the database verbatim, so you are
+    /// responsible for making sure it holds no values from untrusted input.
+    /// Interpolating such a value into the SQL text allows SQL injection.
+    /// Bind it with [`bind`] instead.
     ///
     /// # Examples
     ///
@@ -215,10 +215,10 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// If you give the wrong type, it'll either return an error when deserializing
 /// the query result or produce unexpected values.
 ///
-/// Diesel also passes the given string to the database as written. It must
-/// therefore never contain values that come from outside your own code,
-/// because anything interpolated into the SQL text can carry an SQL
-/// injection. Pass such values with [`SqlLiteral::bind()`] instead.
+/// Diesel also passes the given string to the database verbatim, so you are
+/// responsible for making sure it holds no values from untrusted input.
+/// Interpolating such a value into the SQL text allows SQL injection. Bind it
+/// with [`SqlLiteral::bind()`] instead.
 ///
 /// # Examples
 ///
@@ -297,10 +297,10 @@ where
     ///
     /// # Safety
     ///
-    /// Diesel passes the given string to the database as written. It must
-    /// therefore never contain values that come from outside your own code,
-    /// because anything interpolated into the SQL text can carry an SQL
-    /// injection. Pass such values with [`SqlLiteral::bind()`] instead.
+    /// Diesel passes the given string to the database verbatim, so you are
+    /// responsible for making sure it holds no values from untrusted input.
+    /// Interpolating such a value into the SQL text allows SQL injection.
+    /// Bind it with [`SqlLiteral::bind()`] instead.
     ///
     /// # Examples
     ///

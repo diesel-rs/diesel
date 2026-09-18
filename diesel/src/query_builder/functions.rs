@@ -680,10 +680,10 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 /// that the given type is correct. If your query returns a column of an
 /// unexpected type, the result may have the wrong value, or return an error.
 ///
-/// Diesel also passes the given query string to the database as written. It
-/// must therefore never contain values that come from outside your own code,
-/// because anything interpolated into the SQL text can carry an SQL
-/// injection. Pass such values with [`SqlQuery::bind()`] instead.
+/// Diesel also passes the given query string to the database verbatim, so you
+/// are responsible for making sure it holds no values from untrusted input.
+/// Interpolating such a value into the SQL text allows SQL injection. Bind it
+/// with [`SqlQuery::bind()`] instead.
 ///
 /// # Examples
 ///

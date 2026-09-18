@@ -216,10 +216,10 @@ impl<Inner> SqlQuery<Inner> {
     ///
     /// # Safety
     ///
-    /// Diesel passes the given string to the database as written. It must
-    /// therefore never contain values that come from outside your own code,
-    /// because anything interpolated into the SQL text can carry an SQL
-    /// injection. Pass such values with [`bind`] instead.
+    /// Diesel passes the given string to the database verbatim, so you are
+    /// responsible for making sure it holds no values from untrusted input.
+    /// Interpolating such a value into the SQL text allows SQL injection.
+    /// Bind it with [`bind`] instead.
     ///
     /// [`bind`]: SqlQuery::bind()
     pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
@@ -300,10 +300,10 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     ///
     /// # Safety
     ///
-    /// Diesel passes the given string to the database as written. It must
-    /// therefore never contain values that come from outside your own code,
-    /// because anything interpolated into the SQL text can carry an SQL
-    /// injection. Pass such values with [`bind`] instead.
+    /// Diesel passes the given string to the database verbatim, so you are
+    /// responsible for making sure it holds no values from untrusted input.
+    /// Interpolating such a value into the SQL text allows SQL injection.
+    /// Bind it with [`bind`] instead.
     ///
     /// # Examples
     ///
@@ -448,7 +448,7 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
         self
     }
 
-    /// See [`SqlQuery::sql`].
+    /// See [`SqlQuery::sql`], including its safety requirements.
     ///
     /// [`SqlQuery::sql`]: SqlQuery::sql()
     pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
@@ -514,7 +514,7 @@ impl<'f, DB: Backend, Query> BoxedCloneSqlQuery<'f, DB, Query> {
         self
     }
 
-    /// See [`SqlQuery::sql`].
+    /// See [`SqlQuery::sql`], including its safety requirements.
     ///
     /// [`SqlQuery::sql`]: SqlQuery::sql()
     pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
