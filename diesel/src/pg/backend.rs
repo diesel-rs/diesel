@@ -118,6 +118,8 @@ impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
     type RawValue<'a> = PgValue<'a>;
     type BindCollector<'a> = RawBytesBindCollector<Pg>;
+
+    const SUPPORTS_FN_NAMED_PARAMETERS: bool = true;
 }
 
 impl TypeMetadata for Pg {
@@ -191,3 +193,15 @@ pub struct PgNotification {
 pub struct PostgresLikeBatchUpdateSupport;
 
 impl SupportsBatchUpdate for PostgresLikeBatchUpdateSupport {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supports_fn_named_parameters() {
+        const {
+            assert!(Pg::SUPPORTS_FN_NAMED_PARAMETERS);
+        }
+    }
+}

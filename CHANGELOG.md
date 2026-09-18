@@ -54,6 +54,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
+* Added `named_parameters` attribute to the `declare_sql_function` macro to allow using named notation in the generated SQL function invocation
 
 ### Fixed
 
