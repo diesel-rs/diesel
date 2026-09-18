@@ -1,4 +1,5 @@
-use diesel_fuzz::{mysql, pg, sqlite};
+use arbitrary::Arbitrary;
+use diesel_fuzz::{document, mysql, pg, sqlite};
 use std::num::NonZeroU32;
 
 #[test]
@@ -65,6 +66,37 @@ fn documents_survive_the_round_trip() {
             sqlite::roundtrip_jsonb(conn, &value).expect(document);
             sqlite::roundtrip_json(conn, &value).expect(document);
         }
+    });
+}
+
+#[test]
+fn generated_documents_stay_within_the_read_limit() {
+    for bytes in [
+        vec![0xC5; 976],
+        vec![0x06; 976],
+        vec![0xFF; 976],
+        vec![0x00; 976],
+        (0u8..=255).cycle().take(4096).collect(),
+    ] {
+        let mut unstructured = arbitrary::Unstructured::new(&bytes);
+        let document =
+            document::Document::arbitrary(&mut unstructured).expect("documents from bytes");
+        assert!(
+            document.nesting() <= document::MAX_NESTING,
+            "the generator exceeded the depth serde_json reads"
+        );
+    }
+}
+
+#[test]
+fn a_document_at_the_read_limit_survives_the_round_trip() {
+    let mut value = serde_json::Value::Null;
+    for _ in 0..document::MAX_NESTING {
+        value = serde_json::Value::Array(vec![value]);
+    }
+    sqlite::with_conn(|conn| {
+        sqlite::roundtrip_jsonb(conn, &value).expect("jsonb at the nesting cap");
+        sqlite::roundtrip_json(conn, &value).expect("json text at the nesting cap");
     });
 }
 
