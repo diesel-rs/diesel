@@ -5,7 +5,7 @@ info:
   input: "#[derive(AsExpression)]\n#[diesel(sql_type = diesel::sql_type::Integer)]\nenum Foo {\n    Bar,\n    Baz,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<'__expr> diesel::expression::AsExpression<diesel::sql_type::Integer>
     for &'__expr Foo {
         type Expression = diesel::internal::derives::as_expression::Bound<

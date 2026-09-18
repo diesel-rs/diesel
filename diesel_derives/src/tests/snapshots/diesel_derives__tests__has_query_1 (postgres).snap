@@ -5,7 +5,7 @@ info:
   input: "#[derive(HasQuery)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<__DB: diesel::backend::Backend> diesel::HasQuery<__DB> for User {
         type BaseQuery = <users::table as diesel::query_builder::AsQuery>::Query;
         fn base_query() -> Self::BaseQuery {
@@ -14,7 +14,7 @@ const _: () = {
     }
 };
 const _: () = {
-    use diesel;
+    use ::diesel;
     use diesel::expression::Selectable;
     impl<__DB: diesel::backend::Backend> Selectable<__DB> for User {
         type SelectExpression = (users::r#id, users::r#name);
@@ -38,7 +38,7 @@ const _: () = {
 
 };
 const _: () = {
-    use diesel;
+    use ::diesel;
     use diesel::row::{Row as _, Field as _};
     impl<
         __DB: diesel::backend::Backend,

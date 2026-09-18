@@ -5,7 +5,7 @@ info:
   input: "#[derive(QueryableByName)]\npub struct UserCount {\n    #[diesel(sql_type = diesel::sql_types::BigInt)]\n    pub value: i16,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<__DB: diesel::backend::Backend> diesel::deserialize::QueryableByName<__DB>
     for UserCount
     where
