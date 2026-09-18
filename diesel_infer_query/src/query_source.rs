@@ -30,7 +30,7 @@ pub(crate) enum JoinKind {
 }
 
 /// Information about a specific join
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Join {
     /// To which other query source the current source is joined
     ///
@@ -50,7 +50,7 @@ pub(crate) struct Join {
 ///
 // Possibly that needs to be an enum later
 // to handle subqueries, VALUES clauses, etc
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct QuerySource<'a> {
     /// The schema of the query source
     pub(crate) schema: Option<&'a str>,
@@ -172,6 +172,15 @@ impl<'a> QuerySource<'a> {
                 Self::fill_from_table_with_joins(out, table_with_joins)?;
                 Ok(())
             }
+            sqlparser::ast::TableFactor::Derived { lateral: false,  alias: Some(alias), sample: None, .. } => {
+                out.insert(&alias.name.value, QuerySource {
+                    schema: None,
+                    name: &alias.name.value,
+                    alias: Some(&alias.name.value),
+                    join: None
+                });
+                Ok(())
+            },
 
             s => Err(Error::UnsupportedSql {
                 msg: format!("Unsupported query source: `{s}`"),

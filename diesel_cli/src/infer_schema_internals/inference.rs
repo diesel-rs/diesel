@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use diesel::result::Error::NotFound;
+use diesel_infer_query::IsNull;
 
 use super::table_data::*;
 use super::{SchemaResolverImpl, data_structures::*};
@@ -398,8 +399,10 @@ pub fn load_view_data(
                             .zip(data.infer_nullability(resolver)?)
                         {
                             tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
-                            if let Some(is_nullable) = is_nullable {
-                                column_data.ty.is_nullable = is_nullable;
+                            match is_nullable {
+                                IsNull::IsNullable => column_data.ty.is_nullable = true,
+                                IsNull::NotNullable => column_data.ty.is_nullable = false,
+                                IsNull::Unknown => {}
                             }
                         }
                     } else {

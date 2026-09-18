@@ -1,0 +1,171 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS WITH source AS (SELECT a, b FROM table1 WHERE c > 1), intermediate AS (SELECT a + b AS one, a, b, count(*) as c FROM source) SELECT t1.col1, s.a, s.b, count(*), s.one, s.c FROM users t1 INNER JOIN intermediate s ON t1.id = s.a GROUP BY t1.col1, s.b"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "col1",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "users",
+                field_name: "col1",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "a",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "intermediate",
+                field_name: "a",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "b",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "intermediate",
+                field_name: "b",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Function {
+                name: "count",
+                schema: None,
+                arguments: [
+                    Unknown,
+                ],
+            },
+        },
+        SelectField {
+            ident: Some(
+                "one",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "intermediate",
+                field_name: "one",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "c",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: "intermediate",
+                field_name: "c",
+                via_left_join: false,
+            },
+        },
+    ],
+    subqueries: [
+        (
+            "source",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "table1",
+                            field_name: "a",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "table1",
+                            field_name: "b",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+        (
+            "intermediate",
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "one",
+                        ),
+                        kind: BinaryOp {
+                            left: Field {
+                                schema: None,
+                                query_source: "source",
+                                field_name: "a",
+                                via_left_join: false,
+                            },
+                            right: Field {
+                                schema: None,
+                                query_source: "source",
+                                field_name: "b",
+                                via_left_join: false,
+                            },
+                            op: "+",
+                            statically_not_null: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "a",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "source",
+                            field_name: "a",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "b",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: "source",
+                            field_name: "b",
+                            via_left_join: false,
+                        },
+                    },
+                    SelectField {
+                        ident: Some(
+                            "c",
+                        ),
+                        kind: Function {
+                            name: "count",
+                            schema: None,
+                            arguments: [
+                                Wildcard {
+                                    schema: None,
+                                    relation: "source",
+                                    is_left_joined: false,
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        ),
+    ],
+}

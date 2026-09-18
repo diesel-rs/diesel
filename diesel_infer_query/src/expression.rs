@@ -219,9 +219,85 @@ pub(crate) fn infer_expr(
                 else_clause,
             })
         }
+        Expr::InList {
+            expr,
+            list,
+            negated,
+        } => Ok(Expression::In {
+            left: Box::new(infer_expr(expr, query_source_lookup)?),
+            negated: *negated,
+            list: list
+                .iter()
+                .map(|e| infer_expr(e, query_source_lookup))
+                .collect::<Result<Vec<_>, _>>()?,
+        }),
+        Expr::Nested(n) => infer_expr(n, query_source_lookup)
+            .map(Box::new)
+            .map(Expression::Grouped),
+        Expr::Subquery(query) => {
+            let results = crate::select::parse_query(query, Some(query_source_lookup))?;
+            Ok(Expression::Subquery { selection: results })
+        }
+        Expr::InSubquery {
+            expr,
+            subquery,
+            negated,
+        } => {
+            let results = crate::select::parse_query(subquery, Some(query_source_lookup))?;
+            Ok(Expression::InSubQuery {
+                left: Box::new(infer_expr(expr, query_source_lookup)?),
+                negated: *negated,
+                subquery: results,
+            })
+        }
         // other kinds of expressions still need to be supported
-        _e => {
-            dbg!(_e);
+        Expr::CompoundFieldAccess { .. }
+        | Expr::JsonAccess { .. }
+        | Expr::IsFalse(..)
+        | Expr::IsNotFalse(..)
+        | Expr::IsTrue(..)
+        | Expr::IsNotTrue(..)
+        | Expr::IsUnknown(..)
+        | Expr::IsNotUnknown(..)
+        | Expr::IsNormalized { .. }
+        | Expr::InUnnest { .. }
+        | Expr::Like { .. }
+        | Expr::ILike { .. }
+        | Expr::SimilarTo { .. }
+        | Expr::AnyOp { .. }
+        | Expr::AllOp { .. }
+        | Expr::UnaryOp { .. }
+        | Expr::Convert { .. }
+        | Expr::AtTimeZone { .. }
+        | Expr::Extract { .. }
+        | Expr::Ceil { .. }
+        | Expr::Floor { .. }
+        | Expr::Position { .. }
+        | Expr::Substring { .. }
+        | Expr::Trim { .. }
+        | Expr::Overlay { .. }
+        | Expr::Collate { .. }
+        | Expr::Prefixed { .. }
+        | Expr::TypedString(..)
+        | Expr::Exists { .. }
+        | Expr::GroupingSets(..)
+        | Expr::Cube(..)
+        | Expr::Rollup(..)
+        | Expr::Tuple(..)
+        | Expr::Struct { .. }
+        | Expr::Named { .. }
+        | Expr::Dictionary(..)
+        | Expr::Map(..)
+        | Expr::Array(..)
+        | Expr::Interval(..)
+        | Expr::MatchAgainst { .. }
+        | Expr::Wildcard(..)
+        | Expr::QualifiedWildcard(..)
+        | Expr::OuterJoin(..)
+        | Expr::Prior(..)
+        | Expr::Lambda(..)
+        | Expr::MemberOf(..) => {
+            dbg!(expr);
             Ok(Expression::Unknown)
         }
     }

@@ -1,10 +1,11 @@
 use super::SchemaResolver;
 use super::select::SelectField;
-use super::select::infer_from_select;
+use crate::IsNull;
 use crate::error::Error;
 use crate::error::Result;
+use crate::resolver::CombinedResolver;
 use crate::select::Expression;
-use sqlparser::ast::CreateView;
+use sqlparser::ast::{CreateView, Query};
 use sqlparser::parser::ParserOptions;
 
 /// An opaque representation of information
@@ -14,6 +15,7 @@ use sqlparser::parser::ParserOptions;
 #[derive(Debug, PartialEq)]
 pub struct ViewData {
     pub(crate) fields: Vec<SelectField>,
+    pub(crate) subqueries: Vec<(String, SubQuery)>,
 }
 
 impl ViewData {
@@ -35,13 +37,12 @@ impl ViewData {
     /// This method accepts a generic [`SchemaResolver`]
     /// to query information about relations used in this
     /// view definition
-    pub fn infer_nullability(
-        &self,
-        resolver: &mut dyn SchemaResolver,
-    ) -> Result<Vec<Option<bool>>> {
+    pub fn infer_nullability(&self, resolver: &mut dyn SchemaResolver) -> Result<Vec<IsNull>> {
+        let mut resolver = CombinedResolver::new(&self.subqueries, resolver)?;
+
         self.fields
             .iter()
-            .map(|f| f.infer_nullability(resolver))
+            .map(|f| f.infer_nullability(&mut resolver))
             .collect()
     }
 
@@ -49,6 +50,7 @@ impl ViewData {
     ///
     /// This needs to be called before any other operation is performed with this view definition
     pub fn resolve_references(&mut self, resolver: &mut dyn SchemaResolver) -> Result<()> {
+        let mut resolver = CombinedResolver::new(&self.subqueries, resolver)?;
         let fields = std::mem::take(&mut self.fields);
         self.fields.reserve(fields.len());
         for f in fields {
@@ -67,7 +69,7 @@ impl ViewData {
                         kind: Expression::Field {
                             schema: schema.clone(),
                             query_source: relation.clone(),
-                            field_name: f.name().to_owned(),
+                            field_name: f.name().ok_or(Error::UnnamedField)?.to_owned(),
                             via_left_join: *is_left_joined,
                         },
                     });
@@ -102,14 +104,89 @@ pub fn parse_view_def(definition: &str) -> Result<ViewData> {
             });
         }
     };
-    let result = match &*select.body {
-        sqlparser::ast::SetExpr::Select(select) => infer_from_select(select),
-        // we likely want to support more complex queries here as well (UNION, CTE, etc)
-        s => {
+    let subqueries = collect_subqueries(&select)?;
+    let results = crate::select::parse_query(&select, None)?;
+    Ok(ViewData {
+        fields: results,
+        subqueries,
+    })
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct SubQuery {
+    fields: Vec<SelectField>,
+}
+
+impl SubQuery {
+    pub(crate) fn fields(&self) -> &[SelectField] {
+        &self.fields
+    }
+}
+
+fn collect_subqueries(query: &Query) -> Result<Vec<(String, SubQuery)>> {
+    let mut subqueries = if let Some(with) = &query.with {
+        with.cte_tables
+            .iter()
+            .flat_map(|t| match extract_cte_subqueries(t) {
+                Ok(o) => Box::new(o.into_iter().map(Ok)) as Box<dyn Iterator<Item = _>>,
+                Err(e) => Box::new(std::iter::once(Err(e))),
+            })
+            .collect::<Result<Vec<_>>>()?
+    } else {
+        Vec::new()
+    };
+    if let sqlparser::ast::SetExpr::Select(select_expr) = &*query.body {
+        for s in &select_expr.from {
+            extract_subqueries_from_table_factor(&s.relation, &mut subqueries)?;
+            for join in &s.joins {
+                extract_subqueries_from_table_factor(&join.relation, &mut subqueries)?;
+            }
+        }
+    }
+
+    Ok(subqueries)
+}
+
+fn extract_cte_subqueries(t: &sqlparser::ast::Cte) -> Result<Vec<(String, SubQuery)>, Error> {
+    let name = t.alias.name.value.as_str();
+    let mut subqueries = collect_subqueries(&t.query)?;
+
+    let mut fields = crate::select::parse_query(&t.query, None)?;
+    if !t.alias.columns.is_empty() {
+        if fields.len() == t.alias.columns.len() {
+            fields.iter_mut().zip(&t.alias.columns).for_each(|(f, a)| {
+                f.ident = Some(a.name.value.clone());
+            });
+        } else {
             return Err(Error::UnsupportedSql {
-                msg: format!("Unsupported query kind: `{s}`"),
+                msg: format!(
+                    "Not matching field count for a CTE. \
+                                 Got {} fields, but expected {} fields",
+                    fields.len(),
+                    t.alias.columns.len()
+                ),
             });
         }
-    };
-    Ok(ViewData { fields: result? })
+    }
+
+    subqueries.push((name.to_owned(), SubQuery { fields }));
+    Ok(subqueries)
+}
+
+fn extract_subqueries_from_table_factor(
+    s: &sqlparser::ast::TableFactor,
+    subqueries: &mut Vec<(String, SubQuery)>,
+) -> Result<()> {
+    if let sqlparser::ast::TableFactor::Derived {
+        lateral: false,
+        subquery,
+        alias: Some(alias),
+        sample: None,
+    } = s
+    {
+        let fields = crate::select::parse_query(subquery, None)?;
+        subqueries.push((alias.name.value.clone(), SubQuery { fields }));
+    }
+
+    Ok(())
 }
