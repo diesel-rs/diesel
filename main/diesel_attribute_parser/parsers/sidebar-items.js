@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PostgresType"],"struct":["BelongsTo","MariadbType","MysqlType","SqliteType"]};

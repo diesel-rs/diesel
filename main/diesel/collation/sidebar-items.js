@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Binary","C","Custom","NoCase","Posix","RTrim"],"trait":["Collation"]};

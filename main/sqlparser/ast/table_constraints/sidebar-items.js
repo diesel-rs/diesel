@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TableConstraint"],"struct":["CheckConstraint","ConstraintUsingIndex","ForeignKeyConstraint","FullTextOrSpatialConstraint","IndexConstraint","PrimaryKeyConstraint","UniqueConstraint"]};

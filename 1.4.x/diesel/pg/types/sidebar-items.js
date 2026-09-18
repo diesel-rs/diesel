@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["sql_types","PostgreSQL specific SQL types"]]});
