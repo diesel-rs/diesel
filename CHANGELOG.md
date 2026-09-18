@@ -54,6 +54,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
+* `diesel_dynamic_schema` runtime columns can now be used in `GROUP BY` and `HAVING` clauses, including alongside aggregates.
 
 ### Fixed
 
