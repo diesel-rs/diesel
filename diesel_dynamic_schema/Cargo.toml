@@ -18,6 +18,13 @@ version = "~2.3.0"
 path = "../diesel/"
 default-features = false
 
+[dependencies]
+thiserror = { version = "2.0.0", default-features = false }
+chrono = { version = "0.4.20", optional = true, default-features = false }
+bigdecimal = { version = ">=0.0.13, < 0.5.0", optional = true }
+uuid = { version = ">=0.7.0, <2.0.0", optional = true }
+serde_json = { version = ">=0.8.0, <2.0", optional = true, default-features = false, features = ["alloc"] }
+
 [dev-dependencies]
 dotenvy = "0.15"
 
@@ -54,6 +61,10 @@ sqlite = ["diesel/sqlite"]
 sqlite-no-std = ["diesel/sqlite-no-std"]
 mysql = ["diesel/mysql_backend"]
 mariadb = ["diesel/mariadb_backend"]
+chrono = ["dep:chrono", "diesel/chrono"]
+numeric = ["dep:bigdecimal", "diesel/numeric"]
+uuid = ["dep:uuid", "diesel/uuid"]
+serde_json = ["dep:serde_json", "diesel/serde_json"]
 
 [lints]
 workspace = true

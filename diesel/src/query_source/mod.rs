@@ -40,6 +40,26 @@ pub trait QuerySource {
     /// select clause was explicitly specified. This should always be a tuple of
     /// all the desired columns, not `star`
     fn default_selection(&self) -> Self::DefaultSelection;
+
+    /// Static query sources return `false`, while dynamic sources override this.
+    #[doc(hidden)]
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool {
+        let _ = (schema, table);
+        false
+    }
+}
+
+/// Object-safe [`QuerySource::contains_runtime_table`] for the
+/// [`AstPass`](crate::query_builder::AstPass) query-source stack.
+#[doc(hidden)]
+pub trait DynQuerySource {
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool;
+}
+
+impl<QS: QuerySource> DynQuerySource for QS {
+    fn contains_runtime_table(&self, schema: Option<&str>, table: &str) -> bool {
+        <QS as QuerySource>::contains_runtime_table(self, schema, table)
+    }
 }
 
 /// A column on a database table. Types which implement this trait should have

@@ -1,6 +1,6 @@
 use super::{AstPass, QueryFragment, QueryId};
 use crate::backend::Backend;
-use crate::query_source::AppearsInFromClause;
+use crate::query_source::{AppearsInFromClause, DynQuerySource};
 use crate::{QueryResult, QuerySource};
 
 /// This type represents a not existing from clause
@@ -138,4 +138,33 @@ where
     QS2: AppearsInFromClause<QS1>,
 {
     type Count = <QS2 as AppearsInFromClause<QS1>>::Count;
+}
+
+/// Exposes the runtime-membership source for a select's from clause.
+#[doc(hidden)]
+pub trait FromClauseMembership {
+    fn dyn_query_source(&self) -> &dyn DynQuerySource;
+}
+
+impl<F: QuerySource> FromClauseMembership for FromClause<F> {
+    fn dyn_query_source(&self) -> &dyn DynQuerySource {
+        &self.source
+    }
+}
+
+/// Rejects dynamic columns in a root `NoFromClause`.
+struct NullQuerySource;
+
+impl DynQuerySource for NullQuerySource {
+    fn contains_runtime_table(&self, _schema: Option<&str>, _table: &str) -> bool {
+        false
+    }
+}
+
+static NULL_QUERY_SOURCE: NullQuerySource = NullQuerySource;
+
+impl FromClauseMembership for NoFromClause {
+    fn dyn_query_source(&self) -> &dyn DynQuerySource {
+        &NULL_QUERY_SOURCE
+    }
 }
