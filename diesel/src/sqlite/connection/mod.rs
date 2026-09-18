@@ -3003,6 +3003,41 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    fn use_conn_after_blob_close() {
+        // Explicit close previously let `Drop` close the native handle a second time.
+        // Reusing the connection verifies that the handle is closed exactly once.
+        table! {
+            blobs {
+                id -> Integer,
+                data -> Blob,
+            }
+        }
+
+        let conn = &mut connection();
+
+        crate::sql_query("CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(
+            crate::sql_query("INSERT INTO blobs (data) VALUES ('abc')")
+                .execute(conn)
+                .unwrap(),
+            1
+        );
+
+        let data = conn.get_read_only_blob(blobs::data, 1).unwrap();
+        data.close().unwrap();
+
+        assert_eq!(
+            crate::sql_query("INSERT INTO blobs (data) VALUES ('def')")
+                .execute(conn)
+                .unwrap(),
+            1
+        );
+        assert_eq!(blobs::table.count().get_result::<i64>(conn).unwrap(), 2);
+    }
+
+    #[diesel_test_helper::test]
     fn blob_transaction() {
         table! {
             blobs {

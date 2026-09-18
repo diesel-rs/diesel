@@ -57,8 +57,11 @@ impl SqliteReadOnlyBlob<'_> {
     ///
     /// > The BLOB handle is closed unconditionally. Even if this routine returns an error code,
     /// > the handle is still closed.
-    pub fn close(mut self) -> Result<(), crate::result::Error> {
-        self.close_inner()
+    pub fn close(self) -> Result<(), crate::result::Error> {
+        // SQLite closes the native handle even when close returns an error, so suppress `Drop`
+        // to prevent it from closing the same handle again.
+        let mut this = core::mem::ManuallyDrop::new(self);
+        this.close_inner()
     }
 
     fn close_inner(&mut self) -> Result<(), crate::result::Error> {
