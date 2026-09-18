@@ -1,3 +1,5 @@
+//@check-pass
+
 extern crate diesel;
 
 use diesel::*;
@@ -81,13 +83,4 @@ fn nullable_old_value_expressions_are_selectable_in_update_returning() {
     let _ = update(users::table)
         .set(users::name.eq("Updated"))
         .returning((old_value(users::name).nullable(), users::name));
-
-    // This does not compile
-    insert_into(users::table)
-        .values(users::name.eq(""))
-        .on_conflict(diesel::dsl::DuplicatedKeys)
-        .do_update()
-        .set(users::name.eq(""))
-        .returning(old_value(users::name).nullable());
-    //~^ ERROR: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
 }

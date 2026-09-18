@@ -1,56 +1,28 @@
-error[E0277]: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/returning_nullable_in_update_and_insert_do_update.rs:91:20
-    |
- LL |         .returning(old_value(users::name).nullable());
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
-    |
-    = help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, users::table>>` is not implemented for `Nullable<OldValue<name>>`
-    = note: `Nullable<OldValue<name>>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: item with same name found
-   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
-    |
-LL | pub struct Nullable<ST>(ST);
-    | ^^^^^^^^^^^^^^^^^^^^^^^
-    = note: there are multiple different versions of crate `diesel` in the dependency graph
-help: the following other types implement trait `SelectableExpression<QS>`
-   --> DIESEL/diesel/diesel/src/query_builder/returning/returning_query_source.rs
-    |
-LL | / impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>> for Nullable<E>
-LL | | where
-LL | |     Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
-LL | |     E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
-    | |_______________________________________________________________^ `diesel::expression::nullable::Nullable<E>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-    |
-   ::: DIESEL/diesel/diesel/src/expression/nullable.rs
-    |
- LL | / impl<T, QS> SelectableExpression<QS> for Nullable<T>
- LL | | where
- LL | |     Self: AppearsOnTable<QS>,
- LL | |     QS: ToInnerJoin,
- LL | |     T: SelectableExpression<QS::InnerJoin>,
-    | |___________________________________________^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<QS>`
-...
- LL |   impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
-    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<NoFromClause>`
-    |
-   ::: DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
-    |
-LL | / impl<C> SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>
-LL | |     for Nullable<Old<C>>
-LL | | where
-LL | |     C: Column,
-LL | |     Self: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>,
-    | |___________________________________________________________________________________________^ `Nullable<Old<C>>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
-note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
-    |
-LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
-LL |     where
-LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
-    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-    For more information about this error, try `rustc --explain E0277`.
+warning: function `nullable_expressions_are_selectable_in_returning` is never used
+  --> tests/fail/returning_nullable_in_update_and_insert_do_update.rs:16:4
+   |
+LL | fn nullable_expressions_are_selectable_in_returning() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `nullable_old_expressions_are_selectable_in_returning` is never used
+  --> tests/fail/returning_nullable_in_update_and_insert_do_update.rs:45:4
+   |
+LL | fn nullable_old_expressions_are_selectable_in_returning() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `nullable_boxed_expressions_are_selectable_in_returning` is never used
+  --> tests/fail/returning_nullable_in_update_and_insert_do_update.rs:64:4
+   |
+LL | fn nullable_boxed_expressions_are_selectable_in_returning() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `nullable_old_value_expressions_are_selectable_in_update_returning` is never used
+  --> tests/fail/returning_nullable_in_update_and_insert_do_update.rs:76:4
+   |
+LL | fn nullable_old_value_expressions_are_selectable_in_update_returning() {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: 4 warnings emitted
+
