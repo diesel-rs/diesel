@@ -11,6 +11,7 @@ use self::primitives::{decimal_to_integer, f32_to_i64, f64_to_i64, narrow};
 use crate::deserialize::{self, FromSql};
 use crate::mysql_like::MysqlLikeBackend;
 use crate::mysql_like::NumericRepresentation;
+use crate::mysql_like::value::NonNegative;
 use crate::mysql_like::{MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -180,6 +181,64 @@ impl<DB: MysqlLikeBackend> FromSql<Unsigned<BigInt>, DB> for u64 {
     }
 }
 
+impl<DB: MysqlLikeBackend> ToSql<Unsigned<sql_types::Float>, DB> for NonNegative<f32> {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        out.write_f32::<NativeEndian>(self.0)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+impl<DB: MysqlLikeBackend> FromSql<Unsigned<sql_types::Float>, DB> for NonNegative<f32> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        // Precision loss beyond the mantissa is intended for a float column.
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => Ok(x as f32),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x as f32),
+            NumericRepresentation::Big(x) => Ok(x as f32),
+            NumericRepresentation::UnsignedBig(x) => Ok(x as f32),
+            NumericRepresentation::Float(x) => Ok(x),
+            // there is currently no way to do this in a better way
+            #[allow(clippy::cast_possible_truncation)]
+            NumericRepresentation::Double(x) => Ok(x as f32),
+            NumericRepresentation::Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
+        }
+        .map(NonNegative)
+    }
+}
+
+impl<DB: MysqlLikeBackend> ToSql<Unsigned<sql_types::Double>, DB> for NonNegative<f64> {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        out.write_f64::<NativeEndian>(self.0)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+impl<DB: MysqlLikeBackend> FromSql<Unsigned<sql_types::Double>, DB> for NonNegative<f64> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+        // Precision loss beyond the mantissa is intended for a double column.
+        match value.numeric_value()? {
+            NumericRepresentation::Tiny(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedTiny(x) => Ok(x.into()),
+            NumericRepresentation::Small(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedSmall(x) => Ok(x.into()),
+            NumericRepresentation::Medium(x) => Ok(x.into()),
+            NumericRepresentation::UnsignedMedium(x) => Ok(x.into()),
+            NumericRepresentation::Big(x) => Ok(x as f64),
+            NumericRepresentation::UnsignedBig(x) => Ok(x as f64),
+            NumericRepresentation::Float(x) => Ok(x.into()),
+            NumericRepresentation::Double(x) => Ok(x),
+            NumericRepresentation::Decimal(bytes) => Ok(str::from_utf8(bytes)?.parse()?),
+        }
+        .map(NonNegative)
+    }
+}
+
 impl<DB: MysqlLikeBackend> ToSql<Bool, DB> for bool {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let int_value = i32::from(*self);
@@ -254,6 +313,18 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<Integer>> for DB {
 impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLongLong
+    }
+}
+
+impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<sql_types::Float>> for DB {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
+        MysqlType::Float
+    }
+}
+
+impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<sql_types::Double>> for DB {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
+        MysqlType::Double
     }
 }
 

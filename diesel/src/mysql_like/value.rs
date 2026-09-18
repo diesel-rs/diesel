@@ -1,9 +1,13 @@
+use diesel_derives::AsExpression;
+
 use super::MysqlType;
 use super::types::date_and_time::MysqlTime;
 
-use crate::deserialize;
+use crate::deserialize::{self, FromSqlRow};
+use crate::sql_types::{Double, Float, Numeric, Unsigned};
 use core::error::Error;
 use core::mem::MaybeUninit;
+use core::ops::Deref;
 
 /// Raw mysql value as received from the database
 #[derive(Clone, Debug)]
@@ -347,4 +351,62 @@ fn numeric_value_keeps_signedness() {
             .numeric_value(),
         Ok(N::UnsignedBig(u64::MAX))
     ));
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Unsigned<Float>)]
+#[diesel(sql_type = Unsigned<Double>)]
+#[diesel(sql_type = Unsigned<Numeric>)]
+/// Wrapper type, for Unsigned<ST> in Mariadb and Mysql
+pub struct NonNegative<T>(pub T);
+
+impl<T> Deref for NonNegative<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[cfg(all(test, any(feature = "mysql", feature = "mariadb")))]
+mod tests {
+    use super::NonNegative;
+    use crate::query_dsl::QueryDsl;
+    use crate::query_dsl::RunQueryDsl;
+    use crate::*;
+
+    diesel::table! {
+        test_table(a){
+            a -> Unsigned<Float>,
+            b -> Unsigned<Float>,
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn fun_with_unsigned() {
+        use self::test_table::dsl::*;
+
+        let conn = &mut crate::test_helpers::connection();
+
+        crate::sql_query(
+            "CREATE TEMPORARY TABLE test_table (
+                    a FLOAT UNSIGNED NOT NULL,
+                    b FLOAT UNSIGNED NOT NULL
+            )",
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(test_table)
+            .values((a.eq(NonNegative(3.0f32)), b.eq(NonNegative(5.0f32))))
+            .execute(conn)
+            .unwrap();
+
+        let res = test_table
+            .select(a - b)
+            .get_result::<NonNegative<f32>>(conn)
+            .unwrap();
+
+        assert_eq!(res, NonNegative(-2.0))
+    }
 }
