@@ -5,6 +5,7 @@
 //! This module holds the items needed to type-check `RETURNING` clauses that are not specific
 //! to a particular backend.
 
+use crate::expression::nullable::Nullable;
 use crate::expression::{AppearsOnTable, BoxableExpression, Expression, SelectableExpression};
 use crate::query_source::{
     AppearsInFromClause, Never, Once, QueryRelation, QuerySource, TableNotEqual,
@@ -149,6 +150,13 @@ impl<'a, QS, ST, DB, GB, IsAggregate, StmtKind> AppearsOnTable<ReturningQuerySou
     for Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>
 where
     Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>: Expression,
+{
+}
+
+impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>> for Nullable<E>
+where
+    Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
+    E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
 {
 }
 

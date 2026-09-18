@@ -126,34 +126,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
   
      
-error[E0277]: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
-   --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:60:20
-    |
- LL |         .returning(old_value(users::name).nullable())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Table` is not implemented for `ReturningQuerySource<..., ...>`
-    |          |
-    |          required by a bound introduced by this call
-    |
-    = help: the following other types implement trait `Table`:
-              Only<S>
-              Tablesample<S, TSM>
-              pg::metadata_lookup::pg_namespace::table
-              pg::metadata_lookup::pg_type::table
-              users::table
-    = note: required for `ReturningQuerySource<..., ...>` to implement `query_source::joins::ToInnerJoin`
-    = note: required for `Nullable<OldValue<name>>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
-note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
-    |
-LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
-LL |     where
-LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
-    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
- 
-    
-error[E0277]: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+error[E0277]: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:60:20
     |
  LL |         .returning(old_value(users::name).nullable())
@@ -161,18 +134,43 @@ error[E0277]: cannot select `diesel::mariadb::returning::old_impl::OldValue<colu
     |          |
     |          required by a bound introduced by this call
     |
-    = note: `diesel::mariadb::returning::old_impl::OldValue<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, _>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-      but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
-   --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+    = help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, users::table>>` is not implemented for `Nullable<OldValue<name>>`
+    = note: `Nullable<OldValue<name>>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: item with same name found
+   --> DIESEL/diesel/diesel/src/sql_types/mod.rs
     |
-LL | / impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for OldValue<C>
+LL | pub struct Nullable<ST>(ST);
+    | ^^^^^^^^^^^^^^^^^^^^^^^
+    = note: there are multiple different versions of crate `diesel` in the dependency graph
+help: the following other types implement trait `SelectableExpression<QS>`
+   --> DIESEL/diesel/diesel/src/query_builder/returning/returning_query_source.rs
+    |
+LL | / impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>> for Nullable<E>
+LL | | where
+LL | |     Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
+LL | |     E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
+    | |_______________________________________________________________^ `diesel::expression::nullable::Nullable<E>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+    |
+   ::: DIESEL/diesel/diesel/src/expression/nullable.rs
+    |
+ LL | / impl<T, QS> SelectableExpression<QS> for Nullable<T>
+ LL | | where
+ LL | |     Self: AppearsOnTable<QS>,
+ LL | |     QS: ToInnerJoin,
+ LL | |     T: SelectableExpression<QS::InnerJoin>,
+    | |___________________________________________^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<QS>`
+...
+ LL |   impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
+    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<NoFromClause>`
+    |
+   ::: DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
+    |
+LL | / impl<C> SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>
+LL | |     for Nullable<Old<C>>
 LL | | where
 LL | |     C: Column,
-LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
-    | |_____________________________________________________________________^
-    = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
-    = note: required for `Nullable<OldValue<name>>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+LL | |     Self: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>,
+    | |___________________________________________________________________________________________^ `Nullable<Old<C>>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -184,26 +182,51 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
-error[E0277]: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
-    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:63:39
+error[E0277]: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
+    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:62:39
      |
   LL |         .get_result::<Option<String>>(&mut connection)
      |          ----------                   ^^^^^^^^^^^^^^^ unsatisfied trait bound
      |          |
      |          required by a bound introduced by this call
      |
-     = note: `diesel::mariadb::returning::old_impl::OldValue<columns::name>` is no valid selection for `ReturningQuerySource<..., ...>`
-help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, _>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-      but trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, _>>` is implemented for it
-    --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+     = help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::InsertStmtWithOnConflictDoUpdate, users::table>>` is not implemented for `Nullable<OldValue<name>>`
+     = note: `Nullable<OldValue<name>>` is no valid selection for `ReturningQuerySource<..., ...>`
+help: item with same name found
+    --> DIESEL/diesel/diesel/src/sql_types/mod.rs
      |
- LL | / impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for OldValue<C>
+ LL | pub struct Nullable<ST>(ST);
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+     = note: there are multiple different versions of crate `diesel` in the dependency graph
+help: the following other types implement trait `SelectableExpression<QS>`
+    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_query_source.rs
+     |
+ LL | / impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>> for Nullabl...
+ LL | | where
+ LL | |     Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
+ LL | |     E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
+     | |_______________________________________________________________^ `diesel::expression::nullable::Nullable<E>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+     |
+    ::: DIESEL/diesel/diesel/src/expression/nullable.rs
+     |
+  LL | / impl<T, QS> SelectableExpression<QS> for Nullable<T>
+  LL | | where
+  LL | |     Self: AppearsOnTable<QS>,
+  LL | |     QS: ToInnerJoin,
+  LL | |     T: SelectableExpression<QS::InnerJoin>,
+     | |___________________________________________^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<QS>`
+...
+  LL |   impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<NoFromClause>`
+     |
+    ::: DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
+     |
+ LL | / impl<C> SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>
+ LL | |     for Nullable<Old<C>>
  LL | | where
  LL | |     C: Column,
- LL | |     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
-     | |_____________________________________________________________________^
-     = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
-     = note: required for `Nullable<OldValue<name>>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+ LL | |     Self: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>,
+     | |___________________________________________________________________________________________^ `Nullable<Old<C>>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, Option<std::string::String>>`
 note: required by a bound in `get_result`

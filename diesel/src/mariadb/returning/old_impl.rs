@@ -1,10 +1,9 @@
 //! `RETURNING old.col` support for PostgreSQL 18 and later.
 
-use crate::backend::Backend;
 use crate::expression::{
     AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
-use crate::mariadb;
+use crate::mariadb::Mariadb;
 use crate::query_builder::returning::{OldIdent, ReturningQuerySource, UpdateStmt};
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_source::{AppearsInFromClause, Column};
@@ -14,7 +13,7 @@ use crate::result::QueryResult;
 /// clause of a Mariadb `UPDATE`  statement.
 ///
 /// This is the type returned by [`old_value()`](old_value()).
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct OldValue<C> {
     _column: C,
 }
@@ -58,14 +57,7 @@ impl<C> OldValue<C> {
 /// #     use diesel::mariadb::returning::old_value;
 /// #     let connection = &mut establish_connection();
 /// #     // `RETURNING OLD_VALUE(col)` requires Mariadb 13.0+
-/// #     let mariadb_version = diesel::dsl::sql::<diesel::sql_types::VarChar>(
-/// #         "SELECT VERSION()",
-/// #     ).get_result::<String>(connection).unwrap()
-/// #     .split('.')
-/// #     .next().unwrap()
-/// #     .parse::<u32>()
-/// #     .unwrap();
-/// #     if mariadb_version < 13 { return; }
+/// #     if !mariadb_server_supports_update_returning(connection) { return; }
 /// let was_and_now = diesel::update(users.find(1))
 ///     .set(name.eq("Updated"))
 ///     .returning((old_value(name), name))
@@ -77,12 +69,6 @@ impl<C> OldValue<C> {
 /// ```
 pub fn old_value<C: Column>(col: C) -> OldValue<C> {
     OldValue::new(col)
-}
-
-impl<C> QueryId for OldValue<C> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl<C> Expression for OldValue<C>
@@ -124,22 +110,11 @@ where
 {
 }
 
-impl<C, DB> QueryFragment<DB> for OldValue<C>
+impl<C> QueryFragment<Mariadb> for OldValue<C>
 where
-    DB: Backend,
-    Self: QueryFragment<DB, DB::ReturningClause>,
-{
-    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        <Self as QueryFragment<DB, DB::ReturningClause>>::walk_ast(self, pass)
-    }
-}
-
-impl<C, DB> QueryFragment<DB, mariadb::backend::MariadbReturningClause> for OldValue<C>
-where
-    DB: Backend<ReturningClause = mariadb::backend::MariadbReturningClause>,
     C: Column,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {
         out.push_sql("OLD_VALUE(");
         out.push_identifier(C::NAME)?;
         out.push_sql(")");

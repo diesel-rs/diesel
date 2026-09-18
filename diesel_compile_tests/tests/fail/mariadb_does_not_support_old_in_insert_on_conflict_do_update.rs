@@ -58,10 +58,9 @@ fn main() {
         .do_update()
         .set(users::name.eq(""))
         .returning(old_value(users::name).nullable())
-        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
-        //~| ERROR: the trait bound `ReturningQuerySource<..., ...>: Table` is not satisfied
+        //~^ ERROR: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
         .get_result::<Option<String>>(&mut connection)
-        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
         .unwrap();
 
     // Sanity check: returning the column itself works
