@@ -56,7 +56,7 @@ pub(super) use self::result::PgResult;
 ///
 /// This loading mode allows users to perform hold more than one iterator at once using
 /// the same connection:
-/// ```rust
+/// ```rust,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
