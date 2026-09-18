@@ -1,0 +1,19 @@
+error[E0277]: the trait bound `OnlyAggregate: SqliteWindowFunction<i32>` is not satisfied
+  --> tests/fail/sqlite_window_function_registration_requires_window_trait.rs:34:35
+   |
+LL |     my_win_utils::register_impl::<OnlyAggregate, _>(conn).unwrap();
+   |                                   ^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SqliteWindowFunction<i32>` is not implemented for `OnlyAggregate`
+  --> tests/fail/sqlite_window_function_registration_requires_window_trait.rs:16:1
+   |
+LL | struct OnlyAggregate {
+   | ^^^^^^^^^^^^^^^^^^^^
+   = note: implement `SqliteWindowFunction` in addition to `SqliteAggregateFunction` to register `OnlyAggregate` for a window function
+note: required by a bound in `register_impl`
+  --> tests/fail/sqlite_window_function_registration_requires_window_trait.rs:8:1
+   |
+ LL | #[declare_sql_function]
+   | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `register_impl`
+   = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.
