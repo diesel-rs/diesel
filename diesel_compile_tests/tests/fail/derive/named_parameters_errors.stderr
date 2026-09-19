@@ -1,0 +1,13 @@
+error: expected `=`, the correct format is `generate_return_type_helpers = true/false, named_parameters = true/false`
+ --> tests/fail/derive/named_parameters_errors.rs:8:5
+  |
+LL |     #[declare_sql_function(named_parameters)]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: cannot find attribute `named_parameters` in this scope
+  --> tests/fail/derive/named_parameters_errors.rs:20:11
+   |
+LL |         #[named_parameters]
+   |           ^^^^^^^^^^^^^^^^

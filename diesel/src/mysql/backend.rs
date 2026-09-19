@@ -85,3 +85,15 @@ impl MapErrorNumber for Mysql {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supports_fn_named_parameters() {
+        const {
+            assert!(!Mysql::SUPPORTS_FN_NAMED_PARAMETERS);
+        }
+    }
+}

@@ -21,6 +21,9 @@ impl Backend for Mariadb {
     type QueryBuilder = MariadbQueryBuilder;
     type RawValue<'a> = MariadbValue<'a>;
     type BindCollector<'a> = RawBytesBindCollector<Self>;
+
+    // Todo: It looks like MariaDB is working on adding support for this: https://jira.mariadb.org/browse/MDEV-38329
+    const SUPPORTS_FN_NAMED_PARAMETERS: bool = false;
 }
 
 impl TypeMetadata for Mariadb {
@@ -94,6 +97,18 @@ impl MapErrorNumber for Mariadb {
             4025 => DatabaseErrorKind::CheckViolation,
             1213 => DatabaseErrorKind::SerializationFailure,
             _ => DatabaseErrorKind::Unknown,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supports_fn_named_parameters() {
+        const {
+            assert!(!Mariadb::SUPPORTS_FN_NAMED_PARAMETERS);
         }
     }
 }

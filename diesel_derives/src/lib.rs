@@ -1218,7 +1218,7 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 
 fn define_sql_function_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
-        .map(|input| sql_function::expand(vec![input], false, false))
+        .map(|input| sql_function::expand(vec![input], false, false, false))
         .unwrap_or_else(syn::Error::into_compile_error)
 }
 
@@ -1258,7 +1258,7 @@ pub fn sql_function_proc(input: TokenStream) -> TokenStream {
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 fn sql_function_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     syn::parse2(input)
-        .map(|i| sql_function::expand(vec![i], true, false))
+        .map(|i| sql_function::expand(vec![i], true, false, false))
         .unwrap_or_else(syn::Error::into_compile_error)
 }
 
@@ -2174,6 +2174,37 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// `return_type_helpers` will be generated, containing all return type helpers. For more
 /// information, refer to the `Helper types generation` section.
 ///
+/// # Using Named Notation
+///
+/// If the `named_parameters` attribute is set to `true`, the generated SQL query will use
+/// "named notation" when passing parameters to the SQL function. This is useful to allow changing
+/// the order of parameters without breaking the generated query. The parameter name(s) passed
+/// in the SQL query will be the same as the parameter names in the diesel function, so the diesel
+/// function parameter names must match the parameter names in the SQL function definition. If this
+/// attribute is not provided, `declare_sql_function` defaults to using positional notation.
+///
+/// Currently, this is only supported on Postgres. Providing this attribute will have no effect
+/// for other database backends.
+///
+/// ```no_run
+/// # extern crate diesel;
+/// # use diesel::*;
+/// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// use diesel::sql_types::Text;
+///
+/// #[declare_sql_function(named_parameters = true)]
+/// extern "SQL" {
+///     fn has_named_parameters(a: Text);
+/// }
+///
+/// # fn main() {
+/// select(has_named_parameters("text"));
+/// // This will generate the following SQL (binding "text" to the $1 placeholder)
+/// // SELECT has_named_parameters(a=>$1)
+/// # }
+/// ```
+///
 /// # Adding Doc Comments
 ///
 /// ```no_run
@@ -2217,6 +2248,9 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 ///   - Indicates that this is a variadic function, where `argument_count` is a
 ///     nonnegative integer representing the number of variadic arguments the
 ///     function accepts.
+/// - `#[named_parameters = true/false]`
+///   - Allows overriding the block-level `named_parameters` setting. Useful to opt individual
+///     functions in or out of using named notation for passing parameters to the SQL function.
 ///
 /// Functions can also be generic. Take the definition of `sum`, for example:
 ///
@@ -2688,7 +2722,7 @@ fn declare_sql_function_inner(
     attr: proc_macro2::TokenStream,
     input: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let attr = crate::sql_function::DeclareSqlFunctionArgs::parse_from_macro_input(attr);
+    let attr = syn::parse2::<crate::sql_function::DeclareSqlFunctionArgs>(attr);
 
     let result = syn::parse2::<ExternSqlBlock>(input.clone()).map(|res| {
         sql_function::expand(
@@ -2697,6 +2731,9 @@ fn declare_sql_function_inner(
             attr.as_ref()
                 .map(|attr| attr.generate_return_type_helpers)
                 .unwrap_or(true),
+            attr.as_ref()
+                .map(|attr| attr.named_parameters)
+                .unwrap_or(false),
         )
     });
 

@@ -102,3 +102,15 @@ impl sql_dialect::returning_clause::SupportsReturningClause for SqliteReturningC
 pub struct SqliteBatchUpdate;
 
 impl sql_dialect::batch_update_support::SupportsBatchUpdate for SqliteBatchUpdate {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supports_fn_named_parameters() {
+        const {
+            assert!(!Sqlite::SUPPORTS_FN_NAMED_PARAMETERS);
+        }
+    }
+}

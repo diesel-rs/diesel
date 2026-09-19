@@ -111,6 +111,12 @@ where
     ///
     /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
     type BindCollector<'a>: crate::query_builder::bind_collector::BindCollector<'a, Self> + 'a;
+
+    /// Whether this backend supports using named parameters when invoking SQL functions. Most
+    /// backend do not, but Postgres does, so this value is overridden in the `Pg` implementation
+    /// of this trait.
+    // Todo: Should this be a constant/type in `SqlDialect` instead?
+    const SUPPORTS_FN_NAMED_PARAMETERS: bool = false;
 }
 
 #[doc(hidden)]

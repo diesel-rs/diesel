@@ -63,6 +63,12 @@ pub(crate) mod lower {
                 if needs_comma {
                     out.push_sql(", ");
                 }
+                if <__DieselInternal as diesel::backend::Backend>::SUPPORTS_FN_NAMED_PARAMETERS
+                    && false
+                {
+                    out.push_sql(stringify!(input));
+                    out.push_sql("=>");
+                }
                 self.input.walk_ast(out.reborrow())?;
                 needs_comma = true;
             }
