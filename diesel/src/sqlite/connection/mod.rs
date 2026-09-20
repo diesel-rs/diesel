@@ -257,6 +257,8 @@ impl Connection for SqliteConnection {
     /// make sure to read the following notes:
     ///
     /// * The database is stored in memory by default.
+    /// * With `sqlite-wasm-rs` 0.6, enable its `wasm-bindgen` feature to use the
+    ///   built-in host functions, or provide your own.
     /// * Persistent VFS (Virtual File Systems) is optional,
     ///   see <https://github.com/Spxg/sqlite-wasm-rs> for details
     fn establish(database_url: &str) -> ConnectionResult<Self> {
