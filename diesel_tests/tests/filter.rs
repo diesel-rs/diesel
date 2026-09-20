@@ -762,7 +762,7 @@ fn filter_like_any() {
 
     // Empty pattern array: PostgreSQL returns FALSE for ALL values (including NULL).
     // An empty array has zero patterns to match, so the result is always FALSE.
-    insert_into(users::table)
+    insert_into(users)
         .values(&NewUser::new("Dave", Some("brown")))
         .execute(conn)
         .unwrap();
