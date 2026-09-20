@@ -399,6 +399,12 @@ pub struct Timestamp;
 /// For postgresql you should normally prefer [`Jsonb`](struct.Jsonb.html) instead,
 /// for the reasons discussed there.
 ///
+/// ### Float round trip
+///
+/// Without `serde_json`'s `float_roundtrip` feature, a written `f64` may read
+/// back as the neighbouring double. Cargo features are additive, so a
+/// downstream crate can enable it.
+///
 /// ### [`ToSql`] impls
 ///
 /// - [`serde_json::Value`]
@@ -455,6 +461,12 @@ pub struct Json;
 ///
 /// [pg-adv]: https://www.postgresql.org/docs/current/static/datatype-json.html
 /// [sqlite-adv]: https://sqlite.org/draft/jsonb.html
+///
+/// ### Float round trip
+///
+/// Without `serde_json`'s `float_roundtrip` feature, a written `f64` may read
+/// back as the neighbouring double. Cargo features are additive, so a
+/// downstream crate can enable it.
 ///
 /// ### [`ToSql`] impls
 ///

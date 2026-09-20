@@ -575,8 +575,11 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             .and_then(|c| unsafe { c.as_ref() })
     }
 
-    pub(super) fn copy_value(&self, idx: i32) -> Option<OwnedSqliteValue> {
-        OwnedSqliteValue::copy_from_ptr(self.column_value(idx)?)
+    pub(super) fn copy_value(&self, idx: i32) -> QueryResult<Option<OwnedSqliteValue>> {
+        match self.column_value(idx) {
+            Some(ptr) => OwnedSqliteValue::copy_from_ptr(ptr),
+            None => Ok(None),
+        }
     }
 
     pub(super) fn column_value(&self, idx: i32) -> Option<NonNull<ffi::sqlite3_value>> {
@@ -584,6 +587,10 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             ffi::sqlite3_column_value(self.statement.statement.inner_statement.as_ptr(), idx)
         };
         NonNull::new(ptr)
+    }
+
+    pub(super) fn raw_connection(&self) -> *mut ffi::sqlite3 {
+        self.statement.statement.raw_connection()
     }
 }
 

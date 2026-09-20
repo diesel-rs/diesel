@@ -88,3 +88,49 @@ pub fn pg_database_url() -> String {
         .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests")
 }
+
+/// Asserts that every float written as the json type `ST` for the backend
+/// `DB` reads back with identical bits, which needs `serde_json`'s
+/// `float_roundtrip` feature.
+#[cfg(all(
+    feature = "serde_json",
+    any(feature = "postgres_backend", feature = "mysql")
+))]
+pub(crate) fn assert_floats_survive_a_json_round_trip<ST, DB>(
+    read: impl Fn(&[u8]) -> crate::deserialize::Result<serde_json::Value>,
+) where
+    ST: crate::sql_types::SqlType,
+    DB: crate::backend::Backend + crate::sql_types::TypeMetadata,
+    for<'a> DB::BindCollector<'a>: crate::query_builder::bind_collector::BindCollector<
+            'a,
+            DB,
+            Buffer = crate::query_builder::bind_collector::ByteWrapper<'a>,
+        >,
+    DB::MetadataLookup: 'static,
+    serde_json::Value: crate::serialize::ToSql<ST, DB>,
+{
+    use crate::query_builder::bind_collector::ByteWrapper;
+
+    for float in [
+        8.829872855928286e-308f64,
+        -0.20221894534048165,
+        1.7383394626966921e-307,
+        6.178787134922198e305,
+        0.1,
+        f64::MIN_POSITIVE,
+        f64::MAX,
+    ] {
+        let value = serde_json::Value::from(float);
+        let mut buffer = Vec::new();
+        {
+            let mut out = crate::serialize::Output::test(ByteWrapper(&mut buffer));
+            crate::serialize::ToSql::<ST, DB>::to_sql(&value, &mut out).unwrap();
+        }
+        let back = read(&buffer).unwrap();
+        assert_eq!(
+            back.as_f64().map(f64::to_bits),
+            Some(float.to_bits()),
+            "{float:?} came back as {back}"
+        );
+    }
+}
