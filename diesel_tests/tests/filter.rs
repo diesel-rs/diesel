@@ -729,3 +729,47 @@ fn filter_subselect_with_pg_any() {
         .load(conn);
     assert_eq!(Ok(vec![sean]), users_with_published_posts);
 }
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn filter_like_any() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", conn);
+    let tess = find_user_by_name("Tess", conn);
+
+    let data = users.filter(name.like_any(vec!["Se%", "J%"])).load(conn);
+    assert_eq!(Ok(vec![sean]), data);
+
+    let data = users.filter(name.ilike_any(vec!["tESS"])).load(conn);
+    assert_eq!(Ok(vec![tess]), data);
+
+    // NULL left hand side is a NULL result, loaded as Nullable<Bool>
+    let data: Vec<Option<bool>> = users
+        .order(id)
+        .select(hair_color.like_any(vec![Some("%"), None]))
+        .load(conn)
+        .unwrap();
+    assert_eq!(vec![None, None], data);
+
+    let data: Vec<Option<bool>> = users
+        .order(id)
+        .select(hair_color.ilike_any(vec![Some("%"), None]))
+        .load(conn)
+        .unwrap();
+    assert_eq!(vec![None, None], data);
+
+    // Empty pattern array: PostgreSQL returns FALSE for ALL values (including NULL).
+    // An empty array has zero patterns to match, so the result is always FALSE.
+    insert_into(users)
+        .values(&NewUser::new("Dave", Some("brown")))
+        .execute(conn)
+        .unwrap();
+    let data: Vec<Option<bool>> = users
+        .order(id)
+        .select(hair_color.like_any(Vec::<Option<&str>>::new()))
+        .load(conn)
+        .unwrap();
+    assert_eq!(vec![Some(false), Some(false), Some(false)], data);
+}

@@ -1,10 +1,14 @@
 use crate::expression::subselect::Subselect;
-use crate::expression::{AsExpression, Expression, TypedExpressionType, ValidGrouping};
+use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{Array, SqlType};
+use crate::sql_types::{Array, Bool, SqlType};
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+use crate::expression::TypedExpressionType;
+
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 /// Creates a PostgreSQL `ANY` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
@@ -34,6 +38,7 @@ where
     Any::new(vals.as_expression())
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 /// Creates a PostgreSQL `ALL` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
@@ -62,18 +67,21 @@ where
     All::new(vals.as_expression())
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct Any<Expr> {
     expr: Expr,
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> Any<Expr> {
     fn new(expr: Expr) -> Self {
         Any { expr: expr }
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr, ST> Expression for Any<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
@@ -82,6 +90,7 @@ where
     type SqlType = ST;
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> QueryFragment<Pg> for Any<Expr>
 where
     Expr: QueryFragment<Pg>,
@@ -94,20 +103,24 @@ where
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl_selectable_expression!(Any<Expr>);
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct All<Expr> {
     expr: Expr,
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> All<Expr> {
     fn new(expr: Expr) -> Self {
         All { expr: expr }
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr, ST> Expression for All<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
@@ -116,6 +129,7 @@ where
     type SqlType = ST;
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl<Expr> QueryFragment<Pg> for All<Expr>
 where
     Expr: QueryFragment<Pg>,
@@ -128,7 +142,112 @@ where
     }
 }
 
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 impl_selectable_expression!(All<Expr>);
+
+/// Query dsl node for PostgreSQL `LIKE ANY(ARRAY[...])` expression
+///
+/// This allows matching a text expression against an array of patterns
+/// using `LIKE` semantics (wildcard matching with `%` and `_`).
+///
+/// This is PostgreSQL-specific and not available on other backends.
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[non_exhaustive]
+#[allow(unreachable_pub)]
+pub struct LikeAny<T, U> {
+    /// The expression on the left side of the `LIKE ANY` keyword
+    pub left: T,
+    /// The array of patterns to match against
+    pub values: U,
+}
+
+impl<T, U> LikeAny<T, U> {
+    pub(crate) fn new(left: T, values: U) -> Self {
+        LikeAny { left, values }
+    }
+}
+
+impl<T, U> Expression for LikeAny<T, U>
+where
+    T: Expression,
+    T::SqlType: SqlType + 'static,
+    U: Expression<SqlType = Array<T::SqlType>>,
+    crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        crate::sql_types::MaybeNullableType<Bool>,
+{
+    type SqlType = crate::sql_types::is_nullable::MaybeNullable<
+        crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        Bool,
+    >;
+}
+
+impl<T, U> QueryFragment<Pg> for LikeAny<T, U>
+where
+    T: QueryFragment<Pg>,
+    U: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.left.walk_ast(out.reborrow())?;
+        out.push_sql(" LIKE ANY(");
+        self.values.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(LikeAny<T, U>);
+
+/// Query dsl node for PostgreSQL `ILIKE ANY(ARRAY[...])` expression
+///
+/// This allows matching a text expression against an array of patterns
+/// using case-insensitive `ILIKE` semantics.
+///
+/// This is PostgreSQL-specific and not available on other backends.
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+#[non_exhaustive]
+#[allow(unreachable_pub)]
+pub struct ILikeAny<T, U> {
+    /// The expression on the left side of the `ILIKE ANY` keyword
+    pub left: T,
+    /// The array of patterns to match against
+    pub values: U,
+}
+
+impl<T, U> ILikeAny<T, U> {
+    pub(crate) fn new(left: T, values: U) -> Self {
+        ILikeAny { left, values }
+    }
+}
+
+impl<T, U> Expression for ILikeAny<T, U>
+where
+    T: Expression,
+    T::SqlType: SqlType + 'static,
+    U: Expression<SqlType = Array<T::SqlType>>,
+    crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>:
+        crate::sql_types::MaybeNullableType<Bool>,
+{
+    type SqlType = crate::sql_types::is_nullable::MaybeNullable<
+        crate::sql_types::is_nullable::IsSqlTypeNullable<T::SqlType>,
+        Bool,
+    >;
+}
+
+impl<T, U> QueryFragment<Pg> for ILikeAny<T, U>
+where
+    T: QueryFragment<Pg>,
+    U: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        self.left.walk_ast(out.reborrow())?;
+        out.push_sql(" ILIKE ANY(");
+        self.values.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(ILikeAny<T, U>);
 
 /// Deprecated trait used for implementing `any` and `all` (which are themselves deprecated).
 ///
