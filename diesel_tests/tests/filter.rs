@@ -771,8 +771,5 @@ fn filter_like_any() {
         .select(hair_color.like_any(Vec::<Option<&str>>::new()))
         .load(conn)
         .unwrap();
-    assert_eq!(
-        vec![Some(false), Some(false), Some(false)],
-        data
-    );
+    assert_eq!(vec![Some(false), Some(false), Some(false)], data);
 }
