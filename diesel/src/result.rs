@@ -203,6 +203,18 @@ pub trait DatabaseErrorInformation {
     /// An optional integer indicating an error cursor position as an index into
     /// the original statement string.
     fn statement_position(&self) -> Option<i32>;
+
+    /// The SQLSTATE code of the error, if the backend reports one.
+    ///
+    /// SQLSTATE is a five character error code defined by the ANSI SQL
+    /// standard. PostgreSQL reports one for every error, with the codes listed
+    /// at <https://www.postgresql.org/docs/current/errcodes-appendix.html>.
+    ///
+    /// Currently this method will return `None` for all backends other than
+    /// PostgreSQL.
+    fn sqlstate(&self) -> Option<&str> {
+        None
+    }
 }
 
 impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {

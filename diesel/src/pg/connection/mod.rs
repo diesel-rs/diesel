@@ -885,6 +885,7 @@ mod tests {
 
         if let Err(DatabaseError(_, string)) = query {
             assert_eq!(Some(26), string.statement_position());
+            assert_eq!(Some("42P01"), string.sqlstate());
         } else {
             unreachable!();
         }
