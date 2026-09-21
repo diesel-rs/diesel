@@ -455,17 +455,31 @@ mod jsonb {
         }
     }
 
+    /// Serialise a JSON number to its text representation (the payload written to the JSONB buffer).
+    /// Returned by value so callers can reuse it for both size calculation and the write pass,
+    /// avoiding double formatting.
+    fn number_to_text(n: &serde_json::Value) -> alloc::string::String {
+        n.to_string()
+    }
+
     fn jsonb_number_size(n: &serde_json::Value) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let n_str = n.to_string();
-        let payload_size = n_str.len();
-        Ok(jsonb_header_size(payload_size)? + payload_size)
+        let n_str = number_to_text(n);
+        Ok(jsonb_header_size(n_str.len())? + n_str.len())
+    }
+
+    /// Returns `true` if the string must be emitted as TEXTJ (JSON-escaped).
+    /// The scan matches what SQLite's own `jsonb()` requires: bytes below 0x20
+    /// (ASCII controls), `"`, and `\` need escaping; nothing above 0x1F is
+    /// escaped by JSON, so `char::is_control` would be incorrect here.
+    fn needs_textj(s: &str) -> bool {
+        s.bytes().any(|b| b < 0x20 || b == b'"' || b == b'\\')
     }
 
     fn jsonb_string_size(s: &str) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let payload_size = if s.chars().any(|c| c.is_control()) {
-            let escaped_string = serde_json::to_string(&String::from(s))
-                .map_err(|_| "Failed to serialize string for TEXTJ")?;
-            escaped_string.len() - 2
+        let payload_size = if needs_textj(s) {
+            let escaped_string =
+                serde_json::to_string(&s).map_err(|_| "Failed to serialize string for TEXTJ")?;
+            escaped_string.len() - 2 // strip surrounding quotes
         } else {
             s.len()
         };
@@ -527,6 +541,64 @@ mod jsonb {
     }
 
     // Helper function to write a JSON value into a JSONB binary format
+
+    /// Called when a container (array or object) has been fully processed in the size-calc pass.
+    /// Records the container's payload size in `sizes`, computes its total encoded size, and
+    /// bubbles that total up to the parent frame's `payload_size` accumulator.
+    fn finalize_container_size(
+        container_idx: usize,
+        payload_size: usize,
+        sizes: &mut Vec<usize>,
+        parent_stack: &mut Vec<SizeCalcFrame<'_>>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        sizes[container_idx] = payload_size;
+        let total_size = jsonb_header_size(payload_size)? + payload_size;
+        if let Some(parent) = parent_stack.last_mut() {
+            match parent {
+                SizeCalcFrame::Array {
+                    payload_size: parent_size,
+                    ..
+                }
+                | SizeCalcFrame::Object {
+                    payload_size: parent_size,
+                    ..
+                } => {
+                    *parent_size += total_size;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Called in the write pass when a child value is a nested container.
+    /// Writes the container's JSONB header (using the pre-computed payload size from `sizes`)
+    /// and pushes the appropriate `WriteFrame` onto `write_stack` so its children are processed.
+    fn push_container_write_frame<'a>(
+        child_val: &'a serde_json::Value,
+        buffer: &mut Vec<u8>,
+        sizes: &[usize],
+        container_idx: &mut usize,
+        write_stack: &mut Vec<WriteFrame<'a>>,
+    ) -> serialize::Result {
+        if let Some(arr) = child_val.as_array() {
+            let payload_size = sizes[*container_idx];
+            *container_idx += 1;
+            write_jsonb_header(buffer, JSONB_ARRAY, payload_size)?;
+            write_stack.push(WriteFrame::Array(arr.as_slice()));
+        } else if let Some(obj) = child_val.as_object() {
+            let payload_size = sizes[*container_idx];
+            *container_idx += 1;
+            write_jsonb_header(buffer, JSONB_OBJECT, payload_size)?;
+            write_stack.push(WriteFrame::Object {
+                object: obj,
+                keys: obj.keys(),
+            });
+        } else {
+            write_primitive_jsonb_value(buffer, child_val)?;
+        }
+        Ok(IsNull::No)
+    }
+
     pub(super) fn write_jsonb_value(
         value: &serde_json::Value,
         buffer: &mut Vec<u8>,
@@ -602,22 +674,12 @@ mod jsonb {
                             });
                         }
                     } else {
-                        container_payload_sizes[container_idx] = payload_size;
-                        let total_size = jsonb_header_size(payload_size)? + payload_size;
-                        if let Some(parent) = size_stack.last_mut() {
-                            match parent {
-                                SizeCalcFrame::Array {
-                                    payload_size: parent_size,
-                                    ..
-                                }
-                                | SizeCalcFrame::Object {
-                                    payload_size: parent_size,
-                                    ..
-                                } => {
-                                    *parent_size += total_size;
-                                }
-                            }
-                        }
+                        finalize_container_size(
+                            container_idx,
+                            payload_size,
+                            &mut container_payload_sizes,
+                            &mut size_stack,
+                        )?;
                     }
                 }
                 SizeCalcFrame::Object {
@@ -673,22 +735,12 @@ mod jsonb {
                             });
                         }
                     } else {
-                        container_payload_sizes[container_idx] = payload_size;
-                        let total_size = jsonb_header_size(payload_size)? + payload_size;
-                        if let Some(parent) = size_stack.last_mut() {
-                            match parent {
-                                SizeCalcFrame::Array {
-                                    payload_size: parent_size,
-                                    ..
-                                }
-                                | SizeCalcFrame::Object {
-                                    payload_size: parent_size,
-                                    ..
-                                } => {
-                                    *parent_size += total_size;
-                                }
-                            }
-                        }
+                        finalize_container_size(
+                            container_idx,
+                            payload_size,
+                            &mut container_payload_sizes,
+                            &mut size_stack,
+                        )?;
                     }
                 }
             }
@@ -723,22 +775,13 @@ mod jsonb {
                 WriteFrame::Array(values) => {
                     if let Some((first, rest)) = values.split_first() {
                         write_stack.push(WriteFrame::Array(rest));
-                        if let Some(arr) = first.as_array() {
-                            let payload_size = container_payload_sizes[container_idx];
-                            container_idx += 1;
-                            write_jsonb_header(buffer, JSONB_ARRAY, payload_size)?;
-                            write_stack.push(WriteFrame::Array(arr.as_slice()));
-                        } else if let Some(obj) = first.as_object() {
-                            let payload_size = container_payload_sizes[container_idx];
-                            container_idx += 1;
-                            write_jsonb_header(buffer, JSONB_OBJECT, payload_size)?;
-                            write_stack.push(WriteFrame::Object {
-                                object: obj,
-                                keys: obj.keys(),
-                            });
-                        } else {
-                            write_primitive_jsonb_value(buffer, first)?;
-                        }
+                        push_container_write_frame(
+                            first,
+                            buffer,
+                            &container_payload_sizes,
+                            &mut container_idx,
+                            &mut write_stack,
+                        )?;
                     }
                 }
                 WriteFrame::Object { object, mut keys } => {
@@ -748,22 +791,13 @@ mod jsonb {
                             .ok_or_else(|| format!("Missing value for object key: `{key}`"))?;
                         write_jsonb_string(key, buffer)?;
                         write_stack.push(WriteFrame::Object { object, keys });
-                        if let Some(arr) = child_val.as_array() {
-                            let payload_size = container_payload_sizes[container_idx];
-                            container_idx += 1;
-                            write_jsonb_header(buffer, JSONB_ARRAY, payload_size)?;
-                            write_stack.push(WriteFrame::Array(arr.as_slice()));
-                        } else if let Some(obj) = child_val.as_object() {
-                            let payload_size = container_payload_sizes[container_idx];
-                            container_idx += 1;
-                            write_jsonb_header(buffer, JSONB_OBJECT, payload_size)?;
-                            write_stack.push(WriteFrame::Object {
-                                object: obj,
-                                keys: obj.keys(),
-                            });
-                        } else {
-                            write_primitive_jsonb_value(buffer, child_val)?;
-                        }
+                        push_container_write_frame(
+                            child_val,
+                            buffer,
+                            &container_payload_sizes,
+                            &mut container_idx,
+                            &mut write_stack,
+                        )?;
                     }
                 }
             }
@@ -790,7 +824,7 @@ mod jsonb {
         n: &serde_json::Value,
         buffer: &mut Vec<u8>,
     ) -> serialize::Result {
-        let n = n.to_string();
+        let n = number_to_text(n);
         let tpe = if n
             .char_indices()
             .any(|(idx, c)| !(c.is_ascii_digit() || (idx == 0 && (c == '-' || c == '+'))))
@@ -808,9 +842,7 @@ mod jsonb {
     }
 
     pub(super) fn write_jsonb_string(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        // strings needing a json escape go down TEXTJ, matching what sqlite's own jsonb() writes
-        // the scan is over bytes because json escapes nothing above 0x1F, unlike char::is_control
-        if s.bytes().any(|b| b < 0x20 || b == b'"' || b == b'\\') {
+        if needs_textj(s) {
             write_jsonb_textj(s, buffer)
         } else {
             write_jsonb_header(buffer, JSONB_TEXT, s.len())?;
@@ -820,7 +852,7 @@ mod jsonb {
     }
 
     pub(super) fn write_jsonb_textj(s: &str, buffer: &mut Vec<u8>) -> serialize::Result {
-        // &s passes a sized &str, required by the serde_json 0.8.0 to_string bound
+        // Escape the string for JSON (e.g., \\n, \\uXXXX); &s coerces to &str
         let escaped_string =
             serde_json::to_string(&s).map_err(|_| "Failed to serialize string for TEXTJ")?;
 
