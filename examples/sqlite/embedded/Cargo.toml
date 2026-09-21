@@ -27,7 +27,7 @@ diesel-dynamic-schema = { path = "../../../diesel_dynamic_schema/", default-feat
 libsqlite3-sys = { version = "0.38.0", features = ["bundled"] }
 # a simple memory vfs implementation
 # real world applications might likely want a more complex VFS
-rsqlite-vfs = "0.1"
+rsqlite-vfs = "0.2"
 # a stub libc with the symbols required by sqlite
 tinyrlibc = "0.5"
 

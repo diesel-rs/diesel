@@ -35,12 +35,14 @@ To compile diesel + the sqlite library in no-std mode you need to perform the fo
 You application needs to use the `alloc` crate and provide an allocator implementation as Diesel requires support for allocations.
 
 
-Finally your application needs to provide a `sqlite3_os_init()` function to configure SQLite for the embedded target. This function needs to register at least one VFS. For demonstration purposes you can use the `sqlite_memvfs` crate there:
+Finally your application needs to provide a `sqlite3_os_init()` function to configure SQLite for the embedded target. This function needs to register at least one VFS. For demonstration purposes you can use `rsqlite-vfs = "0.2"` with the `EmbeddedVfs` callbacks defined in `src/main.rs`:
 
 ``` rust
 #[unsafe(no_mangle)]
 extern "C" fn sqlite3_os_init() -> core::ffi::c_int {
-    sqlite_memvfs::install();
+    unsafe {
+        rsqlite_vfs::memvfs::install(EmbeddedVfs, true).unwrap();
+    }
     libsqlite3_sys::SQLITE_OK
 }
 

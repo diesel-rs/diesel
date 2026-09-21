@@ -440,12 +440,10 @@ jobs:
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
 
-      - name: Add wasm32-unknown-unknown target
-        run: rustup target add wasm32-unknown-unknown
-
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
-          tool: wasm-bindgen@0.2.108
+          # Keep in sync with wasm-bindgen-test in diesel/Cargo.toml.
+          tool: wasm-bindgen@0.2.128
 
       - name: Test unit and integration tests
         env:
