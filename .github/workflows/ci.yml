@@ -13,7 +13,14 @@ on:
 name: CI Tests
 permissions:
   contents: "read"
-  actions: "write"
+
+env:
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+  # Force HTTP/1.1 for crates.io downloads: HTTP/2 multiplexing against the
+  # CDN intermittently drops connections mid-stream (SSL "unexpected eof"),
+  # and cargo does not retry those, so CARGO_NET_RETRY alone cannot recover.
+  CARGO_HTTP_MULTIPLEXING: "false"
 
 # See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
 # This will ensure that only one commit will be running tests at a time on each PR.
@@ -34,7 +41,7 @@ jobs:
           [
             ubuntu-latest,
             macos-15-intel,
-            macos-15,
+            macos-26,
             windows-2025,
             ubuntu-24.04-arm,
           ]
@@ -65,7 +72,7 @@ jobs:
           persist-credentials: false
 
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: ${{ matrix.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -142,7 +149,7 @@ jobs:
           echo "MYSQLCLIENT_VERSION=8.4" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS M1)
-        if: matrix.os == 'macos-15' && matrix.backend == 'mysql'
+        if: matrix.os == 'macos-26' && matrix.backend == 'mysql'
         run: |
           brew install mysql@8.4
           ls /opt/homebrew/opt/mysql@8.4
@@ -214,16 +221,14 @@ jobs:
           echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
           dir "C:\Program Files\MySQL\MySQL Server 8.0\lib"
 
-      - name: Install rust toolchain
-        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: ${{ matrix.rust }}
-          components: rustfmt
 
       - name: Rust version check
         shell: bash
+        env:
+          RUST: ${{ matrix.rust }}
         run: |
-          rustup override set ${{ matrix.rust }}
+          rustup override set $RUST
+          rustup component add rustfmt
           cargo --version
           rustc --version
 
@@ -269,13 +274,18 @@ jobs:
 
       - name: Run tests
         shell: bash
+        env:
+          BACKEND: ${{ matrix.backend }}
         run: |
-          cargo xtask run-tests ${{ matrix.backend }} $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
+          cargo xtask run-tests $BACKEND $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
 
       - name: Run diesel_benches
         if: runner.os == 'Linux'
+        env:
+          RUST: ${{ matrix.rust }}
+          BACKEND: ${{ matrix.backend }}
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
+        run: cargo +$RUST test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" --bench benchmarks
 
   compile_tests:
     name: Compiletests
@@ -285,11 +295,12 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -311,12 +322,14 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
-          components: clippy, rustfmt
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
+          rustup component add clippy
+          rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Fixing up rustup
@@ -353,25 +366,35 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
-          components: "rust-src"
-          # It seems not to work
-          # targets: "wasm32-unknown-unknown"
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
+          rustup component add rust-src
+          rustup component add rustfmt
+          rustup target add wasm32-unknown-unknown
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Add wasm32-unknown-unknown target
         run: rustup target add wasm32-unknown-unknown
 
-      - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli --locked
+      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+        with:
+          # Keep in sync with wasm-bindgen-test in diesel/Cargo.toml.
+          tool: wasm-bindgen@0.2.128
 
       - name: Test unit and integration tests
-        run: cargo xtask run-tests --wasm sqlite
+        env:
+          DATABASE_URL: ":memory:"
+        run: cargo xtask run-tests --wasm sqlite --no-example-schema-check -- --no-fail-fast
+
+      - name: Test the wasm example
+        env:
+          CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
+        run: cd examples/sqlite/wasm && cargo test --target wasm32-unknown-unknown
 
   sqlite_bundled:
     name: Check sqlite bundled + Sqlite with asan
@@ -381,12 +404,14 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
-          components: "rust-src, rustfmt"
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
+          rustup component add rust-src
+          rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -416,12 +441,14 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
-          components: "rust-src, rustfmt"
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
+          rustup component add rust-src
+          rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -462,12 +489,14 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
-          components: "rust-src, rustfmt"
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
+          rustup component add rust-src
+          rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Mysql (Linux)
@@ -519,23 +548,21 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: 1.86.0
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: nightly
+      - name: Setup rust toolchain
+        run: |
+          rustup install 1.86.0
+          rustup install nightly
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
           tool: cargo-hack,cargo-minimal-versions
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+          sudo apt-get -o DPkg::Lock::Timeout=300 update
+          sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev
       - name: Check diesel_derives
         run: cargo +1.86.0 minimal-versions check -p diesel_derives --features "postgres sqlite mysql 32-column-tables 64-column-tables 128-column-tables without-deprecated with-deprecated r2d2"
       - name: Check diesel
@@ -555,9 +582,10 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: stable
+      - name: Setup rust toolchain
+        run: |
+          rustup update stable
+          rustup override set stable
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
           tool: cargo-semver-checks

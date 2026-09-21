@@ -6,9 +6,9 @@ use std::sync::Once;
 
 use crate::models::{NewPost, Post};
 use diesel::prelude::*;
-use diesel_migrations::embed_migrations;
 use diesel_migrations::EmbeddedMigrations;
 use diesel_migrations::MigrationHarness;
+use diesel_migrations::embed_migrations;
 use wasm_bindgen::prelude::*;
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
@@ -38,7 +38,6 @@ pub fn establish_connection() -> SqliteConnection {
     let url = match vfs {
         0 => "post.db",
         1 => "file:post.db?vfs=opfs-sahpool",
-        2 => "file:post.db?vfs=relaxed-idb",
         _ => unreachable!(),
     };
     let mut conn =
@@ -52,15 +51,10 @@ pub fn establish_connection() -> SqliteConnection {
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 #[wasm_bindgen(js_name = installOpfsSahpool)]
 pub async fn install_opfs_sahpool() {
-    use sqlite_wasm_vfs::sahpool::{install, OpfsSAHPoolCfg};
-    install(&OpfsSAHPoolCfg::default(), false).await.unwrap();
-}
-
-#[cfg(all(target_family = "wasm", target_os = "unknown"))]
-#[wasm_bindgen(js_name = installRelaxedIdb)]
-pub async fn install_relaxed_idb() {
-    use sqlite_wasm_vfs::relaxed_idb::{install, RelaxedIdbCfg};
-    install(&RelaxedIdbCfg::default(), false).await.unwrap();
+    use sqlite_wasm_vfs::sahpool::{OpfsSAHPoolCfg, install};
+    install::<sqlite_wasm_rs::WasmOsCallback>(&OpfsSAHPoolCfg::default(), false)
+        .await
+        .unwrap();
 }
 
 #[wasm_bindgen(js_name = switchVfs)]

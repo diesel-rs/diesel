@@ -1,6 +1,5 @@
 import init, {
     installOpfsSahpool,
-    installRelaxedIdb,
     switchVfs,
     createPost,
     getPost,
@@ -12,7 +11,6 @@ import init, {
 // Initialize WASM module
 await init();
 await installOpfsSahpool();
-await installRelaxedIdb();
 
 /**
  * Handles incoming messages from the main thread
