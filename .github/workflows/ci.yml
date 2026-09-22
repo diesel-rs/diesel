@@ -128,11 +128,22 @@ jobs:
         if: runner.os == 'Linux' && matrix.backend == 'mariadb'
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
-          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev libmariadb-dev-compat mariadb-server mariadb-client
-          sudo systemctl start mariadb.service
-          sudo mariadb -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost' IDENTIFIED BY 'root';" -uroot
+          sudo apt-get -o DPkg::Lock::Timeout=300 install -y libmariadb-dev libmariadb-dev-compat mariadb-client
+          # apt ships only MariaDB 10.x, so the 13.0 server comes from the official image
+          docker run -d --name mariadb13 -e MARIADB_ROOT_PASSWORD=root -p 3306:3306 mariadb:13.0
+          # -h forces a TCP ping, which only succeeds once the entrypoint's init server is gone
+          for i in $(seq 1 60); do
+            if docker exec mariadb13 mariadb-admin ping -h 127.0.0.1 -uroot -proot --silent >/dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for MariaDB 13 to accept connections ($i)..."
+            sleep 2
+          done
+          docker exec mariadb13 mariadb-admin ping -h 127.0.0.1 -uroot -proot --silent >/dev/null 2>&1 || { echo "MariaDB 13 did not become ready in time"; docker logs mariadb13; exit 1; }
+          docker exec mariadb13 mariadb -uroot -proot -e "create database diesel_test; create database diesel_unit_test;"
+          docker exec mariadb13 mariadb -h 127.0.0.1 -uroot -proot -e "SELECT VERSION();"
           echo "MARIADB_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_test" >> $GITHUB_ENV
-          echo "MARIADB_EXAMPLE_DATABASE_URL=maridb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
+          echo "MARIADB_EXAMPLE_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MARIADB_UNIT_TEST_DATABASE_URL=mariadb://root:root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
           mariadb_config --cc_version
 
