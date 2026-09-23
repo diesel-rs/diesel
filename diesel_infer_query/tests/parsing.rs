@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use diesel_infer_query::{Backend, parse_view_def};
+use diesel_infer_query::{Backend, Error, parse_view_def};
 
 #[track_caller]
 pub(crate) fn check_parse_view(name: &'static str, def: &'static str) {
@@ -324,4 +324,19 @@ fn except() {
 #[test]
 fn unnamed_query_source() {
     check_parse_view("unnamed_query_source", "SELECT * FROM (SELECT 1 as dummy)");
+}
+
+#[test]
+fn unknown_qualified_wildcard() {
+    // the same error as an unknown qualifier of a column
+    for definition in [
+        "CREATE VIEW test AS SELECT posts.* FROM users",
+        "CREATE VIEW test AS SELECT posts.id FROM users",
+    ] {
+        let res = parse_view_def(definition, Backend::Sqlite);
+        assert!(
+            matches!(&res, Err(Error::InvalidQuerySource { query_source, .. }) if query_source == "posts"),
+            "{definition}: {res:?}"
+        );
+    }
 }

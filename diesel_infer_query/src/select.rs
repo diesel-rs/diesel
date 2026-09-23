@@ -384,7 +384,9 @@ pub(crate) fn infer_projection(
                     },
                 })
             } else {
-                todo!()
+                Err(Error::InvalidQuerySource {
+                    query_source: name.to_string(),
+                })
             }
         }
         SelectItem::Wildcard(_) if query_source_lookup.len() == 1 => {
