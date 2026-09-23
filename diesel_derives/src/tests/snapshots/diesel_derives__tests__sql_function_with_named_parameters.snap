@@ -2,25 +2,20 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "define_sql_function! {\n    fn lower(input : Text) -> Text;\n}\n"
+  input: "sql_function! {\n    #[named_parameters = true] fn lower(input : Text) -> Text;\n}\n"
 ---
 #[allow(non_camel_case_types)]
-pub fn lower<input>(input: input) -> lower<input>
+pub fn lower<input>(input: input) -> lower::HelperType<input>
 where
     input: diesel::expression::AsExpression<Text>,
 {
-    lower_utils::lower {
+    lower::lower {
         input: input.as_expression(),
     }
 }
-#[allow(non_camel_case_types, non_snake_case)]
-///The return type of [`lower()`](fn@lower)
-pub type lower<input> = lower_utils::lower<
-    <input as diesel::expression::AsExpression<Text>>::Expression,
->;
 #[doc(hidden)]
 #[allow(non_camel_case_types, non_snake_case, unused_imports)]
-pub(crate) mod lower_utils {
+pub(crate) mod lower {
     use diesel::{self, QueryResult};
     use diesel::expression::{
         AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
@@ -133,6 +128,8 @@ pub(crate) mod lower_utils {
                 if needs_comma {
                     out.push_sql(", ");
                 }
+                out.push_sql(stringify!(input));
+                out.push_sql("=>");
                 self.input.walk_ast(out.reborrow())?;
                 needs_comma = true;
             }
