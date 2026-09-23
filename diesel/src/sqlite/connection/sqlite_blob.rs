@@ -18,7 +18,8 @@ use sqlite_wasm_rs as ffi;
 #[expect(missing_debug_implementations)]
 #[cfg_attr(not(feature = "std"), expect(dead_code))]
 pub struct SqliteReadOnlyBlob<'conn> {
-    pub(crate) blob: core::ptr::NonNull<ffi::sqlite3_blob>,
+    // `None` once closed, so the handle is closed at most once
+    pub(crate) blob: Option<core::ptr::NonNull<ffi::sqlite3_blob>>,
     pub(crate) read_index: usize,
 
     pub(crate) blob_size: usize,
@@ -28,6 +29,11 @@ pub struct SqliteReadOnlyBlob<'conn> {
 impl Drop for SqliteReadOnlyBlob<'_> {
     fn drop(&mut self) {
         use crate::util::std_compat::panicking;
+
+        // `close` already closed the handle
+        if self.blob.is_none() {
+            return;
+        }
 
         if let Err(error_message) = self.close_inner() {
             if panicking() {
@@ -62,13 +68,20 @@ impl SqliteReadOnlyBlob<'_> {
     }
 
     fn close_inner(&mut self) -> Result<(), crate::result::Error> {
-        // SAFETY: From the sqlite3_blob_close documentation:
+        let Some(blob) = self.blob.take() else {
+            return Err(crate::result::Error::ClosingHandle("handle already closed"));
+        };
+
+        // SAFETY: `blob` came from a successful `sqlite3_blob_open`, and taking it out of `self`
+        // guarantees that this open handle is closed at most once.
+        //
+        // From the sqlite3_blob_close documentation:
         //
         //     If an error occurs while committing the transaction, an error code is returned and
         //     the transaction rolled back.
         //
         // As we are in read-only mode here, this is not an issue
-        let close_result = unsafe { ffi::sqlite3_blob_close(self.blob.as_ptr()) };
+        let close_result = unsafe { ffi::sqlite3_blob_close(blob.as_ptr()) };
 
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
@@ -89,6 +102,9 @@ fn to_io_error(error: core::num::TryFromIntError) -> std::io::Error {
 #[cfg(feature = "std")]
 impl std::io::Read for SqliteReadOnlyBlob<'_> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let Some(blob) = self.blob else {
+            return Err(std::io::Error::other("SQLite blob handle is closed"));
+        };
         let buflen: i32 = buf.len().try_into().map_err(to_io_error)?;
         let offset: i32 = self.read_index.try_into().map_err(to_io_error)?;
 
@@ -103,9 +119,12 @@ impl std::io::Read for SqliteReadOnlyBlob<'_> {
             .saturating_sub(offset))
         .min(buflen);
 
+        // SAFETY: `blob` is `Some`, so the handle is open, and `'conn` keeps its connection alive.
+        // `read_length` is at most `buf.len()` and the bytes left after `offset`, so the write
+        // stays within `buf` and the read within the blob.
         let ret = unsafe {
             ffi::sqlite3_blob_read(
-                self.blob.as_ptr(),
+                blob.as_ptr(),
                 buf.as_mut_ptr() as *mut core::ffi::c_void,
                 read_length,
                 offset,
@@ -135,18 +154,19 @@ impl std::io::Seek for SqliteReadOnlyBlob<'_> {
                 self.read_index = if n.is_positive() {
                     self.blob_size
                 } else {
-                    self.blob_size - usize::try_from(n.unsigned_abs()).map_err(to_io_error)?
+                    self.blob_size
+                        .checked_sub(usize::try_from(n.unsigned_abs()).map_err(to_io_error)?)
+                        .ok_or(std::io::ErrorKind::InvalidInput)?
                 };
             }
             std::io::SeekFrom::Current(n) => {
                 let n = isize::try_from(n).map_err(to_io_error)?;
 
                 if n.is_negative() {
-                    self.read_index = if self.read_index < n.unsigned_abs() {
-                        0
-                    } else {
-                        self.read_index - n.unsigned_abs()
-                    };
+                    self.read_index = self
+                        .read_index
+                        .checked_sub(n.unsigned_abs())
+                        .ok_or(std::io::ErrorKind::InvalidInput)?;
                 } else {
                     self.read_index = (self.read_index + n.unsigned_abs()).min(self.blob_size);
                 }
