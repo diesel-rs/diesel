@@ -14,7 +14,7 @@ ViewData {
                         "users",
                     ),
                     field_name: "name",
-                    via_left_join: false,
+                    nullable_row: false,
                 },
                 negated: false,
                 list: [

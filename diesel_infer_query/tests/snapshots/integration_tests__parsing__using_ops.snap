@@ -29,7 +29,7 @@ ViewData {
                         "bar",
                     ),
                     field_name: "json",
-                    via_left_join: false,
+                    nullable_row: false,
                 },
                 right: Literal {
                     value: Some(
@@ -50,7 +50,7 @@ ViewData {
                         "bar",
                     ),
                     field_name: "name",
-                    via_left_join: false,
+                    nullable_row: false,
                 },
                 op: "IS NULL",
                 nullability: NeverNull,

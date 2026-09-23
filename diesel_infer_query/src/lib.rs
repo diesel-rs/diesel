@@ -10,6 +10,7 @@
 mod backend;
 mod error;
 mod expression;
+mod functions;
 mod query_source;
 mod resolver;
 mod select;

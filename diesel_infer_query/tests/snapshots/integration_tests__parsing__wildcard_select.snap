@@ -12,7 +12,7 @@ ViewData {
                 relation: Some(
                     "users",
                 ),
-                is_left_joined: false,
+                nullable_row: false,
             },
         },
     ],

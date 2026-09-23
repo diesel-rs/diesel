@@ -15,7 +15,7 @@ ViewData {
                     "users",
                 ),
                 field_name: "id",
-                via_left_join: false,
+                nullable_row: false,
             },
         },
         SelectField {
@@ -28,7 +28,7 @@ ViewData {
                     "users",
                 ),
                 field_name: "name",
-                via_left_join: false,
+                nullable_row: false,
             },
         },
         SelectField {
@@ -41,7 +41,7 @@ ViewData {
                     "users",
                 ),
                 field_name: "hair_color",
-                via_left_join: false,
+                nullable_row: false,
             },
         },
     ],

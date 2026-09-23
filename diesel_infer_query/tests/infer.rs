@@ -620,6 +620,8 @@ fn with_cte() {
 
 #[test]
 fn multi_level_cte() {
+    // `intermediate` aggregates without GROUP BY, so it returns a row with NULL for `a`,
+    // `b`, and `one` even when `source` is empty
     check_infer(
         "CREATE VIEW test AS WITH source AS (\
              SELECT a, b FROM table1 WHERE c > 1\
@@ -629,7 +631,7 @@ fn multi_level_cte() {
          INNER JOIN intermediate s ON t1.id = s.a GROUP BY t1.col1, s.b",
         [
             IsNull::NotNullable,
-            IsNull::NotNullable,
+            IsNull::IsNullable,
             IsNull::IsNullable,
             IsNull::NotNullable,
             IsNull::IsNullable,
@@ -945,6 +947,375 @@ fn is_distinct_from_followed_by_an_operator() {
                 ("users", "id", IsNull::NotNullable),
                 ("users", "name", IsNull::NotNullable),
             ],
+        );
+    }
+}
+
+#[test]
+fn bare_columns_in_aggregate_queries() {
+    // Without GROUP BY an aggregate query returns one row even for an empty table,
+    // and columns outside the aggregates are NULL in that row
+    check_infer(
+        "CREATE VIEW test AS SELECT id, id IS NULL, count(*) FROM users",
+        [IsNull::IsNullable, IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT *, max(id) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable, IsNull::IsNullable],
+        [
+            ("users", "id", IsNull::NotNullable),
+            ("users", "name", IsNull::NotNullable),
+        ],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id FROM users HAVING count(*) >= 0",
+        [IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // a bare column is NULL in that row wherever it appears, while a CASE over it can
+    // still pick a branch without it
+    check_infer(
+        "CREATE VIEW test AS SELECT CAST(id AS TEXT), (id), id BETWEEN 1 AND 2, \
+         CASE WHEN 1 THEN id ELSE id END, CASE id WHEN 1 THEN 2 ELSE 3 END, id IN (1, 2), \
+         id IN (SELECT 1), 1 IN (SELECT users.id), count(*) FROM users",
+        [
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::NotNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::NotNullable,
+        ],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // groups and window functions only see existing rows
+    check_infer(
+        "CREATE VIEW test AS SELECT id, count(*) FROM users GROUP BY id",
+        [IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id, count(*) OVER () FROM users",
+        [IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn aggregates_in_named_windows_make_bare_columns_nullable() {
+    check_infer(
+        "CREATE VIEW test AS SELECT id, count(*) OVER w FROM users WHERE 0 \
+         WINDOW w AS (ORDER BY sum(id))",
+        [IsNull::IsNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id, count(*) OVER w FROM users WHERE 0 \
+         WINDOW w AS (PARTITION BY count(*))",
+        [IsNull::IsNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id, count(*) OVER w2 FROM users WHERE 0 \
+         WINDOW w1 AS (ORDER BY sum(id)), w2 AS (w1)",
+        [IsNull::IsNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn grouping_sets_make_grouping_columns_nullable() {
+    check_infer(
+        "CREATE VIEW test AS SELECT id, count(*) FROM users GROUP BY ROLLUP(id)",
+        [IsNull::IsNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id FROM users GROUP BY CUBE(id)",
+        [IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id FROM users GROUP BY id GROUPING SETS ((id), ())",
+        [IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // PostgreSQL's dialect reads them as grouping sets rather than calls
+    for grouping in ["ROLLUP (id)", "CUBE (id)", "GROUPING SETS ((id), ())"] {
+        let definition =
+            format!("CREATE VIEW test AS SELECT id, count(*) FROM users GROUP BY {grouping}");
+        check_infer_for(
+            Backend::Pg,
+            definition.leak(),
+            [IsNull::IsNullable, IsNull::NotNullable],
+            [("users", "id", IsNull::NotNullable)],
+        );
+    }
+    // while PostgreSQL 19's GROUP BY ALL groups by the columns outside the aggregates
+    check_infer_for(
+        Backend::Pg,
+        "CREATE VIEW test AS SELECT id, count(*) FROM users GROUP BY ALL",
+        [IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+
+    // The SQLite parser dialect rejects syntaxes it does not represent.
+    for definition in [
+        "CREATE VIEW test AS SELECT id FROM users GROUP BY GROUPING SETS ((id), ())",
+        "CREATE VIEW test AS SELECT id FROM users GROUP BY id WITH ROLLUP",
+    ] {
+        assert!(diesel_infer_query::parse_view_def(definition, Backend::Sqlite).is_err());
+    }
+}
+
+#[test]
+fn sqlite_percentile_aggregates_make_bare_columns_nullable() {
+    check_infer(
+        "CREATE VIEW test AS SELECT id, median(id) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id, percentile(id, 50) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id, percentile_cont(id, 0.5) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT id, percentile_disc(id, 0.5) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn multi_argument_min_and_max_are_scalar() {
+    check_infer(
+        "CREATE VIEW test AS SELECT id, min(id, 1), max(id, 1) FROM users",
+        [IsNull::NotNullable, IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // Scalar min still contains an aggregate, so its arguments must be traversed.
+    check_infer(
+        "CREATE VIEW test AS SELECT id, min(sum(id), 1) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn nested_aggregate_ownership() {
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, \
+         (SELECT count(*) FROM posts WHERE posts.user_id = users.id) FROM users",
+        [IsNull::NotNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // The qualified reference can only come from the outer SELECT.
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, (SELECT count(users.id)) FROM users WHERE 0",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // and so can an unqualified one in a subquery without a FROM clause
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, (SELECT count(id)) FROM users WHERE 0",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, (SELECT max(p.id) FROM posts p) FROM users",
+        [IsNull::NotNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, \
+         (SELECT count(*) FILTER (WHERE p.id > 0) FROM posts p) FROM users",
+        [IsNull::NotNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, \
+         (SELECT count(*) FILTER (WHERE users.id > 0) FROM posts p) \
+         FROM users WHERE 0",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, \
+         (SELECT max(posts.id) FROM posts) FROM users",
+        [IsNull::NotNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // An unqualified reference in a subquery could belong to either query, so such
+    // definitions are rejected
+    assert!(
+        diesel_infer_query::parse_view_def(
+            "CREATE VIEW test AS SELECT users.id, (SELECT max(id) FROM posts) FROM users",
+            Backend::Sqlite,
+        )
+        .is_err()
+    );
+    // `t.id` refers to the argument's own subquery, which leaves `users.id` as the only
+    // variable, so this is an aggregate of the outer SELECT
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id, (SELECT count((SELECT 1 FROM posts t \
+         WHERE t.id = users.id)) FROM posts t) FROM users WHERE 0",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // SQLite binds `users.name` to the outer `users` when the inner `users`, an alias of
+    // `posts`, has no such column, so a name the outer SELECT also exposes, even inside a
+    // parenthesized join, proves nothing
+    for definition in [
+        "CREATE VIEW test AS SELECT users.id, (SELECT count(users.name) FROM posts AS users) \
+         FROM users WHERE 0",
+        "CREATE VIEW test AS SELECT users.id, (SELECT count(USERS.name) FROM posts AS USERS) \
+         FROM users WHERE 0",
+        "CREATE VIEW test AS SELECT u.id, (SELECT count(u.name) FROM (SELECT id FROM posts) AS u) \
+         FROM users AS u WHERE 0",
+        "CREATE VIEW test AS SELECT users.id, (SELECT count(users.name) FROM posts AS users) \
+         FROM (users JOIN comments ON comments.user_id = users.id) WHERE 0",
+    ] {
+        check_infer(
+            definition,
+            [IsNull::IsNullable, IsNull::IsNullable],
+            [("users", "id", IsNull::NotNullable)],
+        );
+    }
+}
+
+#[test]
+fn unknown_functions_can_be_aggregates() {
+    // SQLite applications and MariaDB users can define aggregates, which make a query
+    // without GROUP BY return a row with NULL for its bare columns for an empty table
+    for backend in [Backend::Sqlite, Backend::Mysql, Backend::Mariadb] {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT id, my_aggregate(id) FROM users",
+            [IsNull::IsNullable, IsNull::IsNullable],
+            [("users", "id", IsNull::NotNullable)],
+        );
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT id, LOWER(name), coalesce(name, id) FROM users",
+            [IsNull::NotNullable, IsNull::IsNullable, IsNull::NotNullable],
+            [
+                ("users", "id", IsNull::NotNullable),
+                ("users", "name", IsNull::NotNullable),
+            ],
+        );
+    }
+    // only the built-in functions of the backend itself are known to be scalar, with the
+    // number of arguments SQLite defines them for
+    for (backend, definition, expected) in [
+        (
+            Backend::Sqlite,
+            "SELECT id, aes_encrypt(id) FROM users",
+            IsNull::IsNullable,
+        ),
+        (
+            Backend::Mysql,
+            "SELECT id, aes_encrypt(id) FROM users",
+            IsNull::NotNullable,
+        ),
+        (
+            Backend::Mariadb,
+            "SELECT id, aes_encrypt(id) FROM users",
+            IsNull::NotNullable,
+        ),
+        (
+            Backend::Sqlite,
+            "SELECT id, lower(id, id) FROM users",
+            IsNull::IsNullable,
+        ),
+        (
+            Backend::Sqlite,
+            "SELECT id, round(id, 1, 2) FROM users",
+            IsNull::IsNullable,
+        ),
+        (
+            Backend::Sqlite,
+            "SELECT id, round(id, 1) FROM users",
+            IsNull::NotNullable,
+        ),
+        (
+            Backend::Sqlite,
+            "SELECT id, date() FROM users",
+            IsNull::NotNullable,
+        ),
+        (
+            Backend::Mysql,
+            "SELECT id, ST_Collect(id) FROM users",
+            IsNull::IsNullable,
+        ),
+    ] {
+        let definition = format!("CREATE VIEW test AS {definition}").leak();
+        check_infer_for(
+            backend,
+            definition,
+            [expected, IsNull::IsNullable],
+            [("users", "id", IsNull::NotNullable)],
+        );
+    }
+    // SQLite's CURRENT_TIMESTAMP is a scalar function called without parentheses
+    check_infer(
+        "CREATE VIEW test AS SELECT id, CURRENT_TIMESTAMP IS NULL FROM users",
+        [IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // a qualified name refers to a stored function, which MariaDB allows to aggregate
+    check_infer_for(
+        Backend::Mariadb,
+        "CREATE VIEW test AS SELECT id, db.lower(id) FROM users",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // PostgreSQL rejects a column outside the aggregates without GROUP BY, so a view with
+    // one calls no aggregate, whatever sqlparser reads as a call, like the ARRAY
+    // constructor of a subquery
+    check_infer_for(
+        Backend::Pg,
+        "CREATE VIEW test AS SELECT id, my_function(id), ARRAY(SELECT 1) FROM users",
+        [IsNull::NotNullable, IsNull::IsNullable, IsNull::Unknown],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn aggregate_rows_reach_every_query() {
+    // the arguments of `coalesce()` decide its nullability, so they are bare columns too
+    check_infer(
+        "CREATE VIEW test AS SELECT coalesce(id, name), count(*) FROM users",
+        [IsNull::IsNullable, IsNull::NotNullable],
+        [
+            ("users", "id", IsNull::NotNullable),
+            ("users", "name", IsNull::NotNullable),
+        ],
+    );
+    // common table expressions, derived tables, and subqueries can aggregate as well
+    check_infer(
+        "CREATE VIEW test AS WITH c AS (SELECT id, count(*) AS n FROM users) \
+         SELECT c.id, d.id, 1 IN (SELECT e.id FROM users AS e HAVING count(*) >= 0) \
+         FROM c, (SELECT id, max(id) AS m FROM users) AS d",
+        [IsNull::IsNullable, IsNull::IsNullable, IsNull::IsNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    // MySQL and MariaDB add super-aggregate rows WITH ROLLUP
+    for backend in [Backend::Mysql, Backend::Mariadb] {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT id, count(*) FROM users GROUP BY id WITH ROLLUP",
+            [IsNull::IsNullable, IsNull::NotNullable],
+            [("users", "id", IsNull::NotNullable)],
         );
     }
 }

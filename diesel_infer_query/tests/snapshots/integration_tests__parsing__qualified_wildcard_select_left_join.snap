@@ -12,7 +12,7 @@ ViewData {
                 relation: Some(
                     "users",
                 ),
-                is_left_joined: false,
+                nullable_row: false,
             },
         },
         SelectField {
@@ -22,7 +22,7 @@ ViewData {
                 relation: Some(
                     "posts",
                 ),
-                is_left_joined: true,
+                nullable_row: true,
             },
         },
     ],

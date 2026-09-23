@@ -15,7 +15,7 @@ ViewData {
                     "users",
                 ),
                 field_name: "col1",
-                via_left_join: false,
+                nullable_row: false,
             },
         },
         SelectField {
@@ -28,7 +28,7 @@ ViewData {
                     "source",
                 ),
                 field_name: "b",
-                via_left_join: false,
+                nullable_row: false,
             },
         },
         SelectField {
@@ -59,7 +59,7 @@ ViewData {
                                 "table1",
                             ),
                             field_name: "a",
-                            via_left_join: false,
+                            nullable_row: false,
                         },
                     },
                     SelectField {
@@ -72,7 +72,7 @@ ViewData {
                                 "table1",
                             ),
                             field_name: "b",
-                            via_left_join: false,
+                            nullable_row: false,
                         },
                     },
                 ],

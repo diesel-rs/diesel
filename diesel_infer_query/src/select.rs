@@ -7,9 +7,15 @@ use crate::IsNull;
 use crate::backend::Backend;
 use crate::error::Error;
 use crate::error::Result;
+use crate::functions::{FunctionKind, function_kind};
 use crate::query_source::{QuerySource, find_query_source};
-use sqlparser::ast::{SelectItem, SelectItemQualifiedWildcardKind};
+use sqlparser::ast::{
+    Expr, Function, GroupByExpr, GroupByWithModifier, ObjectName, Query, SelectItem,
+    SelectItemQualifiedWildcardKind, TableFactor, TableWithJoins, Visit, Visitor,
+    visit_expressions,
+};
 use std::collections::HashMap;
+use std::ops::ControlFlow;
 
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct SelectField {
@@ -52,8 +58,11 @@ pub enum Expression {
         query_source: Option<String>,
         /// the name of the field
         field_name: String,
-        /// is this field coming from a query source joined via a `LEFT JOIN`
-        via_left_join: bool,
+        /// can the row this field is read from be missing, which makes the field
+        /// `NULL` whatever its column says? That is the case for query sources joined
+        /// via a `LEFT JOIN`, and for columns outside the aggregates of an aggregate
+        /// query without `GROUP BY`
+        nullable_row: bool,
     },
     /// A cast expression
     Cast {
@@ -89,7 +98,8 @@ pub enum Expression {
     Wildcard {
         schema: Option<String>,
         relation: Option<String>,
-        is_left_joined: bool,
+        /// like `Field::nullable_row`
+        nullable_row: bool,
     },
     /// A `left BETWEEN low AND high` expression
     Between {
@@ -173,8 +183,7 @@ impl Expression {
                 IsNull::NotNullable
             }),
             Self::Field {
-                via_left_join: true,
-                ..
+                nullable_row: true, ..
             } => Ok(IsNull::IsNullable),
             Self::Field {
                 schema,
@@ -323,6 +332,62 @@ impl Expression {
             Expression::Unknown => Ok(IsNull::Unknown),
         }
     }
+
+    /// Mark every field this expression reads as coming from a row that can be missing
+    fn mark_rows_nullable(&mut self) {
+        match self {
+            Self::Field { nullable_row, .. } | Self::Wildcard { nullable_row, .. } => {
+                *nullable_row = true
+            }
+            Self::Cast { inner, .. } | Self::Grouped(inner) => inner.mark_rows_nullable(),
+            Self::PostfixOp { expr, .. } => expr.mark_rows_nullable(),
+            Self::BinaryOp { left, right, .. } | Self::Combined { left, right, .. } => {
+                left.mark_rows_nullable();
+                right.mark_rows_nullable();
+            }
+            Self::Between {
+                left, low, high, ..
+            } => {
+                left.mark_rows_nullable();
+                low.mark_rows_nullable();
+                high.mark_rows_nullable();
+            }
+            Self::Case {
+                operand,
+                conditions,
+                else_clause,
+            } => {
+                for e in operand.iter_mut().chain(else_clause.iter_mut()) {
+                    e.mark_rows_nullable();
+                }
+                for c in conditions {
+                    c.condition.mark_rows_nullable();
+                    c.result.mark_rows_nullable();
+                }
+            }
+            // `coalesce()` depends on the nullability of its arguments
+            Self::Function { arguments, .. } => {
+                arguments.iter_mut().for_each(Self::mark_rows_nullable)
+            }
+            Self::In { left, list, .. } => {
+                left.mark_rows_nullable();
+                list.iter_mut().for_each(Self::mark_rows_nullable);
+            }
+            // a subquery can read the missing row too
+            Self::InSubQuery { left, subquery, .. } => {
+                left.mark_rows_nullable();
+                for field in subquery {
+                    field.kind.mark_rows_nullable();
+                }
+            }
+            Self::Subquery { selection } => {
+                for field in selection {
+                    field.kind.mark_rows_nullable();
+                }
+            }
+            Self::Literal { .. } | Self::Unknown => {}
+        }
+    }
 }
 
 pub(crate) fn infer_from_select(
@@ -339,11 +404,264 @@ pub(crate) fn infer_from_select(
         }
     }
 
-    select
+    let mut fields = select
         .projection
         .iter()
         .map(|p| infer_projection(p, &query_source_lookup, backend))
-        .collect()
+        .collect::<Result<Vec<_>>>()?;
+    if bare_columns_can_be_null(select, backend) {
+        for field in &mut fields {
+            field.kind.mark_rows_nullable();
+        }
+    }
+    Ok(fields)
+}
+
+/// Can a row of `select` have `NULL` for a column read outside the aggregates?
+///
+/// An aggregate query without `GROUP BY` returns one row even for empty input, and
+/// grouping sets add super-aggregate rows with `NULL` for the grouping columns.
+fn bare_columns_can_be_null(select: &sqlparser::ast::Select, backend: Backend) -> bool {
+    if has_grouping_sets(&select.group_by) {
+        return true;
+    }
+
+    let grouped =
+        !matches!(&select.group_by, GroupByExpr::Expressions(exprs, _) if exprs.is_empty());
+    !grouped && (has_aggregate_for_outer_select(select, backend) || select.having.is_some())
+}
+
+fn has_grouping_sets(group_by: &GroupByExpr) -> bool {
+    match group_by {
+        GroupByExpr::All(modifiers) => modifiers.iter().any(is_grouping_set_modifier),
+        GroupByExpr::Expressions(expressions, modifiers) => {
+            modifiers.iter().any(is_grouping_set_modifier)
+                || visit_expressions(expressions, |expr| match expr {
+                    Expr::Rollup(_) | Expr::Cube(_) | Expr::GroupingSets(_) => {
+                        ControlFlow::Break(())
+                    }
+                    Expr::Function(function)
+                        if object_name_is(&function.name, "rollup")
+                            || object_name_is(&function.name, "cube") =>
+                    {
+                        ControlFlow::Break(())
+                    }
+                    _ => ControlFlow::Continue(()),
+                })
+                .is_break()
+        }
+    }
+}
+
+fn is_grouping_set_modifier(modifier: &GroupByWithModifier) -> bool {
+    matches!(
+        modifier,
+        GroupByWithModifier::Rollup
+            | GroupByWithModifier::Cube
+            | GroupByWithModifier::GroupingSets(_)
+    )
+}
+
+fn has_aggregate_for_outer_select(select: &sqlparser::ast::Select, backend: Backend) -> bool {
+    let mut outer_names = Vec::new();
+    for source in &select.from {
+        collect_exposed_names(source, &mut outer_names);
+    }
+    let mut visitor = AggregateVisitor {
+        backend,
+        outer_names,
+        nested_query_sources: Vec::new(),
+    };
+    if select.projection.visit(&mut visitor).is_break() {
+        return true;
+    }
+    select.named_window.visit(&mut visitor).is_break()
+}
+
+struct AggregateVisitor {
+    backend: Backend,
+    /// names the FROM clause of the outer SELECT exposes
+    outer_names: Vec<String>,
+    nested_query_sources: Vec<Vec<String>>,
+}
+
+impl AggregateVisitor {
+    fn can_aggregate(&self, function: &Function) -> bool {
+        match function_kind(function, self.backend) {
+            FunctionKind::Aggregate => true,
+            FunctionKind::Scalar => false,
+            // PostgreSQL rejects columns outside aggregates in a query without `GROUP BY`
+            // that aggregates, so in its views every function next to such a column is
+            // scalar
+            FunctionKind::Unknown => self.backend != Backend::Pg,
+        }
+    }
+}
+
+impl Visitor for AggregateVisitor {
+    type Break = ();
+
+    fn pre_visit_query(&mut self, query: &Query) -> ControlFlow<Self::Break> {
+        self.nested_query_sources
+            .push(exposed_names_in_query(query));
+        ControlFlow::Continue(())
+    }
+
+    fn post_visit_query(&mut self, _query: &Query) -> ControlFlow<Self::Break> {
+        let _ = self.nested_query_sources.pop();
+        ControlFlow::Continue(())
+    }
+
+    fn pre_visit_expr(&mut self, expr: &Expr) -> ControlFlow<Self::Break> {
+        if let Expr::Function(function) = expr
+            && function.over.is_none()
+            && self.can_aggregate(function)
+            && (self.nested_query_sources.is_empty()
+                || !aggregate_is_owned_by_nested_query(
+                    function,
+                    &self.outer_names,
+                    &self.nested_query_sources,
+                ))
+        {
+            return ControlFlow::Break(());
+        }
+        ControlFlow::Continue(())
+    }
+}
+
+fn exposed_names_in_query(query: &Query) -> Vec<String> {
+    let Some(select) = query.body.as_select() else {
+        return Vec::new();
+    };
+
+    let mut names = Vec::new();
+    for source in &select.from {
+        collect_exposed_names(source, &mut names);
+    }
+    names
+}
+
+fn collect_exposed_names(source: &TableWithJoins, names: &mut Vec<String>) {
+    collect_exposed_name(&source.relation, names);
+    for join in &source.joins {
+        collect_exposed_name(&join.relation, names);
+    }
+}
+
+fn collect_exposed_name(table: &TableFactor, names: &mut Vec<String>) {
+    match table {
+        TableFactor::Table { name, alias, .. } => {
+            if let Some(alias) = alias {
+                names.push(alias.name.value.clone());
+            } else if let Some(name) = object_name_last_ident(name) {
+                names.push(name.to_owned());
+            }
+        }
+        TableFactor::Derived {
+            alias: Some(alias), ..
+        } => names.push(alias.name.value.clone()),
+        TableFactor::NestedJoin {
+            table_with_joins,
+            alias,
+        } => {
+            if let Some(alias) = alias {
+                names.push(alias.name.value.clone());
+            } else {
+                collect_exposed_names(table_with_joins, names);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn aggregate_is_owned_by_nested_query(
+    function: &Function,
+    outer_names: &[String],
+    nested_query_sources: &[Vec<String>],
+) -> bool {
+    let mut visitor = ColumnReferenceVisitor {
+        outer_names,
+        nested_query_sources,
+        argument_queries: 0,
+        has_reference: false,
+        has_nested_reference: false,
+    };
+    let _ = function.args.visit(&mut visitor);
+    let _ = function.filter.visit(&mut visitor);
+    let _ = function.within_group.visit(&mut visitor);
+    !visitor.has_reference || visitor.has_nested_reference
+}
+
+struct ColumnReferenceVisitor<'a> {
+    outer_names: &'a [String],
+    nested_query_sources: &'a [Vec<String>],
+    /// how many queries inside the aggregate's arguments enclose the visited expression
+    argument_queries: usize,
+    has_reference: bool,
+    has_nested_reference: bool,
+}
+
+impl ColumnReferenceVisitor<'_> {
+    fn record_qualified_name(&mut self, name: &str) {
+        self.has_reference = true;
+        // inside a query of the arguments the name can refer to that query, which says
+        // nothing about the level the aggregate belongs to; and when a subquery's
+        // relation of that name lacks the column, SQLite looks the column up in the outer
+        // SELECT, so a name the outer SELECT exposes too, in any ASCII case, proves nothing
+        if self.argument_queries == 0
+            && !self
+                .outer_names
+                .iter()
+                .any(|outer| outer.eq_ignore_ascii_case(name))
+        {
+            self.has_nested_reference |= self
+                .nested_query_sources
+                .iter()
+                .any(|query| query.iter().any(|source| source == name));
+        }
+    }
+}
+
+impl Visitor for ColumnReferenceVisitor<'_> {
+    type Break = ();
+
+    fn pre_visit_query(&mut self, _query: &Query) -> ControlFlow<Self::Break> {
+        self.argument_queries += 1;
+        ControlFlow::Continue(())
+    }
+
+    fn post_visit_query(&mut self, _query: &Query) -> ControlFlow<Self::Break> {
+        self.argument_queries -= 1;
+        ControlFlow::Continue(())
+    }
+
+    fn pre_visit_expr(&mut self, expr: &Expr) -> ControlFlow<Self::Break> {
+        match expr {
+            Expr::Identifier(_) => self.has_reference = true,
+            Expr::CompoundIdentifier(identifiers) => {
+                self.has_reference = true;
+                if let Some(qualifier) = identifiers.iter().rev().nth(1) {
+                    self.record_qualified_name(&qualifier.value);
+                }
+            }
+            // only PostgreSQL accepts qualified wildcards like `t.*` in expressions, and it
+            // rejects bare columns next to an aggregate of the outer SELECT, so where such
+            // an aggregate belongs cannot change what it makes nullable
+            _ => {}
+        }
+        ControlFlow::Continue(())
+    }
+}
+
+fn object_name_is(name: &ObjectName, expected: &str) -> bool {
+    object_name_last_ident(name).is_some_and(|name| name.eq_ignore_ascii_case(expected))
+}
+
+fn object_name_last_ident(name: &ObjectName) -> Option<&str> {
+    name.0
+        .last()
+        .and_then(|part| part.as_ident())
+        .map(|ident| ident.value.as_str())
 }
 
 pub(crate) fn collect_query_sources<'a>(
@@ -386,13 +704,13 @@ pub(crate) fn infer_projection(
                 .map(|a| a.value.as_str())
                 .and_then(|k| find_query_source(query_source_lookup, k))
             {
-                let is_left_joined = item.contains_left_join(query_source_lookup)?;
+                let nullable_row = item.contains_left_join(query_source_lookup)?;
                 Ok(SelectField {
                     ident: None,
                     kind: Expression::Wildcard {
                         schema: item.schema.map(|s| s.to_owned()),
                         relation: item.name.map(|c| c.to_owned()),
-                        is_left_joined,
+                        nullable_row,
                     },
                 })
             } else {
@@ -408,7 +726,7 @@ pub(crate) fn infer_projection(
                 kind: Expression::Wildcard {
                     schema: wildcard.schema.map(|c| c.to_owned()),
                     relation: wildcard.name.map(|c| c.to_owned()),
-                    is_left_joined: false,
+                    nullable_row: false,
                 },
             })
         }

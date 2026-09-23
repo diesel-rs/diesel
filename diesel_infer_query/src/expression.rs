@@ -33,7 +33,7 @@ pub(crate) fn infer_expr(
                     query_source: table.name.map(|s| s.to_owned()),
                     field_name: id.value.clone(),
                     // no joins here so we should be fine
-                    via_left_join: false,
+                    nullable_row: false,
                 })
             } else {
                 Err(Error::UnsupportedSql {
@@ -52,12 +52,12 @@ pub(crate) fn infer_expr(
                         }
                     })?;
                 // lookup if this field comes in via a `LEFT JOIN` somewhere in the chain
-                let via_left_join = table.contains_left_join(query_source_lookup)?;
+                let nullable_row = table.contains_left_join(query_source_lookup)?;
                 Ok(Expression::Field {
                     schema: table.schema.map(|s| s.to_owned()),
                     query_source: table.name.map(|s| s.to_owned()),
                     field_name: field.value.clone(),
-                    via_left_join,
+                    nullable_row,
                 })
             }
             _ => Err(Error::UnsupportedSql {
@@ -428,9 +428,9 @@ fn infer_functions(
                             .map(|a| a.value.as_str())
                             .and_then(|k| find_query_source(query_source_lookup, k))
                         {
-                            let is_left_joined = item.contains_left_join(query_source_lookup)?;
+                            let nullable_row = item.contains_left_join(query_source_lookup)?;
                             Ok(Expression::Wildcard {
-                                is_left_joined,
+                                nullable_row,
                                 relation: item.name.map(|s| s.to_owned()),
                                 schema: item.schema.map(|t| t.to_owned()),
                             })
@@ -444,7 +444,7 @@ fn infer_functions(
                             .next()
                             .expect("We have exactly one element");
                         Ok(Expression::Wildcard {
-                            is_left_joined: false,
+                            nullable_row: false,
                             relation: query_source_lookup.name.map(|s| s.to_owned()),
                             schema: query_source_lookup.schema.map(|t| t.to_owned()),
                         })

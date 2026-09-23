@@ -10,7 +10,7 @@ ViewData {
             kind: Wildcard {
                 schema: None,
                 relation: None,
-                is_left_joined: false,
+                nullable_row: false,
             },
         },
     ],

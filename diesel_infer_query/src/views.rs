@@ -193,7 +193,7 @@ fn resolve_wildcards(
         if let Expression::Wildcard {
             schema,
             relation,
-            is_left_joined,
+            nullable_row,
         } = &f.kind
         {
             let resolved_fields = resolver
@@ -206,7 +206,7 @@ fn resolve_wildcards(
                         schema: schema.clone(),
                         query_source: relation.clone(),
                         field_name: f.name().ok_or(Error::UnnamedField)?.to_owned(),
-                        via_left_join: *is_left_joined,
+                        nullable_row: *nullable_row,
                     },
                 });
             }

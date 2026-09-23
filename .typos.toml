@@ -27,6 +27,8 @@ extend-ignore-re = [
     "tipe",
     # we use this often in place of the reserved type identifier
     "tpe",
+    # That's the name of a SQLite function
+    "\"iif\"",
 ]
 
 [default.extend-identifiers]
