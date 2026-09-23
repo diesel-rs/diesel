@@ -78,6 +78,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
+* Fixed loading a tuple of `Selectable::as_select()` expressions nested in another tuple, such as `((User::as_select(), Post::as_select()), id)`, which failed to compile unless the nested tuple was the last element
+* Fixed loading a `Selectable::as_select()` expression followed by an untyped SQL fragment, such as `(User::as_select(), sql::<Untyped>("..."))`, which failed to compile
 
 ### Changed
 
