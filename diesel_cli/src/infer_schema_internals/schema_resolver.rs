@@ -137,15 +137,20 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
         let Some(query_relation) = query_relation else {
             return Err("Unnamed query source cannot be resolved".into());
         };
+        let use_case_insensitive_fallback =
+            uses_case_insensitive_identifier_lookup(self.connection);
         let (table_name, relation) = self.load_relation_data(schema, query_relation)?;
-        Ok(relation
-            .columns()
-            .iter()
-            .find_map(|c| (c.sql_name == field_name).then_some(c as &dyn SchemaField))
-            .ok_or_else(|| {
-                tracing::info!(table = ?table_name, field = %field_name, "Field not found");
-                crate::errors::Error::FieldNotFoundForView(table_name, field_name.to_owned())
-            })?)
+        Ok(find_by_name(
+            relation.columns(),
+            field_name,
+            use_case_insensitive_fallback,
+            |c| c.sql_name.as_str(),
+        )
+        .map(|c| c as &dyn SchemaField)
+        .ok_or_else(|| {
+            tracing::info!(table = ?table_name, field = %field_name, "Field not found");
+            crate::errors::Error::FieldNotFoundForView(table_name, field_name.to_owned())
+        })?)
     }
 
     fn list_fields<'s>(
@@ -173,6 +178,8 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
         schema: Option<&str>,
         query_relation: &str,
     ) -> Result<(TableName, &QueryRelationData), crate::errors::Error> {
+        let use_case_insensitive_fallback =
+            uses_case_insensitive_identifier_lookup(self.connection);
         let table_name = match schema {
             Some(schema) => TableName::new(query_relation, schema),
             None => {
@@ -191,8 +198,59 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
                 }
             }
         };
+        let table_name = if self.unfiltered_table_names.contains_key(&table_name) {
+            table_name
+        } else {
+            find_by_name(
+                self.unfiltered_table_names
+                    .keys()
+                    .filter(|t| t.schema == table_name.schema),
+                &table_name.sql_name,
+                use_case_insensitive_fallback,
+                |t| t.sql_name.as_str(),
+            )
+            .cloned()
+            .unwrap_or(table_name)
+        };
         let relation = self.load_query_relation_data(None, table_name.clone())?;
         Ok((table_name, relation))
+    }
+}
+
+/// Find the item called `name`.
+///
+/// SQLite matches identifiers case-insensitively but preserves their spelling in
+/// view definitions, so it uses a unique ASCII-case-insensitive fallback after an
+/// exact lookup. PostgreSQL, MySQL, and MariaDB use exact matching only.
+fn find_by_name<'i, T: 'i>(
+    items: impl IntoIterator<Item = &'i T>,
+    name: &str,
+    use_case_insensitive_fallback: bool,
+    item_name: impl Fn(&T) -> &str,
+) -> Option<&'i T> {
+    let mut ignoring_case = None;
+    let mut ambiguous = false;
+    for item in items {
+        if item_name(item) == name {
+            return Some(item);
+        }
+        if use_case_insensitive_fallback && item_name(item).eq_ignore_ascii_case(name) {
+            ambiguous |= ignoring_case.replace(item).is_some();
+        }
+    }
+    ignoring_case.filter(|_| !ambiguous)
+}
+
+fn uses_case_insensitive_identifier_lookup(connection: &InferConnection) -> bool {
+    match connection {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => true,
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(_) => false,
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => false,
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => false,
     }
 }
 

@@ -649,6 +649,29 @@ fn print_schema_view_infer_nullable_fallback() {
 
 #[test]
 #[cfg(feature = "sqlite")]
+fn print_schema_view_infer_nullable_case_insensitive() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_case_insensitive",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_view_case_sensitive_relation() {
+    test_print_schema(
+        "print_schema_view_case_sensitive_relation",
+        vec![
+            "--include-views",
+            "--experimental-infer-nullable-for-views",
+            "-o",
+            "v",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
 fn print_schema_table_name_injecetion() {
     test_print_schema("print_schema_table_name_injection", vec![])
 }
