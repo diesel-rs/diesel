@@ -190,7 +190,10 @@ pub struct OffsetPreceding<T = u64>(T);
 impl QueryId for OffsetPreceding {
     type QueryId = ();
 
-    const HAS_STATIC_QUERY_ID: bool = true;
+    // it's not safe to cache by type id
+    // as we inline a dynamic value (the offset) directly
+    // into the SQL
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl<DB> QueryFragment<DB> for OffsetPreceding
@@ -220,7 +223,10 @@ pub struct OffsetFollowing<I = u64>(I);
 impl QueryId for OffsetFollowing {
     type QueryId = ();
 
-    const HAS_STATIC_QUERY_ID: bool = true;
+    // it's not safe to cache by type id
+    // as we inline a dynamic value (the offset) directly
+    // into the SQL
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl<DB> QueryFragment<DB> for OffsetFollowing

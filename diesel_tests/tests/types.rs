@@ -829,6 +829,59 @@ fn pg_ndim_array_from_sql() {
     );
 }
 
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_array_element_oid_uses_array_header() {
+    use diesel::data_types::NdArray;
+    use diesel::deserialize::FromSql;
+    use diesel::pg::PgValue;
+
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    struct ElementOidInteger;
+
+    #[derive(Debug, PartialEq)]
+    struct ElementWithOid {
+        value: i32,
+        oid: u32,
+    }
+
+    impl HasSqlType<ElementOidInteger> for Pg {
+        fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+            <Pg as HasSqlType<Integer>>::metadata(lookup)
+        }
+    }
+
+    impl FromSql<ElementOidInteger, Pg> for ElementWithOid {
+        fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+            let oid = bytes.get_oid().get();
+            let value = FromSql::<Integer, Pg>::from_sql(bytes)?;
+            Ok(Self { value, oid })
+        }
+    }
+
+    assert_eq!(
+        vec![
+            ElementWithOid { value: 1, oid: 23 },
+            ElementWithOid { value: 2, oid: 23 },
+        ],
+        query_single_value::<Array<ElementOidInteger>, Vec<ElementWithOid>>("ARRAY[1, 2]::int4[]")
+    );
+
+    let ndarray = query_single_value::<Array<ElementOidInteger>, NdArray<ElementWithOid>>(
+        "ARRAY[ARRAY[1, 2], ARRAY[3, 4]]::int4[]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(
+        vec![
+            ElementWithOid { value: 1, oid: 23 },
+            ElementWithOid { value: 2, oid: 23 },
+            ElementWithOid { value: 3, oid: 23 },
+            ElementWithOid { value: 4, oid: 23 },
+        ],
+        ndarray.data
+    );
+}
+
 #[cfg(feature = "postgres")]
 #[diesel_test_helper::test]
 fn pg_array_from_sql_non_one_lower_bound() {

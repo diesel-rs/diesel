@@ -203,12 +203,16 @@ where
         .map(|(name, tpy)| {
             let tpy = SupportedQueryRelationStructures::from_str(&tpy)
                 .expect("This should never happen.");
+            let schema_name = schema_name
+                .filter(|&schema| schema != default_schema)
+                .map(|schema| schema.to_owned());
             let data = TableName {
                 rust_name: inference::rust_name_for_sql_name(&name, None),
                 sql_name: name,
-                schema: schema_name
-                    .filter(|&schema| schema != default_schema)
-                    .map(|schema| schema.to_owned()),
+                rust_schema: schema_name
+                    .as_deref()
+                    .map(|s| inference::rust_name_for_sql_name(s, None)),
+                schema: schema_name,
             };
             (tpy, data)
         })

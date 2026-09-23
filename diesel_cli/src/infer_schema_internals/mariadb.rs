@@ -57,11 +57,16 @@ pub fn load_foreign_key_constraints(
                 child_table.strip_schema_if_matches(&default_schema);
                 parent_table.strip_schema_if_matches(&default_schema);
 
+                let foreign_key_columns_rust = foreign_key_columns
+                    .iter()
+                    .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
+                    .collect();
+
                 ForeignKeyConstraint {
                     child_table,
                     parent_table,
                     primary_key_columns,
-                    foreign_key_columns_rust: foreign_key_columns.clone(),
+                    foreign_key_columns_rust,
                     foreign_key_columns,
                 }
             },
@@ -234,6 +239,7 @@ mod test {
             sql_name: "enum_tests".into(),
             rust_name: "enum_tests".into(),
             schema: None,
+            rust_schema: None,
         };
         let table_data =
             get_table_data(&mut connection, &table, &ColumnSorting::OrdinalPosition).unwrap();

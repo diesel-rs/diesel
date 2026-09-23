@@ -1,10 +1,11 @@
+use crate::backend::Backend;
 use crate::expression::operators::Concat;
 use crate::mysql_like::MysqlLikeBackend;
 use crate::query_builder::insert_statement::DefaultValues;
 use crate::query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
 use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
-use crate::query_builder::upsert::on_conflict_actions::{DoNothing, DoUpdate};
+use crate::query_builder::upsert::on_conflict_actions::{DoNothing, DoUpdate, Excluded};
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 use crate::query_builder::where_clause::NoWhereClause;
@@ -135,6 +136,20 @@ where
         self.target.walk_ast(out.reborrow())?;
         self.action.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out)?;
+        Ok(())
+    }
+}
+
+impl<DB, T> QueryFragment<DB, crate::mysql_like::query_fragments::MysqlOnConflictClause>
+    for Excluded<T>
+where
+    DB: Backend<OnConflictClause = crate::mysql_like::query_fragments::MysqlOnConflictClause>,
+    T: Column,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql("VALUES(");
+        out.push_identifier(T::NAME)?;
+        out.push_sql(")");
         Ok(())
     }
 }

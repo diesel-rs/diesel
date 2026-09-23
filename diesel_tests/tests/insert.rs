@@ -1223,10 +1223,15 @@ fn upsert_with_composite_primary_key_do_update() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn batch_upsert_non_default_values() {
     use crate::schema::users;
     let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[cfg(not(any(feature = "mariadb", feature = "mysql")))]
+    let conflict_clause = users::id;
+
+    #[cfg(any(feature = "mariadb", feature = "mysql"))]
+    let conflict_clause = diesel::dsl::DuplicatedKeys;
 
     diesel::insert_into(users::table)
         .values([
@@ -1241,7 +1246,7 @@ fn batch_upsert_non_default_values() {
                 users::hair_color.eq("blue"),
             ),
         ])
-        .on_conflict(users::id)
+        .on_conflict(conflict_clause)
         .do_update()
         .set(users::hair_color.eq(diesel::upsert::excluded(users::hair_color)))
         .execute(conn)
@@ -1260,10 +1265,20 @@ fn batch_upsert_non_default_values() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "postgres", feature = "returning_clauses_for_sqlite_3_35"))]
+#[cfg(any(
+    feature = "postgres",
+    feature = "returning_clauses_for_sqlite_3_35",
+    feature = "mariadb"
+))]
 fn batch_upsert_with_returning() {
     use crate::schema::users;
     let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[cfg(not(feature = "mariadb"))]
+    let conflict_clause = users::id;
+
+    #[cfg(feature = "mariadb")]
+    let conflict_clause = diesel::dsl::DuplicatedKeys;
 
     let inserted_users = diesel::insert_into(users::table)
         .values([
@@ -1278,7 +1293,7 @@ fn batch_upsert_with_returning() {
                 users::hair_color.eq("blue"),
             ),
         ])
-        .on_conflict(users::id)
+        .on_conflict(conflict_clause)
         .do_update()
         .set(users::hair_color.eq(diesel::upsert::excluded(users::hair_color)))
         .get_results::<User>(conn)

@@ -9,6 +9,9 @@ updates:
     reviewers:
       - "diesel/reviewers"
     directory: "/"
+    versioning-strategy: "widen"
+    cooldown:
+      default-days: 7
     schedule:
       interval: "weekly"
       day: "friday"
@@ -40,6 +43,8 @@ updates:
     directory: "/"
     reviewers:
       - "diesel/reviewers"
+    cooldown:
+      default-days: 7
     schedule:
       interval: "weekly"
       day: "friday"
@@ -55,8 +60,11 @@ updates:
         update-types: ["minor", "patch"]
 
   - package-ecosystem: "rust-toolchain"
+    directory: "/"
     reviewers:
       - "diesel/reviewers"
+    cooldown:
+      default-days: 7
     schedule:
       interval: "weekly"
       day: "friday" # rust releases are on thursdays
