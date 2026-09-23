@@ -140,8 +140,7 @@ impl TransactionManagerStatus {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "postgres",
         feature = "mysql",
-        feature = "mariadb",
-        test
+        feature = "mariadb"
     ))]
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
