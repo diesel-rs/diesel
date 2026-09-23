@@ -7,16 +7,28 @@ use diesel::sql_types::Binary;
 use std::cell::RefCell;
 use std::io::{ErrorKind, Read, Seek, SeekFrom};
 
-const OPERATION_SIZE: usize = 3;
-const MAX_OPERATIONS: usize = 64;
-const MAX_READ_SIZE: usize = 64;
+/// Large enough for any `SqliteBlobOp::Read` length.
+const READ_BUFFER_SIZE: usize = 256;
+
+/// One operation on the blob handle.
+#[derive(Arbitrary, Clone, Copy, Debug)]
+pub enum SqliteBlobOp {
+    /// Read into a buffer of this many bytes.
+    Read(u8),
+    /// Seek to this offset from the start.
+    SeekStart(u16),
+    /// Seek to this offset from the end.
+    SeekEnd(i16),
+    /// Seek by this offset from the cursor.
+    SeekCurrent(i16),
+}
 
 #[derive(Arbitrary, Debug)]
 pub struct BlobInput<'a> {
     /// Bytes stored in the SQLite blob.
     pub data: &'a [u8],
-    /// Three-byte read or seek operations.
-    pub operations: &'a [u8],
+    /// Operations applied in order.
+    pub operations: Vec<SqliteBlobOp>,
     /// Whether to explicitly close the handle instead of dropping it.
     pub close_explicitly: bool,
 }
@@ -42,15 +54,13 @@ fn new_connection() -> SqliteConnection {
     conn
 }
 
-/// Run one bounded sequence of blob reads, seeks, and close or drop.
-///
-/// Operations use three bytes: one opcode and one little-endian `u16` parameter.
+/// Run the input's blob operations, then close or drop the handle.
 pub fn run_case(input: &BlobInput<'_>) -> Result<(), String> {
     CONN.with(|conn| {
         run_on_connection(
             &mut conn.borrow_mut(),
             input.data,
-            input.operations,
+            &input.operations,
             input.close_explicitly,
         )
     })
@@ -59,7 +69,7 @@ pub fn run_case(input: &BlobInput<'_>) -> Result<(), String> {
 fn run_on_connection(
     conn: &mut SqliteConnection,
     data: &[u8],
-    operations: &[u8],
+    operations: &[SqliteBlobOp],
     close_explicitly: bool,
 ) -> Result<(), String> {
     let updated = diesel::sql_query("UPDATE fuzz_blobs SET data = ? WHERE id = 1")
@@ -87,42 +97,35 @@ fn run_on_connection(
     }
 
     let mut cursor = 0;
-    let (operations, _) = operations.as_chunks::<OPERATION_SIZE>();
-    for (operation_index, operation) in operations.iter().take(MAX_OPERATIONS).enumerate() {
-        let parameter = [operation[1], operation[2]];
-        if operation[0] & 3 == 0 {
-            let requested = usize::from(u16::from_le_bytes(parameter)).min(MAX_READ_SIZE);
-            let expected_len = (data.len() - cursor).min(requested);
-            let mut output = [0; MAX_READ_SIZE];
-            let actual_len = blob
-                .read(&mut output[..requested])
-                .map_err(|e| format!("read operation {operation_index} failed: {e}"))?;
-            if actual_len != expected_len {
-                return Err(format!(
-                    "read operation {operation_index} returned {actual_len} bytes, expected {expected_len}"
-                ));
+    for (operation_index, &operation) in operations.iter().enumerate() {
+        let (seek_from, expected_cursor) = match operation {
+            SqliteBlobOp::Read(requested) => {
+                let requested = usize::from(requested);
+                let expected_len = (data.len() - cursor).min(requested);
+                let mut output = [0; READ_BUFFER_SIZE];
+                let actual_len = blob
+                    .read(&mut output[..requested])
+                    .map_err(|e| format!("read operation {operation_index} failed: {e}"))?;
+                if actual_len != expected_len {
+                    return Err(format!(
+                        "read operation {operation_index} returned {actual_len} bytes, expected {expected_len}"
+                    ));
+                }
+                let expected = &data[cursor..cursor + expected_len];
+                if &output[..actual_len] != expected {
+                    return Err(format!(
+                        "read operation {operation_index} returned {:?}, expected {expected:?}",
+                        &output[..actual_len]
+                    ));
+                }
+                cursor += actual_len;
+                continue;
             }
-            let expected = &data[cursor..cursor + expected_len];
-            if &output[..actual_len] != expected {
-                return Err(format!(
-                    "read operation {operation_index} returned {:?}, expected {expected:?}",
-                    &output[..actual_len]
-                ));
-            }
-            cursor += actual_len;
-            continue;
-        }
-
-        let (seek_from, expected_cursor) = match operation[0] & 3 {
-            1 => {
-                let offset = u16::from_le_bytes(parameter);
-                (
-                    SeekFrom::Start(u64::from(offset)),
-                    Some(usize::from(offset).min(data.len())),
-                )
-            }
-            2 => {
-                let offset = i16::from_le_bytes(parameter);
+            SqliteBlobOp::SeekStart(offset) => (
+                SeekFrom::Start(u64::from(offset)),
+                Some(usize::from(offset).min(data.len())),
+            ),
+            SqliteBlobOp::SeekEnd(offset) => {
                 let expected = if offset.is_positive() {
                     Some(data.len())
                 } else {
@@ -130,8 +133,7 @@ fn run_on_connection(
                 };
                 (SeekFrom::End(i64::from(offset)), expected)
             }
-            3 => {
-                let offset = i16::from_le_bytes(parameter);
+            SqliteBlobOp::SeekCurrent(offset) => {
                 let magnitude = usize::from(offset.unsigned_abs());
                 let expected = if offset.is_negative() {
                     cursor.checked_sub(magnitude)
@@ -140,7 +142,6 @@ fn run_on_connection(
                 };
                 (SeekFrom::Current(i64::from(offset)), expected)
             }
-            _ => unreachable!(),
         };
         let actual_cursor = match (blob.seek(seek_from), expected_cursor) {
             (Ok(position), Some(_)) => position,
