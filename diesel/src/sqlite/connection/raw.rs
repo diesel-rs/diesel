@@ -437,7 +437,7 @@ impl RawConnection {
         let blob_size = usize::try_from(blob_size).map_err(Error::IntegerConversion)?;
 
         Ok(super::sqlite_blob::SqliteReadOnlyBlob {
-            blob,
+            blob: Some(blob),
             read_index: 0,
             blob_size,
             _pd: core::marker::PhantomData,
