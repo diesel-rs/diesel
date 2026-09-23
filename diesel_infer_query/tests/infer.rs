@@ -909,3 +909,42 @@ fn operators_returning_null_for_non_null_operands() {
         ],
     );
 }
+
+#[test]
+fn is_distinct_from_followed_by_an_operator() {
+    // sqlparser takes a comparison after `FROM` as the right operand, but SQLite reads
+    // `a IS NOT DISTINCT FROM b = c` as `(a IS NOT DISTINCT FROM b) = c`, which can be
+    // NULL. It binds AND looser, as sqlparser does, and `->>` tighter than `=`, which
+    // sqlparser does not, so the `=` hides below the `->>` in the last one.
+    for backend in [Backend::Sqlite, Backend::Pg] {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT id IS DISTINCT FROM name AND hair_color, \
+             id IS NOT DISTINCT FROM name = hair_color, id IS DISTINCT FROM name || hair_color, \
+             id IS DISTINCT FROM name = hair_color ->> 'k' FROM users",
+            [
+                IsNull::IsNullable,
+                IsNull::Unknown,
+                IsNull::NotNullable,
+                IsNull::Unknown,
+            ],
+            [
+                ("users", "id", IsNull::NotNullable),
+                ("users", "name", IsNull::NotNullable),
+                ("users", "hair_color", IsNull::IsNullable),
+            ],
+        );
+        // a unary minus binds tighter than IS in both, but SQLite binds IN as loosely as
+        // IS and reads the last one as `(id IS DISTINCT FROM name) IN (NULL)`, NULL
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT id IS DISTINCT FROM -id, \
+             id IS DISTINCT FROM name IN (NULL) FROM users",
+            [IsNull::NotNullable, IsNull::Unknown],
+            [
+                ("users", "id", IsNull::NotNullable),
+                ("users", "name", IsNull::NotNullable),
+            ],
+        );
+    }
+}

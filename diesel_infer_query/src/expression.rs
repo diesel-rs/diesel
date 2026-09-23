@@ -7,7 +7,8 @@ use crate::error::{Error, Result};
 use crate::query_source::{QuerySource, find_query_source};
 use crate::select::{CaseCondition, Expression, OperatorNullability};
 use sqlparser::ast::{
-    BinaryOperator, Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart, Value,
+    BinaryOperator, Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart,
+    UnaryOperator, Value,
 };
 use std::collections::HashMap;
 
@@ -130,6 +131,11 @@ pub(crate) fn infer_expr(
                 op: String::from(op),
                 nullability: pattern_nullability(backend),
             })
+        }
+        // SQLite reads `a IS DISTINCT FROM b = c` as `(a IS DISTINCT FROM b) = c`, but
+        // sqlparser takes the comparison after `FROM` as the right operand
+        Expr::IsDistinctFrom(_, b) | Expr::IsNotDistinctFrom(_, b) if !binds_tighter_than_is(b) => {
+            Ok(Expression::Unknown)
         }
         Expr::IsDistinctFrom(a, b) => Ok(Expression::BinaryOp {
             left: Box::new(infer_expr(a, query_source_lookup, backend)?),
@@ -342,6 +348,53 @@ fn pattern_nullability(backend: Backend) -> OperatorNullability {
     match backend {
         Backend::Sqlite => OperatorNullability::Nullable,
         Backend::Pg | Backend::Mysql | Backend::Mariadb => OperatorNullability::NullIfOperandNull,
+    }
+}
+
+/// Whether every operator in `expr` binds tighter than `IS`
+///
+/// Only then does the right operand sqlparser finds for `IS [NOT] DISTINCT FROM`
+/// match the database's. The listed operators bind tighter in SQLite, and PostgreSQL
+/// binds even its comparisons tighter. sqlparser ranks some operators differently, for
+/// example `->>` below `=`, so the whole expression counts, except for parenthesized
+/// parts and the arguments of calls, casts, and `CASE`. Expressions not listed count as
+/// binding looser.
+fn binds_tighter_than_is(expr: &Expr) -> bool {
+    use BinaryOperator::*;
+    match expr {
+        Expr::BinaryOp { left, op, right } => {
+            matches!(
+                op,
+                Plus | Minus
+                    | Multiply
+                    | Divide
+                    | Modulo
+                    | StringConcat
+                    | Arrow
+                    | LongArrow
+                    | BitwiseAnd
+                    | BitwiseOr
+                    | PGBitwiseShiftLeft
+                    | PGBitwiseShiftRight
+                    | Lt
+                    | LtEq
+                    | Gt
+                    | GtEq
+            ) && binds_tighter_than_is(left)
+                && binds_tighter_than_is(right)
+        }
+        Expr::UnaryOp { op, expr } => {
+            !matches!(op, UnaryOperator::Not) && binds_tighter_than_is(expr)
+        }
+        Expr::Value(_)
+        | Expr::Identifier(_)
+        | Expr::CompoundIdentifier(_)
+        | Expr::Function(_)
+        | Expr::Cast { .. }
+        | Expr::Case { .. }
+        | Expr::Nested(_)
+        | Expr::Subquery(_) => true,
+        _ => false,
     }
 }
 
