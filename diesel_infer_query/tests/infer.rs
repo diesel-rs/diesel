@@ -302,6 +302,49 @@ pub(crate) fn operations() {
 }
 
 #[test]
+fn deepest_supported_expression() {
+    // 63 comparisons nest 64 expressions, the deepest parse_view_def accepts, and
+    // inferring their nullability recurses as deep, which must fit this thread's stack
+    let definition = format!("CREATE VIEW test AS SELECT 1{}", " = 1".repeat(63)).leak();
+    for backend in BACKENDS {
+        check_infer_for(backend, definition, [IsNull::NotNullable], ());
+    }
+}
+
+#[test]
+fn deepest_supported_definition() {
+    // 22 subqueries, as deep as sqlparser nests them, around 64 set operations, the most
+    // parse_view_def accepts, and 41 comparisons, which nest 64 expressions with the
+    // subqueries, the deepest it accepts. On PostgreSQL, a cast of the first operand to
+    // the deepest array type supported takes the place of a comparison, and lowering it
+    // prints the type. Inferring their nullability recurses through all of them, which
+    // must fit the 2 MiB stack of a spawned thread.
+    let definition = |first: &str, comparisons| -> &'static str {
+        format!(
+            "SELECT {}{first}{}{}{}",
+            "(SELECT ".repeat(22),
+            " = 1".repeat(comparisons),
+            " UNION SELECT 1".repeat(64),
+            ")".repeat(22)
+        )
+        .leak()
+    };
+    let array_cast = format!("NULL::INT{}", "[]".repeat(16));
+    let definitions = BACKENDS
+        .map(|backend| (backend, definition("1", 41)))
+        .into_iter()
+        .chain([(Backend::Pg, definition(&array_cast, 40))]);
+    for (backend, definition) in definitions {
+        std::thread::Builder::new()
+            .stack_size(2 << 20)
+            .spawn(move || check_infer_for(backend, definition, [IsNull::IsNullable], ()))
+            .expect("spawning a thread")
+            .join()
+            .expect("inferring the definition");
+    }
+}
+
+#[test]
 fn is_null_and_is_not_null() {
     check_infer(
         "CREATE VIEW test AS SELECT NULL IS NOT NULL, NULL IS NULL",

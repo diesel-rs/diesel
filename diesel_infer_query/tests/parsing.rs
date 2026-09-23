@@ -4,6 +4,13 @@
 
 use diesel_infer_query::{Backend, Error, parse_view_def};
 
+const BACKENDS: [Backend; 4] = [
+    Backend::Sqlite,
+    Backend::Pg,
+    Backend::Mysql,
+    Backend::Mariadb,
+];
+
 #[track_caller]
 pub(crate) fn check_parse_view(name: &'static str, def: &'static str) {
     check_parse_view_for(Backend::Sqlite, name, def);
@@ -383,4 +390,228 @@ fn partially_parsed_definition() {
     // PostgreSQL ends its view definitions with a semicolon
     let res = parse_view_def(" SELECT users.id FROM users;", Backend::Pg);
     assert!(res.is_ok(), "{res:?}");
+}
+
+#[test]
+fn deeply_nested_expressions() {
+    // inference recurses into operands, so a long chain of operators nests as deep as it
+    // is long and used to overflow the stack
+    for backend in BACKENDS {
+        let res = parse_view_def(&format!("SELECT 1{}", " + 1".repeat(3_000)), backend);
+        assert!(matches!(res, Err(Error::UnsupportedSql { .. })));
+        // 63 additions nest 64 expressions, the deepest supported, which must also fit the
+        // stack of this test's thread
+        let res = parse_view_def(&format!("SELECT 1{}", " + 1".repeat(63)), backend);
+        assert!(res.is_ok(), "{backend:?}: {res:?}");
+        let res = parse_view_def(&format!("SELECT 1{}", " + 1".repeat(64)), backend);
+        assert!(matches!(res, Err(Error::UnsupportedSql { .. })));
+        // sqlparser nests such chains, and chains of UNION queries, as deep as they are
+        // long, and dropping them recurses as deep, which overflowed this thread's stack
+        for definition in [
+            format!("SELECT 1{}", " + 1".repeat(60_000)),
+            format!("SELECT 1{}", " UNION SELECT 1".repeat(20_000)),
+        ] {
+            let res = parse_view_def(&definition, backend);
+            assert!(matches!(res, Err(Error::UnsupportedSql { .. })));
+        }
+    }
+}
+
+#[test]
+fn many_set_operations() {
+    // inference recurses through a chain of set operations, and through the ones of a
+    // query inside it, so the limit counts all set operations of a definition
+    let unions = |n| " UNION SELECT 1".repeat(n);
+    for backend in BACKENDS {
+        for (definition, supported) in [
+            (format!("SELECT 1{}", unions(64)), true),
+            (format!("SELECT 1{}", unions(65)), false),
+            (
+                format!("SELECT (SELECT 1{}){}", unions(32), unions(32)),
+                true,
+            ),
+            (
+                format!("SELECT (SELECT 1{}){}", unions(32), unions(33)),
+                false,
+            ),
+        ] {
+            let res = parse_view_def(&definition, backend);
+            if supported {
+                assert!(res.is_ok(), "{backend:?}: {res:?}");
+            } else {
+                assert!(
+                    matches!(&res, Err(Error::UnsupportedSql { msg }) if msg.contains("set operations")),
+                    "{backend:?}: {res:?}"
+                );
+            }
+        }
+    }
+}
+
+/// Whether parse_view_def rejects `definition` with an error message starting with
+/// `message`, on a thread with the 2 MiB stack of a spawned thread
+fn rejected_on_2_mib_stack(definition: String, backend: Backend, message: &'static str) -> bool {
+    std::thread::Builder::new()
+        .stack_size(2 << 20)
+        .spawn(move || {
+            matches!(
+                parse_view_def(&definition, backend),
+                Err(Error::UnsupportedSql { msg }) if msg.starts_with(message)
+            )
+        })
+        .expect("spawning a thread")
+        .join()
+        .is_ok_and(|rejected| rejected)
+}
+
+#[test]
+fn longest_chains_within_the_token_limit() {
+    // n UNION queries take 2 + 3 * n tokens, and 9 + 3 * n inside a WITH clause, and n
+    // UNPIVOTs after a table 4 + 10 * n, so these are the longest chains the limit of
+    // 12_288 lets through to the parser. sqlparser nests them as deep as they are long,
+    // so rejecting and dropping them must fit a 2 MiB stack, and the message tells that
+    // the parser saw them, not just the token limit.
+    let unions = |n| " UNION SELECT 1".repeat(n);
+    for (definition, message) in [
+        (
+            format!("SELECT 1{}", unions(4_095)),
+            "Definitions of more than 64 set",
+        ),
+        (
+            format!("WITH x AS (SELECT 1{}) SELECT 1", unions(4_093)),
+            "Definitions of more than 64 set",
+        ),
+        (
+            format!(
+                "SELECT * FROM t{}",
+                " UNPIVOT(a FOR b IN (c))".repeat(1_228)
+            ),
+            "Query sources nested",
+        ),
+    ] {
+        for backend in BACKENDS {
+            assert!(
+                rejected_on_2_mib_stack(definition.clone(), backend, message),
+                "{backend:?}: {message}"
+            );
+        }
+    }
+    // likewise n pairs of brackets of a PostgreSQL array type after `SELECT NULL::INT`
+    // take 4 + 2 * n tokens, and 7 + 2 * n in a column definition, whose statement the
+    // error message must not print
+    for (definition, message) in [
+        (
+            format!("SELECT NULL::INT{}", "[]".repeat(6_142)),
+            "Array types nested",
+        ),
+        (
+            format!("CREATE TABLE t (a INT{})", "[]".repeat(6_140)),
+            "Expected a query",
+        ),
+    ] {
+        assert!(
+            rejected_on_2_mib_stack(definition, Backend::Pg, message),
+            "{message}"
+        );
+    }
+}
+
+#[test]
+fn deep_array_types() {
+    // sqlparser nests the brackets of an array type as deep as they are many, so the
+    // limit applies wherever PostgreSQL's dialect reads a type, and counts the arrays
+    // around the brackets that each template nests them in
+    for (template, around) in [
+        ("SELECT NULL::TYPE", 0),
+        ("SELECT CAST(NULL AS TYPE)", 0),
+        ("SELECT TYPE '{}'", 0),
+        ("SELECT CONVERT(x, TYPE)", 0),
+        ("SELECT JSON_VALUE(x, '$' RETURNING TYPE)", 0),
+        ("SELECT string_agg(x, ',' ORDER BY x::TYPE)", 0),
+        ("SELECT NULL::TYPE ARRAY", 1),
+        ("SELECT NULL::ARRAY<TYPE>", 1),
+        ("SELECT t.a FROM f() AS t(a TYPE)", 0),
+        ("SELECT t.a FROM UNNEST(x) AS t(a TYPE)", 0),
+        ("SELECT t.a FROM TABLE(f()) AS t(a TYPE)", 0),
+        ("SELECT t.a FROM u, LATERAL f(u.x) AS t(a TYPE)", 0),
+        ("SELECT * FROM t PIVOT(sum(a) FOR b IN (1)) AS p(a TYPE)", 0),
+        ("WITH c(a TYPE) AS (SELECT 1) SELECT c.a FROM c", 0),
+        (
+            "SELECT * FROM XMLTABLE('/a' PASSING x COLUMNS n FOR ORDINALITY, b TYPE PATH 'b')",
+            0,
+        ),
+        (
+            "SELECT * FROM JSON_TABLE(x, '$' COLUMNS (n FOR ORDINALITY, a TYPE PATH '$.a')) AS j",
+            0,
+        ),
+        ("SELECT * FROM OPENJSON(x) WITH (a TYPE '$.a')", 0),
+    ] {
+        for (depth, beyond_limit) in [(16, false), (17, true)] {
+            let arrays = "[]".repeat(depth - around);
+            let definition = template.replace("TYPE", &format!("INT{arrays}"));
+            let res = parse_view_def(&definition, Backend::Pg);
+            assert_eq!(
+                matches!(&res, Err(Error::UnsupportedSql { msg }) if msg.starts_with("Array types")),
+                beyond_limit,
+                "{definition}: {res:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn table_types() {
+    // sqlparser reads a `TABLE` type in every dialect, which no backend casts to, and the
+    // default of one of its columns would nest array types all over again
+    let deep = format!("INT{}", "[]".repeat(15));
+    let definitions = [
+        "SELECT CAST(NULL AS TABLE(a INT))".to_owned(),
+        "SELECT CAST(NULL AS TABLE(a INT DEFAULT CAST(NULL AS TABLE(b INT))))".to_owned(),
+    ];
+    let pg_definitions = [
+        format!("SELECT NULL::TABLE(a INT DEFAULT NULL::{deep})[]"),
+        format!("SELECT NULL::ARRAY<TABLE(a {deep})>"),
+    ];
+    let cases = BACKENDS
+        .into_iter()
+        .flat_map(|backend| definitions.iter().map(move |d| (backend, d)))
+        .chain(pg_definitions.iter().map(|d| (Backend::Pg, d)));
+    for (backend, definition) in cases {
+        let res = parse_view_def(definition, backend);
+        assert!(
+            matches!(&res, Err(Error::UnsupportedSql { msg }) if msg.starts_with("Unsupported data type")),
+            "{backend:?}: {definition}: {res:?}"
+        );
+    }
+}
+
+#[test]
+fn nested_query_sources() {
+    // sqlparser nests a chain of UNPIVOTs as deep as it is long, and the nested columns of
+    // a JSON_TABLE as deep as they nest: 63 of either inside a query source nest 64 query
+    // sources, the most supported, and printing them in the error about the unsupported
+    // query source must fit a 2 MiB stack
+    let unpivots = |n| format!("SELECT * FROM t{}", " UNPIVOT(a FOR b IN (c))".repeat(n));
+    let nested_columns = |n| {
+        format!(
+            "SELECT * FROM JSON_TABLE(x, '$' COLUMNS ({}a INT PATH '$'{})) AS j",
+            "NESTED PATH '$' COLUMNS (".repeat(n),
+            ")".repeat(n)
+        )
+    };
+    let chains: [fn(usize) -> String; 2] = [unpivots, nested_columns];
+    for backend in BACKENDS {
+        for nested in chains {
+            assert!(
+                rejected_on_2_mib_stack(nested(63), backend, "Unsupported query source"),
+                "{backend:?}: {}",
+                nested(1)
+            );
+            assert!(
+                rejected_on_2_mib_stack(nested(64), backend, "Query sources nested"),
+                "{backend:?}: {}",
+                nested(1)
+            );
+        }
+    }
 }
