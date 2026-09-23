@@ -1964,6 +1964,7 @@ mod tests {
     use crate::prelude::*;
     use crate::sql_types::{Integer, Text};
     use crate::sqlite::SqliteFunctionBehavior;
+    use crate::test_helpers::format_error;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -2304,7 +2305,7 @@ mod tests {
         let r = sql::<Integer>("SELECT id FROM users").load::<i32>(conn);
 
         assert!(r.is_err());
-        assert_eq!(r.unwrap_err().to_string(), "file is not a database");
+        assert_eq!(format_error(&r.unwrap_err()), "file is not a database");
 
         let conn = &mut SqliteConnection::establish(":memory:").unwrap();
 
@@ -2325,7 +2326,7 @@ mod tests {
 
         assert!(r.is_err());
         assert_eq!(
-            r.unwrap_err().to_string(),
+            format_error(&r.unwrap_err()),
             "database disk image is malformed"
         );
 
@@ -2340,7 +2341,7 @@ mod tests {
 
         assert!(r.is_err());
         assert_eq!(
-            r.unwrap_err().to_string(),
+            format_error(&r.unwrap_err()),
             "database disk image is malformed"
         );
     }
@@ -2366,6 +2367,7 @@ mod tests {
         use super::super::{SerializedDatabase, ffi};
         use crate::connection::{Connection, SimpleConnection};
         use crate::sqlite::SqliteConnection;
+        use crate::test_helpers::format_error;
 
         const MIN_DATABASE_BYTES: i64 = 1_048_576;
 
@@ -2412,7 +2414,7 @@ mod tests {
                 let error = serialized
                     .try_as_slice()
                     .expect_err("the failed output allocation must surface as an error");
-                assert_eq!(error.to_string(), "out of memory");
+                assert_eq!(format_error(&error), "out of memory");
 
                 let payload = std::panic::catch_unwind(core::panic::AssertUnwindSafe(|| {
                     core::hint::black_box(serialized[0]);
