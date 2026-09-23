@@ -849,3 +849,13 @@ fn query_source_names_ignore_case() {
         [("users", "id", IsNull::NotNullable)],
     );
 }
+
+#[test]
+fn case_without_else() {
+    // without an ELSE, the result is NULL when no branch matches
+    check_infer(
+        "CREATE VIEW test AS SELECT CASE WHEN 1 = 1 THEN 1 END, CASE 1 WHEN 1 THEN 1 END",
+        [IsNull::IsNullable, IsNull::IsNullable],
+        (),
+    );
+}

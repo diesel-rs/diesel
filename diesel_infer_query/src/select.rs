@@ -231,14 +231,18 @@ impl Expression {
                 ];
                 Ok(nullability[0].or(nullability[1]).or(nullability[2]))
             }
+            // Without an `ELSE` the result is `NULL` when no branch matches
+            Expression::Case {
+                else_clause: None, ..
+            } => Ok(IsNull::IsNullable),
             Expression::Case {
                 conditions,
-                else_clause,
+                else_clause: Some(else_clause),
                 ..
             } => conditions
                 .iter()
                 .map(|c| &c.result)
-                .chain(else_clause.iter().map(|c| &**c))
+                .chain([&**else_clause])
                 .map(|c| c.infer_nullability(resolver))
                 .try_fold(IsNull::NotNullable, |agg, v| Ok(agg.or(v?))),
             Expression::In { left, list, .. } => {
