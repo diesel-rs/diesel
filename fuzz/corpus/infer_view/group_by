@@ -1,0 +1,1 @@
+ SELECT user_id, count(*) FROM posts GROUP BY user_id HAVING count(*) > 0

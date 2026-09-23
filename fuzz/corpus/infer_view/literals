@@ -1,0 +1,1 @@
+ SELECT 1 AS foo, 'foo' AS bar, NULL, CAST(1 AS TEXT), CAST(NULL AS TEXT)

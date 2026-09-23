@@ -1,0 +1,1 @@
+ SELECT b.* FROM users AS a JOIN posts AS b ON b.id = c.id JOIN comments AS c ON c.id = b.id

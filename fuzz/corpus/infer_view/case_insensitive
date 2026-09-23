@@ -1,0 +1,1 @@
+ SELECT USERS.*, Users.NAME AS upper_name, hair_COLOR FROM Users

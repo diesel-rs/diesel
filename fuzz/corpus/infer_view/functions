@@ -1,0 +1,1 @@
+ SELECT count(*), count(id), sum(id), max(id, 1), coalesce(hair_color, name) FROM users

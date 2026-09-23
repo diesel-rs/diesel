@@ -1,0 +1,1 @@
+ SELECT CASE (1) WHEN 1 THEN id << 1 END FROM users

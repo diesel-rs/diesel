@@ -1,0 +1,1 @@
+ WITH users AS (SELECT NULL AS id) SELECT id FROM users

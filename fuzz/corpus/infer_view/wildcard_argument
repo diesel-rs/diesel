@@ -1,0 +1,1 @@
+ SELECT count(users.*), count(*) FROM users

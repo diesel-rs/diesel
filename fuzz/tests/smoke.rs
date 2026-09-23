@@ -1,5 +1,6 @@
 use arbitrary::Arbitrary;
-use diesel_fuzz::{document, mysql, pg, sqlite, sqlite_blob};
+use diesel_fuzz::{document, infer_view, mysql, pg, sqlite, sqlite_blob};
+use diesel_infer_query::IsNull;
 use std::num::NonZeroU32;
 
 #[test]
@@ -67,6 +68,54 @@ fn blob_operations_match_byte_slice_model() {
     for close_explicitly in [true, false, true] {
         input.close_explicitly = close_explicitly;
         sqlite_blob::run_case(&input).expect("blob operations match the model");
+    }
+}
+
+#[test]
+fn inferred_view_nullability_holds_in_sqlite() {
+    for select in [
+        "SELECT users.id, name, hair_color FROM users",
+        "SELECT u.*, posts.id FROM users AS u LEFT JOIN posts ON posts.user_id = u.id",
+        "SELECT USERS.*, Name FROM Users",
+        "SELECT CASE WHEN id > 0 THEN 1 END FROM users",
+        "SELECT id / id, id % id, name ->> 'k', id + id FROM users",
+        "SELECT id, id IS NULL, count(*) FROM comments",
+        "SELECT id IS DISTINCT FROM name AND hair_color FROM users",
+        "SELECT id IS DISTINCT FROM name = hair_color ->> 'k' FROM users",
+        "WITH users AS (SELECT NULL AS id) SELECT id FROM users",
+        // only read in part by the parser
+        "SELECT CASE (1) WHEN 1 THEN id << 1 END FROM users",
+        // rejected instead of panicking or overflowing the stack
+        "SELECT posts.* FROM users",
+        "SELECT b.* FROM users AS a JOIN posts AS b ON b.id = c.id JOIN comments AS c ON c.id = b.id",
+    ] {
+        infer_view::check_raw_sql(select).unwrap_or_else(|violation| panic!("{violation}"));
+    }
+}
+
+#[test]
+fn a_wrong_not_null_claim_is_reported() {
+    // the first user has no hair color
+    let result =
+        infer_view::check_fixture_claims("SELECT hair_color FROM users", &[IsNull::NotNullable]);
+    assert!(result.is_err(), "{result:?}");
+}
+
+#[test]
+fn a_wrong_column_count_is_reported() {
+    // there are no comments, so no row shows the three columns
+    let result = infer_view::check_fixture_claims("SELECT * FROM comments", &[]);
+    assert!(result.is_err(), "{result:?}");
+}
+
+#[test]
+fn generated_views_hold_in_sqlite() {
+    let entropy = (0..=255).collect::<Vec<u8>>();
+    for start in 0..64 {
+        // an odd first byte selects the generated lane
+        let mut data = vec![1];
+        data.extend(entropy.iter().cycle().skip(start * 7).take(512));
+        infer_view::run_case(&data).unwrap_or_else(|violation| panic!("{violation}"));
     }
 }
 

@@ -1,0 +1,1 @@
+ SELECT hair_color IS NULL, hair_color IS NOT NULL, hair_color IS DISTINCT FROM NULL, name IS NOT DISTINCT FROM NULL FROM users

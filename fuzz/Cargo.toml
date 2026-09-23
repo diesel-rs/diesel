@@ -19,6 +19,7 @@ ipnet = "2.5.0"
 ipnetwork = "0.21"
 uuid = "1"
 libsqlite3-sys = { version = "0.38", features = ["bundled"] }
+diesel_infer_query = { path = "../diesel_infer_query" }
 
 [dependencies.diesel]
 path = "../diesel"
@@ -68,6 +69,13 @@ bench = false
 [[bin]]
 name = "sqlite_blob_state"
 path = "fuzz_targets/sqlite_blob_state.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "infer_view"
+path = "fuzz_targets/infer_view.rs"
 test = false
 doc = false
 bench = false

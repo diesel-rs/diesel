@@ -1,0 +1,1 @@
+ SELECT id, id IS NULL, count(*) FROM comments
