@@ -101,7 +101,7 @@ impl<'a> QuerySource<'a> {
                     kind: JoinKind::Inner,
                     to,
                 }) => {
-                    source = query_source_lookup.get(&Some(to.as_str())).ok_or_else(|| {
+                    source = find_query_source(query_source_lookup, to).ok_or_else(|| {
                         Error::InvalidQuerySource {
                             query_source: to.clone(),
                         }
@@ -257,7 +257,16 @@ impl<'a> QuerySource<'a> {
         // So for `INNER JOIN posts ON posts.user_id = users.id`
         // remove `posts`
         for inner in inner.keys().flatten() {
-            join_expr.remove(*inner);
+            if !join_expr.remove(*inner) {
+                let spelled = only_match_ignoring_case(
+                    join_expr.iter().map(|ident| (ident.as_str(), ident)),
+                    inner,
+                )
+                .cloned();
+                if let Some(spelled) = spelled {
+                    join_expr.remove(&spelled);
+                }
+            }
         }
         // we should now have only one table left
         // that's the table we are joining to
@@ -278,6 +287,40 @@ impl<'a> QuerySource<'a> {
             out.insert(l, v);
         }
         Ok(())
+    }
+}
+
+/// Find the query source the query refers to as `name`
+///
+/// SQLite matches names case-insensitively, while PostgreSQL and MySQL store
+/// normalized view definitions that spell each name exactly. So an exact match
+/// wins, and otherwise the only match ignoring ASCII case is used.
+pub(crate) fn find_query_source<'l, 'a>(
+    query_source_lookup: &'l HashMap<Option<&'a str>, QuerySource<'a>>,
+    name: &str,
+) -> Option<&'l QuerySource<'a>> {
+    query_source_lookup
+        .iter()
+        .find_map(|(key, source)| (*key == Some(name)).then_some(source))
+        .or_else(|| {
+            only_match_ignoring_case(
+                query_source_lookup
+                    .iter()
+                    .filter_map(|(key, source)| Some(((*key)?, source))),
+                name,
+            )
+        })
+}
+
+/// The value of the only item whose name equals `name` ignoring ASCII case
+pub(crate) fn only_match_ignoring_case<'i, T>(
+    items: impl Iterator<Item = (&'i str, T)>,
+    name: &str,
+) -> Option<T> {
+    let mut matches = items.filter(|(item, _)| item.eq_ignore_ascii_case(name));
+    match (matches.next(), matches.next()) {
+        (Some((_, value)), None) => Some(value),
+        _ => None,
     }
 }
 

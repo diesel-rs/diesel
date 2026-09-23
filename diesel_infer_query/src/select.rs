@@ -6,7 +6,7 @@ use super::SchemaResolver;
 use crate::IsNull;
 use crate::error::Error;
 use crate::error::Result;
-use crate::query_source::QuerySource;
+use crate::query_source::{QuerySource, find_query_source};
 use sqlparser::ast::{SelectItem, SelectItemQualifiedWildcardKind};
 use std::collections::HashMap;
 
@@ -372,7 +372,7 @@ pub(crate) fn infer_projection(
                 .last()
                 .and_then(|a| a.as_ident())
                 .map(|a| a.value.as_str())
-                .and_then(|k| query_source_lookup.get(&Some(k)))
+                .and_then(|k| find_query_source(query_source_lookup, k))
             {
                 let is_left_joined = item.contains_left_join(query_source_lookup)?;
                 Ok(SelectField {

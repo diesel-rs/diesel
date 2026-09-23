@@ -820,3 +820,32 @@ fn nested_subqueries_with_same_name() {
         (),
     );
 }
+
+#[test]
+fn query_source_names_ignore_case() {
+    // SQLite matches names case-insensitively and stores view definitions as written
+    check_infer(
+        "CREATE VIEW test AS SELECT USERS.*, Posts.id, comments.id FROM users \
+         LEFT JOIN posts ON POSTS.user_id = Users.id \
+         INNER JOIN comments ON comments.post_id = POSTS.id",
+        [
+            IsNull::NotNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+        ],
+        [
+            ("users", "id", IsNull::NotNullable),
+            ("users", "name", IsNull::IsNullable),
+            ("posts", "id", IsNull::NotNullable),
+            ("comments", "id", IsNull::NotNullable),
+        ],
+    );
+    // likewise for common table expressions and derived tables, and their columns
+    check_infer(
+        "CREATE VIEW test AS WITH C AS (SELECT id AS Id FROM users) \
+         SELECT c.ID, D.x FROM c, (SELECT 1 AS X) AS d",
+        [IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+}

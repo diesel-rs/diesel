@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 use crate::Result;
+use crate::query_source::only_match_ignoring_case;
 use crate::views::SubQuery;
 use crate::{Error, IsNull};
 use std::collections::HashMap;
@@ -67,6 +68,25 @@ impl<'b> CombinedResolver<'b> {
     }
 }
 
+/// The fields of the common table expression or derived table named `name`, looked up
+/// like [`crate::query_source::find_query_source`] looks up query sources
+fn find_subquery<'s>(
+    subqueries: &'s HashMap<Option<String>, Vec<ResolvedField>>,
+    name: Option<&str>,
+) -> Option<&'s [ResolvedField]> {
+    subqueries
+        .get(&name.map(|n| n.to_owned()))
+        .or_else(|| {
+            only_match_ignoring_case(
+                subqueries
+                    .iter()
+                    .filter_map(|(key, fields)| Some((key.as_deref()?, fields))),
+                name?,
+            )
+        })
+        .map(|fields| fields.as_slice())
+}
+
 impl<'b> SchemaResolver for CombinedResolver<'b> {
     fn resolve_field<'s>(
         &'s mut self,
@@ -75,17 +95,18 @@ impl<'b> SchemaResolver for CombinedResolver<'b> {
         field_name: &str,
     ) -> Result<&'s dyn SchemaField, Box<dyn std::error::Error + Send + Sync + 'static>> {
         if relation_schema.is_none()
-            && let Some(fields) = self.subqueries.get(&query_relation.map(|s| s.to_owned()))
+            && let Some(fields) = find_subquery(&self.subqueries, query_relation)
         {
             fields
                 .iter()
-                .find_map(|f| {
-                    if f.ident.as_deref() == Some(field_name) {
-                        Some(f as &dyn SchemaField)
-                    } else {
-                        None
-                    }
+                .find(|f| f.ident.as_deref() == Some(field_name))
+                .or_else(|| {
+                    only_match_ignoring_case(
+                        fields.iter().filter_map(|f| Some((f.ident.as_deref()?, f))),
+                        field_name,
+                    )
                 })
+                .map(|f| f as &dyn SchemaField)
                 .ok_or_else(|| {
                     Box::new(Error::UnknownField {
                         relation_schema: relation_schema.map(|c| c.to_owned()),
@@ -106,7 +127,7 @@ impl<'b> SchemaResolver for CombinedResolver<'b> {
         query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
         if relation_schema.is_none()
-            && let Some(fields) = self.subqueries.get(&query_relation.map(|c| c.to_owned()))
+            && let Some(fields) = find_subquery(&self.subqueries, query_relation)
         {
             Ok(fields.iter().map(|f| f as &dyn SchemaField).collect())
         } else {

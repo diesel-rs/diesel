@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use crate::error::{Error, Result};
-use crate::query_source::QuerySource;
+use crate::query_source::{QuerySource, find_query_source};
 use crate::select::{CaseCondition, Expression};
 use sqlparser::ast::{
     Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart, Value,
@@ -42,10 +42,11 @@ pub(crate) fn infer_expr(
         }
         s @ Expr::CompoundIdentifier(ids) => match ids.as_slice() {
             [table, field] => {
-                let table = query_source_lookup
-                    .get(&Some(table.value.as_str()))
-                    .ok_or_else(|| Error::InvalidQuerySource {
-                        query_source: table.value.clone(),
+                let table =
+                    find_query_source(query_source_lookup, &table.value).ok_or_else(|| {
+                        Error::InvalidQuerySource {
+                            query_source: table.value.clone(),
+                        }
                     })?;
                 // lookup if this field comes in via a `LEFT JOIN` somewhere in the chain
                 let via_left_join = table.contains_left_join(query_source_lookup)?;
@@ -328,7 +329,7 @@ fn infer_functions(
                             .last()
                             .and_then(|a| a.as_ident())
                             .map(|a| a.value.as_str())
-                            .and_then(|k| query_source_lookup.get(&Some(k)))
+                            .and_then(|k| find_query_source(query_source_lookup, k))
                         {
                             let is_left_joined = item.contains_left_join(query_source_lookup)?;
                             Ok(Expression::Wildcard {
