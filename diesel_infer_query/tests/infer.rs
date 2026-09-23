@@ -1427,3 +1427,128 @@ fn ambiguous_relation_names() {
         "{res:?}"
     );
 }
+
+const BACKENDS: [Backend; 4] = [
+    Backend::Sqlite,
+    Backend::Pg,
+    Backend::Mysql,
+    Backend::Mariadb,
+];
+
+/// The nullability `nullable` stands for
+fn is_null(nullable: bool) -> IsNull {
+    if nullable {
+        IsNull::IsNullable
+    } else {
+        IsNull::NotNullable
+    }
+}
+
+#[test]
+fn casts_that_can_return_null() {
+    // MySQL and MariaDB return NULL for a value the target type cannot hold, like
+    // `CAST('0000-00-00' AS DATE)` or MariaDB's `CAST('x' AS INET6)`, and TRY_CAST
+    // returns NULL when the conversion fails
+    for backend in BACKENDS {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT CAST('0000-00-00' AS DATE), CAST('x' AS DATETIME), \
+                  CAST('x' AS TIME), CAST(99999 AS YEAR), CAST('x' AS INET6), \
+                  TRY_CAST('x' AS INTEGER), CAST('x' AS INTEGER), CAST(1 AS TEXT), \
+                  CAST('x' AS DECIMAL(5, 2)), CAST('x' AS REAL), CAST('x' AS BLOB)",
+            [
+                IsNull::IsNullable,
+                IsNull::IsNullable,
+                IsNull::IsNullable,
+                IsNull::IsNullable,
+                IsNull::IsNullable,
+                IsNull::IsNullable,
+                IsNull::NotNullable,
+                IsNull::NotNullable,
+                IsNull::NotNullable,
+                IsNull::NotNullable,
+                IsNull::NotNullable,
+            ],
+            (),
+        );
+    }
+    // PostgreSQL 18 casts a JSON null to NULL when converting to a number or a boolean,
+    // so such casts are only non-null for a literal, which cannot be JSON. MySQL returns
+    // NULL for bytes that are no valid string, and MariaDB for a result longer than its
+    // max_allowed_packet.
+    for (backend, expected) in [
+        (Backend::Sqlite, [true, true, true, false, false]),
+        (Backend::Pg, [true, true, true, false, false]),
+        (Backend::Mysql, [true, true, true, true, false]),
+        (Backend::Mariadb, [true, true, true, true, true]),
+    ] {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT CAST(id AS INTEGER), CAST(id AS BOOLEAN), \
+                  CAST(id AS REAL), CAST(name AS TEXT), CAST(name AS BLOB) FROM users",
+            expected.map(is_null),
+            [
+                ("users", "id", IsNull::NotNullable),
+                ("users", "name", IsNull::NotNullable),
+            ],
+        );
+    }
+    // SQLite accepts these names of string and byte types, and a cast never turns a
+    // non-null value into NULL
+    check_infer(
+        "CREATE VIEW test AS SELECT CAST(name AS CHARACTER(10)), \
+         CAST(name AS CHAR VARYING(10)), CAST(name AS NVARCHAR(10)), \
+         CAST(name AS VARBINARY(10)), CAST(name AS CLOB), \
+         CAST(name AS CHARACTER LARGE OBJECT), CAST(name AS CHAR LARGE OBJECT), \
+         CAST(name AS STRING) FROM users",
+        [IsNull::NotNullable; 8],
+        [("users", "name", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn mysql_and_mariadb_casts_to_strings_and_bytes() {
+    // MySQL returns NULL for a declared length above its max_allowed_packet, which is at
+    // least 1024, and in strict mode for bytes that are no valid string of the target
+    // character set. MariaDB caps the declared length instead, but returns NULL for a
+    // result longer than max_allowed_packet in bytes, and keeps up to the declared number
+    // of characters of the operand even for bytes, where a character takes up to 4.
+    let definition = "CREATE VIEW test AS SELECT CAST('x' AS CHAR(1024)), \
+        CAST('x' AS CHAR(1025)), CAST(1 AS CHAR(1025)), CAST('x' AS BINARY(1000000000)), \
+        CAST(name AS CHAR(256)), CAST(name AS CHAR(257)), CAST(name AS BINARY(1024)), \
+        CAST(name AS BINARY(1025)), CAST(name AS BINARY), CAST(x'FF' AS CHAR), \
+        CAST(x'FF' AS BINARY) FROM users";
+    for (backend, expected) in [
+        (
+            Backend::Mysql,
+            [
+                false, true, true, true, true, true, false, true, false, true, false,
+            ],
+        ),
+        (
+            Backend::Mariadb,
+            [
+                false, false, false, false, false, true, true, true, true, true, true,
+            ],
+        ),
+        // SQLite and PostgreSQL turn any value into a string or bytes
+        (Backend::Sqlite, [false; 11]),
+        (Backend::Pg, [false; 11]),
+    ] {
+        check_infer_for(
+            backend,
+            definition,
+            expected.map(is_null),
+            [("users", "name", IsNull::NotNullable)],
+        );
+    }
+    // double-quoted and national strings are literals too
+    for backend in [Backend::Mysql, Backend::Mariadb] {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT CAST(\"x\" AS CHAR(1024)), CAST(N'x' AS CHAR(1024))",
+            [IsNull::NotNullable, IsNull::NotNullable],
+            (),
+        );
+    }
+}

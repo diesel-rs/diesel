@@ -17,6 +17,7 @@ ViewData {
                     is_null: false,
                 },
                 tpe: "INTEGER",
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -31,6 +32,7 @@ ViewData {
                     nullable_row: false,
                 },
                 tpe: "TEXT",
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -47,6 +49,7 @@ ViewData {
                     nullable_row: false,
                 },
                 tpe: "VARCHAR",
+                nullability: NullIfOperandNull,
             },
         },
     ],

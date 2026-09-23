@@ -70,6 +70,8 @@ pub enum Expression {
         inner: Box<Expression>,
         /// target cast type
         tpe: String,
+        /// how the cast can produce null values
+        nullability: OperatorNullability,
     },
     /// A binary operation
     BinaryOp {
@@ -194,7 +196,6 @@ impl Expression {
                 .resolve_field(schema.as_deref(), table.as_deref(), field_name)
                 .map_err(|inner| Error::ResolverFailure { inner })?
                 .is_nullable()),
-            Self::Cast { inner, .. } => inner.infer_nullability(resolver),
             Self::BinaryOp {
                 left,
                 right,
@@ -209,6 +210,11 @@ impl Expression {
             },
             Expression::PostfixOp {
                 expr, nullability, ..
+            }
+            | Expression::Cast {
+                inner: expr,
+                nullability,
+                ..
             } => match nullability {
                 OperatorNullability::NeverNull => Ok(IsNull::NotNullable),
                 OperatorNullability::Nullable => Ok(IsNull::IsNullable),

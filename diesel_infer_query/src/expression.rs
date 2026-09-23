@@ -7,8 +7,9 @@ use crate::error::{Error, Result};
 use crate::query_source::{QuerySource, find_query_source};
 use crate::select::{CaseCondition, Expression, OperatorNullability};
 use sqlparser::ast::{
-    BinaryOperator, Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart,
-    TableFactor, UnaryOperator, Value, Visit, Visitor,
+    BinaryLength, BinaryOperator, CastKind, CharacterLength, DataType, Expr, FunctionArg,
+    FunctionArgExpr, FunctionArguments, ObjectNamePart, TableFactor, UnaryOperator, Value, Visit,
+    Visitor,
 };
 use std::collections::HashMap;
 use std::ops::ControlFlow;
@@ -68,12 +69,16 @@ pub(crate) fn infer_expr(
             }),
         },
         Expr::Cast {
-            expr, data_type, ..
+            kind,
+            expr,
+            data_type,
+            ..
         } => {
             let inner = infer_expr(expr, query_source_lookup, backend)?;
             Ok(Expression::Cast {
                 inner: Box::new(inner),
                 tpe: data_type.to_string(),
+                nullability: cast_nullability(kind, expr, data_type, backend),
             })
         }
         Expr::BinaryOp { left, op, right } => {
@@ -352,6 +357,196 @@ fn pattern_nullability(backend: Backend) -> OperatorNullability {
     match backend {
         Backend::Sqlite => OperatorNullability::Nullable,
         Backend::Pg | Backend::Mysql | Backend::Mariadb => OperatorNullability::NullIfOperandNull,
+    }
+}
+
+/// The smallest `max_allowed_packet` MySQL and MariaDB accept
+const MIN_MAX_ALLOWED_PACKET: u64 = 1024;
+
+/// The most bytes a character takes in the character sets of MySQL and MariaDB
+const MAX_CHARACTER_BYTES: u64 = 4;
+
+/// How the result of a cast of `operand` to `data_type` can be `NULL`
+///
+/// `TRY_CAST` returns `NULL` when the conversion fails, MySQL and MariaDB return `NULL`
+/// for a value the target type cannot hold, like `CAST('0000-00-00' AS DATE)` or
+/// MariaDB's `CAST('x' AS INET6)`, and PostgreSQL 18 turns a JSON `null` into `NULL`
+/// when casting it to a number or a boolean. So a cast keeps the nullability of its
+/// operand only when converting to a string or bytes, which MySQL and MariaDB restrict
+/// further, see [`mysql_string_cast_keeps_nullability`], or when converting a literal,
+/// which cannot be JSON, to a number or a boolean.
+fn cast_nullability(
+    kind: &CastKind,
+    operand: &Expr,
+    data_type: &DataType,
+    backend: Backend,
+) -> OperatorNullability {
+    let keeps_nullability = matches!(kind, CastKind::Cast | CastKind::DoubleColon)
+        && match string_type(data_type) {
+            Some(target) => match backend {
+                Backend::Pg | Backend::Sqlite => true,
+                Backend::Mysql | Backend::Mariadb => {
+                    mysql_string_cast_keeps_nullability(backend, operand, target)
+                }
+            },
+            None => is_number_or_boolean(data_type) && matches!(operand, Expr::Value(_)),
+        };
+    if keeps_nullability {
+        OperatorNullability::NullIfOperandNull
+    } else {
+        OperatorNullability::Nullable
+    }
+}
+
+/// A string or byte type a value is cast to
+#[derive(Clone, Copy)]
+struct StringType {
+    /// is it a type of bytes, which have no character set?
+    binary: bool,
+    /// the declared length, like the 10 of `CHAR(10)`
+    length: Option<u64>,
+}
+
+fn string_type(data_type: &DataType) -> Option<StringType> {
+    use DataType::*;
+    let binary = match data_type {
+        Character(..)
+        | Char(..)
+        | CharacterVarying(..)
+        | CharVarying(..)
+        | Varchar(..)
+        | Nvarchar(..)
+        | CharacterLargeObject(..)
+        | CharLargeObject(..)
+        | Clob(..)
+        | String(..)
+        | Text
+        | TinyText
+        | MediumText
+        | LongText => false,
+        Binary(..) | Varbinary(..) | Blob(..) | Bytes(..) | TinyBlob | MediumBlob | LongBlob
+        | Bytea => true,
+        _ => return None,
+    };
+    Some(StringType {
+        binary,
+        length: explicit_length(data_type),
+    })
+}
+
+fn is_number_or_boolean(data_type: &DataType) -> bool {
+    use DataType::*;
+    matches!(
+        data_type,
+        Numeric(..)
+            | Decimal(..)
+            | DecimalUnsigned(..)
+            | Dec(..)
+            | DecUnsigned(..)
+            | Float(..)
+            | FloatUnsigned(..)
+            | Double(..)
+            | DoubleUnsigned(..)
+            | Float4
+            | Float8
+            | Real
+            | RealUnsigned
+            | DoublePrecision
+            | DoublePrecisionUnsigned
+            | TinyInt(..)
+            | TinyIntUnsigned(..)
+            | SmallInt(..)
+            | SmallIntUnsigned(..)
+            | MediumInt(..)
+            | MediumIntUnsigned(..)
+            | Int(..)
+            | IntUnsigned(..)
+            | Int2(..)
+            | Int4(..)
+            | Int8(..)
+            | Integer(..)
+            | IntegerUnsigned(..)
+            | BigInt(..)
+            | BigIntUnsigned(..)
+            | Signed
+            | SignedInteger
+            | Unsigned
+            | UnsignedInteger
+            | Bool
+            | Boolean
+    )
+}
+
+/// Whether a cast of `operand` to `target` keeps the nullability of `operand` on MySQL
+/// or MariaDB
+///
+/// MySQL returns `NULL` for a declared length above its `max_allowed_packet`, and in its
+/// default strict mode for bytes that are no valid string of the target character set,
+/// which a string or number literal always is. MariaDB caps the declared length
+/// instead, but returns `NULL` for a result longer than its `max_allowed_packet` in
+/// bytes, and even a cast to bytes keeps up to the declared number of characters of
+/// its operand. So the characters of a declared length or of a literal, times the
+/// bytes a character can take, bound the result.
+fn mysql_string_cast_keeps_nullability(
+    backend: Backend,
+    operand: &Expr,
+    target: StringType,
+) -> bool {
+    if backend == Backend::Mysql {
+        target
+            .length
+            .is_none_or(|length| length <= MIN_MAX_ALLOWED_PACKET)
+            && (target.binary || literal_characters(operand).is_some())
+    } else {
+        [target.length, literal_characters(operand)]
+            .into_iter()
+            .flatten()
+            .min()
+            .is_some_and(|characters| {
+                characters.saturating_mul(MAX_CHARACTER_BYTES) <= MIN_MAX_ALLOWED_PACKET
+            })
+    }
+}
+
+/// The number of characters of a string or number literal
+fn literal_characters(expr: &Expr) -> Option<u64> {
+    let Expr::Value(value) = expr else {
+        return None;
+    };
+    match &value.value {
+        Value::SingleQuotedString(text)
+        | Value::DoubleQuotedString(text)
+        | Value::NationalStringLiteral(text)
+        | Value::Number(text, _) => u64::try_from(text.chars().count()).ok(),
+        _ => None,
+    }
+}
+
+/// The explicit length of a string or byte type, like the 10 of `VARCHAR(10)`
+fn explicit_length(data_type: &DataType) -> Option<u64> {
+    use DataType::*;
+    match data_type {
+        Character(length)
+        | Char(length)
+        | CharacterVarying(length)
+        | CharVarying(length)
+        | Varchar(length)
+        | Nvarchar(length) => length.as_ref().map(|length| match length {
+            CharacterLength::IntegerLength { length, .. } => *length,
+            CharacterLength::Max => u64::MAX,
+        }),
+        Varbinary(length) => length.as_ref().map(|length| match length {
+            BinaryLength::IntegerLength { length } => *length,
+            BinaryLength::Max => u64::MAX,
+        }),
+        CharacterLargeObject(length)
+        | CharLargeObject(length)
+        | Clob(length)
+        | String(length)
+        | Binary(length)
+        | Blob(length)
+        | Bytes(length) => *length,
+        _ => None,
     }
 }
 
