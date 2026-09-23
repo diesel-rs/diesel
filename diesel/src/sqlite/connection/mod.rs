@@ -234,6 +234,10 @@ impl SimpleConnection for SqliteConnection {
                 query: &StrQueryHelper::new(query),
                 error: resp.as_ref().err(),
             });
+        if resp.is_err() && self.raw_connection.is_autocommit() {
+            // SQLite ends the transaction on some failures, e.g. an aborting commit hook.
+            self.transaction_state.status = TransactionManagerStatus::Valid(Default::default());
+        }
         resp
     }
 }

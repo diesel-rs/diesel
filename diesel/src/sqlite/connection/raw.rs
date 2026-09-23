@@ -174,6 +174,11 @@ impl RawConnection {
         unsafe { ffi::sqlite3_last_insert_rowid(self.internal_connection.as_ptr()) }
     }
 
+    pub(super) fn is_autocommit(&self) -> bool {
+        // SAFETY: `internal_connection` stays open until `Drop`.
+        unsafe { ffi::sqlite3_get_autocommit(self.internal_connection.as_ptr()) != 0 }
+    }
+
     pub(super) fn register_sql_function<F, Ret, RetSqlType>(
         &self,
         fn_name: &str,
