@@ -359,3 +359,20 @@ fn cyclic_join() {
         "{res:?}"
     );
 }
+
+#[test]
+fn partially_parsed_definition() {
+    // sqlparser cannot parse `<<` in SQLite views, so it gives up on the CASE, reads
+    // `CASE (1)` as a call of a function named `CASE`, and stops before `WHEN 1`. That
+    // dropped the rest of the query, including its FROM clause.
+    for definition in [
+        "CREATE VIEW test AS SELECT CASE (1) WHEN 1 THEN id << 1 END FROM users",
+        "SELECT id FROM users; SELECT name FROM users",
+    ] {
+        let res = parse_view_def(definition, Backend::Sqlite);
+        assert!(res.is_err(), "{definition}: {res:?}");
+    }
+    // PostgreSQL ends its view definitions with a semicolon
+    let res = parse_view_def(" SELECT users.id FROM users;", Backend::Pg);
+    assert!(res.is_ok(), "{res:?}");
+}

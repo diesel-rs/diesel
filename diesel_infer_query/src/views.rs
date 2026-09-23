@@ -69,10 +69,16 @@ pub fn parse_view_def(definition: &str, backend: Backend) -> Result<ViewData> {
     let dialect = backend.dialect();
     let options = ParserOptions::new();
 
-    let stmt = sqlparser::parser::Parser::new(dialect)
+    // `parse_statement` stops wherever the statement seems to end, so anything after
+    // that, like the FROM clause of a query it only read in part, would silently be
+    // left out of the inference
+    let statements = sqlparser::parser::Parser::new(dialect)
         .with_options(options)
         .try_with_sql(definition)?
-        .parse_statement()?;
+        .parse_statements()?;
+    let [stmt] = <[_; 1]>::try_from(statements).map_err(|statements| Error::UnsupportedSql {
+        msg: format!("Expected one statement, found {}", statements.len()),
+    })?;
 
     let select = match stmt {
         sqlparser::ast::Statement::Query(query) => query,
