@@ -87,21 +87,34 @@ impl<'a> QuerySource<'a> {
         &self,
         query_source_lookup: &HashMap<Option<&str>, QuerySource<'_>>,
     ) -> Result<bool> {
-        if let Some(join) = &self.join {
-            match join.kind {
-                JoinKind::Inner => {
-                    let source = query_source_lookup
-                        .get(&Some(join.to.as_str()))
-                        .ok_or_else(|| Error::InvalidQuerySource {
-                            query_source: join.to.clone(),
-                        })?;
-                    source.contains_left_join(query_source_lookup)
+        let mut source = self;
+        // Every step follows a join to a query source from the lookup, so a chain
+        // taking more steps than there are query sources has to be a cycle
+        for _ in 0..=query_source_lookup.len() {
+            match &source.join {
+                None => return Ok(false),
+                Some(Join {
+                    kind: JoinKind::Left,
+                    ..
+                }) => return Ok(true),
+                Some(Join {
+                    kind: JoinKind::Inner,
+                    to,
+                }) => {
+                    source = query_source_lookup.get(&Some(to.as_str())).ok_or_else(|| {
+                        Error::InvalidQuerySource {
+                            query_source: to.clone(),
+                        }
+                    })?;
                 }
-                JoinKind::Left => Ok(true),
             }
-        } else {
-            Ok(false)
         }
+        Err(Error::UnsupportedSql {
+            msg: format!(
+                "Cyclic join chain for query source `{}`",
+                self.name.unwrap_or_default()
+            ),
+        })
     }
 
     fn fill_from_table_factor(

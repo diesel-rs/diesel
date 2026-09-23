@@ -340,3 +340,22 @@ fn unknown_qualified_wildcard() {
         );
     }
 }
+
+#[test]
+fn cyclic_join() {
+    // `b` is joined through `c`, and `c` through `b`
+    let res = parse_view_def(
+        "CREATE VIEW test AS SELECT b.* FROM a JOIN b ON b.id = c.id JOIN c ON c.id = b.id",
+        Backend::Sqlite,
+    );
+    assert!(matches!(res, Err(Error::UnsupportedSql { .. })), "{res:?}");
+    // `b` is joined through `z`, which the FROM clause lacks
+    let res = parse_view_def(
+        "CREATE VIEW test AS SELECT b.* FROM a JOIN b ON b.id = z.id",
+        Backend::Sqlite,
+    );
+    assert!(
+        matches!(&res, Err(Error::InvalidQuerySource { query_source, .. }) if query_source == "z"),
+        "{res:?}"
+    );
+}
