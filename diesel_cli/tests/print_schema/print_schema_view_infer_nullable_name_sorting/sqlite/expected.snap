@@ -1,0 +1,33 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_name_sorting"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    left_items (left_id) {
+        a_left -> Nullable<Text>,
+        left_id -> Integer,
+        z_left -> Text,
+    }
+}
+
+diesel::view! {
+    joined {
+        a_left -> Nullable<Text>,
+        b_right -> Text,
+        left_id -> Integer,
+        right_id -> Integer,
+        y_right -> Nullable<Text>,
+        z_left -> Text,
+    }
+}
+
+diesel::view! {
+    reordered {
+        a -> Nullable<Text>,
+        z -> Text,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(left_items, joined, reordered,);

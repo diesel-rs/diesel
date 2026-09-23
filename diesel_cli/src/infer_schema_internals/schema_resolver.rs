@@ -1,6 +1,7 @@
 use super::{
     ColumnDefinition, QueryRelationData, SupportedQueryRelationStructures, TableName,
-    load_table_data, load_table_names, load_view_data, resolve_unqualified_relation_schema,
+    load_table_data_for_query_resolution, load_table_names, load_view_data,
+    order_query_relation_columns_for_output, resolve_unqualified_relation_schema,
 };
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
@@ -53,15 +54,16 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
         //
         // Our `cached_results` list could contain many more table entries at this
         // point as loading views could trigger loading additional data
-        Ok(self
-            .print_schema_relations
-            .into_iter()
-            .map(|(_, rel)| {
-                self.cached_results
-                    .remove(&rel)
-                    .expect("This relation was loaded before")
-            })
-            .collect())
+        let mut output = Vec::with_capacity(self.print_schema_relations.len());
+        for (_, relation_name) in self.print_schema_relations {
+            let mut relation = self
+                .cached_results
+                .remove(&relation_name)
+                .expect("This relation was loaded before");
+            order_query_relation_columns_for_output(self.connection, self.config, &mut relation)?;
+            output.push(relation);
+        }
+        Ok(output)
     }
 
     fn load_query_relation_data(
@@ -108,7 +110,12 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
         };
         match kind {
             SupportedQueryRelationStructures::Table => Ok(QueryRelationData::Table(
-                load_table_data(self.connection, t.clone(), self.config, kind)?,
+                load_table_data_for_query_resolution(
+                    self.connection,
+                    t.clone(),
+                    self.config,
+                    kind,
+                )?,
             )),
             SupportedQueryRelationStructures::View => {
                 Ok(QueryRelationData::View(load_view_data(self, t.clone())?))

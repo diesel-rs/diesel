@@ -207,6 +207,79 @@ fn get_column_information(
     }
 }
 
+fn query_relation_column_sorting(config: &PrintSchema) -> ColumnSorting {
+    if config.experimental_infer_nullable_for_views {
+        ColumnSorting::OrdinalPosition
+    } else {
+        config.column_sorting
+    }
+}
+
+pub(super) fn order_query_relation_columns_for_output(
+    connection: &mut InferConnection,
+    config: &PrintSchema,
+    relation: &mut QueryRelationData,
+) -> Result<(), crate::errors::Error> {
+    if !config.experimental_infer_nullable_for_views
+        || !matches!(config.column_sorting, ColumnSorting::Name)
+    {
+        return Ok(());
+    }
+
+    let (name, kind) = match relation {
+        QueryRelationData::Table(table) => {
+            (table.name.clone(), SupportedQueryRelationStructures::Table)
+        }
+        QueryRelationData::View(view) => {
+            (view.name.clone(), SupportedQueryRelationStructures::View)
+        }
+    };
+    let pg_domains_as_custom_types = config
+        .pg_domains_as_custom_types
+        .iter()
+        .map(|regex| regex as &regex::Regex)
+        .collect::<Vec<_>>();
+    let database_order = get_column_information(
+        connection,
+        &name,
+        &ColumnSorting::Name,
+        &pg_domains_as_custom_types,
+        kind,
+    )?;
+    let columns = match relation {
+        QueryRelationData::Table(table) => &mut table.column_data,
+        QueryRelationData::View(view) => &mut view.column_data,
+    };
+
+    if database_order.len() != columns.len()
+        || database_order.iter().any(|column| {
+            !columns
+                .iter()
+                .any(|existing| existing.sql_name == column.column_name)
+        })
+    {
+        tracing::warn!(relation = %name, "Column list changed while resolving view nullability");
+        return Ok(());
+    }
+
+    let mut columns_by_name = HashMap::with_capacity(columns.len());
+    for column in std::mem::take(columns) {
+        let replaced = columns_by_name.insert(column.sql_name.clone(), column);
+        debug_assert!(replaced.is_none());
+    }
+    *columns = database_order
+        .into_iter()
+        .map(|column| {
+            columns_by_name
+                .remove(&column.column_name)
+                .expect("The database returned the same columns in a different order")
+        })
+        .collect();
+    debug_assert!(columns_by_name.is_empty());
+
+    Ok(())
+}
+
 fn determine_column_type(
     attr: &ColumnInformation,
     conn: &mut InferConnection,
@@ -304,6 +377,7 @@ fn load_column_structure_data(
     connection: &mut InferConnection,
     name: &TableName,
     config: &PrintSchema,
+    column_sorting: ColumnSorting,
     primary_key: Option<&[String]>,
     kind: SupportedQueryRelationStructures,
 ) -> Result<(Option<String>, Vec<ColumnDefinition>), crate::errors::Error> {
@@ -336,7 +410,7 @@ fn load_column_structure_data(
     get_column_information(
         connection,
         name,
-        &config.column_sorting,
+        &column_sorting,
         &pg_domains_as_custom_types,
         kind,
     )?
@@ -371,12 +445,44 @@ pub fn load_table_data(
     config: &PrintSchema,
     tpe: SupportedQueryRelationStructures,
 ) -> Result<TableData, crate::errors::Error> {
+    load_table_data_with_column_sorting(connection, name, config, tpe, config.column_sorting)
+}
+
+#[tracing::instrument(skip(connection))]
+pub(super) fn load_table_data_for_query_resolution(
+    connection: &mut InferConnection,
+    name: TableName,
+    config: &PrintSchema,
+    tpe: SupportedQueryRelationStructures,
+) -> Result<TableData, crate::errors::Error> {
+    load_table_data_with_column_sorting(
+        connection,
+        name,
+        config,
+        tpe,
+        query_relation_column_sorting(config),
+    )
+}
+
+fn load_table_data_with_column_sorting(
+    connection: &mut InferConnection,
+    name: TableName,
+    config: &PrintSchema,
+    tpe: SupportedQueryRelationStructures,
+    column_sorting: ColumnSorting,
+) -> Result<TableData, crate::errors::Error> {
     let primary_key = match tpe {
         SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
         SupportedQueryRelationStructures::View => Vec::new(),
     };
-    let (table_comment, column_data) =
-        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
+    let (table_comment, column_data) = load_column_structure_data(
+        connection,
+        &name,
+        config,
+        column_sorting,
+        Some(&primary_key),
+        tpe,
+    )?;
     let primary_key = primary_key
         .iter()
         .map(|k| rust_name_for_sql_name(k, Some(&name)))
@@ -398,6 +504,7 @@ pub fn load_view_data(
         resolver.connection,
         &name,
         resolver.config,
+        query_relation_column_sorting(resolver.config),
         None,
         SupportedQueryRelationStructures::View,
     )?;
