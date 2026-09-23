@@ -13,6 +13,7 @@ table! {
 
 fn main() {}
 
+#[allow(dead_code)]
 fn nullable_expressions_are_selectable_in_returning() {
     let _ = update(users::table)
         .set(users::name.eq("Updated"))
@@ -42,6 +43,7 @@ fn nullable_expressions_are_selectable_in_returning() {
         .returning((users::id, users::name.nullable()));
 }
 
+#[allow(dead_code)]
 fn nullable_old_expressions_are_selectable_in_returning() {
     use pg::returning::old;
 
@@ -61,6 +63,7 @@ fn nullable_old_expressions_are_selectable_in_returning() {
         .returning(old(users::name).nullable());
 }
 
+#[allow(dead_code)]
 fn nullable_boxed_expressions_are_selectable_in_returning() {
     use pg::Pg;
     use sql_types::Text;
@@ -73,7 +76,8 @@ fn nullable_boxed_expressions_are_selectable_in_returning() {
         .returning(boxed.nullable());
 }
 
-fn nullable_old_value_expressions_are_selectable_in_update_returning() {
+#[allow(dead_code)]
+fn nullable_and_assume_not_null_expressions_are_selectable_in_update_returning() {
     use mariadb::returning::old_value;
 
     let _ = update(users::table)
@@ -83,4 +87,12 @@ fn nullable_old_value_expressions_are_selectable_in_update_returning() {
     let _ = update(users::table)
         .set(users::name.eq("Updated"))
         .returning((old_value(users::name).nullable(), users::name));
+
+    let _ = update(users::table)
+        .set(users::name.eq("Updated"))
+        .returning(users::name.assume_not_null());
+
+    let _ = insert_into(users::table)
+        .values(users::name.eq("Inserted"))
+        .returning(users::name.assume_not_null());
 }

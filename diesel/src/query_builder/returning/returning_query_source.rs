@@ -160,6 +160,14 @@ where
 {
 }
 
+impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>>
+    for crate::expression::assume_not_null::AssumeNotNull<E>
+where
+    Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
+    E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
+{
+}
+
 /// Represents the identifier `old` or `old_value` in the `RETURNING` clause.
 /// It is independent of the table of the column, and used as QS in marker in AppearsInFromClause.
 ///

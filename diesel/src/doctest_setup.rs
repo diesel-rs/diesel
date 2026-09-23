@@ -261,6 +261,7 @@ cfg_if::cfg_if! {
             connection
         }
 
+        #[allow(dead_code)]
         fn mariadb_server_supports_update_returning(connection: &mut MariadbConnection) -> bool {
             diesel::dsl::sql::<diesel::sql_types::VarChar>("SELECT VERSION();")
                 .get_result::<String>(connection)
