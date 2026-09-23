@@ -188,6 +188,8 @@ where
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let num_dimensions = 1;
         out.write_i32::<NetworkEndian>(num_dimensions)?;
+        // The null flag depends on the elements, so it is patched once they are written.
+        let flags_offset = out.reborrow().into_inner().0.len();
         let flags = 0;
         out.write_i32::<NetworkEndian>(flags)?;
         let element_oid = Pg::metadata(out.metadata_lookup()).oid()?;
@@ -199,6 +201,7 @@ where
         // This buffer is created outside of the loop to reuse the underlying memory allocation
         // For most cases all array elements will have the same serialized size
         let mut buffer = Vec::new();
+        let mut has_nulls = false;
 
         for elem in self.iter() {
             let is_null = {
@@ -211,9 +214,15 @@ where
                 out.write_all(&buffer)?;
                 buffer.clear();
             } else {
+                has_nulls = true;
                 // https://github.com/postgres/postgres/blob/82f8107b92c9104ec9d9465f3f6a4c6dab4c124a/src/backend/utils/adt/arrayfuncs.c#L1461
                 out.write_i32::<NetworkEndian>(-1)?;
             }
+        }
+
+        if has_nulls {
+            out.reborrow().into_inner().0[flags_offset..flags_offset + 4]
+                .copy_from_slice(&1_i32.to_be_bytes());
         }
 
         Ok(IsNull::No)
@@ -258,10 +267,12 @@ where
 mod tests {
     use byteorder::{NetworkEndian, WriteBytesExt};
 
+    use super::ByteWrapper;
     use crate::data_types::NdArray;
     use crate::deserialize::{self, FromSql};
-    use crate::pg::{Pg, PgValue};
-    use crate::sql_types::{Array, Integer};
+    use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+    use crate::serialize::{Output, ToSql};
+    use crate::sql_types::{Array, Integer, Nullable};
 
     #[derive(Debug, PartialEq)]
     struct ElementOid(u32);
@@ -311,6 +322,45 @@ mod tests {
         let res = <NdArray<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value).unwrap();
         assert_eq!(vec![1], res.dims);
         assert_eq!(vec![ElementOid(23)], res.data);
+    }
+
+    /// Built-in element types have static OIDs, so serializing them never looks one up.
+    struct StaticOidsOnly;
+
+    impl PgMetadataLookup for StaticOidsOnly {
+        fn lookup_type(&mut self, type_name: &str, _schema: Option<&str>) -> PgTypeMetadata {
+            panic!("unexpected type lookup for `{type_name}`")
+        }
+    }
+
+    #[test]
+    fn serialized_null_flag_matches_elements() {
+        // The decoder treats a `-1` element length as NULL only when this flag is set,
+        // so arrays containing NULL previously failed to read back.
+        for (array, flags) in [
+            (vec![Some(7), None, Some(-9)], 1),
+            (vec![Some(7), Some(-9)], 0),
+        ] {
+            // The flag is patched after the elements, so serialize after unrelated bytes.
+            let prefix = [0xAA; 3];
+            let mut buffer = prefix.to_vec();
+            ToSql::<Array<Nullable<Integer>>, Pg>::to_sql(
+                &array,
+                &mut Output::new(
+                    ByteWrapper(&mut buffer),
+                    &mut StaticOidsOnly as &mut dyn PgMetadataLookup,
+                ),
+            )
+            .unwrap();
+
+            let (written_prefix, value) = buffer.split_at(prefix.len());
+            assert_eq!(written_prefix, prefix);
+            assert_eq!(value[4..8], i32::to_be_bytes(flags));
+            let decoded = <Vec<Option<i32>> as FromSql<Array<Nullable<Integer>>, Pg>>::from_sql(
+                PgValue::for_test(value),
+            );
+            assert_eq!(decoded.unwrap(), array);
+        }
     }
 
     #[test]
