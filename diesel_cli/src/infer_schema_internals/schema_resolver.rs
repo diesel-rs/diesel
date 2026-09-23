@@ -1,6 +1,6 @@
 use super::{
     ColumnDefinition, QueryRelationData, SupportedQueryRelationStructures, TableName,
-    load_table_data, load_table_names, load_view_data,
+    load_table_data, load_table_names, load_view_data, resolve_unqualified_relation_schema,
 };
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
@@ -14,6 +14,7 @@ pub struct SchemaResolverImpl<'a, 'b> {
     pub(super) config: &'b PrintSchema,
     unfiltered_table_names: HashMap<TableName, SupportedQueryRelationStructures>,
     recursive_resolve_chain: Vec<TableName>,
+    resolved_unqualified_relations: HashMap<String, TableName>,
 }
 
 impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
@@ -34,6 +35,7 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
             config,
             unfiltered_table_names,
             recursive_resolve_chain: Vec::new(),
+            resolved_unqualified_relations: HashMap::new(),
         }
     }
 
@@ -42,9 +44,10 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
     ) -> Result<Vec<QueryRelationData>, crate::errors::Error> {
         let requested_relations = self.print_schema_relations.clone();
         for (kind, t) in requested_relations {
-            self.recursive_resolve_chain = Vec::new();
+            debug_assert!(self.recursive_resolve_chain.is_empty());
             self.load_query_relation_data(Some(kind), t)?;
         }
+        debug_assert!(self.recursive_resolve_chain.is_empty());
 
         // extract all data required for the actual print schema operation
         //
@@ -73,36 +76,44 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
                 tracing::error!(chain = ?self.recursive_resolve_chain, "Cyclic view definition");
                 return Err(crate::errors::Error::CyclicViewDefinition(t));
             }
+
             self.recursive_resolve_chain.push(t.clone());
-            let kind = match kind.or_else(|| self.unfiltered_table_names.get(&t).copied()) {
-                Some(kind) => kind,
-                None => {
-                    let tables = load_table_names(self.connection, t.schema.as_deref())?;
-                    self.unfiltered_table_names
-                        .extend(tables.into_iter().map(|(tpe, rel)| (rel, tpe)));
-                    self.unfiltered_table_names
-                        .get(&t)
-                        .copied()
-                        .ok_or_else(|| {
-                            tracing::info!(chain = ?self.recursive_resolve_chain, "Resolve chain");
-                            crate::errors::Error::CouldNotResolveView(t.clone())
-                        })?
-                }
-            };
-            let data = match kind {
-                SupportedQueryRelationStructures::Table => QueryRelationData::Table(
-                    load_table_data(self.connection, t.clone(), self.config, kind)?,
-                ),
-                SupportedQueryRelationStructures::View => {
-                    QueryRelationData::View(load_view_data(self, t.clone())?)
-                }
-            };
-            self.cached_results.insert(t.clone(), data);
+            let data = self.load_uncached_query_relation_data(kind, &t);
+            let popped = self.recursive_resolve_chain.pop();
+            debug_assert_eq!(popped.as_ref(), Some(&t));
+            self.cached_results.insert(t.clone(), data?);
         }
         Ok(self
             .cached_results
             .get(&t)
             .expect("We literally inserted that above"))
+    }
+
+    fn load_uncached_query_relation_data(
+        &mut self,
+        kind: Option<SupportedQueryRelationStructures>,
+        t: &TableName,
+    ) -> Result<QueryRelationData, crate::errors::Error> {
+        let kind = match kind.or_else(|| self.unfiltered_table_names.get(t).copied()) {
+            Some(kind) => kind,
+            None => {
+                let tables = load_table_names(self.connection, t.schema.as_deref())?;
+                self.unfiltered_table_names
+                    .extend(tables.into_iter().map(|(tpe, rel)| (rel, tpe)));
+                self.unfiltered_table_names.get(t).copied().ok_or_else(|| {
+                    tracing::info!(chain = ?self.recursive_resolve_chain, "Resolve chain");
+                    crate::errors::Error::CouldNotResolveView(t.clone())
+                })?
+            }
+        };
+        match kind {
+            SupportedQueryRelationStructures::Table => Ok(QueryRelationData::Table(
+                load_table_data(self.connection, t.clone(), self.config, kind)?,
+            )),
+            SupportedQueryRelationStructures::View => {
+                Ok(QueryRelationData::View(load_view_data(self, t.clone())?))
+            }
+        }
     }
 }
 
@@ -154,17 +165,24 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
         &mut self,
         schema: Option<&str>,
         query_relation: &str,
-    ) -> Result<(TableName, &QueryRelationData), Box<dyn std::error::Error + Send + Sync + 'static>>
-    {
-        let schema = schema.or_else(|| {
-            self.recursive_resolve_chain
-                .iter()
-                .rfind(|r| r.schema.is_some())
-                .and_then(|r| r.schema.as_deref())
-        });
+    ) -> Result<(TableName, &QueryRelationData), crate::errors::Error> {
         let table_name = match schema {
-            None => TableName::from_name(query_relation),
             Some(schema) => TableName::new(query_relation, schema),
+            None => {
+                if let Some(table_name) = self.resolved_unqualified_relations.get(query_relation) {
+                    table_name.clone()
+                } else {
+                    let schema =
+                        resolve_unqualified_relation_schema(self.connection, query_relation)?;
+                    let table_name = match schema {
+                        Some(schema) => TableName::new(query_relation, schema),
+                        None => TableName::from_name(query_relation),
+                    };
+                    self.resolved_unqualified_relations
+                        .insert(query_relation.to_owned(), table_name.clone());
+                    table_name
+                }
+            }
         };
         let relation = self.load_query_relation_data(None, table_name.clone())?;
         Ok((table_name, relation))

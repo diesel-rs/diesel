@@ -89,6 +89,28 @@ pub fn load_table_names(
     Ok(tables)
 }
 
+pub(super) fn resolve_unqualified_relation_schema(
+    connection: &mut InferConnection,
+    relation_name: &str,
+) -> Result<Option<String>, crate::errors::Error> {
+    #[cfg(not(feature = "postgres"))]
+    let _ = relation_name;
+
+    match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(connection) => Ok(super::pg::resolve_unqualified_relation_schema(
+            connection,
+            relation_name,
+        )?),
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => Ok(None),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => Ok(None),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => Ok(None),
+    }
+}
+
 pub fn filter_column_structure(
     table_names: &[(SupportedQueryRelationStructures, TableName)],
     structure: SupportedQueryRelationStructures,

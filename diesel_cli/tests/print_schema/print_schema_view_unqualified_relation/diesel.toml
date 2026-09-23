@@ -1,0 +1,7 @@
+[print_schema]
+file = "src/schema.rs"
+with_docs = false
+schema = "other"
+include_views = true
+experimental_infer_nullable_for_views = true
+filter = { only_tables = ["good", "descriptions"] }
