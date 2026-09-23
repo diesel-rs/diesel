@@ -143,9 +143,10 @@ pub trait BoxedQueryHelper<'a, QS, DB> {
         ) -> QueryResult<()>,
     ) -> QueryResult<()>
     where
-        DB: Backend,
+        DB: Backend + 'b,
         QS: QueryFragment<DB>,
         BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
+        'a: 'b,
         'b: 'c;
 }
 
