@@ -80,8 +80,6 @@ pub enum Error {
     FieldNotFoundForView(TableName, String),
     #[error("Cyclic view definition detected: `{n}`", n=print_relation(.0))]
     CyclicViewDefinition(TableName),
-    #[error("Error inferring view definitions: {0}")]
-    InferError(diesel_infer_query::Error),
 }
 
 fn print_path(path: &Path) -> String {
@@ -101,19 +99,6 @@ impl Error {
         match error {
             MigrationError::IoError(error) => Self::IoError(error, path.map(Into::into)),
             _ => Self::MigrationError(Box::new(error)),
-        }
-    }
-}
-
-impl From<diesel_infer_query::Error> for Error {
-    fn from(value: diesel_infer_query::Error) -> Self {
-        match value {
-            diesel_infer_query::Error::ResolverFailure { inner, .. }
-                if inner.downcast_ref::<Self>().is_some() =>
-            {
-                *inner.downcast().expect("We checked this before")
-            }
-            e => Self::InferError(e),
         }
     }
 }

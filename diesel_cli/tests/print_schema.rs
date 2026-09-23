@@ -640,6 +640,15 @@ fn print_schema_view_infer_nullable_name_sorting() {
 
 #[test]
 #[cfg(feature = "sqlite")]
+fn print_schema_view_infer_nullable_fallback() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_fallback",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
 fn print_schema_table_name_injecetion() {
     test_print_schema("print_schema_table_name_injection", vec![])
 }
