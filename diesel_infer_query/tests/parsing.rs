@@ -6,7 +6,12 @@ use diesel_infer_query::{Backend, Error, parse_view_def};
 
 #[track_caller]
 pub(crate) fn check_parse_view(name: &'static str, def: &'static str) {
-    let res = parse_view_def(def, Backend::Sqlite);
+    check_parse_view_for(Backend::Sqlite, name, def);
+}
+
+#[track_caller]
+fn check_parse_view_for(backend: Backend, name: &'static str, def: &'static str) {
+    let res = parse_view_def(def, backend);
     assert!(
         res.is_ok(),
         "Failed to infer SQL with error: {}",
@@ -47,7 +52,8 @@ pub(crate) fn simple_table_with_alias() {
 
 #[test]
 pub(crate) fn using_ops() {
-    check_parse_view(
+    check_parse_view_for(
+        Backend::Pg,
         "using_ops",
         "CREATE VIEW ops AS SELECT 1 + 2, json @> 'json', name IS NULL FROM bar",
     );
@@ -118,7 +124,8 @@ fn is_distinct_from() {
 #[test]
 
 fn like() {
-    check_parse_view(
+    check_parse_view_for(
+        Backend::Pg,
         "like",
         "CREATE VIEW test AS SELECT 'abc' LIKE 'foo', 'cde' LIKE NULL, \
               'fgh' ILIKE '%', 'ijk' ILIKE NULL, 'abc' NOT LIKE '%', 'abc' NOT LIKE NULL",
@@ -135,7 +142,8 @@ fn between() {
 
 #[test]
 fn similar_to() {
-    check_parse_view(
+    check_parse_view_for(
+        Backend::Pg,
         "similar_to",
         "CREATE VIEW test AS SELECT 'abc' SIMILAR TO 'cde', 'ABC' NOT SIMILAR TO NULL, NULL SIMILAR TO 'abc'",
     )

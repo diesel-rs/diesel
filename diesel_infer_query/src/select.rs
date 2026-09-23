@@ -4,6 +4,7 @@
 
 use super::SchemaResolver;
 use crate::IsNull;
+use crate::backend::Backend;
 use crate::error::Error;
 use crate::error::Result;
 use crate::query_source::{QuerySource, find_query_source};
@@ -69,14 +70,14 @@ pub enum Expression {
         right: Box<Expression>,
         /// operator
         op: String,
-        /// is this operation statically known not to produce null values
-        statically_not_null: bool,
+        /// how the operation can produce null values
+        nullability: OperatorNullability,
     },
     // A postfix operation like `IS NULL`
     PostfixOp {
         expr: Box<Expression>,
         op: String,
-        statically_not_null: bool,
+        nullability: OperatorNullability,
     },
     /// A function call
     Function {
@@ -129,6 +130,17 @@ pub enum Expression {
     Unknown,
 }
 
+/// How the result of an operator can be `NULL`
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum OperatorNullability {
+    /// Never `NULL`, like `IS NULL`
+    NeverNull,
+    /// `NULL` exactly when an operand is `NULL`, like `=` or `||`
+    NullIfOperandNull,
+    /// Can be `NULL` for any operands, like `/` for a zero divisor
+    Nullable,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum SetOperator {
     Union,
@@ -177,28 +189,22 @@ impl Expression {
             Self::BinaryOp {
                 left,
                 right,
-                statically_not_null,
+                nullability,
                 ..
-            } => {
-                if *statically_not_null {
-                    Ok(IsNull::NotNullable)
-                } else {
-                    Ok(left
-                        .infer_nullability(resolver)?
-                        .or(right.infer_nullability(resolver)?))
-                }
-            }
+            } => match nullability {
+                OperatorNullability::NeverNull => Ok(IsNull::NotNullable),
+                OperatorNullability::Nullable => Ok(IsNull::IsNullable),
+                OperatorNullability::NullIfOperandNull => Ok(left
+                    .infer_nullability(resolver)?
+                    .or(right.infer_nullability(resolver)?)),
+            },
             Expression::PostfixOp {
-                expr,
-                statically_not_null,
-                ..
-            } => {
-                if *statically_not_null {
-                    Ok(IsNull::NotNullable)
-                } else {
-                    expr.infer_nullability(resolver)
-                }
-            }
+                expr, nullability, ..
+            } => match nullability {
+                OperatorNullability::NeverNull => Ok(IsNull::NotNullable),
+                OperatorNullability::Nullable => Ok(IsNull::IsNullable),
+                OperatorNullability::NullIfOperandNull => expr.infer_nullability(resolver),
+            },
             Expression::Function {
                 name,
                 schema,
@@ -322,6 +328,7 @@ impl Expression {
 pub(crate) fn infer_from_select(
     select: &sqlparser::ast::Select,
     outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
+    backend: Backend,
 ) -> Result<Vec<SelectField>> {
     let mut query_source_lookup = collect_query_sources(&select.from)?;
     if let Some(outer) = outer_lookup {
@@ -335,7 +342,7 @@ pub(crate) fn infer_from_select(
     select
         .projection
         .iter()
-        .map(|p| infer_projection(p, &query_source_lookup))
+        .map(|p| infer_projection(p, &query_source_lookup, backend))
         .collect()
 }
 
@@ -352,10 +359,11 @@ pub(crate) fn collect_query_sources<'a>(
 pub(crate) fn infer_projection(
     item: &SelectItem,
     query_source_lookup: &HashMap<Option<&str>, QuerySource>,
+    backend: Backend,
 ) -> Result<SelectField> {
     match item {
         SelectItem::UnnamedExpr(expr) => {
-            let kind = crate::expression::infer_expr(expr, query_source_lookup)?;
+            let kind = crate::expression::infer_expr(expr, query_source_lookup, backend)?;
             let ident = if let Expression::Field { field_name, .. } = &kind {
                 Some(field_name.clone())
             } else {
@@ -365,7 +373,7 @@ pub(crate) fn infer_projection(
         }
         SelectItem::ExprWithAlias { expr, alias } => Ok(SelectField {
             ident: Some(alias.value.clone()),
-            kind: crate::expression::infer_expr(expr, query_source_lookup)?,
+            kind: crate::expression::infer_expr(expr, query_source_lookup, backend)?,
         }),
         SelectItem::QualifiedWildcard(
             SelectItemQualifiedWildcardKind::ObjectName(name),
@@ -422,26 +430,28 @@ pub(crate) fn infer_projection(
 pub(crate) fn parse_query(
     select: &sqlparser::ast::Query,
     outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
+    backend: Backend,
 ) -> Result<Vec<SelectField>> {
     let expr = &select.body;
-    parse_from_set_expr(outer_lookup, expr)
+    parse_from_set_expr(outer_lookup, expr, backend)
 }
 
 fn parse_from_set_expr(
     outer_lookup: Option<&HashMap<Option<&str>, QuerySource<'_>>>,
     expr: &sqlparser::ast::SetExpr,
+    backend: Backend,
 ) -> Result<Vec<SelectField>> {
     match expr {
         sqlparser::ast::SetExpr::Select(select_expr) => {
-            infer_from_select(select_expr, outer_lookup)
+            infer_from_select(select_expr, outer_lookup, backend)
         }
         // Set expressions like `UNION`, `INTERSECT` and `EXCEPT`
         sqlparser::ast::SetExpr::SetOperation {
             left, op, right, ..
         } => {
             let op = SetOperator::from_sql_parser_ast(op)?;
-            let left = parse_from_set_expr(outer_lookup, left)?;
-            let right = parse_from_set_expr(outer_lookup, right)?;
+            let left = parse_from_set_expr(outer_lookup, left, backend)?;
+            let right = parse_from_set_expr(outer_lookup, right, backend)?;
             if left.len() == right.len() {
                 Ok(left
                     .into_iter()

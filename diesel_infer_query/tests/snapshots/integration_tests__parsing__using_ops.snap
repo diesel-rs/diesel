@@ -17,7 +17,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "+",
-                statically_not_null: false,
+                nullability: Nullable,
             },
         },
         SelectField {
@@ -38,7 +38,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "@>",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -53,7 +53,7 @@ ViewData {
                     via_left_join: false,
                 },
                 op: "IS NULL",
-                statically_not_null: true,
+                nullability: NeverNull,
             },
         },
     ],

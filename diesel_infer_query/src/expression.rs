@@ -2,17 +2,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use crate::backend::Backend;
 use crate::error::{Error, Result};
 use crate::query_source::{QuerySource, find_query_source};
-use crate::select::{CaseCondition, Expression};
+use crate::select::{CaseCondition, Expression, OperatorNullability};
 use sqlparser::ast::{
-    Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart, Value,
+    BinaryOperator, Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart, Value,
 };
 use std::collections::HashMap;
 
 pub(crate) fn infer_expr(
     expr: &sqlparser::ast::Expr,
     query_source_lookup: &HashMap<Option<&str>, QuerySource>,
+    backend: Backend,
 ) -> Result<Expression> {
     match expr {
         Expr::Value(v) => Ok(Expression::Literal {
@@ -66,39 +68,39 @@ pub(crate) fn infer_expr(
         Expr::Cast {
             expr, data_type, ..
         } => {
-            let inner = infer_expr(expr, query_source_lookup)?;
+            let inner = infer_expr(expr, query_source_lookup, backend)?;
             Ok(Expression::Cast {
                 inner: Box::new(inner),
                 tpe: data_type.to_string(),
             })
         }
         Expr::BinaryOp { left, op, right } => {
-            let left = Box::new(infer_expr(left, query_source_lookup)?);
-            let right = Box::new(infer_expr(right, query_source_lookup)?);
+            let left = Box::new(infer_expr(left, query_source_lookup, backend)?);
+            let right = Box::new(infer_expr(right, query_source_lookup, backend)?);
             Ok(Expression::BinaryOp {
                 left,
                 right,
                 op: op.to_string(),
-                statically_not_null: false,
+                nullability: binary_operator_nullability(op),
             })
         }
         Expr::IsNull(e) => {
-            let inner = Box::new(infer_expr(e, query_source_lookup)?);
+            let inner = Box::new(infer_expr(e, query_source_lookup, backend)?);
             Ok(Expression::PostfixOp {
                 expr: inner,
                 op: String::from("IS NULL"),
-                statically_not_null: true,
+                nullability: OperatorNullability::NeverNull,
             })
         }
         Expr::IsNotNull(e) => {
-            let inner = Box::new(infer_expr(e, query_source_lookup)?);
+            let inner = Box::new(infer_expr(e, query_source_lookup, backend)?);
             Ok(Expression::PostfixOp {
                 expr: inner,
                 op: String::from("IS NOT NULL"),
-                statically_not_null: true,
+                nullability: OperatorNullability::NeverNull,
             })
         }
-        Expr::Function(f) => infer_functions(f, query_source_lookup),
+        Expr::Function(f) => infer_functions(f, query_source_lookup, backend),
         Expr::Like {
             negated,
             any,
@@ -108,10 +110,10 @@ pub(crate) fn infer_expr(
         } if !*any && escape_char.is_none() => {
             let op = if *negated { "NOT LIKE" } else { "LIKE" };
             Ok(Expression::BinaryOp {
-                left: Box::new(infer_expr(expr, query_source_lookup)?),
-                right: Box::new(infer_expr(pattern, query_source_lookup)?),
+                left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
+                right: Box::new(infer_expr(pattern, query_source_lookup, backend)?),
                 op: String::from(op),
-                statically_not_null: false,
+                nullability: pattern_nullability(backend),
             })
         }
         Expr::ILike {
@@ -123,23 +125,23 @@ pub(crate) fn infer_expr(
         } if !*any && escape_char.is_none() => {
             let op = if *negated { "NOT ILIKE" } else { "ILIKE" };
             Ok(Expression::BinaryOp {
-                left: Box::new(infer_expr(expr, query_source_lookup)?),
-                right: Box::new(infer_expr(pattern, query_source_lookup)?),
+                left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
+                right: Box::new(infer_expr(pattern, query_source_lookup, backend)?),
                 op: String::from(op),
-                statically_not_null: false,
+                nullability: pattern_nullability(backend),
             })
         }
         Expr::IsDistinctFrom(a, b) => Ok(Expression::BinaryOp {
-            left: Box::new(infer_expr(a, query_source_lookup)?),
-            right: Box::new(infer_expr(b, query_source_lookup)?),
+            left: Box::new(infer_expr(a, query_source_lookup, backend)?),
+            right: Box::new(infer_expr(b, query_source_lookup, backend)?),
             op: String::from("IS DISTINCT FROM"),
-            statically_not_null: true,
+            nullability: OperatorNullability::NeverNull,
         }),
         Expr::IsNotDistinctFrom(a, b) => Ok(Expression::BinaryOp {
-            left: Box::new(infer_expr(a, query_source_lookup)?),
-            right: Box::new(infer_expr(b, query_source_lookup)?),
+            left: Box::new(infer_expr(a, query_source_lookup, backend)?),
+            right: Box::new(infer_expr(b, query_source_lookup, backend)?),
             op: String::from("IS NOT DISTINCT FROM"),
-            statically_not_null: true,
+            nullability: OperatorNullability::NeverNull,
         }),
         Expr::Between {
             expr,
@@ -147,10 +149,10 @@ pub(crate) fn infer_expr(
             low,
             high,
         } => Ok(Expression::Between {
-            left: Box::new(infer_expr(expr, query_source_lookup)?),
+            left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
             negated: *negated,
-            low: Box::new(infer_expr(low, query_source_lookup)?),
-            high: Box::new(infer_expr(high, query_source_lookup)?),
+            low: Box::new(infer_expr(low, query_source_lookup, backend)?),
+            high: Box::new(infer_expr(high, query_source_lookup, backend)?),
         }),
         Expr::SimilarTo {
             negated,
@@ -164,10 +166,10 @@ pub(crate) fn infer_expr(
                 "SIMILAR TO"
             };
             Ok(Expression::BinaryOp {
-                left: Box::new(infer_expr(expr, query_source_lookup)?),
-                right: Box::new(infer_expr(pattern, query_source_lookup)?),
+                left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
+                right: Box::new(infer_expr(pattern, query_source_lookup, backend)?),
                 op: String::from(op),
-                statically_not_null: false,
+                nullability: pattern_nullability(backend),
             })
         }
         Expr::RLike {
@@ -184,10 +186,10 @@ pub(crate) fn infer_expr(
                 "RLIKE"
             };
             Ok(Expression::BinaryOp {
-                left: Box::new(infer_expr(expr, query_source_lookup)?),
-                right: Box::new(infer_expr(pattern, query_source_lookup)?),
+                left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
+                right: Box::new(infer_expr(pattern, query_source_lookup, backend)?),
                 op: String::from(op),
-                statically_not_null: false,
+                nullability: pattern_nullability(backend),
             })
         }
         Expr::Case {
@@ -198,19 +200,19 @@ pub(crate) fn infer_expr(
         } => {
             let operand = operand
                 .as_ref()
-                .map(|o| infer_expr(o, query_source_lookup))
+                .map(|o| infer_expr(o, query_source_lookup, backend))
                 .transpose()?
                 .map(Box::new);
             let else_clause = else_result
                 .as_ref()
-                .map(|e| infer_expr(e, query_source_lookup))
+                .map(|e| infer_expr(e, query_source_lookup, backend))
                 .transpose()?
                 .map(Box::new);
             let conditions = conditions
                 .iter()
                 .map(|c| -> std::result::Result<_, _> {
-                    let condition = infer_expr(&c.condition, query_source_lookup)?;
-                    let result = infer_expr(&c.result, query_source_lookup)?;
+                    let condition = infer_expr(&c.condition, query_source_lookup, backend)?;
+                    let result = infer_expr(&c.result, query_source_lookup, backend)?;
                     Ok(CaseCondition { condition, result })
                 })
                 .collect::<Result<Vec<_>>>()?;
@@ -225,18 +227,18 @@ pub(crate) fn infer_expr(
             list,
             negated,
         } => Ok(Expression::In {
-            left: Box::new(infer_expr(expr, query_source_lookup)?),
+            left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
             negated: *negated,
             list: list
                 .iter()
-                .map(|e| infer_expr(e, query_source_lookup))
+                .map(|e| infer_expr(e, query_source_lookup, backend))
                 .collect::<Result<Vec<_>, _>>()?,
         }),
-        Expr::Nested(n) => infer_expr(n, query_source_lookup)
+        Expr::Nested(n) => infer_expr(n, query_source_lookup, backend)
             .map(Box::new)
             .map(Expression::Grouped),
         Expr::Subquery(query) => {
-            let results = crate::select::parse_query(query, Some(query_source_lookup))?;
+            let results = crate::select::parse_query(query, Some(query_source_lookup), backend)?;
             Ok(Expression::Subquery { selection: results })
         }
         Expr::InSubquery {
@@ -244,9 +246,9 @@ pub(crate) fn infer_expr(
             subquery,
             negated,
         } => {
-            let results = crate::select::parse_query(subquery, Some(query_source_lookup))?;
+            let results = crate::select::parse_query(subquery, Some(query_source_lookup), backend)?;
             Ok(Expression::InSubQuery {
-                left: Box::new(infer_expr(expr, query_source_lookup)?),
+                left: Box::new(infer_expr(expr, query_source_lookup, backend)?),
                 negated: *negated,
                 subquery: results,
             })
@@ -302,9 +304,51 @@ pub(crate) fn infer_expr(
     }
 }
 
+/// How the result of `op` can be `NULL`
+///
+/// Only operators known to return `NULL` exactly for `NULL` operands are listed.
+/// Anything else can return `NULL` for any operands: `/` and `%` for a zero divisor
+/// in SQLite and MySQL, `->>` for a missing key, and even `+`, `-`, and `*`, as SQLite
+/// turns a NaN result like `'1e999' - '1e999'` into `NULL` and PostgreSQL's `+` on
+/// closed paths returns `NULL`. SQLite's `REGEXP` and `MATCH` call functions only an
+/// application defines, see [`pattern_nullability`].
+fn binary_operator_nullability(op: &BinaryOperator) -> OperatorNullability {
+    use BinaryOperator::*;
+    match op {
+        // `^`, a power in PostgreSQL and an exclusive or in MySQL
+        PGExp
+        // comparison and logic
+        | Eq | NotEq | Lt | LtEq | Gt | GtEq | Spaceship | And | Or | Xor
+        // strings and pattern matching
+        | StringConcat | PGRegexMatch | PGRegexIMatch | PGRegexNotMatch
+        | PGRegexNotIMatch | PGLikeMatch | PGILikeMatch | PGNotLikeMatch | PGNotILikeMatch
+        | PGStartsWith
+        // bits, without PostgreSQL's `#`, which also intersects geometric shapes
+        | BitwiseOr | BitwiseAnd | BitwiseXor | PGBitwiseShiftLeft | PGBitwiseShiftRight
+        // PostgreSQL containment and key checks
+        | PGOverlap | AtArrow | ArrowAt | HashMinus | Question | QuestionAnd | QuestionPipe => {
+            OperatorNullability::NullIfOperandNull
+        }
+        _ => OperatorNullability::Nullable,
+    }
+}
+
+/// How the result of a pattern match like `LIKE` can be `NULL`
+///
+/// SQLite evaluates `LIKE` with a function an application can replace, and `REGEXP`
+/// with one only an application defines, and such a function can return `NULL` for any
+/// operands.
+fn pattern_nullability(backend: Backend) -> OperatorNullability {
+    match backend {
+        Backend::Sqlite => OperatorNullability::Nullable,
+        Backend::Pg | Backend::Mysql | Backend::Mariadb => OperatorNullability::NullIfOperandNull,
+    }
+}
+
 fn infer_functions(
     f: &sqlparser::ast::Function,
     query_source_lookup: &HashMap<Option<&str>, QuerySource<'_>>,
+    backend: Backend,
 ) -> Result<Expression> {
     let (name, schema) = match f.name.0.as_slice() {
         [ObjectNamePart::Identifier(name)] => (&name.value, None),
@@ -322,7 +366,7 @@ fn infer_functions(
                 FunctionArg::Named { arg, .. }
                 | FunctionArg::ExprNamed { arg, .. }
                 | FunctionArg::Unnamed(arg) => match arg {
-                    FunctionArgExpr::Expr(expr) => infer_expr(expr, query_source_lookup),
+                    FunctionArgExpr::Expr(expr) => infer_expr(expr, query_source_lookup, backend),
                     FunctionArgExpr::QualifiedWildcard(object_name) => {
                         if let Some(item) = object_name
                             .0

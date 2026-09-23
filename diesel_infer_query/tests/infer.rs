@@ -146,8 +146,18 @@ fn check_infer<const N: usize>(
     expected: [IsNull; N],
     resolver: impl Into<Resolver>,
 ) {
+    check_infer_for(Backend::Sqlite, def, expected, resolver);
+}
+
+#[track_caller]
+fn check_infer_for<const N: usize>(
+    backend: Backend,
+    def: &'static str,
+    expected: [IsNull; N],
+    resolver: impl Into<Resolver>,
+) {
     let mut resolver = resolver.into();
-    let res = diesel_infer_query::parse_view_def(def, Backend::Sqlite);
+    let res = diesel_infer_query::parse_view_def(def, backend);
 
     assert!(
         res.is_ok(),
@@ -165,7 +175,7 @@ fn check_infer<const N: usize>(
         res.unwrap_err()
     );
     let res = res.unwrap();
-    assert_eq!(res, expected);
+    assert_eq!(res, expected, "{backend:?}");
 }
 
 #[test]
@@ -280,7 +290,7 @@ pub(crate) fn nested_join() {
 #[test]
 pub(crate) fn operations() {
     check_infer(
-        "CREATE VIEW test AS SELECT 1 + 1, 1+NULL, NULL+1, NULL + NULL",
+        "CREATE VIEW test AS SELECT 1 = 1, 1 = NULL, NULL = 1, NULL = NULL",
         [
             IsNull::NotNullable,
             IsNull::IsNullable,
@@ -363,7 +373,14 @@ fn is_distinct_from() {
 
 #[test]
 fn like() {
+    // SQLite evaluates LIKE with a function an application can replace
     check_infer(
+        "CREATE VIEW test AS SELECT 'abc' LIKE 'foo', 'abc' NOT LIKE '%', NULL LIKE 'foo'",
+        [IsNull::IsNullable, IsNull::IsNullable, IsNull::IsNullable],
+        (),
+    );
+    check_infer_for(
+        Backend::Pg,
         "CREATE VIEW test AS SELECT 'abc' LIKE 'foo', 'cde' LIKE NULL, \
               'fgh' ILIKE '%', 'ijk' ILIKE NULL, 'abc' NOT LIKE '%', NULL NOT LIKE '%'",
         [
@@ -398,7 +415,8 @@ fn between() {
 
 #[test]
 fn similar_to() {
-    check_infer(
+    check_infer_for(
+        Backend::Pg,
         "CREATE VIEW test AS SELECT 'abc' SIMILAR TO 'cde', 'ABC' NOT SIMILAR TO NULL, NULL SIMILAR TO 'abc'",
         [IsNull::NotNullable, IsNull::IsNullable, IsNull::IsNullable],
         (),
@@ -407,16 +425,24 @@ fn similar_to() {
 
 #[test]
 fn regexp() {
+    for backend in [Backend::Mysql, Backend::Mariadb] {
+        check_infer_for(
+            backend,
+            "CREATE VIEW test AS SELECT 'abc' REGEXP 'abc', NULL REGEXP 'abc', \
+            'abc' RLIKE 'abc', NULL RLIKE 'abc'",
+            [
+                IsNull::NotNullable,
+                IsNull::IsNullable,
+                IsNull::NotNullable,
+                IsNull::IsNullable,
+            ],
+            (),
+        );
+    }
+    // SQLite's REGEXP and MATCH call functions only an application defines
     check_infer(
-        "CREATE VIEW test AS SELECT 'abc' REGEXP 'abc', NULL REGEXP 'abc', 'abc' REGEXP NULL,\
-         'abc' RLIKE 'abc', NULL RLIKE 'abc'",
-        [
-            IsNull::NotNullable,
-            IsNull::IsNullable,
-            IsNull::IsNullable,
-            IsNull::NotNullable,
-            IsNull::IsNullable,
-        ],
+        "CREATE VIEW test AS SELECT 'abc' REGEXP 'abc', 'abc' MATCH 'abc'",
+        [IsNull::IsNullable, IsNull::IsNullable],
         (),
     )
 }
@@ -529,12 +555,12 @@ fn not_in_subquery() {
 fn nested() {
     check_infer(
         "CREATE VIEW test AS SELECT \
-                          (1 + 2) - 3, \
-                          (NULL + 2) - 3, \
-                          (1 + 3) - NULL, \
-                          3 - (1 + 3), \
-                          NULL - (1 + 3), \
-                          3 - (NULL + 3)",
+                          ('a' || 'b') || 'c', \
+                          (NULL || 'b') || 'c', \
+                          ('a' || 'c') || NULL, \
+                          'c' || ('a' || 'c'), \
+                          NULL || ('a' || 'c'), \
+                          'c' || (NULL || 'c')",
         [
             IsNull::NotNullable,
             IsNull::IsNullable,
@@ -857,5 +883,29 @@ fn case_without_else() {
         "CREATE VIEW test AS SELECT CASE WHEN 1 = 1 THEN 1 END, CASE 1 WHEN 1 THEN 1 END",
         [IsNull::IsNullable, IsNull::IsNullable],
         (),
+    );
+}
+
+#[test]
+fn operators_returning_null_for_non_null_operands() {
+    // `/` and `%` return NULL for a zero divisor in SQLite and MySQL, `->>` returns
+    // NULL for a missing key, and SQLite turns a NaN result like `'1e999' - '1e999'`
+    // into NULL
+    check_infer(
+        "CREATE VIEW test AS SELECT id / id, id % id, name ->> 'key', id + id, id - id, \
+              id * id, id = id FROM users",
+        [
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::IsNullable,
+            IsNull::NotNullable,
+        ],
+        [
+            ("users", "id", IsNull::NotNullable),
+            ("users", "name", IsNull::NotNullable),
+        ],
     );
 }

@@ -89,8 +89,8 @@ pub fn parse_view_def(definition: &str, backend: Backend) -> Result<ViewData> {
             });
         }
     };
-    let subqueries = collect_subqueries(&select)?;
-    let results = crate::select::parse_query(&select, None)?;
+    let subqueries = collect_subqueries(&select, backend)?;
+    let results = crate::select::parse_query(&select, None, backend)?;
     Ok(ViewData {
         fields: results,
         subqueries,
@@ -108,11 +108,11 @@ impl SubQuery {
     }
 }
 
-fn collect_subqueries(query: &Query) -> Result<Vec<(Option<String>, SubQuery)>> {
+fn collect_subqueries(query: &Query, backend: Backend) -> Result<Vec<(Option<String>, SubQuery)>> {
     let mut subqueries = if let Some(with) = &query.with {
         with.cte_tables
             .iter()
-            .flat_map(|t| match extract_cte_subqueries(t) {
+            .flat_map(|t| match extract_cte_subqueries(t, backend) {
                 Ok(o) => Box::new(o.into_iter().map(Ok)) as Box<dyn Iterator<Item = _>>,
                 Err(e) => Box::new(std::iter::once(Err(e))),
             })
@@ -122,9 +122,9 @@ fn collect_subqueries(query: &Query) -> Result<Vec<(Option<String>, SubQuery)>> 
     };
     if let sqlparser::ast::SetExpr::Select(select_expr) = &*query.body {
         for s in &select_expr.from {
-            extract_subqueries_from_table_factor(&s.relation, &mut subqueries)?;
+            extract_subqueries_from_table_factor(&s.relation, &mut subqueries, backend)?;
             for join in &s.joins {
-                extract_subqueries_from_table_factor(&join.relation, &mut subqueries)?;
+                extract_subqueries_from_table_factor(&join.relation, &mut subqueries, backend)?;
             }
         }
     }
@@ -134,11 +134,12 @@ fn collect_subqueries(query: &Query) -> Result<Vec<(Option<String>, SubQuery)>> 
 
 fn extract_cte_subqueries(
     t: &sqlparser::ast::Cte,
+    backend: Backend,
 ) -> Result<Vec<(Option<String>, SubQuery)>, Error> {
     let name = t.alias.name.value.as_str();
-    let mut subqueries = collect_subqueries(&t.query)?;
+    let mut subqueries = collect_subqueries(&t.query, backend)?;
 
-    let mut fields = crate::select::parse_query(&t.query, None)?;
+    let mut fields = crate::select::parse_query(&t.query, None, backend)?;
     if !t.alias.columns.is_empty() {
         if fields.len() == t.alias.columns.len() {
             fields.iter_mut().zip(&t.alias.columns).for_each(|(f, a)| {
@@ -163,6 +164,7 @@ fn extract_cte_subqueries(
 fn extract_subqueries_from_table_factor(
     s: &sqlparser::ast::TableFactor,
     subqueries: &mut Vec<(Option<String>, SubQuery)>,
+    backend: Backend,
 ) -> Result<()> {
     if let sqlparser::ast::TableFactor::Derived {
         lateral: false,
@@ -171,7 +173,7 @@ fn extract_subqueries_from_table_factor(
         sample: None,
     } = s
     {
-        let fields = crate::select::parse_query(subquery, None)?;
+        let fields = crate::select::parse_query(subquery, None, backend)?;
         subqueries.push((
             alias.as_ref().map(|a| a.name.value.clone()),
             SubQuery { fields },

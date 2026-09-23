@@ -13,7 +13,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "IS NOT NULL",
-                statically_not_null: true,
+                nullability: NeverNull,
             },
         },
         SelectField {
@@ -24,7 +24,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "IS NULL",
-                statically_not_null: true,
+                nullability: NeverNull,
             },
         },
     ],

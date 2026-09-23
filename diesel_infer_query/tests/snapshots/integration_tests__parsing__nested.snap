@@ -19,7 +19,7 @@ ViewData {
                             is_null: false,
                         },
                         op: "+",
-                        statically_not_null: false,
+                        nullability: Nullable,
                     },
                 ),
                 right: Literal {
@@ -27,7 +27,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "-",
-                statically_not_null: false,
+                nullability: Nullable,
             },
         },
     ],

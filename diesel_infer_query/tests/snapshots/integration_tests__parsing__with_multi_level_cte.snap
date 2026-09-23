@@ -145,7 +145,7 @@ ViewData {
                                 via_left_join: false,
                             },
                             op: "+",
-                            statically_not_null: false,
+                            nullability: Nullable,
                         },
                     },
                     SelectField {
