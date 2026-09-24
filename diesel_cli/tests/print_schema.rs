@@ -671,6 +671,14 @@ fn print_schema_view_case_sensitive_relation() {
 }
 
 #[test]
+fn print_schema_view_infer_nullable_holds() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_holds",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    )
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn print_schema_table_name_injecetion() {
     test_print_schema("print_schema_table_name_injection", vec![])
@@ -791,6 +799,7 @@ fn test_print_schema_with_options(test_name: &str, args: Vec<&str>, check_compil
     let schema = read_file(&backend_file_path(test_name, "schema.sql"));
     db.execute(&schema);
 
+    let infers_view_nullability = args.contains(&"--experimental-infer-nullable-for-views");
     let result = p.command("print-schema").args(args).run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -808,9 +817,69 @@ fn test_print_schema_with_options(test_name: &str, args: Vec<&str>, check_compil
 
         test_print_schema_config(test_name, &test_path, &schema);
     });
+    if infers_view_nullability {
+        assert_views_hold(&db, &result);
+    }
     if check_compile {
         assert_schema_compiles(test_name, result);
     }
+}
+
+/// Check that no row of the views of `schema` has NULL in a column `schema` declares
+/// NOT NULL
+#[track_caller]
+fn assert_views_hold(db: &crate::support::database::Database, schema: &str) {
+    use diesel::RunQueryDsl;
+
+    #[derive(diesel::QueryableByName)]
+    struct Nulls {
+        #[diesel(sql_type = diesel::sql_types::BigInt)]
+        nulls: i64,
+    }
+
+    let mut conn = db.conn();
+    for (view, column) in not_null_view_columns(schema) {
+        let query = format!("SELECT COUNT(*) AS nulls FROM {view} WHERE {column} IS NULL");
+        let nulls = diesel::sql_query(&query)
+            .get_result::<Nulls>(&mut conn)
+            .expect(&query)
+            .nulls;
+        assert_eq!(nulls, 0, "{view}.{column} is NOT NULL in the schema");
+    }
+}
+
+/// The views `schema` declares, with the SQL name of each column it declares NOT NULL
+fn not_null_view_columns(schema: &str) -> Vec<(String, String)> {
+    let mut columns = Vec::new();
+    let mut in_views = false;
+    let mut view = None;
+    let mut sql_name = None;
+    for line in schema.lines().map(str::trim) {
+        if line == "diesel::view! {" {
+            in_views = true;
+            continue;
+        }
+        if !in_views {
+            continue;
+        }
+        if let Some(name) = line
+            .strip_prefix("#[sql_name = \"")
+            .and_then(|line| line.strip_suffix("\"]"))
+        {
+            sql_name = Some(name.to_owned());
+        } else if line == "}" {
+            // closes the view, or the `view!` around it
+            in_views = view.take().is_some();
+        } else if let Some(name) = line.strip_suffix(" {") {
+            view = Some(sql_name.take().unwrap_or_else(|| name.to_owned()));
+        } else if let (Some(view), Some((name, sql_type))) = (&view, line.split_once(" -> ")) {
+            let name = sql_name.take().unwrap_or_else(|| name.to_owned());
+            if !sql_type.starts_with("Nullable<") {
+                columns.push((view.clone(), name));
+            }
+        }
+    }
+    columns
 }
 
 #[track_caller]
