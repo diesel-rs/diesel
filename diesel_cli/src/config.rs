@@ -521,6 +521,17 @@ pub struct PrintSchema {
     pub custom_enum_derives: Option<BTreeSet<String>>,
     #[serde(default)]
     pub generate_rust_enum_definitions: Option<bool>,
+    #[serde(default)]
+    pub type_map: Option<Vec<SchemaTypeMap>>,
+}
+
+#[derive(Default, Deserialize, Clone, Debug)]
+pub struct SchemaTypeMap {
+    pub database_typename: String,
+    pub schema_typename: String,
+    pub table_name: Option<String>,
+    pub schema_name: Option<String>,
+    pub column_name: Option<String>,
 }
 
 impl PrintSchema {
