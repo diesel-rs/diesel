@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use diesel_infer_query::{IsNull, SchemaField, SchemaResolver};
+use diesel_infer_query::{Backend, IsNull, SchemaField, SchemaResolver};
 use std::collections::HashMap;
 
 #[derive(Hash, Eq, PartialEq, Debug)]
@@ -147,7 +147,7 @@ fn check_infer<const N: usize>(
     resolver: impl Into<Resolver>,
 ) {
     let mut resolver = resolver.into();
-    let res = diesel_infer_query::parse_view_def(def);
+    let res = diesel_infer_query::parse_view_def(def, Backend::Sqlite);
 
     assert!(
         res.is_ok(),

@@ -1,4 +1,5 @@
 use super::SchemaResolver;
+use super::backend::Backend;
 use super::select::SelectField;
 use crate::IsNull;
 use crate::error::Error;
@@ -62,12 +63,13 @@ impl ViewData {
 /// Infer information about a given view definition
 ///
 /// This method accepts both `CREATE VIEW xyz AS SELECT …` and
-/// plain `SELECT …` statements as view definition.
-pub fn parse_view_def(definition: &str) -> Result<ViewData> {
-    let dialect = sqlparser::dialect::SQLiteDialect {};
+/// plain `SELECT …` statements as view definition. `backend` is the
+/// database the definition comes from, which parses and evaluates it.
+pub fn parse_view_def(definition: &str, backend: Backend) -> Result<ViewData> {
+    let dialect = backend.dialect();
     let options = ParserOptions::new();
 
-    let stmt = sqlparser::parser::Parser::new(&dialect)
+    let stmt = sqlparser::parser::Parser::new(dialect)
         .with_options(options)
         .try_with_sql(definition)?
         .parse_statement()?;

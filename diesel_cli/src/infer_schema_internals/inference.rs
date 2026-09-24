@@ -382,7 +382,8 @@ pub fn load_view_data(
     let sql_definition = load_view_sql_definition(resolver.connection, &name)?;
     if resolver.config.experimental_infer_nullable_for_views {
         tracing::debug!("Infer nullability for view fields");
-        match diesel_infer_query::parse_view_def(&sql_definition) {
+        let backend = infer_query_backend(resolver.connection);
+        match diesel_infer_query::parse_view_def(&sql_definition, backend) {
             Ok(mut data) => {
                 if data
                     .resolve_references(resolver)
@@ -444,5 +445,20 @@ fn load_view_sql_definition(
         InferConnection::Mariadb(mariadb_connection) => Ok(
             super::information_schema::load_view_sql_definition(mariadb_connection, name)?,
         ),
+    }
+}
+
+/// The backend `connection` connects to, which decides how its view definitions are
+/// parsed and evaluated
+fn infer_query_backend(connection: &InferConnection) -> diesel_infer_query::Backend {
+    match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(_) => diesel_infer_query::Backend::Pg,
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => diesel_infer_query::Backend::Sqlite,
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => diesel_infer_query::Backend::Mysql,
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => diesel_infer_query::Backend::Mariadb,
     }
 }

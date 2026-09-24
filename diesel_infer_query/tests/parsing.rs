@@ -2,11 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use diesel_infer_query::parse_view_def;
+use diesel_infer_query::{Backend, parse_view_def};
 
 #[track_caller]
 pub(crate) fn check_parse_view(name: &'static str, def: &'static str) {
-    let res = parse_view_def(def);
+    let res = parse_view_def(def, Backend::Sqlite);
     assert!(
         res.is_ok(),
         "Failed to infer SQL with error: {}",
@@ -67,6 +67,23 @@ pub(crate) fn is_null_and_not_null() {
         "is_null_and_not_null",
         "CREATE VIEW test AS SELECT 1 IS NOT NULL, 2 IS NULL",
     );
+}
+
+#[test]
+fn definitions_are_read_in_the_dialect_of_their_backend() {
+    // the SQLite dialect cannot read PostgreSQL's `?`, which checks for a key of a JSON
+    // object, or MySQL's `DIV`, which divides integers
+    for (backend, definition) in [
+        (
+            Backend::Pg,
+            "CREATE VIEW test AS SELECT doc ? 'k' FROM users",
+        ),
+        (Backend::Mysql, "CREATE VIEW test AS SELECT 7 DIV 2"),
+        (Backend::Mariadb, "CREATE VIEW test AS SELECT 7 DIV 2"),
+    ] {
+        let res = parse_view_def(definition, backend);
+        assert!(res.is_ok(), "{backend:?}: {res:?}");
+    }
 }
 
 #[test]

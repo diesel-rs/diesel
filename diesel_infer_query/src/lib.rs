@@ -7,6 +7,7 @@
 //! view are nullable or not
 
 #![warn(missing_docs)]
+mod backend;
 mod error;
 mod expression;
 mod query_source;
@@ -14,6 +15,8 @@ mod resolver;
 mod select;
 mod views;
 
+#[doc(inline)]
+pub use crate::backend::Backend;
 #[doc(inline)]
 pub use crate::error::{Error, Result};
 #[doc(inline)]
