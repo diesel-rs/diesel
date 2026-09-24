@@ -72,6 +72,9 @@ pub mod multiconnection {
     pub use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
 
     #[doc(hidden)]
+    pub use crate::query_builder::from_clause::FromClauseMembership;
+
+    #[doc(hidden)]
     pub use crate::query_builder::select_statement::boxed::BoxedQueryHelper;
 
     #[doc(hidden)]

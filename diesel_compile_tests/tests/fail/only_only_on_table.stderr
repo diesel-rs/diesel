@@ -49,29 +49,29 @@ LL | | )]
 
    
 error[E0599]: the method `only` exists for struct `columns::id`, but its trait bounds were not satisfied
-  --> tests/fail/only_only_on_table.rs:17:31
-   |
- LL |         id -> Int8,
-   |         -- method `only` not found for this struct because it doesn't satisfy `columns::id: Table` or `columns::id: diesel::dsl::OnlyDsl`
+   --> tests/fail/only_only_on_table.rs:17:31
+    |
+  LL |         id -> Int8,
+    |         -- method `only` not found for this struct because it doesn't satisfy `columns::id: Table` or `columns::id: diesel::dsl::OnlyDsl`
 ...
-LL |     foo::table.select(foo::id.only());
-   |                               ^^^^ method cannot be called on `columns::id` due to unsatisfied trait bounds
-   |
-   = note: the following trait bounds were not satisfied:
-           `columns::id: Table`
-           which is required by `columns::id: diesel::dsl::OnlyDsl`
-           `&columns::id: Table`
-           which is required by `&columns::id: diesel::dsl::OnlyDsl`
-           `&mut columns::id: Table`
-           which is required by `&mut columns::id: diesel::dsl::OnlyDsl`
+ LL |     foo::table.select(foo::id.only());
+    |                               ^^^^ method cannot be called on `columns::id` due to unsatisfied trait bounds
+    |
+    = note: the following trait bounds were not satisfied:
+            `columns::id: Table`
+            which is required by `columns::id: diesel::dsl::OnlyDsl`
+            `&columns::id: Table`
+            which is required by `&columns::id: diesel::dsl::OnlyDsl`
+            `&mut columns::id: Table`
+            which is required by `&mut columns::id: diesel::dsl::OnlyDsl`
 note: the trait `Table` must be implemented
-  --> DIESEL/diesel/diesel/src/query_source/mod.rs
-   |
+   --> DIESEL/diesel/diesel/src/query_source/mod.rs
+    |
 LL | pub trait Table: QuerySource + AsQuery + Sized {
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   = help: items from traits can only be used if the trait is implemented and in scope
-   = note: the following trait defines an item `only`, perhaps you need to implement it:
-           candidate #1: `diesel::dsl::OnlyDsl`
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following trait defines an item `only`, perhaps you need to implement it:
+            candidate #1: `diesel::dsl::OnlyDsl`
 
 error[E0277]: the trait bound `Only<foo::table>: LoadQuery<'_, diesel::SqliteConnection, _>` is not satisfied
     --> tests/fail/only_only_on_table.rs:22:28

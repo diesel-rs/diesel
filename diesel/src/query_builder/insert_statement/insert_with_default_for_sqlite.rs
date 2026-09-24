@@ -115,7 +115,7 @@ where
         // explicit destruct to make sure we use all  the fields
         let InsertStatement {
             operator,
-            target: _,
+            target,
             records,
             returning,
             into_clause,
@@ -136,6 +136,7 @@ where
         let ast_pass = AstPass::debug_binds(&mut buffer, &Sqlite);
         super::insert_statement::walk_ast_intern::<T, _, _, _, Sqlite>(
             ast_pass,
+            target,
             records,
             into_clause,
             operator,
@@ -147,6 +148,7 @@ where
         let sql_pass = AstPass::to_sql(&mut query_builder, &mut ast_pass_to_sql_options, &Sqlite);
         super::insert_statement::walk_ast_intern::<T, _, _, _, Sqlite>(
             sql_pass,
+            target,
             records,
             into_clause,
             operator,

@@ -7,6 +7,7 @@ use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
+use crate::query_builder::from_clause::FromClauseMembership;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
 use crate::query_builder::having_clause::HavingClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
@@ -144,7 +145,7 @@ pub trait BoxedQueryHelper<'a, QS, DB> {
     ) -> QueryResult<()>
     where
         DB: Backend,
-        QS: QueryFragment<DB>,
+        QS: QueryFragment<DB> + FromClauseMembership,
         BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
         'b: 'c;
 }
@@ -160,10 +161,12 @@ impl<'a, ST, QS, DB, GB> BoxedQueryHelper<'a, QS, DB> for BoxedSelectStatement<'
     ) -> QueryResult<()>
     where
         DB: Backend,
-        QS: QueryFragment<DB>,
+        QS: QueryFragment<DB> + FromClauseMembership,
         BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
         'b: 'c,
     {
+        let frame = out.query_source_frame(self.from.dyn_query_source(), true);
+        let mut out = out.push_query_source(&frame);
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
         self.select.walk_ast(out.reborrow())?;
@@ -217,7 +220,7 @@ where
     DB: Backend<
             SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement,
         > + DieselReserveSpecialization,
-    QS: QueryFragment<DB>,
+    QS: QueryFragment<DB> + FromClauseMembership,
     BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
