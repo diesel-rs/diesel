@@ -75,6 +75,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
 * Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
 * Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
+* Negative MySQL and MariaDB `TIME` values now load into `MysqlTime` instead of being rejected while decoding. `chrono::NaiveTime` and `time::Time` cannot represent them, so those targets report that instead
 
 ### Changed
 
