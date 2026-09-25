@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ErrorKind","MatchKind"],"mod":["packed"],"struct":["AhoCorasick","AhoCorasickBuilder","Error","FindIter","FindOverlappingIter","Match","StreamFindIter"],"trait":["StateID"]};

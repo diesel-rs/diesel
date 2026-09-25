@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The `jsonb_array()` SQL function accepts zero or more arguments and returns a well-formed JSON array that is composed from those arguments. Note that arguments of type BLOB will not be accepted by this function."><title>jsonb_array_1 in diesel::sqlite::expression::dsl - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">jsonb_array_1</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.3.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">jsonb_<wbr>array_<wbr>1</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#variadic-functions" title="Variadic functions">Variadic functions</a><ul><li><a href="#controlling-the-generation-of-variadic-function-variants" title="Controlling the generation of variadic function variants">Controlling the generation of variadic function variants</a></li></ul></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>sqlite::<wbr>expression::<wbr>dsl</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">sqlite</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">dsl</a></div><h1>Function <span class="fn">jsonb_<wbr>array_<wbr>1</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/sqlite/expression/functions.rs.html#16">Source</a> </span></div><pre class="rust item-decl"><code>pub fn jsonb_array_1&lt;V1: NotBlob, value_1&gt;(
+    value_1: value_1,
+) -&gt; <a class="type" href="../functions/type.jsonb_array_1.html" title="type diesel::sqlite::expression::functions::jsonb_array_1">jsonb_array_1</a>&lt;V1, value_1&gt;<div class="where">where
+    value_1: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;V1&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>sqlite</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The <code>jsonb_array()</code> SQL function accepts zero or more arguments and returns a well-formed JSON array
+that is composed from those arguments. Note that arguments of type BLOB will not be accepted by this
+function.</p>
+<p>An argument with SQL type TEXT is normally converted into a quoted JSON string. However, if the
+argument is the output from another json function, then it is stored as JSON. This allows calls to
+<code>jsonb_array()</code> and <code>jsonb_object()</code> to be nested. The <a href="../functions/fn.json.html" title="fn diesel::sqlite::expression::functions::json"><code>json()</code></a> function can also be used to force
+strings to be recognized as JSON.</p>
+<p>This function works just like the <a href="../functions/fn.json_array_1.html" title="fn diesel::sqlite::expression::functions::json_array_1"><code>json_array()</code></a> function except that it returns the
+constructed JSON array in the SQLite’s private JSONB format rather than in the standard RFC 8259 text
+format.</p>
+<p>This function requires at least SQLite 3.38 or newer</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>result = diesel::select(jsonb_array_0()).get_result::&lt;serde_json::Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>([]), result);
+
+<span class="kw">let </span>result = diesel::select(jsonb_array_1::&lt;Text, <span class="kw">_</span>&gt;(<span class="string">"abc"</span>))
+    .get_result::&lt;serde_json::Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>([<span class="string">"abc"</span>]), result);
+
+<span class="kw">let </span>result = diesel::select(jsonb_array_2::&lt;Text, Double, <span class="kw">_</span>, <span class="kw">_</span>&gt;(<span class="string">"abc"</span>, <span class="number">3.1415</span>))
+    .get_result::&lt;serde_json::Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>([<span class="string">"abc"</span>, <span class="number">3.1415</span>]), result);</code></pre></div><h2 id="variadic-functions"><a class="doc-anchor" href="#variadic-functions">§</a>Variadic functions</h2>
+<p>This function is variadic in SQL, so there’s a family of functions
+on a diesel side:</p>
+<p><code>jsonb_array_0</code>, <code>jsonb_array_1</code>, … <code>jsonb_array_n</code></p>
+<p>Here, the postfix number indicates repetitions of variadic arguments.
+To use this function, the appropriate version with the correct
+argument count must be selected.</p>
+<h3 id="controlling-the-generation-of-variadic-function-variants"><a class="doc-anchor" href="#controlling-the-generation-of-variadic-function-variants">§</a>Controlling the generation of variadic function variants</h3>
+<p>By default, only variants with 0, 1, and 2 repetitions of variadic
+arguments are generated. To generate more variants, set the
+<code>DIESEL_VARIADIC_FUNCTION_ARGS</code> environment variable to the desired
+number of variants.</p>
+<p>For a greater convenience this environment variable can also be set
+in a <code>.cargo/config.toml</code> file as described in the
+<a href="https://doc.rust-lang.org/cargo/reference/config.html#env">cargo documentation</a>.</p>
+</div></details></section></div></main></body></html>

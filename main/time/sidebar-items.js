@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Month","Weekday"],"mod":["convert","error","ext","format_description","formatting","iter","macros","parsing","unit","util"],"struct":["Date","OffsetDateTime","PlainDateTime","SignedDuration","Time","Timestamp","UtcDateTime","UtcOffset"],"type":["Duration","PrimitiveDateTime","Result"]};
