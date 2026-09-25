@@ -1,0 +1,45 @@
+error[E0277]: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>` is not satisfied
+   --> tests/fail/old_value_is_not_allowed_in_subselect_for_mariadb.rs:48:20
+    |
+ LL |   ...   .returning((posts::table
+    |  ________---------_^
+    | |        |
+    | |        required by a bound introduced by this call
+ LL | | ...
+ LL | | ...       .select(posts::title)
+ LL | | ...       .filter(posts::user_id.eq(old_value(users::id)))
+ LL | | ...       .single_value(),))
+    | |___________________________^ unsatisfied trait bound
+    |
+help: the trait `AppearsOnTable<query_source::joins::Join<posts::table, diesel::query_builder::returning::returning_query_source::ReturningQuerySource<_, _>, query_source::joins::Inner>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<users::columns::id>`
+      but trait `AppearsOnTable<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<_, _>>` is implemented for it
+   --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+    |
+ LL | / impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
+ LL | | where
+ LL | |     C: Column,
+ LL | |     Self: Expression,
+...   |
+LL | |             Count = crate::query_source::Once,
+LL | |         >,
+    | |__________^
+    = help: for that trait implementation, expected `ReturningQuerySource<UpdateStmt, table>`, found `Join<table, ReturningQuerySource<..., ...>, ...>`
+    = note: required for `Eq<user_id, OldValue<id>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
+    = note: 1 redundant requirement hidden
+    = note: required for `Grouped<Eq<user_id, OldValue<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
+    = note: required for `WhereClause<Grouped<Eq<user_id, OldValue<id>>>>` to implement `ValidWhereClause<FromClause<Join<..., ..., ...>>>`
+    = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `ValidSubselect<ReturningQuerySource<..., ...>>`
+    = note: required for `Subselect<..., ...>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: 2 redundant requirements hidden
+    = note: required for `(Grouped<Subselect<..., ...>>,)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+    For more information about this error, try `rustc --explain E0277`.
