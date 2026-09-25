@@ -405,9 +405,7 @@ impl Display for Error {
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
             }
-            Error::IntegerConversion(ref e) => {
-                write!(f, "Internal integer conversion error: {e}")
-            }
+            Error::IntegerConversion(_) => f.write_str("Internal integer conversion failed"),
             Error::ClosingHandle(message) => {
                 write!(f, "Error closing SQLite blob: {message}")
             }
