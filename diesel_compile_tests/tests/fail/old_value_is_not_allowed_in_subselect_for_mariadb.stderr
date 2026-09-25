@@ -1,3 +1,20 @@
+error[E0277]: the trait bound `OldValue<id>: AsExpression<Integer>` is not satisfied
+  --> tests/fail/old_value_is_not_allowed_in_subselect_for_mariadb.rs:51:36
+   |
+LL |             .filter(posts::user_id.eq(old_value(users::id)))
+   |                                    ^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::sql_types::Integer>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<users::columns::id>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             &'__expr AutoVacuumMode
+             &'__expr i32
+             Arc<i32>
+             AutoVacuumMode
+             Box<i32>
+             Rc<i32>
+             i32
+
+   
 error[E0277]: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>` is not satisfied
    --> tests/fail/old_value_is_not_allowed_in_subselect_for_mariadb.rs:48:20
     |
@@ -8,6 +25,7 @@ error[E0277]: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>
  LL | | ...
  LL | | ...       .select(posts::title)
  LL | | ...       .filter(posts::user_id.eq(old_value(users::id)))
+ LL | | ...
  LL | | ...       .single_value(),))
     | |___________________________^ unsatisfied trait bound
     |
@@ -15,10 +33,10 @@ help: the trait `AppearsOnTable<query_source::joins::Join<posts::table, diesel::
       but trait `AppearsOnTable<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<_, _>>` is implemented for it
    --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
     |
- LL | / impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
- LL | | where
- LL | |     C: Column,
- LL | |     Self: Expression,
+LL | / impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
+LL | | where
+LL | |     C: Column,
+LL | |     Self: Expression,
 ...   |
 LL | |             Count = crate::query_source::Once,
 LL | |         >,

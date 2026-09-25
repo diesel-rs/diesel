@@ -49,7 +49,25 @@ const _: () = {
             }
         }
     }
-
+    #[diagnostic::do_not_recommend]
+    impl<
+        __ST,
+    > diesel::deserialize::FromSql<
+        diesel::mariadb::returning::OldValueOf<__ST>,
+        diesel::mariadb::Mariadb,
+    > for Color
+    where
+        Self: diesel::deserialize::FromSql<__ST, diesel::mariadb::Mariadb>,
+    {
+        fn from_sql(
+            value: <diesel::mariadb::Mariadb as diesel::backend::Backend>::RawValue<'_>,
+        ) -> diesel::deserialize::Result<Self> {
+            <Self as diesel::deserialize::FromSql<
+                __ST,
+                diesel::mariadb::Mariadb,
+            >>::from_sql(value)
+        }
+    }
     impl<__DB> diesel::serialize::ToSql<diesel::sql_types::Integer, __DB> for Color
     where
         __DB: diesel::backend::Backend,

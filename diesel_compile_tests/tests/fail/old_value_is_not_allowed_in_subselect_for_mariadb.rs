@@ -49,6 +49,7 @@ fn main() {
             //~^ ERROR: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>` is not satisfied
             .select(posts::title)
             .filter(posts::user_id.eq(old_value(users::id)))
+            //~^ ERROR: the trait bound `OldValue<id>: AsExpression<Integer>` is not satisfied
             .single_value(),))
         .execute(&mut conn)
         .unwrap();

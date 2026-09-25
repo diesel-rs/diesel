@@ -1,0 +1,162 @@
+error[E0277]: the trait bound `&str: AsExpression<OldValueOf<diesel::sql_types::Text>>` is not satisfied
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:42:43
+   |
+LL |         .returning(old_value(users::name).eq("Sean"));
+   |                                           ^^ the trait `AsExpression<OldValueOf<diesel::sql_types::Text>>` is not implemented for `&str`
+   |
+   = help: `&str` implements trait `AsExpression<T>`:
+             AsExpression<Citext>
+             AsExpression<diesel::sql_types::Bpchar>
+             AsExpression<diesel::sql_types::Date>
+             AsExpression<diesel::sql_types::Text>
+             AsExpression<diesel::sql_types::Time>
+             AsExpression<diesel::sql_types::Timestamp>
+
+error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:42:20
+    |
+ LL |         .returning(old_value(users::name).eq("Sean"));
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ValidGrouping<()>` is not implemented for `str`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+              AliasedField<S, C>
+              columns::hair_color
+              columns::id
+              columns::name
+              diesel::mariadb::returning::old_impl::OldValue<C>
+              diesel::pg::returning::old_impl::Old<C>
+              pg::metadata_lookup::pg_namespace::columns::nspname
+              pg::metadata_lookup::pg_namespace::columns::oid
+            and N others
+    = note: required for `&str` to implement `ValidGrouping<()>`
+    = note: 1 redundant requirement hidden
+    = note: required for `Eq<OldValue<name>, &str>` to implement `ValidGrouping<()>`
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+    help: consider removing this method call, as the receiver has type `diesel::mariadb::returning::old_impl::OldValue<columns::name>` and `diesel::mariadb::returning::old_impl::OldValue<columns::name>: ValidGrouping<()>` trivially holds
+    |
+ 42 -         .returning(old_value(users::name).eq("Sean"));
+ 42 +         .returning(old_value(users::name));
+    |
+
+error[E0277]: cannot select `str` from `ReturningQuerySource<UpdateStmt, table>`
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:42:20
+    |
+ LL |         .returning(old_value(users::name).eq("Sean"));
+    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `str`
+    = note: `str` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              `&'a T` implements `SelectableExpression<QS>`
+              `(T, T1)` implements `SelectableExpression<QS>`
+              `(T, T1, T2)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4, T5)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4, T5, T6)` implements `SelectableExpression<QS>`
+              `(T, T1, T2, T3, T4, T5, T6, T7)` implements `SelectableExpression<QS>`
+            and N others
+    = note: required for `&str` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: 2 redundant requirements hidden
+    = note: required for `Grouped<Eq<OldValue<name>, &str>>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+    |
+LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+    |            --------- required by a bound in this associated function
+...
+LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
+ 
+    help: consider removing this method call, as the receiver has type `diesel::mariadb::returning::old_impl::OldValue<columns::name>` and `diesel::mariadb::returning::old_impl::OldValue<columns::name>: SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` trivially holds
+    |
+ 42 -         .returning(old_value(users::name).eq("Sean"));
+ 42 +         .returning(old_value(users::name));
+    |
+
+error[E0369]: cannot add `{integer}` to `diesel::mariadb::returning::old_impl::OldValue<columns::id>`
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:48:41
+   |
+LL |         .returning(old_value(users::id) + 1);
+   |                    -------------------- ^ - {integer}
+   |                    |
+   |                    diesel::mariadb::returning::old_impl::OldValue<columns::id>
+   |
+note: `diesel::mariadb::returning::old_impl::OldValue<columns::id>` does not implement `std::ops::Add<{integer}>`
+  --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+   |
+LL | pub struct OldValue<C> {
+   | ^^^^^^^^^^^^^^^^^^^^^^ `diesel::mariadb::returning::old_impl::OldValue<columns::id>` is defined in another crate
+
+error[E0277]: the trait bound `OldValue<name>: AsExpression<Text>` is not satisfied
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:52:32
+   |
+LL |         .returning(users::name.eq(old_value(users::name)));
+   |                                ^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             &'__expr MigrationVersion<'a>
+             &'__expr Name
+             &'__expr std::string::String
+             &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
+           and N others
+
+   
+error[E0599]: the method `concat` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:58:43
+   |
+LL |         .returning(old_value(users::name).concat("!"));
+   |                                           ^^^^^^ method cannot be called due to unsatisfied trait bounds
+   |
+  ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+   |
+LL | pub struct OldValue<C> {
+   | ---------------------- doesn't satisfy `_: PgArrayExpressionMethods`, `_: PgBinaryExpressionMethods`, `_: PgJsonbExpressionMethods` or `_: TextExpressionMethods`
+...
+LL | pub struct OldValueOf<ST>(PhantomData<ST>);
+   | ------------------------- doesn't satisfy `_: ArrayOrNullableArray`, `_: BinaryOrNullableBinary`, `_: JsonbOrNullableJsonb` or `_: TextOrNullableText`
+   |
+   = note: the following trait bounds were not satisfied:
+           `OldValueOf<diesel::sql_types::Text>: expression_methods::text_expression_methods::private::TextOrNullableText`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::ArrayOrNullableArray`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::JsonbOrNullableJsonb`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::BinaryOrNullableBinary`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: expression_methods::text_expression_methods::private::TextOrNullableText`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::ArrayOrNullableArray`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::JsonbOrNullableJsonb`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
+           `OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::BinaryOrNullableBinary`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`

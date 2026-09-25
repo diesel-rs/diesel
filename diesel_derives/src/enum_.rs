@@ -74,6 +74,21 @@ pub fn derive(item: DeriveEnumInput) -> Result<TokenStream> {
         });
     }
 
+    let enum_name = &item.ident;
+    from_sql_impls.push(quote::quote! {
+        diesel::internal::derives::enum_::expand_mariadb! {
+            #[diagnostic::do_not_recommend]
+            impl<__ST> diesel::deserialize::FromSql<diesel::mariadb::returning::OldValueOf<__ST>, diesel::mariadb::Mariadb> for #enum_name
+            where
+                Self: diesel::deserialize::FromSql<__ST, diesel::mariadb::Mariadb>,
+            {
+                fn from_sql(value: <diesel::mariadb::Mariadb as diesel::backend::Backend>::RawValue<'_>) -> diesel::deserialize::Result<Self> {
+                    <Self as diesel::deserialize::FromSql<__ST, diesel::mariadb::Mariadb>>::from_sql(value)
+                }
+            }
+        }
+    });
+
     let struct_ty = syn::Type::Path(syn::TypePath {
         qself: None,
         path: item.ident.into(),

@@ -769,6 +769,46 @@ fn returning_old_column_in_update_via_selectable() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn returning_old_value_of_nullable_and_unsigned_columns() {
+    use crate::schema::{unsigned_widths, users};
+    use diesel::mariadb::returning::old_value;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let set_black = update(users::table.find(sean.id))
+        .set(users::hair_color.eq("black"))
+        .returning((old_value(users::hair_color), users::hair_color))
+        .get_result::<(Option<String>, Option<String>)>(connection);
+    assert_eq!(Ok((None, Some("black".to_string()))), set_black);
+    let set_null = update(users::table.find(sean.id))
+        .set(users::hair_color.eq(None::<String>))
+        .returning(old_value(users::hair_color))
+        .get_result::<Option<String>>(connection);
+    assert_eq!(Ok(Some("black".to_string())), set_null);
+
+    insert_into(unsigned_widths::table)
+        .values((
+            unsigned_widths::id.eq(1042_u32),
+            unsigned_widths::tiny_value.eq(200_u8),
+            unsigned_widths::small_value.eq(40_000_u16),
+            unsigned_widths::int_value.eq(4_000_000_000_u32),
+            unsigned_widths::big_value.eq(u64::MAX),
+        ))
+        .execute(connection)
+        .unwrap();
+    let was = update(unsigned_widths::table.find(1042_u32))
+        .set(unsigned_widths::big_value.eq(0_u64))
+        .returning(old_value(unsigned_widths::big_value))
+        .get_result::<u64>(connection);
+    assert_eq!(Ok(u64::MAX), was);
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn returning_subselect_and_old_in_update() {
     use crate::schema::{posts, users};

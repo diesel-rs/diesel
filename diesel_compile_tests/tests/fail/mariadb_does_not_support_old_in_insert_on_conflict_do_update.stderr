@@ -52,7 +52,7 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
      = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
      = note: required for `(OldValue<name>, name)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 1 redundant requirement hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UpsertOldNew, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+     = note: required for `diesel::expression::select_by::SelectBy<UpsertOldNew, Mariadb>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UpsertOldNew>`
 note: required by a bound in `get_result`

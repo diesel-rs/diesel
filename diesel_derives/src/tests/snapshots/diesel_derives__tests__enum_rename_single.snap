@@ -49,6 +49,7 @@ const _: () = {
             }
         }
     }
+
     impl<__DB> diesel::serialize::ToSql<diesel::sql_types::Text, __DB> for Color
     where
         __DB: diesel::backend::Backend,
