@@ -29,6 +29,8 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [],
+                recursive: false,
             },
         ),
     ],

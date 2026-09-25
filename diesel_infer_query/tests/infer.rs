@@ -1319,3 +1319,111 @@ fn aggregate_rows_reach_every_query() {
         );
     }
 }
+
+#[test]
+fn relations_resolve_in_their_scope() {
+    // `users` of the common table expression inside `c` is out of scope for the outer
+    // query, which reads the table
+    check_infer(
+        "CREATE VIEW test AS WITH c AS (WITH users AS (SELECT 'x' AS hair_color) \
+         SELECT hair_color FROM users) SELECT users.hair_color FROM users",
+        [IsNull::IsNullable],
+        [("users", "hair_color", IsNull::IsNullable)],
+    );
+    // derived tables in the arms of a set operation and inside other derived tables
+    check_infer(
+        "CREATE VIEW test AS SELECT d.x FROM (SELECT 1 AS x) AS d \
+         UNION SELECT e.x FROM (SELECT f.x FROM (SELECT NULL AS x) AS f) AS e",
+        [IsNull::IsNullable],
+        (),
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT d.x FROM (SELECT 1 AS x) AS d \
+         UNION SELECT e.x FROM (SELECT f.x FROM (SELECT 2 AS x) AS f) AS e",
+        [IsNull::NotNullable],
+        (),
+    );
+    // derived tables inside a parenthesized join, and next to an unnamed one
+    check_infer(
+        "CREATE VIEW test AS SELECT d.x, users.id \
+         FROM (users JOIN (SELECT 1 AS x) AS d ON d.x = users.id)",
+        [IsNull::NotNullable, IsNull::NotNullable],
+        [("users", "id", IsNull::NotNullable)],
+    );
+    check_infer(
+        "CREATE VIEW test AS SELECT d.x FROM (SELECT 1 AS x) AS d, (SELECT NULL AS y)",
+        [IsNull::NotNullable],
+        (),
+    );
+    // the resolver only knows the relations around a subquery
+    for definition in [
+        "CREATE VIEW test AS SELECT 1 IN (WITH users AS (SELECT NULL AS id) \
+         SELECT id FROM users) FROM users",
+        "CREATE VIEW test AS SELECT 1 IN (SELECT d.id FROM (SELECT NULL AS id) AS d) \
+         FROM users",
+    ] {
+        check_infer(definition, [IsNull::Unknown], ());
+    }
+    // a recursive common table expression reads itself, not the table `t`
+    check_infer(
+        "CREATE VIEW test AS WITH RECURSIVE t(n, m) AS (SELECT 1, NULL \
+         UNION ALL SELECT t.m, t.m FROM t WHERE t.n IS NOT NULL) SELECT n FROM t",
+        [IsNull::Unknown],
+        [
+            ("t", "n", IsNull::NotNullable),
+            ("t", "m", IsNull::NotNullable),
+        ],
+    );
+}
+
+#[test]
+fn cte_column_lists_match_their_queries() {
+    // SQLite rejects a column list longer or shorter than the query
+    for definition in [
+        "CREATE VIEW test AS WITH c(a) AS (SELECT 1, 2) SELECT c.a FROM c",
+        "CREATE VIEW test AS WITH c(a, b) AS (SELECT 1) SELECT c.a FROM c",
+    ] {
+        let res = diesel_infer_query::parse_view_def(definition, Backend::Sqlite);
+        assert!(
+            matches!(res, Err(diesel_infer_query::Error::UnsupportedSql { .. })),
+            "{definition}: {res:?}"
+        );
+    }
+}
+
+#[test]
+fn ambiguous_relation_names() {
+    for definition in [
+        // SQLite reads the common table expression `b`, PostgreSQL and MySQL the table
+        "CREATE VIEW test AS WITH a AS (SELECT id FROM b), b AS (SELECT NULL AS id) \
+         SELECT id FROM a",
+        // one query defines `d` twice
+        "CREATE VIEW test AS SELECT d.x FROM (SELECT 1 AS x) AS d \
+         UNION SELECT d.x FROM (SELECT NULL AS x) AS d",
+        // the subquery reads the table `users`, not the derived table
+        "CREATE VIEW test AS SELECT 1 IN (SELECT id FROM users) \
+         FROM (SELECT NULL AS id) AS users",
+        // two unnamed derived tables, which the resolver cannot tell apart
+        "CREATE VIEW test AS SELECT x FROM (SELECT 1 AS x), (SELECT NULL AS y)",
+    ] {
+        let res = diesel_infer_query::parse_view_def(definition, Backend::Sqlite);
+        assert!(
+            matches!(res, Err(diesel_infer_query::Error::UnsupportedSql { .. })),
+            "{definition}: {res:?}"
+        );
+    }
+    // `c` inside `d` matches the inner `C` only ignoring case, but the outer `c` exactly
+    let mut resolver = Resolver::from(());
+    let mut view_def = diesel_infer_query::parse_view_def(
+        "CREATE VIEW test AS WITH c AS (SELECT 1 AS x), \
+         d AS (WITH C AS (SELECT NULL AS x) SELECT c.x FROM c) SELECT d.x FROM d",
+        Backend::Sqlite,
+    )
+    .unwrap();
+    view_def.resolve_references(&mut resolver).unwrap();
+    let res = view_def.infer_nullability(&mut resolver);
+    assert!(
+        matches!(res, Err(diesel_infer_query::Error::ResolverFailure { .. })),
+        "{res:?}"
+    );
+}

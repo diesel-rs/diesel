@@ -144,6 +144,8 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [],
+                recursive: false,
             },
         ),
         (
@@ -205,6 +207,8 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [],
+                recursive: false,
             },
         ),
         (
@@ -310,41 +314,8 @@ ViewData {
                         },
                     },
                 ],
-            },
-        ),
-        (
-            Some(
-                "s",
-            ),
-            SubQuery {
-                fields: [
-                    SelectField {
-                        ident: Some(
-                            "col1",
-                        ),
-                        kind: Field {
-                            schema: None,
-                            query_source: Some(
-                                "small_table",
-                            ),
-                            field_name: "col1",
-                            nullable_row: false,
-                        },
-                    },
-                    SelectField {
-                        ident: Some(
-                            "col2",
-                        ),
-                        kind: Field {
-                            schema: None,
-                            query_source: Some(
-                                "small_table",
-                            ),
-                            field_name: "col2",
-                            nullable_row: false,
-                        },
-                    },
-                ],
+                subqueries: [],
+                recursive: false,
             },
         ),
         (
@@ -432,6 +403,46 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [
+                    (
+                        Some(
+                            "s",
+                        ),
+                        SubQuery {
+                            fields: [
+                                SelectField {
+                                    ident: Some(
+                                        "col1",
+                                    ),
+                                    kind: Field {
+                                        schema: None,
+                                        query_source: Some(
+                                            "small_table",
+                                        ),
+                                        field_name: "col1",
+                                        nullable_row: false,
+                                    },
+                                },
+                                SelectField {
+                                    ident: Some(
+                                        "col2",
+                                    ),
+                                    kind: Field {
+                                        schema: None,
+                                        query_source: Some(
+                                            "small_table",
+                                        ),
+                                        field_name: "col2",
+                                        nullable_row: false,
+                                    },
+                                },
+                            ],
+                            subqueries: [],
+                            recursive: false,
+                        },
+                    ),
+                ],
+                recursive: false,
             },
         ),
     ],

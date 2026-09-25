@@ -53,6 +53,8 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [],
+                recursive: false,
             },
         ),
     ],

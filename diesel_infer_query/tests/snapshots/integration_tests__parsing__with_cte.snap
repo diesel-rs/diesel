@@ -76,6 +76,8 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [],
+                recursive: false,
             },
         ),
     ],

@@ -125,6 +125,8 @@ ViewData {
                         },
                     },
                 ],
+                subqueries: [],
+                recursive: true,
             },
         ),
     ],

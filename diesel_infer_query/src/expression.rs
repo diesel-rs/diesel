@@ -8,9 +8,10 @@ use crate::query_source::{QuerySource, find_query_source};
 use crate::select::{CaseCondition, Expression, OperatorNullability};
 use sqlparser::ast::{
     BinaryOperator, Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart,
-    UnaryOperator, Value,
+    TableFactor, UnaryOperator, Value, Visit, Visitor,
 };
 use std::collections::HashMap;
+use std::ops::ControlFlow;
 
 pub(crate) fn infer_expr(
     expr: &sqlparser::ast::Expr,
@@ -247,6 +248,9 @@ pub(crate) fn infer_expr(
             let results = crate::select::parse_query(query, Some(query_source_lookup), backend)?;
             Ok(Expression::Subquery { selection: results })
         }
+        // the resolver only knows the relations of the queries around a subquery, not
+        // those the subquery defines itself
+        Expr::InSubquery { subquery, .. } if defines_relations(subquery) => Ok(Expression::Unknown),
         Expr::InSubquery {
             expr,
             subquery,
@@ -396,6 +400,33 @@ fn binds_tighter_than_is(expr: &Expr) -> bool {
         | Expr::Subquery(_) => true,
         _ => false,
     }
+}
+
+/// Does `query` define a common table expression or derived table anywhere?
+fn defines_relations(query: &sqlparser::ast::Query) -> bool {
+    struct Definitions;
+
+    impl Visitor for Definitions {
+        type Break = ();
+
+        fn pre_visit_query(&mut self, query: &sqlparser::ast::Query) -> ControlFlow<()> {
+            if query.with.is_some() {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        }
+
+        fn pre_visit_table_factor(&mut self, factor: &TableFactor) -> ControlFlow<()> {
+            if matches!(factor, TableFactor::Derived { .. }) {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        }
+    }
+
+    query.visit(&mut Definitions).is_break()
 }
 
 fn infer_functions(

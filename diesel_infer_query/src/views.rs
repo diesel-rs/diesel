@@ -4,10 +4,14 @@ use super::select::SelectField;
 use crate::IsNull;
 use crate::error::Error;
 use crate::error::Result;
-use crate::resolver::CombinedResolver;
+use crate::resolver::{CombinedResolver, ResolvedField};
 use crate::select::Expression;
-use sqlparser::ast::{CreateView, Query};
+use sqlparser::ast::{
+    CreateView, ObjectNamePart, Query, SetExpr, TableFactor, TableWithJoins, Visit, Visitor,
+    visit_relations,
+};
 use sqlparser::parser::ParserOptions;
+use std::ops::ControlFlow;
 
 /// An opaque representation of information
 /// about a specific SQL view
@@ -39,8 +43,8 @@ impl ViewData {
     /// to query information about relations used in this
     /// view definition
     pub fn infer_nullability(&self, resolver: &mut dyn SchemaResolver) -> Result<Vec<IsNull>> {
-        let mut resolver = CombinedResolver::new(&self.subqueries, resolver)?;
-
+        let mut resolver = CombinedResolver::new(resolver);
+        infer_subqueries(&self.subqueries, &mut resolver)?;
         self.fields
             .iter()
             .map(|f| f.infer_nullability(&mut resolver))
@@ -51,12 +55,9 @@ impl ViewData {
     ///
     /// This needs to be called before any other operation is performed with this view definition
     pub fn resolve_references(&mut self, resolver: &mut dyn SchemaResolver) -> Result<()> {
-        for (_, subquery) in &mut self.subqueries {
-            resolve_wildcards(&mut subquery.fields, resolver)?;
-        }
-        let mut resolver = CombinedResolver::new(&self.subqueries, resolver)?;
-        resolve_wildcards(&mut self.fields, &mut resolver)?;
-        Ok(())
+        let mut resolver = CombinedResolver::new(resolver);
+        resolve_subquery_wildcards(&mut self.subqueries, &mut resolver)?;
+        resolve_wildcards(&mut self.fields, &mut resolver)
     }
 }
 
@@ -89,6 +90,7 @@ pub fn parse_view_def(definition: &str, backend: Backend) -> Result<ViewData> {
             });
         }
     };
+    check_derived_table_aliases(&select)?;
     let subqueries = collect_subqueries(&select, backend)?;
     let results = crate::select::parse_query(&select, None, backend)?;
     Ok(ViewData {
@@ -97,90 +99,240 @@ pub fn parse_view_def(definition: &str, backend: Backend) -> Result<ViewData> {
     })
 }
 
+/// A common table expression or derived table of a view definition
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct SubQuery {
     fields: Vec<SelectField>,
+    /// the common table expressions and derived tables of its own query, which only it
+    /// sees
+    subqueries: Vec<(Option<String>, SubQuery)>,
+    /// is it a common table expression of a `WITH RECURSIVE` clause, which can read
+    /// itself?
+    recursive: bool,
+}
+
+/// The common table expressions and derived tables `query` defines itself
+///
+/// The resolver looks them up by name in the scope of the query, so a query may not
+/// define a name twice, and a common table expression may not read one defined after
+/// it, which SQLite looks up among the common table expressions and PostgreSQL and MySQL
+/// among the tables.
+fn collect_subqueries(query: &Query, backend: Backend) -> Result<Vec<(Option<String>, SubQuery)>> {
+    let mut subqueries = Vec::new();
+    if let Some(with) = &query.with {
+        for (index, cte) in with.cte_tables.iter().enumerate() {
+            let name = &cte.alias.name.value;
+            if let Some(later) = with.cte_tables[index + 1..]
+                .iter()
+                .find(|later| reads_relation(&cte.query, &later.alias.name.value))
+            {
+                return Err(Error::UnsupportedSql {
+                    msg: format!(
+                        "Common table expression `{name}` reads `{}`, which is defined after it",
+                        later.alias.name.value
+                    ),
+                });
+            }
+            let mut fields = crate::select::parse_query(&cte.query, None, backend)?;
+            if !cte.alias.columns.is_empty() {
+                if fields.len() == cte.alias.columns.len() {
+                    fields
+                        .iter_mut()
+                        .zip(&cte.alias.columns)
+                        .for_each(|(f, a)| {
+                            f.ident = Some(a.name.value.clone());
+                        });
+                } else {
+                    return Err(Error::UnsupportedSql {
+                        msg: format!(
+                            "Not matching field count for a CTE. \
+                                 Got {} fields, but expected {} fields",
+                            fields.len(),
+                            cte.alias.columns.len()
+                        ),
+                    });
+                }
+            }
+            subqueries.push((
+                Some(name.clone()),
+                SubQuery {
+                    fields,
+                    subqueries: collect_subqueries(&cte.query, backend)?,
+                    recursive: with.recursive,
+                },
+            ));
+        }
+    }
+    collect_derived_tables(&query.body, &mut subqueries, backend)?;
+    for (index, (name, _)) in subqueries.iter().enumerate() {
+        let defined_before = subqueries[..index]
+            .iter()
+            .any(|(other, _)| match (name, other) {
+                (Some(name), Some(other)) => name.eq_ignore_ascii_case(other),
+                (None, None) => true,
+                _ => false,
+            });
+        if defined_before {
+            return Err(Error::UnsupportedSql {
+                msg: format!(
+                    "Query defines `{}` twice",
+                    name.as_deref().unwrap_or("an unnamed derived table")
+                ),
+            });
+        }
+    }
+    Ok(subqueries)
+}
+
+/// The derived tables in the `FROM` clauses of `body`
+fn collect_derived_tables(
+    body: &SetExpr,
+    subqueries: &mut Vec<(Option<String>, SubQuery)>,
+    backend: Backend,
+) -> Result<()> {
+    match body {
+        SetExpr::Select(select) => {
+            for table in &select.from {
+                collect_derived_table(table, subqueries, backend)?;
+            }
+        }
+        SetExpr::SetOperation { left, right, .. } => {
+            collect_derived_tables(left, subqueries, backend)?;
+            collect_derived_tables(right, subqueries, backend)?;
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+fn collect_derived_table(
+    table: &TableWithJoins,
+    subqueries: &mut Vec<(Option<String>, SubQuery)>,
+    backend: Backend,
+) -> Result<()> {
+    for factor in std::iter::once(&table.relation).chain(table.joins.iter().map(|j| &j.relation)) {
+        match factor {
+            TableFactor::Derived {
+                lateral: false,
+                subquery,
+                alias,
+                sample: None,
+            } => subqueries.push((
+                alias.as_ref().map(|a| a.name.value.clone()),
+                SubQuery {
+                    fields: crate::select::parse_query(subquery, None, backend)?,
+                    subqueries: collect_subqueries(subquery, backend)?,
+                    recursive: false,
+                },
+            )),
+            TableFactor::NestedJoin {
+                table_with_joins, ..
+            } => collect_derived_table(table_with_joins, subqueries, backend)?,
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+/// Does `query` read a relation called `name`, ignoring ASCII case?
+fn reads_relation(query: &Query, name: &str) -> bool {
+    visit_relations(query, |relation| match relation.0.as_slice() {
+        [ObjectNamePart::Identifier(ident)] if ident.value.eq_ignore_ascii_case(name) => {
+            ControlFlow::Break(())
+        }
+        _ => ControlFlow::Continue(()),
+    })
+    .is_break()
+}
+
+/// Reject a definition that reads a relation by a name a derived table has somewhere
+///
+/// The resolver looks a derived table up by its alias, while a relation of the same name
+/// read in another query means a table or common table expression.
+fn check_derived_table_aliases(query: &Query) -> Result<()> {
+    struct Aliases(Vec<String>);
+
+    impl Visitor for Aliases {
+        type Break = ();
+
+        fn pre_visit_table_factor(&mut self, factor: &TableFactor) -> ControlFlow<()> {
+            if let TableFactor::Derived {
+                alias: Some(alias), ..
+            } = factor
+            {
+                self.0.push(alias.name.value.clone());
+            }
+            ControlFlow::Continue(())
+        }
+    }
+
+    let mut aliases = Aliases(Vec::new());
+    let _ = query.visit(&mut aliases);
+    match aliases.0.iter().find(|alias| reads_relation(query, alias)) {
+        Some(alias) => Err(Error::UnsupportedSql {
+            msg: format!("Relation `{alias}` is read, but also names a derived table"),
+        }),
+        None => Ok(()),
+    }
+}
+
+/// Infer the nullability of the fields of `subqueries`, and bring them into scope
+///
+/// The relations a query defines itself are only in scope while inferring that query.
+fn infer_subqueries(
+    subqueries: &[(Option<String>, SubQuery)],
+    resolver: &mut CombinedResolver<'_>,
+) -> Result<()> {
+    for (name, subquery) in subqueries {
+        let scope = resolver.enter(name, subquery);
+        infer_subqueries(&subquery.subqueries, resolver)?;
+        let fields = subquery
+            .fields
+            .iter()
+            .map(|f| {
+                Ok(ResolvedField::new(
+                    f.ident.clone(),
+                    f.infer_nullability(resolver)?,
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        resolver.leave(scope);
+        resolver.define(name.clone(), fields);
+    }
+    Ok(())
+}
+
+/// Resolve the wildcards of `subqueries`, and bring them into scope
+fn resolve_subquery_wildcards(
+    subqueries: &mut [(Option<String>, SubQuery)],
+    resolver: &mut CombinedResolver<'_>,
+) -> Result<()> {
+    for (name, subquery) in subqueries {
+        let scope = resolver.enter(name, subquery);
+        resolve_subquery_wildcards(&mut subquery.subqueries, resolver)?;
+        resolve_wildcards(&mut subquery.fields, resolver)?;
+        resolver.leave(scope);
+        resolver.define(name.clone(), unknown_fields(&subquery.fields));
+    }
+    Ok(())
+}
+
+/// The fields of a relation whose nullability is not inferred yet
+pub(crate) fn unknown_fields(fields: &[SelectField]) -> Vec<ResolvedField> {
+    fields
+        .iter()
+        .map(|f| ResolvedField::new(f.ident.clone(), IsNull::Unknown))
+        .collect()
 }
 
 impl SubQuery {
     pub(crate) fn fields(&self) -> &[SelectField] {
         &self.fields
     }
-}
 
-fn collect_subqueries(query: &Query, backend: Backend) -> Result<Vec<(Option<String>, SubQuery)>> {
-    let mut subqueries = if let Some(with) = &query.with {
-        with.cte_tables
-            .iter()
-            .flat_map(|t| match extract_cte_subqueries(t, backend) {
-                Ok(o) => Box::new(o.into_iter().map(Ok)) as Box<dyn Iterator<Item = _>>,
-                Err(e) => Box::new(std::iter::once(Err(e))),
-            })
-            .collect::<Result<Vec<_>>>()?
-    } else {
-        Vec::new()
-    };
-    if let sqlparser::ast::SetExpr::Select(select_expr) = &*query.body {
-        for s in &select_expr.from {
-            extract_subqueries_from_table_factor(&s.relation, &mut subqueries, backend)?;
-            for join in &s.joins {
-                extract_subqueries_from_table_factor(&join.relation, &mut subqueries, backend)?;
-            }
-        }
+    pub(crate) fn recursive(&self) -> bool {
+        self.recursive
     }
-
-    Ok(subqueries)
-}
-
-fn extract_cte_subqueries(
-    t: &sqlparser::ast::Cte,
-    backend: Backend,
-) -> Result<Vec<(Option<String>, SubQuery)>, Error> {
-    let name = t.alias.name.value.as_str();
-    let mut subqueries = collect_subqueries(&t.query, backend)?;
-
-    let mut fields = crate::select::parse_query(&t.query, None, backend)?;
-    if !t.alias.columns.is_empty() {
-        if fields.len() == t.alias.columns.len() {
-            fields.iter_mut().zip(&t.alias.columns).for_each(|(f, a)| {
-                f.ident = Some(a.name.value.clone());
-            });
-        } else {
-            return Err(Error::UnsupportedSql {
-                msg: format!(
-                    "Not matching field count for a CTE. \
-                                 Got {} fields, but expected {} fields",
-                    fields.len(),
-                    t.alias.columns.len()
-                ),
-            });
-        }
-    }
-
-    subqueries.push((Some(name.to_owned()), SubQuery { fields }));
-    Ok(subqueries)
-}
-
-fn extract_subqueries_from_table_factor(
-    s: &sqlparser::ast::TableFactor,
-    subqueries: &mut Vec<(Option<String>, SubQuery)>,
-    backend: Backend,
-) -> Result<()> {
-    if let sqlparser::ast::TableFactor::Derived {
-        lateral: false,
-        subquery,
-        alias,
-        sample: None,
-    } = s
-    {
-        let fields = crate::select::parse_query(subquery, None, backend)?;
-        subqueries.push((
-            alias.as_ref().map(|a| a.name.value.clone()),
-            SubQuery { fields },
-        ));
-    }
-
-    Ok(())
 }
 
 fn resolve_wildcards(
