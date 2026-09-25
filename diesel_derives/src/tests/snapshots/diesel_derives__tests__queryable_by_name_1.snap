@@ -5,7 +5,7 @@ info:
   input: "#[derive(QueryableByName)]\nstruct User {\n    id: i32,\n    name: String,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<__DB: diesel::backend::Backend> diesel::deserialize::QueryableByName<__DB>
     for User
     where

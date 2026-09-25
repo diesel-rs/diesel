@@ -7,7 +7,7 @@ info:
 #[allow(non_camel_case_types)]
 pub fn lower<input>(input: input) -> lower::HelperType<input>
 where
-    input: diesel::expression::AsExpression<Text>,
+    input: ::diesel::expression::AsExpression<Text>,
 {
     lower::lower {
         input: input.as_expression(),
@@ -16,16 +16,16 @@ where
 #[doc(hidden)]
 #[allow(non_camel_case_types, non_snake_case, unused_imports)]
 pub(crate) mod lower {
-    use diesel::{self, QueryResult};
-    use diesel::expression::{
+    use ::diesel::QueryResult;
+    use ::diesel::expression::{
         AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
     };
-    use diesel::query_builder::{QueryFragment, AstPass};
-    use diesel::sql_types::*;
-    use diesel::internal::sql_functions::*;
+    use ::diesel::query_builder::{QueryFragment, AstPass};
+    use ::diesel::sql_types::*;
+    use ::diesel::internal::sql_functions::*;
     use super::*;
-    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
-    #[derive(diesel::sql_types::DieselNumericOps)]
+    #[derive(Debug, Clone, Copy, ::diesel::query_builder::QueryId)]
+    #[derive(::diesel::sql_types::DieselNumericOps)]
     pub struct lower<input> {
         pub(super) input: input,
     }
@@ -49,7 +49,7 @@ pub(crate) mod lower {
     {}
     impl<input, __DieselInternal> FunctionFragment<__DieselInternal> for lower<input>
     where
-        __DieselInternal: diesel::backend::Backend,
+        __DieselInternal: ::diesel::backend::Backend,
         input: QueryFragment<__DieselInternal>,
     {
         const FUNCTION_NAME: &'static str = "lower";
@@ -71,7 +71,7 @@ pub(crate) mod lower {
     }
     impl<input, __DieselInternal> QueryFragment<__DieselInternal> for lower<input>
     where
-        __DieselInternal: diesel::backend::Backend,
+        __DieselInternal: ::diesel::backend::Backend,
         input: QueryFragment<__DieselInternal>,
     {
         fn walk_ast<'__b>(

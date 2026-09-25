@@ -5,7 +5,7 @@ info:
   input: "#[derive(SqlType)]\n#[diesel(mysql_type(name = \"Long\"))]\n#[diesel(enum_type)]\nstruct Integer;\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl diesel::sql_types::SqlType for Integer {
         type IsNull = diesel::sql_types::is_nullable::NotNull;
         const IS_ARRAY: bool = false;
