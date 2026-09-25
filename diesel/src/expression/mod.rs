@@ -1138,6 +1138,13 @@ impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
     type IsAggregate = IsAggregate;
 }
 
+// A box may name outer columns, so it is only checked under the `()` grouping it was boxed for
+impl<QS, ST, DB, IsAggregate, From> ValidGrouping<subselect::SubselectGroupBy<(), From>>
+    for dyn BoxableExpression<QS, DB, (), IsAggregate, SqlType = ST> + '_
+{
+    type IsAggregate = IsAggregate;
+}
+
 impl<QS, ST, DB, GB, IsAggregate> QueryId
     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Send + Sync + '_
 {
@@ -1148,6 +1155,13 @@ impl<QS, ST, DB, GB, IsAggregate> QueryId
 
 impl<QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
     for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + Send + Sync + '_
+{
+    type IsAggregate = IsAggregate;
+}
+
+// A box may name outer columns, so it is only checked under the `()` grouping it was boxed for
+impl<QS, ST, DB, IsAggregate, From> ValidGrouping<subselect::SubselectGroupBy<(), From>>
+    for dyn BoxableExpression<QS, DB, (), IsAggregate, SqlType = ST> + Send + Sync + '_
 {
     type IsAggregate = IsAggregate;
 }
