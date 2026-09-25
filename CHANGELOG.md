@@ -77,6 +77,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
 * Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
+* Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 
 ### Changed
 
