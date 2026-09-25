@@ -9,6 +9,7 @@ cargo +nightly fuzz run --fuzz-dir fuzz <target>   # from the repository root
 | Target | Property |
 |---|---|
 | `pg_from_sql` | 48 postgres decoders never panic |
+| `pg_array` | array encoding matches a model of the binary format, and decoding recovers the elements in up to six dimensions |
 | `mysql_from_sql` | 29 mysql decoders never panic, under every wire type |
 | `sqlite_from_sql` | 26 sqlite decoders never panic, in every storage class |
 | `sqlite_jsonb_decode` | decoding a blob never panics |

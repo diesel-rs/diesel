@@ -80,6 +80,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "pg_array"
+path = "fuzz_targets/pg_array.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "mysql_from_sql"
 path = "fuzz_targets/mysql_from_sql.rs"
 test = false
