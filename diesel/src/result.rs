@@ -438,11 +438,10 @@ impl Display for ConnectionError {
 }
 
 impl StdError for ConnectionError {
-    #[expect(deprecated)]
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
-            ConnectionError::InvalidCString(ref e) => e.cause(),
-            ConnectionError::CouldntSetupConfiguration(ref e) => e.cause(),
+            ConnectionError::InvalidCString(ref e) => e.source(),
+            ConnectionError::CouldntSetupConfiguration(ref e) => e.source(),
             _ => None,
         }
     }
