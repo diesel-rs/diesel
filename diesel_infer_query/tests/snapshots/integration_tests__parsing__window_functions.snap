@@ -1,20 +1,20 @@
 ---
 source: diesel_infer_query/tests/parsing.rs
 expression: res
-info: "CREATE VIEW test AS SELECT users.id, name, hair_color as hair_colour FROM users"
+info: "CREATE VIEW test AS SELECT user_id, name, row_number() OVER (PARTITION BY department ORDER BY salary DESC) as rn FROM employees"
 ---
 ViewData {
     fields: [
         SelectField {
             ident: Some(
-                "id",
+                "user_id",
             ),
             kind: Field {
                 schema: None,
                 query_source: Some(
-                    "users",
+                    "employees",
                 ),
-                field_name: "id",
+                field_name: "user_id",
                 via_left_join: false,
             },
         },
@@ -25,7 +25,7 @@ ViewData {
             kind: Field {
                 schema: None,
                 query_source: Some(
-                    "users",
+                    "employees",
                 ),
                 field_name: "name",
                 via_left_join: false,
@@ -33,15 +33,12 @@ ViewData {
         },
         SelectField {
             ident: Some(
-                "hair_colour",
+                "rn",
             ),
-            kind: Field {
+            kind: Function {
+                name: "row_number",
                 schema: None,
-                query_source: Some(
-                    "users",
-                ),
-                field_name: "hair_color",
-                via_left_join: false,
+                arguments: [],
             },
         },
     ],

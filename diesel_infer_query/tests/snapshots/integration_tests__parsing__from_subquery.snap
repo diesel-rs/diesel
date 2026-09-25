@@ -1,0 +1,59 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT t1.some_col, users.name FROM (SELECT some_col FROM posts WHERE posts.id < 10) AS t1 INNER JOIN users ON users.id = t1.some_col"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "some_col",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: Some(
+                    "t1",
+                ),
+                field_name: "some_col",
+                via_left_join: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "name",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: Some(
+                    "users",
+                ),
+                field_name: "name",
+                via_left_join: false,
+            },
+        },
+    ],
+    subqueries: [
+        (
+            Some(
+                "t1",
+            ),
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "some_col",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: Some(
+                                "posts",
+                            ),
+                            field_name: "some_col",
+                            via_left_join: false,
+                        },
+                    },
+                ],
+            },
+        ),
+    ],
+}
