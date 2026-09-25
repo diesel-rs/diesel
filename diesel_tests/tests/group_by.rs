@@ -284,3 +284,39 @@ fn check_filter_with_boxed_group_by_subselect() {
 
     assert!(source.execute(conn).is_ok());
 }
+
+#[diesel_test_helper::test]
+fn select_subselect_referencing_grouped_outer_column() {
+    use diesel::dsl::count_star;
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", conn);
+
+    insert_into(posts::table)
+        .values(&vec![
+            sean.new_post("Hello", None),
+            sean.new_post("Hello 2", None),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    let post_counts = users::table
+        .group_by(users::id)
+        .select((
+            users::name,
+            posts::table
+                .filter(posts::user_id.eq(users::id))
+                .select(count_star())
+                .single_value(),
+        ))
+        .order(users::name)
+        .load::<(String, Option<i64>)>(conn);
+
+    assert_eq!(
+        Ok(vec![
+            ("Sean".to_string(), Some(2)),
+            ("Tess".to_string(), Some(0)),
+        ]),
+        post_counts
+    );
+}

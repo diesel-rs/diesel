@@ -171,6 +171,14 @@ impl<Expr> ValidWhereClause<NoFromClause> for WhereClause<Expr> where
 {
 }
 
+impl<GB> ValidGrouping<GB> for NoWhereClause {
+    type IsAggregate = is_aggregate::Never;
+}
+
+impl<GB, Expr: ValidGrouping<GB>> ValidGrouping<GB> for WhereClause<Expr> {
+    type IsAggregate = Expr::IsAggregate;
+}
+
 #[allow(missing_debug_implementations)] // We can't...
 pub enum BoxedWhereClause<'a, DB> {
     Where(Box<dyn QueryFragment<DB> + Send + 'a>),

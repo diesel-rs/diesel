@@ -1,3 +1,45 @@
+error[E0277]: `bool` cannot be used as a subselect
+   --> tests/fail/exists_can_only_take_subselects.rs:26:18
+    |
+ LL |     users::table.filter(exists(true));
+    |                  ^^^^^^ the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is not implemented for `bool`
+    |
+    = note: only select statements and their combinations can be used as subselects
+help: the following other types implement trait `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
+    |
+LL | / impl<ST, QS, DB, GB, OuterGB> ValidSubselectGrouping<OuterGB>
+LL | |     for BoxedSelectStatement<'_, ST, QS, DB, GB>
+    | |________________________________________________^ `BoxedSelectStatement<'_, ST, QS, DB, GB>` implements `diesel::expression::subselect::ValidSubselectGrouping<OuterGB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, GB> ValidSubselectGrouping<GB>
+LL | |     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     W: ValidGrouping<SubselectGroupBy<GB, F>>,
+    | |______________________________________________^ `SelectStatement<F, S, D, W, O, LOf, G, H, LC>` implements `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+    |
+LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+LL | | where
+LL | |     Source: ValidSubselectGrouping<GB>,
+LL | |     Rhs: ValidSubselectGrouping<GB>,
+LL | |     Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
+    | |___________________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>` implements `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed_clone.rs
+    |
+LL | / impl<ST, QS, DB, GB, OuterGB> ValidSubselectGrouping<OuterGB>
+LL | |     for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
+    | |_____________________________________________________^ `BoxedCloneSelectStatement<'_, ST, QS, DB, GB>` implements `diesel::expression::subselect::ValidSubselectGrouping<OuterGB>`
+    = note: required for `Subselect<bool, Bool>` to implement `ValidGrouping<()>`
+    = note: required for `diesel::expression::exists::Exists<bool>` to implement `NonAggregate`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<diesel::expression::exists::Exists<bool>>`
+ 
+    
 error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
    --> tests/fail/exists_can_only_take_subselects.rs:26:18
     |
@@ -41,8 +83,56 @@ LL | |     DB: Backend,
     = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<diesel::expression::exists::Exists<bool>>`
  
     
+error[E0277]: `users::columns::id` cannot be used as a subselect
+   --> tests/fail/exists_can_only_take_subselects.rs:29:18
+    |
+ LL |     users::table.filter(exists(users::id));
+    |                  ^^^^^^ unsatisfied trait bound
+    |
+help: the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is not implemented for `users::columns::id`
+   --> tests/fail/exists_can_only_take_subselects.rs:8:9
+    |
+  LL |         id -> Integer,
+    |         ^^
+    = note: only select statements and their combinations can be used as subselects
+help: the following other types implement trait `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
+    |
+LL | / impl<ST, QS, DB, GB, OuterGB> ValidSubselectGrouping<OuterGB>
+LL | |     for BoxedSelectStatement<'_, ST, QS, DB, GB>
+    | |________________________________________________^ `BoxedSelectStatement<'_, ST, QS, DB, GB>` implements `diesel::expression::subselect::ValidSubselectGrouping<OuterGB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
+    |
+LL | / impl<F, S, D, W, O, LOf, G, H, LC, GB> ValidSubselectGrouping<GB>
+LL | |     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+LL | | where
+LL | |     W: ValidGrouping<SubselectGroupBy<GB, F>>,
+    | |______________________________________________^ `SelectStatement<F, S, D, W, O, LOf, G, H, LC>` implements `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+    |
+LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+LL | | where
+LL | |     Source: ValidSubselectGrouping<GB>,
+LL | |     Rhs: ValidSubselectGrouping<GB>,
+LL | |     Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
+    | |___________________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>` implements `diesel::expression::subselect::ValidSubselectGrouping<GB>`
+    |
+   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed_clone.rs
+    |
+LL | / impl<ST, QS, DB, GB, OuterGB> ValidSubselectGrouping<OuterGB>
+LL | |     for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
+    | |_____________________________________________________^ `BoxedCloneSelectStatement<'_, ST, QS, DB, GB>` implements `diesel::expression::subselect::ValidSubselectGrouping<OuterGB>`
+    = note: required for `Subselect<id, Bool>` to implement `ValidGrouping<()>`
+    = note: required for `diesel::expression::exists::Exists<users::columns::id>` to implement `NonAggregate`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<diesel::expression::exists::Exists<users::columns::id>>`
+ 
+        = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
-   --> tests/fail/exists_can_only_take_subselects.rs:28:18
+   --> tests/fail/exists_can_only_take_subselects.rs:29:18
     |
  LL |     users::table.filter(exists(users::id));
     |                  ^^^^^^ unsatisfied trait bound

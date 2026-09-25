@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::backend::{DieselReserveSpecialization, sql_dialect};
 use crate::dsl::AsExprOf;
-use crate::expression::subselect::ValidSubselect;
+use crate::expression::subselect::{ValidSubselect, ValidSubselectGrouping};
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
@@ -220,6 +220,14 @@ where
 impl<ST, QS, QS2, DB, GB> ValidSubselect<QS2> for BoxedCloneSelectStatement<'_, ST, QS, DB, GB> where
     Self: Query<SqlType = ST>
 {
+}
+
+// Boxing and every boxed clause method only accept expressions of `QS`, so a boxed
+// statement never references the outer query
+impl<ST, QS, DB, GB, OuterGB> ValidSubselectGrouping<OuterGB>
+    for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
+{
+    type IsAggregate = is_aggregate::Never;
 }
 
 impl<ST, QS, DB, GB> QueryFragment<DB> for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
