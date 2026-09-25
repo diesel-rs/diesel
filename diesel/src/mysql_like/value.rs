@@ -3,7 +3,9 @@ use diesel_derives::AsExpression;
 use super::MysqlType;
 use super::types::date_and_time::MysqlTime;
 
-use crate::deserialize::{self, FromSqlRow};
+use crate::backend::Backend;
+use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::serialize::ToSql;
 use crate::sql_types::{Double, Float, Numeric, Unsigned};
 use core::error::Error;
 use core::mem::MaybeUninit;
@@ -206,6 +208,44 @@ pub enum NumericRepresentation<'a> {
     Decimal(&'a [u8]),
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Unsigned<Float>)]
+#[diesel(sql_type = Unsigned<Double>)]
+#[diesel(sql_type = Unsigned<Numeric>)]
+/// Wrapper type, for Unsigned<ST> in Mariadb and Mysql
+pub struct NonNegative<T>(pub T);
+
+impl<T> Deref for NonNegative<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<DB, T, ST> ToSql<Unsigned<ST>, DB> for NonNegative<T>
+where
+    T: ToSql<ST, DB>,
+    DB: Backend,
+{
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut crate::serialize::Output<'b, '_, DB>,
+    ) -> crate::serialize::Result {
+        self.0.to_sql(out)
+    }
+}
+
+impl<DB, T, ST> FromSql<Unsigned<ST>, DB> for NonNegative<T>
+where
+    T: FromSql<ST, DB>,
+    DB: Backend,
+{
+    fn from_sql(bytes: <DB as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        T::from_sql(bytes).map(NonNegative)
+    }
+}
+
 #[test]
 #[allow(unsafe_code, reason = "Test code")]
 fn invalid_reads() {
@@ -353,22 +393,7 @@ fn numeric_value_keeps_signedness() {
     ));
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, AsExpression, FromSqlRow)]
-#[diesel(sql_type = Unsigned<Float>)]
-#[diesel(sql_type = Unsigned<Double>)]
-#[diesel(sql_type = Unsigned<Numeric>)]
-/// Wrapper type, for Unsigned<ST> in Mariadb and Mysql
-pub struct NonNegative<T>(pub T);
-
-impl<T> Deref for NonNegative<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[cfg(all(test, any(feature = "mysql", feature = "mariadb")))]
+#[cfg(test)]
 mod tests {
     use super::NonNegative;
     use crate::query_dsl::QueryDsl;
