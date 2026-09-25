@@ -1,3 +1,4 @@
+use crate::format_error;
 use crate::schema::*;
 use diesel::*;
 
@@ -1026,7 +1027,7 @@ fn named_struct_batch_empty() {
 
     assert!(update_users.is_err());
     assert_eq!(
-        update_users.unwrap_err().to_string(),
+        format_error(&update_users.unwrap_err()),
         "There are no changes to save. This query cannot be built"
     );
 }

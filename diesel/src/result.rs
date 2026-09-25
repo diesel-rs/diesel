@@ -405,9 +405,7 @@ impl Display for Error {
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
             }
-            Error::IntegerConversion(ref e) => {
-                write!(f, "Internal integer conversion error: {e}")
-            }
+            Error::IntegerConversion(_) => f.write_str("Internal integer conversion failed"),
             Error::ClosingHandle(message) => {
                 write!(f, "Error closing SQLite blob: {message}")
             }
@@ -416,12 +414,12 @@ impl Display for Error {
 }
 
 impl StdError for Error {
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
-            Error::InvalidCString(ref e) => Some(e),
-            Error::QueryBuilderError(ref e) => Some(&**e),
-            Error::DeserializationError(ref e) => Some(&**e),
-            Error::SerializationError(ref e) => Some(&**e),
+            Error::InvalidCString(ref e) => e.source(),
+            Error::QueryBuilderError(ref e) => e.source(),
+            Error::DeserializationError(ref e) => e.source(),
+            Error::SerializationError(ref e) => e.source(),
             Error::IntegerConversion(ref e) => Some(e),
             _ => None,
         }
@@ -440,10 +438,10 @@ impl Display for ConnectionError {
 }
 
 impl StdError for ConnectionError {
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
-            ConnectionError::InvalidCString(ref e) => Some(e),
-            ConnectionError::CouldntSetupConfiguration(ref e) => Some(e),
+            ConnectionError::InvalidCString(ref e) => e.source(),
+            ConnectionError::CouldntSetupConfiguration(ref e) => e.source(),
             _ => None,
         }
     }
@@ -565,13 +563,9 @@ impl StdError for DeserializeFieldError {
 impl fmt::Display for DeserializeFieldError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref field_name) = self.field_name {
-            write!(
-                f,
-                "Error deserializing field '{}': {}",
-                field_name, self.error
-            )
+            write!(f, "Error deserializing field '{field_name}'")
         } else {
-            write!(f, "Error deserializing field: {}", self.error)
+            f.write_str("Error deserializing field")
         }
     }
 }

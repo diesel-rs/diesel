@@ -3,6 +3,13 @@ extern crate dotenvy;
 
 use crate::prelude::*;
 
+pub fn format_error(error: &dyn core::error::Error) -> String {
+    core::iter::successors(Some(error), |error| error.source())
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>()
+        .join(": ")
+}
+
 cfg_if! {
     if #[cfg(feature = "__sqlite-shared")] {
         pub type TestConnection = SqliteConnection;

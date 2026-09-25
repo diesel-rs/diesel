@@ -23,6 +23,8 @@ impl<DB: MysqlLikeBackend> ToSql<sql_types::Json, DB> for serde_json::Value {
 mod tests {
     use super::*;
     use crate::mysql::Mysql;
+    use crate::test_helpers::format_error;
+
     #[diesel_test_helper::test]
     fn regression_json_float_survives_a_round_trip() {
         use crate::mysql::MysqlType;
@@ -65,7 +67,7 @@ mod tests {
         let uuid: Result<serde_json::Value, _> = FromSql::<sql_types::Json, Mysql>::from_sql(
             MysqlValue::new_internal(b"boom", MysqlType::String),
         );
-        assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
+        assert_eq!(format_error(&*uuid.unwrap_err()), "Invalid Json");
     }
 
     #[diesel_test_helper::test]
@@ -73,7 +75,7 @@ mod tests {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Json, Mysql>::from_nullable_sql(None);
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }

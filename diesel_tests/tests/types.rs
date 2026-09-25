@@ -4,6 +4,7 @@
 extern crate bigdecimal;
 extern crate chrono;
 
+use crate::format_error;
 use crate::schema::*;
 use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "postgres")]
@@ -2012,7 +2013,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<SmallInt>("SELECT bool FROM test_table").get_result::<i16>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'bool': \
          Received less than 2 bytes while decoding an i16. \
          Was an expression of a different type accidentally marked as SmallInt?"
@@ -2021,7 +2022,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<SmallInt>("SELECT int FROM test_table").get_result::<i16>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'int': \
          Received more than 2 bytes while decoding an i16. \
          Was an Integer expression accidentally marked as SmallInt?"
@@ -2030,7 +2031,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Integer>("SELECT small FROM test_table").get_result::<i32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'small': \
          Received less than 4 bytes while decoding an i32. \
          Was an SmallInt expression accidentally marked as Integer?"
@@ -2039,7 +2040,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Integer>("SELECT big FROM test_table").get_result::<i32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'big': \
          Received more than 4 bytes while decoding an i32. \
          Was an BigInt expression accidentally marked as Integer?"
@@ -2048,7 +2049,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<BigInt>("SELECT int FROM test_table").get_result::<i64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'int': \
          Received less than 8 bytes while decoding an i64. \
          Was an Integer expression accidentally marked as BigInt?"
@@ -2057,7 +2058,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<BigInt>("SELECT text FROM test_table").get_result::<i64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'text': \
          Received more than 8 bytes while decoding an i64. \
          Was an expression of a different type expression accidentally marked as BigInt?"
@@ -2066,7 +2067,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Float>("SELECT small FROM test_table").get_result::<f32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'small': \
          Received less than 4 bytes while decoding an f32. \
          Was a numeric accidentally marked as float?"
@@ -2075,7 +2076,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Float>("SELECT double FROM test_table").get_result::<f32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'double': \
          Received more than 4 bytes while decoding an f32. \
          Was a double accidentally marked as float?"
@@ -2084,7 +2085,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Double>("SELECT float FROM test_table").get_result::<f64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'float': \
          Received less than 8 bytes while decoding an f64. \
          Was a float accidentally marked as double?"
@@ -2093,7 +2094,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Double>("SELECT text FROM test_table").get_result::<f64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'text': \
          Received more than 8 bytes while decoding an f64. \
          Was a numeric accidentally marked as double?"

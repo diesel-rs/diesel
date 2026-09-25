@@ -645,6 +645,7 @@ mod tests {
     use crate::sqlite::JsonValidFlag;
     #[cfg(not(miri))] // ffi call
     use crate::test_helpers::connection;
+    use crate::test_helpers::format_error;
     #[cfg(not(miri))] // ffi call
     use crate::{IntoSql, dsl::sql};
     use serde_json::{Value, json};
@@ -1753,7 +1754,7 @@ mod tests {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Json>().eq(&sql("json('boom')")))
             .get_result::<bool>(conn);
-        assert_eq!(res.unwrap_err().to_string(), "malformed JSON");
+        assert_eq!(format_error(&res.unwrap_err()), "malformed JSON");
     }
 
     #[diesel_test_helper::test]
@@ -1762,14 +1763,14 @@ mod tests {
         let conn = &mut connection();
         let res = diesel::select(json!(true).into_sql::<Jsonb>().eq(&sql("jsonb('boom')")))
             .get_result::<bool>(conn);
-        assert_eq!(res.unwrap_err().to_string(), "malformed JSON");
+        assert_eq!(format_error(&res.unwrap_err()), "malformed JSON");
     }
 
     #[diesel_test_helper::test]
     fn no_json_from_sql() {
         let uuid: Result<serde_json::Value, _> = FromSql::<Json, Sqlite>::from_nullable_sql(None);
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }
@@ -1778,7 +1779,7 @@ mod tests {
     fn no_jsonb_from_sql() {
         let uuid: Result<serde_json::Value, _> = FromSql::<Jsonb, Sqlite>::from_nullable_sql(None);
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }
