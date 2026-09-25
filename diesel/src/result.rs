@@ -563,13 +563,9 @@ impl StdError for DeserializeFieldError {
 impl fmt::Display for DeserializeFieldError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref field_name) = self.field_name {
-            write!(
-                f,
-                "Error deserializing field '{}': {}",
-                field_name, self.error
-            )
+            write!(f, "Error deserializing field '{field_name}'")
         } else {
-            write!(f, "Error deserializing field: {}", self.error)
+            f.write_str("Error deserializing field")
         }
     }
 }
