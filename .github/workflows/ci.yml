@@ -494,6 +494,12 @@ jobs:
     name: Check sqlite bundled + Sqlite with asan
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
+    env:
+      # Every step below builds its own copy of libsqlite3 via the bundled
+      # feature of libsqlite3-sys, so this reaches all of them. SQLITE_DEBUG
+      # enables SQLite's internal assert() statements, which check API usage
+      # and internal invariants at the cost of roughly 3x slower execution.
+      LIBSQLITE3_FLAGS: SQLITE_DEBUG
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
