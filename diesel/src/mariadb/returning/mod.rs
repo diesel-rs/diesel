@@ -6,4 +6,4 @@
 
 mod old_impl;
 
-pub use self::old_impl::old_value;
+pub use self::old_impl::{OldValueOf, old_value};
