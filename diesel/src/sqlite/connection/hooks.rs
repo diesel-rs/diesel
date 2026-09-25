@@ -1455,10 +1455,22 @@ mod tests {
         });
 
         // The transaction should have been rolled back.
-        assert!(result.is_err());
+        assert!(
+            matches!(result, Err(crate::result::Error::DatabaseError(..))),
+            "{result:?}"
+        );
+        assert_eq!(
+            Ok(None),
+            <crate::connection::AnsiTransactionManager as crate::connection::TransactionManager<
+                SqliteConnection,
+            >>::transaction_manager_status_mut(conn)
+            .transaction_depth()
+        );
 
         // Remove the hook so subsequent queries don't fail.
         conn.remove_commit_hook();
+        conn.immediate_transaction(|_| Ok::<_, crate::result::Error>(()))
+            .unwrap();
 
         // Verify the row was not persisted.
         let cnt: i64 = crate::sql_query("SELECT COUNT(*) as c FROM t_commit")
