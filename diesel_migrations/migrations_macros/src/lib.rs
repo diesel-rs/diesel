@@ -121,5 +121,13 @@ use proc_macro::TokenStream;
 /// ```
 #[proc_macro]
 pub fn embed_migrations(input: TokenStream) -> TokenStream {
-    embed_migrations::expand(input.to_string()).into()
+    let input = if input.is_empty() {
+        None
+    } else {
+        match syn::parse(input) {
+            Ok(input) => Some(input),
+            Err(e) => return e.into_compile_error().into(),
+        }
+    };
+    embed_migrations::expand(input).into()
 }
