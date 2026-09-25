@@ -15,6 +15,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## [2.3.14] 2026-10-07
 
 * Add support for sqlite-wasm-rs 0.6
+* Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
+* Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 
 ## [2.3.13] 2026-09-04
 
