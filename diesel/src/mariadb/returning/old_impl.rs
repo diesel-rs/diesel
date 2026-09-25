@@ -87,14 +87,17 @@ where
 
 // `OldValue<C>` is selectable on a `RETURNING` clause whose statement-kind marker
 // is `UpdateStmt`. Since `OLD_VALUE` is only valid in `UPDATE ... RETURNING`
-impl<C, QS> AppearsOnTable<QS> for OldValue<C>
+//
+// It's not selectable on any subqueries in the returning clause
+impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
 where
     C: Column,
     Self: Expression,
     // Check that we have exactly one `old` identifier in the `RETURNING` clause.
-    QS: AppearsInFromClause<OldIdent, Count = crate::query_source::Once>,
+    ReturningQuerySource<UpdateStmt, QS>:
+        AppearsInFromClause<OldIdent, Count = crate::query_source::Once>,
     // Check that the `old` identifier relates the table of that column.
-    QS: AppearsInFromClause<
+    ReturningQuerySource<UpdateStmt, QS>: AppearsInFromClause<
             ReturningQuerySource<OldIdent, C::Table>,
             Count = crate::query_source::Once,
         >,
