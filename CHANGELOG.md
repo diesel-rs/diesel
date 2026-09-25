@@ -59,6 +59,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
+* Fixed `IpNetwork` written as a PostgreSQL `Cidr` to clear the host bits, as `IpNet` already does, instead of sending a value the server rejects with `invalid external "cidr" value`.
 * Fixed `SqliteReadOnlyBlob::close` closing the underlying SQLite handle twice.
 * Fixed `SqliteReadOnlyBlob` seeks before byte zero to return `InvalidInput` without changing the cursor, instead of overflowing or clamping to zero.
 * Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.

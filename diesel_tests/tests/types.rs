@@ -1428,6 +1428,32 @@ fn pg_v4address_to_sql_v4address() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn pg_cidr_with_host_bits_to_sql_is_masked() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let v4 = "'10.0.0.0/8'::cidr";
+    let v6 = "'2001:4f8::/32'::cidr";
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
+        v4,
+        ipnetwork::IpNetwork::from_str("10.0.0.5/8").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
+        v6,
+        ipnetwork::IpNetwork::from_str("2001:4f8:3:ba::1/32").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnet::IpNet>(
+        v4,
+        ipnet::IpNet::from_str("10.0.0.5/8").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnet::IpNet>(
+        v6,
+        ipnet::IpNet::from_str("2001:4f8:3:ba::1/32").unwrap()
+    ));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 fn pg_v4address_to_sql_v4address_ipnet() {
     use std::str::FromStr;
 
