@@ -203,6 +203,29 @@ pub trait DatabaseErrorInformation {
     /// An optional integer indicating an error cursor position as an index into
     /// the original statement string.
     fn statement_position(&self) -> Option<i32>;
+
+    /// The SQLSTATE code of the error, if the backend reports one.
+    ///
+    /// SQLSTATE is the five character error code defined by the ANSI SQL
+    /// standard, two characters of class followed by three of subclass, taken
+    /// from the digits and the uppercase Latin letters. A code is neither
+    /// localized nor tied to the wording of the message, so it is the reliable
+    /// input to error handling.
+    ///
+    /// The backends differ in whether they report one.
+    ///
+    /// * PostgreSQL returns the code for every error, and the codes are listed
+    ///   at <https://www.postgresql.org/docs/current/errcodes-appendix.html>.
+    /// * MySQL and MariaDB return `None`. Both servers send a SQLSTATE with
+    ///   each error and Diesel's backend does not retain it.
+    /// * SQLite returns `None`. SQLite has no SQLSTATE and reports its own
+    ///   `SQLITE_*` result codes instead.
+    ///
+    /// The value is `None` whenever the backend reported no code, and never a
+    /// shortened one, so a `Some` value is always exactly five characters.
+    fn sqlstate(&self) -> Option<&str> {
+        None
+    }
 }
 
 impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {

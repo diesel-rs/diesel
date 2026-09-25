@@ -102,6 +102,43 @@ fn foreign_key_violation_correct_constraint_name() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn sqlstate_reports_the_code_of_a_mapped_error() {
+    let connection = &mut connection();
+
+    insert_into(users::table)
+        .values(&User::new(1, "Sean"))
+        .execute(connection)
+        .unwrap();
+    let failure = insert_into(users::table)
+        .values(&User::new(1, "Jim"))
+        .execute(connection);
+
+    match failure {
+        Err(DatabaseError(UniqueViolation, e)) => assert_eq!(Some("23505"), e.sqlstate()),
+        other => panic!("{other:?} did not match Err(DatabaseError(UniqueViolation, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn sqlstate_reports_the_code_of_an_unmapped_error() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    // 22012 (division_by_zero) has no `DatabaseErrorKind` variant
+    let failure =
+        diesel::select(1.into_sql::<sql_types::Integer>() / 0.into_sql::<sql_types::Integer>())
+            .get_result::<i32>(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => assert_eq!(Some("22012"), e.sqlstate()),
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 // This is a false positive as there is a side effect of this collect (spawning threads)
 #[allow(clippy::needless_collect)]
 fn isolation_errors_are_detected() {

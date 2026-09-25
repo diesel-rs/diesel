@@ -218,6 +218,10 @@ impl DatabaseErrorInformation for PgErrorInformation {
             .get_result_field(ResultField::StatementPosition)?;
         str_pos.parse::<i32>().ok()
     }
+
+    fn sqlstate(&self) -> Option<&str> {
+        self.result.get_result_field(ResultField::SqlState)
+    }
 }
 
 mod error_codes {
