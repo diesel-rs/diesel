@@ -22,7 +22,7 @@ use crate::mariadb::Mariadb;
 /// `MariadbConnection` only supports a single loading mode, which loads
 /// values row by row from the result set.
 ///
-/// ```rust
+/// ```rust,dejadoc
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -56,7 +56,7 @@ use crate::mariadb::Mariadb;
 /// This mode does **not support** creating
 /// multiple iterators using the same connection.
 ///
-/// ```compile_fail
+/// ```compile_fail,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
