@@ -301,19 +301,23 @@ jobs:
           RUST: ${{ matrix.rust }}
         run: |
           rustup override set $RUST
-          rustup component add rustfmt
+          rustup component add rustfmt llvm-tools-preview
           cargo --version
           rustc --version
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
         with:
-          tool: nextest
+          tool: cargo-llvm-cov,nextest
 
       - name: Add Flags (nightly)
         if: matrix.rust == 'nightly'
         shell: bash
         run: |
           echo FLAGS="-F diesel/i-implement-a-third-party-backend-and-opt-into-breaking-changes -F diesel/unstable -F diesel/without-deprecated" >> $GITHUB_ENV
+          # Recording doctest coverage is a nightly only feature.
+          echo COV_DOCTESTS="--doctests" >> $GITHUB_ENV
+          # Persisted doctest binaries otherwise keep several GB of debuginfo.
+          echo RUSTDOCFLAGS="$RUSTDOCFLAGS -C strip=debuginfo" >> $GITHUB_ENV
 
       - name: Add Flags (beta + Sqlite)
         if: matrix.rust == 'beta' && matrix.backend == 'sqlite'
@@ -350,7 +354,27 @@ jobs:
         env:
           BACKEND: ${{ matrix.backend }}
         run: |
+          # The wrapper instruments the nested cargo invocations xtask spawns.
+          if [ "$GITHUB_EVENT_NAME" != "merge_group" ]; then
+            cargo llvm-cov show-env --sh $COV_DOCTESTS > "$RUNNER_TEMP/llvm-cov.env"
+            source "$RUNNER_TEMP/llvm-cov.env"
+            cargo llvm-cov clean --workspace
+          fi
           cargo xtask run-tests $BACKEND $NO_DOC_TESTS $EXAMPLE_SCHEMA_CHECKS -- --no-fail-fast $FLAGS
+          if [ "$GITHUB_EVENT_NAME" != "merge_group" ]; then
+            cargo llvm-cov report --codecov --output-path codecov.json --ignore-filename-regex 'xtask|doctest_setup\.rs' --failure-mode all $COV_DOCTESTS
+          fi
+
+      - name: Upload coverage
+        if: github.event_name != 'merge_group'
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: codecov.json
+          disable_search: true
+          flags: ${{ matrix.backend }}
+          plugins: noop
+          name: ${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.rust }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run diesel_benches
         if: runner.os == 'Linux'
