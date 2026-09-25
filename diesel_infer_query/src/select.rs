@@ -3,13 +3,14 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use super::SchemaResolver;
+use crate::IsNull;
 use crate::error::Error;
 use crate::error::Result;
 use crate::query_source::QuerySource;
 use sqlparser::ast::{SelectItem, SelectItemQualifiedWildcardKind};
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) struct SelectField {
     pub(crate) ident: Option<String>,
     pub(crate) kind: Expression,
@@ -19,12 +20,12 @@ impl SelectField {
     pub(crate) fn infer_nullability(
         &self,
         resolver: &mut (dyn SchemaResolver + '_),
-    ) -> Result<Option<bool>> {
+    ) -> Result<IsNull> {
         self.kind.infer_nullability(resolver)
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 /// WHEN [condition] THEN [result]` exrpession
 pub(crate) struct CaseCondition {
     pub(crate) condition: Expression,
@@ -32,7 +33,7 @@ pub(crate) struct CaseCondition {
 }
 
 /// Different kind of expressions in a SELECT clause
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[non_exhaustive]
 pub enum Expression {
     /// A literal value like `1` or `'foo'`
@@ -47,7 +48,7 @@ pub enum Expression {
         /// the schema of the query source
         schema: Option<String>,
         /// the name of the query source
-        query_source: String,
+        query_source: Option<String>,
         /// the name of the field
         field_name: String,
         /// is this field coming from a query source joined via a `LEFT JOIN`
@@ -86,7 +87,7 @@ pub enum Expression {
     /// A wild card `*` expression
     Wildcard {
         schema: Option<String>,
-        relation: String,
+        relation: Option<String>,
         is_left_joined: bool,
     },
     /// A `left BETWEEN low AND high` expression
@@ -102,32 +103,76 @@ pub enum Expression {
         conditions: Vec<CaseCondition>,
         else_clause: Option<Box<Expression>>,
     },
+    /// A `[left] (NOT) IN ([LIST]) expression
+    In {
+        left: Box<Expression>,
+        negated: bool,
+        list: Vec<Expression>,
+    },
+    /// A `[left] (NOT) IN ([QUERY]) expression
+    InSubQuery {
+        left: Box<Expression>,
+        negated: bool,
+        subquery: Vec<SelectField>,
+    },
+    /// An expression grouping by `(inner)`
+    Grouped(Box<Expression>),
+    /// SubQuery,
+    Subquery { selection: Vec<SelectField> },
+    /// A field based on a combined set
+    Combined {
+        left: Box<Expression>,
+        right: Box<Expression>,
+        set_operator: SetOperator,
+    },
     /// A unknown select expression
     Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum SetOperator {
+    Union,
+    Intersect,
+    Except,
+}
+
+impl SetOperator {
+    fn from_sql_parser_ast(ast: &sqlparser::ast::SetOperator) -> Result<Self> {
+        match ast {
+            sqlparser::ast::SetOperator::Union => Ok(Self::Union),
+            sqlparser::ast::SetOperator::Except => Ok(Self::Except),
+            sqlparser::ast::SetOperator::Intersect => Ok(Self::Intersect),
+            sqlparser::ast::SetOperator::Minus => Err(Error::UnsupportedSql {
+                msg: format!("Unsupported set operator: {ast}"),
+            }),
+        }
+    }
 }
 
 impl Expression {
     pub(crate) fn infer_nullability(
         &self,
         resolver: &mut (dyn SchemaResolver + '_),
-    ) -> Result<Option<bool>> {
+    ) -> Result<IsNull> {
         match self {
-            Self::Literal { is_null, .. } => Ok(Some(*is_null)),
+            Self::Literal { is_null, .. } => Ok(if *is_null {
+                IsNull::IsNullable
+            } else {
+                IsNull::NotNullable
+            }),
             Self::Field {
                 via_left_join: true,
                 ..
-            } => Ok(Some(true)),
+            } => Ok(IsNull::IsNullable),
             Self::Field {
                 schema,
                 query_source: table,
                 field_name,
                 ..
-            } => Ok(Some(
-                resolver
-                    .resolve_field(schema.as_deref(), table, field_name)
-                    .map_err(|inner| Error::ResolverFailure { inner })?
-                    .is_nullable(),
-            )),
+            } => Ok(resolver
+                .resolve_field(schema.as_deref(), table.as_deref(), field_name)
+                .map_err(|inner| Error::ResolverFailure { inner })?
+                .is_nullable()),
             Self::Cast { inner, .. } => inner.infer_nullability(resolver),
             Self::BinaryOp {
                 left,
@@ -136,15 +181,11 @@ impl Expression {
                 ..
             } => {
                 if *statically_not_null {
-                    Ok(Some(false))
+                    Ok(IsNull::NotNullable)
                 } else {
-                    match (
-                        left.infer_nullability(resolver)?,
-                        right.infer_nullability(resolver)?,
-                    ) {
-                        (None, _) | (_, None) => Ok(None),
-                        (Some(a), Some(b)) => Ok(Some(a || b)),
-                    }
+                    Ok(left
+                        .infer_nullability(resolver)?
+                        .or(right.infer_nullability(resolver)?))
                 }
             }
             Expression::PostfixOp {
@@ -153,16 +194,31 @@ impl Expression {
                 ..
             } => {
                 if *statically_not_null {
-                    Ok(Some(false))
+                    Ok(IsNull::NotNullable)
                 } else {
                     expr.infer_nullability(resolver)
                 }
             }
-            Expression::Function { name, schema, .. } => {
+            Expression::Function {
+                name,
+                schema,
+                arguments,
+            } => {
                 match name.to_lowercase().as_str() {
                     // we consider count as only not nullable function for now
-                    "count" if schema.is_none() => Ok(Some(false)),
-                    _ => Ok(Some(true)),
+                    "count" if schema.is_none() => Ok(IsNull::NotNullable),
+                    // coalesce is not nullable if any argument cannot contain
+                    // null values as it returns the first non-null value
+                    "coalesce" if schema.is_none() => {
+                        for arg in arguments {
+                            match arg.infer_nullability(resolver)? {
+                                IsNull::NotNullable => return Ok(IsNull::NotNullable),
+                                IsNull::IsNullable | IsNull::Unknown => {}
+                            }
+                        }
+                        Ok(IsNull::IsNullable)
+                    }
+                    _ => Ok(IsNull::IsNullable),
                 }
             }
             Expression::Between {
@@ -173,11 +229,8 @@ impl Expression {
                     low.infer_nullability(resolver)?,
                     high.infer_nullability(resolver)?,
                 ];
-                Ok(nullability
-                    .into_iter()
-                    .try_fold(false, |agg, v| Some(agg || v?)))
+                Ok(nullability[0].or(nullability[1]).or(nullability[2]))
             }
-            Expression::Unknown => Ok(None),
             Expression::Case {
                 conditions,
                 else_clause,
@@ -187,17 +240,93 @@ impl Expression {
                 .map(|c| &c.result)
                 .chain(else_clause.iter().map(|c| &**c))
                 .map(|c| c.infer_nullability(resolver))
-                .try_fold(Some(false), |agg, v| match (agg, v?) {
-                    (Some(agg), Some(v)) => Ok(Some(agg || v)),
-                    _ => Ok(None),
-                }),
-            Expression::Wildcard { .. } => unreachable!(),
+                .try_fold(IsNull::NotNullable, |agg, v| Ok(agg.or(v?))),
+            Expression::In { left, list, .. } => {
+                let left = left.infer_nullability(resolver);
+                list.iter()
+                    .map(|l| l.infer_nullability(resolver))
+                    .chain([left])
+                    .try_fold(IsNull::NotNullable, |agg, v| Ok(agg.or(v?)))
+            }
+            Expression::Grouped(inner) => inner.infer_nullability(resolver),
+            Expression::Subquery { selection } => match selection.as_slice() {
+                [_s] => {
+                    // always nullable as the subquery might return an empty result
+                    Ok(IsNull::IsNullable)
+                }
+                _ => Ok(IsNull::Unknown),
+            },
+            Expression::InSubQuery { left, subquery, .. } => {
+                match subquery.as_slice() {
+                    [s] => {
+                        // `x IN (SELECT y …)` yields NULL when x matches no row and the
+                        // subquery contains a NULL, so the result is nullable whenever
+                        // either side is nullable
+                        Ok(left
+                            .infer_nullability(resolver)?
+                            .or(s.infer_nullability(resolver)?))
+                    }
+                    // A subquery should return only one column
+                    // if that's not the case, give up
+                    _ => Ok(IsNull::Unknown),
+                }
+            }
+            // for except set operations only the left
+            // side is actually returned
+            Expression::Combined {
+                left,
+                set_operator: SetOperator::Except,
+                ..
+            } => left.infer_nullability(resolver),
+            // for `UNION` set operations both sides are
+            // returned, so if any side can contain
+            // null values we need to assume this for the
+            // whole expression
+            Expression::Combined {
+                left,
+                right,
+                set_operator: SetOperator::Union,
+            } => {
+                let left = left.infer_nullability(resolver)?;
+                let right = right.infer_nullability(resolver)?;
+                Ok(left.or(right))
+            }
+            // for `INTERSECT` we only return values
+            // that are in both result sets, so
+            // if any side is not nullable we only return
+            // not nullable values for this expression
+            Expression::Combined {
+                left,
+                right,
+                set_operator: SetOperator::Intersect,
+            } => {
+                let left = left.infer_nullability(resolver)?;
+                let right = right.infer_nullability(resolver)?;
+                let ret = match (left, right) {
+                    (IsNull::Unknown, _) | (_, IsNull::Unknown) => IsNull::Unknown,
+                    (IsNull::NotNullable, _) | (_, IsNull::NotNullable) => IsNull::NotNullable,
+                    (IsNull::IsNullable, IsNull::IsNullable) => IsNull::IsNullable,
+                };
+                Ok(ret)
+            }
+            Expression::Wildcard { .. } => Err(Error::UnresolvedWildcard),
+            Expression::Unknown => Ok(IsNull::Unknown),
         }
     }
 }
 
-pub(crate) fn infer_from_select(select: &sqlparser::ast::Select) -> Result<Vec<SelectField>> {
-    let query_source_lookup = collect_query_sources(&select.from)?;
+pub(crate) fn infer_from_select(
+    select: &sqlparser::ast::Select,
+    outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
+) -> Result<Vec<SelectField>> {
+    let mut query_source_lookup = collect_query_sources(&select.from)?;
+    if let Some(outer) = outer_lookup {
+        for (k, v) in outer {
+            if !query_source_lookup.contains_key(k) {
+                query_source_lookup.insert(*k, v.clone());
+            }
+        }
+    }
 
     select
         .projection
@@ -208,7 +337,7 @@ pub(crate) fn infer_from_select(select: &sqlparser::ast::Select) -> Result<Vec<S
 
 pub(crate) fn collect_query_sources<'a>(
     sources: &'a [sqlparser::ast::TableWithJoins],
-) -> Result<HashMap<&'a str, QuerySource<'a>>> {
+) -> Result<HashMap<Option<&'a str>, QuerySource<'a>>> {
     let mut out = HashMap::with_capacity(sources.len());
     for s in sources {
         QuerySource::fill_from_table_with_joins(&mut out, s)?;
@@ -218,13 +347,18 @@ pub(crate) fn collect_query_sources<'a>(
 
 pub(crate) fn infer_projection(
     item: &SelectItem,
-    query_source_lookup: &HashMap<&str, QuerySource>,
+    query_source_lookup: &HashMap<Option<&str>, QuerySource>,
 ) -> Result<SelectField> {
     match item {
-        SelectItem::UnnamedExpr(expr) => Ok(SelectField {
-            ident: None,
-            kind: crate::expression::infer_expr(expr, query_source_lookup)?,
-        }),
+        SelectItem::UnnamedExpr(expr) => {
+            let kind = crate::expression::infer_expr(expr, query_source_lookup)?;
+            let ident = if let Expression::Field { field_name, .. } = &kind {
+                Some(field_name.clone())
+            } else {
+                None
+            };
+            Ok(SelectField { ident, kind })
+        }
         SelectItem::ExprWithAlias { expr, alias } => Ok(SelectField {
             ident: Some(alias.value.clone()),
             kind: crate::expression::infer_expr(expr, query_source_lookup)?,
@@ -238,14 +372,14 @@ pub(crate) fn infer_projection(
                 .last()
                 .and_then(|a| a.as_ident())
                 .map(|a| a.value.as_str())
-                .and_then(|k| query_source_lookup.get(k))
+                .and_then(|k| query_source_lookup.get(&Some(k)))
             {
                 let is_left_joined = item.contains_left_join(query_source_lookup)?;
                 Ok(SelectField {
                     ident: None,
                     kind: Expression::Wildcard {
                         schema: item.schema.map(|s| s.to_owned()),
-                        relation: item.name.to_owned(),
+                        relation: item.name.map(|c| c.to_owned()),
                         is_left_joined,
                     },
                 })
@@ -259,7 +393,7 @@ pub(crate) fn infer_projection(
                 ident: None,
                 kind: Expression::Wildcard {
                     schema: wildcard.schema.map(|c| c.to_owned()),
-                    relation: wildcard.name.to_owned(),
+                    relation: wildcard.name.map(|c| c.to_owned()),
                     is_left_joined: false,
                 },
             })
@@ -275,6 +409,59 @@ pub(crate) fn infer_projection(
         }),
         s @ SelectItem::ExprWithAliases { .. } => Err(Error::UnsupportedSql {
             msg: format!("Unsupported `SELECT` expression: `{s}`"),
+        }),
+    }
+}
+
+pub(crate) fn parse_query(
+    select: &sqlparser::ast::Query,
+    outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
+) -> Result<Vec<SelectField>> {
+    let expr = &select.body;
+    parse_from_set_expr(outer_lookup, expr)
+}
+
+fn parse_from_set_expr(
+    outer_lookup: Option<&HashMap<Option<&str>, QuerySource<'_>>>,
+    expr: &sqlparser::ast::SetExpr,
+) -> Result<Vec<SelectField>> {
+    match expr {
+        sqlparser::ast::SetExpr::Select(select_expr) => {
+            infer_from_select(select_expr, outer_lookup)
+        }
+        // Set expressions like `UNION`, `INTERSECT` and `EXCEPT`
+        sqlparser::ast::SetExpr::SetOperation {
+            left, op, right, ..
+        } => {
+            let op = SetOperator::from_sql_parser_ast(op)?;
+            let left = parse_from_set_expr(outer_lookup, left)?;
+            let right = parse_from_set_expr(outer_lookup, right)?;
+            if left.len() == right.len() {
+                Ok(left
+                    .into_iter()
+                    .zip(right)
+                    .map(|(l, r)| SelectField {
+                        ident: l.ident,
+                        kind: Expression::Combined {
+                            left: Box::new(l.kind),
+                            right: Box::new(r.kind),
+                            set_operator: op,
+                        },
+                    })
+                    .collect())
+            } else {
+                Err(Error::UnsupportedSql {
+                    msg: format!(
+                        "We expect set operations to have the same number of fields on both sides. \
+                         We got {} fields on the left side and {} fields on the right side",
+                        left.len(),
+                        right.len()
+                    ),
+                })
+            }
+        }
+        s => Err(Error::UnsupportedSql {
+            msg: format!("Unsupported query kind: `{s}`"),
         }),
     }
 }
