@@ -1,4 +1,4 @@
-//! `RETURNING old.col` support for PostgreSQL 18 and later.
+//! `UPDATE ... RETURNING OLD_VALUE(col)` support for MariaDB 13.0 and later.
 
 use crate::expression::{
     AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
@@ -10,7 +10,7 @@ use crate::query_source::{AppearsInFromClause, Column};
 use crate::result::QueryResult;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
-/// clause of a Mariadb `UPDATE`  statement.
+/// clause of a Mariadb `UPDATE` statement.
 ///
 /// This is the type returned by [`old_value()`](old_value()).
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -67,7 +67,7 @@ impl<C> OldValue<C> {
 /// # #[cfg(not(feature = "mariadb"))]
 /// # fn main() {}
 /// ```
-pub fn old_value<C: Column>(col: C) -> OldValue<C> {
+pub fn old_value<C: Column>(col: C) -> old_value<C> {
     OldValue::new(col)
 }
 
