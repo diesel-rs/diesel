@@ -12,23 +12,19 @@ fn main() -> ui_test::color_eyre::Result<()> {
         .canonicalize()
         .unwrap();
     config.path_filter(&diesel_root_path, "DIESEL");
+    // `path_filter` replaces the parent of the checkout, so the checkout's own directory
+    // name survives in the path and has to be normalized away too. It is only `diesel` in
+    // a plain clone, so take it from the path rather than assuming it.
+    let checkout_dir = regex::escape(&diesel_root_path.file_name().unwrap().to_string_lossy());
+    config.filter(
+        &format!("DIESEL\\/{checkout_dir}\\/diesel_compile_tests\\/target"),
+        "DIESEL/diesel/diesel_compile_tests/target",
+    );
     if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
-        // When `CARGO_TARGET_DIR` points outside of the diesel workspace -- e.g.
-        // when tests are run from a sandbox that redirects build artifacts to a
-        // temporary location -- `path_filter(&diesel_root_path, "DIESEL")` alone
-        // doesn't normalize paths emitted by rustc that point at the target
-        // directory (such as `<target>/ui/0/.../*.long-type-*.txt`), so they
-        // would leak into the blessed `.stderr` files. Map the actual target
-        // directory to the canonical in-workspace location so blessing produces
-        // the expected output regardless of where cargo places build artifacts.
-        //
-        // We can't use `Config::path_filter` for this because it canonicalizes
-        // the path it's given, takes that path's *parent*, and only registers
-        // the parent as the substring to replace (presumably so a caller can
-        // pass any concrete file inside the directory they want normalized).
-        // Here we already have the directory we want to replace and have no
-        // guaranteed-to-exist child file to pass, so we register an explicit
-        // (escaped) regex match against the target directory instead.
+        // When CARGO_TARGET_DIR points outside this workspace, path_filter(&diesel_root_path, "DIESEL") does not normalize rustc paths that point into the external target directory.
+        // That would leak paths such as <target>/ui/0/.../*.long-type-*.txt into blessed .stderr files.
+        // Config::path_filter cannot be used here because it canonicalizes the input path, replaces that path's parent, and expects a concrete child path.
+        // We already have the directory to replace, with no guaranteed child file, so this uses an explicit escaped regex.
         if let Ok(target_dir) = PathBuf::from(target_dir).canonicalize() {
             if !target_dir.starts_with(&diesel_root_path) {
                 config.filter(
@@ -57,6 +53,11 @@ fn main() -> ui_test::color_eyre::Result<()> {
         "",
     );
     // not sure how well that works on windows
+    // Same checkout name, here in rustc source paths.
+    config.filter(
+        &format!("DIESEL\\/{checkout_dir}\\/diesel\\/([a-zA-Z_0-9\\/]*)\\.rs:[0-9]*:[0-9]*"),
+        "DIESEL/diesel/diesel/$1.rs",
+    );
     config.filter(
         "diesel\\/diesel\\/([a-zA-Z_0-9\\/]*)\\.rs:[0-9]*:[0-9]*",
         "diesel/diesel/$1.rs",
