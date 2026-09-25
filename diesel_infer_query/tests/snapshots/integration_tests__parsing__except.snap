@@ -1,0 +1,58 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT owner_id, file_hash FROM content_vault WHERE created < '2026-08-07' EXCEPT SELECT creator_id, sha256 FROM recent_uploads"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "owner_id",
+            ),
+            kind: Combined {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "content_vault",
+                    ),
+                    field_name: "owner_id",
+                    nullable_row: false,
+                },
+                right: Field {
+                    schema: None,
+                    query_source: Some(
+                        "recent_uploads",
+                    ),
+                    field_name: "creator_id",
+                    nullable_row: false,
+                },
+                set_operator: Except,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "file_hash",
+            ),
+            kind: Combined {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "content_vault",
+                    ),
+                    field_name: "file_hash",
+                    nullable_row: false,
+                },
+                right: Field {
+                    schema: None,
+                    query_source: Some(
+                        "recent_uploads",
+                    ),
+                    field_name: "sha256",
+                    nullable_row: false,
+                },
+                set_operator: Except,
+            },
+        },
+    ],
+    subqueries: [],
+}

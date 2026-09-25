@@ -1,0 +1,35 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: CREATE VIEW test AS SELECT (1 + 2) - 3
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: BinaryOp {
+                left: Grouped(
+                    BinaryOp {
+                        left: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                        right: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                        op: "+",
+                        nullability: Nullable,
+                    },
+                ),
+                right: Literal {
+                    value: None,
+                    is_null: false,
+                },
+                op: "-",
+                nullability: Nullable,
+            },
+        },
+    ],
+    subqueries: [],
+}

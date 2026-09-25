@@ -1,0 +1,46 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT user_id, name, row_number() OVER (PARTITION BY department ORDER BY salary DESC) as rn FROM employees"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "user_id",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: Some(
+                    "employees",
+                ),
+                field_name: "user_id",
+                nullable_row: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "name",
+            ),
+            kind: Field {
+                schema: None,
+                query_source: Some(
+                    "employees",
+                ),
+                field_name: "name",
+                nullable_row: false,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "rn",
+            ),
+            kind: Function {
+                name: "row_number",
+                schema: None,
+                arguments: [],
+            },
+        },
+    ],
+    subqueries: [],
+}

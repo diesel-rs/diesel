@@ -19,7 +19,7 @@ ViewData {
                     is_null: true,
                 },
                 op: "IS DISTINCT FROM",
-                statically_not_null: true,
+                nullability: NeverNull,
             },
         },
         SelectField {
@@ -36,8 +36,9 @@ ViewData {
                     is_null: true,
                 },
                 op: "IS NOT DISTINCT FROM",
-                statically_not_null: true,
+                nullability: NeverNull,
             },
         },
     ],
+    subqueries: [],
 }

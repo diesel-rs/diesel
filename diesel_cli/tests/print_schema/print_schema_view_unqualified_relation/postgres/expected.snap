@@ -1,0 +1,21 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_unqualified_relation"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod other {
+    diesel::view! {
+        other.descriptions {
+            description -> Text,
+        }
+    }
+
+    diesel::view! {
+        other.good {
+            name -> Nullable<Text>,
+        }
+    }
+
+    diesel::allow_tables_to_appear_in_same_query!(descriptions, good,);
+}

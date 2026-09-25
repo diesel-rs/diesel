@@ -1,0 +1,58 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT id, name FROM old_users WHERE is_active = TRUE UNION SELECT user_id, display_name FROM new_members"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "id",
+            ),
+            kind: Combined {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "old_users",
+                    ),
+                    field_name: "id",
+                    nullable_row: false,
+                },
+                right: Field {
+                    schema: None,
+                    query_source: Some(
+                        "new_members",
+                    ),
+                    field_name: "user_id",
+                    nullable_row: false,
+                },
+                set_operator: Union,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "name",
+            ),
+            kind: Combined {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "old_users",
+                    ),
+                    field_name: "name",
+                    nullable_row: false,
+                },
+                right: Field {
+                    schema: None,
+                    query_source: Some(
+                        "new_members",
+                    ),
+                    field_name: "display_name",
+                    nullable_row: false,
+                },
+                set_operator: Union,
+            },
+        },
+    ],
+    subqueries: [],
+}

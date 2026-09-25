@@ -1,10 +1,11 @@
 use super::{
     ColumnDefinition, QueryRelationData, SupportedQueryRelationStructures, TableName,
-    load_table_data, load_table_names, load_view_data,
+    load_table_data_for_query_resolution, load_table_names, load_view_data,
+    order_query_relation_columns_for_output, resolve_unqualified_relation_schema,
 };
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
-use diesel_infer_query::{SchemaField, SchemaResolver};
+use diesel_infer_query::{IsNull, SchemaField, SchemaResolver};
 use std::collections::HashMap;
 
 pub struct SchemaResolverImpl<'a, 'b> {
@@ -14,6 +15,7 @@ pub struct SchemaResolverImpl<'a, 'b> {
     pub(super) config: &'b PrintSchema,
     unfiltered_table_names: HashMap<TableName, SupportedQueryRelationStructures>,
     recursive_resolve_chain: Vec<TableName>,
+    resolved_unqualified_relations: HashMap<String, TableName>,
 }
 
 impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
@@ -34,6 +36,7 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
             config,
             unfiltered_table_names,
             recursive_resolve_chain: Vec::new(),
+            resolved_unqualified_relations: HashMap::new(),
         }
     }
 
@@ -42,23 +45,25 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
     ) -> Result<Vec<QueryRelationData>, crate::errors::Error> {
         let requested_relations = self.print_schema_relations.clone();
         for (kind, t) in requested_relations {
-            self.recursive_resolve_chain = Vec::new();
+            debug_assert!(self.recursive_resolve_chain.is_empty());
             self.load_query_relation_data(Some(kind), t)?;
         }
+        debug_assert!(self.recursive_resolve_chain.is_empty());
 
         // extract all data required for the actual print schema operation
         //
         // Our `cached_results` list could contain many more table entries at this
         // point as loading views could trigger loading additional data
-        Ok(self
-            .print_schema_relations
-            .into_iter()
-            .map(|(_, rel)| {
-                self.cached_results
-                    .remove(&rel)
-                    .expect("This relation was loaded before")
-            })
-            .collect())
+        let mut output = Vec::with_capacity(self.print_schema_relations.len());
+        for (_, relation_name) in self.print_schema_relations {
+            let mut relation = self
+                .cached_results
+                .remove(&relation_name)
+                .expect("This relation was loaded before");
+            order_query_relation_columns_for_output(self.connection, self.config, &mut relation)?;
+            output.push(relation);
+        }
+        Ok(output)
     }
 
     fn load_query_relation_data(
@@ -73,36 +78,49 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
                 tracing::error!(chain = ?self.recursive_resolve_chain, "Cyclic view definition");
                 return Err(crate::errors::Error::CyclicViewDefinition(t));
             }
+
             self.recursive_resolve_chain.push(t.clone());
-            let kind = match kind.or_else(|| self.unfiltered_table_names.get(&t).copied()) {
-                Some(kind) => kind,
-                None => {
-                    let tables = load_table_names(self.connection, t.schema.as_deref())?;
-                    self.unfiltered_table_names
-                        .extend(tables.into_iter().map(|(tpe, rel)| (rel, tpe)));
-                    self.unfiltered_table_names
-                        .get(&t)
-                        .copied()
-                        .ok_or_else(|| {
-                            tracing::info!(chain = ?self.recursive_resolve_chain, "Resolve chain");
-                            crate::errors::Error::CouldNotResolveView(t.clone())
-                        })?
-                }
-            };
-            let data = match kind {
-                SupportedQueryRelationStructures::Table => QueryRelationData::Table(
-                    load_table_data(self.connection, t.clone(), self.config, kind)?,
-                ),
-                SupportedQueryRelationStructures::View => {
-                    QueryRelationData::View(load_view_data(self, t.clone())?)
-                }
-            };
-            self.cached_results.insert(t.clone(), data);
+            let data = self.load_uncached_query_relation_data(kind, &t);
+            let popped = self.recursive_resolve_chain.pop();
+            debug_assert_eq!(popped.as_ref(), Some(&t));
+            self.cached_results.insert(t.clone(), data?);
         }
         Ok(self
             .cached_results
             .get(&t)
             .expect("We literally inserted that above"))
+    }
+
+    fn load_uncached_query_relation_data(
+        &mut self,
+        kind: Option<SupportedQueryRelationStructures>,
+        t: &TableName,
+    ) -> Result<QueryRelationData, crate::errors::Error> {
+        let kind = match kind.or_else(|| self.unfiltered_table_names.get(t).copied()) {
+            Some(kind) => kind,
+            None => {
+                let tables = load_table_names(self.connection, t.schema.as_deref())?;
+                self.unfiltered_table_names
+                    .extend(tables.into_iter().map(|(tpe, rel)| (rel, tpe)));
+                self.unfiltered_table_names.get(t).copied().ok_or_else(|| {
+                    tracing::info!(chain = ?self.recursive_resolve_chain, "Resolve chain");
+                    crate::errors::Error::CouldNotResolveView(t.clone())
+                })?
+            }
+        };
+        match kind {
+            SupportedQueryRelationStructures::Table => Ok(QueryRelationData::Table(
+                load_table_data_for_query_resolution(
+                    self.connection,
+                    t.clone(),
+                    self.config,
+                    kind,
+                )?,
+            )),
+            SupportedQueryRelationStructures::View => {
+                Ok(QueryRelationData::View(load_view_data(self, t.clone())?))
+            }
+        }
     }
 }
 
@@ -110,28 +128,39 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
     fn resolve_field(
         &mut self,
         schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<
         &dyn diesel_infer_query::SchemaField,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
+        let Some(query_relation) = query_relation else {
+            return Err("Unnamed query source cannot be resolved".into());
+        };
+        let use_case_insensitive_fallback =
+            uses_case_insensitive_identifier_lookup(self.connection);
         let (table_name, relation) = self.load_relation_data(schema, query_relation)?;
-        Ok(relation
-            .columns()
-            .iter()
-            .find_map(|c| (c.sql_name == field_name).then_some(c as &dyn SchemaField))
-            .ok_or_else(|| {
-                tracing::info!(table = ?table_name, field = %field_name, "Field not found");
-                crate::errors::Error::FieldNotFoundForView(table_name, field_name.to_owned())
-            })?)
+        Ok(find_by_name(
+            relation.columns(),
+            field_name,
+            use_case_insensitive_fallback,
+            |c| c.sql_name.as_str(),
+        )
+        .map(|c| c as &dyn SchemaField)
+        .ok_or_else(|| {
+            tracing::info!(table = ?table_name, field = %field_name, "Field not found");
+            crate::errors::Error::FieldNotFoundForView(table_name, field_name.to_owned())
+        })?)
     }
 
     fn list_fields<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let Some(query_relation) = query_relation else {
+            return Err("Unnamed query source cannot be resolved".into());
+        };
         let (_table_name, relation) = self.load_relation_data(relation_schema, query_relation)?;
         let ret = relation
             .columns()
@@ -148,29 +177,93 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
         &mut self,
         schema: Option<&str>,
         query_relation: &str,
-    ) -> Result<(TableName, &QueryRelationData), Box<dyn std::error::Error + Send + Sync + 'static>>
-    {
-        let schema = schema.or_else(|| {
-            self.recursive_resolve_chain
-                .iter()
-                .rfind(|r| r.schema.is_some())
-                .and_then(|r| r.schema.as_deref())
-        });
+    ) -> Result<(TableName, &QueryRelationData), crate::errors::Error> {
+        let use_case_insensitive_fallback =
+            uses_case_insensitive_identifier_lookup(self.connection);
         let table_name = match schema {
-            None => TableName::from_name(query_relation),
             Some(schema) => TableName::new(query_relation, schema),
+            None => {
+                if let Some(table_name) = self.resolved_unqualified_relations.get(query_relation) {
+                    table_name.clone()
+                } else {
+                    let schema =
+                        resolve_unqualified_relation_schema(self.connection, query_relation)?;
+                    let table_name = match schema {
+                        Some(schema) => TableName::new(query_relation, schema),
+                        None => TableName::from_name(query_relation),
+                    };
+                    self.resolved_unqualified_relations
+                        .insert(query_relation.to_owned(), table_name.clone());
+                    table_name
+                }
+            }
+        };
+        let table_name = if self.unfiltered_table_names.contains_key(&table_name) {
+            table_name
+        } else {
+            find_by_name(
+                self.unfiltered_table_names
+                    .keys()
+                    .filter(|t| t.schema == table_name.schema),
+                &table_name.sql_name,
+                use_case_insensitive_fallback,
+                |t| t.sql_name.as_str(),
+            )
+            .cloned()
+            .unwrap_or(table_name)
         };
         let relation = self.load_query_relation_data(None, table_name.clone())?;
         Ok((table_name, relation))
     }
 }
 
+/// Find the item called `name`.
+///
+/// SQLite matches identifiers case-insensitively but preserves their spelling in
+/// view definitions, so it uses a unique ASCII-case-insensitive fallback after an
+/// exact lookup. PostgreSQL, MySQL, and MariaDB use exact matching only.
+fn find_by_name<'i, T: 'i>(
+    items: impl IntoIterator<Item = &'i T>,
+    name: &str,
+    use_case_insensitive_fallback: bool,
+    item_name: impl Fn(&T) -> &str,
+) -> Option<&'i T> {
+    let mut ignoring_case = None;
+    let mut ambiguous = false;
+    for item in items {
+        if item_name(item) == name {
+            return Some(item);
+        }
+        if use_case_insensitive_fallback && item_name(item).eq_ignore_ascii_case(name) {
+            ambiguous |= ignoring_case.replace(item).is_some();
+        }
+    }
+    ignoring_case.filter(|_| !ambiguous)
+}
+
+fn uses_case_insensitive_identifier_lookup(connection: &InferConnection) -> bool {
+    match connection {
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => true,
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(_) => false,
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => false,
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => false,
+    }
+}
+
 impl SchemaField for ColumnDefinition {
-    fn is_nullable(&self) -> bool {
-        self.ty.is_nullable
+    fn is_nullable(&self) -> IsNull {
+        if self.ty.is_nullable {
+            IsNull::IsNullable
+        } else {
+            IsNull::NotNullable
+        }
     }
 
-    fn name(&self) -> &str {
-        &self.sql_name
+    fn name(&self) -> Option<&str> {
+        Some(&self.sql_name)
     }
 }

@@ -1,0 +1,41 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_fallback"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        name -> Text,
+    }
+}
+
+diesel::view! {
+    all_users {
+        id -> Nullable<Integer>,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::view! {
+    names {
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::view! {
+    row_ids {
+        r -> Nullable<Integer>,
+        name -> Nullable<Text>,
+    }
+}
+
+diesel::view! {
+    unknown {
+        u -> Nullable<Binary>,
+        id -> Integer,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(users, all_users, names, row_ids, unknown,);

@@ -1,0 +1,39 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: CREATE VIEW test AS SELECT name NOT IN (SELECT posts.name FROM posts) FROM users
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: InSubQuery {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "users",
+                    ),
+                    field_name: "name",
+                    nullable_row: false,
+                },
+                negated: true,
+                subquery: [
+                    SelectField {
+                        ident: Some(
+                            "name",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: Some(
+                                "posts",
+                            ),
+                            field_name: "name",
+                            nullable_row: false,
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+    subqueries: [],
+}

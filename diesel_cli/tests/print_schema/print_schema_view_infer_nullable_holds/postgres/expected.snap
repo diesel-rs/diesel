@@ -1,0 +1,48 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_holds"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    aggregates {
+        n -> Int8,
+        max_id -> Nullable<Int4>,
+    }
+}
+
+diesel::view! {
+    casts {
+        id_text -> Text,
+        name_short -> Varchar,
+        doc_text -> Text,
+        k -> Nullable<Int4>,
+    }
+}
+
+diesel::view! {
+    operators {
+        k_text -> Nullable<Text>,
+        not_first -> Bool,
+        name_x -> Text,
+    }
+}
+
+diesel::view! {
+    patterns {
+        starts_with_a -> Bool,
+        starts_with_a_ci -> Bool,
+        matches_a -> Bool,
+        similar_a -> Nullable<Bool>,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Int4,
+        name -> Text,
+        doc -> Jsonb,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(aggregates, casts, operators, patterns, users,);

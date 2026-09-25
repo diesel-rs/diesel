@@ -1,0 +1,1 @@
+ SELECT users.id, posts.id FROM users LEFT JOIN posts ON posts.user_id = users.id

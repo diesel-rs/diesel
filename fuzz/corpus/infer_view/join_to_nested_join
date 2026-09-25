@@ -1,0 +1,1 @@
+ SELECT users.id FROM users JOIN (posts JOIN comments ON comments.post_id = posts.id) ON posts.user_id = users.id

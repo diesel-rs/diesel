@@ -30,7 +30,7 @@ pub(crate) enum JoinKind {
 }
 
 /// Information about a specific join
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct Join {
     /// To which other query source the current source is joined
     ///
@@ -50,12 +50,12 @@ pub(crate) struct Join {
 ///
 // Possibly that needs to be an enum later
 // to handle subqueries, VALUES clauses, etc
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct QuerySource<'a> {
     /// The schema of the query source
     pub(crate) schema: Option<&'a str>,
     /// The name of the query source
-    pub(crate) name: &'a str,
+    pub(crate) name: Option<&'a str>,
     /// The alias that is used to refer to this query source in the query
     #[expect(dead_code, reason = "its there for later")]
     pub(crate) alias: Option<&'a str>,
@@ -69,7 +69,7 @@ impl<'a> QuerySource<'a> {
     /// The `out` map contains a lookup list indexed by the name of the query source
     /// as used in the query
     pub(crate) fn fill_from_table_with_joins(
-        out: &mut HashMap<&'a str, QuerySource<'a>>,
+        out: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
         table_with_joins: &'a sqlparser::ast::TableWithJoins,
     ) -> Result<()> {
         // first resolve the table itself
@@ -85,28 +85,41 @@ impl<'a> QuerySource<'a> {
     /// used to include this query source is joined via a `LEFT JOIN`
     pub(crate) fn contains_left_join(
         &self,
-        query_source_lookup: &HashMap<&str, QuerySource<'_>>,
+        query_source_lookup: &HashMap<Option<&str>, QuerySource<'_>>,
     ) -> Result<bool> {
-        if let Some(join) = &self.join {
-            match join.kind {
-                JoinKind::Inner => {
-                    let source = query_source_lookup.get(join.to.as_str()).ok_or_else(|| {
+        let mut source = self;
+        // Every step follows a join to a query source from the lookup, so a chain
+        // taking more steps than there are query sources has to be a cycle
+        for _ in 0..=query_source_lookup.len() {
+            match &source.join {
+                None => return Ok(false),
+                Some(Join {
+                    kind: JoinKind::Left,
+                    ..
+                }) => return Ok(true),
+                Some(Join {
+                    kind: JoinKind::Inner,
+                    to,
+                }) => {
+                    source = find_query_source(query_source_lookup, to).ok_or_else(|| {
                         Error::InvalidQuerySource {
-                            query_source: join.to.clone(),
+                            query_source: to.clone(),
                         }
                     })?;
-                    source.contains_left_join(query_source_lookup)
                 }
-                JoinKind::Left => Ok(true),
             }
-        } else {
-            Ok(false)
         }
+        Err(Error::UnsupportedSql {
+            msg: format!(
+                "Cyclic join chain for query source `{}`",
+                self.name.unwrap_or_default()
+            ),
+        })
     }
 
     fn fill_from_table_factor(
         s: &'a sqlparser::ast::TableFactor,
-        out: &mut HashMap<&'a str, QuerySource<'a>>,
+        out: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
     ) -> Result<()> {
         match s {
             sqlparser::ast::TableFactor::Table {
@@ -155,10 +168,10 @@ impl<'a> QuerySource<'a> {
                 // So use the name of the alias in that case, otherwise the name of the table.
                 let lookup = alias.unwrap_or(name);
                 out.insert(
-                    lookup,
+                    Some(lookup),
                     QuerySource {
                         schema,
-                        name,
+                        name: Some(name),
                         alias,
                         join: None,
                     },
@@ -172,7 +185,24 @@ impl<'a> QuerySource<'a> {
                 Self::fill_from_table_with_joins(out, table_with_joins)?;
                 Ok(())
             }
-
+            sqlparser::ast::TableFactor::Derived { lateral: false,  alias: Some(alias), sample: None, .. } => {
+                out.insert(Some(&alias.name.value), QuerySource {
+                    schema: None,
+                    name: Some(&alias.name.value),
+                    alias: Some(&alias.name.value),
+                    join: None
+                });
+                Ok(())
+            },
+            sqlparser::ast::TableFactor::Derived { lateral: false, alias: None, ..} => {
+                out.insert(None, QuerySource {
+                    schema: None,
+                    name: None,
+                    alias: None,
+                    join: None
+                });
+                Ok(())
+            },
             s => Err(Error::UnsupportedSql {
                 msg: format!("Unsupported query source: `{s}`"),
             }),
@@ -180,7 +210,7 @@ impl<'a> QuerySource<'a> {
     }
 
     fn fill_from_join(
-        out: &mut HashMap<&'a str, QuerySource<'a>>,
+        out: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
         join: &'a sqlparser::ast::Join,
     ) -> Result<()> {
         use sqlparser::ast::Visit;
@@ -226,8 +256,17 @@ impl<'a> QuerySource<'a> {
         // remove the query source used in the join directly
         // So for `INNER JOIN posts ON posts.user_id = users.id`
         // remove `posts`
-        for inner in inner.keys() {
-            join_expr.remove(*inner);
+        for inner in inner.keys().flatten() {
+            if !join_expr.remove(*inner) {
+                let spelled = only_match_ignoring_case(
+                    join_expr.iter().map(|ident| (ident.as_str(), ident)),
+                    inner,
+                )
+                .cloned();
+                if let Some(spelled) = spelled {
+                    join_expr.remove(&spelled);
+                }
+            }
         }
         // we should now have only one table left
         // that's the table we are joining to
@@ -248,6 +287,40 @@ impl<'a> QuerySource<'a> {
             out.insert(l, v);
         }
         Ok(())
+    }
+}
+
+/// Find the query source the query refers to as `name`
+///
+/// SQLite matches names case-insensitively, while PostgreSQL and MySQL store
+/// normalized view definitions that spell each name exactly. So an exact match
+/// wins, and otherwise the only match ignoring ASCII case is used.
+pub(crate) fn find_query_source<'l, 'a>(
+    query_source_lookup: &'l HashMap<Option<&'a str>, QuerySource<'a>>,
+    name: &str,
+) -> Option<&'l QuerySource<'a>> {
+    query_source_lookup
+        .iter()
+        .find_map(|(key, source)| (*key == Some(name)).then_some(source))
+        .or_else(|| {
+            only_match_ignoring_case(
+                query_source_lookup
+                    .iter()
+                    .filter_map(|(key, source)| Some(((*key)?, source))),
+                name,
+            )
+        })
+}
+
+/// The value of the only item whose name equals `name` ignoring ASCII case
+pub(crate) fn only_match_ignoring_case<'i, T>(
+    items: impl Iterator<Item = (&'i str, T)>,
+    name: &str,
+) -> Option<T> {
+    let mut matches = items.filter(|(item, _)| item.eq_ignore_ascii_case(name));
+    match (matches.next(), matches.next()) {
+        (Some((_, value)), None) => Some(value),
+        _ => None,
     }
 }
 

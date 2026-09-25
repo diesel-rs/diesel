@@ -17,7 +17,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "+",
-                statically_not_null: false,
+                nullability: Nullable,
             },
         },
         SelectField {
@@ -25,9 +25,11 @@ ViewData {
             kind: BinaryOp {
                 left: Field {
                     schema: None,
-                    query_source: "bar",
+                    query_source: Some(
+                        "bar",
+                    ),
                     field_name: "json",
-                    via_left_join: false,
+                    nullable_row: false,
                 },
                 right: Literal {
                     value: Some(
@@ -36,7 +38,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "@>",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -44,13 +46,16 @@ ViewData {
             kind: PostfixOp {
                 expr: Field {
                     schema: None,
-                    query_source: "bar",
+                    query_source: Some(
+                        "bar",
+                    ),
                     field_name: "name",
-                    via_left_join: false,
+                    nullable_row: false,
                 },
                 op: "IS NULL",
-                statically_not_null: true,
+                nullability: NeverNull,
             },
         },
     ],
+    subqueries: [],
 }

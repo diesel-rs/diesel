@@ -21,7 +21,7 @@ ViewData {
                                 is_null: false,
                             },
                             op: "=",
-                            statically_not_null: false,
+                            nullability: NullIfOperandNull,
                         },
                         result: Literal {
                             value: None,
@@ -63,7 +63,7 @@ ViewData {
                                 is_null: false,
                             },
                             op: "=",
-                            statically_not_null: false,
+                            nullability: NullIfOperandNull,
                         },
                         result: Literal {
                             value: None,
@@ -105,7 +105,7 @@ ViewData {
                                 is_null: false,
                             },
                             op: "=",
-                            statically_not_null: false,
+                            nullability: NullIfOperandNull,
                         },
                         result: Literal {
                             value: None,
@@ -132,4 +132,5 @@ ViewData {
             },
         },
     ],
+    subqueries: [],
 }

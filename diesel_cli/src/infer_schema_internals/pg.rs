@@ -138,6 +138,31 @@ fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_typ
     RegNamespace::new(quote_ident(schema))
 }
 
+pub fn resolve_unqualified_relation_schema(
+    conn: &mut PgConnection,
+    relation_name: &str,
+) -> QueryResult<Option<String>> {
+    #[derive(QueryableByName)]
+    struct RelationSchema {
+        #[diesel(sql_type = sql_types::Text)]
+        schema_name: String,
+    }
+
+    let schema = diesel::sql_query(
+        "SELECT n.nspname::text AS schema_name \
+         FROM pg_catalog.pg_class c \
+         JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace \
+         WHERE c.oid = pg_catalog.to_regclass(pg_catalog.quote_ident($1))",
+    )
+    .bind::<sql_types::Text, _>(relation_name)
+    .get_result::<RelationSchema>(conn)
+    .optional()?
+    .map(|row| row.schema_name);
+    let default_schema = Pg::default_schema(conn)?;
+
+    Ok(schema.filter(|schema| schema != &default_schema))
+}
+
 pub fn get_table_data(
     conn: &mut PgConnection,
     table: &TableName,

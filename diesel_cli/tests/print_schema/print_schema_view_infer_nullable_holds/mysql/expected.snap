@@ -1,0 +1,34 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_holds"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    casts {
+        id -> Integer,
+        bytes_text -> Nullable<Varchar>,
+        too_long -> Nullable<Text>,
+    }
+}
+
+diesel::view! {
+    operators {
+        quotient -> Nullable<Integer>,
+        ratio -> Nullable<Decimal>,
+        starts_with_a -> Integer,
+        one -> Bigint,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        #[max_length = 50]
+        name -> Varchar,
+        #[max_length = 16]
+        bytes -> Varbinary,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(casts, operators, users,);

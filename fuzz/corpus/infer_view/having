@@ -1,0 +1,1 @@
+ SELECT id FROM comments HAVING count(*) >= 0

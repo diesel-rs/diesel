@@ -1,0 +1,1 @@
+ SELECT 1 + 1, 1 + NULL, id * 2, id / id, id % id, name || title FROM users JOIN posts ON posts.user_id = users.id

@@ -21,7 +21,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "SIMILAR TO",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -38,7 +38,7 @@ ViewData {
                     is_null: true,
                 },
                 op: "NOT SIMILAR TO",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -55,8 +55,9 @@ ViewData {
                     is_null: false,
                 },
                 op: "SIMILAR TO",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
     ],
+    subqueries: [],
 }

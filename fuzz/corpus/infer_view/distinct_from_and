@@ -1,0 +1,1 @@
+ SELECT id IS DISTINCT FROM name AND hair_color, id IS NOT DISTINCT FROM name = hair_color ->> 'k' FROM users

@@ -1,0 +1,70 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT (SELECT users.name FROM users WHERE users.id = posts.user_id), (SELECT users.hair_color FROM users WHERE users.id = posts.user_id), (SELECT posts.body FROM users WHERE users.id = posts.user_id)\n              FROM posts"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Subquery {
+                selection: [
+                    SelectField {
+                        ident: Some(
+                            "name",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: Some(
+                                "users",
+                            ),
+                            field_name: "name",
+                            nullable_row: false,
+                        },
+                    },
+                ],
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Subquery {
+                selection: [
+                    SelectField {
+                        ident: Some(
+                            "hair_color",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: Some(
+                                "users",
+                            ),
+                            field_name: "hair_color",
+                            nullable_row: false,
+                        },
+                    },
+                ],
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Subquery {
+                selection: [
+                    SelectField {
+                        ident: Some(
+                            "body",
+                        ),
+                        kind: Field {
+                            schema: None,
+                            query_source: Some(
+                                "posts",
+                            ),
+                            field_name: "body",
+                            nullable_row: false,
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+    subqueries: [],
+}

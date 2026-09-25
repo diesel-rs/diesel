@@ -1,0 +1,57 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_holds"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    empty_table (rowid) {
+        rowid -> Integer,
+        id -> Integer,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        name -> Text,
+        bytes -> Binary,
+    }
+}
+
+diesel::view! {
+    aggregates {
+        id -> Nullable<Integer>,
+        n -> Binary,
+    }
+}
+
+diesel::view! {
+    casts {
+        bytes_text -> Text,
+        name_number -> Nullable<Integer>,
+    }
+}
+
+diesel::view! {
+    operators {
+        ratio -> Nullable<Binary>,
+        is_first -> Binary,
+    }
+}
+
+diesel::view! {
+    patterns {
+        starts_with_a -> Nullable<Binary>,
+        is_a -> Binary,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    empty_table,
+    users,
+    aggregates,
+    casts,
+    operators,
+    patterns,
+);

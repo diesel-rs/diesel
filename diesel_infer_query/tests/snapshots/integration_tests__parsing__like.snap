@@ -21,7 +21,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "LIKE",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -38,7 +38,7 @@ ViewData {
                     is_null: true,
                 },
                 op: "LIKE",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -57,7 +57,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "ILIKE",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -74,7 +74,7 @@ ViewData {
                     is_null: true,
                 },
                 op: "ILIKE",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -93,7 +93,7 @@ ViewData {
                     is_null: false,
                 },
                 op: "NOT LIKE",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
         SelectField {
@@ -110,8 +110,9 @@ ViewData {
                     is_null: true,
                 },
                 op: "NOT LIKE",
-                statically_not_null: false,
+                nullability: NullIfOperandNull,
             },
         },
     ],
+    subqueries: [],
 }

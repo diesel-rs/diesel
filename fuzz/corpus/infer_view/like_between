@@ -1,0 +1,1 @@
+ SELECT name LIKE 'a%', hair_color LIKE NULL, id BETWEEN 0 AND 10, id BETWEEN NULL AND 25 FROM users

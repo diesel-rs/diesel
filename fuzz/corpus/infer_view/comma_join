@@ -1,0 +1,1 @@
+ SELECT users.id, posts.title FROM users, posts

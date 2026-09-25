@@ -1,0 +1,1 @@
+ SELECT u.id, name, u.hair_color AS hair_colour FROM users AS u

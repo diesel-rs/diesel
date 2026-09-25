@@ -1,0 +1,7 @@
+[print_schema]
+file = "src/schema.rs"
+with_docs = false
+include_views = true
+experimental_infer_nullable_for_views = true
+column_sorting = "name"
+filter = { only_tables = ["joined", "left_items", "reordered"] }

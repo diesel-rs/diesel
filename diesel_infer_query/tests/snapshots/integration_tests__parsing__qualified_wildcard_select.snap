@@ -9,9 +9,12 @@ ViewData {
             ident: None,
             kind: Wildcard {
                 schema: None,
-                relation: "users",
-                is_left_joined: false,
+                relation: Some(
+                    "users",
+                ),
+                nullable_row: false,
             },
         },
     ],
+    subqueries: [],
 }

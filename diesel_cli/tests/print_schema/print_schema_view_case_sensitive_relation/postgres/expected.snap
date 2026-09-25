@@ -1,0 +1,11 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_case_sensitive_relation"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    v {
+        name -> Nullable<Text>,
+    }
+}

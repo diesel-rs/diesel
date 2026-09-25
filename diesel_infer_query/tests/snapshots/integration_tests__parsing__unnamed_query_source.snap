@@ -1,0 +1,37 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: SELECT * FROM (SELECT 1 as dummy)
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: Wildcard {
+                schema: None,
+                relation: None,
+                nullable_row: false,
+            },
+        },
+    ],
+    subqueries: [
+        (
+            None,
+            SubQuery {
+                fields: [
+                    SelectField {
+                        ident: Some(
+                            "dummy",
+                        ),
+                        kind: Literal {
+                            value: None,
+                            is_null: false,
+                        },
+                    },
+                ],
+                subqueries: [],
+                recursive: false,
+            },
+        ),
+    ],
+}

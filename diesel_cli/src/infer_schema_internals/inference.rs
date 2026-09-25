@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use diesel::result::Error::NotFound;
+use diesel_infer_query::IsNull;
 
 use super::table_data::*;
 use super::{SchemaResolverImpl, data_structures::*};
@@ -86,6 +87,28 @@ pub fn load_table_names(
 
     tracing::info!(?tables, "Loaded tables");
     Ok(tables)
+}
+
+pub(super) fn resolve_unqualified_relation_schema(
+    connection: &mut InferConnection,
+    relation_name: &str,
+) -> Result<Option<String>, crate::errors::Error> {
+    #[cfg(not(feature = "postgres"))]
+    let _ = relation_name;
+
+    match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(connection) => Ok(super::pg::resolve_unqualified_relation_schema(
+            connection,
+            relation_name,
+        )?),
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => Ok(None),
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => Ok(None),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => Ok(None),
+    }
 }
 
 pub fn filter_column_structure(
@@ -182,6 +205,79 @@ fn get_column_information(
         tracing::info!(?column_info, "Load column information for table {table}");
         Ok(column_info)
     }
+}
+
+fn query_relation_column_sorting(config: &PrintSchema) -> ColumnSorting {
+    if config.experimental_infer_nullable_for_views {
+        ColumnSorting::OrdinalPosition
+    } else {
+        config.column_sorting
+    }
+}
+
+pub(super) fn order_query_relation_columns_for_output(
+    connection: &mut InferConnection,
+    config: &PrintSchema,
+    relation: &mut QueryRelationData,
+) -> Result<(), crate::errors::Error> {
+    if !config.experimental_infer_nullable_for_views
+        || !matches!(config.column_sorting, ColumnSorting::Name)
+    {
+        return Ok(());
+    }
+
+    let (name, kind) = match relation {
+        QueryRelationData::Table(table) => {
+            (table.name.clone(), SupportedQueryRelationStructures::Table)
+        }
+        QueryRelationData::View(view) => {
+            (view.name.clone(), SupportedQueryRelationStructures::View)
+        }
+    };
+    let pg_domains_as_custom_types = config
+        .pg_domains_as_custom_types
+        .iter()
+        .map(|regex| regex as &regex::Regex)
+        .collect::<Vec<_>>();
+    let database_order = get_column_information(
+        connection,
+        &name,
+        &ColumnSorting::Name,
+        &pg_domains_as_custom_types,
+        kind,
+    )?;
+    let columns = match relation {
+        QueryRelationData::Table(table) => &mut table.column_data,
+        QueryRelationData::View(view) => &mut view.column_data,
+    };
+
+    if database_order.len() != columns.len()
+        || database_order.iter().any(|column| {
+            !columns
+                .iter()
+                .any(|existing| existing.sql_name == column.column_name)
+        })
+    {
+        tracing::warn!(relation = %name, "Column list changed while resolving view nullability");
+        return Ok(());
+    }
+
+    let mut columns_by_name = HashMap::with_capacity(columns.len());
+    for column in std::mem::take(columns) {
+        let replaced = columns_by_name.insert(column.sql_name.clone(), column);
+        debug_assert!(replaced.is_none());
+    }
+    *columns = database_order
+        .into_iter()
+        .map(|column| {
+            columns_by_name
+                .remove(&column.column_name)
+                .expect("The database returned the same columns in a different order")
+        })
+        .collect();
+    debug_assert!(columns_by_name.is_empty());
+
+    Ok(())
 }
 
 fn determine_column_type(
@@ -281,6 +377,7 @@ fn load_column_structure_data(
     connection: &mut InferConnection,
     name: &TableName,
     config: &PrintSchema,
+    column_sorting: ColumnSorting,
     primary_key: Option<&[String]>,
     kind: SupportedQueryRelationStructures,
 ) -> Result<(Option<String>, Vec<ColumnDefinition>), crate::errors::Error> {
@@ -313,7 +410,7 @@ fn load_column_structure_data(
     get_column_information(
         connection,
         name,
-        &config.column_sorting,
+        &column_sorting,
         &pg_domains_as_custom_types,
         kind,
     )?
@@ -348,12 +445,44 @@ pub fn load_table_data(
     config: &PrintSchema,
     tpe: SupportedQueryRelationStructures,
 ) -> Result<TableData, crate::errors::Error> {
+    load_table_data_with_column_sorting(connection, name, config, tpe, config.column_sorting)
+}
+
+#[tracing::instrument(skip(connection))]
+pub(super) fn load_table_data_for_query_resolution(
+    connection: &mut InferConnection,
+    name: TableName,
+    config: &PrintSchema,
+    tpe: SupportedQueryRelationStructures,
+) -> Result<TableData, crate::errors::Error> {
+    load_table_data_with_column_sorting(
+        connection,
+        name,
+        config,
+        tpe,
+        query_relation_column_sorting(config),
+    )
+}
+
+fn load_table_data_with_column_sorting(
+    connection: &mut InferConnection,
+    name: TableName,
+    config: &PrintSchema,
+    tpe: SupportedQueryRelationStructures,
+    column_sorting: ColumnSorting,
+) -> Result<TableData, crate::errors::Error> {
     let primary_key = match tpe {
         SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
         SupportedQueryRelationStructures::View => Vec::new(),
     };
-    let (table_comment, column_data) =
-        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
+    let (table_comment, column_data) = load_column_structure_data(
+        connection,
+        &name,
+        config,
+        column_sorting,
+        Some(&primary_key),
+        tpe,
+    )?;
     let primary_key = primary_key
         .iter()
         .map(|k| rust_name_for_sql_name(k, Some(&name)))
@@ -375,31 +504,42 @@ pub fn load_view_data(
         resolver.connection,
         &name,
         resolver.config,
+        query_relation_column_sorting(resolver.config),
         None,
         SupportedQueryRelationStructures::View,
     )?;
     let sql_definition = load_view_sql_definition(resolver.connection, &name)?;
     if resolver.config.experimental_infer_nullable_for_views {
         tracing::debug!("Infer nullability for view fields");
-        match diesel_infer_query::parse_view_def(&sql_definition) {
+        let backend = infer_query_backend(resolver.connection);
+        match diesel_infer_query::parse_view_def(&sql_definition, backend) {
             Ok(mut data) => {
                 if data
                     .resolve_references(resolver)
                     .map_err(|e| {
-                        tracing::debug!(view = %name, ?data, ?e, "Failed to resolve references");
+                        tracing::warn!(view = %name, error = %e, "Failed to infer nullablity for view fields");
                         e
                     })
                     .is_ok()
                 {
                     tracing::debug!(view = %name, ?data, "Inferred data");
                     if data.field_count() == column_data.len() {
-                        for (column_data, is_nullable) in column_data
-                            .iter_mut()
-                            .zip(data.infer_nullability(resolver)?)
-                        {
-                            tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
-                            if let Some(is_nullable) = is_nullable {
-                                column_data.ty.is_nullable = is_nullable;
+                        match data.infer_nullability(resolver) {
+                            Ok(nullability) => {
+                                for (column_data, is_nullable) in
+                                    column_data.iter_mut().zip(nullability)
+                                {
+                                    tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                                    match is_nullable {
+                                        IsNull::IsNullable => column_data.ty.is_nullable = true,
+                                        IsNull::NotNullable => column_data.ty.is_nullable = false,
+                                        IsNull::Unknown => {}
+                                    }
+                                }
+                            }
+                            // keep what the database reports, as for a view we cannot parse
+                            Err(e) => {
+                                tracing::warn!(view = %name, error = %e, "Failed to infer nullablity for view fields")
                             }
                         }
                     } else {
@@ -441,5 +581,20 @@ fn load_view_sql_definition(
         InferConnection::Mariadb(mariadb_connection) => Ok(
             super::information_schema::load_view_sql_definition(mariadb_connection, name)?,
         ),
+    }
+}
+
+/// The backend `connection` connects to, which decides how its view definitions are
+/// parsed and evaluated
+fn infer_query_backend(connection: &InferConnection) -> diesel_infer_query::Backend {
+    match connection {
+        #[cfg(feature = "postgres")]
+        InferConnection::Pg(_) => diesel_infer_query::Backend::Pg,
+        #[cfg(feature = "sqlite")]
+        InferConnection::Sqlite(_) => diesel_infer_query::Backend::Sqlite,
+        #[cfg(feature = "mysql")]
+        InferConnection::Mysql(_) => diesel_infer_query::Backend::Mysql,
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(_) => diesel_infer_query::Backend::Mariadb,
     }
 }

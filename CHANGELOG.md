@@ -56,6 +56,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
+* Added the experimental `--experimental-infer-nullable-for-views` option (`experimental_infer_nullable_for_views` in `diesel.toml`) to `diesel print-schema`, which infers from a view's definition which of its columns cannot be `NULL`, and keeps the nullability the database reports for every column it cannot prove non-null
 
 ### Fixed
 

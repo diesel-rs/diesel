@@ -1,0 +1,57 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT '123'::integer AS id, CAST(price AS text), name::varchar AS v_name FROM items"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "id",
+            ),
+            kind: Cast {
+                inner: Literal {
+                    value: Some(
+                        "123",
+                    ),
+                    is_null: false,
+                },
+                tpe: "INTEGER",
+                nullability: NullIfOperandNull,
+            },
+        },
+        SelectField {
+            ident: None,
+            kind: Cast {
+                inner: Field {
+                    schema: None,
+                    query_source: Some(
+                        "items",
+                    ),
+                    field_name: "price",
+                    nullable_row: false,
+                },
+                tpe: "TEXT",
+                nullability: NullIfOperandNull,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "v_name",
+            ),
+            kind: Cast {
+                inner: Field {
+                    schema: None,
+                    query_source: Some(
+                        "items",
+                    ),
+                    field_name: "name",
+                    nullable_row: false,
+                },
+                tpe: "VARCHAR",
+                nullability: NullIfOperandNull,
+            },
+        },
+    ],
+    subqueries: [],
+}

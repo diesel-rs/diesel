@@ -1,0 +1,58 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT project_id, user_id FROM assigned_tasks WHERE status = 'COMPLETED' INTERSECT SELECT product_id, associated_user FROM purchases WHERE purchased = TRUE"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: Some(
+                "project_id",
+            ),
+            kind: Combined {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "assigned_tasks",
+                    ),
+                    field_name: "project_id",
+                    nullable_row: false,
+                },
+                right: Field {
+                    schema: None,
+                    query_source: Some(
+                        "purchases",
+                    ),
+                    field_name: "product_id",
+                    nullable_row: false,
+                },
+                set_operator: Intersect,
+            },
+        },
+        SelectField {
+            ident: Some(
+                "user_id",
+            ),
+            kind: Combined {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "assigned_tasks",
+                    ),
+                    field_name: "user_id",
+                    nullable_row: false,
+                },
+                right: Field {
+                    schema: None,
+                    query_source: Some(
+                        "purchases",
+                    ),
+                    field_name: "associated_user",
+                    nullable_row: false,
+                },
+                set_operator: Intersect,
+            },
+        },
+    ],
+    subqueries: [],
+}
