@@ -11,8 +11,8 @@
 use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;
 use crate::expression::IntoSql;
-use crate::expression::NonAggregate;
-use crate::expression::subselect::ValidSubselect;
+use crate::expression::subselect::{ValidSubselect, ValidSubselectGrouping};
+use crate::expression::{MixedAggregates, NonAggregate};
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
@@ -98,6 +98,16 @@ where
     Source: ValidSubselect<QS>,
     Rhs: ValidSubselect<QS>,
 {
+}
+
+impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
+    for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+where
+    Source: ValidSubselectGrouping<GB>,
+    Rhs: ValidSubselectGrouping<GB>,
+    Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
+{
+    type IsAggregate = <Source::IsAggregate as MixedAggregates<Rhs::IsAggregate>>::Output;
 }
 
 impl<Combinator, Rule, Source, Rhs, O, LOf> RunQueryDslSupport

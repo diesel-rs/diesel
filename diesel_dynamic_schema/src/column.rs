@@ -2,6 +2,7 @@ use core::borrow::Borrow;
 use core::marker::PhantomData;
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, TypedExpressionType, ValidGrouping};
+use diesel::internal::table_macro::SubselectGroupBy;
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use diesel::query_source::ColumnHasTable;
@@ -53,6 +54,14 @@ where
 
 impl<T, U, ST> ValidGrouping<()> for Column<T, U, ST> {
     type IsAggregate = is_aggregate::No;
+}
+
+// The relation of a dynamic column is unknown, so it counts as an outer reference
+impl<T, U, ST, GB, From> ValidGrouping<SubselectGroupBy<GB, From>> for Column<T, U, ST>
+where
+    Self: ValidGrouping<GB>,
+{
+    type IsAggregate = <Self as ValidGrouping<GB>>::IsAggregate;
 }
 
 impl<T, U, ST, DB> QueryFragment<DB> for Column<T, U, ST>

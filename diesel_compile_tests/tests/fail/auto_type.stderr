@@ -1,17 +1,17 @@
 error: literals must have type suffix for auto_type, e.g. `2_i64`
-  --> tests/fail/auto_type.rs:46:13
+  --> tests/fail/auto_type.rs:47:13
    |
 LL |     let n = 2;
    |             ^
 
 error: can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
-  --> tests/fail/auto_type.rs:59:25
+  --> tests/fail/auto_type.rs:60:25
    |
 LL |     posts::user_id.eq::<_>()
    |                         ^
 
 error: literals must have type suffix for auto_type, e.g. `2_i64`
-  --> tests/fail/auto_type.rs:72:34
+  --> tests/fail/auto_type.rs:73:34
    |
 LL |             .filter(posts::id.gt(2)),
    |                                  ^
@@ -37,25 +37,53 @@ LL | fn user_has_post_with_id_greater_than(id_greater_than: i32) -> _ {
    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
-  --> tests/fail/auto_type.rs:46:13
+  --> tests/fail/auto_type.rs:47:13
    |
 LL |     let n = 2;
    |             ^ not allowed in type signatures
 
 error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
-  --> tests/fail/auto_type.rs:59:25
+  --> tests/fail/auto_type.rs:60:25
    |
 LL |     posts::user_id.eq::<_>()
    |                         ^ not allowed in type signatures
 
 error[E0121]: the placeholder `_` is not allowed within types on item signatures for associated types
-  --> tests/fail/auto_type.rs:72:34
+  --> tests/fail/auto_type.rs:73:34
    |
 LL |             .filter(posts::id.gt(2)),
    |                                  ^ not allowed in type signatures
 
+error[E0277]: the trait bound `id: ValidGrouping<SubselectGroupBy<(), ...>>` is not satisfied
+  --> tests/fail/auto_type.rs:36:10
+   |
+LL |         .filter(user_has_post_with_id_greater_than(id_greater_than))
+   |          ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `ValidGrouping<diesel::expression::subselect::SubselectGroupBy<(), diesel::query_builder::from_clause::FromClause<posts::table>>>` is not implemented for `users::columns::id`
+  --> tests/fail/auto_type.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+help: `users::columns::id` implements trait `ValidGrouping<GroupByClause>`
+  --> tests/fail/auto_type.rs:7:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+   |         |
+   |         `ValidGrouping<()>`
+   |         `ValidGrouping<__GB>`
+   |         `ValidGrouping<SubselectGroupBy<__GB, __F>>`
+   = note: required for `Eq<user_id, id>` to implement `ValidGrouping<SubselectGroupBy<(), ...>>`
+   = note: 1 redundant requirement hidden
+   = note: required for `And<Grouped<Eq<user_id, id>>, Grouped<...>>` to implement `ValidGrouping<SubselectGroupBy<(), ...>>`
+   = note: required for `Exists<SelectStatement<..., ..., ..., ...>>` to implement `NonAggregate`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<...>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error[E0061]: this method takes 1 argument but 0 arguments were supplied
-  --> tests/fail/auto_type.rs:59:20
+  --> tests/fail/auto_type.rs:60:20
    |
 LL |     posts::user_id.eq::<_>()
    |                    ^^^^^^^-- argument #1 is missing

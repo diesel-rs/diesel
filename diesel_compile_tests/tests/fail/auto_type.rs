@@ -35,6 +35,7 @@ fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
     users::table
         .filter(user_has_post_with_id_greater_than(id_greater_than))
         //~^ ERROR: type alias takes 0 generic arguments but 1 generic argument was supplied
+        //~| ERROR: the trait bound `id: ValidGrouping<SubselectGroupBy<(), ...>>` is not satisfied
         .select(users::name)
 }
 

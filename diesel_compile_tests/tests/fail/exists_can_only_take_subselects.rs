@@ -25,6 +25,8 @@ fn main() {
 
     users::table.filter(exists(true));
     //~^ ERROR: the trait bound `bool: SelectQuery` is not satisfied
+    //~| ERROR: `bool` cannot be used as a subselect
     users::table.filter(exists(users::id));
     //~^ ERROR: the trait bound `users::columns::id: SelectQuery` is not satisfied
+    //~| ERROR: `users::columns::id` cannot be used as a subselect
 }
