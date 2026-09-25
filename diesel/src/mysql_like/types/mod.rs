@@ -257,6 +257,18 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
     }
 }
 
+impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<sql_types::Float>> for DB {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
+        MysqlType::Float
+    }
+}
+
+impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<sql_types::Double>> for DB {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
+        MysqlType::Double
+    }
+}
+
 /// Represents the MySQL datetime type.
 ///
 /// ### [`ToSql`] impls
