@@ -416,12 +416,13 @@ impl Display for Error {
 }
 
 impl StdError for Error {
+    #[expect(deprecated)]
     fn cause(&self) -> Option<&dyn StdError> {
         match *self {
-            Error::InvalidCString(ref e) => Some(e),
-            Error::QueryBuilderError(ref e) => Some(&**e),
-            Error::DeserializationError(ref e) => Some(&**e),
-            Error::SerializationError(ref e) => Some(&**e),
+            Error::InvalidCString(ref e) => e.cause(),
+            Error::QueryBuilderError(ref e) => e.cause(),
+            Error::DeserializationError(ref e) => e.cause(),
+            Error::SerializationError(ref e) => e.cause(),
             Error::IntegerConversion(ref e) => Some(e),
             _ => None,
         }
