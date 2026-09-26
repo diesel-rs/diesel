@@ -556,8 +556,9 @@ macro_rules! impl_from_sql_row {
         where __DB: Backend,
               $T1: FromSqlRow<crate::sql_types::Untyped, __DB>,
             $(
-                $T: FromSqlRow<$ST, __DB> + StaticallySizedRow<$ST, __DB>,
-        )*
+                $ST: CompatibleType<$T, __DB>,
+                $T: FromSqlRow<<$ST as CompatibleType<$T, __DB>>::SqlType, __DB> + StaticallySizedRow<<$ST as CompatibleType<$T, __DB>>::SqlType, __DB>,
+            )*
         {
             #[allow(non_snake_case, unused_variables, unused_mut)]
             fn build_from_row<'a>(full_row: &impl Row<'a, __DB>)
@@ -569,7 +570,7 @@ macro_rules! impl_from_sql_row {
                 $(
                     let row = full_row.partial_row(static_field_count..static_field_count + $T::FIELD_COUNT);
                     static_field_count += $T::FIELD_COUNT;
-                    let $T = $T::build_from_row(&row)?;
+                    let $T = <$T as FromSqlRow<<$ST as CompatibleType<$T, __DB>>::SqlType, __DB>>::build_from_row(&row)?;
                 )*
 
                 let row = full_row.partial_row(static_field_count..field_count);

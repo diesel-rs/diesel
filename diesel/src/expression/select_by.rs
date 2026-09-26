@@ -97,6 +97,15 @@ where
     }
 }
 
+impl<T, DB> crate::util::TupleSize for SelectBy<T, DB>
+where
+    T: Selectable<DB>,
+    DB: Backend,
+    SqlTypeOf<T::SelectExpression>: crate::util::TupleSize,
+{
+    const SIZE: usize = <SqlTypeOf<T::SelectExpression> as crate::util::TupleSize>::SIZE;
+}
+
 impl<T, DB> QueryFragment<DB> for SelectBy<T, DB>
 where
     T: Selectable<DB>,

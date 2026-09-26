@@ -85,6 +85,42 @@ struct UserWithoutSelectable {
     name: String,
 }
 
+#[derive(Queryable)]
+struct PostWithoutSelectable {
+    id: i32,
+    title: String,
+}
+
+struct PostLookalike(i32, String);
+
+impl diesel::deserialize::FromStaticSqlRow<diesel::dsl::AsSelect<Post, diesel::pg::Pg>, diesel::pg::Pg>
+    for PostLookalike
+{
+    fn build_from_row<'a>(
+        row: &impl diesel::row::Row<'a, diesel::pg::Pg>,
+    ) -> diesel::deserialize::Result<Self> {
+        let (id, title) = <(i32, String) as diesel::deserialize::FromStaticSqlRow<
+            (diesel::sql_types::Integer, diesel::sql_types::Text),
+            diesel::pg::Pg,
+        >>::build_from_row(row)?;
+        Ok(PostLookalike(id, title))
+    }
+}
+
+impl Queryable<diesel::dsl::AsSelect<Post, diesel::pg::Pg>, diesel::pg::Pg> for PostLookalike {
+    type Row = Self;
+
+    fn build(row: Self) -> diesel::deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
+#[derive(QueryableByName)]
+struct Nickname {
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    nickname: String,
+}
+
 fn main() {
     let mut conn = PgConnection::establish("").unwrap();
 
@@ -256,6 +292,24 @@ fn main() {
         .select((Post::as_select(), posts::title))
         .load::<((i32, String), String)>(&mut conn)
         //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<..., _>` is not satisfied
+        .unwrap();
+    let _ = posts::table
+        .select(((Post::as_select(), posts::title), posts::id))
+        .load::<(((i32, String), String), i32)>(&mut conn)
+        //~^ ERROR: the trait bound `((..., ...), ...): CompatibleType<..., _>` is not satisfied
+        .unwrap();
+    let _ = posts::table
+        .select(((Post::as_select(), posts::title), posts::id))
+        .load::<((PostWithoutSelectable, String), i32)>(&mut conn)
+        //~^ ERROR: the trait bound `((..., ...), ...): CompatibleType<..., _>` is not satisfied
+        .unwrap();
+    let _ = posts::table
+        .select((
+            Post::as_select(),
+            diesel::dsl::sql::<diesel::sql_types::Untyped>("title AS nickname"),
+        ))
+        .load::<(PostLookalike, Nickname)>(&mut conn)
+        //~^ ERROR: the trait bound `(SelectBy<Post, _>, ...): CompatibleType<..., _>` is not satisfied
         .unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
