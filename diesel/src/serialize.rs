@@ -78,7 +78,7 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     }
 }
 
-#[cfg(test)]
+#[doc(hidden)]
 impl<'a, DB: Backend> Output<'a, 'static, DB> {
     /// Returns a `Output` suitable for testing `ToSql` implementations.
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
