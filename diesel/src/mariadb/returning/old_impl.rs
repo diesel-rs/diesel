@@ -1,16 +1,17 @@
 //! `UPDATE ... RETURNING OLD_VALUE(col)` support for MariaDB 13.0 and later.
 
-use crate::backend::Backend;
-use crate::deserialize::{self, FromSql, FromSqlRef};
+use crate::deserialize::SqlTypeLikeMarker;
 use crate::expression::{
-    AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
+    AppearsOnTable, Expression, QueryMetadata, SelectableExpression, TypedExpressionType,
+    ValidGrouping, is_aggregate,
 };
 use crate::mariadb::Mariadb;
 use crate::query_builder::returning::{OldIdent, ReturningQuerySource, UpdateStmt};
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::{AppearsInFromClause, Column};
 use crate::result::QueryResult;
-use crate::sql_types::{self, HasSqlType, SingleValue, SqlType, TypeMetadata};
+use crate::sql_types::{self, IntoNullable, SingleValue};
 use core::marker::PhantomData;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
@@ -81,7 +82,7 @@ where
     C: Column + Expression,
     C::SqlType: SingleValue,
 {
-    type SqlType = OldValueOf<<C as Expression>::SqlType>;
+    type SqlType = OldValueOf<C::SqlType>;
 }
 
 /// SQL type of [`old_value(col)`](old_value()), loaded like `ST` but accepted by
@@ -96,115 +97,45 @@ where
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct OldValueOf<ST>(PhantomData<ST>);
 
-impl<ST: SqlType> SqlType for OldValueOf<ST> {
-    type IsNull = ST::IsNull;
-}
-
-impl<ST: SingleValue> SingleValue for OldValueOf<ST> {}
-
-impl<ST> HasSqlType<OldValueOf<ST>> for Mariadb
-where
-    Mariadb: HasSqlType<ST>,
-{
-    fn metadata(lookup: &mut Self::MetadataLookup) -> <Mariadb as TypeMetadata>::TypeMetadata {
-        <Mariadb as HasSqlType<ST>>::metadata(lookup)
-    }
-}
-
-// Mirrors every MySQL-like leaf impl, owned types reach them through blanket impls.
-macro_rules! old_value_from_sql {
-    ($($(#[$meta:meta])* $st:ty => $rust:ty),* $(,)?) => {$(
-        $(#[$meta])*
-        #[diagnostic::do_not_recommend]
-        impl FromSql<OldValueOf<$st>, Mariadb> for $rust {
-            fn from_sql(value: <Mariadb as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
-                <$rust as FromSql<$st, Mariadb>>::from_sql(value)
-            }
-        }
-    )*};
-}
-
-old_value_from_sql!(
-    sql_types::TinyInt => i8,
-    sql_types::SmallInt => i16,
-    sql_types::Integer => i32,
-    sql_types::BigInt => i64,
-    sql_types::Unsigned<sql_types::TinyInt> => u8,
-    sql_types::Unsigned<sql_types::SmallInt> => u16,
-    sql_types::Unsigned<sql_types::Integer> => u32,
-    sql_types::Unsigned<sql_types::BigInt> => u64,
-    sql_types::Bool => bool,
-    sql_types::Float => f32,
-    sql_types::Double => f64,
-    sql_types::Text => *const str,
-    sql_types::Binary => *const [u8],
-    sql_types::Datetime => crate::mysql_like::data_types::MysqlTime,
-    sql_types::Timestamp => crate::mysql_like::data_types::MysqlTime,
-    sql_types::Time => crate::mysql_like::data_types::MysqlTime,
-    sql_types::Date => crate::mysql_like::data_types::MysqlTime,
-    #[cfg(feature = "chrono")]
-    sql_types::Datetime => chrono::NaiveDateTime,
-    #[cfg(feature = "chrono")]
-    sql_types::Timestamp => chrono::NaiveDateTime,
-    #[cfg(feature = "chrono")]
-    sql_types::Time => chrono::NaiveTime,
-    #[cfg(feature = "chrono")]
-    sql_types::Date => chrono::NaiveDate,
-    #[cfg(feature = "time")]
-    sql_types::Datetime => time::PrimitiveDateTime,
-    #[cfg(feature = "time")]
-    sql_types::Timestamp => time::PrimitiveDateTime,
-    #[cfg(feature = "time")]
-    sql_types::Datetime => time::OffsetDateTime,
-    #[cfg(feature = "time")]
-    sql_types::Timestamp => time::OffsetDateTime,
-    #[cfg(feature = "time")]
-    sql_types::Time => time::Time,
-    #[cfg(feature = "time")]
-    sql_types::Date => time::Date,
-    #[cfg(feature = "numeric")]
-    sql_types::Numeric => bigdecimal::BigDecimal,
-    #[cfg(feature = "serde_json")]
-    sql_types::Json => serde_json::Value,
-);
-
-macro_rules! old_value_from_sql_ref {
-    ($($st:ty => $rust:ty),* $(,)?) => {$(
-        #[diagnostic::do_not_recommend]
-        impl<'a> FromSqlRef<'a, OldValueOf<$st>, Mariadb> for &'a $rust {
-            fn from_sql(
-                bytes: &'a mut <Mariadb as Backend>::RawValue<'_>,
-            ) -> deserialize::Result<Self> {
-                <&'a $rust as FromSqlRef<'a, $st, Mariadb>>::from_sql(bytes)
-            }
-        }
-    )*};
-}
-
-old_value_from_sql_ref!(sql_types::Text => str, sql_types::Binary => [u8]);
-
 #[diagnostic::do_not_recommend]
-impl<T, ST> FromSql<OldValueOf<sql_types::Nullable<ST>>, Mariadb> for Option<T>
+impl<U, ST> CompatibleType<U, Mariadb> for OldValueOf<ST>
 where
-    T: FromSql<OldValueOf<ST>, Mariadb>,
-    ST: SqlType<IsNull = sql_types::is_nullable::NotNull>,
+    ST: CompatibleType<U, Mariadb>,
 {
-    fn from_sql(value: <Mariadb as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
-        T::from_sql(value).map(Some)
-    }
-
-    fn from_nullable_sql(
-        value: Option<<Mariadb as Backend>::RawValue<'_>>,
-    ) -> deserialize::Result<Self> {
-        value.map(T::from_sql).transpose()
-    }
+    type SqlType = ST;
 }
+
+impl<ST> TypedExpressionType for OldValueOf<ST> {}
+
+impl<ST> SqlTypeLikeMarker for OldValueOf<ST> {}
 
 impl<C> ValidGrouping<()> for OldValue<C>
 where
     C: Column,
 {
     type IsAggregate = is_aggregate::No;
+}
+
+impl<ST> IntoNullable for OldValueOf<ST> {
+    type Nullable = OldValueOf<sql_types::Nullable<ST>>;
+}
+
+impl<ST> QueryMetadata<OldValueOf<ST>> for Mariadb
+where
+    Self: QueryMetadata<ST>,
+{
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+        <Self as QueryMetadata<ST>>::row_metadata(lookup, out);
+    }
+}
+
+impl<ST> QueryMetadata<sql_types::Nullable<OldValueOf<ST>>> for Mariadb
+where
+    Self: QueryMetadata<ST>,
+{
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+        <Self as QueryMetadata<ST>>::row_metadata(lookup, out);
+    }
 }
 
 // `OldValue<C>` is selectable on a `RETURNING` clause whose statement-kind marker

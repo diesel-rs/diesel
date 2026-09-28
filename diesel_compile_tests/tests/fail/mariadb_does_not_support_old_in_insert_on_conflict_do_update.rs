@@ -36,6 +36,7 @@ fn main() {
         //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
         .get_result::<UpsertOldNew>(&mut connection)
         //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~| ERROR: the trait bound `SelectBy<UpsertOldNew, _>: CompatibleType<..., _>` is not satisfied
         .unwrap();
 
     // The plain tuple version mirrors the same constraint: writing

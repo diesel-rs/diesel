@@ -39,22 +39,25 @@ fn main() {
     // MariaDB rejects these as syntax errors
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
-        .returning(old_value(users::name).eq("Sean"));
-    //~^ ERROR: the trait bound `&str: AsExpression<OldValueOf<diesel::sql_types::Text>>` is not satisfied
-    //~| ERROR: the trait bound `str: ValidGrouping<()>` is not satisfied
-    //~| ERROR: cannot select `str` from `ReturningQuerySource<UpdateStmt, table>`
+        .returning(old_value(users::name).eq("Sean"))
+        //~^ ERROR: the method `eq` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
+        .execute(&mut conn);
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
-        .returning(old_value(users::id) + 1);
-    //~^ ERROR: cannot add `{integer}` to `diesel::mariadb::returning::old_impl::OldValue<columns::id>`
+        .returning(old_value(users::id) + 1)
+        //~^ ERROR: cannot add `{integer}` to `diesel::mariadb::returning::old_impl::OldValue<columns::id>`
+        .execute(&mut conn);
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
-        .returning(users::name.eq(old_value(users::name)));
-    //~^ ERROR: the trait bound `OldValue<name>: AsExpression<Text>` is not satisfied
+        .returning(users::name.eq(old_value(users::name)))
+        //~^ ERROR: the trait bound `OldValue<name>: AsExpression<Text>` is not satisfied
+        //~| ERROR: the trait bound `OldValueOf<diesel::sql_types::Text>: diesel::sql_types::SqlType` is not satisfied
+        .execute(&mut conn);
 
     // MariaDB evaluates this to the new value
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
-        .returning(old_value(users::name).concat("!"));
-    //~^ ERROR: the method `concat` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
+        .returning(old_value(users::name).concat("!"))
+        //~^ ERROR: the method `concat` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
+        .execute(&mut conn);
 }

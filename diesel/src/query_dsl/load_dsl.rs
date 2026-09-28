@@ -220,7 +220,8 @@ mod private {
         ST: SqlType + TypedExpressionType,
         U: Selectable<DB, SelectExpression = E>,
         E: Expression<SqlType = ST>,
-        U: FromSqlRow<ST, DB>,
+        ST: CompatibleType<U, DB>,
+        U: FromSqlRow<ST::SqlType, DB>,
     {
         type SqlType = ST;
     }

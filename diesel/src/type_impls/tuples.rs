@@ -1,7 +1,7 @@
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
 use crate::deserialize::{
-    self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
+    self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeLikeMarker, StaticallySizedRow,
 };
 use crate::expression::{
     AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable,
@@ -521,12 +521,12 @@ macro_rules! tuple_impls {
                 type SqlType = Nullable<<($($ST,)*) as CompatibleType<__T, __DB>>::SqlType>;
             }
 
-            impl<$($ST,)*> SqlTypeOrSelectable for ($($ST,)*)
-            where $($ST: SqlTypeOrSelectable,)*
+            impl<$($ST,)*> SqlTypeLikeMarker for ($($ST,)*)
+            where $($ST: SqlTypeLikeMarker,)*
             {}
 
-            impl<$($ST,)*> SqlTypeOrSelectable for Nullable<($($ST,)*)>
-            where ($($ST,)*): SqlTypeOrSelectable
+            impl<$($ST,)*> SqlTypeLikeMarker for Nullable<($($ST,)*)>
+            where ($($ST,)*): SqlTypeLikeMarker
             {}
         )+
     }

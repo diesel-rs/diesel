@@ -31,6 +31,42 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
  
     
+error[E0277]: the trait bound `SelectBy<UpsertOldNew, _>: CompatibleType<..., _>` is not satisfied
+    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:37:37
+     |
+  LL |         .get_result::<UpsertOldNew>(&mut connection)
+     |          ----------                 ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<UpsertOldNew, _>` is not implemented for `diesel::expression::select_by::SelectBy<UpsertOldNew, _>`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `UpsertOldNew` and in your query `.select(UpsertOldNew::as_select())` to get a better error message
+help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is conditionally implemented for `diesel::expression::select_by::SelectBy<U, DB>`
+    --> DIESEL/diesel/diesel/src/query_dsl/load_dsl.rs
+     |
+ LL | /     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
+ LL | |     where
+ LL | |         DB: Backend,
+ LL | |         ST: SqlType + TypedExpressionType,
+     | |             ------- unsatisfied requirement introduced here: `(OldValueOf<diesel::sql_types::Text>, diesel::sql_types::Text): diesel::sql_types::SqlType`
+...    |
+ LL | |         ST: CompatibleType<U, DB>,
+ LL | |         U: FromSqlRow<ST::SqlType, DB>,
+     | |_______________________________________^
+     = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UpsertOldNew>`
+note: required by a bound in `get_result`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+     |        ---------- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
+  
+     
 error[E0277]: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
     --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:37:37
      |
@@ -52,7 +88,7 @@ help: the trait `SelectableExpression<diesel::query_builder::returning::returnin
      = help: for that trait implementation, expected `UpdateStmt`, found `InsertStmtWithOnConflictDoUpdate`
      = note: required for `(OldValue<name>, name)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: 1 redundant requirement hidden
-     = note: required for `diesel::expression::select_by::SelectBy<UpsertOldNew, Mariadb>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+     = note: required for `diesel::expression::select_by::SelectBy<UpsertOldNew, _>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
      = note: required for `InsertStatement<table, ..., ..., ...>` to implement `LoadQuery<'_, _, UpsertOldNew>`
 note: required by a bound in `get_result`
@@ -66,7 +102,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:48:20
+   --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:49:20
     |
  LL |         .returning(old_value(users::name))
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -96,7 +132,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
     
 error[E0277]: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
-    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:50:31
+    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:51:31
      |
   LL |         .get_result::<String>(&mut connection)
      |          ----------           ^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -127,7 +163,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:60:20
+   --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:61:20
     |
  LL |         .returning(old_value(users::name).nullable())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -183,7 +219,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
     
 error[E0277]: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
-    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:62:39
+    --> tests/fail/mariadb_does_not_support_old_in_insert_on_conflict_do_update.rs:63:39
      |
   LL |         .get_result::<Option<String>>(&mut connection)
      |          ----------                   ^^^^^^^^^^^^^^^ unsatisfied trait bound

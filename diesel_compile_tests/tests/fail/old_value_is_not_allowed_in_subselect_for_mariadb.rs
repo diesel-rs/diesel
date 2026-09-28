@@ -47,9 +47,11 @@ fn main() {
         .set(users::name.eq("Renamed"))
         .returning((posts::table
             //~^ ERROR: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>` is not satisfied
+            //~| ERROR: the trait bound `OldValueOf<diesel::sql_types::Integer>: diesel::sql_types::SqlType` is not satisfied
             .select(posts::title)
             .filter(posts::user_id.eq(old_value(users::id)))
             //~^ ERROR: the trait bound `OldValue<id>: AsExpression<Integer>` is not satisfied
+            //~| ERROR: the trait bound `OldValueOf<diesel::sql_types::Integer>: diesel::sql_types::SqlType` is not satisfied
             .single_value(),))
         .execute(&mut conn)
         .unwrap();

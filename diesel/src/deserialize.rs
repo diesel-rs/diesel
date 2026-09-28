@@ -544,10 +544,10 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
 }
 
 #[doc(hidden)]
-pub trait SqlTypeOrSelectable {}
+pub trait SqlTypeLikeMarker {}
 
-impl<ST> SqlTypeOrSelectable for ST where ST: SqlType + SingleValue {}
-impl<U, DB> SqlTypeOrSelectable for SelectBy<U, DB>
+impl<ST> SqlTypeLikeMarker for ST where ST: SqlType + SingleValue {}
+impl<U, DB> SqlTypeLikeMarker for SelectBy<U, DB>
 where
     U: Selectable<DB>,
     DB: Backend,
@@ -557,7 +557,7 @@ where
 impl<T, ST, DB> FromSqlRow<ST, DB> for T
 where
     T: Queryable<ST, DB>,
-    ST: SqlTypeOrSelectable,
+    ST: SqlTypeLikeMarker,
     DB: Backend,
     T::Row: FromStaticSqlRow<ST, DB>,
 {
@@ -614,7 +614,7 @@ where
 
 impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
 where
-    ST: SqlTypeOrSelectable + crate::util::TupleSize,
+    ST: SqlTypeLikeMarker + crate::util::TupleSize,
     T: Queryable<ST, DB>,
     DB: Backend,
 {
