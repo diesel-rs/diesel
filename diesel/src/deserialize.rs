@@ -545,7 +545,7 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
 
 #[doc(hidden)]
 pub trait SqlTypeLikeMarker {
-    /// The SQL type `#[diesel(check_for_backend)]` checks `FromSqlRow` against
+    /// The SQL type a `Selectable` field of this type is deserialized from
     type SqlType;
 }
 
