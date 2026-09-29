@@ -37,14 +37,27 @@ struct Previous {
     name: String,
 }
 
-// An optional embed is meant for the nullable side of a join, and a
-// `RETURNING` clause has no join
 #[derive(Debug, Queryable, Selectable)]
 #[diesel(table_name = users)]
 struct OptionallyEmbedded {
     #[diesel(embed)]
     previous: Option<Previous>,
     name: String,
+}
+
+#[derive(Debug, Queryable, Selectable)]
+#[diesel(table_name = users)]
+struct PreviousColor {
+    #[diesel(select_expression = old_value(users::hair_color).assume_not_null())]
+    hair_color: String,
+}
+
+#[derive(Debug, Queryable, Selectable)]
+#[diesel(table_name = users)]
+struct Recolored {
+    #[diesel(embed)]
+    previous: Option<PreviousColor>,
+    hair_color: Option<String>,
 }
 
 fn main() {
@@ -121,10 +134,21 @@ fn main() {
         .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>())
         //~^ ERROR: the method `cast` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::id>`, but its trait bounds were not satisfied
         .execute(&mut conn);
-
+    // MariaDB returns the old values for these, but a nullable tuple needs
+    // every element to be a `SqlType`
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
         .returning(OptionallyEmbedded::as_select())
         //~^ ERROR: the associated function or constant `as_select` exists for struct `OptionallyEmbedded`, but its trait bounds were not satisfied
+        .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning(Recolored::as_select())
+        //~^ ERROR: the associated function or constant `as_select` exists for struct `Recolored`, but its trait bounds were not satisfied
+        .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning((old_value(users::name), old_value(users::hair_color)).nullable())
+        //~^ ERROR: cannot select `Nullable<(OldValue<name>, OldValue<hair_color>)>` from `ReturningQuerySource<UpdateStmt, table>`
         .execute(&mut conn);
 }
