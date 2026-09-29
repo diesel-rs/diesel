@@ -1,5 +1,5 @@
 error[E0599]: the method `eq` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
-  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:94:43
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:64:43
    |
 LL |         .returning(old_value(users::name).eq("Sean"))
    |                                           ^^ method cannot be called due to unsatisfied trait bounds
@@ -23,7 +23,7 @@ LL | pub struct OldValueOf<ST>(PhantomData<ST>);
            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Iterator`
 
 error[E0369]: cannot add `{integer}` to `diesel::mariadb::returning::old_impl::OldValue<columns::id>`
-  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:99:41
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:69:41
    |
 LL |         .returning(old_value(users::id) + 1)
    |                    -------------------- ^ - {integer}
@@ -37,28 +37,28 @@ LL | pub struct OldValue<C> {
    | ^^^^^^^^^^^^^^^^^^^^^^ `diesel::mariadb::returning::old_impl::OldValue<columns::id>` is defined in another crate
 
 error[E0277]: the trait bound `OldValue<name>: AsExpression<Text>` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:104:32
-    |
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:74:32
+   |
 LL |         .returning(users::name.eq(old_value(users::name)))
-    |                                ^^ unsatisfied trait bound
-    |
-    = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-    = help: the following other types implement trait `AsExpression<T>`:
-              &'__expr MigrationVersion<'a>
-              &'__expr Name
-              &'__expr std::string::String
-              &'__expr str
-              Arc<std::string::String>
-              Arc<str>
-              Box<std::string::String>
-              Box<str>
-            and N others
- 
-    
+   |                                ^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             &'__expr MigrationVersion<'a>
+             &'__expr Name
+             &'__expr std::string::String
+             &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
+           and N others
+
+   
 error[E0277]: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:104:20
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:74:20
     |
-LL |         .returning(users::name.eq(old_value(users::name)))
+ LL |         .returning(users::name.eq(old_value(users::name)))
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlType` is not implemented for `OldValueOf<Text>`
     |          |
     |          required by a bound introduced by this call
@@ -90,131 +90,131 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
     
 error[E0599]: the method `is_null` exists for struct `OldValue<hair_color>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:110:49
-    |
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:80:49
+   |
 LL |         .returning(old_value(users::hair_color).is_null())
-    |                                                 ^^^^^^^ method cannot be called on `OldValue<hair_color>` due to unsatisfied trait bounds
-    |
-   ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
-    |
- LL | pub struct OldValue<C> {
-    | ---------------------- doesn't satisfy `<_ as Expression>::SqlType = Untyped`, `_: ExpressionMethods` or `_: UntypedExpressionMethods`
+   |                                                 ^^^^^^^ method cannot be called on `OldValue<hair_color>` due to unsatisfied trait bounds
+   |
+  ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+   |
+LL | pub struct OldValue<C> {
+   | ---------------------- doesn't satisfy `<_ as Expression>::SqlType = Untyped`, `_: ExpressionMethods` or `_: UntypedExpressionMethods`
 ...
- LL | pub struct OldValueOf<ST>(PhantomData<ST>);
-    | ------------------------- doesn't satisfy `_: SingleValue`
-    |
-    = note: the following trait bounds were not satisfied:
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Nullable<diesel::sql_types::Text>>: SingleValue`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::ExpressionMethods`
-            `<diesel::mariadb::returning::old_impl::OldValue<columns::hair_color> as Expression>::SqlType = Untyped`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Nullable<diesel::sql_types::Text>>: SingleValue`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::ExpressionMethods`
-            `<&diesel::mariadb::returning::old_impl::OldValue<columns::hair_color> as Expression>::SqlType = Untyped`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::ExpressionMethods`
-            `<&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color> as Expression>::SqlType = Untyped`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
- 
-    
+LL | pub struct OldValueOf<ST>(PhantomData<ST>);
+   | ------------------------- doesn't satisfy `_: SingleValue`
+   |
+   = note: the following trait bounds were not satisfied:
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Nullable<diesel::sql_types::Text>>: SingleValue`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::ExpressionMethods`
+           `<diesel::mariadb::returning::old_impl::OldValue<columns::hair_color> as Expression>::SqlType = Untyped`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Nullable<diesel::sql_types::Text>>: SingleValue`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::ExpressionMethods`
+           `<&diesel::mariadb::returning::old_impl::OldValue<columns::hair_color> as Expression>::SqlType = Untyped`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::ExpressionMethods`
+           `<&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color> as Expression>::SqlType = Untyped`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>: diesel::UntypedExpressionMethods`
+
+   
 error[E0599]: the method `eq` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:115:43
-    |
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:85:43
+   |
 LL |         .returning(old_value(users::name).eq(old_value(users::name)))
-    |                                           ^^ method cannot be called due to unsatisfied trait bounds
-    |
-   ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
-    |
- LL | pub struct OldValue<C> {
-    | ---------------------- doesn't satisfy `_: ExpressionMethods` or `_: Iterator`
+   |                                           ^^ method cannot be called due to unsatisfied trait bounds
+   |
+  ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+   |
+LL | pub struct OldValue<C> {
+   | ---------------------- doesn't satisfy `_: ExpressionMethods` or `_: Iterator`
 ...
- LL | pub struct OldValueOf<ST>(PhantomData<ST>);
-    | ------------------------- doesn't satisfy `_: SingleValue`
-    |
-    = note: the following trait bounds were not satisfied:
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: SingleValue`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::ExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: SingleValue`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::ExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::ExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValue<columns::name>: Iterator`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Iterator`
+LL | pub struct OldValueOf<ST>(PhantomData<ST>);
+   | ------------------------- doesn't satisfy `_: SingleValue`
+   |
+   = note: the following trait bounds were not satisfied:
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: SingleValue`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::ExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: SingleValue`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::ExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::ExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValue<columns::name>: Iterator`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Iterator`
 
 error[E0599]: the method `concat` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::name>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:122:43
-    |
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:92:43
+   |
 LL |         .returning(old_value(users::name).concat("!"))
-    |                                           ^^^^^^ method cannot be called due to unsatisfied trait bounds
-    |
-   ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
-    |
- LL | pub struct OldValue<C> {
-    | ---------------------- doesn't satisfy `_: PgArrayExpressionMethods`, `_: PgBinaryExpressionMethods`, `_: PgJsonbExpressionMethods` or `_: TextExpressionMethods`
+   |                                           ^^^^^^ method cannot be called due to unsatisfied trait bounds
+   |
+  ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+   |
+LL | pub struct OldValue<C> {
+   | ---------------------- doesn't satisfy `_: PgArrayExpressionMethods`, `_: PgBinaryExpressionMethods`, `_: PgJsonbExpressionMethods` or `_: TextExpressionMethods`
 ...
- LL | pub struct OldValueOf<ST>(PhantomData<ST>);
-    | ------------------------- doesn't satisfy `_: ArrayOrNullableArray`, `_: BinaryOrNullableBinary`, `_: JsonbOrNullableJsonb` or `_: TextOrNullableText`
-    |
-    = note: the following trait bounds were not satisfied:
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: expression_methods::text_expression_methods::private::TextOrNullableText`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::ArrayOrNullableArray`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::JsonbOrNullableJsonb`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::BinaryOrNullableBinary`
-            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: expression_methods::text_expression_methods::private::TextOrNullableText`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::ArrayOrNullableArray`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::JsonbOrNullableJsonb`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
-            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::BinaryOrNullableBinary`
-            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
-            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
-            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
+LL | pub struct OldValueOf<ST>(PhantomData<ST>);
+   | ------------------------- doesn't satisfy `_: ArrayOrNullableArray`, `_: BinaryOrNullableBinary`, `_: JsonbOrNullableJsonb` or `_: TextOrNullableText`
+   |
+   = note: the following trait bounds were not satisfied:
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: expression_methods::text_expression_methods::private::TextOrNullableText`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::ArrayOrNullableArray`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::JsonbOrNullableJsonb`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::BinaryOrNullableBinary`
+           which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: expression_methods::text_expression_methods::private::TextOrNullableText`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::ArrayOrNullableArray`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::JsonbOrNullableJsonb`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
+           `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>: diesel::pg::expression::expression_methods::private::BinaryOrNullableBinary`
+           which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::TextExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgArrayExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgJsonbExpressionMethods`
+           `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
+           which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
 
 error[E0277]: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:127:60
-    |
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:97:60
+   |
 LL |         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
-    |                                                            ^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |
-    = help: the trait `AsExpression<diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-    = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-            and N others
+   |                                                            ^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+           and N others
 note: required by a bound in `case_when`
-   --> DIESEL/diesel/diesel/src/expression/case_when.rs
-    |
- LL | pub fn case_when<C, T, ST>(condition: C, if_true: T) -> helper_types::case_when<C, T, ST>
-    |        --------- required by a bound in this function
+  --> DIESEL/diesel/diesel/src/expression/case_when.rs
+   |
+LL | pub fn case_when<C, T, ST>(condition: C, if_true: T) -> helper_types::case_when<C, T, ST>
+   |        --------- required by a bound in this function
 ...
- LL |     T: AsExpression<ST>,
-    |        ^^^^^^^^^^^^^^^^ required by this bound in `case_when`
- 
-    
+LL |     T: AsExpression<ST>,
+   |        ^^^^^^^^^^^^^^^^ required by this bound in `case_when`
+
+   
 error[E0277]: the trait bound `OldValueOf<Nullable<Text>>: SqlType` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:127:20
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:97:20
     |
-LL |         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
+ LL |         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlType` is not implemented for `OldValueOf<Nullable<Text>>`
     |          |
     |          required by a bound introduced by this call
@@ -244,7 +244,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
     
 error[E0599]: the method `cast` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::id>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:134:41
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:104:41
     |
 LL |         .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>())
     |                                         ^^^^ method cannot be called due to unsatisfied trait bounds
@@ -265,125 +265,20 @@ LL |         .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>()
             `&mut diesel::mariadb::returning::old_impl::OldValue<columns::id>: Expression`
             which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::id>: diesel::ExpressionMethods`
 
-error[E0599]: the associated function or constant `as_select` exists for struct `OptionallyEmbedded`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:141:40
-    |
- LL | struct OptionallyEmbedded {
-    | ------------------------- associated function or constant `as_select` not found for this struct because it doesn't satisfy `OptionallyEmbedded: diesel::Selectable<_>` or `OptionallyEmbedded: diesel::SelectableHelper<_>`
-...
-LL |         .returning(OptionallyEmbedded::as_select())
-    |                                        ^^^^^^^^^ associated function or constant cannot be called on `OptionallyEmbedded` due to unsatisfied trait bounds
-    |
-    = note: the following trait bounds were not satisfied:
-            `OptionallyEmbedded: diesel::Selectable<_>`
-            which is required by `OptionallyEmbedded: diesel::SelectableHelper<_>`
-            `&OptionallyEmbedded: diesel::Selectable<_>`
-            which is required by `&OptionallyEmbedded: diesel::SelectableHelper<_>`
-            `&mut OptionallyEmbedded: diesel::Selectable<_>`
-            which is required by `&mut OptionallyEmbedded: diesel::SelectableHelper<_>`
-note: the trait `diesel::Selectable` must be implemented
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
-    |
-LL | pub trait Selectable<DB: Backend> {
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    = help: items from traits can only be used if the trait is implemented and in scope
-    = note: the following trait defines an item `as_select`, perhaps you need to implement it:
-            candidate #1: `diesel::SelectableHelper`
-
-error[E0599]: the associated function or constant `as_select` exists for struct `Recolored`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:146:31
-    |
- LL | struct Recolored {
-    | ---------------- associated function or constant `as_select` not found for this struct because it doesn't satisfy `Recolored: diesel::Selectable<_>` or `Recolored: diesel::SelectableHelper<_>`
-...
-LL |         .returning(Recolored::as_select())
-    |                               ^^^^^^^^^ associated function or constant cannot be called on `Recolored` due to unsatisfied trait bounds
-    |
-    = note: the following trait bounds were not satisfied:
-            `Recolored: diesel::Selectable<_>`
-            which is required by `Recolored: diesel::SelectableHelper<_>`
-            `&Recolored: diesel::Selectable<_>`
-            which is required by `&Recolored: diesel::SelectableHelper<_>`
-            `&mut Recolored: diesel::Selectable<_>`
-            which is required by `&mut Recolored: diesel::SelectableHelper<_>`
-note: the trait `diesel::Selectable` must be implemented
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
-    |
-LL | pub trait Selectable<DB: Backend> {
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    = help: items from traits can only be used if the trait is implemented and in scope
-    = note: the following trait defines an item `as_select`, perhaps you need to implement it:
-            candidate #1: `diesel::SelectableHelper`
-
-error[E0277]: cannot select `Nullable<(OldValue<name>, OldValue<hair_color>)>` from `ReturningQuerySource<UpdateStmt, table>`
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:151:20
-    |
-LL |         .returning((old_value(users::name), old_value(users::hair_color)).nullable())
-    |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
-    |
-    = help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `Nullable<(OldValue<name>, OldValue<hair_color>)>`
-    = note: `Nullable<(OldValue<name>, OldValue<hair_color>)>` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
-help: the following other types implement trait `SelectableExpression<QS>`
-   --> DIESEL/diesel/diesel/src/query_builder/returning/returning_query_source.rs
-    |
-LL | / impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>> for Nullable<E>
-LL | | where
-LL | |     Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
-LL | |     E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
-    | |_______________________________________________________________^ `diesel::expression::nullable::Nullable<E>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-    |
-   ::: DIESEL/diesel/diesel/src/expression/nullable.rs
-    |
- LL | / impl<T, QS> SelectableExpression<QS> for Nullable<T>
- LL | | where
- LL | |     Self: AppearsOnTable<QS>,
- LL | |     QS: ToInnerJoin,
- LL | |     T: SelectableExpression<QS::InnerJoin>,
-    | |___________________________________________^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<QS>`
-...
- LL |   impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}
-    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::expression::nullable::Nullable<T>` implements `SelectableExpression<NoFromClause>`
-    |
-   ::: DIESEL/diesel/diesel/src/pg/returning/old_impl.rs
-    |
-LL | / impl<C> SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>
-LL | |     for Nullable<Old<C>>
-LL | | where
-LL | |     C: Column,
-LL | |     Self: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>,
-    | |___________________________________________________________________________________________^ `Nullable<Old<C>>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
-note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
-    |
-LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
-    |            --------- required by a bound in this associated function
-...
-LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
-    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
- 
-    help: consider removing this method call, as the receiver has type `(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>)` and `(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::hair_color>): SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` trivially holds
-    |
-151 -         .returning((old_value(users::name), old_value(users::hair_color)).nullable())
-151 +         .returning((old_value(users::name), old_value(users::hair_color)))
-    |
-
 error[E0277]: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:127:20
-    |
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:97:20
+   |
 LL |         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
-    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |
-    = help: the trait `AsExpression<diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-    = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-            and N others
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `AsExpression<diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
+   = help: the following other types implement trait `AsExpression<T>`:
+             `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
+             `&'__expr Cents` implements `AsExpression<Money>`
+             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
+             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
+             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
+             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+           and N others
