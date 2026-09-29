@@ -2,7 +2,7 @@
 
 // MariaDB 13 returns the old values for all of these, but they do not compile
 // yet because a nullable tuple requires every element to be a `SqlType`
-
+#![allow(warnings)]
 extern crate diesel;
 
 use diesel::mariadb::returning::old_value;
