@@ -217,12 +217,12 @@ mod private {
     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
     where
         DB: Backend,
-        ST: SqlType + TypedExpressionType,
+        ST: TypedExpressionType,
         U: Selectable<DB, SelectExpression = E>,
         E: Expression<SqlType = ST>,
         ST: CompatibleType<U, DB>,
         U: FromSqlRow<ST::SqlType, DB>,
     {
-        type SqlType = ST;
+        type SqlType = ST::SqlType;
     }
 }

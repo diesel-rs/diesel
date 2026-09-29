@@ -809,6 +809,165 @@ fn returning_old_value_of_nullable_and_unsigned_columns() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn returning_old_value_for_every_updated_row() {
+    use crate::schema::users;
+    use diesel::mariadb::returning::old_value;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let mut rows = update(users::table)
+        .set(users::name.eq("Jim"))
+        .returning((old_value(users::name), users::name))
+        .load::<(String, String)>(connection)
+        .unwrap();
+    rows.sort();
+    assert_eq!(
+        vec![
+            ("Sean".to_string(), "Jim".to_string()),
+            ("Tess".to_string(), "Jim".to_string()),
+        ],
+        rows,
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn returning_boxed_old_value() {
+    use crate::schema::users;
+    use diesel::mariadb::returning::old_value;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let was = update(users::table.find(sean.id))
+        .set(users::name.eq("Jim"))
+        .returning(Box::new(old_value(users::name)))
+        .get_result::<String>(connection);
+    assert_eq!(Ok("Sean".to_string()), was);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn returning_old_value_into_type_with_hand_written_from_sql() {
+    use crate::schema::users;
+    use diesel::backend::Backend;
+    use diesel::deserialize::{self, FromSql, FromSqlRow};
+    use diesel::mariadb::Mariadb;
+    use diesel::mariadb::returning::old_value;
+
+    #[derive(Debug, PartialEq, FromSqlRow)]
+    struct Nickname(String);
+
+    impl FromSql<sql_types::Text, Mariadb> for Nickname {
+        fn from_sql(value: <Mariadb as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+            <String as FromSql<sql_types::Text, Mariadb>>::from_sql(value).map(Nickname)
+        }
+    }
+
+    impl Selectable<Mariadb> for Nickname {
+        type SelectExpression = diesel::mariadb::returning::old_value<users::name>;
+
+        fn construct_selection() -> Self::SelectExpression {
+            old_value(users::name)
+        }
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users, check_for_backend(Mariadb))]
+    struct Renamed {
+        #[diesel(select_expression = old_value(users::name))]
+        was: Nickname,
+        #[diesel(select_expression = old_value(users::hair_color))]
+        hair_was: Option<Nickname>,
+        name: Nickname,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let was = update(users::table.find(sean.id))
+        .set(users::name.eq("Jim"))
+        .returning(old_value(users::name))
+        .get_result::<Nickname>(connection);
+    assert_eq!(Ok(Nickname("Sean".to_string())), was);
+
+    let row = update(users::table.find(sean.id))
+        .set(users::name.eq("Sean"))
+        .returning(Renamed::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Renamed {
+            was: Nickname("Jim".to_string()),
+            hair_was: None,
+            name: Nickname("Sean".to_string()),
+        }),
+        row,
+    );
+
+    let was = update(users::table.find(sean.id))
+        .set(users::name.eq("Tim"))
+        .returning(Nickname::as_select())
+        .get_result(connection);
+    assert_eq!(Ok(Nickname("Sean".to_string())), was);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn returning_old_value_in_embedded_selectable() {
+    use crate::schema::users;
+    use diesel::mariadb::Mariadb;
+    use diesel::mariadb::returning::old_value;
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users, check_for_backend(Mariadb))]
+    struct Previous {
+        #[diesel(select_expression = old_value(users::name))]
+        name: String,
+        #[diesel(select_expression = old_value(users::hair_color))]
+        hair_color: Option<String>,
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users, check_for_backend(Mariadb))]
+    struct Renamed {
+        #[diesel(embed)]
+        previous: Previous,
+        name: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let row = update(users::table.find(sean.id))
+        .set(users::name.eq("Jim"))
+        .returning(Renamed::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Renamed {
+            previous: Previous {
+                name: "Sean".to_string(),
+                hair_color: None,
+            },
+            name: "Jim".to_string(),
+        }),
+        row,
+    );
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn returning_subselect_and_old_in_update() {
     use crate::schema::{posts, users};

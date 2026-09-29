@@ -11,7 +11,8 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::{AppearsInFromClause, Column};
 use crate::result::QueryResult;
-use crate::sql_types::{self, IntoNullable, SingleValue};
+use crate::sql_types::{IntoNullable, SingleValue};
+use crate::util::TupleSize;
 use core::marker::PhantomData;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
@@ -85,15 +86,11 @@ where
     type SqlType = OldValueOf<C::SqlType>;
 }
 
-/// SQL type of [`old_value(col)`](old_value()), loaded like `ST` but accepted by
-/// no literal, column or `ST`-typed function, the positions where
+/// SQL type of [`old_value(col)`](old_value()). It loads into the same Rust
+/// types as `ST` through `CompatibleType`, and since it implements neither
+/// `SqlType` nor `SingleValue`, no operator, function or comparison accepts it.
+/// Those are the positions where
 /// [MDEV-40126](https://jira.mariadb.org/browse/MDEV-40126) breaks `OLD_VALUE`.
-/// `.is_null()` and `old_value(a).eq(old_value(b))` still compile, although
-/// MariaDB rejects `OLD_VALUE` as an operand there too.
-///
-/// A type with a hand-written `FromSql<ST, Mariadb>` impl also needs
-/// `FromSql<OldValueOf<ST>, Mariadb>` to load from `old_value(col)`, which
-/// `#[derive(Enum)]` already generates.
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct OldValueOf<ST>(PhantomData<ST>);
 
@@ -107,7 +104,13 @@ where
 
 impl<ST> TypedExpressionType for OldValueOf<ST> {}
 
-impl<ST> SqlTypeLikeMarker for OldValueOf<ST> {}
+impl<ST> SqlTypeLikeMarker for OldValueOf<ST> {
+    type SqlType = ST;
+}
+
+impl<ST: TupleSize> TupleSize for OldValueOf<ST> {
+    const SIZE: usize = ST::SIZE;
+}
 
 impl<C> ValidGrouping<()> for OldValue<C>
 where
@@ -116,20 +119,11 @@ where
     type IsAggregate = is_aggregate::No;
 }
 
-impl<ST> IntoNullable for OldValueOf<ST> {
-    type Nullable = OldValueOf<sql_types::Nullable<ST>>;
+impl<ST: IntoNullable> IntoNullable for OldValueOf<ST> {
+    type Nullable = OldValueOf<ST::Nullable>;
 }
 
 impl<ST> QueryMetadata<OldValueOf<ST>> for Mariadb
-where
-    Self: QueryMetadata<ST>,
-{
-    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
-        <Self as QueryMetadata<ST>>::row_metadata(lookup, out);
-    }
-}
-
-impl<ST> QueryMetadata<sql_types::Nullable<OldValueOf<ST>>> for Mariadb
 where
     Self: QueryMetadata<ST>,
 {

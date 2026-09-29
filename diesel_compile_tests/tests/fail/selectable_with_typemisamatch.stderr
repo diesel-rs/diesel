@@ -103,7 +103,7 @@ help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is
  LL | /     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
  LL | |     where
  LL | |         DB: Backend,
- LL | |         ST: SqlType + TypedExpressionType,
+ LL | |         ST: TypedExpressionType,
 ...    |
  LL | |         ST: CompatibleType<U, DB>,
      | |             --------------------- unsatisfied requirement introduced here: `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::query_dsl::load_dsl::private::CompatibleType<User, _>`

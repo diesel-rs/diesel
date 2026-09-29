@@ -1,14 +1,6 @@
 use super::derive;
 use super::expand_with;
 
-fn snapshot_name(name: &str) -> String {
-    if cfg!(feature = "mariadb") {
-        format!("{name} (mariadb)")
-    } else {
-        name.to_owned()
-    }
-}
-
 #[test]
 pub(crate) fn enum_1() {
     let input = quote::quote! {
@@ -25,7 +17,7 @@ pub(crate) fn enum_1() {
         &crate::derive_enum_inner as &dyn Fn(_) -> _,
         input,
         derive(syn::parse_quote!(#[derive(Enum)])),
-        &snapshot_name("enum_1"),
+        "enum_1",
     );
 }
 
@@ -45,7 +37,7 @@ pub(crate) fn enum_2() {
         &crate::derive_enum_inner as &dyn Fn(_) -> _,
         input,
         derive(syn::parse_quote!(#[derive(Enum)])),
-        &snapshot_name("enum_2"),
+        "enum_2",
     );
 }
 
@@ -66,7 +58,7 @@ fn rename_all() {
         &crate::derive_enum_inner as &dyn Fn(_) -> _,
         input,
         derive(syn::parse_quote!(#[derive(Enum)])),
-        &snapshot_name("enum_rename_all"),
+        "enum_rename_all",
     );
 }
 
@@ -89,6 +81,6 @@ fn rename_single() {
         &crate::derive_enum_inner as &dyn Fn(_) -> _,
         input,
         derive(syn::parse_quote!(#[derive(Enum)])),
-        &snapshot_name("enum_rename_single"),
+        "enum_rename_single",
     );
 }

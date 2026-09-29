@@ -544,14 +544,24 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
 }
 
 #[doc(hidden)]
-pub trait SqlTypeLikeMarker {}
+pub trait SqlTypeLikeMarker {
+    /// The SQL type `#[diesel(check_for_backend)]` checks `FromSqlRow` against
+    type SqlType;
+}
 
-impl<ST> SqlTypeLikeMarker for ST where ST: SqlType + SingleValue {}
+impl<ST> SqlTypeLikeMarker for ST
+where
+    ST: SqlType + SingleValue,
+{
+    type SqlType = ST;
+}
+
 impl<U, DB> SqlTypeLikeMarker for SelectBy<U, DB>
 where
     U: Selectable<DB>,
     DB: Backend,
 {
+    type SqlType = Self;
 }
 
 impl<T, ST, DB> FromSqlRow<ST, DB> for T

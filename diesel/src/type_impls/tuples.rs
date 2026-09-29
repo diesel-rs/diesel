@@ -523,11 +523,15 @@ macro_rules! tuple_impls {
 
             impl<$($ST,)*> SqlTypeLikeMarker for ($($ST,)*)
             where $($ST: SqlTypeLikeMarker,)*
-            {}
+            {
+                type SqlType = Self;
+            }
 
             impl<$($ST,)*> SqlTypeLikeMarker for Nullable<($($ST,)*)>
             where ($($ST,)*): SqlTypeLikeMarker
-            {}
+            {
+                type SqlType = Self;
+            }
         )+
     }
 }
