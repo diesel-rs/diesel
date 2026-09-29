@@ -11,7 +11,7 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::{AppearsInFromClause, Column};
 use crate::result::QueryResult;
-use crate::sql_types::{IntoNullable, SingleValue};
+use crate::sql_types::{IntoNotNullable, IntoNullable, SingleValue};
 use crate::util::TupleSize;
 use core::marker::PhantomData;
 
@@ -121,6 +121,10 @@ where
 
 impl<ST: IntoNullable> IntoNullable for OldValueOf<ST> {
     type Nullable = OldValueOf<ST::Nullable>;
+}
+
+impl<ST: IntoNotNullable> IntoNotNullable for OldValueOf<ST> {
+    type NotNullable = OldValueOf<ST::NotNullable>;
 }
 
 impl<ST> QueryMetadata<OldValueOf<ST>> for Mariadb

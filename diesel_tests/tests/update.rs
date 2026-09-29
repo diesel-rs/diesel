@@ -855,6 +855,58 @@ fn returning_boxed_old_value() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "mariadb")]
+fn returning_old_value_assumed_not_null() {
+    use crate::schema::users;
+    use diesel::mariadb::Mariadb;
+    use diesel::mariadb::returning::old_value;
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users, check_for_backend(Mariadb))]
+    struct Recolored {
+        #[diesel(select_expression = old_value(users::hair_color).assume_not_null())]
+        was: String,
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let was = update(users::table.find(sean.id))
+        .set(users::hair_color.eq("black"))
+        .returning(old_value(users::hair_color).assume_not_null().nullable())
+        .get_result::<Option<String>>(connection);
+    assert_eq!(Ok(None), was);
+
+    let was = update(users::table.find(sean.id))
+        .set(users::hair_color.eq("red"))
+        .returning(old_value(users::hair_color).assume_not_null())
+        .get_result::<String>(connection);
+    assert_eq!(Ok("black".to_string()), was);
+
+    let was = update(users::table.find(sean.id))
+        .set(users::name.eq("Jim"))
+        .returning(old_value(users::name).nullable().assume_not_null())
+        .get_result::<String>(connection);
+    assert_eq!(Ok("Sean".to_string()), was);
+
+    let row = update(users::table.find(sean.id))
+        .set(users::hair_color.eq("brown"))
+        .returning(Recolored::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Recolored {
+            was: "red".to_string(),
+            hair_color: Some("brown".to_string()),
+        }),
+        row,
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
 fn returning_old_value_into_type_with_hand_written_from_sql() {
     use crate::schema::users;
     use diesel::backend::Backend;

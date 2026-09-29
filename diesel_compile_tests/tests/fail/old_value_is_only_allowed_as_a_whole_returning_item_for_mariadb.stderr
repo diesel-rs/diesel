@@ -243,8 +243,30 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
     
+error[E0599]: the method `cast` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::id>`, but its trait bounds were not satisfied
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:121:41
+    |
+LL |         .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>())
+    |                                         ^^^^ method cannot be called due to unsatisfied trait bounds
+    |
+   ::: DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+    |
+ LL | pub struct OldValue<C> {
+    | ---------------------- doesn't satisfy `_: ExpressionMethods`
+...
+ LL | pub struct OldValueOf<ST>(PhantomData<ST>);
+    | ------------------------- doesn't satisfy `_: SingleValue`
+    |
+    = note: the following trait bounds were not satisfied:
+            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Integer>: SingleValue`
+            which is required by `diesel::mariadb::returning::old_impl::OldValue<columns::id>: diesel::ExpressionMethods`
+            `diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Integer>: SingleValue`
+            which is required by `&diesel::mariadb::returning::old_impl::OldValue<columns::id>: diesel::ExpressionMethods`
+            `&mut diesel::mariadb::returning::old_impl::OldValue<columns::id>: Expression`
+            which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::id>: diesel::ExpressionMethods`
+
 error[E0599]: the associated function or constant `as_select` exists for struct `OptionallyEmbedded`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:122:40
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:127:40
     |
  LL | struct OptionallyEmbedded {
     | ------------------------- associated function or constant `as_select` not found for this struct because it doesn't satisfy `OptionallyEmbedded: diesel::Selectable<_>` or `OptionallyEmbedded: diesel::SelectableHelper<_>`

@@ -116,6 +116,11 @@ fn main() {
         //~| ERROR: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
         //~| ERROR: the trait bound `OldValueOf<Nullable<Text>>: SqlType` is not satisfied
         .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>())
+        //~^ ERROR: the method `cast` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::id>`, but its trait bounds were not satisfied
+        .execute(&mut conn);
 
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
