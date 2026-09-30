@@ -36,6 +36,8 @@ fn main() {
     let query = users::table
         .left_join(posts::table)
         .select((users::name, (Post::as_select(),).nullable()));
-    //~^ ERROR: the trait bound `(name, Nullable<(SelectBy<Post, _>,)>): Expression` is not satisfied
     let _ = diesel::debug_query::<diesel::sqlite::Sqlite, _>(&query).to_string();
+    let mut conn = SqliteConnection::establish("…").unwrap();
+    let _ = query.get_result::<(String, Option<Post>)>(&mut conn).unwrap();
+    //~^ ERROR: the trait bound `(Text, Nullable<(...,)>): CompatibleType<..., _>` is not satisfied
 }
