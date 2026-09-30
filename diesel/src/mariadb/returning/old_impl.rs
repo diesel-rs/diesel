@@ -53,6 +53,11 @@ impl<C> OldValue<C> {
 /// is rejected at compile time, because it is invalid
 /// there. (Note that `ON CONFLICT DO NOTHING` never returns untouched rows.)
 ///
+/// On MariaDB 13.0, `old_value` of a view column that is an expression or a
+/// constant crashes the server
+/// ([MDEV-40125](https://jira.mariadb.org/browse/MDEV-40125)). MariaDB 13.1.1
+/// returns the right value.
+///
 /// # Example
 ///
 /// ```rust
