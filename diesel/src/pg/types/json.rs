@@ -59,6 +59,7 @@ mod tests {
     use crate::query_builder::bind_collector::ByteWrapper;
     use crate::serialize::{Output, ToSql};
     use crate::sql_types;
+    use crate::test_helpers::format_error;
 
     #[diesel_test_helper::test]
     fn json_to_sql() {
@@ -81,7 +82,7 @@ mod tests {
     fn bad_json_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Json, Pg>::from_sql(PgValue::for_test(b"boom"));
-        assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
+        assert_eq!(format_error(&*uuid.unwrap_err()), "Invalid Json");
     }
 
     #[diesel_test_helper::test]
@@ -89,7 +90,7 @@ mod tests {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Json, Pg>::from_nullable_sql(None);
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }
@@ -115,7 +116,7 @@ mod tests {
     fn bad_jsonb_from_sql() {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Jsonb, Pg>::from_sql(PgValue::for_test(b"\x01boom"));
-        assert_eq!(uuid.unwrap_err().to_string(), "Invalid Json");
+        assert_eq!(format_error(&*uuid.unwrap_err()), "Invalid Json");
     }
 
     #[diesel_test_helper::test]
@@ -123,7 +124,7 @@ mod tests {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Jsonb, Pg>::from_sql(PgValue::for_test(b"\x02true"));
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unsupported JSONB encoding version"
         );
     }
@@ -133,7 +134,7 @@ mod tests {
         let uuid: Result<serde_json::Value, _> =
             FromSql::<sql_types::Jsonb, Pg>::from_nullable_sql(None);
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }

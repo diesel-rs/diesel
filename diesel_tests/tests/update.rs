@@ -1,3 +1,4 @@
+use crate::format_error;
 use crate::schema::*;
 use diesel::*;
 
