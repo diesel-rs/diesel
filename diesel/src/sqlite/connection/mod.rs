@@ -13,7 +13,11 @@ mod limits;
 #[cfg(all(
     test,
     feature = "std",
-    not(all(target_family = "wasm", target_os = "unknown"))
+    not(all(target_family = "wasm", target_os = "unknown")),
+    // Its only consumers read memory allocated by the native library or rely
+    // on native code invoking a panic hook, neither of which is supported when
+    // running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    not(miri)
 ))]
 #[allow(unsafe_code)]
 mod oom_test_support;
@@ -1739,24 +1743,37 @@ impl SqliteConnection {
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
-        use crate::sql_types::{Integer, Text};
+        // When running under miri with a native libsqlite3 (see
+        // `-Zmiri-native-lib`), native code is not allowed to call back into
+        // Rust. Registering `diesel_manage_updated_at` hands a Rust function
+        // pointer to sqlite, whose `xDestroy` callback is invoked by native
+        // code when the connection is closed, which miri rejects. As miri is
+        // only used to run a subset of the test suite, we skip the registration
+        // entirely in that case.
+        #[cfg(miri)]
+        return Ok(());
 
-        // This function has side effects (creates triggers), so it should not
-        // be deterministic. We use DIRECTONLY to prevent it from being called
-        // from malicious schema objects in untrusted databases.
-        functions::register::<Text, Integer, _, _, _>(
-            &self.raw_connection,
-            "diesel_manage_updated_at",
-            SqliteFunctionBehavior::DIRECTONLY,
-            |conn, table_name: String| {
-                conn.exec(&alloc::format!(
-                    include_str!("diesel_manage_updated_at.sql"),
-                    table_name = table_name
-                ))
-                .expect("Failed to create trigger");
-                0 // have to return *something*
-            },
-        )
+        #[cfg(not(miri))]
+        {
+            use crate::sql_types::{Integer, Text};
+
+            // This function has side effects (creates triggers), so it should not
+            // be deterministic. We use DIRECTONLY to prevent it from being called
+            // from malicious schema objects in untrusted databases.
+            functions::register::<Text, Integer, _, _, _>(
+                &self.raw_connection,
+                "diesel_manage_updated_at",
+                SqliteFunctionBehavior::DIRECTONLY,
+                |conn, table_name: String| {
+                    conn.exec(&alloc::format!(
+                        include_str!("diesel_manage_updated_at.sql"),
+                        table_name = table_name
+                    ))
+                    .expect("Failed to create trigger");
+                    0 // have to return *something*
+                },
+            )
+        }
     }
 
     fn establish_inner(database_url: &str) -> Result<SqliteConnection, ConnectionError> {
@@ -2011,6 +2028,10 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[allow(unsafe_code)]
     fn with_raw_connection_can_execute_raw_sql() {
         let connection = &mut connection();
@@ -2095,6 +2116,10 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[allow(unsafe_code)]
     fn with_raw_connection_can_read_database_filename() {
         let connection = &mut connection();
@@ -2198,6 +2223,10 @@ mod tests {
     // Filesystem access is not available in WASM
     #[diesel_test_helper::test]
     #[allow(unsafe_code)]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn with_raw_connection_can_read_file_database_filename() {
         let dir = std::env::temp_dir().join("diesel_test_filename.db");
@@ -2245,6 +2274,10 @@ mod tests {
         fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn database_serializes_and_deserializes_successfully() {
         let expected_users = vec![
@@ -2293,6 +2326,10 @@ mod tests {
         }
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn database_deserialize_random_bytes() {
         let buffer = vec![0, 1, 2, 3, 4];
@@ -2358,7 +2395,11 @@ mod tests {
 
     #[cfg(all(
         feature = "std",
-        not(all(target_family = "wasm", target_os = "unknown"))
+        not(all(target_family = "wasm", target_os = "unknown")),
+        // These tests read memory allocated by the native library or rely on
+        // native code invoking a panic hook, neither of which is supported when
+        // running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+        not(miri)
     ))]
     #[allow(unsafe_code)]
     mod sqlite_serialize_oom {
@@ -2452,6 +2493,10 @@ mod tests {
         }
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_custom_function() {
         let connection = &mut connection();
@@ -2475,6 +2520,10 @@ mod tests {
         assert_eq!("fOoBaR", mapped_string);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_multiarg_function() {
         let connection = &mut connection();
@@ -2484,6 +2533,10 @@ mod tests {
         assert_eq!(Ok(3), added);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_noarg_function() {
         let connection = &mut connection();
@@ -2493,6 +2546,10 @@ mod tests {
         assert_eq!(Ok(42), answer);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut connection();
@@ -2502,6 +2559,10 @@ mod tests {
         assert_eq!(Ok(42), answer);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_nondeterministic_function() {
         let connection = &mut connection();
@@ -2541,6 +2602,10 @@ mod tests {
         }
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_aggregate_function() {
         use self::my_sum_example::dsl::*;
@@ -2567,6 +2632,10 @@ mod tests {
         assert_eq!(Ok(6), result);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
@@ -2628,6 +2697,10 @@ mod tests {
         }
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_aggregate_multiarg_function() {
         use self::range_max_example::dsl::*;
@@ -2668,6 +2741,10 @@ mod tests {
         }
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn register_collation_function() {
         use self::my_collation_example::dsl::*;
@@ -2835,6 +2912,10 @@ mod tests {
         assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(2));
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn last_insert_rowid_unchanged_after_failed_insert() {
         let conn = &mut connection();
@@ -3132,6 +3213,10 @@ mod tests {
         assert_eq!(buf, b"abc");
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn aggregate_function_works_with_aligned_data() {
         #[derive(Debug, Default)]
@@ -3165,6 +3250,10 @@ mod tests {
             .unwrap();
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn sum_twice() {
         #[derive(Default)]
@@ -3224,6 +3313,10 @@ mod tests {
         assert_eq!(second_res, 0);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn test_injection() {
         diesel::table! {
@@ -3272,6 +3365,10 @@ mod tests {
         assert_eq!(conn.get_limit(SqliteLimit::ExprDepth), first);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_length() {
         let mut conn = connection();
@@ -3290,6 +3387,10 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_column_count() {
         // A wide result set runs under the default column limit but fails once the limit is
@@ -3310,6 +3411,10 @@ mod tests {
         assert!(crate::sql_query(&wide).execute(&mut conn).is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_expr_depth() {
         let mut conn = connection();
@@ -3321,6 +3426,10 @@ mod tests {
         assert!(crate::sql_query(&deep).execute(&mut conn).is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_compound_select() {
         let mut conn = connection();
@@ -3341,6 +3450,10 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_vdbe_op() {
         // The same heavy statement runs under the default opcode budget but fails once that
@@ -3355,6 +3468,10 @@ mod tests {
         assert!(crate::sql_query(heavy).execute(&mut conn).is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_function_arg() {
         let mut conn = connection();
@@ -3373,6 +3490,10 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_attached() {
         let mut conn = connection();
@@ -3386,6 +3507,10 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_variable_number() {
         let mut conn = connection();
@@ -3405,6 +3530,10 @@ mod tests {
         assert!(crate::sql_query(&past_limit).execute(&mut conn).is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_trigger_depth() {
         use crate::connection::SimpleConnection;
@@ -3448,6 +3577,10 @@ mod tests {
         assert!(crate::sql_query("SELECT 1").execute(&mut conn).is_ok());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_sql_length() {
         let mut conn = connection();
@@ -3459,6 +3592,10 @@ mod tests {
         assert!(result.is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn set_limit_enforces_like_pattern_length() {
         let mut conn = connection();
@@ -3740,6 +3877,10 @@ mod tests {
         assert!(conn.is_writable_schema().unwrap());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn db_config_attach_create_roundtrip() {
         let conn = &mut connection();
@@ -3752,6 +3893,10 @@ mod tests {
         assert!(conn.is_attach_create_enabled().unwrap());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn db_config_attach_write_roundtrip() {
         let conn = &mut connection();
@@ -3775,6 +3920,10 @@ mod tests {
         assert!(!conn.is_writable_schema().unwrap());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn foreign_keys_enabled_enforces_constraints() {
         let conn = &mut connection();
@@ -3795,6 +3944,10 @@ mod tests {
         assert!(result.is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn views_disabled_blocks_view_queries() {
         let conn = &mut connection();
@@ -3859,6 +4012,10 @@ mod tests {
         assert_eq!(1, count, "trigger should fire while enabled");
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn dqs_dml_controls_double_quoted_string_literals() {
         let conn = &mut connection();
@@ -3875,6 +4032,10 @@ mod tests {
         assert_eq!(Ok("bare_token".to_owned()), enabled);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn dqs_ddl_controls_double_quoted_string_literals() {
         let conn = &mut connection();
@@ -3896,6 +4057,10 @@ mod tests {
         assert!(enabled.is_ok());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn writable_schema_controls_direct_sqlite_master_writes() {
         let conn = &mut connection();
@@ -3915,6 +4080,10 @@ mod tests {
         assert!(crate::sql_query(update).execute(conn).is_ok());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn fts3_tokenizer_disabled_blocks_the_function() {
         let conn = &mut connection();
@@ -3936,8 +4105,9 @@ mod tests {
     }
 
     // These ATTACH tests need a real filesystem (temp files), which is not
-    // available on the wasm target, where SQLite is in-memory only.
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // available on the wasm target, where SQLite is in-memory only. Their only
+    // consumers are also compiled out under miri (see the individual tests).
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn temp_db_path(name: &str) -> (tempfile::TempDir, std::path::PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join(name);
@@ -3945,6 +4115,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_create_disabled_blocks_new_database_files() {
         let conn = &mut connection();
@@ -3971,6 +4145,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_write_disabled_opens_attached_databases_read_only() {
         let conn = &mut connection();
@@ -4044,6 +4222,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_database_supports_cross_schema_join_then_detach() {
         use crate::connection::SimpleConnection;
@@ -4096,6 +4278,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_database_binds_path_verbatim_without_quoting() {
         // A single quote in the path would break a hand-assembled ATTACH statement.
@@ -4114,7 +4300,7 @@ mod tests {
         assert_eq!(count, 0);
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn conn_attach_roundtrip(path: &std::path::Path) {
         use crate::connection::SimpleConnection;
 
@@ -4127,6 +4313,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_database_interprets_file_uri_query_parameters() {
         // Seed a database with a row to read through the attached schema.
@@ -4164,6 +4354,10 @@ mod tests {
         conn.detach_database("ro_schema").unwrap();
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_and_detach_surface_errors_without_panicking() {
         let conn = &mut connection();
@@ -4205,6 +4399,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn attach_database_honors_create_and_write_hardening_knobs() {
         use crate::connection::SimpleConnection;
@@ -4251,6 +4449,10 @@ mod tests {
         fn innocuous_fn() -> Integer;
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn directonly_function_blocked_from_view() {
         let conn = &mut connection();
@@ -4280,6 +4482,10 @@ mod tests {
         assert!(result.is_err());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn innocuous_function_allowed_from_view_with_untrusted_schema() {
         let conn = &mut connection();
@@ -4518,6 +4724,10 @@ mod tests {
         assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn unknown_schema_is_reported_as_an_error() {
         let conn = &mut connection();
@@ -4658,6 +4868,10 @@ mod tests {
         assert_eq!(0, conn.freelist_count(None).unwrap());
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn incremental_vacuum_of_an_unknown_schema_is_an_error() {
         let conn = &mut connection();
@@ -4731,6 +4945,10 @@ mod tests {
         assert!(conn.page_count(Some("aux")).unwrap() < before);
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn vacuum_inside_a_transaction_is_an_error() {
         use crate::connection::Connection;
@@ -4742,6 +4960,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn vacuum_into_writes_a_readable_copy_through_a_quoted_path() {
         let dir = tempfile::tempdir().unwrap();
@@ -4770,6 +4992,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn vacuum_into_refuses_to_overwrite_an_existing_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -4789,6 +5015,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn vacuum_into_copies_the_named_attached_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -4852,8 +5082,9 @@ mod tests {
         );
     }
 
-    // WAL requires a real file.
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // WAL requires a real file. Its only consumers are also compiled out under
+    // miri (see the individual tests).
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn wal_connection(path: &std::path::Path) -> SqliteConnection {
         let mut conn = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
         conn.batch_execute("PRAGMA journal_mode = WAL").unwrap();
@@ -4861,6 +5092,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_truncate_reports_an_emptied_wal() {
         let dir = tempfile::tempdir().unwrap();
@@ -4891,6 +5126,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_accepts_every_mode() {
         let dir = tempfile::tempdir().unwrap();
@@ -4931,6 +5170,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_noop_reports_state_without_moving_frames() {
         let dir = tempfile::tempdir().unwrap();
@@ -4963,6 +5206,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_reports_busy_while_a_reader_holds_an_old_snapshot() {
         use crate::connection::Connection;
@@ -5017,6 +5264,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_targets_the_named_attached_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -5051,6 +5302,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_unqualified_covers_every_attached_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -5085,6 +5340,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_escapes_a_double_quote_in_the_schema_name() {
         // An unquoted identifier would be a syntax error, and the wrong quoting
@@ -5108,6 +5367,10 @@ mod tests {
         assert_eq!(Some(0), outcome.log_frames, "the quoted schema was reached");
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_of_an_unknown_schema_is_an_error() {
         let conn = &mut connection();
@@ -5119,6 +5382,10 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_checkpoint_inside_a_transaction_is_an_error() {
         use crate::connection::Connection;

@@ -593,6 +593,9 @@ mod tests {
         SqliteConnection::establish(":memory:").unwrap()
     }
 
+    // Only used by tests that are compiled out under miri (see the
+    // individual tests below).
+    #[cfg(not(miri))]
     #[derive(crate::QueryableByName)]
     struct CountResult {
         #[diesel(sql_type = crate::sql_types::BigInt)]
@@ -617,6 +620,9 @@ mod tests {
         }
     }
 
+    // Only used by tests that are compiled out under miri (see the
+    // individual tests below).
+    #[cfg(not(miri))]
     fn setup_hook_tables(conn: &mut SqliteConnection) {
         crate::sql_query(
             "CREATE TABLE hook_users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)",
@@ -632,6 +638,9 @@ mod tests {
 
     // A schema-qualified `table!` marker routes only to its attached database,
     // even when a same-named table exists in `main`.
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn router_on_matches_schema_qualified_table() {
         use std::sync::{Arc, Mutex};
@@ -679,6 +688,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn router_on_dispatches_to_typed_table() {
         use std::sync::{Arc, Mutex};
@@ -707,6 +719,9 @@ mod tests {
         assert_eq!(events[0].1, 1); // rowid
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_delete_fires_only_for_delete() {
         use std::sync::{Arc, Mutex};
@@ -741,6 +756,9 @@ mod tests {
         assert_eq!(events[0], SqliteChangeOp::Delete);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn every_matching_route_fires_in_order() {
         use std::sync::{Arc, Mutex};
@@ -768,6 +786,9 @@ mod tests {
         assert_eq!(*order.lock().unwrap(), vec![1, 2]);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn remove_update_stops_dispatch() {
         use std::sync::{Arc, Mutex};
@@ -798,6 +819,9 @@ mod tests {
         assert_eq!(*fired.lock().unwrap(), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn events_fire_immediately_during_statement() {
         use std::sync::{Arc, Mutex};
@@ -828,6 +852,9 @@ mod tests {
         assert_eq!(*fired.lock().unwrap(), vec![1i64]);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_update_fires_for_update_only() {
         use std::sync::{Arc, Mutex};
@@ -859,6 +886,9 @@ mod tests {
         assert_eq!(*count.lock().unwrap(), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_update_receives_every_change() {
         use std::sync::{Arc, Mutex};
@@ -895,6 +925,9 @@ mod tests {
         assert_eq!(evts[3], (SqliteChangeOp::Delete, "hook_posts".to_owned()));
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn router_filters_by_op_mask() {
         use std::sync::{Arc, Mutex};
@@ -925,6 +958,9 @@ mod tests {
         assert_eq!(*count.lock().unwrap(), 2);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn router_dispatches_to_multiple_tables() {
         use std::sync::{Arc, Mutex};
@@ -957,6 +993,9 @@ mod tests {
         assert_eq!(*post_count.lock().unwrap(), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_any_audit_plus_specific_route() {
         use std::sync::{Arc, Mutex};
@@ -991,6 +1030,9 @@ mod tests {
         assert_eq!(*user_insert_count.lock().unwrap(), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn rowid_in_filters_by_table() {
         use std::sync::{Arc, Mutex};
@@ -1019,6 +1061,9 @@ mod tests {
         assert_eq!(*captured.lock().unwrap(), vec![1i64]);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn is_from_matches_table_marker() {
         use std::sync::{Arc, Mutex};
@@ -1044,6 +1089,9 @@ mod tests {
         assert_eq!(*captured.lock().unwrap(), vec![(true, false)]);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn hooks_fire_across_transactions() {
         use std::sync::{Arc, Mutex};
@@ -1122,6 +1170,9 @@ mod tests {
     /// the implicit deletion of the conflicting row does NOT fire the update
     /// hook. Only the INSERT for the new row fires.
     /// See: https://www.sqlite.org/c3ref/update_hook.html
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn update_hook_silent_for_on_conflict_replace_deletion() {
         use std::sync::{Arc, Mutex};
@@ -1206,6 +1257,9 @@ mod tests {
 
     /// When a table has triggers, the truncate optimization is disabled, so
     /// DELETE without WHERE fires per-row DELETE events as normal.
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn update_hook_fires_for_delete_all_when_triggers_disable_truncate() {
         use std::sync::{Arc, Mutex};
@@ -1252,6 +1306,9 @@ mod tests {
     /// Modifications to internal system tables like sqlite_sequence
     /// (used by AUTOINCREMENT) do not trigger the update hook.
     /// See: https://www.sqlite.org/c3ref/update_hook.html
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn update_hook_silent_for_internal_sqlite_sequence() {
         use std::sync::{Arc, Mutex};
@@ -1293,6 +1350,9 @@ mod tests {
     /// INSERT OR REPLACE on the primary key itself: when a row with the same
     /// PK already exists, the old row is silently deleted and the new row is
     /// inserted. The hook reports only the INSERT, not the implicit DELETE.
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn update_hook_silent_for_replace_into_on_pk_conflict() {
         use std::sync::{Arc, Mutex};
@@ -1345,6 +1405,9 @@ mod tests {
     /// freed memory. This documents that the feature works through the move that
     /// real code performs (returning a connection, storing it in a struct,
     /// handing it to a pool, etc.).
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn change_hook_fires_after_connection_move() {
         use std::sync::{Arc, Mutex};
@@ -1376,6 +1439,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn router_filters_table_and_op() {
         use std::sync::{Arc, Mutex};
@@ -1410,6 +1476,9 @@ mod tests {
         assert_eq!(events, vec![SqliteChangeOp::Insert, SqliteChangeOp::Update]);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_commit_fires_on_commit() {
         let conn = &mut connection();
@@ -1433,6 +1502,9 @@ mod tests {
         assert_eq!(count.load(Ordering::Relaxed), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_commit_returning_true_forces_rollback() {
         let conn = &mut connection();
@@ -1480,6 +1552,9 @@ mod tests {
         assert_eq!(cnt, 0);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn replacing_commit_hook_drops_old() {
         let conn = &mut connection();
@@ -1537,6 +1612,9 @@ mod tests {
         assert_eq!(count.load(Ordering::Relaxed), 0);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_rollback_fires_on_explicit_rollback() {
         let conn = &mut connection();
@@ -1563,6 +1641,9 @@ mod tests {
         assert_eq!(count.load(Ordering::Relaxed), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_rollback_fires_when_commit_hook_forces_rollback() {
         let conn = &mut connection();
@@ -1647,6 +1728,9 @@ mod tests {
     const HEAVY_QUERY: &str = "WITH RECURSIVE c(x) AS \
         (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < 100000) SELECT count(*) FROM c";
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_progress_interrupts_query() {
         let conn = &mut connection();
@@ -1685,9 +1769,11 @@ mod tests {
     // platforms, including WASM. The file-backed databases used here cannot
     // be created on WASM, so only the tests are gated out.
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     /// Helper: create a file-backed connection in WAL mode (WAL requires a real
     /// file, and every WAL test below wants the connection already in WAL mode).
+    /// Its only consumers are also compiled out under miri (see the
+    /// individual tests below).
     fn wal_connection() -> (SqliteConnection, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.db");
@@ -1699,6 +1785,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_fires_in_wal_mode() {
         let (conn, _dir) = &mut wal_connection();
@@ -1735,6 +1824,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn replacing_wal_hook_drops_old() {
         let (conn, _dir) = &mut wal_connection();
@@ -1778,6 +1870,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn remove_wal_hook_disables_callback() {
         let (conn, _dir) = &mut wal_connection();
@@ -1803,6 +1898,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_hook_does_not_fire_in_default_journal_mode() {
         // A plain file connection left in the default journal mode ("delete"),
@@ -1834,6 +1932,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_can_use_borrowed_connection() {
         let (conn, _dir) = &mut wal_connection();
@@ -1868,6 +1969,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_callback_write_re_enters_hook() {
         let (conn, _dir) = &mut wal_connection();
@@ -1918,6 +2022,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_fires_once_per_transaction_commit() {
         let (conn, _dir) = &mut wal_connection();
@@ -1956,6 +2063,9 @@ mod tests {
     // database (`:memory:` connections do not share a lock), and
     // `tempfile::tempdir()` panics on WASM due to the lack of a filesystem.
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_busy_handler_is_invoked_on_lock_contention() {
         let dir = tempfile::tempdir().unwrap();
@@ -1995,6 +2105,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_authorize_deny_rejects_statement() {
         let conn = &mut connection();
@@ -2026,6 +2139,9 @@ mod tests {
             .unwrap();
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn remove_authorizer_re_prepares_cached_statements() {
         use crate::prelude::*;
@@ -2077,6 +2193,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_authorize_re_prepares_cached_statements() {
         use crate::prelude::*;
@@ -2129,6 +2248,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_trace_reports_statement_and_profile() {
         use std::sync::Mutex;
@@ -2183,6 +2305,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn remove_trace_stops_events() {
         use std::sync::atomic::AtomicUsize;
@@ -2217,6 +2342,9 @@ mod tests {
         crate::sql_query("SELECT 1").execute(conn).unwrap();
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn replacing_collation_needed_hook_drops_old() {
         use std::sync::atomic::AtomicBool;
@@ -2255,6 +2383,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn collation_needed_fires_and_registers_collation() {
         use crate::sqlite::SqliteTextRep;
@@ -2312,6 +2443,9 @@ mod tests {
         crate::sql_query("SELECT 1").execute(conn).unwrap();
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn callback_can_be_reentered_from_within_its_own_body() {
         use std::sync::atomic::AtomicBool;
@@ -2370,6 +2504,9 @@ mod tests {
         );
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn remove_collation_needed_hook_stops_future_callbacks() {
         let conn = &mut connection();

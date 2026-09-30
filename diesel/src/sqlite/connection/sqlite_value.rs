@@ -458,7 +458,11 @@ mod tests {
 
     #[cfg(all(
         feature = "std",
-        not(all(target_family = "wasm", target_os = "unknown"))
+        not(all(target_family = "wasm", target_os = "unknown")),
+        // These tests read memory allocated by the native library or rely on
+        // native code invoking a panic hook, neither of which is supported when
+        // running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+        not(miri)
     ))]
     mod allocation_failure {
         use super::super::SqliteValue;
@@ -813,6 +817,10 @@ mod tests {
         assert_eq!(zero_blob_value.read_blob(), b"");
     }
 
+    // Reads text values, which requires accessing memory allocated by the
+    // native library. That is not supported when running under miri with a
+    // native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn blob_bytes_survive_a_text_read_of_the_same_value() {
         use crate::prelude::*;
@@ -844,6 +852,10 @@ mod tests {
         );
     }
 
+    // Reads text values, which requires accessing memory allocated by the
+    // native library. That is not supported when running under miri with a
+    // native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[expect(clippy::approx_constant)] // we really want to use 3.14
     #[diesel_test_helper::test]
     fn can_convert_all_values() {
