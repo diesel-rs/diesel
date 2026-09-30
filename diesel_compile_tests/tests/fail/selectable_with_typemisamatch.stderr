@@ -103,15 +103,15 @@ help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is
  LL | /     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
  LL | |     where
  LL | |         DB: Backend,
- LL | |         ST: SqlType + TypedExpressionType,
+ LL | |         ST: TypedExpressionType + SqlTypeLikeMarker,
  LL | |         U: Selectable<DB, SelectExpression = E>,
  LL | |         E: Expression<SqlType = ST>,
- LL | |         U: FromSqlRow<ST, DB>,
-     | |____________------------------^
+ LL | |         U: FromSqlRow<<ST as SqlTypeLikeMarker>::SqlType, DB>,
+     | |____________--------------------------------------------------^
      |              |
-     |              unsatisfied requirement introduced here: `User: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), _>`
-     |              unsatisfied requirement introduced here: `User: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), _>`
-     |              unsatisfied requirement introduced here: `User: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), _>`
+     |              unsatisfied requirement introduced here: `User: FromSqlRow<<(diesel::sql_types::Integer, diesel::sql_types::Text) as diesel::deserialize::SqlTypeLikeMarker>::SqlType, _>`
+     |              unsatisfied requirement introduced here: `User: FromSqlRow<<(diesel::sql_types::Integer, diesel::sql_types::Text) as diesel::deserialize::SqlTypeLikeMarker>::SqlType, _>`
+     |              unsatisfied requirement introduced here: `User: FromSqlRow<<(diesel::sql_types::Integer, diesel::sql_types::Text) as diesel::deserialize::SqlTypeLikeMarker>::SqlType, _>`
      = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
