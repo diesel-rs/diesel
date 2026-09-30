@@ -907,6 +907,163 @@ fn returning_old_value_assumed_not_null() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "mariadb")]
+fn returning_old_value_in_nullable_tuples() {
+    use crate::schema::users;
+    use diesel::mariadb::returning::old_value;
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct PreviousName {
+        #[diesel(select_expression = old_value(users::name))]
+        name: String,
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct Renamed {
+        #[diesel(embed)]
+        previous: Option<PreviousName>,
+        name: String,
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct PreviousColor {
+        #[diesel(select_expression = old_value(users::hair_color).assume_not_null())]
+        hair_color: String,
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct Recolored {
+        #[diesel(embed)]
+        previous: Option<PreviousColor>,
+        hair_color: Option<String>,
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct PreviousNullableColor {
+        #[diesel(select_expression = old_value(users::hair_color))]
+        hair_color: Option<String>,
+    }
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct NullablyRecolored {
+        #[diesel(embed)]
+        previous: Option<PreviousNullableColor>,
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let row = update(users::table.find(sean.id))
+        .set(users::name.eq("Jim"))
+        .returning(Renamed::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Renamed {
+            previous: Some(PreviousName {
+                name: "Sean".to_string(),
+            }),
+            name: "Jim".to_string(),
+        }),
+        row,
+    );
+
+    let row = update(users::table.find(sean.id))
+        .set(users::hair_color.eq("black"))
+        .returning(Recolored::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Recolored {
+            previous: None,
+            hair_color: Some("black".to_string()),
+        }),
+        row,
+    );
+
+    let row = update(users::table.find(sean.id))
+        .set(users::hair_color.eq("red"))
+        .returning(Recolored::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Recolored {
+            previous: Some(PreviousColor {
+                hair_color: "black".to_string(),
+            }),
+            hair_color: Some("red".to_string()),
+        }),
+        row,
+    );
+
+    let row = update(users::table.find(sean.id))
+        .set(users::hair_color.eq(None::<String>))
+        .returning(NullablyRecolored::as_select())
+        .get_result(connection);
+    assert_eq!(
+        Ok(NullablyRecolored {
+            previous: Some(PreviousNullableColor {
+                hair_color: Some("red".to_string()),
+            }),
+            hair_color: None,
+        }),
+        row,
+    );
+
+    let was = update(users::table.find(sean.id))
+        .set(users::name.eq("Sean"))
+        .returning((old_value(users::name), old_value(users::hair_color)).nullable())
+        .get_result::<Option<(String, Option<String>)>>(connection);
+    assert_eq!(Ok(Some(("Jim".to_string(), None))), was);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn returning_old_value_in_nested_selections() {
+    use crate::schema::users;
+    use diesel::mariadb::returning::old_value;
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct Renamed {
+        #[diesel(select_expression = (old_value(users::name), old_value(users::id)))]
+        was: (String, i32),
+        name: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    if !mariadb_server_supports_update_returning(connection) {
+        return;
+    }
+
+    let sean = find_user_by_name("Sean", connection);
+    let row = update(users::table.find(sean.id))
+        .set(users::name.eq("Jim"))
+        .returning(((old_value(users::name),), users::name))
+        .get_result::<((String,), String)>(connection);
+    assert_eq!(Ok((("Sean".to_string(),), "Jim".to_string())), row);
+
+    let row = update(users::table.find(sean.id))
+        .set(users::name.eq("Tim"))
+        .returning(Renamed::as_returning())
+        .get_result(connection);
+    assert_eq!(
+        Ok(Renamed {
+            was: ("Jim".to_string(), sean.id),
+            name: "Tim".to_string(),
+        }),
+        row,
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
 fn returning_old_value_into_type_with_hand_written_from_sql() {
     use crate::schema::users;
     use diesel::backend::Backend;

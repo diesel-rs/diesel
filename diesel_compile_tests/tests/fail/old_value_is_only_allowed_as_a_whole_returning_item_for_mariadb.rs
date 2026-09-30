@@ -104,4 +104,35 @@ fn main() {
         .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>())
         //~^ ERROR: the method `cast` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::id>`, but its trait bounds were not satisfied
         .execute(&mut conn);
+
+    // A nullable tuple of `old_value` is still no operand
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning(diesel::dsl::case_when(
+            //~^ ERROR: the trait bound `Nullable<(OldValueOf<Text>,)>: IntoNullable` is not satisfied
+            users::id.eq(1),
+            (old_value(users::name),).nullable(),
+            //~^ ERROR: the trait bound `Nullable<(OldValue<name>,)>: AsExpression<...>` is not satisfied
+        ))
+        .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning((old_value(users::name),).nullable().assume_not_null())
+        //~^ ERROR: cannot select `AssumeNotNull<Nullable<(OldValue<name>,)>>` from `ReturningQuerySource<UpdateStmt, table>`
+        .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning((old_value(users::name),).nullable().eq((old_value(users::name),).nullable()))
+        //~^ ERROR: the method `eq` exists for struct `Nullable<(OldValue<name>,)>`, but its trait bounds were not satisfied
+        .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning((old_value(users::name), old_value(users::id)).nullable().is_null())
+        //~^ ERROR: the method `is_null` exists for struct `Nullable<(OldValue<name>, OldValue<id>)>`, but its trait bounds were not satisfied
+        .execute(&mut conn);
+    diesel::update(users::table)
+        .set(users::name.eq("Renamed"))
+        .returning(users::id.nullable().eq_any((old_value(users::id),).nullable()))
+        //~^ ERROR: `Nullable<(OldValue<id>,)>` is not an iterator
+        .execute(&mut conn);
 }
