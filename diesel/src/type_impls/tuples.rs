@@ -1,7 +1,8 @@
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
 use crate::deserialize::{
-    self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeLikeMarker, StaticallySizedRow,
+    self, CompatibleTupleElement, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeLikeMarker,
+    StaticallySizedRow,
 };
 use crate::expression::{
     AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable,
@@ -508,7 +509,7 @@ macro_rules! tuple_impls {
             impl<__T, $($ST,)* __DB> CompatibleType<__T, __DB> for ($($ST,)*)
             where
                 __DB: Backend,
-                $($ST: SqlTypeLikeMarker,)*
+                $($ST: CompatibleTupleElement,)*
                 __T: FromSqlRow<($($ST::SqlType,)*), __DB>,
             {
                 type SqlType = ($($ST::SqlType,)*);

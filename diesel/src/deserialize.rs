@@ -564,6 +564,23 @@ where
     type SqlType = Self;
 }
 
+#[doc(hidden)]
+pub trait CompatibleTupleElement {
+    /// The SQL type this tuple element is loaded from
+    type SqlType;
+}
+
+impl<ST> CompatibleTupleElement for ST
+where
+    ST: SqlTypeLikeMarker,
+{
+    type SqlType = ST::SqlType;
+}
+
+impl CompatibleTupleElement for Untyped {
+    type SqlType = Untyped;
+}
+
 impl<T, ST, DB> FromSqlRow<ST, DB> for T
 where
     T: Queryable<ST, DB>,
