@@ -152,6 +152,7 @@ impl Queryable<sql_types::Binary, Pg> for *const [u8] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::format_error;
 
     #[diesel_test_helper::test]
     fn cchar_to_sql() {
@@ -168,7 +169,7 @@ mod tests {
     fn cchar_from_sql() {
         let result = <u8 as FromSql<sql_types::CChar, Pg>>::from_nullable_sql(None);
         assert_eq!(
-            result.unwrap_err().to_string(),
+            format_error(&*result.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }
@@ -188,7 +189,7 @@ mod tests {
     fn no_bool_from_sql() {
         let result = <bool as FromSql<sql_types::Bool, Pg>>::from_nullable_sql(None);
         assert_eq!(
-            result.unwrap_err().to_string(),
+            format_error(&*result.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }

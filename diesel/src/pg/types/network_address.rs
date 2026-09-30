@@ -143,6 +143,7 @@ impl_Sql!(Cidr, 1);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::format_error;
 
     #[diesel_test_helper::test]
     fn v4address_to_sql() {
@@ -257,7 +258,7 @@ mod tests {
                 let address: Result<IpNetwork, _> =
                     FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&[7, PGSQL_AF_INET, 0]));
                 assert_eq!(
-                    address.unwrap_err().to_string(),
+                    format_error(&*address.unwrap_err()),
                     "invalid network address format. input is too short."
                 );
             };
@@ -273,7 +274,7 @@ mod tests {
             ($ty:ty) => {
                 let address: Result<IpNetwork, _> = FromSql::<$ty, Pg>::from_nullable_sql(None);
                 assert_eq!(
-                    address.unwrap_err().to_string(),
+                    format_error(&*address.unwrap_err()),
                     "Unexpected null for non-null column"
                 );
             };
