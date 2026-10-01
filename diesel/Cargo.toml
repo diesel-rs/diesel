@@ -14,11 +14,17 @@ rust-version.workspace = true
 include = [
     "src/**/*.rs",
     "tests/**/*.rs",
+    "benches/**/*.rs",
     "LICENSE-*",
     "README.md",
     "src/sqlite/connection/diesel_manage_updated_at.sql",
     "src/migration/setup_migration_table.sql",
 ]
+
+[[bench]]
+name = "sqlite_jsonb_encode"
+harness = false
+required-features = ["sqlite", "serde_json"]
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }
@@ -75,6 +81,8 @@ quickcheck = "1.0.3"
 serde_json = { version = "1.0.54", features = ["float_roundtrip"] }
 tempfile = "3.10.1"
 diesel_test_helper = { path = "../diesel_test_helper" }
+criterion = { version = "0.5", features = ["html_reports"] }
+
 
 [features]
 default = ["with-deprecated", "32-column-tables", "std"]
