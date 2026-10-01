@@ -95,8 +95,7 @@ fn main() {
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
-        //~^ ERROR: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
-        //~| ERROR: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
+        //~^ ERROR: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
         //~| ERROR: the trait bound `OldValueOf<Nullable<Text>>: SqlType` is not satisfied
         .execute(&mut conn);
     diesel::update(users::table)
@@ -110,29 +109,29 @@ fn main() {
         .set(users::name.eq("Renamed"))
         .returning(diesel::dsl::case_when(
             //~^ ERROR: the trait bound `Nullable<(OldValueOf<Text>,)>: IntoNullable` is not satisfied
+            //~| ERROR: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
             users::id.eq(1),
             (old_value(users::name),).nullable(),
-            //~^ ERROR: the trait bound `Nullable<(OldValue<name>,)>: AsExpression<...>` is not satisfied
         ))
         .execute(&mut conn);
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
         .returning((old_value(users::name),).nullable().assume_not_null())
-        //~^ ERROR: cannot select `AssumeNotNull<Nullable<(OldValue<name>,)>>` from `ReturningQuerySource<UpdateStmt, table>`
+        //~^ ERROR: cannot select `AssumeNotNull<NullableExpression<(_,)>>` from `ReturningQuerySource<UpdateStmt, table>`
         .execute(&mut conn);
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
         .returning((old_value(users::name),).nullable().eq((old_value(users::name),).nullable()))
-        //~^ ERROR: the method `eq` exists for struct `Nullable<(OldValue<name>,)>`, but its trait bounds were not satisfied
+        //~^ ERROR: the method `eq` exists for struct `NullableExpression<(OldValue<name>,)>`, but its trait bounds were not satisfied
         .execute(&mut conn);
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
         .returning((old_value(users::name), old_value(users::id)).nullable().is_null())
-        //~^ ERROR: the method `is_null` exists for struct `Nullable<(OldValue<name>, OldValue<id>)>`, but its trait bounds were not satisfied
+        //~^ ERROR: the method `is_null` exists for struct `NullableExpression<(OldValue<name>, OldValue<id>)>`, but its trait bounds were not satisfied
         .execute(&mut conn);
     diesel::update(users::table)
         .set(users::name.eq("Renamed"))
         .returning(users::id.nullable().eq_any((old_value(users::id),).nullable()))
-        //~^ ERROR: `Nullable<(OldValue<id>,)>` is not an iterator
+        //~^ ERROR: `NullableExpression<(OldValue<id>,)>` is not an iterator
         .execute(&mut conn);
 }

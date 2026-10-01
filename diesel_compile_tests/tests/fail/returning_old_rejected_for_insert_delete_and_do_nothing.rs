@@ -24,9 +24,9 @@ fn main() {
     insert_into(users)
         .values(&NewUser("Hello".into()))
         .returning(old(name))
-        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<_, table>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<_, table>`
         .unwrap();
 
     // DELETE: `old(col)` is pointless because all columns already refer to the
@@ -45,8 +45,8 @@ fn main() {
         .on_conflict(id)
         .do_nothing()
         .returning(old(name))
-        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<_, table>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::pg::returning::old_impl::Old<columns::name>` from `ReturningQuerySource<_, table>`
         .unwrap();
 }
