@@ -5,7 +5,7 @@ info:
   input: "#[derive(AsChangeset)]\nstruct User {\n    id: i32,\n    #[diesel(treat_none_as_null = true)]\n    name: Option<String>,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     fn _check_owned()
     where
         String: diesel::expression::AsExpression<
