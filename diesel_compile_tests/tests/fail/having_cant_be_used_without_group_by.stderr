@@ -1,12 +1,12 @@
-error[E0277]: the trait bound `SelectStatement<..., ...>: HavingDsl<_>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<_, _>: HavingDsl<_>` is not satisfied
    --> tests/fail/having_cant_be_used_without_group_by.rs:28:10
     |
  LL |         .having(users::id.gt(1))
-    |          ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<table>, ...>`
+    |          ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<table>, _>`
     |
     = note: a `HAVING` clause requires setting a `GROUP BY` clause first
-help: the trait `HavingDsl<_>` is not implemented for `diesel::query_builder::select_statement::SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
-      but it is implemented for `diesel::query_builder::select_statement::SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<_>, _, _>`
+help: the trait `HavingDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
+      but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<_>, _, _>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, Predicate> HavingDsl<Predicate>
@@ -30,13 +30,13 @@ LL |         .having(users::id.gt(1))
              &T
              AliasedField<S, C>
              Box<T>
-             CaseWhen<..., ...>
-             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
-             CaseWhen<CaseWhenConditionsLeaf<W, T>, ...>
+             CaseWhen<_, E>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, _>
+             CaseWhen<CaseWhenConditionsLeaf<W, T>, _>
              SqlLiteral<ST, T>
              UncheckedBind<Query, Value>
            and N others
-   = note: required for `BoxedSelectStatement<'_, (Integer, Text), ..., _>` to implement `HavingDsl<_>`
+   = note: required for `BoxedSelectStatement<'_, (Integer, Text), _, _>` to implement `HavingDsl<_>`
 
    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
@@ -53,7 +53,7 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `HavingDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `HavingDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -71,6 +71,6 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 2 redundant requirements hidden
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
-   = note: required for `BoxedSelectStatement<'_, Text, ..., _, ...>` to implement `HavingDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
+   = note: required for `BoxedSelectStatement<'_, Text, _, _, id>` to implement `HavingDsl<Grouped<Eq<id, Bound<Integer, i32>>>>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

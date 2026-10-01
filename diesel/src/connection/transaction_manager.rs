@@ -501,16 +501,17 @@ where
                             ..
                         }),
                 }) = conn.transaction_state().status
-                    && (committing_top_level || requires_rollback_maybe_up_to_top_level)
                 {
-                    match Self::rollback_transaction(conn) {
-                        Ok(()) => {}
-                        Err(rollback_error) => {
-                            conn.transaction_state().status.set_in_error();
-                            return Err(Error::RollbackErrorOnCommit {
-                                rollback_error: Box::new(rollback_error),
-                                commit_error: Box::new(commit_error),
-                            });
+                    if (committing_top_level || requires_rollback_maybe_up_to_top_level) {
+                        match Self::rollback_transaction(conn) {
+                            Ok(()) => {}
+                            Err(rollback_error) => {
+                                conn.transaction_state().status.set_in_error();
+                                return Err(Error::RollbackErrorOnCommit {
+                                    rollback_error: Box::new(rollback_error),
+                                    commit_error: Box::new(commit_error),
+                                });
+                            }
                         }
                     }
                 }
@@ -1104,9 +1105,9 @@ mod test {
     #[cfg(feature = "sqlite")]
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
-        use crate::connection::SimpleConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::connection::SimpleConnection;
         use crate::prelude::*;
         use crate::result::{DatabaseErrorKind, Error};
 
@@ -1173,9 +1174,9 @@ mod test {
     #[diesel_test_helper::test]
     #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_commits_after_a_recovered_statement_error() {
-        use crate::connection::SimpleConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::connection::SimpleConnection;
         use crate::prelude::*;
         use crate::result::Error;
 
