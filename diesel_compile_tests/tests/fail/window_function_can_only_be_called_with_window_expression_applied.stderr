@@ -1,63 +1,39 @@
 error[E0277]: the trait bound `lag<Text, name>: ValidGrouping<()>` is not satisfied
-   --> tests/fail/window_function_can_only_be_called_with_window_expression_applied.rs:15:25
-    |
- LL |     users::table.select(lag(users::name));
-    |                  ------ ^^^^^^^^^^^^^^^^ the trait `ValidGrouping<()>` is not implemented for `lag<Text, name>`
-    |                  |
-    |                  required by a bound introduced by this call
-    |
-    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-              AliasedField<S, C>
-              columns::id
-              columns::name
-              diesel::mariadb::returning::old_impl::OldValue<C>
-              diesel::pg::returning::old_impl::Old<C>
-              pg::metadata_lookup::pg_namespace::columns::nspname
-              pg::metadata_lookup::pg_namespace::columns::oid
-              pg::metadata_lookup::pg_type::columns::oid
-            and N others
-    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<lag<Text, name>>`
-    = note: 1 redundant requirement hidden
-    = note: required for `users::table` to implement `SelectDsl<lag<Text, name>>`
-note: required by a bound in `diesel::QueryDsl::select`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
-    |        ------ required by a bound in this associated function
-...
-LL |         Self: methods::SelectDsl<Selection>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
+  --> tests/fail/window_function_can_only_be_called_with_window_expression_applied.rs:15:18
+   |
+LL |     users::table.select(lag(users::name));
+   |                  ^^^^^^ the trait `ValidGrouping<()>` is not implemented for `lag<Text, name>`
+   |
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+             AliasedField<S, C>
+             columns::id
+             columns::name
+             diesel::mariadb::returning::old_impl::OldValue<C>
+             diesel::pg::returning::old_impl::Old<C>
+             pg::metadata_lookup::pg_namespace::columns::nspname
+             pg::metadata_lookup::pg_namespace::columns::oid
+             pg::metadata_lookup::pg_type::columns::oid
+           and N others
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<lag<Text, name>>`
+
+   
 error[E0277]: the trait bound `rank: ValidGrouping<()>` is not satisfied
-   --> tests/fail/window_function_can_only_be_called_with_window_expression_applied.rs:18:25
-    |
- LL |     users::table.select(rank());
-    |                  ------ ^^^^^^ unsatisfied trait bound
-    |                  |
-    |                  required by a bound introduced by this call
-    |
-    = help: the trait `ValidGrouping<()>` is not implemented for `diesel::expression::functions::window_functions::rank_utils::rank`
-    = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
-              AliasedField<S, C>
-              columns::id
-              columns::name
-              diesel::mariadb::returning::old_impl::OldValue<C>
-              diesel::pg::returning::old_impl::Old<C>
-              pg::metadata_lookup::pg_namespace::columns::nspname
-              pg::metadata_lookup::pg_namespace::columns::oid
-              pg::metadata_lookup::pg_type::columns::oid
-            and N others
-    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<rank>`
-    = note: 1 redundant requirement hidden
-    = note: required for `users::table` to implement `SelectDsl<rank>`
-note: required by a bound in `diesel::QueryDsl::select`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
-    |        ------ required by a bound in this associated function
-...
-LL |         Self: methods::SelectDsl<Selection>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    For more information about this error, try `rustc --explain E0277`.
+  --> tests/fail/window_function_can_only_be_called_with_window_expression_applied.rs:18:18
+   |
+LL |     users::table.select(rank());
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `ValidGrouping<()>` is not implemented for `diesel::expression::functions::window_functions::rank_utils::rank`
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+             AliasedField<S, C>
+             columns::id
+             columns::name
+             diesel::mariadb::returning::old_impl::OldValue<C>
+             diesel::pg::returning::old_impl::Old<C>
+             pg::metadata_lookup::pg_namespace::columns::nspname
+             pg::metadata_lookup::pg_namespace::columns::oid
+             pg::metadata_lookup::pg_type::columns::oid
+           and N others
+   = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<rank>`
+
+   For more information about this error, try `rustc --explain E0277`.

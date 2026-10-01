@@ -22,6 +22,7 @@ LL |             .filter(posts::user_id.eq(old_value(users::id)))
    |              ^^^^^^ the trait `diesel::sql_types::SqlType` is not implemented for `OldValueOf<Integer>`
    |
    = help: the following other types implement trait `diesel::sql_types::SqlType`:
+             (T,)
              (T, T1)
              (T, T1, T2)
              (T, T1, T2, T3)
@@ -29,28 +30,27 @@ LL |             .filter(posts::user_id.eq(old_value(users::id)))
              (T, T1, T2, T3, T4, T5)
              (T, T1, T2, T3, T4, T5, T6)
              (T, T1, T2, T3, T4, T5, T6, T7)
-             (T, T1, T2, T3, T4, T5, T6, T7, T8)
            and N others
    = note: required for `Eq<user_id, OldValue<id>>` to implement `Expression`
-   = note: required for `SelectStatement<FromClause<table>, ...>` to implement `FilterDsl<Grouped<Eq<user_id, OldValue<id>>>>`
+   = note: required for `SelectStatement<FromClause<table>, _>` to implement `FilterDsl<Grouped<Eq<user_id, OldValue<id>>>>`
 
    
-error[E0277]: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>` is not satisfied
+error[E0277]: the trait bound `OldValue<id>: AppearsOnTable<_>` is not satisfied
    --> tests/fail/old_value_is_not_allowed_in_subselect_for_mariadb.rs:48:20
     |
- LL |   ...   .returning((posts::table
-    |  ________---------_^
-    | |        |
-    | |        required by a bound introduced by this call
- LL | | ...
- LL | | ...
- LL | | ...       .select(posts::title)
+ LL |           .returning((posts::table
+    |  __________---------_^
+    | |          |
+    | |          required by a bound introduced by this call
+ LL | |
+ LL | |
+ LL | |             .select(posts::title)
 ...   |
- LL | | ...       .single_value(),))
-    | |___________________________^ unsatisfied trait bound
+ LL | |             .single_value(),))
+    | |_____________________________^ unsatisfied trait bound
     |
-help: the trait `AppearsOnTable<query_source::joins::Join<posts::table, diesel::query_builder::returning::returning_query_source::ReturningQuerySource<_, _>, query_source::joins::Inner>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<users::columns::id>`
-      but trait `AppearsOnTable<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<_, _>>` is implemented for it
+help: the trait `AppearsOnTable<diesel::internal::table_macro::Join<posts::table, ReturningQuerySource<_, _>, diesel::internal::table_macro::Inner>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<users::columns::id>`
+      but trait `AppearsOnTable<ReturningQuerySource<_, _>>` is implemented for it
    --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
     |
 LL | / impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
@@ -61,16 +61,16 @@ LL | |     Self: Expression,
 LL | |             Count = crate::query_source::Once,
 LL | |         >,
     | |__________^
-    = help: for that trait implementation, expected `ReturningQuerySource<UpdateStmt, table>`, found `Join<table, ReturningQuerySource<..., ...>, ...>`
-    = note: required for `Eq<user_id, OldValue<id>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
+    = help: for that trait implementation, expected `ReturningQuerySource<UpdateStmt, table>`, found `Join<table, ReturningQuerySource<_, table>, Inner>`
+    = note: required for `Eq<user_id, OldValue<id>>` to implement `AppearsOnTable<Join<table, _, Inner>>`
     = note: 1 redundant requirement hidden
-    = note: required for `Grouped<Eq<user_id, OldValue<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
-    = note: required for `WhereClause<Grouped<Eq<user_id, OldValue<id>>>>` to implement `ValidWhereClause<FromClause<Join<..., ..., ...>>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `ValidSubselect<ReturningQuerySource<..., ...>>`
-    = note: required for `Subselect<..., ...>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `Grouped<Eq<user_id, OldValue<id>>>` to implement `AppearsOnTable<Join<table, _, Inner>>`
+    = note: required for `WhereClause<Grouped<Eq<user_id, OldValue<id>>>>` to implement `ValidWhereClause<FromClause<_>>`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _, _>` to implement `ValidSubselect<ReturningQuerySource<_, table>>`
+    = note: required for `Subselect<SelectStatement<_, _, _, _, _, _>, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: 2 redundant requirements hidden
-    = note: required for `(Grouped<Subselect<..., ...>>,)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+    = note: required for `(Grouped<Subselect<_, _>>,)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
+    = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |
@@ -96,6 +96,7 @@ error[E0277]: the trait bound `OldValueOf<Integer>: SqlType` is not satisfied
     | |_____________________________^ the trait `diesel::sql_types::SqlType` is not implemented for `OldValueOf<Integer>`
     |
     = help: the following other types implement trait `diesel::sql_types::SqlType`:
+              (T,)
               (T, T1)
               (T, T1, T2)
               (T, T1, T2, T3)
@@ -103,18 +104,17 @@ error[E0277]: the trait bound `OldValueOf<Integer>: SqlType` is not satisfied
               (T, T1, T2, T3, T4, T5)
               (T, T1, T2, T3, T4, T5, T6)
               (T, T1, T2, T3, T4, T5, T6, T7)
-              (T, T1, T2, T3, T4, T5, T6, T7, T8)
             and N others
     = note: required for `Eq<user_id, OldValue<id>>` to implement `Expression`
     = note: 1 redundant requirement hidden
     = note: required for `Grouped<Eq<user_id, OldValue<id>>>` to implement `Expression`
-    = note: required for `Grouped<Eq<user_id, OldValue<id>>>` to implement `AppearsOnTable<Join<table, ..., ...>>`
-    = note: required for `WhereClause<Grouped<Eq<user_id, OldValue<id>>>>` to implement `ValidWhereClause<FromClause<Join<..., ..., ...>>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ..., ...>` to implement `ValidSubselect<ReturningQuerySource<..., ...>>`
-    = note: required for `Subselect<..., ...>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
+    = note: required for `Grouped<Eq<user_id, OldValue<id>>>` to implement `AppearsOnTable<Join<table, _, Inner>>`
+    = note: required for `WhereClause<Grouped<Eq<user_id, OldValue<id>>>>` to implement `ValidWhereClause<FromClause<_>>`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _, _>` to implement `ValidSubselect<ReturningQuerySource<_, table>>`
+    = note: required for `Subselect<SelectStatement<_, _, _, _, _, _>, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: 2 redundant requirements hidden
-    = note: required for `(Grouped<Subselect<..., ...>>,)` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+    = note: required for `(Grouped<Subselect<_, _>>,)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
+    = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |

@@ -31,7 +31,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `__static_cond` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -47,11 +47,11 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<
 LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<table>, ...>` to implement `GroupByDsl<posts::columns::id>`
+   = note: required for `SelectStatement<FromClause<table>, _>` to implement `GroupByDsl<posts::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:46:10
    |
 LL |         .group_by(posts::id)
@@ -68,42 +68,32 @@ LL |         id -> Integer,
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<id>` is not satisfied
-   --> tests/fail/invalid_group_by.rs:48:17
-    |
- LL |         .select(user_alias.field(users::id))
-    |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
-    |
-    = help: the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`
+  --> tests/fail/invalid_group_by.rs:48:10
+   |
+LL |         .select(user_alias.field(users::id))
+   |          ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`
 help: the following other types implement trait `ValidGrouping<GroupByClause>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
-    |
- LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
- LL | | where
- LL | |     S: AliasSource,
- LL | |     C: QueryRelationField<QueryRelation = S::Target>,
-    | |_____________________________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
+  --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
+   |
+LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     C: QueryRelationField<QueryRelation = S::Target>,
+   | |_____________________________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
 ...
- LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
- LL | | where
- LL | |     S: AliasSource,
- LL | |     C1: QueryRelationField<QueryRelation = S::Target>,
- LL | |     C2: QueryRelationField<QueryRelation = S::Target>,
- LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
-    | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
-note: required by a bound in `diesel::QueryDsl::select`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
-    |        ------ required by a bound in this associated function
-...
-LL |         Self: methods::SelectDsl<Selection>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
-error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
+LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     C1: QueryRelationField<QueryRelation = S::Target>,
+LL | |     C2: QueryRelationField<QueryRelation = S::Target>,
+LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
+   | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
+
+   
+error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:54:10
    |
 LL |         .group_by(post_alias.field(posts::id))
@@ -138,11 +128,11 @@ note: required for `users::columns::id` to implement `ValidGrouping<AliasedField
    |
  LL |         id -> Integer,
    |         ^^
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:62:10
    |
 LL |         .group_by(post_alias.field(posts::id))
@@ -152,43 +142,33 @@ LL |         .group_by(post_alias.field(posts::id))
    = note: required for `SelectStatement<FromClause<Alias<user1>>>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
 
    
-error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<...>` is not satisfied
-   --> tests/fail/invalid_group_by.rs:64:17
-    |
- LL |         .select(user_alias.field(users::id))
-    |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
-    |
-    = help: the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`
+error[E0277]: the trait bound `AliasedField<user1, id>: ValidGrouping<_>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:64:10
+   |
+LL |         .select(user_alias.field(users::id))
+   |          ^^^^^^ unsatisfied trait bound
+   |
+   = help: the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`
 help: the following other types implement trait `ValidGrouping<GroupByClause>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
-    |
- LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
- LL | | where
- LL | |     S: AliasSource,
- LL | |     C: QueryRelationField<QueryRelation = S::Target>,
-    | |_____________________________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
+  --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
+   |
+LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     C: QueryRelationField<QueryRelation = S::Target>,
+   | |_____________________________________________________^ `AliasedField<S, C>` implements `ValidGrouping<()>`
 ...
- LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
- LL | | where
- LL | |     S: AliasSource,
- LL | |     C1: QueryRelationField<QueryRelation = S::Target>,
- LL | |     C2: QueryRelationField<QueryRelation = S::Target>,
- LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
-    | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
-note: required by a bound in `diesel::QueryDsl::select`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
-    |        ------ required by a bound in this associated function
-...
-LL |         Self: methods::SelectDsl<Selection>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
- 
-    
-error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
+LL | / impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
+LL | | where
+LL | |     S: AliasSource,
+LL | |     C1: QueryRelationField<QueryRelation = S::Target>,
+LL | |     C2: QueryRelationField<QueryRelation = S::Target>,
+LL | |     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
+   | |___________________________________________________________^ `AliasedField<S, C2>` implements `ValidGrouping<AliasedField<S, C1>>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<AliasedField<user1, users::columns::id>>`
+
+   
+error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:71:10
    |
 LL |         .group_by(posts::id)
@@ -200,25 +180,25 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<
 LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, ...>` to implement `GroupByDsl<posts::columns::id>`
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, _>` to implement `GroupByDsl<posts::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:78:10
    |
 LL |         .group_by(post_alias.field(posts::id))
    |          ^^^^^^^^ expected `Once`, found `Never`
    |
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<table>>`
-   = note: required for `SelectStatement<FromClause<table>, ...>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
+   = note: required for `SelectStatement<FromClause<table>, _>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
 
    
-error[E0271]: type mismatch resolving `<FromClause<...> as AppearsInFromClause<...>>::Count == Once`
+error[E0271]: type mismatch resolving `<FromClause<Alias<user1>> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:85:10
    |
 LL |         .group_by(post_alias.field(posts::id))
    |          ^^^^^^^^ expected `Once`, found `Never`
    |
    = note: required for `AliasedField<post1, posts::columns::id>` to implement `AppearsOnTable<FromClause<Alias<user1>>>`
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, ...>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, _>` to implement `GroupByDsl<AliasedField<post1, posts::columns::id>>`

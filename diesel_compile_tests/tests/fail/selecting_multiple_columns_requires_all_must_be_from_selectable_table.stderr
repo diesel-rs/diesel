@@ -13,12 +13,12 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<ReturningQuerySource<..., ...>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<posts::table>
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
@@ -39,12 +39,12 @@ LL |         user_id -> Integer,
    = help: `posts::columns::user_id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<ReturningQuerySource<..., ...>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<posts::table>
    = note: required for `(posts::columns::id, posts::columns::user_id)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, posts::columns::user_id)>`
 
@@ -84,12 +84,12 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<ReturningQuerySource<..., ...>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<posts::table>
    = note: required for `(posts::columns::id, users::columns::name)` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<(posts::columns::id, users::columns::name)>`
 

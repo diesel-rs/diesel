@@ -64,6 +64,7 @@ error[E0277]: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
     |          required by a bound introduced by this call
     |
     = help: the following other types implement trait `diesel::sql_types::SqlType`:
+              (T,)
               (T, T1)
               (T, T1, T2)
               (T, T1, T2, T3)
@@ -71,14 +72,13 @@ error[E0277]: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
               (T, T1, T2, T3, T4, T5)
               (T, T1, T2, T3, T4, T5, T6)
               (T, T1, T2, T3, T4, T5, T6, T7)
-              (T, T1, T2, T3, T4, T5, T6, T7, T8)
             and N others
     = note: required for `Eq<name, OldValue<name>>` to implement `Expression`
     = note: 1 redundant requirement hidden
     = note: required for `Grouped<Eq<name, OldValue<name>>>` to implement `Expression`
-    = note: required for `Grouped<Eq<name, OldValue<name>>>` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
-    = note: required for `Grouped<Eq<name, OldValue<name>>>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+    = note: required for `Grouped<Eq<name, OldValue<name>>>` to implement `AppearsOnTable<ReturningQuerySource<_, table>>`
+    = note: required for `Grouped<Eq<name, OldValue<name>>>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
+    = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |
@@ -184,22 +184,21 @@ LL | pub struct OldValueOf<ST>(PhantomData<ST>);
             `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: Expression`
             which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::name>: diesel::PgBinaryExpressionMethods`
 
-error[E0277]: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
-  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:97:60
+error[E0277]: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
+  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:97:20
    |
 LL |         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
-   |                                                            ^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlType` is not implemented for `OldValueOf<Text>`
    |
-   = help: the trait `AsExpression<diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+   = help: the following other types implement trait `diesel::sql_types::SqlType`:
+             (T,)
+             (T, T1)
+             (T, T1, T2)
+             (T, T1, T2, T3)
+             (T, T1, T2, T3, T4)
+             (T, T1, T2, T3, T4, T5)
+             (T, T1, T2, T3, T4, T5, T6)
+             (T, T1, T2, T3, T4, T5, T6, T7)
            and N others
 note: required by a bound in `case_when`
   --> DIESEL/diesel/diesel/src/expression/case_when.rs
@@ -207,8 +206,8 @@ note: required by a bound in `case_when`
 LL | pub fn case_when<C, T, ST>(condition: C, if_true: T) -> helper_types::case_when<C, T, ST>
    |        --------- required by a bound in this function
 ...
-LL |     T: AsExpression<ST>,
-   |        ^^^^^^^^^^^^^^^^ required by this bound in `case_when`
+LL |     ST: SqlType + TypedExpressionType,
+   |         ^^^^^^^ required by this bound in `case_when`
 
    
 error[E0277]: the trait bound `OldValueOf<Nullable<Text>>: SqlType` is not satisfied
@@ -220,6 +219,7 @@ error[E0277]: the trait bound `OldValueOf<Nullable<Text>>: SqlType` is not satis
     |          required by a bound introduced by this call
     |
     = help: the following other types implement trait `diesel::sql_types::SqlType`:
+              (T,)
               (T, T1)
               (T, T1, T2)
               (T, T1, T2, T3)
@@ -227,12 +227,11 @@ error[E0277]: the trait bound `OldValueOf<Nullable<Text>>: SqlType` is not satis
               (T, T1, T2, T3, T4, T5)
               (T, T1, T2, T3, T4, T5, T6)
               (T, T1, T2, T3, T4, T5, T6, T7)
-              (T, T1, T2, T3, T4, T5, T6, T7, T8)
             and N others
-    = note: required for `CaseWhen<CaseWhenConditionsLeaf<..., ...>, ...>` to implement `Expression`
-    = note: required for `CaseWhen<CaseWhenConditionsLeaf<..., ...>, ...>` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
-    = note: required for `CaseWhen<CaseWhenConditionsLeaf<..., ...>, ...>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+    = note: required for `CaseWhen<CaseWhenConditionsLeaf<Grouped<_>, _>, _>` to implement `Expression`
+    = note: required for `CaseWhen<CaseWhenConditionsLeaf<Grouped<_>, _>, _>` to implement `AppearsOnTable<ReturningQuerySource<_, table>>`
+    = note: required for `CaseWhen<CaseWhenConditionsLeaf<Grouped<_>, _>, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
+    = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |
@@ -244,7 +243,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
     
 error[E0599]: the method `cast` exists for struct `diesel::mariadb::returning::old_impl::OldValue<columns::id>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:104:41
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:103:41
     |
 LL |         .returning(old_value(users::id).cast::<diesel::sql_types::BigInt>())
     |                                         ^^^^ method cannot be called due to unsatisfied trait bounds
@@ -265,44 +264,52 @@ LL | pub struct OldValueOf<ST>(PhantomData<ST>);
             `&mut diesel::mariadb::returning::old_impl::OldValue<columns::id>: Expression`
             which is required by `&mut diesel::mariadb::returning::old_impl::OldValue<columns::id>: diesel::ExpressionMethods`
 
-error[E0277]: the trait bound `Nullable<(OldValue<name>,)>: AsExpression<...>` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:114:13
+error[E0277]: the trait bound `OldValueOf<Text>: SqlType` is not satisfied
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:110:20
     |
-LL |             (old_value(users::name),).nullable(),
-    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
+LL |           .returning(diesel::dsl::case_when(
+    |  ____________________^
+LL | |
+LL | |
+LL | |             users::id.eq(1),
+LL | |             (old_value(users::name),).nullable(),
+LL | |         ))
+    | |_________^ the trait `diesel::sql_types::SqlType` is not implemented for `OldValueOf<Text>`
     |
-    = help: the trait `AsExpression<diesel::sql_types::Nullable<(diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>,)>>` is not implemented for `Nullable<(OldValue<name>,)>`
-    = help: the following other types implement trait `AsExpression<T>`:
-              `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
-              `&'__expr Cents` implements `AsExpression<Money>`
-              `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-              `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-              `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-              `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
+    = help: the following other types implement trait `diesel::sql_types::SqlType`:
+              (T,)
+              (T, T1)
+              (T, T1, T2)
+              (T, T1, T2, T3)
+              (T, T1, T2, T3, T4)
+              (T, T1, T2, T3, T4, T5)
+              (T, T1, T2, T3, T4, T5, T6)
+              (T, T1, T2, T3, T4, T5, T6, T7)
             and N others
+    = note: required for `(OldValueOf<Text>,)` to implement `diesel::sql_types::SqlType`
+    = note: 1 redundant requirement hidden
+    = note: required for `Nullable<(OldValueOf<Text>,)>` to implement `diesel::sql_types::SqlType`
 note: required by a bound in `case_when`
    --> DIESEL/diesel/diesel/src/expression/case_when.rs
     |
  LL | pub fn case_when<C, T, ST>(condition: C, if_true: T) -> helper_types::case_when<C, T, ST>
     |        --------- required by a bound in this function
 ...
- LL |     T: AsExpression<ST>,
-    |        ^^^^^^^^^^^^^^^^ required by this bound in `case_when`
+ LL |     ST: SqlType + TypedExpressionType,
+    |         ^^^^^^^ required by this bound in `case_when`
  
     
 error[E0277]: the trait bound `Nullable<(OldValueOf<Text>,)>: IntoNullable` is not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:111:20
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:110:20
     |
 LL |           .returning(diesel::dsl::case_when(
     |  __________---------_^
     | |          |
     | |          required by a bound introduced by this call
 LL | |
+LL | |
 LL | |             users::id.eq(1),
 LL | |             (old_value(users::name),).nullable(),
-LL | |
 LL | |         ))
     | |_________^ the trait `IntoNullable` is not implemented for `Nullable<(OldValueOf<Text>,)>`
     |
@@ -315,10 +322,10 @@ LL | |     T: SqlType,
     | |________-------^
     |          |
     |          unsatisfied requirement introduced here: `(diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>,): diesel::sql_types::SqlType`
-    = note: required for `CaseWhen<CaseWhenConditionsLeaf<..., ...>, ...>` to implement `Expression`
-    = note: required for `CaseWhen<CaseWhenConditionsLeaf<..., ...>, ...>` to implement `AppearsOnTable<ReturningQuerySource<..., ...>>`
-    = note: required for `CaseWhen<CaseWhenConditionsLeaf<..., ...>, ...>` to implement `SelectableExpression<ReturningQuerySource<..., ...>>`
-    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+    = note: required for `CaseWhen<CaseWhenConditionsLeaf<Grouped<_>, _>, _>` to implement `Expression`
+    = note: required for `CaseWhen<CaseWhenConditionsLeaf<Grouped<_>, _>, _>` to implement `AppearsOnTable<ReturningQuerySource<_, table>>`
+    = note: required for `CaseWhen<CaseWhenConditionsLeaf<Grouped<_>, _>, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
+    = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |
@@ -329,16 +336,16 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
     
-error[E0277]: cannot select `AssumeNotNull<Nullable<(OldValue<name>,)>>` from `ReturningQuerySource<UpdateStmt, table>`
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:120:20
+error[E0277]: cannot select `AssumeNotNull<NullableExpression<(_,)>>` from `ReturningQuerySource<UpdateStmt, table>`
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:119:20
     |
 LL |         .returning((old_value(users::name),).nullable().assume_not_null())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |          |
     |          required by a bound introduced by this call
     |
-    = help: the trait `SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` is not implemented for `AssumeNotNull<Nullable<(OldValue<name>,)>>`
-    = note: `AssumeNotNull<Nullable<(OldValue<name>,)>>` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
+    = help: the trait `SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::UpdateStmt, users::table>>` is not implemented for `AssumeNotNull<NullableExpression<(_,)>>`
+    = note: `AssumeNotNull<NullableExpression<(_,)>>` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
 help: the following other types implement trait `SelectableExpression<QS>`
    --> DIESEL/diesel/diesel/src/query_builder/returning/returning_query_source.rs
     |
@@ -347,7 +354,7 @@ LL | |     for crate::expression::assume_not_null::AssumeNotNull<E>
 LL | | where
 LL | |     Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
 LL | |     E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
-    | |_______________________________________________________________^ `diesel::expression::assume_not_null::AssumeNotNull<E>` implements `SelectableExpression<ReturningQuerySource<..., ...>>`
+    | |_______________________________________________________________^ `diesel::expression::assume_not_null::AssumeNotNull<E>` implements `SelectableExpression<ReturningQuerySource<StmtKind, T>>`
     |
    ::: DIESEL/diesel/diesel/src/expression/assume_not_null.rs
     |
@@ -360,8 +367,8 @@ LL | |     E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
 ...
  LL | / impl<T> SelectableExpression<NoFromClause> for AssumeNotNull<T> where
  LL | |     Self: AppearsOnTable<NoFromClause>
-    | |______________________________________^ `diesel::expression::assume_not_null::AssumeNotNull<T>` implements `SelectableExpression<NoFromClause>`
-    = note: required for `UpdateStatement<table, NoWhereClause, ..., ...>` to implement `Query`
+    | |______________________________________^ `diesel::expression::assume_not_null::AssumeNotNull<T>` implements `SelectableExpression<diesel::internal::table_macro::NoFromClause>`
+    = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |
@@ -371,17 +378,17 @@ LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, Retur
 LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
  
-    help: consider removing this method call, as the receiver has type `diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>` and `diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: SelectableExpression<diesel::query_builder::returning::returning_query_source::ReturningQuerySource<diesel::query_builder::returning::returning_query_source::UpdateStmt, users::table>>` trivially holds
+    help: consider removing this method call, as the receiver has type `diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>` and `diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::UpdateStmt, users::table>>` trivially holds
     |
-120 -         .returning((old_value(users::name),).nullable().assume_not_null())
-120 +         .returning((old_value(users::name),).nullable())
+119 -         .returning((old_value(users::name),).nullable().assume_not_null())
+119 +         .returning((old_value(users::name),).nullable())
     |
 
-error[E0599]: the method `eq` exists for struct `Nullable<(OldValue<name>,)>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:125:57
+error[E0599]: the method `eq` exists for struct `NullableExpression<(OldValue<name>,)>`, but its trait bounds were not satisfied
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:124:57
     |
 LL | ...ld_value(users::name),).nullable().eq((old_value(users::name),).nullable()))
-    |                                       ^^ method cannot be called on `Nullable<(OldValue<name>,)>` due to unsatisfied trait bounds
+    |                                       ^^ method cannot be called on `NullableExpression<(OldValue<name>,)>` due to unsatisfied trait bounds
     |
    ::: DIESEL/diesel/diesel/src/sql_types/mod.rs
     |
@@ -395,20 +402,20 @@ LL | pub struct Nullable<ST>(ST);
     |
     = note: the following trait bounds were not satisfied:
             `diesel::sql_types::Nullable<(diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>,)>: SingleValue`
-            which is required by `diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: diesel::ExpressionMethods`
+            which is required by `diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: diesel::ExpressionMethods`
             `diesel::sql_types::Nullable<(diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>,)>: SingleValue`
-            which is required by `&diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: diesel::ExpressionMethods`
-            `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: Expression`
-            which is required by `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: diesel::ExpressionMethods`
-            `diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: Iterator`
-            which is required by `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: Iterator`
+            which is required by `&diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: diesel::ExpressionMethods`
+            `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: Expression`
+            which is required by `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: diesel::ExpressionMethods`
+            `diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: Iterator`
+            which is required by `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>,)>: Iterator`
  
     
-error[E0599]: the method `is_null` exists for struct `Nullable<(OldValue<name>, OldValue<id>)>`, but its trait bounds were not satisfied
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:130:78
+error[E0599]: the method `is_null` exists for struct `NullableExpression<(OldValue<name>, OldValue<id>)>`, but its trait bounds were not satisfied
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:129:78
     |
 LL |         .returning((old_value(users::name), old_value(users::id)).nullable().is_null())
-    |                                                                              ^^^^^^^ method cannot be called on `Nullable<(OldValue<name>, OldValue<id>)>` due to unsatisfied trait bounds
+    |                                                                              ^^^^^^^ method cannot be called on `NullableExpression<(OldValue<name>, OldValue<id>)>` due to unsatisfied trait bounds
     |
    ::: DIESEL/diesel/diesel/src/sql_types/mod.rs
     |
@@ -422,52 +429,51 @@ LL | pub struct Nullable<ST>(ST);
     |
     = note: the following trait bounds were not satisfied:
             `diesel::sql_types::Nullable<(diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>, diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Integer>)>: SingleValue`
-            which is required by `diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::ExpressionMethods`
-            `<diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)> as Expression>::SqlType = Untyped`
-            which is required by `diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
+            which is required by `diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::ExpressionMethods`
+            `<diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)> as Expression>::SqlType = Untyped`
+            which is required by `diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
             `diesel::sql_types::Nullable<(diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>, diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Integer>)>: SingleValue`
-            which is required by `&diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::ExpressionMethods`
-            `<&diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)> as Expression>::SqlType = Untyped`
-            which is required by `&diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
-            `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: Expression`
-            which is required by `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::ExpressionMethods`
-            `<&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)> as Expression>::SqlType = Untyped`
-            which is required by `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
-            `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: Expression`
-            which is required by `&mut diesel::expression::nullable::Nullable<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
+            which is required by `&diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::ExpressionMethods`
+            `<&diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)> as Expression>::SqlType = Untyped`
+            which is required by `&diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
+            `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: Expression`
+            which is required by `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::ExpressionMethods`
+            `<&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)> as Expression>::SqlType = Untyped`
+            which is required by `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
+            `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: Expression`
+            which is required by `&mut diesel::internal::table_macro::NullableExpression<(diesel::mariadb::returning::old_impl::OldValue<columns::name>, diesel::mariadb::returning::old_impl::OldValue<columns::id>)>: diesel::UntypedExpressionMethods`
  
     
-error[E0277]: `Nullable<(OldValue<id>,)>` is not an iterator
-   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:135:41
+error[E0277]: `NullableExpression<(OldValue<id>,)>` is not an iterator
+   --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:134:41
     |
 LL |         .returning(users::id.nullable().eq_any((old_value(users::id),).nullable()))
-    |                                         ^^^^^^ `Nullable<(OldValue<id>,)>` is not an iterator
+    |                                         ^^^^^^ `NullableExpression<(OldValue<id>,)>` is not an iterator
     |
-    = help: the trait `Iterator` is not implemented for `Nullable<(OldValue<id>,)>`
-    = help: the following other types implement trait `diesel::expression::array_comparison::AsInExpression<T>`:
-              diesel::pg::expression::array::ArrayLiteral<T, ST>
-              diesel::pg::expression::array::ArraySubselect<T, ST>
-              CombinationClause<Combinator, Rule, Source, Rhs>
-              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
-              BoxedSelectStatement<'a, ST, QS, DB, GB>
-    = note: required for `Nullable<(OldValue<id>,)>` to implement `IntoIterator`
-    = note: required for `Nullable<(OldValue<id>,)>` to implement `AsInExpression<Nullable<Integer>>`
- 
-    
-error[E0277]: the trait bound `OldValue<name>: AsExpression<OldValueOf<Text>>` is not satisfied
-  --> tests/fail/old_value_is_only_allowed_as_a_whole_returning_item_for_mariadb.rs:97:20
-   |
-LL |         .returning(diesel::dsl::case_when(users::id.eq(1), old_value(users::name)))
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-   |
-   = help: the trait `AsExpression<diesel::mariadb::returning::old_impl::OldValueOf<diesel::sql_types::Text>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<columns::name>`
-   = help: the following other types implement trait `AsExpression<T>`:
-             `&'__expr AutoVacuumMode` implements `AsExpression<diesel::sql_types::Integer>`
-             `&'__expr Cents` implements `AsExpression<Money>`
-             `&'__expr JsonValidFlag` implements `AsExpression<JsonValidFlags>`
-             `&'__expr MigrationVersion<'a>` implements `AsExpression<diesel::sql_types::Text>`
-             `&'__expr MysqlTime` implements `AsExpression<Datetime>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Date>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Time>`
-             `&'__expr MysqlTime` implements `AsExpression<diesel::sql_types::Timestamp>`
-           and N others
+    = help: the trait `Iterator` is not implemented for `NullableExpression<(OldValue<id>,)>`
+help: the following other types implement trait `AsInExpression<T>`
+   --> DIESEL/diesel/diesel/src/expression/array_comparison.rs
+    |
+LL | / impl<ST, Combinator, Rule, Source, Rhs> AsInExpression<ST>
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs>
+LL | | where
+LL | |     ST: SqlType,
+LL | |     Self: SelectQuery<SqlType = ST>,
+LL | |     Subselect<Self, ST>: Expression<SqlType = ST>,
+    | |__________________________________________________^ `CombinationClause<Combinator, Rule, Source, Rhs>`
+    |
+   ::: DIESEL/diesel/diesel/src/pg/expression/array.rs
+    |
+LL | / impl<T, ST> AsInExpression<ST> for ArrayLiteral<T, ST>
+LL | | where
+LL | |     Self: Expression<SqlType = sql_types::Array<ST>>,
+LL | |     ST: SqlType,
+    | |________________^ `diesel::pg::expression::array::ArrayLiteral<T, ST>`
+...
+LL | / impl<T, ST> AsInExpression<ST> for ArraySubselect<T, ST>
+LL | | where
+LL | |     Self: Expression<SqlType = sql_types::Array<ST>>,
+LL | |     ST: SqlType,
+    | |________________^ `diesel::pg::expression::array::ArraySubselect<T, ST>`
+    = note: required for `NullableExpression<(OldValue<id>,)>` to implement `IntoIterator`
+    = note: required for `NullableExpression<(OldValue<id>,)>` to implement `AsInExpression<Nullable<Integer>>`

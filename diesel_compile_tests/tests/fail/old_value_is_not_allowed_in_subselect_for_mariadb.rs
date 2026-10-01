@@ -46,7 +46,7 @@ fn main() {
     diesel::update(users::table.filter(users::id.eq(42)))
         .set(users::name.eq("Renamed"))
         .returning((posts::table
-            //~^ ERROR: the trait bound `OldValue<id>: AppearsOnTable<Join<..., ..., ...>>` is not satisfied
+            //~^ ERROR: the trait bound `OldValue<id>: AppearsOnTable<_>` is not satisfied
             //~| ERROR: the trait bound `OldValueOf<Integer>: SqlType` is not satisfied
             .select(posts::title)
             .filter(posts::user_id.eq(old_value(users::id)))

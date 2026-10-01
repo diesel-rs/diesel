@@ -12,8 +12,8 @@ help: the trait `QueryFragment<Sqlite>` is implemented for `diesel::query_builde
      |
  LL |     impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     = note: required for `InsertStatement<table, ..., ...>` to implement `QueryFragment<Pg>`
-     = note: required for `InsertStatement<table, ..., ...>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
+     = note: required for `InsertStatement<table, ValuesClause<_, table>, _>` to implement `QueryFragment<Pg>`
+     = note: required for `InsertStatement<table, ValuesClause<_, table>, _>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

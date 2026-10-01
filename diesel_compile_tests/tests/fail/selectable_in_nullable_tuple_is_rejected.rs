@@ -39,5 +39,5 @@ fn main() {
     let _ = diesel::debug_query::<diesel::sqlite::Sqlite, _>(&query).to_string();
     let mut conn = SqliteConnection::establish("…").unwrap();
     let _ = query.get_result::<(String, Option<Post>)>(&mut conn).unwrap();
-    //~^ ERROR: the trait bound `(Text, Nullable<(...,)>): CompatibleType<..., _>` is not satisfied
+    //~^ ERROR: the trait bound `(Text, Nullable<(_,)>): CompatibleType<_, _>` is not satisfied
 }
