@@ -2500,6 +2500,98 @@ const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type:
 /// }
 /// ```
 ///
+/// ## Custom Window Functions
+///
+/// A custom aggregate additionally marked with `#[window]` also works inside
+/// an `OVER` clause. Its `register_impl` requires the
+/// [SqliteWindowFunction](../diesel/sqlite/trait.SqliteWindowFunction.html)
+/// trait, which adds `value` for reading the current window result and
+/// `inverse` for removing a row from it, and registers through
+/// `sqlite3_create_window_function` (SQLite 3.25.0 or newer).
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::*;
+/// # use diesel::expression::functions::declare_sql_function;
+/// #
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {
+/// #   run().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// # }
+/// use diesel::sql_types::Integer;
+/// # #[cfg(feature = "sqlite")]
+/// use diesel::sqlite::{SqliteAggregateFunction, SqliteWindowFunction};
+///
+/// #[declare_sql_function]
+/// extern "SQL" {
+///     #[aggregate]
+///     #[window]
+///     fn my_win_sum(x: Integer) -> Integer;
+/// }
+///
+/// #[derive(Default)]
+/// struct MyWinSum { sum: i32 }
+///
+/// # #[cfg(feature = "sqlite")]
+/// impl SqliteAggregateFunction<i32> for MyWinSum {
+///     type Output = i32;
+///
+///     fn step(&mut self, expr: i32) {
+///         self.sum += expr;
+///     }
+///
+///     fn finalize(aggregator: Option<Self>) -> Self::Output {
+///         aggregator.map(|a| a.sum).unwrap_or_default()
+///     }
+/// }
+///
+/// # #[cfg(feature = "sqlite")]
+/// impl SqliteWindowFunction<i32> for MyWinSum {
+///     fn value(aggregator: Option<&Self>) -> Self::Output {
+///         aggregator.map(|a| a.sum).unwrap_or_default()
+///     }
+///
+///     fn inverse(&mut self, expr: i32) {
+///         self.sum -= expr;
+///     }
+/// }
+/// # table! {
+/// #     players {
+/// #         id -> Integer,
+/// #         score -> Integer,
+/// #     }
+/// # }
+///
+/// # #[cfg(feature = "sqlite")]
+/// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
+/// #    use self::players::dsl::*;
+///     let connection = &mut SqliteConnection::establish(":memory:")?;
+/// #    diesel::sql_query("create table players (id integer primary key autoincrement, score integer)")
+/// #        .execute(connection)
+/// #        .unwrap();
+/// #    diesel::sql_query("insert into players (score) values (10), (20), (30)")
+/// #        .execute(connection)
+/// #        .unwrap();
+///
+///     my_win_sum_utils::register_impl::<MyWinSum, _>(connection)?;
+///
+///     let sliding_sums = players
+///         .select(my_win_sum(score).window_order(id).frame_by(
+///             dsl::frame::Rows.frame_between(1.preceding(), dsl::frame::CurrentRow),
+///         ))
+///         .load::<i32>(connection)?;
+///
+///     println!("The sliding sums are: {sliding_sums:?}");
+///
+/// #    assert_eq!(vec![10, 30, 50], sliding_sums);
+///     Ok(())
+/// }
+/// ```
+///
 /// ## Variadic functions
 ///
 /// Since Rust does not support variadic functions, the SQL variadic functions are
