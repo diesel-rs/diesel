@@ -42,7 +42,7 @@ help: a struct with a similar name exists
    |
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-   --> tests/fail/selectable.rs:165:10
+   --> tests/fail/selectable.rs:201:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -74,7 +74,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<Join<
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `users::table`
-   --> tests/fail/selectable.rs:165:10
+   --> tests/fail/selectable.rs:201:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ unsatisfied trait bound
@@ -106,7 +106,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<Join<
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `users::table`
-   --> tests/fail/selectable.rs:165:10
+   --> tests/fail/selectable.rs:201:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ unsatisfied trait bound
@@ -138,7 +138,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<Jo
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
-    --> tests/fail/selectable.rs:169:15
+    --> tests/fail/selectable.rs:205:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -182,7 +182,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `users::table`
-    --> tests/fail/selectable.rs:169:15
+    --> tests/fail/selectable.rs:205:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -226,7 +226,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `users::table`
-    --> tests/fail/selectable.rs:169:15
+    --> tests/fail/selectable.rs:205:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -270,7 +270,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `id: IsContainedInGroupBy<id>` is not satisfied
-   --> tests/fail/selectable.rs:179:10
+   --> tests/fail/selectable.rs:215:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ unsatisfied trait bound
@@ -304,7 +304,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<posts::colum
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `id: IsContainedInGroupBy<name>` is not satisfied
-   --> tests/fail/selectable.rs:179:10
+   --> tests/fail/selectable.rs:215:10
     |
 LL |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ unsatisfied trait bound
@@ -338,7 +338,7 @@ note: required for `users::columns::name` to implement `ValidGrouping<posts::col
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: mixing aggregate and not aggregate expressions is not allowed in SQL
-   --> tests/fail/selectable.rs:188:10
+   --> tests/fail/selectable.rs:224:10
     |
 LL |         .select(UserWithPostCount::as_select())
     |          ^^^^^^ unsatisfied trait bound
@@ -362,7 +362,7 @@ LL |     impl MixedAggregates<Never> for No {
  
     
 error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/selectable.rs:197:20
+   --> tests/fail/selectable.rs:233:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -400,7 +400,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
-   --> tests/fail/selectable.rs:197:20
+   --> tests/fail/selectable.rs:233:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -438,7 +438,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-   --> tests/fail/selectable.rs:197:20
+   --> tests/fail/selectable.rs:233:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
@@ -469,7 +469,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
-    --> tests/fail/selectable.rs:201:15
+    --> tests/fail/selectable.rs:237:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -508,7 +508,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
-    --> tests/fail/selectable.rs:201:15
+    --> tests/fail/selectable.rs:237:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -547,7 +547,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-    --> tests/fail/selectable.rs:201:15
+    --> tests/fail/selectable.rs:237:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ expected `Once`, found `Never`
@@ -579,7 +579,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
-   --> tests/fail/selectable.rs:211:20
+   --> tests/fail/selectable.rs:247:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -617,7 +617,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
-   --> tests/fail/selectable.rs:211:20
+   --> tests/fail/selectable.rs:247:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -655,7 +655,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-   --> tests/fail/selectable.rs:211:20
+   --> tests/fail/selectable.rs:247:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
@@ -686,7 +686,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
-    --> tests/fail/selectable.rs:215:15
+    --> tests/fail/selectable.rs:251:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -725,7 +725,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
-    --> tests/fail/selectable.rs:215:15
+    --> tests/fail/selectable.rs:251:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -764,7 +764,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-    --> tests/fail/selectable.rs:215:15
+    --> tests/fail/selectable.rs:251:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ expected `Once`, found `Never`
@@ -796,7 +796,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
-   --> tests/fail/selectable.rs:224:20
+   --> tests/fail/selectable.rs:260:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -834,7 +834,7 @@ LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
-   --> tests/fail/selectable.rs:224:20
+   --> tests/fail/selectable.rs:260:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
@@ -872,7 +872,7 @@ LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-   --> tests/fail/selectable.rs:224:20
+   --> tests/fail/selectable.rs:260:20
     |
 LL |         .returning(UserWithEmbeddedPost::as_select())
     |          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
@@ -903,7 +903,7 @@ LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
-    --> tests/fail/selectable.rs:228:15
+    --> tests/fail/selectable.rs:264:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -942,7 +942,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
-    --> tests/fail/selectable.rs:228:15
+    --> tests/fail/selectable.rs:264:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ unsatisfied trait bound
@@ -981,7 +981,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
-    --> tests/fail/selectable.rs:228:15
+    --> tests/fail/selectable.rs:264:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ expected `Once`, found `Never`
@@ -1013,7 +1013,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
           = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0599]: the associated function or constant `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
-   --> tests/fail/selectable.rs:236:40
+   --> tests/fail/selectable.rs:272:40
     |
  LL | struct UserWithoutSelectable {
     | ---------------------------- associated function or constant `as_select` not found for this struct because it doesn't satisfy `UserWithoutSelectable: diesel::Selectable<_>` or `UserWithoutSelectable: diesel::SelectableHelper<_>`
@@ -1038,7 +1038,7 @@ LL | pub trait Selectable<DB: Backend> {
             candidate #1: `diesel::SelectableHelper`
 
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-    --> tests/fail/selectable.rs:244:32
+    --> tests/fail/selectable.rs:280:32
      |
  LL |         .load::<(i32, String)>(&mut conn)
      |          ----                  ^^^^^^^^^ the trait `SingleValue` is not implemented for `diesel::expression::select_by::SelectBy<Post, _>`
@@ -1068,7 +1068,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: the trait bound `(i32, String): Queryable<SelectBy<Post, _>, _>` is not satisfied
-    --> tests/fail/selectable.rs:244:32
+    --> tests/fail/selectable.rs:280:32
      |
  LL |         .load::<(i32, String)>(&mut conn)
      |          ----                  ^^^^^^^^^ unsatisfied trait bound
@@ -1100,7 +1100,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-    --> tests/fail/selectable.rs:251:32
+    --> tests/fail/selectable.rs:287:32
      |
  LL |         .load::<(i32, String)>(&mut conn)
      |          ----                  ^^^^^^^^^ the trait `SingleValue` is not implemented for `diesel::expression::select_by::SelectBy<Post, _>`
@@ -1130,7 +1130,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: the trait bound `(i32, String): Queryable<SelectBy<Post, _>, _>` is not satisfied
-    --> tests/fail/selectable.rs:251:32
+    --> tests/fail/selectable.rs:287:32
      |
  LL |         .load::<(i32, String)>(&mut conn)
      |          ----                  ^^^^^^^^^ unsatisfied trait bound
@@ -1162,7 +1162,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<..., _>` is not satisfied
-    --> tests/fail/selectable.rs:257:42
+    --> tests/fail/selectable.rs:293:42
      |
  LL |         .load::<((i32, String), String)>(&mut conn)
      |          ----                            ^^^^^^^^^ unsatisfied trait bound
@@ -1195,8 +1195,110 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
+error[E0277]: the trait bound `((..., ...), ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/selectable.rs:298:49
+     |
+ LL |         .load::<(((i32, String), String), i32)>(&mut conn)
+     |          ----                                   ^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<(((i32, std::string::String), std::string::String), i32), _>` is not implemented for `((SelectBy<Post, _>, Text), Integer)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `(((i32, std::string::String), std::string::String), i32)` and in your query `.select((((i32, std::string::String), std::string::String), i32)::as_select())` to get a better error message
+     = help: the following other types implement trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>`:
+               `Nullable<(ST, ST1)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, (((i32, String), String), i32)>`
+note: required by a bound in `load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: the trait bound `((..., ...), ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/selectable.rs:303:57
+     |
+ LL |         .load::<((PostWithoutSelectable, String), i32)>(&mut conn)
+     |          ----                                           ^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<((PostWithoutSelectable, std::string::String), i32), _>` is not implemented for `((SelectBy<Post, _>, Text), Integer)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `((PostWithoutSelectable, std::string::String), i32)` and in your query `.select(((PostWithoutSelectable, std::string::String), i32)::as_select())` to get a better error message
+     = help: the following other types implement trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>`:
+               `Nullable<(ST, ST1)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, ((..., ...), i32)>`
+note: required by a bound in `load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
+error[E0277]: the trait bound `(SelectBy<Post, _>, ...): CompatibleType<..., _>` is not satisfied
+    --> tests/fail/selectable.rs:311:44
+     |
+ LL |         .load::<(PostLookalike, Nickname)>(&mut conn)
+     |          ----                              ^^^^^^^^^ unsatisfied trait bound
+     |          |
+     |          required by a bound introduced by this call
+     |
+     = help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<(PostLookalike, Nickname), _>` is not implemented for `(diesel::expression::select_by::SelectBy<Post, _>, Untyped)`
+     = note: this is a mismatch between what your query returns and what your type expects the query to return
+     = note: the fields in your struct need to match the fields returned by your query in count, order and type
+     = note: consider using `#[diesel(check_for_backend(_))]` on either `#[derive(Selectable)]` or `#[derive(QueryableByName)]` 
+             on your struct `(PostLookalike, Nickname)` and in your query `.select((PostLookalike, Nickname)::as_select())` to get a better error message
+     = help: the following other types implement trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>`:
+               `Nullable<(ST, ST1)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `CompatibleType<Option<__T>, __DB>`
+               `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `CompatibleType<Option<__T>, __DB>`
+             and N others
+     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, (PostLookalike, Nickname)>`
+note: required by a bound in `load`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+     |        ---- required by a bound in this associated function
+LL |     where
+LL |         Self: LoadQuery<'query, Conn, U>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+  
+     
 error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-    --> tests/fail/selectable.rs:263:37
+    --> tests/fail/selectable.rs:317:37
      |
  LL |         .load::<(i32, String, i32)>(&mut conn)
      |          ----                       ^^^^^^^^^ the trait `SingleValue` is not implemented for `diesel::expression::select_by::SelectBy<Post, _>`
@@ -1226,7 +1328,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0277]: the trait bound `(i32, String, i32): Queryable<SelectBy<..., _>, _>` is not satisfied
-    --> tests/fail/selectable.rs:263:37
+    --> tests/fail/selectable.rs:317:37
      |
  LL |         .load::<(i32, String, i32)>(&mut conn)
      |          ----                       ^^^^^^^^^ unsatisfied trait bound
@@ -1258,7 +1360,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
   
      
 error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
-    --> tests/fail/selectable.rs:274:15
+    --> tests/fail/selectable.rs:328:15
      |
  LL |         .load(&mut conn)
      |          ---- ^^^^^^^^^ expected `Pg`, found `Sqlite`

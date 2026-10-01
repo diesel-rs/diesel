@@ -232,6 +232,172 @@ fn mixed_selectable_and_plain_select() {
     assert_eq!(expected_data, actual_data);
 }
 
+#[diesel_test_helper::test]
+fn nested_tuple_of_selectables_followed_by_plain_select() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let expected_data = vec![
+        (
+            (
+                User {
+                    id: 1,
+                    name: "Sean".to_string(),
+                    hair_color: None,
+                },
+                UserName::new("Sean"),
+            ),
+            1,
+        ),
+        (
+            (
+                User {
+                    id: 2,
+                    name: "Tess".to_string(),
+                    hair_color: None,
+                },
+                UserName::new("Tess"),
+            ),
+            2,
+        ),
+    ];
+    let actual_data: Vec<((User, UserName), i32)> = users
+        .select(((User::as_select(), UserName::as_select()), id))
+        .order(id)
+        .load(connection)
+        .unwrap();
+    assert_eq!(expected_data, actual_data);
+}
+
+#[diesel_test_helper::test]
+fn nested_tuple_with_nullable_selectable_followed_by_plain_select() {
+    use crate::joins::TestData;
+
+    let (mut connection, test_data) =
+        crate::joins::connection_with_fixture_data_for_multitable_joins();
+    let TestData {
+        posts, comments, ..
+    } = test_data;
+
+    let data = posts::table
+        .left_outer_join(comments::table)
+        .order((posts::id, comments::id))
+        .select((
+            (
+                Post::as_select(),
+                <Option<Comment> as SelectableHelper<_>>::as_select(),
+            ),
+            posts::id,
+        ))
+        .load::<((Post, Option<Comment>), i32)>(&mut connection);
+    let expected = vec![
+        ((posts[0].clone(), Some(comments[0].clone())), posts[0].id),
+        ((posts[0].clone(), Some(comments[2].clone())), posts[0].id),
+        ((posts[1].clone(), None), posts[1].id),
+        ((posts[2].clone(), Some(comments[1].clone())), posts[2].id),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[diesel_test_helper::test]
+fn tuple_of_selectables_inside_custom_query_wrapper() {
+    use diesel::backend::Backend;
+    use diesel::query_builder::{AstPass, Query, QueryFragment, QueryId};
+    use diesel::sql_types::BigInt;
+
+    #[derive(Debug, PartialEq, Queryable, Selectable)]
+    #[diesel(table_name = users)]
+    struct UserHairColor {
+        hair_color: Option<String>,
+    }
+
+    #[derive(QueryId)]
+    struct WithTotal<T>(T);
+
+    impl<T: Query> Query for WithTotal<T> {
+        type SqlType = (T::SqlType, BigInt);
+    }
+
+    impl<T, DB> QueryFragment<DB> for WithTotal<T>
+    where
+        DB: Backend,
+        T: QueryFragment<DB>,
+    {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+            out.push_sql("SELECT *, COUNT(*) OVER () FROM (");
+            self.0.walk_ast(out.reborrow())?;
+            out.push_sql(") AS inner_query");
+            Ok(())
+        }
+    }
+
+    impl<T, Conn> RunQueryDsl<Conn> for WithTotal<T> {}
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let mut actual_data: Vec<((UserName, UserHairColor), i64)> =
+        WithTotal(users::table.select((UserName::as_select(), UserHairColor::as_select())))
+            .load(connection)
+            .unwrap();
+    // derived tables carry no row order on MySQL and MariaDB
+    actual_data.sort_by(|a, b| (a.0).0.0.cmp(&(b.0).0.0));
+    let expected_data = vec![
+        (
+            (UserName::new("Sean"), UserHairColor { hair_color: None }),
+            2,
+        ),
+        (
+            (UserName::new("Tess"), UserHairColor { hair_color: None }),
+            2,
+        ),
+    ];
+    assert_eq!(expected_data, actual_data);
+}
+
+#[diesel_test_helper::test]
+fn selectable_followed_by_untyped_sql() {
+    use diesel::dsl::sql;
+    use diesel::sql_types::{Text, Untyped};
+
+    #[derive(Debug, PartialEq, QueryableByName)]
+    struct Nickname {
+        #[diesel(sql_type = Text)]
+        nickname: String,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let actual_data: Vec<(User, Nickname)> = users::table
+        .select((User::as_select(), sql::<Untyped>("name AS nickname")))
+        .order(users::id)
+        .load(connection)
+        .unwrap();
+    let expected_data = vec![
+        (
+            User {
+                id: 1,
+                name: "Sean".to_string(),
+                hair_color: None,
+            },
+            Nickname {
+                nickname: "Sean".to_string(),
+            },
+        ),
+        (
+            User {
+                id: 2,
+                name: "Tess".to_string(),
+                hair_color: None,
+            },
+            Nickname {
+                nickname: "Tess".to_string(),
+            },
+        ),
+    ];
+    assert_eq!(expected_data, actual_data);
+}
+
 // The following tests are duplicates from tests in joins.rs
 // They are used to verify that selectable behaves equivalent to the corresponding
 // raw select
