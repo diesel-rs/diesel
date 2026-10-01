@@ -1,0 +1,20 @@
+error[E0271]: type mismatch resolving `<ForeignKeys as Pragma>::Scope == PerSchema`
+   --> tests/fail/per_connection_pragma_cannot_take_a_schema.rs:22:33
+    |
+ LL |     let _ = connection.pragma::<ForeignKeys>(None);
+    |                                 ^^^^^^^^^^^ type mismatch resolving `<ForeignKeys as Pragma>::Scope == PerSchema`
+    |
+note: expected this to be `PerSchema`
+   --> tests/fail/per_connection_pragma_cannot_take_a_schema.rs:11:18
+    |
+ LL |     type Scope = PerConnection;
+    |                  ^^^^^^^^^^^^^
+note: required by a bound in `pragma::<impl diesel::SqliteConnection>::pragma`
+   --> DIESEL/diesel/diesel/src/sqlite/pragma.rs
+    |
+LL |     pub fn pragma<P>(&mut self, schema: Option<&str>) -> QueryResult<P::Row>
+    |            ------ required by a bound in this associated function
+LL |     where
+LL |         P: ReadPragma<Scope = PerSchema>,
+    |                       ^^^^^^^^^^^^^^^^^ required by this bound in `pragma::<impl SqliteConnection>::pragma`
+For more information about this error, try `rustc --explain E0271`.

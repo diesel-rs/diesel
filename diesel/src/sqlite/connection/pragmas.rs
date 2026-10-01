@@ -3,8 +3,8 @@ use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
+use crate::sqlite::pragma::{AutoVacuum, FreelistCount, PageCount};
 use alloc::string::ToString;
-use core::marker::PhantomData;
 
 /// The `auto_vacuum` mode of a database, controlling whether and when SQLite
 /// reclaims freed pages back to the file.
@@ -92,9 +92,7 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn auto_vacuum(&mut self, schema: Option<&str>) -> QueryResult<AutoVacuumMode> {
-        use crate::query_dsl::RunQueryDsl;
-        let query: Pragma<'_, crate::sql_types::Integer> = Pragma::new("auto_vacuum", schema);
-        query.get_result(self)
+        self.pragma::<AutoVacuum>(schema)
     }
 
     /// Set the [`auto_vacuum`](AutoVacuumMode) mode of a database.
@@ -121,15 +119,7 @@ impl SqliteConnection {
         schema: Option<&str>,
         mode: AutoVacuumMode,
     ) -> QueryResult<()> {
-        use crate::query_dsl::RunQueryDsl;
-        // #[repr(i32)] guarantees the discriminant fits exactly in i32.
-        SetPragmaInt {
-            schema,
-            name: "auto_vacuum",
-            value: mode as i32,
-        }
-        .execute(self)
-        .map(|_| ())
+        self.set_pragma::<AutoVacuum>(schema, &mode)
     }
 
     /// Total number of pages in a database, via `PRAGMA page_count`.
@@ -153,7 +143,7 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn page_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
-        self.read_pragma_count("page_count", schema)
+        self.pragma::<PageCount>(schema)
     }
 
     /// Unused pages on a database's freelist, via `PRAGMA freelist_count`.
@@ -173,18 +163,7 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn freelist_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
-        self.read_pragma_count("freelist_count", schema)
-    }
-
-    fn read_pragma_count(
-        &mut self,
-        pragma: &'static str,
-        schema: Option<&str>,
-    ) -> QueryResult<i64> {
-        use crate::query_dsl::RunQueryDsl;
-
-        let query: Pragma<'_, crate::sql_types::BigInt> = Pragma::new(pragma, schema);
-        query.get_result(self)
+        self.pragma::<FreelistCount>(schema)
     }
 
     /// Shrink a database by releasing freelist pages, without the full rewrite
@@ -362,76 +341,6 @@ impl SqliteConnection {
         })
     }
 }
-
-// A `PRAGMA` accepts no bind parameters, neither for the schema it targets nor for the
-// value it assigns, so the schema is rendered as a quoted identifier by the query
-// builder. `name` is always a constant chosen here, never caller data.
-struct Pragma<'a, ST> {
-    schema: Option<&'a str>,
-    name: &'static str,
-    sql_type: PhantomData<ST>,
-}
-
-impl<'a, ST> Pragma<'a, ST> {
-    fn new(name: &'static str, schema: Option<&'a str>) -> Self {
-        Pragma {
-            schema,
-            name,
-            sql_type: PhantomData,
-        }
-    }
-}
-
-impl<ST> QueryFragment<Sqlite> for Pragma<'_, ST> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        out.push_sql("PRAGMA ");
-        out.push_identifier(self.schema.unwrap_or("main"))?;
-        out.push_sql(".");
-        out.push_sql(self.name);
-        Ok(())
-    }
-}
-
-// The schema name is runtime data, so the rendered SQL is not determined by the type.
-impl<ST> QueryId for Pragma<'_, ST> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
-}
-
-impl<ST> Query for Pragma<'_, ST> {
-    type SqlType = ST;
-}
-
-impl<ST> RunQueryDslSupport for Pragma<'_, ST> {}
-
-// `PRAGMA name = value` takes no bind parameter for the value either, so the integer is
-// rendered as a literal.
-struct SetPragmaInt<'a> {
-    schema: Option<&'a str>,
-    name: &'static str,
-    value: i32,
-}
-
-impl QueryFragment<Sqlite> for SetPragmaInt<'_> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        out.push_sql("PRAGMA ");
-        out.push_identifier(self.schema.unwrap_or("main"))?;
-        out.push_sql(".");
-        out.push_sql(self.name);
-        out.push_sql(" = ");
-        out.push_sql(&self.value.to_string());
-        Ok(())
-    }
-}
-
-impl QueryId for SetPragmaInt<'_> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
-}
-
-impl RunQueryDslSupport for SetPragmaInt<'_> {}
 
 // `VACUUM` names its schema as an identifier, so that operand is quoted by the query
 // builder, while the `INTO` destination is an expression and binds normally.

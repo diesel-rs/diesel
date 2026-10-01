@@ -1,0 +1,20 @@
+error[E0271]: type mismatch resolving `<UserVersion as Pragma>::Scope == PerConnection`
+   --> tests/fail/per_schema_pragma_cannot_be_set_on_the_connection.rs:20:48
+    |
+ LL |     let _ = connection.set_connection_pragma::<UserVersion>(&7);
+    |                                                ^^^^^^^^^^^ type mismatch resolving `<UserVersion as Pragma>::Scope == PerConnection`
+    |
+note: expected this to be `PerConnection`
+   --> tests/fail/per_schema_pragma_cannot_be_set_on_the_connection.rs:10:18
+    |
+ LL |     type Scope = PerSchema;
+    |                  ^^^^^^^^^
+note: required by a bound in `pragma::<impl diesel::SqliteConnection>::set_connection_pragma`
+   --> DIESEL/diesel/diesel/src/sqlite/pragma.rs
+    |
+LL |     pub fn set_connection_pragma<P>(&mut self, value: &P::Value) -> QueryResult<()>
+    |            --------------------- required by a bound in this associated function
+LL |     where
+LL |         P: WritePragma<Scope = PerConnection>,
+    |                        ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `pragma::<impl SqliteConnection>::set_connection_pragma`
+For more information about this error, try `rustc --explain E0271`.
