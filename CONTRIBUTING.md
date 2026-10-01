@@ -82,9 +82,9 @@ We try to keep a number of issues [marked as good first issue](https://github.co
 4. Create a `.env` file in this directory, and add the connection details for
    your databases.
 
-   *Additional note:* The MySQL tests currently fail when running on MySQL 5.6
-   or lower. If you have 5.6 or lower installed locally and cannot upgrade for
-   some reason, you may want to consider setting up Docker as mentioned below.
+   *Additional note:* The MySQL tests require MySQL 8.4 in order to pass. If you
+   have a different version installed locally, you may want to consider setting
+   up Docker as mentioned below.
 
    See [.env.sample](.env.sample) for an example that works with a trivial
    local setup.
@@ -95,12 +95,12 @@ We try to keep a number of issues [marked as good first issue](https://github.co
    user that you've specified.
 
    If you have [Docker](https://www.docker.com/), the following snippet might help you
-   to get Postgres and MySQL running (with the above `.env` file):
+   to get Postgres and MySQL 8.4 running (with the above `.env` file):
 
    ```bash
    #!/usr/bin/env sh
    set -e
-   docker run -d --name diesel.mysql -p 3306:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql
+   docker run -d --name diesel.mysql -p 3306:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql:8.4
    while
      sleep 1;
      ! echo 'CREATE DATABASE diesel_test; CREATE DATABASE diesel_unit_test;' | docker exec -i diesel.mysql mysql
