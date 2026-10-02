@@ -1,6 +1,6 @@
 [package]
 name = "migrations_macros"
-version = "2.3.0"
+version = "2.3.1"
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
 homepage = "https://diesel.rs"
@@ -12,6 +12,7 @@ rust-version.workspace = true
 [dependencies]
 quote = "1"
 proc-macro2 = "1"
+syn = "3"
 
 [dependencies.migrations_internals]
 version = "~2.3.0"

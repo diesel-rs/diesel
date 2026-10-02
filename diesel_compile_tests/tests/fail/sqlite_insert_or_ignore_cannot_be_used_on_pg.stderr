@@ -17,8 +17,8 @@ help: `diesel::query_builder::insert_statement::private::InsertOrIgnore` impleme
 ...
  LL |     impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `QueryFragment<Mysql>`
-     = note: required for `InsertStatement<table, ..., ...>` to implement `QueryFragment<Pg>`
-     = note: required for `InsertStatement<table, ..., ...>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
+     = note: required for `InsertStatement<table, ValuesClause<_, table>, _>` to implement `QueryFragment<Pg>`
+     = note: required for `InsertStatement<table, ValuesClause<_, table>, _>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

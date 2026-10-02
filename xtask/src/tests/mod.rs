@@ -226,6 +226,8 @@ impl TestArgs {
                     "dsl_auto_type",
                     "-p",
                     "diesel_table_macro_syntax",
+                    "-p",
+                    "migrations_macros",
                     "-F",
                     "diesel/extras",
                 ])
@@ -234,7 +236,11 @@ impl TestArgs {
                 .arg("-F")
                 .arg(format!("diesel_derives/{backend}"))
                 .arg("-F")
-                .arg(format!("diesel-dynamic-schema/{backend}"));
+                .arg(format!("diesel-dynamic-schema/{backend}"))
+                .arg("-F")
+                .arg(format!("diesel_migrations/{backend}"))
+                .arg("-F")
+                .arg(format!("migrations_macros/{backend}"));
             if matches!(backend, Backend::Mysql) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);

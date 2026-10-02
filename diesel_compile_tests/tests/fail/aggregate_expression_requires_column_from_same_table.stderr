@@ -13,11 +13,11 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<posts::table>
    = note: required for `sum<Integer, id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<sum<Integer, id>>`
 
@@ -57,11 +57,11 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<posts::table>
    = note: required for `avg<Integer, id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<avg<Integer, id>>`
 
@@ -101,11 +101,11 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<posts::table>
    = note: required for `max<Integer, id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<max<Integer, id>>`
 
@@ -145,11 +145,11 @@ LL |         id -> Integer,
    = help: `posts::columns::id` implements trait `SelectableExpression<QS>`:
              SelectableExpression<Only<posts::table>>
              SelectableExpression<Tablesample<posts::table, TSM>>
-             SelectableExpression<SelectStatement<...>>
-             SelectableExpression<posts::table>
              SelectableExpression<Join<Left, Right, Inner>>
              SelectableExpression<Join<Left, Right, LeftOuter>>
-             SelectableExpression<query_source::joins::JoinOn<Join, On>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<posts::table>
    = note: required for `min<Integer, id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<min<Integer, id>>`
 
