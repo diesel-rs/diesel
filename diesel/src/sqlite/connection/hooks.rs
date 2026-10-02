@@ -334,12 +334,18 @@ mod tests {
         SqliteConnection::establish(":memory:").unwrap()
     }
 
+    // Only used by tests that are compiled out under miri (see the
+    // individual tests below).
+    #[cfg(not(miri))]
     #[derive(crate::QueryableByName)]
     struct CountResult {
         #[diesel(sql_type = crate::sql_types::BigInt)]
         c: i64,
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_commit_fires_on_commit() {
         let conn = &mut connection();
@@ -363,6 +369,9 @@ mod tests {
         assert_eq!(count.load(Ordering::Relaxed), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_commit_returning_true_forces_rollback() {
         let conn = &mut connection();
@@ -410,6 +419,9 @@ mod tests {
         assert_eq!(cnt, 0);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn replacing_commit_hook_drops_old() {
         let conn = &mut connection();
@@ -467,6 +479,9 @@ mod tests {
         assert_eq!(count.load(Ordering::Relaxed), 0);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_rollback_fires_on_explicit_rollback() {
         let conn = &mut connection();
@@ -493,6 +508,9 @@ mod tests {
         assert_eq!(count.load(Ordering::Relaxed), 1);
     }
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_rollback_fires_when_commit_hook_forces_rollback() {
         let conn = &mut connection();
@@ -577,6 +595,9 @@ mod tests {
     const HEAVY_QUERY: &str = "WITH RECURSIVE c(x) AS \
         (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < 100000) SELECT count(*) FROM c";
 
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_progress_interrupts_query() {
         let conn = &mut connection();
@@ -615,9 +636,11 @@ mod tests {
     // platforms, including WASM. The file-backed databases used here cannot
     // be created on WASM, so only the tests are gated out.
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     /// Helper: create a file-backed connection in WAL mode (WAL requires a real
     /// file, and every WAL test below wants the connection already in WAL mode).
+    /// Its only consumers are also compiled out under miri (see the
+    /// individual tests below).
     fn wal_connection() -> (SqliteConnection, tempfile::TempDir) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("test.db");
@@ -629,6 +652,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_fires_in_wal_mode() {
         let (conn, _dir) = &mut wal_connection();
@@ -665,6 +691,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn replacing_wal_hook_drops_old() {
         let (conn, _dir) = &mut wal_connection();
@@ -708,6 +737,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn remove_wal_hook_disables_callback() {
         let (conn, _dir) = &mut wal_connection();
@@ -733,6 +765,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn wal_hook_does_not_fire_in_default_journal_mode() {
         // A plain file connection left in the default journal mode ("delete"),
@@ -764,6 +799,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_can_use_borrowed_connection() {
         let (conn, _dir) = &mut wal_connection();
@@ -798,6 +836,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_callback_write_re_enters_hook() {
         let (conn, _dir) = &mut wal_connection();
@@ -848,6 +889,9 @@ mod tests {
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_wal_fires_once_per_transaction_commit() {
         let (conn, _dir) = &mut wal_connection();
@@ -886,6 +930,9 @@ mod tests {
     // database (`:memory:` connections do not share a lock), and
     // `tempfile::tempdir()` panics on WASM due to the lack of a filesystem.
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn on_busy_handler_is_invoked_on_lock_contention() {
         let dir = tempfile::tempdir().unwrap();

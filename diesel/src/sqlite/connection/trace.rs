@@ -138,7 +138,8 @@ impl SqliteConnection {
     }
 }
 
-#[cfg(test)]
+// miri doesn't support ffi callbacks
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
     use crate::connection::Connection;

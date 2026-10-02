@@ -219,7 +219,11 @@ impl<'stmt> Field<'stmt, Sqlite> for SqliteField<'stmt, '_> {
     }
 }
 
-#[cfg(test)]
+// Reads text or blob values, which requires accessing memory allocated by the
+// native library. That is not supported when running under miri with a native
+// libsqlite3 (`-Zmiri-native-lib`), so the whole module is compiled out in
+// that case.
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
 

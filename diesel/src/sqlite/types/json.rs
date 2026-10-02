@@ -1847,8 +1847,14 @@ mod tests {
 
     #[diesel_test_helper::test]
     fn guard_against_stackoverflow_mixed() {
+        // otherwise miri is too slow
+        #[cfg(not(miri))]
+        const SIZE: usize = 2000;
+        #[cfg(miri)]
+        const SIZE: usize = 20;
+
         let mut value = serde_json::Value::Number(42.into());
-        for i in 0_usize..2000 {
+        for i in 0_usize..SIZE {
             if i.is_multiple_of(2) {
                 let mut map = serde_json::Map::new();
                 map.insert(format!("key_{i}"), value);

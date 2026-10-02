@@ -357,12 +357,15 @@ mod tests {
                 .execute(&mut conn)
                 .is_ok()
         );
-        // A 500-byte blob exceeds the 100-byte row/value limit ("string or blob too big").
-        assert!(
-            crate::sql_query("SELECT length(randomblob(500))")
-                .execute(&mut conn)
-                .is_err()
-        );
+        if cfg!(not(miri)) {
+            // ffi string access
+            // A 500-byte blob exceeds the 100-byte row/value limit ("string or blob too big").
+            assert!(
+                crate::sql_query("SELECT length(randomblob(500))")
+                    .execute(&mut conn)
+                    .is_err()
+            );
+        }
     }
 
     #[diesel_test_helper::test]
@@ -380,9 +383,12 @@ mod tests {
         let mut unconstrained = connection();
         assert!(crate::sql_query(&wide).execute(&mut unconstrained).is_ok());
 
-        let mut conn = connection();
-        conn.set_limit(SqliteLimit::ColumnCount, 10);
-        assert!(crate::sql_query(&wide).execute(&mut conn).is_err());
+        if cfg!(not(miri)) {
+            // ffi string access
+            let mut conn = connection();
+            conn.set_limit(SqliteLimit::ColumnCount, 10);
+            assert!(crate::sql_query(&wide).execute(&mut conn).is_err());
+        }
     }
 
     #[diesel_test_helper::test]
@@ -391,9 +397,12 @@ mod tests {
         conn.set_limit(SqliteLimit::ExprDepth, 5);
 
         assert!(crate::sql_query("SELECT 1+1").execute(&mut conn).is_ok());
-        // A 40-deep addition tree exceeds the parse-tree depth of five.
-        let deep = format!("SELECT {}1", "1+".repeat(40));
-        assert!(crate::sql_query(&deep).execute(&mut conn).is_err());
+        if cfg!(not(miri)) {
+            // ffi string access
+            // A 40-deep addition tree exceeds the parse-tree depth of five.
+            let deep = format!("SELECT {}1", "1+".repeat(40));
+            assert!(crate::sql_query(&deep).execute(&mut conn).is_err());
+        }
     }
 
     #[diesel_test_helper::test]
@@ -406,14 +415,17 @@ mod tests {
                 .execute(&mut conn)
                 .is_ok()
         );
-        // Five UNION terms exceed the limit of two ("too many terms in compound SELECT").
-        assert!(
-            crate::sql_query(
-                "SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5"
-            )
-            .execute(&mut conn)
-            .is_err()
-        );
+        if cfg!(not(miri)) {
+            // ffi string access
+            // Five UNION terms exceed the limit of two ("too many terms in compound SELECT").
+            assert!(
+                crate::sql_query(
+                    "SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5"
+                )
+                .execute(&mut conn)
+                .is_err()
+            );
+        }
     }
 
     #[diesel_test_helper::test]
@@ -425,9 +437,12 @@ mod tests {
         let mut unconstrained = connection();
         assert!(crate::sql_query(heavy).execute(&mut unconstrained).is_ok());
 
-        let mut conn = connection();
-        conn.set_limit(SqliteLimit::VdbeOp, 5);
-        assert!(crate::sql_query(heavy).execute(&mut conn).is_err());
+        if cfg!(not(miri)) {
+            // ffi string access
+            let mut conn = connection();
+            conn.set_limit(SqliteLimit::VdbeOp, 5);
+            assert!(crate::sql_query(heavy).execute(&mut conn).is_err());
+        }
     }
 
     #[diesel_test_helper::test]
@@ -440,14 +455,18 @@ mod tests {
                 .execute(&mut conn)
                 .is_ok()
         );
-        // Eight arguments exceed the limit of three ("too many arguments on function max").
-        assert!(
-            crate::sql_query("SELECT max(1, 2, 3, 4, 5, 6, 7, 8)")
-                .execute(&mut conn)
-                .is_err()
-        );
+        if cfg!(not(miri)) {
+            // ffi string access
+            // Eight arguments exceed the limit of three ("too many arguments on function max").
+            assert!(
+                crate::sql_query("SELECT max(1, 2, 3, 4, 5, 6, 7, 8)")
+                    .execute(&mut conn)
+                    .is_err()
+            );
+        }
     }
 
+    #[cfg(not(miri))] // ffi string access
     #[diesel_test_helper::test]
     fn set_limit_enforces_attached() {
         let mut conn = connection();
@@ -477,7 +496,10 @@ mod tests {
             SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT as i64 + 1
         );
         assert!(crate::sql_query(&at_limit).execute(&mut conn).is_ok());
-        assert!(crate::sql_query(&past_limit).execute(&mut conn).is_err());
+        if cfg!(not(miri)) {
+            // ffi string access
+            assert!(crate::sql_query(&past_limit).execute(&mut conn).is_err());
+        }
     }
 
     #[diesel_test_helper::test]
@@ -504,11 +526,14 @@ mod tests {
         let mut conn = connection();
         conn.set_limit(SqliteLimit::TriggerDepth, 3);
         conn.batch_execute(setup).unwrap();
-        assert!(
-            crate::sql_query("INSERT INTO recur VALUES (1)")
-                .execute(&mut conn)
-                .is_err()
-        );
+        if cfg!(not(miri)) {
+            // ffi string access
+            assert!(
+                crate::sql_query("INSERT INTO recur VALUES (1)")
+                    .execute(&mut conn)
+                    .is_err()
+            );
+        }
     }
 
     #[diesel_test_helper::test]
@@ -523,6 +548,7 @@ mod tests {
         assert!(crate::sql_query("SELECT 1").execute(&mut conn).is_ok());
     }
 
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn set_limit_enforces_sql_length() {
         let mut conn = connection();
@@ -545,9 +571,12 @@ mod tests {
                 .is_ok()
         );
 
-        let long_pattern = "%".repeat(200);
-        let query = format!("SELECT 'test' LIKE '{long_pattern}'");
-        assert!(crate::sql_query(&query).execute(&mut conn).is_err());
+        // ffi string access
+        if cfg!(not(miri)) {
+            let long_pattern = "%".repeat(200);
+            let query = format!("SELECT 'test' LIKE '{long_pattern}'");
+            assert!(crate::sql_query(&query).execute(&mut conn).is_err());
+        }
     }
 
     #[diesel_test_helper::test]

@@ -791,6 +791,10 @@ mod test {
     }
 
     #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -1101,6 +1105,10 @@ mod test {
 
     #[diesel_test_helper::test]
     #[cfg(feature = "__sqlite-shared")]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::SimpleConnection;
@@ -1170,6 +1178,10 @@ mod test {
     }
 
     #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_commits_after_a_recovered_statement_error() {
         use crate::connection::SimpleConnection;

@@ -728,3 +728,22 @@ jobs:
       - name: Run miri tests for big-endian target
         run: |
           cargo +nightly miri test -p diesel -F postgres check_as_ref_ --target s390x-unknown-linux-gnu
+  Miri-Native-Lib:
+    name: Miri Tests (sqlite via native lib)
+    runs-on: ubuntu-latest
+    needs: [rustfmt_and_clippy]
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Setup rust toolchain
+        run: |
+          rustup update nightly --no-self-update
+          rustup component add miri --toolchain nightly
+      - name: Install sqlite development files
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev pkg-config
+      - name: Run miri tests for the sqlite backend
+        run: |
+          cargo xtask run-tests --miri sqlite
