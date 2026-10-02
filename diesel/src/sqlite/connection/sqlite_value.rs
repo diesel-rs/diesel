@@ -471,6 +471,7 @@ mod tests {
             panic_message, run_in_child, with_heap_limit,
         };
         use crate::sqlite::{Sqlite, SqliteConnection};
+        use crate::test_helpers::format_error;
         use alloc::string::{String, ToString};
 
         const VALUE_LEN: usize = 1_048_576;
@@ -747,9 +748,7 @@ mod tests {
                     None => panic!("the iterator ended instead of copying the row"),
                 };
                 assert!(
-                    error
-                        .to_string()
-                        .contains("SQLite failed to allocate a duplicated value"),
+                    format_error(&error).contains("SQLite failed to allocate a duplicated value"),
                     "unexpected error: {error}"
                 );
             });

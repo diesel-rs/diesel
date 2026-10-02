@@ -14,6 +14,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Add support for sqlite-wasm-rs 0.6
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
@@ -55,9 +56,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * `diesel_dynamic_schema` runtime columns can now be used in `GROUP BY` and `HAVING` clauses, including alongside aggregates.
+* Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
 
 ### Fixed
 
+* Fixed `SqliteReadOnlyBlob::close` closing the underlying SQLite handle twice.
+* Fixed `SqliteReadOnlyBlob` seeks before byte zero to return `InvalidInput` without changing the cursor, instead of overflowing or clamping to zero.
+* Fixed PostgreSQL array serialization to set the header's null flag when an element is `NULL`. PostgreSQL ignored the missing flag, but Diesel could not deserialize such arrays.
 * Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
 * Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
@@ -69,6 +74,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* The SQLite JSONB reader now rejects a `null`, `true` or `false` element that declares a payload or uses a multi byte header, instead of decoding a value that SQLite either refuses or reads differently
+* Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
+* Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
+* Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
+* Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
+* Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 
 ### Changed
 

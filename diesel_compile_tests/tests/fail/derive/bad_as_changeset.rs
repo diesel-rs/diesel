@@ -12,11 +12,9 @@ table! {
 //~^ ERROR: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
 //~| ERROR: the trait bound `&i32: AsExpression<Nullable<Text>>` is not satisfied
 //~| ERROR: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
-//~| ERROR: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
-//~| ERROR: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
+//~| ERROR: the trait bound `&i32: AsExpression<diesel::sql_types::Text>` is not satisfied
 //~| ERROR: the trait bound `&'update i32: AsExpression<diesel::sql_types::Text>` is not satisfied
 //~| ERROR: the trait bound `&i32: AsExpression<Nullable<Text>>` is not satisfied
-//~| ERROR: the trait bound `i32: AppearsOnTable<users::table>` is not satisfied
 struct User {
     id: String,
     name: i32,

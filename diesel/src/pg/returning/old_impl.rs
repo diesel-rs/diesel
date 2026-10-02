@@ -1,14 +1,15 @@
 //! `RETURNING old.col` support for PostgreSQL 18 and later.
 
 use crate::backend::{Backend, sql_dialect};
+use crate::expression::nullable::Nullable;
 use crate::expression::{
     AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
 use crate::query_builder::returning::{
-    InsertStmtWithOnConflictDoUpdate, ReturningQuerySource, UpdateStmt,
+    InsertStmtWithOnConflictDoUpdate, OldIdent, ReturningQuerySource, UpdateStmt,
 };
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::query_source::{AppearsInFromClause, Column, Never, Once, QueryRelation};
+use crate::query_source::{AppearsInFromClause, Column};
 use crate::result::QueryResult;
 
 /// Wraps a column to refer to its pre-modification value in the `RETURNING`
@@ -128,42 +129,6 @@ where
 {
 }
 
-/// Represents the identifier `old` in the `RETURNING` clause.
-/// It is independent of the table of the column, and used as QS in marker in AppearsInFromClause.
-///
-/// We use this to typecheck that there is only one `old` identifier when we use `old`, so that
-/// there is no ambiguity, and also as a generic
-/// "any valid OLD statement-kind marker for ReturningQuerySource".
-#[derive(Debug, Clone, Copy)]
-pub struct OldIdent;
-
-/// There is an `old.` in ReturningQuerySource<UpdateStmt, T>
-///
-/// Useful to check non-ambiguity of `old`
-impl<StmtKind, T> AppearsInFromClause<OldIdent> for ReturningQuerySource<StmtKind, T> {
-    type Count = Once;
-}
-/// There isn't one directly on tables
-/// (this is useful for typechecking `old` in subqueries in returning)
-impl<T> AppearsInFromClause<OldIdent> for T
-where
-    T: QueryRelation,
-{
-    type Count = Never;
-}
-/// There is an `old.` for T in ReturningQuerySource<UpdateStmt, T>
-impl<T> AppearsInFromClause<ReturningQuerySource<OldIdent, T>>
-    for ReturningQuerySource<UpdateStmt, T>
-{
-    type Count = Once;
-}
-/// There is an `old.` for T in ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T>
-impl<T> AppearsInFromClause<ReturningQuerySource<OldIdent, T>>
-    for ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T>
-{
-    type Count = Once;
-}
-
 // We intentionally did not add implementations for use of `old(col)` in plain `INSERT`
 // (without `ON CONFLICT ... DO UPDATE`) or `DELETE` `RETURNING`, because it is not useful
 // there as one can just use `RETURNING column_name`. (`ON CONFLICT DO NOTHING` never returns
@@ -175,6 +140,14 @@ impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for Old
 where
     C: Column,
     Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+{
+}
+
+impl<C> SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>
+    for Nullable<Old<C>>
+where
+    C: Column,
+    Self: AppearsOnTable<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, C::Table>>,
 {
 }
 

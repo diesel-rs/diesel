@@ -123,7 +123,10 @@ pub fn generate_check_function(
                 let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
                 let ty = ty_builder.type_with_backend(b);
                 Ok(syn::parse_quote_spanned! {span =>
-                    #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
+                    #field_ty: diesel::deserialize::FromSqlRow<
+                        <diesel::dsl::SqlTypeOf<#ty> as diesel::internal::derives::selectable::SqlTypeLikeMarker>::SqlType,
+                        #b,
+                    >
                 })
             })
         })

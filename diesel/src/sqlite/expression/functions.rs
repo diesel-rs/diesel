@@ -593,7 +593,7 @@ extern "SQL" {
     /// - [`jsonb_extract_double`](jsonb_extract_double()) for floating-point values
     /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
     ///
-    /// This function requires at least SQLite 3.9 or newer.
+    /// This function requires at least SQLite 3.45 or newer.
     ///
     /// # Example
     ///
@@ -609,7 +609,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::{json, Value};
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 9, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     ///
     /// let json = json!({"a": "xyz"});
     /// let result = diesel::select(jsonb_extract_string::<Json, _, _>(json, "$.a"))
@@ -652,7 +652,7 @@ extern "SQL" {
     /// - [`jsonb_extract_double`](jsonb_extract_double()) for floating-point values
     /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
     ///
-    /// This function requires at least SQLite 3.9 or newer.
+    /// This function requires at least SQLite 3.45 or newer.
     ///
     /// # Example
     ///
@@ -668,7 +668,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::{json, Value};
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 9, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     ///
     /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
     /// let result = diesel::select(jsonb_extract_integer::<Json, _, _>(json, "$.c[2].f"))
@@ -711,7 +711,7 @@ extern "SQL" {
     /// - [`jsonb_extract_integer`](jsonb_extract_integer()) for integer values
     /// - [`jsonb_extract_jsonb`](jsonb_extract_jsonb_1()) for JSON objects or arrays in JSONB format
     ///
-    /// This function requires at least SQLite 3.9 or newer.
+    /// This function requires at least SQLite 3.45 or newer.
     ///
     /// # Example
     ///
@@ -727,7 +727,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Nullable};
     /// #     use serde_json::{json, Value};
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 9, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     ///
     /// let json = json!({"a": 3.14});
     /// let result = diesel::select(jsonb_extract_double::<Json, _, _>(json, "$.a"))
@@ -777,7 +777,7 @@ extern "SQL" {
     /// - [`jsonb_extract_integer`](jsonb_extract_integer()) for integer values
     /// - [`jsonb_extract_double`](jsonb_extract_double()) for floating-point values
     ///
-    /// This function requires at least SQLite 3.9 or newer.
+    /// This function requires at least SQLite 3.45 or newer.
     ///
     /// # Example
     ///
@@ -793,7 +793,7 @@ extern "SQL" {
     /// #     use diesel::sql_types::{Json, Jsonb, Nullable};
     /// #     use serde_json::{json, Value};
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 9, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     ///
     /// let json = json!({"a": 2, "c": [4, 5, {"f": 7}]});
     /// let result = diesel::select(jsonb_extract_jsonb_1::<Json, _, _>(json, "$"))
@@ -1511,6 +1511,8 @@ extern "SQL" {
     /// The `jsonb_group_array(X)` function is an aggregate SQL function that returns a JSONB array comprised of
     /// all X values in the aggregation.
     ///
+    /// This function requires at least SQLite 3.45 or newer
+    ///
     /// ## Aggregate Function Expression
     ///
     /// This function can be used as aggregate expression. See [`AggregateExpressionMethods`] for details.
@@ -1530,23 +1532,24 @@ extern "SQL" {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::*;
-    /// #     use schema::animals::dsl::*;
     /// #     use serde_json::json;
+    /// #     use schema::animals::dsl::*;
     /// #
     /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let result = animals
-    ///     .select(json_group_array(species))
+    ///     .select(jsonb_group_array(species))
     ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["dog", "spider"]));
     ///
     /// let result = animals
-    ///     .select(json_group_array(legs))
+    ///     .select(jsonb_group_array(legs))
     ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!([4, 8]));
     ///
     /// let result = animals
-    ///     .select(json_group_array(name))
+    ///     .select(jsonb_group_array(name))
     ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["Jack", null]));
     ///
@@ -1567,13 +1570,14 @@ extern "SQL" {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::*;
-    /// #     use schema::animals::dsl::*;
     /// #     use serde_json::json;
+    /// #     use schema::animals::dsl::*;
     /// #
     /// #     let connection = &mut establish_connection();
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let result = animals
-    ///     .select(json_group_array(species).aggregate_filter(legs.lt(8)))
+    ///     .select(jsonb_group_array(species).aggregate_filter(legs.lt(8)))
     ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(result, json!(["dog"]));
     ///
@@ -1651,7 +1655,7 @@ extern "SQL" {
     /// function except that the generated object is returned in SQLite's private binary JSONB
     /// format rather than in the standard RFC 8259 text format.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
@@ -1670,7 +1674,7 @@ extern "SQL" {
     /// #     use serde_json::json;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let result = diesel::select(jsonb_object_0()).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!({}), result);
@@ -1795,7 +1799,7 @@ extern "SQL" {
     /// In such case, the result will include all duplicates (e.g., `{"key": 1, "key": 2, "key": 3}`).
     /// Note that any duplicate entries in the resulting JSONB will be removed during deserialization.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// ## Aggregate Function Expression
     ///
@@ -1816,12 +1820,11 @@ extern "SQL" {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::*;
-    /// #     use diesel::sql_types::Text;
     /// #     use serde_json::json;
     /// #     use schema::animals::dsl::*;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let result = animals.select(jsonb_group_object(species, name)).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!({"dog":"Jack","spider":null}), result);
@@ -1843,23 +1846,11 @@ extern "SQL" {
     /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::dsl::*;
-    /// #     use diesel::sql_types::Text;
     /// #     use serde_json::json;
     /// #     use schema::animals::dsl::*;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #
-    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
-    /// #         .get_result::<String>(connection)?;
-    /// #
-    /// #     let version_components: Vec<&str> = version.split('.').collect();
-    /// #     let major: u32 = version_components[0].parse().unwrap();
-    /// #     let minor: u32 = version_components[1].parse().unwrap();
-    /// #
-    /// #     if major < 3 || minor < 38 {
-    /// #         println!("SQLite version is too old, skipping the test.");
-    /// #         return Ok(());
-    /// #     }
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let result = animals.select(jsonb_group_object(species, name).aggregate_filter(legs.lt(8))).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!({"dog":"Jack"}), result);
@@ -1869,7 +1860,7 @@ extern "SQL" {
     /// ```
     ///
     /// # See also
-    /// - [`json_group_object`](jsonb_group_array()) will return data in JSON format instead of JSONB.
+    /// - [`json_group_object`](json_group_object()) will return data in JSON format instead of JSONB.
     /// - [`jsonb_group_array`](jsonb_group_array()) will return JSONB array instead of object.
     #[cfg(feature = "__sqlite-shared")]
     #[aggregate]
@@ -1942,7 +1933,7 @@ extern "SQL" {
     /// constructed JSON array in the SQLite's private JSONB format rather than in the standard RFC 8259 text
     /// format.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
@@ -1961,7 +1952,7 @@ extern "SQL" {
     /// #     use serde_json::json;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let result = diesel::select(jsonb_array_0()).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!([]), result);
@@ -2068,7 +2059,7 @@ extern "SQL" {
     ///
     /// This function returns value in a binary JSONB format.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
@@ -2087,7 +2078,7 @@ extern "SQL" {
     /// #     use serde_json::json;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let json = json!(['a', 'b', 'c', 'd']);
     /// let result = diesel::select(jsonb_remove_0::<Jsonb, _>(json))
@@ -2214,7 +2205,7 @@ extern "SQL" {
     /// function except that the result is returned in SQLite's private binary JSONB format rather than
     /// in the standard RFC 8259 text format.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
@@ -2233,7 +2224,7 @@ extern "SQL" {
     /// #     use serde_json::json;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let json = json!({"a": 1, "c": 3});
     /// let result = diesel::select(jsonb_insert_1::<Jsonb, Integer, _, _, _>(json, "$.b", 2))
@@ -2361,7 +2352,7 @@ extern "SQL" {
     /// function except that the result is returned in SQLite's private binary JSONB format rather than
     /// in the standard RFC 8259 text format.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
@@ -2380,7 +2371,7 @@ extern "SQL" {
     /// #     use serde_json::json;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let json = json!({"a": 1, "b": 2});
     /// let result = diesel::select(jsonb_replace_1::<Jsonb, Integer, _, _, _>(json, "$.a", 99))
@@ -2503,7 +2494,7 @@ extern "SQL" {
     /// function except that the result is returned in SQLite's private binary JSONB format rather than
     /// in the standard RFC 8259 text format.
     ///
-    /// This function requires at least SQLite 3.38 or newer
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
@@ -2522,7 +2513,7 @@ extern "SQL" {
     /// #     use serde_json::json;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #     assert_version!(connection, 3, 38, 0);
+    /// #     assert_version!(connection, 3, 45, 0);
     /// #
     /// let json = json!({"a": 1});
     /// let result = diesel::select(jsonb_set_1::<Jsonb, Integer, _, _, _>(json, "$.b", 2))
@@ -2650,6 +2641,8 @@ extern "SQL" {
     /// returns the patched JSON value in SQLite's binary JSONB format.
     ///
     /// See [`json_patch`](json_patch()) for details about the MergePatch semantics.
+    ///
+    /// This function requires at least SQLite 3.45 or newer
     ///
     /// # Examples
     ///
