@@ -27,11 +27,15 @@ const _: () = {
     fn _check_field_compatibility_mysql()
     where
         i32: diesel::deserialize::FromSqlRow<
-            diesel::dsl::SqlTypeOf<users::r#id>,
+            <diesel::dsl::SqlTypeOf<
+                users::r#id,
+            > as diesel::internal::derives::selectable::SqlTypeLikeMarker>::SqlType,
             diesel::mysql::Mysql,
         >,
         String: diesel::deserialize::FromSqlRow<
-            diesel::dsl::SqlTypeOf<users::r#name>,
+            <diesel::dsl::SqlTypeOf<
+                users::r#name,
+            > as diesel::internal::derives::selectable::SqlTypeLikeMarker>::SqlType,
             diesel::mysql::Mysql,
         >,
     {}

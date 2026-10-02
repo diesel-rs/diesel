@@ -47,7 +47,7 @@ fn main() {
     diesel::copy_from(users::table)
         .from_insertable(vec![NewUser { name: "John" }])
         .with_format(CopyFormat::Csv)
-        //~^ ERROR: no method named `with_format` found for struct `CopyFromQuery<table, InsertableWrapper<Vec<...>>>` in the current scope
+        //~^ ERROR: no method named `with_format` found for struct `CopyFromQuery<table, InsertableWrapper<Vec<_>>>` in the current scope
         .execute(conn)
         .unwrap();
 

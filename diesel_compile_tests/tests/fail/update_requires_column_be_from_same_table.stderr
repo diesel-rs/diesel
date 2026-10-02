@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<Grouped<...> as AsChangeset>::Target == table`
+error[E0271]: type mismatch resolving `<Grouped<_> as AsChangeset>::Target == table`
   --> tests/fail/update_requires_column_be_from_same_table.rs:24:37
    |
 LL |     let command = update(users).set(posts::title.eq("Hello"));

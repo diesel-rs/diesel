@@ -42,7 +42,7 @@ LL |         U: Insertable<T>,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+error[E0271]: type mismatch resolving `<&_ as Insertable<table>>::Values == ValuesClause<_, table>`
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:31
    |
 LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
@@ -61,11 +61,11 @@ note: `users::table` is defined in module `crate::users` of the current crate
  LL | / table! {
  LL | |     users {
    | |_________^
-   = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &...)` to implement `diesel::Insertable<users::table>`
+   = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &_)` to implement `diesel::Insertable<users::table>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+error[E0271]: type mismatch resolving `<&_ as Insertable<table>>::Values == ValuesClause<_, table>`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:24:39
     |
  LL |     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
@@ -86,9 +86,9 @@ note: `users::table` is defined in module `crate::users` of the current crate
   LL | / table! {
   LL | |     users {
     | |_________^
-    = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &...)` to implement `diesel::Insertable<users::table>`
+    = note: required for `(&Grouped<Eq<id, Bound<Integer, i32>>>, &_)` to implement `diesel::Insertable<users::table>`
     = note: 1 redundant requirement hidden
-    = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, ...)` to implement `diesel::Insertable<users::table>`
+    = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, _)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |
@@ -132,7 +132,7 @@ note: `users::table` is defined in module `crate::users` of the current crate
     | |_________^
     = note: required for `&Eq<id, Bound<Integer, i32>>` to implement `diesel::Insertable<users::table>`
     = note: 3 redundant requirements hidden
-    = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, ...)` to implement `diesel::Insertable<users::table>`
+    = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, _)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |

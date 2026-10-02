@@ -23,7 +23,7 @@ struct User1 {
 }
 
 #[derive(HasQuery)]
-//~^ ERROR: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<...>` is not satisfied
+//~^ ERROR: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<_>` is not satisfied
 #[diesel(table_name = posts)]
 struct UserMixedUp {
     id: i32,
@@ -48,7 +48,7 @@ struct TypeMismatch {
 }
 
 #[derive(HasQuery)]
-//~^ ERROR: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<...>` is not satisfied
+//~^ ERROR: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<_>` is not satisfied
 //~| ERROR: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
 //~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 #[diesel(table_name = users)]
@@ -58,9 +58,9 @@ struct RequiresValidSelect {
 }
 
 #[derive(HasQuery)]
-//~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ...>: SelectDsl<...>` is not satisfied
-//~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+//~^ ERROR: the trait bound `SelectStatement<_, _, _, _>: SelectDsl<_>` is not satisfied
 //~| ERROR: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+//~| ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
 #[diesel(base_query = users::table.filter(users::id.eq(42_i32)))]
 struct BaseQueryStillRequiresValidSelect {
     #[diesel(select_expression = posts::id)]
@@ -68,7 +68,7 @@ struct BaseQueryStillRequiresValidSelect {
 }
 
 #[derive(HasQuery)]
-//~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
+//~^ ERROR: the trait bound `SelectStatement<_, _, _, _, _, _, _>: SelectDsl<_>` is not satisfied
 //~| ERROR: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
 #[diesel(base_query = users::table.group_by(users::name))]
 #[diesel(table_name = users)]

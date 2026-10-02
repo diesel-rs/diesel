@@ -31,6 +31,7 @@ impl ToSql<Uuid, Pg> for uuid::Uuid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::format_error;
 
     #[diesel_test_helper::test]
     fn uuid_to_sql() {
@@ -71,7 +72,7 @@ mod tests {
         // "invalid bytes length: expected 16, found 4"
         // or
         // "invalid length: expected 16 bytes, found 4"
-        let error_message = uuid.unwrap_err().to_string();
+        let error_message = format_error(&*uuid.unwrap_err());
         assert!(error_message.starts_with("invalid"));
         assert!(error_message.contains("length"));
         assert!(error_message.contains("expected 16"));
@@ -82,7 +83,7 @@ mod tests {
     fn no_uuid_from_sql() {
         let uuid = uuid::Uuid::from_nullable_sql(None);
         assert_eq!(
-            uuid.unwrap_err().to_string(),
+            format_error(&*uuid.unwrap_err()),
             "Unexpected null for non-null column"
         );
     }
