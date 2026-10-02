@@ -1,6 +1,7 @@
 //! `UPDATE ... RETURNING OLD_VALUE(col)` support for MariaDB 13.0 and later.
 
 use crate::deserialize::SqlTypeLikeMarker;
+use crate::expression::subselect::SubselectGroupBy;
 use crate::expression::{
     AppearsOnTable, Expression, QueryMetadata, SelectableExpression, TypedExpressionType,
     ValidGrouping, is_aggregate,
@@ -122,6 +123,15 @@ where
     C: Column,
 {
     type IsAggregate = is_aggregate::No;
+}
+
+// `OLD_VALUE` always names the row of the outer statement
+impl<C, GB, From> ValidGrouping<SubselectGroupBy<GB, From>> for OldValue<C>
+where
+    C: Column,
+    Self: ValidGrouping<GB>,
+{
+    type IsAggregate = <Self as ValidGrouping<GB>>::IsAggregate;
 }
 
 impl<ST: IntoNullable> IntoNullable for OldValueOf<ST> {

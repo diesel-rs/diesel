@@ -2,6 +2,7 @@
 
 use crate::backend::{Backend, sql_dialect};
 use crate::expression::nullable::Nullable;
+use crate::expression::subselect::SubselectGroupBy;
 use crate::expression::{
     AppearsOnTable, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
@@ -104,6 +105,15 @@ where
     C: Column,
 {
     type IsAggregate = is_aggregate::No;
+}
+
+// `old` always names the row of the outer statement
+impl<C, GB, From> ValidGrouping<SubselectGroupBy<GB, From>> for Old<C>
+where
+    C: Column,
+    Self: ValidGrouping<GB>,
+{
+    type IsAggregate = <Self as ValidGrouping<GB>>::IsAggregate;
 }
 
 // `Old<C>` is selectable on a `RETURNING` clause whose statement-kind marker
