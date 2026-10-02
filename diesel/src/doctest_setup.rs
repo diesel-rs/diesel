@@ -260,6 +260,19 @@ cfg_if::cfg_if! {
             connection.begin_test_transaction().unwrap();
             connection
         }
+
+        #[allow(dead_code)]
+        fn mariadb_server_supports_update_returning(connection: &mut MariadbConnection) -> bool {
+            diesel::dsl::sql::<diesel::sql_types::VarChar>("SELECT VERSION();")
+                .get_result::<String>(connection)
+                .expect("Failed to get Mariadb server version")
+                .split('.')
+                .next()
+                .map(|str| str.parse::<u32>())
+                .expect("Failed to split Mariadb server version")
+                .expect("Failed to parse Mariadb server version")
+                >= 13
+        }
     } else if #[cfg(feature = "mysql")] {
         #[allow(dead_code)]
         type DB = diesel::mysql::Mysql;

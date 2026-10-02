@@ -1,5 +1,5 @@
 use arbitrary::Arbitrary;
-use diesel_fuzz::{document, mysql, pg, sqlite};
+use diesel_fuzz::{document, mysql, pg, pg_array, sqlite, sqlite_blob};
 use std::num::NonZeroU32;
 
 #[test]
@@ -10,6 +10,33 @@ fn every_pg_case_decodes_without_panicking() {
         for bytes in [&[][..], &[0x00], &[0xFF; 4], &[0x7F; 16], &[0xAA; 64]] {
             pg::decode_case(selector, oid, bytes);
         }
+    }
+}
+
+#[test]
+fn arrays_match_the_binary_format_model() {
+    use pg_array::{ArrayCase, ArrayInput};
+
+    let int4 = |elements: Vec<Option<i32>>, dimensions: Vec<u8>, lower_bound| {
+        ArrayInput::Int4(ArrayCase {
+            elements,
+            dimensions,
+            lower_bound,
+        })
+    };
+    let cases = [
+        int4(vec![], vec![], 1),
+        int4(vec![Some(7), None, Some(-9)], vec![3], 1),
+        int4((1..=6).map(Some).collect(), vec![2, 3], -4),
+        int4(vec![Some(1)], vec![2, 2], 0),
+        ArrayInput::Text(ArrayCase {
+            elements: vec![Some(String::new()), None, Some("ünïcode".into())],
+            dimensions: vec![1, 3, 0],
+            lower_bound: i32::MAX,
+        }),
+    ];
+    for input in &cases {
+        pg_array::run_case(input).expect("arrays match the model");
     }
 }
 
@@ -41,6 +68,32 @@ fn every_sqlite_case_decodes_without_panicking() {
                 sqlite::decode_case(selector, kind, bytes);
             }
         }
+    }
+}
+
+#[test]
+fn blob_operations_match_byte_slice_model() {
+    use sqlite_blob::SqliteBlobOp::{Read, SeekCurrent, SeekEnd, SeekStart};
+
+    let mut input = sqlite_blob::BlobInput {
+        data: b"abc",
+        operations: vec![
+            SeekStart(1),
+            Read(1),         // "b"
+            SeekCurrent(-5), // rejected before the start
+            Read(1),         // "c"
+            SeekEnd(-1),
+            SeekEnd(-4), // rejected before the start
+            Read(64),    // "c"
+            SeekStart(0),
+            Read(3), // "abc"
+        ],
+        close_explicitly: true,
+    };
+
+    for close_explicitly in [true, false, true] {
+        input.close_explicitly = close_explicitly;
+        sqlite_blob::run_case(&input).expect("blob operations match the model");
     }
 }
 

@@ -38,6 +38,6 @@ fn main() {
     let stmt = insert_into(users)
         .values(&new_user)
         .returning((name, bad::age));
-    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<..., ...>`
-    //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+    //~^ ERROR: cannot select `bad::columns::age` from `ReturningQuerySource<_, table>`
+    //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
 }

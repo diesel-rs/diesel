@@ -40,7 +40,10 @@ pub mod sql_types {
 
 /// A trait for backends which implement the MySQL wire protocol. This is implemented for both MySQL and MariaDB,
 /// and can be used when writing code that is compatible with both backends.
-#[expect(private_bounds)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    expect(private_bounds)
+)]
 pub trait MysqlLikeBackend
 where
     Self: for<'a> Backend<
@@ -60,11 +63,18 @@ where
     const SCHEME: &'static str;
 }
 
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(crate) trait MapErrorNumber {
     /// Resolve the returned error number to a `DatabaseErrorKind`
     // Bound on `MysqlLikeBackend` everywhere, called only by the connections.
     #[cfg_attr(
-        not(any(feature = "mysql", feature = "mariadb")),
+        not(any(
+            feature = "mysql",
+            feature = "mariadb",
+            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+        )),
         expect(dead_code, reason = "only the connections call it")
     )]
     fn map_error_number(error_number: u32) -> DatabaseErrorKind;

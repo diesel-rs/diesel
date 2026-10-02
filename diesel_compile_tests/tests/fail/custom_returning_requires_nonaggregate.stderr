@@ -18,7 +18,7 @@ LL |     impl MixedAggregates<Yes> for Yes {
 ...
 LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
-    = note: required for `UpdateStatement<table, WhereClause<...>, ..., ...>` to implement `Query`
+    = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
     |
@@ -51,7 +51,7 @@ LL |     impl MixedAggregates<Never> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `(name, count<Text, name>)` to implement `ValidGrouping<()>`
     = note: required for `(name, count<Text, name>)` to implement `NonAggregate`
-    = note: required for `InsertStatement<table, ..., ..., ...>` to implement `Query`
+    = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |

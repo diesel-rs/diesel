@@ -162,9 +162,10 @@ pub trait BoxedCloneQueryHelper<'a, QS, DB> {
         ) -> QueryResult<()>,
     ) -> QueryResult<()>
     where
-        DB: Backend,
+        DB: Backend + 'b,
         QS: QueryFragment<DB>,
         BoxedCloneLimitOffsetClause<'a, DB>: QueryFragment<DB>,
+        'a: 'b,
         'b: 'c;
 }
 
