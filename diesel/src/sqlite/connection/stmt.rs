@@ -596,7 +596,9 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
     use crate::prelude::*;
+    #[cfg(not(miri))]
     use crate::sql_types::Text;
 
     // this is a regression test for

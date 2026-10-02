@@ -453,7 +453,9 @@ mod tests {
     use crate::connection::{LoadConnection, SimpleConnection};
     use crate::row::Field;
     use crate::row::Row;
+    #[cfg(not(miri))]
     use crate::sql_types::{Blob, Double, Int4, Text};
+    #[cfg(not(miri))]
     use crate::*;
 
     #[cfg(all(

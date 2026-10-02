@@ -324,6 +324,7 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
+    #[cfg(not(miri))]
     use crate::sql_types::Text;
 
     fn connection() -> SqliteConnection {
@@ -494,10 +495,13 @@ mod tests {
         .execute(conn)
         .unwrap();
 
-        // Insert a child row with no matching parent — should fail with FK enabled
-        let result =
-            crate::sql_query("INSERT INTO child (id, parent_id) VALUES (1, 999)").execute(conn);
-        assert!(result.is_err());
+        if cfg!(not(miri)) {
+            // fii string access
+            // Insert a child row with no matching parent — should fail with FK enabled
+            let result =
+                crate::sql_query("INSERT INTO child (id, parent_id) VALUES (1, 999)").execute(conn);
+            assert!(result.is_err());
+        }
     }
 
     #[diesel_test_helper::test]
@@ -521,13 +525,16 @@ mod tests {
                 .is_ok()
         );
 
-        // Disabled: queries that reference the view fail.
-        conn.set_views_enabled(false).unwrap();
-        assert!(
-            crate::sql_query("SELECT id FROM base_view")
-                .execute(conn)
-                .is_err()
-        );
+        if cfg!(not(miri)) {
+            // ffi string access
+            // Disabled: queries that reference the view fail.
+            conn.set_views_enabled(false).unwrap();
+            assert!(
+                crate::sql_query("SELECT id FROM base_view")
+                    .execute(conn)
+                    .is_err()
+            );
+        }
     }
 
     #[diesel_test_helper::test]
@@ -564,6 +571,7 @@ mod tests {
         assert_eq!(1, count, "trigger should fire while enabled");
     }
 
+    #[cfg(not(miri))] // ffi string access
     #[diesel_test_helper::test]
     fn dqs_dml_controls_double_quoted_string_literals() {
         let conn = &mut connection();
@@ -571,6 +579,7 @@ mod tests {
         // Disabled: a double-quoted token in DML is parsed as an identifier, so a
         // bare `"text"` that is not a column errors.
         conn.set_double_quoted_strings_dml(false).unwrap();
+
         let disabled = sql::<Text>(r#"SELECT "bare_token""#).get_result::<String>(conn);
         assert!(disabled.is_err());
 
@@ -587,10 +596,14 @@ mod tests {
         // Disabled: a double-quoted token in a CHECK constraint is parsed as an
         // identifier. As there is no such column, creating the table errors.
         conn.set_double_quoted_strings_ddl(false).unwrap();
-        let disabled =
-            crate::sql_query(r#"CREATE TABLE dqs_off (name TEXT, CHECK (name <> "not_a_column"))"#)
-                .execute(conn);
-        assert!(disabled.is_err());
+        // accesses an ffi allocated string
+        if cfg!(not(miri)) {
+            let disabled = crate::sql_query(
+                r#"CREATE TABLE dqs_off (name TEXT, CHECK (name <> "not_a_column"))"#,
+            )
+            .execute(conn);
+            assert!(disabled.is_err());
+        }
 
         // Enabled: the same token is accepted as a string literal, so the CHECK
         // constraint (and the table) are created successfully.
@@ -611,15 +624,19 @@ mod tests {
         let update =
             "UPDATE sqlite_master SET sql = sql WHERE type = 'table' AND name = 'protected'";
 
-        // Disabled (default): a direct write to sqlite_master is rejected.
-        conn.set_writable_schema(false).unwrap();
-        assert!(crate::sql_query(update).execute(conn).is_err());
+        if cfg!(not(miri)) {
+            // ffi string access
+            // Disabled (default): a direct write to sqlite_master is rejected.
+            conn.set_writable_schema(false).unwrap();
+            assert!(crate::sql_query(update).execute(conn).is_err());
+        }
 
         // Enabled: the same write is permitted.
         conn.set_writable_schema(true).unwrap();
         assert!(crate::sql_query(update).execute(conn).is_ok());
     }
 
+    #[cfg(not(miri))] // potential ffi string access
     #[diesel_test_helper::test]
     fn fts3_tokenizer_disabled_blocks_the_function() {
         let conn = &mut connection();
@@ -642,14 +659,14 @@ mod tests {
 
     // These ATTACH tests need a real filesystem (temp files), which is not
     // available on the wasm target, where SQLite is in-memory only.
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn temp_db_path(name: &str) -> (tempfile::TempDir, std::path::PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join(name);
         (dir, path)
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn attach_create_disabled_blocks_new_database_files() {
         let conn = &mut connection();
@@ -675,7 +692,7 @@ mod tests {
         conn.detach_database("aux_create").unwrap();
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn attach_write_disabled_opens_attached_databases_read_only() {
         let conn = &mut connection();

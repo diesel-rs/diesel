@@ -511,10 +511,10 @@ impl RunQueryDslSupport for WalCheckpoint<'_> {}
 mod tests {
     use super::*;
     use crate::connection::SimpleConnection;
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::dsl::sql;
     use crate::prelude::*;
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::sql_types::{Integer, Text};
 
     fn connection() -> SqliteConnection {
@@ -734,6 +734,7 @@ mod tests {
         assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
     }
 
+    #[cfg(not(miri))] // ffi string access
     #[diesel_test_helper::test]
     fn unknown_schema_is_reported_as_an_error() {
         let conn = &mut connection();
@@ -874,6 +875,7 @@ mod tests {
         assert_eq!(0, conn.freelist_count(None).unwrap());
     }
 
+    #[cfg(not(miri))] // ffi string access
     #[diesel_test_helper::test]
     fn incremental_vacuum_of_an_unknown_schema_is_an_error() {
         let conn = &mut connection();
@@ -947,6 +949,7 @@ mod tests {
         assert!(conn.page_count(Some("aux")).unwrap() < before);
     }
 
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn vacuum_inside_a_transaction_is_an_error() {
         use crate::connection::Connection;
@@ -957,7 +960,7 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn vacuum_into_writes_a_readable_copy_through_a_quoted_path() {
         let dir = tempfile::tempdir().unwrap();
@@ -985,7 +988,7 @@ mod tests {
         );
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn vacuum_into_refuses_to_overwrite_an_existing_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -1004,7 +1007,7 @@ mod tests {
         );
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn vacuum_into_copies_the_named_attached_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -1069,14 +1072,14 @@ mod tests {
     }
 
     // WAL requires a real file.
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn wal_connection(path: &std::path::Path) -> SqliteConnection {
         let mut conn = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
         conn.batch_execute("PRAGMA journal_mode = WAL").unwrap();
         conn
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_truncate_reports_an_emptied_wal() {
         let dir = tempfile::tempdir().unwrap();
@@ -1106,7 +1109,7 @@ mod tests {
         assert_eq!(None, outcome.checkpointed_frames);
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_accepts_every_mode() {
         let dir = tempfile::tempdir().unwrap();
@@ -1146,7 +1149,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_noop_reports_state_without_moving_frames() {
         let dir = tempfile::tempdir().unwrap();
@@ -1178,7 +1181,7 @@ mod tests {
         assert_eq!(first, second, "a second NOOP reports the same state");
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_reports_busy_while_a_reader_holds_an_old_snapshot() {
         use crate::connection::Connection;
@@ -1232,7 +1235,7 @@ mod tests {
         assert_eq!(Some(0), outcome.log_frames);
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_targets_the_named_attached_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -1266,7 +1269,7 @@ mod tests {
         assert_eq!(None, outcome.log_frames);
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_unqualified_covers_every_attached_database() {
         let dir = tempfile::tempdir().unwrap();
@@ -1300,7 +1303,7 @@ mod tests {
         assert_eq!(Some(0), aux_after.log_frames, "aux was checkpointed too");
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_escapes_a_double_quote_in_the_schema_name() {
         // An unquoted identifier would be a syntax error, and the wrong quoting
@@ -1324,6 +1327,7 @@ mod tests {
         assert_eq!(Some(0), outcome.log_frames, "the quoted schema was reached");
     }
 
+    #[cfg(not(miri))] // ffi string access
     #[diesel_test_helper::test]
     fn wal_checkpoint_of_an_unknown_schema_is_an_error() {
         let conn = &mut connection();
@@ -1334,7 +1338,7 @@ mod tests {
         );
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn wal_checkpoint_inside_a_transaction_is_an_error() {
         use crate::connection::Connection;

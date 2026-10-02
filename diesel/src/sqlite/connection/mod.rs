@@ -15,7 +15,8 @@ mod limits;
 #[cfg(all(
     test,
     feature = "std",
-    not(all(target_family = "wasm", target_os = "unknown"))
+    not(all(target_family = "wasm", target_os = "unknown")),
+    not(miri)
 ))]
 #[allow(unsafe_code)]
 mod oom_test_support;
@@ -59,7 +60,7 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::sql_types::TypeMetadata;
-use crate::sqlite::{Sqlite, SqliteFunctionBehavior};
+use crate::sqlite::Sqlite;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ffi as libc;
@@ -786,7 +787,7 @@ impl SqliteConnection {
             functions::register::<Text, Integer, _, _, _>(
                 &self.raw_connection,
                 "diesel_manage_updated_at",
-                SqliteFunctionBehavior::DIRECTONLY,
+                crate::sqlite::SqliteFunctionBehavior::DIRECTONLY,
                 |conn, table_name: String| {
                     conn.exec(&alloc::format!(
                         include_str!("diesel_manage_updated_at.sql"),
@@ -826,6 +827,7 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::{Integer, Text};
+    #[cfg(not(miri))]
     use crate::test_helpers::format_error;
 
     fn connection() -> SqliteConnection {
@@ -1513,9 +1515,12 @@ mod tests {
             .execute(&mut conn)
             .unwrap();
 
-        let data = quote_table::table
-            .load::<(Option<i32>, Option<String>)>(&mut conn)
-            .unwrap();
-        assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+        if cfg!(not(miri)) {
+            // string access over ffi
+            let data = quote_table::table
+                .load::<(Option<i32>, Option<String>)>(&mut conn)
+                .unwrap();
+            assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+        }
     }
 }

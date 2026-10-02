@@ -99,7 +99,7 @@ mod tests {
 
     // These ATTACH tests need a real filesystem (temp files), which is not
     // available on the wasm target, where SQLite is in-memory only.
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn temp_db_path(name: &str) -> (tempfile::TempDir, std::path::PathBuf) {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join(name);
@@ -138,7 +138,8 @@ mod tests {
         }
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // no miri as this returns a string
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn attach_database_supports_cross_schema_join_then_detach() {
         use crate::connection::SimpleConnection;
@@ -189,7 +190,8 @@ mod tests {
         );
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // no miri, as that requires a fs call
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn attach_database_binds_path_verbatim_without_quoting() {
         // A single quote in the path would break a hand-assembled ATTACH statement.
@@ -208,7 +210,7 @@ mod tests {
         assert_eq!(count, 0);
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     fn conn_attach_roundtrip(path: &std::path::Path) {
         use crate::connection::SimpleConnection;
         let conn = &mut connection();
@@ -219,7 +221,8 @@ mod tests {
         conn.detach_database("verbatim").unwrap();
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // no miri as that requires a fs call
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn attach_database_interprets_file_uri_query_parameters() {
         // Seed a database with a row to read through the attached schema.
@@ -258,6 +261,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi string access
     fn attach_and_detach_surface_errors_without_panicking() {
         let conn = &mut connection();
 
@@ -296,7 +300,8 @@ mod tests {
         conn.detach_database(schema).unwrap();
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // no miri as that requires a fs call
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     #[diesel_test_helper::test]
     fn attach_database_honors_create_and_write_hardening_knobs() {
         use crate::connection::SimpleConnection;
