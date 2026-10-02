@@ -8,7 +8,7 @@ use std::env;
 use crate::models::{NewPost, Post};
 
 pub fn establish_connection() -> SqliteConnection {
-    dotenv().ok();
+    let _ = dotenv();
 
     let database_url = env::var("SQLITE_DATABASE_URL")
         .or_else(|_| env::var("DATABASE_URL"))
