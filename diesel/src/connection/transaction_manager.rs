@@ -139,7 +139,6 @@ impl TransactionManagerStatus {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "postgres",
         feature = "mysql",
-        test
     ))]
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
@@ -502,7 +501,7 @@ where
                         }),
                 }) = conn.transaction_state().status
                 {
-                    if (committing_top_level || requires_rollback_maybe_up_to_top_level) {
+                    if committing_top_level || requires_rollback_maybe_up_to_top_level {
                         match Self::rollback_transaction(conn) {
                             Ok(()) => {}
                             Err(rollback_error) => {
@@ -543,7 +542,6 @@ mod test {
         pub(crate) struct MockConnection {
             pub(crate) next_results: VecDeque<QueryResult<usize>>,
             pub(crate) next_batch_execute_results: VecDeque<QueryResult<()>>,
-            pub(crate) top_level_requires_rollback_after_next_batch_execute: bool,
             transaction_state: AnsiTransactionManager,
             instrumentation: Option<Box<dyn Instrumentation>>,
         }
@@ -567,7 +565,6 @@ mod test {
                 Ok(Self {
                     next_results: VecDeque::new(),
                     next_batch_execute_results: VecDeque::new(),
-                    top_level_requires_rollback_after_next_batch_execute: false,
                     transaction_state: AnsiTransactionManager::default(),
                     instrumentation: None,
                 })
@@ -1172,7 +1169,7 @@ mod test {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "__sqlite-shared")]
+    #[cfg(feature = "sqlite")]
     fn sqlite_transaction_commits_after_a_recovered_statement_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;

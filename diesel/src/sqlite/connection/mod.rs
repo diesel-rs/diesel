@@ -658,6 +658,7 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::{Integer, Text};
+    use crate::test_helpers::format_error;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -794,6 +795,7 @@ mod tests {
         use super::super::{ffi, SerializedDatabase};
         use crate::connection::{Connection, SimpleConnection};
         use crate::sqlite::SqliteConnection;
+        use crate::test_helpers::format_error;
 
         const MIN_DATABASE_BYTES: i64 = 1_048_576;
 

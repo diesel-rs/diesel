@@ -17,6 +17,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for sqlite-wasm-rs 0.6
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
+* Correctly implement `Error::source` for our error types
+* Workaround a potential future breaking change in rust
 
 ## [2.3.13] 2026-09-04
 
@@ -2395,3 +2397,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.11]: https://github.com/diesel-rs/diesel/compare/v2.3.10...v2.3.11
 [2.3.12]: https://github.com/diesel-rs/diesel/compare/v2.3.11...v2.3.12
 [2.3.13]: https://github.com/diesel-rs/diesel/compare/v2.3.12...v2.3.13
+[2.3.14]: https://github.com/diesel-rs/diesel/compare/v2.3.13...v2.3.14

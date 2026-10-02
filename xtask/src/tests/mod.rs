@@ -1,4 +1,5 @@
 use crate::Backend;
+use cargo_metadata::camino::Utf8PathBuf;
 use cargo_metadata::{Metadata, MetadataCommand};
 use std::process::Command;
 use std::process::Stdio;

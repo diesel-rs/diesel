@@ -22,6 +22,8 @@ impl ToSql<sql_types::Json, Mysql> for serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::format_error;
+
     #[diesel_test_helper::test]
     fn json_to_sql() {
         use crate::query_builder::bind_collector::ByteWrapper;
