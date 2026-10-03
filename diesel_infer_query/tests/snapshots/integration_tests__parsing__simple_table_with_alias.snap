@@ -6,19 +6,27 @@ info: "CREATE VIEW test AS SELECT u.id, name, u.hair_color AS hair_colour FROM u
 ViewData {
     fields: [
         SelectField {
-            ident: None,
+            ident: Some(
+                "id",
+            ),
             kind: Field {
                 schema: None,
-                query_source: "users",
+                query_source: Some(
+                    "users",
+                ),
                 field_name: "id",
                 via_left_join: false,
             },
         },
         SelectField {
-            ident: None,
+            ident: Some(
+                "name",
+            ),
             kind: Field {
                 schema: None,
-                query_source: "users",
+                query_source: Some(
+                    "users",
+                ),
                 field_name: "name",
                 via_left_join: false,
             },
@@ -29,10 +37,13 @@ ViewData {
             ),
             kind: Field {
                 schema: None,
-                query_source: "users",
+                query_source: Some(
+                    "users",
+                ),
                 field_name: "hair_color",
                 via_left_join: false,
             },
         },
     ],
+    subqueries: [],
 }

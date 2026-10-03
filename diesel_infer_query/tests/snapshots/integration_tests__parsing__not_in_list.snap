@@ -1,0 +1,38 @@
+---
+source: diesel_infer_query/tests/parsing.rs
+expression: res
+info: "CREATE VIEW test AS SELECT name NOT IN (1, 2, 4) FROM users"
+---
+ViewData {
+    fields: [
+        SelectField {
+            ident: None,
+            kind: In {
+                left: Field {
+                    schema: None,
+                    query_source: Some(
+                        "users",
+                    ),
+                    field_name: "name",
+                    via_left_join: false,
+                },
+                negated: true,
+                list: [
+                    Literal {
+                        value: None,
+                        is_null: false,
+                    },
+                    Literal {
+                        value: None,
+                        is_null: false,
+                    },
+                    Literal {
+                        value: None,
+                        is_null: false,
+                    },
+                ],
+            },
+        },
+    ],
+    subqueries: [],
+}
