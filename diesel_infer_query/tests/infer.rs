@@ -820,3 +820,67 @@ fn nested_subqueries_with_same_name() {
         (),
     );
 }
+
+#[test]
+fn derived_table_in_union_branch_shadows_table() {
+    check_infer(
+        "CREATE VIEW test AS SELECT posts.id FROM (SELECT NULL AS id) posts UNION SELECT 1",
+        [IsNull::IsNullable],
+        [("posts", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn derived_table_in_in_subquery_shadows_table() {
+    check_infer(
+        "CREATE VIEW test AS SELECT users.id IN \
+         (SELECT posts.id FROM (SELECT NULL AS id) posts) FROM users",
+        [IsNull::IsNullable],
+        [
+            ("users", "id", IsNull::NotNullable),
+            ("posts", "id", IsNull::NotNullable),
+        ],
+    );
+}
+
+#[test]
+fn nested_derived_table_shadows_table() {
+    check_infer(
+        "CREATE VIEW test AS SELECT u.id FROM (SELECT posts.id FROM (SELECT NULL AS id) posts) u",
+        [IsNull::IsNullable],
+        [("posts", "id", IsNull::NotNullable)],
+    );
+}
+
+#[test]
+fn derived_table_inside_cte_is_not_visible_outside() {
+    check_infer(
+        "CREATE VIEW test AS WITH c AS (SELECT t.a FROM (SELECT 1 AS a) t) SELECT t.a FROM t",
+        [IsNull::IsNullable],
+        [("t", "a", IsNull::IsNullable)],
+    );
+}
+
+#[test]
+fn derived_table_shadows_cte_with_same_name() {
+    check_infer(
+        "CREATE VIEW test AS WITH posts AS (SELECT 1 AS id) \
+         SELECT posts.id FROM (SELECT NULL AS id) posts",
+        [IsNull::IsNullable],
+        (),
+    );
+}
+
+#[test]
+fn unnamed_derived_expression_is_unresolved() {
+    let mut resolver = Resolver::from(());
+    let mut view = diesel_infer_query::parse_view_def(
+        "CREATE VIEW v AS SELECT s.\"1 + 2\" AS a FROM (SELECT 1 + 2) s",
+    )
+    .unwrap();
+    view.resolve_references(&mut resolver).unwrap();
+    assert!(matches!(
+        view.infer_nullability(&mut resolver),
+        Err(diesel_infer_query::Error::UnknownField { .. })
+    ));
+}

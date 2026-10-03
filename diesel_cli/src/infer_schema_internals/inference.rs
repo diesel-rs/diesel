@@ -394,15 +394,21 @@ pub fn load_view_data(
                 {
                     tracing::debug!(view = %name, ?data, "Inferred data");
                     if data.field_count() == column_data.len() {
-                        for (column_data, is_nullable) in column_data
-                            .iter_mut()
-                            .zip(data.infer_nullability(resolver)?)
-                        {
-                            tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
-                            match is_nullable {
-                                IsNull::IsNullable => column_data.ty.is_nullable = true,
-                                IsNull::NotNullable => column_data.ty.is_nullable = false,
-                                IsNull::Unknown => {}
+                        match data.infer_nullability(resolver) {
+                            Ok(nullability) => {
+                                for (column_data, is_nullable) in
+                                    column_data.iter_mut().zip(nullability)
+                                {
+                                    tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                                    match is_nullable {
+                                        IsNull::IsNullable => column_data.ty.is_nullable = true,
+                                        IsNull::NotNullable => column_data.ty.is_nullable = false,
+                                        IsNull::Unknown => {}
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                tracing::warn!(view = %name, error = %e, "Failed to infer nullability for view fields");
                             }
                         }
                     } else {

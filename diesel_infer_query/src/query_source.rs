@@ -56,6 +56,7 @@ pub(crate) struct QuerySource<'a> {
     pub(crate) schema: Option<&'a str>,
     /// The name of the query source
     pub(crate) name: Option<&'a str>,
+    pub(crate) source_id: Option<usize>,
     /// The alias that is used to refer to this query source in the query
     #[expect(dead_code, reason = "its there for later")]
     pub(crate) alias: Option<&'a str>,
@@ -160,6 +161,7 @@ impl<'a> QuerySource<'a> {
                         schema,
                         name: Some(name),
                         alias,
+                        source_id: None,
                         join: None,
                     },
                 );
@@ -177,6 +179,7 @@ impl<'a> QuerySource<'a> {
                     schema: None,
                     name: Some(&alias.name.value),
                     alias: Some(&alias.name.value),
+                    source_id: None,
                     join: None
                 });
                 Ok(())
@@ -186,6 +189,7 @@ impl<'a> QuerySource<'a> {
                     schema: None,
                     name: None,
                     alias: None,
+                    source_id: None,
                     join: None
                 });
                 Ok(())

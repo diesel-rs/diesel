@@ -2,30 +2,28 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use super::SchemaResolver;
 use crate::IsNull;
 use crate::error::Error;
 use crate::error::Result;
 use crate::query_source::QuerySource;
+use crate::resolver::{CombinedResolver, SchemaResolver};
+use crate::views::ParseContext;
 use sqlparser::ast::{SelectItem, SelectItemQualifiedWildcardKind};
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct SelectField {
     pub(crate) ident: Option<String>,
     pub(crate) kind: Expression,
 }
 
 impl SelectField {
-    pub(crate) fn infer_nullability(
-        &self,
-        resolver: &mut (dyn SchemaResolver + '_),
-    ) -> Result<IsNull> {
+    pub(crate) fn infer_nullability(&self, resolver: &mut CombinedResolver<'_>) -> Result<IsNull> {
         self.kind.infer_nullability(resolver)
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 /// WHEN [condition] THEN [result]` exrpession
 pub(crate) struct CaseCondition {
     pub(crate) condition: Expression,
@@ -33,7 +31,7 @@ pub(crate) struct CaseCondition {
 }
 
 /// Different kind of expressions in a SELECT clause
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum Expression {
     /// A literal value like `1` or `'foo'`
@@ -50,6 +48,7 @@ pub enum Expression {
         /// the name of the query source
         query_source: Option<String>,
         /// the name of the field
+        source_id: Option<usize>,
         field_name: String,
         /// is this field coming from a query source joined via a `LEFT JOIN`
         via_left_join: bool,
@@ -89,6 +88,7 @@ pub enum Expression {
         schema: Option<String>,
         relation: Option<String>,
         is_left_joined: bool,
+        source_id: Option<usize>,
     },
     /// A `left BETWEEN low AND high` expression
     Between {
@@ -150,10 +150,7 @@ impl SetOperator {
 }
 
 impl Expression {
-    pub(crate) fn infer_nullability(
-        &self,
-        resolver: &mut (dyn SchemaResolver + '_),
-    ) -> Result<IsNull> {
+    pub(crate) fn infer_nullability(&self, resolver: &mut CombinedResolver<'_>) -> Result<IsNull> {
         match self {
             Self::Literal { is_null, .. } => Ok(if *is_null {
                 IsNull::IsNullable
@@ -167,12 +164,20 @@ impl Expression {
             Self::Field {
                 schema,
                 query_source: table,
+                source_id,
                 field_name,
                 ..
-            } => Ok(resolver
-                .resolve_field(schema.as_deref(), table.as_deref(), field_name)
-                .map_err(|inner| Error::ResolverFailure { inner })?
-                .is_nullable()),
+            } => {
+                let field = match source_id {
+                    Some(id) => {
+                        resolver.resolve_derived_field(*id, table.as_deref(), field_name)?
+                    }
+                    None => resolver
+                        .resolve_field(schema.as_deref(), table.as_deref(), field_name)
+                        .map_err(|inner| Error::ResolverFailure { inner })?,
+                };
+                Ok(field.is_nullable())
+            }
             Self::Cast { inner, .. } => inner.infer_nullability(resolver),
             Self::BinaryOp {
                 left,
@@ -318,21 +323,59 @@ impl Expression {
 pub(crate) fn infer_from_select(
     select: &sqlparser::ast::Select,
     outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
+    context: &mut ParseContext,
 ) -> Result<Vec<SelectField>> {
     let mut query_source_lookup = collect_query_sources(&select.from)?;
-    if let Some(outer) = outer_lookup {
-        for (k, v) in outer {
-            if !query_source_lookup.contains_key(k) {
-                query_source_lookup.insert(*k, v.clone());
-            }
+    for source in &select.from {
+        register_derived(&source.relation, &mut query_source_lookup, context)?;
+        for join in &source.joins {
+            register_derived(&join.relation, &mut query_source_lookup, context)?;
         }
     }
-
+    for source in query_source_lookup.values_mut() {
+        if source.source_id.is_none() && source.schema.is_none() {
+            source.source_id = source.name.and_then(|name| context.cte(name));
+        }
+    }
+    if let Some(outer) = outer_lookup {
+        for (k, v) in outer {
+            query_source_lookup.entry(*k).or_insert_with(|| v.clone());
+        }
+    }
     select
         .projection
         .iter()
-        .map(|p| infer_projection(p, &query_source_lookup))
+        .map(|p| infer_projection(p, &query_source_lookup, context))
         .collect()
+}
+
+fn register_derived<'a>(
+    source: &'a sqlparser::ast::TableFactor,
+    lookup: &mut HashMap<Option<&'a str>, QuerySource<'a>>,
+    context: &mut ParseContext,
+) -> Result<()> {
+    match source {
+        sqlparser::ast::TableFactor::Derived {
+            subquery, alias, ..
+        } => {
+            let fields = parse_query(subquery, None, context)?;
+            let id = context.register(fields);
+            let key = alias.as_ref().map(|alias| alias.name.value.as_str());
+            if let Some(source) = lookup.get_mut(&key) {
+                source.source_id = Some(id);
+            }
+        }
+        sqlparser::ast::TableFactor::NestedJoin {
+            table_with_joins, ..
+        } => {
+            register_derived(&table_with_joins.relation, lookup, context)?;
+            for join in &table_with_joins.joins {
+                register_derived(&join.relation, lookup, context)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 pub(crate) fn collect_query_sources<'a>(
@@ -348,10 +391,11 @@ pub(crate) fn collect_query_sources<'a>(
 pub(crate) fn infer_projection(
     item: &SelectItem,
     query_source_lookup: &HashMap<Option<&str>, QuerySource>,
+    context: &mut ParseContext,
 ) -> Result<SelectField> {
     match item {
         SelectItem::UnnamedExpr(expr) => {
-            let kind = crate::expression::infer_expr(expr, query_source_lookup)?;
+            let kind = crate::expression::infer_expr(expr, query_source_lookup, context)?;
             let ident = if let Expression::Field { field_name, .. } = &kind {
                 Some(field_name.clone())
             } else {
@@ -361,7 +405,7 @@ pub(crate) fn infer_projection(
         }
         SelectItem::ExprWithAlias { expr, alias } => Ok(SelectField {
             ident: Some(alias.value.clone()),
-            kind: crate::expression::infer_expr(expr, query_source_lookup)?,
+            kind: crate::expression::infer_expr(expr, query_source_lookup, context)?,
         }),
         SelectItem::QualifiedWildcard(
             SelectItemQualifiedWildcardKind::ObjectName(name),
@@ -381,6 +425,7 @@ pub(crate) fn infer_projection(
                         schema: item.schema.map(|s| s.to_owned()),
                         relation: item.name.map(|c| c.to_owned()),
                         is_left_joined,
+                        source_id: item.source_id,
                     },
                 })
             } else {
@@ -395,6 +440,7 @@ pub(crate) fn infer_projection(
                     schema: wildcard.schema.map(|c| c.to_owned()),
                     relation: wildcard.name.map(|c| c.to_owned()),
                     is_left_joined: false,
+                    source_id: wildcard.source_id,
                 },
             })
         }
@@ -416,26 +462,51 @@ pub(crate) fn infer_projection(
 pub(crate) fn parse_query(
     select: &sqlparser::ast::Query,
     outer_lookup: Option<&HashMap<Option<&str>, QuerySource>>,
+    context: &mut ParseContext,
 ) -> Result<Vec<SelectField>> {
-    let expr = &select.body;
-    parse_from_set_expr(outer_lookup, expr)
+    let outer_ctes = context.ctes.len();
+    if let Some(with) = &select.with {
+        for cte in &with.cte_tables {
+            let mut fields = parse_query(&cte.query, None, context)?;
+            if !cte.alias.columns.is_empty() {
+                if fields.len() != cte.alias.columns.len() {
+                    return Err(Error::UnsupportedSql {
+                        msg: format!(
+                            "Not matching field count for a CTE. Got {} fields, but expected {} fields",
+                            fields.len(),
+                            cte.alias.columns.len()
+                        ),
+                    });
+                }
+                for (field, alias) in fields.iter_mut().zip(&cte.alias.columns) {
+                    field.ident = Some(alias.name.value.clone());
+                }
+            }
+            let id = context.register(fields);
+            context.ctes.push((cte.alias.name.value.clone(), id));
+        }
+    }
+    let result = parse_from_set_expr(outer_lookup, &select.body, context);
+    context.ctes.truncate(outer_ctes);
+    result
 }
 
 fn parse_from_set_expr(
     outer_lookup: Option<&HashMap<Option<&str>, QuerySource<'_>>>,
     expr: &sqlparser::ast::SetExpr,
+    context: &mut ParseContext,
 ) -> Result<Vec<SelectField>> {
     match expr {
         sqlparser::ast::SetExpr::Select(select_expr) => {
-            infer_from_select(select_expr, outer_lookup)
+            infer_from_select(select_expr, outer_lookup, context)
         }
         // Set expressions like `UNION`, `INTERSECT` and `EXCEPT`
         sqlparser::ast::SetExpr::SetOperation {
             left, op, right, ..
         } => {
             let op = SetOperator::from_sql_parser_ast(op)?;
-            let left = parse_from_set_expr(outer_lookup, left)?;
-            let right = parse_from_set_expr(outer_lookup, right)?;
+            let left = parse_from_set_expr(outer_lookup, left, context)?;
+            let right = parse_from_set_expr(outer_lookup, right, context)?;
             if left.len() == right.len() {
                 Ok(left
                     .into_iter()

@@ -1,0 +1,1 @@
+CREATE VIEW v AS SELECT s."1 + 2" AS a FROM (SELECT 1 + 2) s;

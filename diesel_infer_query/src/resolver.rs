@@ -2,9 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 use crate::Result;
+use crate::select::SelectField;
 use crate::views::SubQuery;
 use crate::{Error, IsNull};
-use std::collections::HashMap;
 
 /// A generic interface that allows this crate
 /// to request more information about certain database
@@ -36,68 +36,88 @@ pub trait SchemaField {
 }
 
 pub(crate) struct CombinedResolver<'b> {
-    subqueries: HashMap<Option<String>, Vec<ResolvedField>>,
+    subqueries: Vec<Vec<ResolvedField>>,
     fallback: &'b mut dyn SchemaResolver,
 }
 
 impl<'b> CombinedResolver<'b> {
+    pub(crate) fn empty(capacity: usize, fallback: &'b mut dyn SchemaResolver) -> Self {
+        Self {
+            fallback,
+            subqueries: Vec::with_capacity(capacity),
+        }
+    }
+
     pub(crate) fn new(
-        subqueries: &[(Option<String>, SubQuery)],
+        subqueries: &[SubQuery],
         fallback: &'b mut dyn SchemaResolver,
     ) -> Result<Self> {
-        let mut resolver = Self {
-            fallback,
-            subqueries: HashMap::new(),
-        };
-        for (k, s) in subqueries {
-            let fields = s
-                .fields()
-                .iter()
-                .map(|f| {
-                    let is_null = f.infer_nullability(&mut resolver)?;
-                    Ok(ResolvedField {
-                        is_null,
-                        ident: f.ident.clone(),
-                    })
-                })
-                .collect::<Result<Vec<_>>>()?;
-            resolver.subqueries.insert(k.to_owned(), fields);
+        let mut resolver = Self::empty(subqueries.len(), fallback);
+        for subquery in subqueries {
+            resolver.insert(&subquery.fields)?;
         }
         Ok(resolver)
     }
+
+    pub(crate) fn insert(&mut self, fields: &[SelectField]) -> Result<()> {
+        let fields = fields
+            .iter()
+            .map(|field| {
+                Ok(ResolvedField {
+                    is_null: field.infer_nullability(self)?,
+                    ident: field.ident.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        self.subqueries.push(fields);
+        Ok(())
+    }
+
+    pub(crate) fn resolve_derived_field(
+        &self,
+        source_id: usize,
+        relation: Option<&str>,
+        field_name: &str,
+    ) -> Result<&dyn SchemaField> {
+        self.subqueries
+            .get(source_id)
+            .and_then(|fields| {
+                fields
+                    .iter()
+                    .find(|field| field.ident.as_deref() == Some(field_name))
+            })
+            .map(|field| field as &dyn SchemaField)
+            .ok_or_else(|| Error::UnknownField {
+                relation_schema: None,
+                query_relation: relation.map(str::to_owned),
+                field_name: field_name.to_owned(),
+            })
+    }
+
+    pub(crate) fn list_derived_fields(&self, source_id: usize) -> Result<Vec<&dyn SchemaField>> {
+        self.subqueries
+            .get(source_id)
+            .map(|fields| {
+                fields
+                    .iter()
+                    .map(|field| field as &dyn SchemaField)
+                    .collect()
+            })
+            .ok_or_else(|| Error::UnsupportedSql {
+                msg: "Unresolved subquery".to_owned(),
+            })
+    }
 }
 
-impl<'b> SchemaResolver for CombinedResolver<'b> {
+impl SchemaResolver for CombinedResolver<'_> {
     fn resolve_field<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
         query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<&'s dyn SchemaField, Box<dyn std::error::Error + Send + Sync + 'static>> {
-        if relation_schema.is_none()
-            && let Some(fields) = self.subqueries.get(&query_relation.map(|s| s.to_owned()))
-        {
-            fields
-                .iter()
-                .find_map(|f| {
-                    if f.ident.as_deref() == Some(field_name) {
-                        Some(f as &dyn SchemaField)
-                    } else {
-                        None
-                    }
-                })
-                .ok_or_else(|| {
-                    Box::new(Error::UnknownField {
-                        relation_schema: relation_schema.map(|c| c.to_owned()),
-                        query_relation: query_relation.map(|c| c.to_owned()),
-                        field_name: field_name.to_owned(),
-                    })
-                    .into()
-                })
-        } else {
-            self.fallback
-                .resolve_field(relation_schema, query_relation, field_name)
-        }
+        self.fallback
+            .resolve_field(relation_schema, query_relation, field_name)
     }
 
     fn list_fields<'s>(
@@ -105,13 +125,7 @@ impl<'b> SchemaResolver for CombinedResolver<'b> {
         relation_schema: Option<&str>,
         query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
-        if relation_schema.is_none()
-            && let Some(fields) = self.subqueries.get(&query_relation.map(|c| c.to_owned()))
-        {
-            Ok(fields.iter().map(|f| f as &dyn SchemaField).collect())
-        } else {
-            self.fallback.list_fields(relation_schema, query_relation)
-        }
+        self.fallback.list_fields(relation_schema, query_relation)
     }
 }
 
