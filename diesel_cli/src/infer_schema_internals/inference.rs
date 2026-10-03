@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use diesel::result::Error::NotFound;
+use diesel_infer_query::IsNull;
 
 use super::table_data::*;
 use super::{SchemaResolverImpl, data_structures::*};
@@ -393,13 +394,21 @@ pub fn load_view_data(
                 {
                     tracing::debug!(view = %name, ?data, "Inferred data");
                     if data.field_count() == column_data.len() {
-                        for (column_data, is_nullable) in column_data
-                            .iter_mut()
-                            .zip(data.infer_nullability(resolver)?)
-                        {
-                            tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
-                            if let Some(is_nullable) = is_nullable {
-                                column_data.ty.is_nullable = is_nullable;
+                        match data.infer_nullability(resolver) {
+                            Ok(nullability) => {
+                                for (column_data, is_nullable) in
+                                    column_data.iter_mut().zip(nullability)
+                                {
+                                    tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                                    match is_nullable {
+                                        IsNull::IsNullable => column_data.ty.is_nullable = true,
+                                        IsNull::NotNullable => column_data.ty.is_nullable = false,
+                                        IsNull::Unknown => {}
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                tracing::warn!(view = %name, error = %e, "Failed to infer nullability for view fields");
                             }
                         }
                     } else {
