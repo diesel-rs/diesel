@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Token","Whitespace"],"struct":["Location","Span","TokenWithSpan","Tokenizer","TokenizerError","Word"],"type":["TokenWithLocation"]};

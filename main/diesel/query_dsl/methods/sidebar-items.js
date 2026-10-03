@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":["BoxedCloneDsl","BoxedDsl","DistinctDsl","DistinctOnDsl","ExecuteDsl","FilterDsl","FindDsl","GroupByDsl","HavingDsl","LimitDsl","LoadQuery","LockingDsl","ModifyLockDsl","OffsetDsl","OrFilterDsl","OrderDsl","SelectDsl","SelectNullableDsl","SingleValueDsl","ThenOrderDsl"]};

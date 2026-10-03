@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Specifies that a table exists, and what columns it has. This will create a new public module, with the same name, as the name of the table. In this module, you’ll find a unit struct named `table`, and a unit struct with the names of each of the columns."><meta name="keywords" content="rust, rustlang, rust-lang, table"><title>table in diesel - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../diesel/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><div class="sidebar-elems"><h2 class="location">Other items in<br><a href="index.html">diesel</a></h2><div id="sidebar-vars" data-name="table" data-ty="macro" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../wheel.svg"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Macro <a href="index.html">diesel</a>::<wbr><a class="macro" href="#">table</a><button id="copy-path" onclick="copy_path(this)" title="copy path"><img src="../clipboard.svg" width="19" height="18" alt="Copy item import" title="Copy item import to clipboard"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/diesel/macros/mod.rs.html#264-276" title="goto source code">[src]</a></span></h1><div class="docblock type-decl"><div class="example-wrap"><pre class="rust macro">
+<span class="macro">macro_rules!</span> <span class="ident">table</span> {
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tokens</span> : <span class="ident">tt</span>) <span class="kw-2">*</span>) <span class="op">=</span><span class="op">&gt;</span> { ... };
+}</pre></div>
+</div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Specifies that a table exists, and what columns it has. This will create a
+new public module, with the same name, as the name of the table. In this
+module, you’ll find a unit struct named <code>table</code>, and a unit struct with the
+names of each of the columns.</p>
+<p>By default this allows a maximum of 32 columns per table.
+You can increase this limit to 64 by enabling the <code>64-column-tables</code> feature.
+You can increase it to 128 by enabling the <code>128-column-tables</code> feature.
+You can decrease it to 16 columns,
+which improves compilation time,
+by disabling the default features of Diesel.
+Note that enabling 64 column tables or larger will substantially increase
+the compile time of Diesel.</p>
+<h2 id="example-usage" class="section-header"><a href="#example-usage">Example usage</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">table!</span> {
+    <span class="ident">users</span> {
+        <span class="ident">id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">name</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VarChar</span>,
+        <span class="ident">favorite_color</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Nullable</span><span class="op">&lt;</span><span class="ident">VarChar</span><span class="op">&gt;</span>,
+    }
+}</pre></div>
+<p>You may also specify a primary key if it’s called something other than <code>id</code>.
+Tables with no primary key are not supported.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">table!</span> {
+    <span class="ident">users</span> (<span class="ident">non_standard_primary_key</span>) {
+        <span class="ident">non_standard_primary_key</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">name</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VarChar</span>,
+        <span class="ident">favorite_color</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Nullable</span><span class="op">&lt;</span><span class="ident">VarChar</span><span class="op">&gt;</span>,
+    }
+}</pre></div>
+<p>For tables with composite primary keys, list all of the columns in the
+primary key.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="macro">table!</span> {
+    <span class="ident">followings</span> (<span class="ident">user_id</span>, <span class="ident">post_id</span>) {
+        <span class="ident">user_id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">post_id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">favorited</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Bool</span>,
+    }
+}</pre></div>
+<p>If you are using types that aren’t from Diesel’s core types, you can specify
+which types to import.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#[<span class="ident">macro_use</span>]</span> <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">diesel</span>;
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">diesel_full_text_search</span>;
+
+<span class="macro">table!</span> {
+    <span class="kw">use</span> <span class="ident">diesel::sql_types</span>::<span class="kw-2">*</span>;
+    <span class="kw">use</span> <span class="ident">diesel_full_text_search</span>::<span class="kw-2">*</span>;
+
+    <span class="ident">posts</span> {
+        <span class="ident">id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="ident">title</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Text</span>,
+        <span class="ident">keywords</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TsVector</span>,
+    }
+}</pre></div>
+<p>If you want to add documentation to the generated code you can use the
+following syntax:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#[<span class="ident">macro_use</span>]</span> <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">diesel</span>;
+
+<span class="macro">table!</span> {
+
+    <span class="doccomment">/// The table containing all blog posts</span>
+    <span class="ident">posts</span> {
+        <span class="doccomment">/// The post&#39;s unique id</span>
+        <span class="ident">id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="doccomment">/// The post&#39;s title</span>
+        <span class="ident">title</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Text</span>,
+    }
+}</pre></div>
+<p>If you have a column with the same name as a Rust reserved keyword, you can use
+the <code>sql_name</code> attribute like this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#[<span class="ident">macro_use</span>]</span> <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">diesel</span>;
+
+<span class="macro">table!</span> {
+    <span class="ident">posts</span> {
+        <span class="ident">id</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Integer</span>,
+        <span class="doccomment">/// This column is named `mytype` but references the table `type` column.</span>
+        <span class="attribute">#[<span class="ident">sql_name</span> <span class="op">=</span> <span class="string">&quot;type&quot;</span>]</span>
+        <span class="ident">mytype</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Text</span>,
+    }
+}</pre></div>
+<p>This module will also contain several helper types:</p>
+<h2 id="dsl" class="section-header"><a href="#dsl">dsl</a></h2>
+<p>This simply re-exports the table, renamed to the same name as the module,
+and each of the columns. This is useful to glob import when you’re dealing
+primarily with one table, to allow writing <code>users.filter(name.eq(&quot;Sean&quot;))</code>
+instead of <code>users::table.filter(users::name.eq(&quot;Sean&quot;))</code>.</p>
+<h2 id="all_columns" class="section-header"><a href="#all_columns"><code>all_columns</code></a></h2>
+<p>A constant will be assigned called <code>all_columns</code>. This is what will be
+selected if you don’t otherwise specify a select clause. It’s type will be
+<code>table::AllColumns</code>. You can also get this value from the
+<code>Table::all_columns</code> function.</p>
+<h2 id="star" class="section-header"><a href="#star">star</a></h2>
+<p>This will be the qualified “star” expression for this table (e.g.
+<code>users.*</code>). Internally, we read columns by index, not by name, so this
+column is not safe to read data out of, and it has had it’s SQL type set to
+<code>()</code> to prevent accidentally using it as such. It is sometimes useful for
+count statements however. It can also be accessed through the <code>Table.star()</code>
+method.</p>
+<h2 id="sqltype" class="section-header"><a href="#sqltype"><code>SqlType</code></a></h2>
+<p>A type alias called <code>SqlType</code> will be created. It will be the SQL type of
+<code>all_columns</code>. The SQL type is needed for things like <a href="query_dsl/trait.QueryDsl.html#method.into_boxed">returning boxed
+queries</a>.</p>
+<h2 id="boxedquery" class="section-header"><a href="#boxedquery"><code>BoxedQuery</code></a></h2>
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BoxedQuery</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">DB</span>, <span class="ident">ST</span> <span class="op">=</span> <span class="ident">SqlType</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BoxedSelectStatement</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">ST</span>, <span class="ident">table</span>, <span class="ident">DB</span><span class="op">&gt;</span>;</pre></div>
+</div></details></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="diesel" data-search-index-js="../search-index.js" data-search-js="../search.js"></div>
+    <script src="../main.js"></script>
+</body></html>

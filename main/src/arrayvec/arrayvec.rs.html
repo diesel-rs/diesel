@@ -1,0 +1,1440 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrayvec-0.7.8/src/arrayvec.rs`."><title>arrayvec.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="arrayvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (0abfedbc7 2026-10-02)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">arrayvec/</div>arrayvec.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a>
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/cmp/index.html">std::cmp</a>;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/iter/index.html">std::iter</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/mem/index.html">std::mem</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span>std::ops::{<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html">Bound</a>, <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html">Deref</a>, <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html">DerefMut</a>, <a href="https://doc.rust-lang.org/nightly/core/ops/range/trait.RangeBounds.html">RangeBounds</a>};
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/ptr/index.html">std::ptr</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/slice/index.html">std::slice</a>;
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a><span class="comment">// extra traits
+<a href=#10 id=10 data-nosnippet>10</a></span><span class="kw">use </span>std::borrow::{<a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">Borrow</a>, <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html">BorrowMut</a>};
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>std::hash::{<a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a>, <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html">Hasher</a>};
+<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/fmt/index.html">std::fmt</a>;
+<a href=#13 id=13 data-nosnippet>13</a>
+<a href=#14 id=14 data-nosnippet>14</a><span class="attr">#[cfg(feature=<span class="string">"std"</span>)]
+<a href=#15 id=15 data-nosnippet>15</a></span><span class="kw">use </span>std::io;
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/mem/manually_drop/struct.ManuallyDrop.html">std::mem::ManuallyDrop</a>;
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">std::mem::MaybeUninit</a>;
+<a href=#19 id=19 data-nosnippet>19</a>
+<a href=#20 id=20 data-nosnippet>20</a><span class="attr">#[cfg(feature=<span class="string">"serde"</span>)]
+<a href=#21 id=21 data-nosnippet>21</a></span><span class="kw">use </span>serde::{Serialize, Deserialize, Serializer, Deserializer};
+<a href=#22 id=22 data-nosnippet>22</a>
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span><a href="lib.rs.html#32"><span class="kw">crate</span>::LenUint</a>;
+<a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span><a href="errors.rs.html#9-11"><span class="kw">crate</span>::errors::CapacityError</a>;
+<a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span><a href="arrayvec_impl.rs.html#8-86"><span class="kw">crate</span>::arrayvec_impl::ArrayVecImpl</a>;
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span><a href="utils.rs.html#4"><span class="kw">crate</span>::utils::MakeMaybeUninit</a>;
+<a href=#27 id=27 data-nosnippet>27</a>
+<a href=#28 id=28 data-nosnippet>28</a><span class="doccomment">/// A vector with a fixed capacity.
+<a href=#29 id=29 data-nosnippet>29</a>///
+<a href=#30 id=30 data-nosnippet>30</a>/// The `ArrayVec` is a vector backed by a fixed size array. It keeps track of
+<a href=#31 id=31 data-nosnippet>31</a>/// the number of initialized elements. The `ArrayVec&lt;T, CAP&gt;` is parameterized
+<a href=#32 id=32 data-nosnippet>32</a>/// by `T` for the element type and `CAP` for the maximum capacity.
+<a href=#33 id=33 data-nosnippet>33</a>///
+<a href=#34 id=34 data-nosnippet>34</a>/// `CAP` is of type `usize` but is range limited to `u32::MAX` (or `u16::MAX` on 16-bit targets);
+<a href=#35 id=35 data-nosnippet>35</a>/// attempting to create larger arrayvecs with larger capacity will panic.
+<a href=#36 id=36 data-nosnippet>36</a>///
+<a href=#37 id=37 data-nosnippet>37</a>/// The vector is a contiguous value (storing the elements inline) that you can store directly on
+<a href=#38 id=38 data-nosnippet>38</a>/// the stack if needed.
+<a href=#39 id=39 data-nosnippet>39</a>///
+<a href=#40 id=40 data-nosnippet>40</a>/// It offers a simple API but also dereferences to a slice, so that the full slice API is
+<a href=#41 id=41 data-nosnippet>41</a>/// available. The ArrayVec can be converted into a by value iterator.
+<a href=#42 id=42 data-nosnippet>42</a></span><span class="attr">#[repr(C)]
+<a href=#43 id=43 data-nosnippet>43</a></span><span class="kw">pub struct </span><a href="../../arrayvec/struct.ArrayVec.html">ArrayVec</a>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; {
+<a href=#44 id=44 data-nosnippet>44</a>    len: <a href="lib.rs.html#32">LenUint</a>,
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="comment">// the `len` first elements of the array are initialized
+<a href=#46 id=46 data-nosnippet>46</a>    </span>xs: [<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>&lt;T&gt;; <a href="#43">CAP</a>],
+<a href=#47 id=47 data-nosnippet>47</a>}
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#49">CAP</a>&gt; {
+<a href=#50 id=50 data-nosnippet>50</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#51 id=51 data-nosnippet>51</a>        <a class="self" href="#50">self</a>.<a href="#254-256">clear</a>();
+<a href=#52 id=52 data-nosnippet>52</a>
+<a href=#53 id=53 data-nosnippet>53</a>        <span class="comment">// MaybeUninit inhibits array's drop
+<a href=#54 id=54 data-nosnippet>54</a>    </span>}
+<a href=#55 id=55 data-nosnippet>55</a>}
+<a href=#56 id=56 data-nosnippet>56</a>
+<a href=#57 id=57 data-nosnippet>57</a><span class="macro">macro_rules!</span> panic_oob {
+<a href=#58 id=58 data-nosnippet>58</a>    (<span class="macro-nonterminal">$method_name</span>:expr, <span class="macro-nonterminal">$index</span>:expr, <span class="macro-nonterminal">$len</span>:expr) =&gt; {
+<a href=#59 id=59 data-nosnippet>59</a>        <span class="macro">panic!</span>(<span class="macro">concat!</span>(<span class="string">"ArrayVec::"</span>, <span class="macro-nonterminal">$method_name</span>, <span class="string">": index {} is out of bounds in vector of length {}"</span>),
+<a href=#60 id=60 data-nosnippet>60</a>               <span class="macro-nonterminal">$index</span>, <span class="macro-nonterminal">$len</span>)
+<a href=#61 id=61 data-nosnippet>61</a>    }
+<a href=#62 id=62 data-nosnippet>62</a>}
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="#43-47">ArrayVec</a>&lt;T, <a href="#64">CAP</a>&gt; {
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="doccomment">/// Capacity
+<a href=#66 id=66 data-nosnippet>66</a>    </span><span class="kw">const </span>CAPACITY: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> = <a href="#64">CAP</a>;
+<a href=#67 id=67 data-nosnippet>67</a>
+<a href=#68 id=68 data-nosnippet>68</a>    <span class="doccomment">/// Create a new empty `ArrayVec`.
+<a href=#69 id=69 data-nosnippet>69</a>    ///
+<a href=#70 id=70 data-nosnippet>70</a>    /// The maximum capacity is given by the generic parameter `CAP`.
+<a href=#71 id=71 data-nosnippet>71</a>    ///
+<a href=#72 id=72 data-nosnippet>72</a>    /// ```
+<a href=#73 id=73 data-nosnippet>73</a>    /// use arrayvec::ArrayVec;
+<a href=#74 id=74 data-nosnippet>74</a>    ///
+<a href=#75 id=75 data-nosnippet>75</a>    /// let mut array = ArrayVec::&lt;_, 16&gt;::new();
+<a href=#76 id=76 data-nosnippet>76</a>    /// array.push(1);
+<a href=#77 id=77 data-nosnippet>77</a>    /// array.push(2);
+<a href=#78 id=78 data-nosnippet>78</a>    /// assert_eq!(&amp;array[..], &amp;[1, 2]);
+<a href=#79 id=79 data-nosnippet>79</a>    /// assert_eq!(array.capacity(), 16);
+<a href=#80 id=80 data-nosnippet>80</a>    /// ```
+<a href=#81 id=81 data-nosnippet>81</a>    </span><span class="attr">#[inline]
+<a href=#82 id=82 data-nosnippet>82</a>    #[track_caller]
+<a href=#83 id=83 data-nosnippet>83</a>    </span><span class="kw">pub fn </span>new() -&gt; <a href="#43-47">ArrayVec</a>&lt;T, <a href="#64">CAP</a>&gt; {
+<a href=#84 id=84 data-nosnippet>84</a><span class="expansion"><input id=expand-84 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>std::mem::size_of::&lt;usize&gt;() &gt; std::mem::size_of::&lt;LenUint&gt;() {
+    <span class="kw">if </span>CAP &gt; LenUint::MAX <span class="kw">as </span>usize {
+        ::core::panicking::panic(<span class="string">"ArrayVec: largest supported capacity is u32::MAX"</span>);
+    }
+};</span><span class="original"><a href="lib.rs.html#37-48">assert_capacity_limit!</a>(CAP)</span></span>;
+<a href=#85 id=85 data-nosnippet>85</a>        <span class="kw">unsafe </span>{
+<a href=#86 id=86 data-nosnippet>86</a>            <a href="#43-47">ArrayVec</a> { xs: <a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>::<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html#method.uninit">uninit</a>().<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html#method.assume_init">assume_init</a>(), len: <span class="number">0 </span>}
+<a href=#87 id=87 data-nosnippet>87</a>        }
+<a href=#88 id=88 data-nosnippet>88</a>    }
+<a href=#89 id=89 data-nosnippet>89</a>
+<a href=#90 id=90 data-nosnippet>90</a>    <span class="doccomment">/// Create a new empty `ArrayVec` (const fn).
+<a href=#91 id=91 data-nosnippet>91</a>    ///
+<a href=#92 id=92 data-nosnippet>92</a>    /// The maximum capacity is given by the generic parameter `CAP`.
+<a href=#93 id=93 data-nosnippet>93</a>    ///
+<a href=#94 id=94 data-nosnippet>94</a>    /// ```
+<a href=#95 id=95 data-nosnippet>95</a>    /// use arrayvec::ArrayVec;
+<a href=#96 id=96 data-nosnippet>96</a>    ///
+<a href=#97 id=97 data-nosnippet>97</a>    /// static ARRAY: ArrayVec&lt;u8, 1024&gt; = ArrayVec::new_const();
+<a href=#98 id=98 data-nosnippet>98</a>    /// ```
+<a href=#99 id=99 data-nosnippet>99</a>    </span><span class="kw">pub const fn </span>new_const() -&gt; <a href="#43-47">ArrayVec</a>&lt;T, <a href="#64">CAP</a>&gt; {
+<a href=#100 id=100 data-nosnippet>100</a><span class="expansion"><input id=expand-100 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span>std::mem::size_of::&lt;usize&gt;() &gt; std::mem::size_of::&lt;LenUint&gt;() {
+    <span class="kw">if </span>CAP &gt; LenUint::MAX <span class="kw">as </span>usize { [][CAP] }
+};</span><span class="original"><a href="lib.rs.html#50-58">assert_capacity_limit_const!</a>(CAP)</span></span>;
+<a href=#101 id=101 data-nosnippet>101</a>        <a href="#43-47">ArrayVec</a> { xs: <a href="utils.rs.html#4">MakeMaybeUninit</a>::<a href="utils.rs.html#9">ARRAY</a>, len: <span class="number">0 </span>}
+<a href=#102 id=102 data-nosnippet>102</a>    }
+<a href=#103 id=103 data-nosnippet>103</a>
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="doccomment">/// Return the number of elements in the `ArrayVec`.
+<a href=#105 id=105 data-nosnippet>105</a>    ///
+<a href=#106 id=106 data-nosnippet>106</a>    /// ```
+<a href=#107 id=107 data-nosnippet>107</a>    /// use arrayvec::ArrayVec;
+<a href=#108 id=108 data-nosnippet>108</a>    ///
+<a href=#109 id=109 data-nosnippet>109</a>    /// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#110 id=110 data-nosnippet>110</a>    /// array.pop();
+<a href=#111 id=111 data-nosnippet>111</a>    /// assert_eq!(array.len(), 2);
+<a href=#112 id=112 data-nosnippet>112</a>    /// ```
+<a href=#113 id=113 data-nosnippet>113</a>    </span><span class="attr">#[inline(always)]
+<a href=#114 id=114 data-nosnippet>114</a>    </span><span class="kw">pub const fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> { <a class="self" href="#114">self</a>.len <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> }
+<a href=#115 id=115 data-nosnippet>115</a>
+<a href=#116 id=116 data-nosnippet>116</a>    <span class="doccomment">/// Returns whether the `ArrayVec` is empty.
+<a href=#117 id=117 data-nosnippet>117</a>    ///
+<a href=#118 id=118 data-nosnippet>118</a>    /// ```
+<a href=#119 id=119 data-nosnippet>119</a>    /// use arrayvec::ArrayVec;
+<a href=#120 id=120 data-nosnippet>120</a>    ///
+<a href=#121 id=121 data-nosnippet>121</a>    /// let mut array = ArrayVec::from([1]);
+<a href=#122 id=122 data-nosnippet>122</a>    /// array.pop();
+<a href=#123 id=123 data-nosnippet>123</a>    /// assert_eq!(array.is_empty(), true);
+<a href=#124 id=124 data-nosnippet>124</a>    /// ```
+<a href=#125 id=125 data-nosnippet>125</a>    </span><span class="attr">#[inline]
+<a href=#126 id=126 data-nosnippet>126</a>    </span><span class="kw">pub const fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> { <a class="self" href="#126">self</a>.<a href="#114">len</a>() == <span class="number">0 </span>}
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a>    <span class="doccomment">/// Return the capacity of the `ArrayVec`.
+<a href=#129 id=129 data-nosnippet>129</a>    ///
+<a href=#130 id=130 data-nosnippet>130</a>    /// ```
+<a href=#131 id=131 data-nosnippet>131</a>    /// use arrayvec::ArrayVec;
+<a href=#132 id=132 data-nosnippet>132</a>    ///
+<a href=#133 id=133 data-nosnippet>133</a>    /// let array = ArrayVec::from([1, 2, 3]);
+<a href=#134 id=134 data-nosnippet>134</a>    /// assert_eq!(array.capacity(), 3);
+<a href=#135 id=135 data-nosnippet>135</a>    /// ```
+<a href=#136 id=136 data-nosnippet>136</a>    </span><span class="attr">#[inline(always)]
+<a href=#137 id=137 data-nosnippet>137</a>    </span><span class="kw">pub const fn </span>capacity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> { <a href="#64">CAP</a> }
+<a href=#138 id=138 data-nosnippet>138</a>
+<a href=#139 id=139 data-nosnippet>139</a>    <span class="doccomment">/// Return true if the `ArrayVec` is completely filled to its capacity, false otherwise.
+<a href=#140 id=140 data-nosnippet>140</a>    ///
+<a href=#141 id=141 data-nosnippet>141</a>    /// ```
+<a href=#142 id=142 data-nosnippet>142</a>    /// use arrayvec::ArrayVec;
+<a href=#143 id=143 data-nosnippet>143</a>    ///
+<a href=#144 id=144 data-nosnippet>144</a>    /// let mut array = ArrayVec::&lt;_, 1&gt;::new();
+<a href=#145 id=145 data-nosnippet>145</a>    /// assert!(!array.is_full());
+<a href=#146 id=146 data-nosnippet>146</a>    /// array.push(1);
+<a href=#147 id=147 data-nosnippet>147</a>    /// assert!(array.is_full());
+<a href=#148 id=148 data-nosnippet>148</a>    /// ```
+<a href=#149 id=149 data-nosnippet>149</a>    </span><span class="kw">pub const fn </span>is_full(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> { <a class="self" href="#149">self</a>.<a href="#114">len</a>() == <a class="self" href="#149">self</a>.<a href="#137">capacity</a>() }
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="doccomment">/// Returns the capacity left in the `ArrayVec`.
+<a href=#152 id=152 data-nosnippet>152</a>    ///
+<a href=#153 id=153 data-nosnippet>153</a>    /// ```
+<a href=#154 id=154 data-nosnippet>154</a>    /// use arrayvec::ArrayVec;
+<a href=#155 id=155 data-nosnippet>155</a>    ///
+<a href=#156 id=156 data-nosnippet>156</a>    /// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#157 id=157 data-nosnippet>157</a>    /// array.pop();
+<a href=#158 id=158 data-nosnippet>158</a>    /// assert_eq!(array.remaining_capacity(), 1);
+<a href=#159 id=159 data-nosnippet>159</a>    /// ```
+<a href=#160 id=160 data-nosnippet>160</a>    </span><span class="kw">pub const fn </span>remaining_capacity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> {
+<a href=#161 id=161 data-nosnippet>161</a>        <a class="self" href="#160">self</a>.<a href="#137">capacity</a>() - <a class="self" href="#160">self</a>.<a href="#114">len</a>()
+<a href=#162 id=162 data-nosnippet>162</a>    }
+<a href=#163 id=163 data-nosnippet>163</a>
+<a href=#164 id=164 data-nosnippet>164</a>    <span class="doccomment">/// Push `element` to the end of the vector.
+<a href=#165 id=165 data-nosnippet>165</a>    ///
+<a href=#166 id=166 data-nosnippet>166</a>    /// ***Panics*** if the vector is already full.
+<a href=#167 id=167 data-nosnippet>167</a>    ///
+<a href=#168 id=168 data-nosnippet>168</a>    /// ```
+<a href=#169 id=169 data-nosnippet>169</a>    /// use arrayvec::ArrayVec;
+<a href=#170 id=170 data-nosnippet>170</a>    ///
+<a href=#171 id=171 data-nosnippet>171</a>    /// let mut array = ArrayVec::&lt;_, 2&gt;::new();
+<a href=#172 id=172 data-nosnippet>172</a>    ///
+<a href=#173 id=173 data-nosnippet>173</a>    /// array.push(1);
+<a href=#174 id=174 data-nosnippet>174</a>    /// array.push(2);
+<a href=#175 id=175 data-nosnippet>175</a>    ///
+<a href=#176 id=176 data-nosnippet>176</a>    /// assert_eq!(&amp;array[..], &amp;[1, 2]);
+<a href=#177 id=177 data-nosnippet>177</a>    /// ```
+<a href=#178 id=178 data-nosnippet>178</a>    </span><span class="attr">#[track_caller]
+<a href=#179 id=179 data-nosnippet>179</a>    </span><span class="kw">pub fn </span>push(<span class="kw-2">&amp;mut </span><span class="self">self</span>, element: T) {
+<a href=#180 id=180 data-nosnippet>180</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#39-41">push</a>(<a class="self" href="#179">self</a>, <a href="#179">element</a>)
+<a href=#181 id=181 data-nosnippet>181</a>    }
+<a href=#182 id=182 data-nosnippet>182</a>
+<a href=#183 id=183 data-nosnippet>183</a>    <span class="doccomment">/// Push `element` to the end of the vector.
+<a href=#184 id=184 data-nosnippet>184</a>    ///
+<a href=#185 id=185 data-nosnippet>185</a>    /// Return `Ok` if the push succeeds, or return an error if the vector
+<a href=#186 id=186 data-nosnippet>186</a>    /// is already full.
+<a href=#187 id=187 data-nosnippet>187</a>    ///
+<a href=#188 id=188 data-nosnippet>188</a>    /// ```
+<a href=#189 id=189 data-nosnippet>189</a>    /// use arrayvec::ArrayVec;
+<a href=#190 id=190 data-nosnippet>190</a>    ///
+<a href=#191 id=191 data-nosnippet>191</a>    /// let mut array = ArrayVec::&lt;_, 2&gt;::new();
+<a href=#192 id=192 data-nosnippet>192</a>    ///
+<a href=#193 id=193 data-nosnippet>193</a>    /// let push1 = array.try_push(1);
+<a href=#194 id=194 data-nosnippet>194</a>    /// let push2 = array.try_push(2);
+<a href=#195 id=195 data-nosnippet>195</a>    ///
+<a href=#196 id=196 data-nosnippet>196</a>    /// assert!(push1.is_ok());
+<a href=#197 id=197 data-nosnippet>197</a>    /// assert!(push2.is_ok());
+<a href=#198 id=198 data-nosnippet>198</a>    ///
+<a href=#199 id=199 data-nosnippet>199</a>    /// assert_eq!(&amp;array[..], &amp;[1, 2]);
+<a href=#200 id=200 data-nosnippet>200</a>    ///
+<a href=#201 id=201 data-nosnippet>201</a>    /// let overflow = array.try_push(3);
+<a href=#202 id=202 data-nosnippet>202</a>    ///
+<a href=#203 id=203 data-nosnippet>203</a>    /// assert!(overflow.is_err());
+<a href=#204 id=204 data-nosnippet>204</a>    /// ```
+<a href=#205 id=205 data-nosnippet>205</a>    </span><span class="kw">pub fn </span>try_push(<span class="kw-2">&amp;mut </span><span class="self">self</span>, element: T) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="errors.rs.html#9-11">CapacityError</a>&lt;T&gt;&gt; {
+<a href=#206 id=206 data-nosnippet>206</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#43-52">try_push</a>(<a class="self" href="#205">self</a>, <a href="#205">element</a>)
+<a href=#207 id=207 data-nosnippet>207</a>    }
+<a href=#208 id=208 data-nosnippet>208</a>
+<a href=#209 id=209 data-nosnippet>209</a>    <span class="doccomment">/// Push `element` to the end of the vector without checking the capacity.
+<a href=#210 id=210 data-nosnippet>210</a>    ///
+<a href=#211 id=211 data-nosnippet>211</a>    /// It is up to the caller to ensure the capacity of the vector is
+<a href=#212 id=212 data-nosnippet>212</a>    /// sufficiently large.
+<a href=#213 id=213 data-nosnippet>213</a>    ///
+<a href=#214 id=214 data-nosnippet>214</a>    /// This method uses *debug assertions* to check that the arrayvec is not full.
+<a href=#215 id=215 data-nosnippet>215</a>    ///
+<a href=#216 id=216 data-nosnippet>216</a>    /// ```
+<a href=#217 id=217 data-nosnippet>217</a>    /// use arrayvec::ArrayVec;
+<a href=#218 id=218 data-nosnippet>218</a>    ///
+<a href=#219 id=219 data-nosnippet>219</a>    /// let mut array = ArrayVec::&lt;_, 2&gt;::new();
+<a href=#220 id=220 data-nosnippet>220</a>    ///
+<a href=#221 id=221 data-nosnippet>221</a>    /// if array.len() + 2 &lt;= array.capacity() {
+<a href=#222 id=222 data-nosnippet>222</a>    ///     unsafe {
+<a href=#223 id=223 data-nosnippet>223</a>    ///         array.push_unchecked(1);
+<a href=#224 id=224 data-nosnippet>224</a>    ///         array.push_unchecked(2);
+<a href=#225 id=225 data-nosnippet>225</a>    ///     }
+<a href=#226 id=226 data-nosnippet>226</a>    /// }
+<a href=#227 id=227 data-nosnippet>227</a>    ///
+<a href=#228 id=228 data-nosnippet>228</a>    /// assert_eq!(&amp;array[..], &amp;[1, 2]);
+<a href=#229 id=229 data-nosnippet>229</a>    /// ```
+<a href=#230 id=230 data-nosnippet>230</a>    </span><span class="kw">pub unsafe fn </span>push_unchecked(<span class="kw-2">&amp;mut </span><span class="self">self</span>, element: T) {
+<a href=#231 id=231 data-nosnippet>231</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#54-59">push_unchecked</a>(<a class="self" href="#230">self</a>, <a href="#230">element</a>)
+<a href=#232 id=232 data-nosnippet>232</a>    }
+<a href=#233 id=233 data-nosnippet>233</a>
+<a href=#234 id=234 data-nosnippet>234</a>    <span class="doccomment">/// Shortens the vector, keeping the first `len` elements and dropping
+<a href=#235 id=235 data-nosnippet>235</a>    /// the rest.
+<a href=#236 id=236 data-nosnippet>236</a>    ///
+<a href=#237 id=237 data-nosnippet>237</a>    /// If `len` is greater than the vector’s current length this has no
+<a href=#238 id=238 data-nosnippet>238</a>    /// effect.
+<a href=#239 id=239 data-nosnippet>239</a>    ///
+<a href=#240 id=240 data-nosnippet>240</a>    /// ```
+<a href=#241 id=241 data-nosnippet>241</a>    /// use arrayvec::ArrayVec;
+<a href=#242 id=242 data-nosnippet>242</a>    ///
+<a href=#243 id=243 data-nosnippet>243</a>    /// let mut array = ArrayVec::from([1, 2, 3, 4, 5]);
+<a href=#244 id=244 data-nosnippet>244</a>    /// array.truncate(3);
+<a href=#245 id=245 data-nosnippet>245</a>    /// assert_eq!(&amp;array[..], &amp;[1, 2, 3]);
+<a href=#246 id=246 data-nosnippet>246</a>    /// array.truncate(4);
+<a href=#247 id=247 data-nosnippet>247</a>    /// assert_eq!(&amp;array[..], &amp;[1, 2, 3]);
+<a href=#248 id=248 data-nosnippet>248</a>    /// ```
+<a href=#249 id=249 data-nosnippet>249</a>    </span><span class="kw">pub fn </span>truncate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_len: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) {
+<a href=#250 id=250 data-nosnippet>250</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#76-85">truncate</a>(<a class="self" href="#249">self</a>, <a href="#249">new_len</a>)
+<a href=#251 id=251 data-nosnippet>251</a>    }
+<a href=#252 id=252 data-nosnippet>252</a>
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="doccomment">/// Remove all elements in the vector.
+<a href=#254 id=254 data-nosnippet>254</a>    </span><span class="kw">pub fn </span>clear(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#255 id=255 data-nosnippet>255</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#72-74">clear</a>(<a class="self" href="#254">self</a>)
+<a href=#256 id=256 data-nosnippet>256</a>    }
+<a href=#257 id=257 data-nosnippet>257</a>
+<a href=#258 id=258 data-nosnippet>258</a>
+<a href=#259 id=259 data-nosnippet>259</a>    <span class="doccomment">/// Get pointer to where element at `index` would be
+<a href=#260 id=260 data-nosnippet>260</a>    </span><span class="kw">unsafe fn </span>get_unchecked_ptr(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; <span class="kw-2">*mut </span>T {
+<a href=#261 id=261 data-nosnippet>261</a>        <a class="self" href="#260">self</a>.<a href="#740-742">as_mut_ptr</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a href="#260">index</a>)
+<a href=#262 id=262 data-nosnippet>262</a>    }
+<a href=#263 id=263 data-nosnippet>263</a>
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="doccomment">/// Insert `element` at position `index`.
+<a href=#265 id=265 data-nosnippet>265</a>    ///
+<a href=#266 id=266 data-nosnippet>266</a>    /// Shift up all elements after `index`.
+<a href=#267 id=267 data-nosnippet>267</a>    ///
+<a href=#268 id=268 data-nosnippet>268</a>    /// It is an error if the index is greater than the length or if the
+<a href=#269 id=269 data-nosnippet>269</a>    /// arrayvec is full.
+<a href=#270 id=270 data-nosnippet>270</a>    ///
+<a href=#271 id=271 data-nosnippet>271</a>    /// ***Panics*** if the array is full or the `index` is out of bounds. See
+<a href=#272 id=272 data-nosnippet>272</a>    /// `try_insert` for fallible version.
+<a href=#273 id=273 data-nosnippet>273</a>    ///
+<a href=#274 id=274 data-nosnippet>274</a>    /// ```
+<a href=#275 id=275 data-nosnippet>275</a>    /// use arrayvec::ArrayVec;
+<a href=#276 id=276 data-nosnippet>276</a>    ///
+<a href=#277 id=277 data-nosnippet>277</a>    /// let mut array = ArrayVec::&lt;_, 2&gt;::new();
+<a href=#278 id=278 data-nosnippet>278</a>    ///
+<a href=#279 id=279 data-nosnippet>279</a>    /// array.insert(0, "x");
+<a href=#280 id=280 data-nosnippet>280</a>    /// array.insert(0, "y");
+<a href=#281 id=281 data-nosnippet>281</a>    /// assert_eq!(&amp;array[..], &amp;["y", "x"]);
+<a href=#282 id=282 data-nosnippet>282</a>    ///
+<a href=#283 id=283 data-nosnippet>283</a>    /// ```
+<a href=#284 id=284 data-nosnippet>284</a>    </span><span class="attr">#[track_caller]
+<a href=#285 id=285 data-nosnippet>285</a>    </span><span class="kw">pub fn </span>insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, element: T) {
+<a href=#286 id=286 data-nosnippet>286</a>        <a class="self" href="#285">self</a>.<a href="#309-333">try_insert</a>(<a href="#285">index</a>, <a href="#285">element</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.unwrap">unwrap</a>()
+<a href=#287 id=287 data-nosnippet>287</a>    }
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="doccomment">/// Insert `element` at position `index`.
+<a href=#290 id=290 data-nosnippet>290</a>    ///
+<a href=#291 id=291 data-nosnippet>291</a>    /// Shift up all elements after `index`; the `index` must be less than
+<a href=#292 id=292 data-nosnippet>292</a>    /// or equal to the length.
+<a href=#293 id=293 data-nosnippet>293</a>    ///
+<a href=#294 id=294 data-nosnippet>294</a>    /// Returns an error if vector is already at full capacity.
+<a href=#295 id=295 data-nosnippet>295</a>    ///
+<a href=#296 id=296 data-nosnippet>296</a>    /// ***Panics*** `index` is out of bounds.
+<a href=#297 id=297 data-nosnippet>297</a>    ///
+<a href=#298 id=298 data-nosnippet>298</a>    /// ```
+<a href=#299 id=299 data-nosnippet>299</a>    /// use arrayvec::ArrayVec;
+<a href=#300 id=300 data-nosnippet>300</a>    ///
+<a href=#301 id=301 data-nosnippet>301</a>    /// let mut array = ArrayVec::&lt;_, 2&gt;::new();
+<a href=#302 id=302 data-nosnippet>302</a>    ///
+<a href=#303 id=303 data-nosnippet>303</a>    /// assert!(array.try_insert(0, "x").is_ok());
+<a href=#304 id=304 data-nosnippet>304</a>    /// assert!(array.try_insert(0, "y").is_ok());
+<a href=#305 id=305 data-nosnippet>305</a>    /// assert!(array.try_insert(0, "z").is_err());
+<a href=#306 id=306 data-nosnippet>306</a>    /// assert_eq!(&amp;array[..], &amp;["y", "x"]);
+<a href=#307 id=307 data-nosnippet>307</a>    ///
+<a href=#308 id=308 data-nosnippet>308</a>    /// ```
+<a href=#309 id=309 data-nosnippet>309</a>    </span><span class="kw">pub fn </span>try_insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, element: T) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="errors.rs.html#9-11">CapacityError</a>&lt;T&gt;&gt; {
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="kw">if </span><a href="#309">index</a> &gt; <a class="self" href="#309">self</a>.<a href="#114">len</a>() {
+<a href=#311 id=311 data-nosnippet>311</a><span class="expansion"><input id=expand-311 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"ArrayVec::try_insert: index {0} is out of bounds in vector of length {1}"</span>,
+            index, <span class="self">self</span>.len()));
+}</span><span class="original"><a href="#57-62">panic_oob!</a>(<span class="string">"try_insert"</span>, index, <span class="self">self</span>.len())</span></span>
+<a href=#312 id=312 data-nosnippet>312</a>        }
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="kw">if </span><a class="self" href="#309">self</a>.<a href="#114">len</a>() == <a class="self" href="#309">self</a>.<a href="#137">capacity</a>() {
+<a href=#314 id=314 data-nosnippet>314</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="errors.rs.html#9-11">CapacityError</a>::<a href="errors.rs.html#15-19">new</a>(<a href="#309">element</a>));
+<a href=#315 id=315 data-nosnippet>315</a>        }
+<a href=#316 id=316 data-nosnippet>316</a>        <span class="kw">let </span>len = <a class="self" href="#309">self</a>.<a href="#114">len</a>();
+<a href=#317 id=317 data-nosnippet>317</a>
+<a href=#318 id=318 data-nosnippet>318</a>        <span class="comment">// follows is just like Vec&lt;T&gt;
+<a href=#319 id=319 data-nosnippet>319</a>        </span><span class="kw">unsafe </span>{ <span class="comment">// infallible
+<a href=#320 id=320 data-nosnippet>320</a>            // The spot to put the new value
+<a href=#321 id=321 data-nosnippet>321</a>            </span>{
+<a href=#322 id=322 data-nosnippet>322</a>                <span class="kw">let </span>p: <span class="kw-2">*mut </span><span class="kw">_ </span>= <a class="self" href="#309">self</a>.<a href="#260-262">get_unchecked_ptr</a>(<a href="#309">index</a>);
+<a href=#323 id=323 data-nosnippet>323</a>                <span class="comment">// Shift everything over to make space. (Duplicating the
+<a href=#324 id=324 data-nosnippet>324</a>                // `index`th element into two consecutive places.)
+<a href=#325 id=325 data-nosnippet>325</a>                </span>ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.copy.html">copy</a>(<a href="#322">p</a>, <a href="#322">p</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.offset">offset</a>(<span class="number">1</span>), <a href="#316">len</a> - <a href="#309">index</a>);
+<a href=#326 id=326 data-nosnippet>326</a>                <span class="comment">// Write it in, overwriting the first copy of the `index`th
+<a href=#327 id=327 data-nosnippet>327</a>                // element.
+<a href=#328 id=328 data-nosnippet>328</a>                </span>ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.write.html">write</a>(<a href="#322">p</a>, <a href="#309">element</a>);
+<a href=#329 id=329 data-nosnippet>329</a>            }
+<a href=#330 id=330 data-nosnippet>330</a>            <a class="self" href="#309">self</a>.<a href="#580-584">set_len</a>(<a href="#316">len</a> + <span class="number">1</span>);
+<a href=#331 id=331 data-nosnippet>331</a>        }
+<a href=#332 id=332 data-nosnippet>332</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#333 id=333 data-nosnippet>333</a>    }
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="doccomment">/// Remove the last element in the vector and return it.
+<a href=#336 id=336 data-nosnippet>336</a>    ///
+<a href=#337 id=337 data-nosnippet>337</a>    /// Return `Some(` *element* `)` if the vector is non-empty, else `None`.
+<a href=#338 id=338 data-nosnippet>338</a>    ///
+<a href=#339 id=339 data-nosnippet>339</a>    /// ```
+<a href=#340 id=340 data-nosnippet>340</a>    /// use arrayvec::ArrayVec;
+<a href=#341 id=341 data-nosnippet>341</a>    ///
+<a href=#342 id=342 data-nosnippet>342</a>    /// let mut array = ArrayVec::&lt;_, 2&gt;::new();
+<a href=#343 id=343 data-nosnippet>343</a>    ///
+<a href=#344 id=344 data-nosnippet>344</a>    /// array.push(1);
+<a href=#345 id=345 data-nosnippet>345</a>    ///
+<a href=#346 id=346 data-nosnippet>346</a>    /// assert_eq!(array.pop(), Some(1));
+<a href=#347 id=347 data-nosnippet>347</a>    /// assert_eq!(array.pop(), None);
+<a href=#348 id=348 data-nosnippet>348</a>    /// ```
+<a href=#349 id=349 data-nosnippet>349</a>    </span><span class="kw">pub fn </span>pop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;T&gt; {
+<a href=#350 id=350 data-nosnippet>350</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#61-70">pop</a>(<a class="self" href="#349">self</a>)
+<a href=#351 id=351 data-nosnippet>351</a>    }
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a>    <span class="doccomment">/// Remove the element at `index` and swap the last element into its place.
+<a href=#354 id=354 data-nosnippet>354</a>    ///
+<a href=#355 id=355 data-nosnippet>355</a>    /// This operation is O(1).
+<a href=#356 id=356 data-nosnippet>356</a>    ///
+<a href=#357 id=357 data-nosnippet>357</a>    /// Return the *element* if the index is in bounds, else panic.
+<a href=#358 id=358 data-nosnippet>358</a>    ///
+<a href=#359 id=359 data-nosnippet>359</a>    /// ***Panics*** if the `index` is out of bounds.
+<a href=#360 id=360 data-nosnippet>360</a>    ///
+<a href=#361 id=361 data-nosnippet>361</a>    /// ```
+<a href=#362 id=362 data-nosnippet>362</a>    /// use arrayvec::ArrayVec;
+<a href=#363 id=363 data-nosnippet>363</a>    ///
+<a href=#364 id=364 data-nosnippet>364</a>    /// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#365 id=365 data-nosnippet>365</a>    ///
+<a href=#366 id=366 data-nosnippet>366</a>    /// assert_eq!(array.swap_remove(0), 1);
+<a href=#367 id=367 data-nosnippet>367</a>    /// assert_eq!(&amp;array[..], &amp;[3, 2]);
+<a href=#368 id=368 data-nosnippet>368</a>    ///
+<a href=#369 id=369 data-nosnippet>369</a>    /// assert_eq!(array.swap_remove(1), 2);
+<a href=#370 id=370 data-nosnippet>370</a>    /// assert_eq!(&amp;array[..], &amp;[3]);
+<a href=#371 id=371 data-nosnippet>371</a>    /// ```
+<a href=#372 id=372 data-nosnippet>372</a>    </span><span class="kw">pub fn </span>swap_remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; T {
+<a href=#373 id=373 data-nosnippet>373</a>        <a class="self" href="#372">self</a>.<a href="#396-403">swap_pop</a>(<a href="#372">index</a>)
+<a href=#374 id=374 data-nosnippet>374</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_else">unwrap_or_else</a>(|| {
+<a href=#375 id=375 data-nosnippet>375</a><span class="expansion"><input id=expand-375 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"ArrayVec::swap_remove: index {0} is out of bounds in vector of length {1}"</span>,
+            index, <span class="self">self</span>.len()));
+}</span><span class="original"><a href="#57-62">panic_oob!</a>(<span class="string">"swap_remove"</span>, index, <span class="self">self</span>.len())</span></span>
+<a href=#376 id=376 data-nosnippet>376</a>            })
+<a href=#377 id=377 data-nosnippet>377</a>    }
+<a href=#378 id=378 data-nosnippet>378</a>
+<a href=#379 id=379 data-nosnippet>379</a>    <span class="doccomment">/// Remove the element at `index` and swap the last element into its place.
+<a href=#380 id=380 data-nosnippet>380</a>    ///
+<a href=#381 id=381 data-nosnippet>381</a>    /// This is a checked version of `.swap_remove`.  
+<a href=#382 id=382 data-nosnippet>382</a>    /// This operation is O(1).
+<a href=#383 id=383 data-nosnippet>383</a>    ///
+<a href=#384 id=384 data-nosnippet>384</a>    /// Return `Some(` *element* `)` if the index is in bounds, else `None`.
+<a href=#385 id=385 data-nosnippet>385</a>    ///
+<a href=#386 id=386 data-nosnippet>386</a>    /// ```
+<a href=#387 id=387 data-nosnippet>387</a>    /// use arrayvec::ArrayVec;
+<a href=#388 id=388 data-nosnippet>388</a>    ///
+<a href=#389 id=389 data-nosnippet>389</a>    /// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#390 id=390 data-nosnippet>390</a>    ///
+<a href=#391 id=391 data-nosnippet>391</a>    /// assert_eq!(array.swap_pop(0), Some(1));
+<a href=#392 id=392 data-nosnippet>392</a>    /// assert_eq!(&amp;array[..], &amp;[3, 2]);
+<a href=#393 id=393 data-nosnippet>393</a>    ///
+<a href=#394 id=394 data-nosnippet>394</a>    /// assert_eq!(array.swap_pop(10), None);
+<a href=#395 id=395 data-nosnippet>395</a>    /// ```
+<a href=#396 id=396 data-nosnippet>396</a>    </span><span class="kw">pub fn </span>swap_pop(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;T&gt; {
+<a href=#397 id=397 data-nosnippet>397</a>        <span class="kw">let </span>len = <a class="self" href="#396">self</a>.<a href="#114">len</a>();
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="kw">if </span><a href="#396">index</a> &gt;= <a href="#397">len</a> {
+<a href=#399 id=399 data-nosnippet>399</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#400 id=400 data-nosnippet>400</a>        }
+<a href=#401 id=401 data-nosnippet>401</a>        <a class="self" href="#396">self</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.swap">swap</a>(<a href="#396">index</a>, <a href="#397">len</a> - <span class="number">1</span>);
+<a href=#402 id=402 data-nosnippet>402</a>        <a class="self" href="#396">self</a>.<a href="#349-351">pop</a>()
+<a href=#403 id=403 data-nosnippet>403</a>    }
+<a href=#404 id=404 data-nosnippet>404</a>
+<a href=#405 id=405 data-nosnippet>405</a>    <span class="doccomment">/// Remove the element at `index` and shift down the following elements.
+<a href=#406 id=406 data-nosnippet>406</a>    ///
+<a href=#407 id=407 data-nosnippet>407</a>    /// The `index` must be strictly less than the length of the vector.
+<a href=#408 id=408 data-nosnippet>408</a>    ///
+<a href=#409 id=409 data-nosnippet>409</a>    /// ***Panics*** if the `index` is out of bounds.
+<a href=#410 id=410 data-nosnippet>410</a>    ///
+<a href=#411 id=411 data-nosnippet>411</a>    /// ```
+<a href=#412 id=412 data-nosnippet>412</a>    /// use arrayvec::ArrayVec;
+<a href=#413 id=413 data-nosnippet>413</a>    ///
+<a href=#414 id=414 data-nosnippet>414</a>    /// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#415 id=415 data-nosnippet>415</a>    ///
+<a href=#416 id=416 data-nosnippet>416</a>    /// let removed_elt = array.remove(0);
+<a href=#417 id=417 data-nosnippet>417</a>    /// assert_eq!(removed_elt, 1);
+<a href=#418 id=418 data-nosnippet>418</a>    /// assert_eq!(&amp;array[..], &amp;[2, 3]);
+<a href=#419 id=419 data-nosnippet>419</a>    /// ```
+<a href=#420 id=420 data-nosnippet>420</a>    </span><span class="kw">pub fn </span>remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; T {
+<a href=#421 id=421 data-nosnippet>421</a>        <a class="self" href="#420">self</a>.<a href="#443-449">pop_at</a>(<a href="#420">index</a>)
+<a href=#422 id=422 data-nosnippet>422</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or_else">unwrap_or_else</a>(|| {
+<a href=#423 id=423 data-nosnippet>423</a><span class="expansion"><input id=expand-423 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"ArrayVec::remove: index {0} is out of bounds in vector of length {1}"</span>,
+            index, <span class="self">self</span>.len()));
+}</span><span class="original"><a href="#57-62">panic_oob!</a>(<span class="string">"remove"</span>, index, <span class="self">self</span>.len())</span></span>
+<a href=#424 id=424 data-nosnippet>424</a>            })
+<a href=#425 id=425 data-nosnippet>425</a>    }
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>    <span class="doccomment">/// Remove the element at `index` and shift down the following elements.
+<a href=#428 id=428 data-nosnippet>428</a>    ///
+<a href=#429 id=429 data-nosnippet>429</a>    /// This is a checked version of `.remove(index)`. Returns `None` if there
+<a href=#430 id=430 data-nosnippet>430</a>    /// is no element at `index`. Otherwise, return the element inside `Some`.
+<a href=#431 id=431 data-nosnippet>431</a>    ///
+<a href=#432 id=432 data-nosnippet>432</a>    /// ```
+<a href=#433 id=433 data-nosnippet>433</a>    /// use arrayvec::ArrayVec;
+<a href=#434 id=434 data-nosnippet>434</a>    ///
+<a href=#435 id=435 data-nosnippet>435</a>    /// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#436 id=436 data-nosnippet>436</a>    ///
+<a href=#437 id=437 data-nosnippet>437</a>    /// assert!(array.pop_at(0).is_some());
+<a href=#438 id=438 data-nosnippet>438</a>    /// assert_eq!(&amp;array[..], &amp;[2, 3]);
+<a href=#439 id=439 data-nosnippet>439</a>    ///
+<a href=#440 id=440 data-nosnippet>440</a>    /// assert!(array.pop_at(2).is_none());
+<a href=#441 id=441 data-nosnippet>441</a>    /// assert!(array.pop_at(10).is_none());
+<a href=#442 id=442 data-nosnippet>442</a>    /// ```
+<a href=#443 id=443 data-nosnippet>443</a>    </span><span class="kw">pub fn </span>pop_at(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;T&gt; {
+<a href=#444 id=444 data-nosnippet>444</a>        <span class="kw">if </span><a href="#443">index</a> &gt;= <a class="self" href="#443">self</a>.<a href="#114">len</a>() {
+<a href=#445 id=445 data-nosnippet>445</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#446 id=446 data-nosnippet>446</a>        } <span class="kw">else </span>{
+<a href=#447 id=447 data-nosnippet>447</a>            <a class="self" href="#443">self</a>.<a href="#640-665">drain</a>(index..index + <span class="number">1</span>).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>()
+<a href=#448 id=448 data-nosnippet>448</a>        }
+<a href=#449 id=449 data-nosnippet>449</a>    }
+<a href=#450 id=450 data-nosnippet>450</a>
+<a href=#451 id=451 data-nosnippet>451</a>    <span class="doccomment">/// Retains only the elements specified by the predicate.
+<a href=#452 id=452 data-nosnippet>452</a>    ///
+<a href=#453 id=453 data-nosnippet>453</a>    /// In other words, remove all elements `e` such that `f(&amp;mut e)` returns false.
+<a href=#454 id=454 data-nosnippet>454</a>    /// This method operates in place and preserves the order of the retained
+<a href=#455 id=455 data-nosnippet>455</a>    /// elements.
+<a href=#456 id=456 data-nosnippet>456</a>    ///
+<a href=#457 id=457 data-nosnippet>457</a>    /// ```
+<a href=#458 id=458 data-nosnippet>458</a>    /// use arrayvec::ArrayVec;
+<a href=#459 id=459 data-nosnippet>459</a>    ///
+<a href=#460 id=460 data-nosnippet>460</a>    /// let mut array = ArrayVec::from([1, 2, 3, 4]);
+<a href=#461 id=461 data-nosnippet>461</a>    /// array.retain(|x| *x &amp; 1 != 0 );
+<a href=#462 id=462 data-nosnippet>462</a>    /// assert_eq!(&amp;array[..], &amp;[1, 3]);
+<a href=#463 id=463 data-nosnippet>463</a>    /// ```
+<a href=#464 id=464 data-nosnippet>464</a>    </span><span class="kw">pub fn </span>retain&lt;F&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>f: F)
+<a href=#465 id=465 data-nosnippet>465</a>        <span class="kw">where </span>F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;mut </span>T) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>
+<a href=#466 id=466 data-nosnippet>466</a>    {
+<a href=#467 id=467 data-nosnippet>467</a>        <span class="comment">// Check the implementation of
+<a href=#468 id=468 data-nosnippet>468</a>        // https://doc.rust-lang.org/std/vec/struct.Vec.html#method.retain
+<a href=#469 id=469 data-nosnippet>469</a>        // for safety arguments (especially regarding panics in f and when
+<a href=#470 id=470 data-nosnippet>470</a>        // dropping elements). Implementation closely mirrored here.
+<a href=#471 id=471 data-nosnippet>471</a>
+<a href=#472 id=472 data-nosnippet>472</a>        </span><span class="kw">let </span>original_len = <a class="self" href="#464">self</a>.<a href="#114">len</a>();
+<a href=#473 id=473 data-nosnippet>473</a>        <span class="kw">unsafe </span>{ <a class="self" href="#464">self</a>.<a href="#580-584">set_len</a>(<span class="number">0</span>) };
+<a href=#474 id=474 data-nosnippet>474</a>
+<a href=#475 id=475 data-nosnippet>475</a>        <span class="kw">struct </span>BackshiftOnDrop&lt;<span class="lifetime">'a</span>, T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; {
+<a href=#476 id=476 data-nosnippet>476</a>            v: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#475">CAP</a>&gt;,
+<a href=#477 id=477 data-nosnippet>477</a>            processed_len: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>,
+<a href=#478 id=478 data-nosnippet>478</a>            deleted_cnt: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>,
+<a href=#479 id=479 data-nosnippet>479</a>            original_len: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>,
+<a href=#480 id=480 data-nosnippet>480</a>        }
+<a href=#481 id=481 data-nosnippet>481</a>
+<a href=#482 id=482 data-nosnippet>482</a>        <span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#475-480">BackshiftOnDrop</a>&lt;<span class="lifetime">'_</span>, T, <a href="#482">CAP</a>&gt; {
+<a href=#483 id=483 data-nosnippet>483</a>            <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#484 id=484 data-nosnippet>484</a>                <span class="kw">if </span><a class="self" href="#483">self</a>.deleted_cnt &gt; <span class="number">0 </span>{
+<a href=#485 id=485 data-nosnippet>485</a>                    <span class="kw">unsafe </span>{
+<a href=#486 id=486 data-nosnippet>486</a>                        ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.copy.html">copy</a>(
+<a href=#487 id=487 data-nosnippet>487</a>                            <a class="self" href="#483">self</a>.v.<a href="#735-737">as_ptr</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a class="self" href="#483">self</a>.processed_len),
+<a href=#488 id=488 data-nosnippet>488</a>                            <a class="self" href="#483">self</a>.v.<a href="#740-742">as_mut_ptr</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a class="self" href="#483">self</a>.processed_len - <a class="self" href="#483">self</a>.deleted_cnt),
+<a href=#489 id=489 data-nosnippet>489</a>                            <a class="self" href="#483">self</a>.original_len - <a class="self" href="#483">self</a>.processed_len
+<a href=#490 id=490 data-nosnippet>490</a>                        );
+<a href=#491 id=491 data-nosnippet>491</a>                    }
+<a href=#492 id=492 data-nosnippet>492</a>                }
+<a href=#493 id=493 data-nosnippet>493</a>                <span class="kw">unsafe </span>{
+<a href=#494 id=494 data-nosnippet>494</a>                    <a class="self" href="#483">self</a>.v.<a href="#580-584">set_len</a>(<a class="self" href="#483">self</a>.original_len - <a class="self" href="#483">self</a>.deleted_cnt);
+<a href=#495 id=495 data-nosnippet>495</a>                }
+<a href=#496 id=496 data-nosnippet>496</a>            }
+<a href=#497 id=497 data-nosnippet>497</a>        }
+<a href=#498 id=498 data-nosnippet>498</a>
+<a href=#499 id=499 data-nosnippet>499</a>        <span class="kw">let </span><span class="kw-2">mut </span>g = <a href="#475-480">BackshiftOnDrop</a> { v: <a class="self" href="#464">self</a>, processed_len: <span class="number">0</span>, deleted_cnt: <span class="number">0</span>, <a href="#472">original_len</a> };
+<a href=#500 id=500 data-nosnippet>500</a>
+<a href=#501 id=501 data-nosnippet>501</a>        <span class="attr">#[inline(always)]
+<a href=#502 id=502 data-nosnippet>502</a>        </span><span class="kw">fn </span>process_one&lt;F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;mut </span>T) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>, T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, <span class="kw">const </span>DELETED: <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>&gt;(
+<a href=#503 id=503 data-nosnippet>503</a>            f: <span class="kw-2">&amp;mut </span>F,
+<a href=#504 id=504 data-nosnippet>504</a>            g: <span class="kw-2">&amp;mut </span><a href="#475-480">BackshiftOnDrop</a>&lt;<span class="lifetime">'_</span>, T, <a href="#502">CAP</a>&gt;
+<a href=#505 id=505 data-nosnippet>505</a>        ) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#506 id=506 data-nosnippet>506</a>            <span class="kw">let </span>cur = <span class="kw">unsafe </span>{ <a href="#504">g</a>.v.<a href="#740-742">as_mut_ptr</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a href="#504">g</a>.processed_len) };
+<a href=#507 id=507 data-nosnippet>507</a>            <span class="kw">if </span>!<a href="#503">f</a>(<span class="kw">unsafe </span>{ <span class="kw-2">&amp;mut *</span><a href="#506">cur</a> }) {
+<a href=#508 id=508 data-nosnippet>508</a>                <a href="#504">g</a>.processed_len += <span class="number">1</span>;
+<a href=#509 id=509 data-nosnippet>509</a>                <a href="#504">g</a>.deleted_cnt += <span class="number">1</span>;
+<a href=#510 id=510 data-nosnippet>510</a>                <span class="kw">unsafe </span>{ ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.drop_in_place.html">drop_in_place</a>(<a href="#506">cur</a>) };
+<a href=#511 id=511 data-nosnippet>511</a>                <span class="kw">return </span><span class="bool-val">false</span>;
+<a href=#512 id=512 data-nosnippet>512</a>            }
+<a href=#513 id=513 data-nosnippet>513</a>            <span class="kw">if </span><a href="#502">DELETED</a> {
+<a href=#514 id=514 data-nosnippet>514</a>                <span class="kw">unsafe </span>{
+<a href=#515 id=515 data-nosnippet>515</a>                    <span class="kw">let </span>hole_slot = <a href="#506">cur</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.sub">sub</a>(<a href="#504">g</a>.deleted_cnt);
+<a href=#516 id=516 data-nosnippet>516</a>                    ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.copy_nonoverlapping.html">copy_nonoverlapping</a>(<a href="#506">cur</a>, <a href="#515">hole_slot</a>, <span class="number">1</span>);
+<a href=#517 id=517 data-nosnippet>517</a>                }
+<a href=#518 id=518 data-nosnippet>518</a>            }
+<a href=#519 id=519 data-nosnippet>519</a>            <a href="#504">g</a>.processed_len += <span class="number">1</span>;
+<a href=#520 id=520 data-nosnippet>520</a>            <span class="bool-val">true
+<a href=#521 id=521 data-nosnippet>521</a>        </span>}
+<a href=#522 id=522 data-nosnippet>522</a>
+<a href=#523 id=523 data-nosnippet>523</a>        <span class="comment">// Stage 1: Nothing was deleted.
+<a href=#524 id=524 data-nosnippet>524</a>        </span><span class="kw">while </span>g.processed_len != original_len {
+<a href=#525 id=525 data-nosnippet>525</a>            <span class="kw">if </span>!process_one::&lt;F, T, CAP, <span class="bool-val">false</span>&gt;(<span class="kw-2">&amp;mut </span>f, <span class="kw-2">&amp;mut </span>g) {
+<a href=#526 id=526 data-nosnippet>526</a>                <span class="kw">break</span>;
+<a href=#527 id=527 data-nosnippet>527</a>            }
+<a href=#528 id=528 data-nosnippet>528</a>        }
+<a href=#529 id=529 data-nosnippet>529</a>
+<a href=#530 id=530 data-nosnippet>530</a>        <span class="comment">// Stage 2: Some elements were deleted.
+<a href=#531 id=531 data-nosnippet>531</a>        </span><span class="kw">while </span>g.processed_len != original_len {
+<a href=#532 id=532 data-nosnippet>532</a>            process_one::&lt;F, T, CAP, <span class="bool-val">true</span>&gt;(<span class="kw-2">&amp;mut </span>f, <span class="kw-2">&amp;mut </span>g);
+<a href=#533 id=533 data-nosnippet>533</a>        }
+<a href=#534 id=534 data-nosnippet>534</a>
+<a href=#535 id=535 data-nosnippet>535</a>        <a href="https://doc.rust-lang.org/nightly/core/mem/fn.drop.html">drop</a>(<a href="#499">g</a>);
+<a href=#536 id=536 data-nosnippet>536</a>    }
+<a href=#537 id=537 data-nosnippet>537</a>
+<a href=#538 id=538 data-nosnippet>538</a>    <span class="doccomment">/// Returns the remaining spare capacity of the vector as a slice of
+<a href=#539 id=539 data-nosnippet>539</a>    /// `MaybeUninit&lt;T&gt;`.
+<a href=#540 id=540 data-nosnippet>540</a>    ///
+<a href=#541 id=541 data-nosnippet>541</a>    /// The returned slice can be used to fill the vector with data (e.g. by
+<a href=#542 id=542 data-nosnippet>542</a>    /// reading from a file) before marking the data as initialized using the
+<a href=#543 id=543 data-nosnippet>543</a>    /// [`set_len`] method.
+<a href=#544 id=544 data-nosnippet>544</a>    ///
+<a href=#545 id=545 data-nosnippet>545</a>    /// [`set_len`]: ArrayVec::set_len
+<a href=#546 id=546 data-nosnippet>546</a>    ///
+<a href=#547 id=547 data-nosnippet>547</a>    /// # Examples
+<a href=#548 id=548 data-nosnippet>548</a>    ///
+<a href=#549 id=549 data-nosnippet>549</a>    /// ```
+<a href=#550 id=550 data-nosnippet>550</a>    /// use arrayvec::ArrayVec;
+<a href=#551 id=551 data-nosnippet>551</a>    ///
+<a href=#552 id=552 data-nosnippet>552</a>    /// // Allocate vector big enough for 10 elements.
+<a href=#553 id=553 data-nosnippet>553</a>    /// let mut v: ArrayVec&lt;i32, 10&gt; = ArrayVec::new();
+<a href=#554 id=554 data-nosnippet>554</a>    ///
+<a href=#555 id=555 data-nosnippet>555</a>    /// // Fill in the first 3 elements.
+<a href=#556 id=556 data-nosnippet>556</a>    /// let uninit = v.spare_capacity_mut();
+<a href=#557 id=557 data-nosnippet>557</a>    /// uninit[0].write(0);
+<a href=#558 id=558 data-nosnippet>558</a>    /// uninit[1].write(1);
+<a href=#559 id=559 data-nosnippet>559</a>    /// uninit[2].write(2);
+<a href=#560 id=560 data-nosnippet>560</a>    ///
+<a href=#561 id=561 data-nosnippet>561</a>    /// // Mark the first 3 elements of the vector as being initialized.
+<a href=#562 id=562 data-nosnippet>562</a>    /// unsafe {
+<a href=#563 id=563 data-nosnippet>563</a>    ///     v.set_len(3);
+<a href=#564 id=564 data-nosnippet>564</a>    /// }
+<a href=#565 id=565 data-nosnippet>565</a>    ///
+<a href=#566 id=566 data-nosnippet>566</a>    /// assert_eq!(&amp;v[..], &amp;[0, 1, 2]);
+<a href=#567 id=567 data-nosnippet>567</a>    /// ```
+<a href=#568 id=568 data-nosnippet>568</a>    </span><span class="kw">pub fn </span>spare_capacity_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>[<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>&lt;T&gt;] {
+<a href=#569 id=569 data-nosnippet>569</a>        <span class="kw">let </span>len = <a class="self" href="#568">self</a>.<a href="#114">len</a>();
+<a href=#570 id=570 data-nosnippet>570</a>        <span class="kw-2">&amp;mut </span><a class="self" href="#568">self</a>.xs[len..]
+<a href=#571 id=571 data-nosnippet>571</a>    }
+<a href=#572 id=572 data-nosnippet>572</a>
+<a href=#573 id=573 data-nosnippet>573</a>    <span class="doccomment">/// Set the vector’s length without dropping or moving out elements
+<a href=#574 id=574 data-nosnippet>574</a>    ///
+<a href=#575 id=575 data-nosnippet>575</a>    /// This method is `unsafe` because it changes the notion of the
+<a href=#576 id=576 data-nosnippet>576</a>    /// number of “valid” elements in the vector. Use with care.
+<a href=#577 id=577 data-nosnippet>577</a>    ///
+<a href=#578 id=578 data-nosnippet>578</a>    /// This method uses *debug assertions* to check that `length` is
+<a href=#579 id=579 data-nosnippet>579</a>    /// not greater than the capacity.
+<a href=#580 id=580 data-nosnippet>580</a>    </span><span class="kw">pub unsafe fn </span>set_len(<span class="kw-2">&amp;mut </span><span class="self">self</span>, length: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) {
+<a href=#581 id=581 data-nosnippet>581</a>        <span class="comment">// type invariant that capacity always fits in LenUint
+<a href=#582 id=582 data-nosnippet>582</a></span><span class="expansion"><input id=expand-582 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!(length &lt;= <span class="self">self</span>.capacity()) {
+        ::core::panicking::panic(<span class="string">"assertion failed: length &lt;= self.capacity()"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(length &lt;= <span class="self">self</span>.capacity())</span></span>;
+<a href=#583 id=583 data-nosnippet>583</a>        <a class="self" href="#580">self</a>.len = <a href="#580">length</a> <span class="kw">as </span><a href="lib.rs.html#32">LenUint</a>;
+<a href=#584 id=584 data-nosnippet>584</a>    }
+<a href=#585 id=585 data-nosnippet>585</a>
+<a href=#586 id=586 data-nosnippet>586</a>    <span class="doccomment">/// Copy all elements from the slice and append to the `ArrayVec`.
+<a href=#587 id=587 data-nosnippet>587</a>    ///
+<a href=#588 id=588 data-nosnippet>588</a>    /// ```
+<a href=#589 id=589 data-nosnippet>589</a>    /// use arrayvec::ArrayVec;
+<a href=#590 id=590 data-nosnippet>590</a>    ///
+<a href=#591 id=591 data-nosnippet>591</a>    /// let mut vec: ArrayVec&lt;usize, 10&gt; = ArrayVec::new();
+<a href=#592 id=592 data-nosnippet>592</a>    /// vec.push(1);
+<a href=#593 id=593 data-nosnippet>593</a>    /// vec.try_extend_from_slice(&amp;[2, 3]).unwrap();
+<a href=#594 id=594 data-nosnippet>594</a>    /// assert_eq!(&amp;vec[..], &amp;[1, 2, 3]);
+<a href=#595 id=595 data-nosnippet>595</a>    /// ```
+<a href=#596 id=596 data-nosnippet>596</a>    ///
+<a href=#597 id=597 data-nosnippet>597</a>    /// # Errors
+<a href=#598 id=598 data-nosnippet>598</a>    ///
+<a href=#599 id=599 data-nosnippet>599</a>    /// This method will return an error if the capacity left (see
+<a href=#600 id=600 data-nosnippet>600</a>    /// [`remaining_capacity`]) is smaller then the length of the provided
+<a href=#601 id=601 data-nosnippet>601</a>    /// slice.
+<a href=#602 id=602 data-nosnippet>602</a>    ///
+<a href=#603 id=603 data-nosnippet>603</a>    /// [`remaining_capacity`]: #method.remaining_capacity
+<a href=#604 id=604 data-nosnippet>604</a>    </span><span class="kw">pub fn </span>try_extend_from_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>[T]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <a href="errors.rs.html#9-11">CapacityError</a>&gt;
+<a href=#605 id=605 data-nosnippet>605</a>        <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html">Copy</a>,
+<a href=#606 id=606 data-nosnippet>606</a>    {
+<a href=#607 id=607 data-nosnippet>607</a>        <span class="kw">if </span><a class="self" href="#604">self</a>.<a href="#160-162">remaining_capacity</a>() &lt; <a href="#604">other</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() {
+<a href=#608 id=608 data-nosnippet>608</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="errors.rs.html#9-11">CapacityError</a>::<a href="errors.rs.html#15-19">new</a>(()));
+<a href=#609 id=609 data-nosnippet>609</a>        }
+<a href=#610 id=610 data-nosnippet>610</a>
+<a href=#611 id=611 data-nosnippet>611</a>        <span class="kw">let </span>self_len = <a class="self" href="#604">self</a>.<a href="#114">len</a>();
+<a href=#612 id=612 data-nosnippet>612</a>        <span class="kw">let </span>other_len = <a href="#604">other</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>();
+<a href=#613 id=613 data-nosnippet>613</a>
+<a href=#614 id=614 data-nosnippet>614</a>        <span class="kw">unsafe </span>{
+<a href=#615 id=615 data-nosnippet>615</a>            <span class="kw">let </span>dst = <a class="self" href="#604">self</a>.<a href="#260-262">get_unchecked_ptr</a>(<a href="#611">self_len</a>);
+<a href=#616 id=616 data-nosnippet>616</a>            ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.copy_nonoverlapping.html">copy_nonoverlapping</a>(<a href="#604">other</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.as_ptr">as_ptr</a>(), <a href="#615">dst</a>, <a href="#612">other_len</a>);
+<a href=#617 id=617 data-nosnippet>617</a>            <a class="self" href="#604">self</a>.<a href="#580-584">set_len</a>(<a href="#611">self_len</a> + <a href="#612">other_len</a>);
+<a href=#618 id=618 data-nosnippet>618</a>        }
+<a href=#619 id=619 data-nosnippet>619</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#620 id=620 data-nosnippet>620</a>    }
+<a href=#621 id=621 data-nosnippet>621</a>
+<a href=#622 id=622 data-nosnippet>622</a>    <span class="doccomment">/// Create a draining iterator that removes the specified range in the vector
+<a href=#623 id=623 data-nosnippet>623</a>    /// and yields the removed items from start to end. The element range is
+<a href=#624 id=624 data-nosnippet>624</a>    /// removed even if the iterator is not consumed until the end.
+<a href=#625 id=625 data-nosnippet>625</a>    ///
+<a href=#626 id=626 data-nosnippet>626</a>    /// Note: It is unspecified how many elements are removed from the vector,
+<a href=#627 id=627 data-nosnippet>627</a>    /// if the `Drain` value is leaked.
+<a href=#628 id=628 data-nosnippet>628</a>    ///
+<a href=#629 id=629 data-nosnippet>629</a>    /// **Panics** if the starting point is greater than the end point or if
+<a href=#630 id=630 data-nosnippet>630</a>    /// the end point is greater than the length of the vector.
+<a href=#631 id=631 data-nosnippet>631</a>    ///
+<a href=#632 id=632 data-nosnippet>632</a>    /// ```
+<a href=#633 id=633 data-nosnippet>633</a>    /// use arrayvec::ArrayVec;
+<a href=#634 id=634 data-nosnippet>634</a>    ///
+<a href=#635 id=635 data-nosnippet>635</a>    /// let mut v1 = ArrayVec::from([1, 2, 3]);
+<a href=#636 id=636 data-nosnippet>636</a>    /// let v2: ArrayVec&lt;_, 3&gt; = v1.drain(0..2).collect();
+<a href=#637 id=637 data-nosnippet>637</a>    /// assert_eq!(&amp;v1[..], &amp;[3]);
+<a href=#638 id=638 data-nosnippet>638</a>    /// assert_eq!(&amp;v2[..], &amp;[1, 2]);
+<a href=#639 id=639 data-nosnippet>639</a>    /// ```
+<a href=#640 id=640 data-nosnippet>640</a>    </span><span class="kw">pub fn </span>drain&lt;R&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, range: R) -&gt; <a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'_</span>, T, <a href="#64">CAP</a>&gt;
+<a href=#641 id=641 data-nosnippet>641</a>        <span class="kw">where </span>R: <a href="https://doc.rust-lang.org/nightly/core/ops/range/trait.RangeBounds.html">RangeBounds</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt;
+<a href=#642 id=642 data-nosnippet>642</a>    {
+<a href=#643 id=643 data-nosnippet>643</a>        <span class="comment">// Memory safety
+<a href=#644 id=644 data-nosnippet>644</a>        //
+<a href=#645 id=645 data-nosnippet>645</a>        // When the Drain is first created, it shortens the length of
+<a href=#646 id=646 data-nosnippet>646</a>        // the source vector to make sure no uninitialized or moved-from elements
+<a href=#647 id=647 data-nosnippet>647</a>        // are accessible at all if the Drain's destructor never gets to run.
+<a href=#648 id=648 data-nosnippet>648</a>        //
+<a href=#649 id=649 data-nosnippet>649</a>        // Drain will ptr::read out the values to remove.
+<a href=#650 id=650 data-nosnippet>650</a>        // When finished, remaining tail of the vec is copied back to cover
+<a href=#651 id=651 data-nosnippet>651</a>        // the hole, and the vector length is restored to the new length.
+<a href=#652 id=652 data-nosnippet>652</a>        //
+<a href=#653 id=653 data-nosnippet>653</a>        </span><span class="kw">let </span>len = <a class="self" href="#640">self</a>.<a href="#114">len</a>();
+<a href=#654 id=654 data-nosnippet>654</a>        <span class="kw">let </span>start = <span class="kw">match </span><a href="#640">range</a>.<a href="https://doc.rust-lang.org/nightly/core/ops/range/trait.RangeBounds.html#tymethod.start_bound">start_bound</a>() {
+<a href=#655 id=655 data-nosnippet>655</a>            Bound::<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html#variant.Unbounded">Unbounded</a> =&gt; <span class="number">0</span>,
+<a href=#656 id=656 data-nosnippet>656</a>            Bound::<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html#variant.Included">Included</a>(<span class="kw-2">&amp;</span>i) =&gt; <a href="#656">i</a>,
+<a href=#657 id=657 data-nosnippet>657</a>            Bound::<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html#variant.Excluded">Excluded</a>(<span class="kw-2">&amp;</span>i) =&gt; <a href="#657">i</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.saturating_add">saturating_add</a>(<span class="number">1</span>),
+<a href=#658 id=658 data-nosnippet>658</a>        };
+<a href=#659 id=659 data-nosnippet>659</a>        <span class="kw">let </span>end = <span class="kw">match </span><a href="#640">range</a>.<a href="https://doc.rust-lang.org/nightly/core/ops/range/trait.RangeBounds.html#tymethod.end_bound">end_bound</a>() {
+<a href=#660 id=660 data-nosnippet>660</a>            Bound::<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html#variant.Excluded">Excluded</a>(<span class="kw-2">&amp;</span>j) =&gt; <a href="#660">j</a>,
+<a href=#661 id=661 data-nosnippet>661</a>            Bound::<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html#variant.Included">Included</a>(<span class="kw-2">&amp;</span>j) =&gt; <a href="#661">j</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.saturating_add">saturating_add</a>(<span class="number">1</span>),
+<a href=#662 id=662 data-nosnippet>662</a>            Bound::<a href="https://doc.rust-lang.org/nightly/core/ops/range/enum.Bound.html#variant.Unbounded">Unbounded</a> =&gt; <a href="#653">len</a>,
+<a href=#663 id=663 data-nosnippet>663</a>        };
+<a href=#664 id=664 data-nosnippet>664</a>        <a class="self" href="#640">self</a>.<a href="#667-686">drain_range</a>(<a href="#654">start</a>, <a href="#659">end</a>)
+<a href=#665 id=665 data-nosnippet>665</a>    }
+<a href=#666 id=666 data-nosnippet>666</a>
+<a href=#667 id=667 data-nosnippet>667</a>    <span class="kw">fn </span>drain_range(<span class="kw-2">&amp;mut </span><span class="self">self</span>, start: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, end: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; <a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'_</span>, T, <a href="#64">CAP</a>&gt;
+<a href=#668 id=668 data-nosnippet>668</a>    {
+<a href=#669 id=669 data-nosnippet>669</a>        <span class="kw">let </span>len = <a class="self" href="#667">self</a>.<a href="#114">len</a>();
+<a href=#670 id=670 data-nosnippet>670</a>
+<a href=#671 id=671 data-nosnippet>671</a>        <span class="comment">// bounds check happens here (before length is changed!)
+<a href=#672 id=672 data-nosnippet>672</a>        </span><span class="kw">let </span>range_slice: <span class="kw-2">*const </span><span class="kw">_ </span>= <span class="kw-2">&amp;</span><a class="self" href="#667">self</a>[start..end];
+<a href=#673 id=673 data-nosnippet>673</a>
+<a href=#674 id=674 data-nosnippet>674</a>        <span class="comment">// Calling `set_len` creates a fresh and thus unique mutable references, making all
+<a href=#675 id=675 data-nosnippet>675</a>        // older aliases we created invalid. So we cannot call that function.
+<a href=#676 id=676 data-nosnippet>676</a>        </span><a class="self" href="#667">self</a>.len = <a href="#667">start</a> <span class="kw">as </span><a href="lib.rs.html#32">LenUint</a>;
+<a href=#677 id=677 data-nosnippet>677</a>
+<a href=#678 id=678 data-nosnippet>678</a>        <span class="kw">unsafe </span>{
+<a href=#679 id=679 data-nosnippet>679</a>            <a href="#1004-1012">Drain</a> {
+<a href=#680 id=680 data-nosnippet>680</a>                tail_start: <a href="#667">end</a>,
+<a href=#681 id=681 data-nosnippet>681</a>                tail_len: <a href="#669">len</a> - <a href="#667">end</a>,
+<a href=#682 id=682 data-nosnippet>682</a>                iter: (<span class="kw-2">*</span><a href="#672">range_slice</a>).<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>(),
+<a href=#683 id=683 data-nosnippet>683</a>                vec: <a class="self" href="#667">self</a> <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>,
+<a href=#684 id=684 data-nosnippet>684</a>            }
+<a href=#685 id=685 data-nosnippet>685</a>        }
+<a href=#686 id=686 data-nosnippet>686</a>    }
+<a href=#687 id=687 data-nosnippet>687</a>
+<a href=#688 id=688 data-nosnippet>688</a>    <span class="doccomment">/// Return the inner fixed size array, if it is full to its capacity.
+<a href=#689 id=689 data-nosnippet>689</a>    ///
+<a href=#690 id=690 data-nosnippet>690</a>    /// Return an `Ok` value with the array if length equals capacity,
+<a href=#691 id=691 data-nosnippet>691</a>    /// return an `Err` with self otherwise.
+<a href=#692 id=692 data-nosnippet>692</a>    </span><span class="kw">pub fn </span>into_inner(<span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;[T; <a href="#64">CAP</a>], <span class="self">Self</span>&gt; {
+<a href=#693 id=693 data-nosnippet>693</a>        <span class="kw">if </span><a class="self" href="#692">self</a>.<a href="#114">len</a>() &lt; <a class="self" href="#692">self</a>.<a href="#137">capacity</a>() {
+<a href=#694 id=694 data-nosnippet>694</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a class="self" href="#692">self</a>)
+<a href=#695 id=695 data-nosnippet>695</a>        } <span class="kw">else </span>{
+<a href=#696 id=696 data-nosnippet>696</a>            <span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a class="self" href="#692">self</a>.<a href="#704-709">into_inner_unchecked</a>()) }
+<a href=#697 id=697 data-nosnippet>697</a>        }
+<a href=#698 id=698 data-nosnippet>698</a>    }
+<a href=#699 id=699 data-nosnippet>699</a>
+<a href=#700 id=700 data-nosnippet>700</a>    <span class="doccomment">/// Return the inner fixed size array.
+<a href=#701 id=701 data-nosnippet>701</a>    ///
+<a href=#702 id=702 data-nosnippet>702</a>    /// Safety:
+<a href=#703 id=703 data-nosnippet>703</a>    /// This operation is safe if and only if length equals capacity.
+<a href=#704 id=704 data-nosnippet>704</a>    </span><span class="kw">pub unsafe fn </span>into_inner_unchecked(<span class="self">self</span>) -&gt; [T; <a href="#64">CAP</a>] {
+<a href=#705 id=705 data-nosnippet>705</a><span class="expansion"><input id=expand-705 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    {
+        <span class="kw">match </span>(<span class="kw-2">&amp;</span><span class="self">self</span>.len(), <span class="kw-2">&amp;</span><span class="self">self</span>.capacity()) {
+            (left_val, right_val) =&gt; {
+                <span class="kw">if </span>!(<span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val) {
+                    <span class="kw">let </span>kind = ::core::panicking::AssertKind::Eq;
+                    ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                        <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+                }
+            }
+        }
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert_eq.html">debug_assert_eq!</a>(<span class="self">self</span>.len(), <span class="self">self</span>.capacity())</span></span>;
+<a href=#706 id=706 data-nosnippet>706</a>        <span class="kw">let </span>self_ = <a href="https://doc.rust-lang.org/nightly/core/mem/manually_drop/struct.ManuallyDrop.html">ManuallyDrop</a>::<a href="https://doc.rust-lang.org/nightly/core/mem/manually_drop/struct.ManuallyDrop.html#method.new">new</a>(<a class="self" href="#704">self</a>);
+<a href=#707 id=707 data-nosnippet>707</a>        <span class="kw">let </span>array = ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.read.html">read</a>(<a href="#706">self_</a>.<a href="#735-737">as_ptr</a>() <span class="kw">as </span><span class="kw-2">*const </span>[T; <a href="#64">CAP</a>]);
+<a href=#708 id=708 data-nosnippet>708</a>        <a href="#707">array</a>
+<a href=#709 id=709 data-nosnippet>709</a>    }
+<a href=#710 id=710 data-nosnippet>710</a>
+<a href=#711 id=711 data-nosnippet>711</a>    <span class="doccomment">/// Returns the ArrayVec, replacing the original with a new empty ArrayVec.
+<a href=#712 id=712 data-nosnippet>712</a>    ///
+<a href=#713 id=713 data-nosnippet>713</a>    /// ```
+<a href=#714 id=714 data-nosnippet>714</a>    /// use arrayvec::ArrayVec;
+<a href=#715 id=715 data-nosnippet>715</a>    ///
+<a href=#716 id=716 data-nosnippet>716</a>    /// let mut v = ArrayVec::from([0, 1, 2, 3]);
+<a href=#717 id=717 data-nosnippet>717</a>    /// assert_eq!([0, 1, 2, 3], v.take().into_inner().unwrap());
+<a href=#718 id=718 data-nosnippet>718</a>    /// assert!(v.is_empty());
+<a href=#719 id=719 data-nosnippet>719</a>    /// ```
+<a href=#720 id=720 data-nosnippet>720</a>    </span><span class="kw">pub fn </span>take(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self  </span>{
+<a href=#721 id=721 data-nosnippet>721</a>        mem::<a href="https://doc.rust-lang.org/nightly/core/mem/fn.replace.html">replace</a>(<a class="self" href="#720">self</a>, <span class="self">Self</span>::<a href="#83-88">new</a>())
+<a href=#722 id=722 data-nosnippet>722</a>    }
+<a href=#723 id=723 data-nosnippet>723</a>
+<a href=#724 id=724 data-nosnippet>724</a>    <span class="doccomment">/// Return a slice containing all elements of the vector.
+<a href=#725 id=725 data-nosnippet>725</a>    </span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] {
+<a href=#726 id=726 data-nosnippet>726</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#17-22">as_slice</a>(<a class="self" href="#725">self</a>)
+<a href=#727 id=727 data-nosnippet>727</a>    }
+<a href=#728 id=728 data-nosnippet>728</a>
+<a href=#729 id=729 data-nosnippet>729</a>    <span class="doccomment">/// Return a mutable slice containing all elements of the vector.
+<a href=#730 id=730 data-nosnippet>730</a>    </span><span class="kw">pub fn </span>as_mut_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>[T] {
+<a href=#731 id=731 data-nosnippet>731</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#25-30">as_mut_slice</a>(<a class="self" href="#730">self</a>)
+<a href=#732 id=732 data-nosnippet>732</a>    }
+<a href=#733 id=733 data-nosnippet>733</a>
+<a href=#734 id=734 data-nosnippet>734</a>    <span class="doccomment">/// Return a raw pointer to the vector's buffer.
+<a href=#735 id=735 data-nosnippet>735</a>    </span><span class="kw">pub fn </span>as_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*const </span>T {
+<a href=#736 id=736 data-nosnippet>736</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#33">as_ptr</a>(<a class="self" href="#735">self</a>)
+<a href=#737 id=737 data-nosnippet>737</a>    }
+<a href=#738 id=738 data-nosnippet>738</a>
+<a href=#739 id=739 data-nosnippet>739</a>    <span class="doccomment">/// Return a raw mutable pointer to the vector's buffer.
+<a href=#740 id=740 data-nosnippet>740</a>    </span><span class="kw">pub fn </span>as_mut_ptr(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>T {
+<a href=#741 id=741 data-nosnippet>741</a>        ArrayVecImpl::<a href="arrayvec_impl.rs.html#36">as_mut_ptr</a>(<a class="self" href="#740">self</a>)
+<a href=#742 id=742 data-nosnippet>742</a>    }
+<a href=#743 id=743 data-nosnippet>743</a>}
+<a href=#744 id=744 data-nosnippet>744</a>
+<a href=#745 id=745 data-nosnippet>745</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="arrayvec_impl.rs.html#8-86">ArrayVecImpl</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#745">CAP</a>&gt; {
+<a href=#746 id=746 data-nosnippet>746</a>    <span class="kw">type </span>Item = T;
+<a href=#747 id=747 data-nosnippet>747</a>    <span class="kw">const </span>CAPACITY: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> = <a href="#745">CAP</a>;
+<a href=#748 id=748 data-nosnippet>748</a>
+<a href=#749 id=749 data-nosnippet>749</a>    <span class="kw">fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> { <a class="self" href="#749">self</a>.<a href="#114">len</a>() }
+<a href=#750 id=750 data-nosnippet>750</a>
+<a href=#751 id=751 data-nosnippet>751</a>    <span class="kw">unsafe fn </span>set_len(<span class="kw-2">&amp;mut </span><span class="self">self</span>, length: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) {
+<a href=#752 id=752 data-nosnippet>752</a><span class="expansion"><input id=expand-752 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!(length &lt;= CAP) {
+        ::core::panicking::panic(<span class="string">"assertion failed: length &lt;= CAP"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(length &lt;= CAP)</span></span>;
+<a href=#753 id=753 data-nosnippet>753</a>        <a class="self" href="#751">self</a>.len = <a href="#751">length</a> <span class="kw">as </span><a href="lib.rs.html#32">LenUint</a>;
+<a href=#754 id=754 data-nosnippet>754</a>    }
+<a href=#755 id=755 data-nosnippet>755</a>
+<a href=#756 id=756 data-nosnippet>756</a>    <span class="kw">fn </span>as_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*const </span><span class="self">Self</span>::Item {
+<a href=#757 id=757 data-nosnippet>757</a>        <a class="self" href="#756">self</a>.xs.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.as_ptr">as_ptr</a>() <span class="kw">as _
+<a href=#758 id=758 data-nosnippet>758</a>    </span>}
+<a href=#759 id=759 data-nosnippet>759</a>
+<a href=#760 id=760 data-nosnippet>760</a>    <span class="kw">fn </span>as_mut_ptr(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span><span class="self">Self</span>::Item {
+<a href=#761 id=761 data-nosnippet>761</a>        <a class="self" href="#760">self</a>.xs.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.as_mut_ptr">as_mut_ptr</a>() <span class="kw">as _
+<a href=#762 id=762 data-nosnippet>762</a>    </span>}
+<a href=#763 id=763 data-nosnippet>763</a>}
+<a href=#764 id=764 data-nosnippet>764</a>
+<a href=#765 id=765 data-nosnippet>765</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html">Deref</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#765">CAP</a>&gt; {
+<a href=#766 id=766 data-nosnippet>766</a>    <span class="kw">type </span>Target = [T];
+<a href=#767 id=767 data-nosnippet>767</a>    <span class="attr">#[inline]
+<a href=#768 id=768 data-nosnippet>768</a>    </span><span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+<a href=#769 id=769 data-nosnippet>769</a>        <a class="self" href="#768">self</a>.<a href="#725-727">as_slice</a>()
+<a href=#770 id=770 data-nosnippet>770</a>    }
+<a href=#771 id=771 data-nosnippet>771</a>}
+<a href=#772 id=772 data-nosnippet>772</a>
+<a href=#773 id=773 data-nosnippet>773</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html">DerefMut</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#773">CAP</a>&gt; {
+<a href=#774 id=774 data-nosnippet>774</a>    <span class="attr">#[inline]
+<a href=#775 id=775 data-nosnippet>775</a>    </span><span class="kw">fn </span>deref_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="self">Self</span>::Target {
+<a href=#776 id=776 data-nosnippet>776</a>        <a class="self" href="#775">self</a>.<a href="#730-732">as_mut_slice</a>()
+<a href=#777 id=777 data-nosnippet>777</a>    }
+<a href=#778 id=778 data-nosnippet>778</a>}
+<a href=#779 id=779 data-nosnippet>779</a>
+<a href=#780 id=780 data-nosnippet>780</a>
+<a href=#781 id=781 data-nosnippet>781</a><span class="doccomment">/// Create an `ArrayVec` from an array.
+<a href=#782 id=782 data-nosnippet>782</a>///
+<a href=#783 id=783 data-nosnippet>783</a>/// ```
+<a href=#784 id=784 data-nosnippet>784</a>/// use arrayvec::ArrayVec;
+<a href=#785 id=785 data-nosnippet>785</a>///
+<a href=#786 id=786 data-nosnippet>786</a>/// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#787 id=787 data-nosnippet>787</a>/// assert_eq!(array.len(), 3);
+<a href=#788 id=788 data-nosnippet>788</a>/// assert_eq!(array.capacity(), 3);
+<a href=#789 id=789 data-nosnippet>789</a>/// ```
+<a href=#790 id=790 data-nosnippet>790</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;[T; <a href="#790">CAP</a>]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#790">CAP</a>&gt; {
+<a href=#791 id=791 data-nosnippet>791</a>    <span class="attr">#[track_caller]
+<a href=#792 id=792 data-nosnippet>792</a>    </span><span class="kw">fn </span>from(array: [T; <a href="#790">CAP</a>]) -&gt; <span class="self">Self </span>{
+<a href=#793 id=793 data-nosnippet>793</a>        <span class="kw">let </span>array = <a href="https://doc.rust-lang.org/nightly/core/mem/manually_drop/struct.ManuallyDrop.html">ManuallyDrop</a>::<a href="https://doc.rust-lang.org/nightly/core/mem/manually_drop/struct.ManuallyDrop.html#method.new">new</a>(<a href="#792">array</a>);
+<a href=#794 id=794 data-nosnippet>794</a>        <span class="kw">let </span><span class="kw-2">mut </span>vec = &lt;<a href="#43-47">ArrayVec</a>&lt;T, <a href="#790">CAP</a>&gt;&gt;::<a href="#83-88">new</a>();
+<a href=#795 id=795 data-nosnippet>795</a>        <span class="kw">unsafe </span>{
+<a href=#796 id=796 data-nosnippet>796</a>            (<span class="kw-2">&amp;*</span><a href="#793">array</a> <span class="kw">as </span><span class="kw-2">*const </span>[T; <a href="#790">CAP</a>] <span class="kw">as </span><span class="kw-2">*const </span>[<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>&lt;T&gt;; <a href="#790">CAP</a>])
+<a href=#797 id=797 data-nosnippet>797</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.copy_to_nonoverlapping">copy_to_nonoverlapping</a>(<span class="kw-2">&amp;mut </span><a href="#794">vec</a>.xs <span class="kw">as </span><span class="kw-2">*mut </span>[<a href="https://doc.rust-lang.org/nightly/core/mem/maybe_uninit/union.MaybeUninit.html">MaybeUninit</a>&lt;T&gt;; <a href="#790">CAP</a>], <span class="number">1</span>);
+<a href=#798 id=798 data-nosnippet>798</a>            <a href="#794">vec</a>.<a href="#580-584">set_len</a>(<a href="#790">CAP</a>);
+<a href=#799 id=799 data-nosnippet>799</a>        }
+<a href=#800 id=800 data-nosnippet>800</a>        <a href="#794">vec</a>
+<a href=#801 id=801 data-nosnippet>801</a>    }
+<a href=#802 id=802 data-nosnippet>802</a>}
+<a href=#803 id=803 data-nosnippet>803</a>
+<a href=#804 id=804 data-nosnippet>804</a>
+<a href=#805 id=805 data-nosnippet>805</a><span class="doccomment">/// Try to create an `ArrayVec` from a slice. This will return an error if the slice was too big to
+<a href=#806 id=806 data-nosnippet>806</a>/// fit.
+<a href=#807 id=807 data-nosnippet>807</a>///
+<a href=#808 id=808 data-nosnippet>808</a>/// ```
+<a href=#809 id=809 data-nosnippet>809</a>/// use arrayvec::ArrayVec;
+<a href=#810 id=810 data-nosnippet>810</a>/// use std::convert::TryInto as _;
+<a href=#811 id=811 data-nosnippet>811</a>///
+<a href=#812 id=812 data-nosnippet>812</a>/// let array: ArrayVec&lt;_, 4&gt; = (&amp;[1, 2, 3] as &amp;[_]).try_into().unwrap();
+<a href=#813 id=813 data-nosnippet>813</a>/// assert_eq!(array.len(), 3);
+<a href=#814 id=814 data-nosnippet>814</a>/// assert_eq!(array.capacity(), 4);
+<a href=#815 id=815 data-nosnippet>815</a>/// ```
+<a href=#816 id=816 data-nosnippet>816</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html">std::convert::TryFrom</a>&lt;<span class="kw-2">&amp;</span>[T]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#816">CAP</a>&gt;
+<a href=#817 id=817 data-nosnippet>817</a>    <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>,
+<a href=#818 id=818 data-nosnippet>818</a>{
+<a href=#819 id=819 data-nosnippet>819</a>    <span class="kw">type </span>Error = <a href="errors.rs.html#9-11">CapacityError</a>;
+<a href=#820 id=820 data-nosnippet>820</a>
+<a href=#821 id=821 data-nosnippet>821</a>    <span class="kw">fn </span>try_from(slice: <span class="kw-2">&amp;</span>[T]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+<a href=#822 id=822 data-nosnippet>822</a>        <span class="kw">if </span><span class="self">Self</span>::<a href="#66">CAPACITY</a> &lt; <a href="#821">slice</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() {
+<a href=#823 id=823 data-nosnippet>823</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<a href="errors.rs.html#9-11">CapacityError</a>::<a href="errors.rs.html#15-19">new</a>(()))
+<a href=#824 id=824 data-nosnippet>824</a>        } <span class="kw">else </span>{
+<a href=#825 id=825 data-nosnippet>825</a>            <span class="kw">let </span><span class="kw-2">mut </span>array = <span class="self">Self</span>::<a href="#83-88">new</a>();
+<a href=#826 id=826 data-nosnippet>826</a>            <a href="#825">array</a>.<a href="#1156-1165">extend_from_slice</a>(<a href="#821">slice</a>);
+<a href=#827 id=827 data-nosnippet>827</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#825">array</a>)
+<a href=#828 id=828 data-nosnippet>828</a>        }
+<a href=#829 id=829 data-nosnippet>829</a>    }
+<a href=#830 id=830 data-nosnippet>830</a>}
+<a href=#831 id=831 data-nosnippet>831</a>
+<a href=#832 id=832 data-nosnippet>832</a>
+<a href=#833 id=833 data-nosnippet>833</a><span class="doccomment">/// Iterate the `ArrayVec` with references to each element.
+<a href=#834 id=834 data-nosnippet>834</a>///
+<a href=#835 id=835 data-nosnippet>835</a>/// ```
+<a href=#836 id=836 data-nosnippet>836</a>/// use arrayvec::ArrayVec;
+<a href=#837 id=837 data-nosnippet>837</a>///
+<a href=#838 id=838 data-nosnippet>838</a>/// let array = ArrayVec::from([1, 2, 3]);
+<a href=#839 id=839 data-nosnippet>839</a>///
+<a href=#840 id=840 data-nosnippet>840</a>/// for elt in &amp;array {
+<a href=#841 id=841 data-nosnippet>841</a>///     // ...
+<a href=#842 id=842 data-nosnippet>842</a>/// }
+<a href=#843 id=843 data-nosnippet>843</a>/// ```
+<a href=#844 id=844 data-nosnippet>844</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a> <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#844">CAP</a>&gt; {
+<a href=#845 id=845 data-nosnippet>845</a>    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
+<a href=#846 id=846 data-nosnippet>846</a>    <span class="kw">type </span>IntoIter = slice::<a href="https://doc.rust-lang.org/nightly/core/slice/iter/struct.Iter.html">Iter</a>&lt;<span class="lifetime">'a</span>, T&gt;;
+<a href=#847 id=847 data-nosnippet>847</a>    <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIter { <a class="self" href="#847">self</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>() }
+<a href=#848 id=848 data-nosnippet>848</a>}
+<a href=#849 id=849 data-nosnippet>849</a>
+<a href=#850 id=850 data-nosnippet>850</a><span class="doccomment">/// Iterate the `ArrayVec` with mutable references to each element.
+<a href=#851 id=851 data-nosnippet>851</a>///
+<a href=#852 id=852 data-nosnippet>852</a>/// ```
+<a href=#853 id=853 data-nosnippet>853</a>/// use arrayvec::ArrayVec;
+<a href=#854 id=854 data-nosnippet>854</a>///
+<a href=#855 id=855 data-nosnippet>855</a>/// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#856 id=856 data-nosnippet>856</a>///
+<a href=#857 id=857 data-nosnippet>857</a>/// for elt in &amp;mut array {
+<a href=#858 id=858 data-nosnippet>858</a>///     // ...
+<a href=#859 id=859 data-nosnippet>859</a>/// }
+<a href=#860 id=860 data-nosnippet>860</a>/// ```
+<a href=#861 id=861 data-nosnippet>861</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a> <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#861">CAP</a>&gt; {
+<a href=#862 id=862 data-nosnippet>862</a>    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T;
+<a href=#863 id=863 data-nosnippet>863</a>    <span class="kw">type </span>IntoIter = slice::<a href="https://doc.rust-lang.org/nightly/core/slice/iter/struct.IterMut.html">IterMut</a>&lt;<span class="lifetime">'a</span>, T&gt;;
+<a href=#864 id=864 data-nosnippet>864</a>    <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIter { <a class="self" href="#864">self</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter_mut">iter_mut</a>() }
+<a href=#865 id=865 data-nosnippet>865</a>}
+<a href=#866 id=866 data-nosnippet>866</a>
+<a href=#867 id=867 data-nosnippet>867</a><span class="doccomment">/// Iterate the `ArrayVec` with each element by value.
+<a href=#868 id=868 data-nosnippet>868</a>///
+<a href=#869 id=869 data-nosnippet>869</a>/// The vector is consumed by this operation.
+<a href=#870 id=870 data-nosnippet>870</a>///
+<a href=#871 id=871 data-nosnippet>871</a>/// ```
+<a href=#872 id=872 data-nosnippet>872</a>/// use arrayvec::ArrayVec;
+<a href=#873 id=873 data-nosnippet>873</a>///
+<a href=#874 id=874 data-nosnippet>874</a>/// for elt in ArrayVec::from([1, 2, 3]) {
+<a href=#875 id=875 data-nosnippet>875</a>///     // ...
+<a href=#876 id=876 data-nosnippet>876</a>/// }
+<a href=#877 id=877 data-nosnippet>877</a>/// ```
+<a href=#878 id=878 data-nosnippet>878</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#878">CAP</a>&gt; {
+<a href=#879 id=879 data-nosnippet>879</a>    <span class="kw">type </span>Item = T;
+<a href=#880 id=880 data-nosnippet>880</a>    <span class="kw">type </span>IntoIter = <a href="#914-917">IntoIter</a>&lt;T, <a href="#878">CAP</a>&gt;;
+<a href=#881 id=881 data-nosnippet>881</a>    <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <a href="#914-917">IntoIter</a>&lt;T, <a href="#878">CAP</a>&gt; {
+<a href=#882 id=882 data-nosnippet>882</a>        <a href="#914-917">IntoIter</a> { index: <span class="number">0</span>, v: <a class="self" href="#881">self</a>, }
+<a href=#883 id=883 data-nosnippet>883</a>    }
+<a href=#884 id=884 data-nosnippet>884</a>}
+<a href=#885 id=885 data-nosnippet>885</a>
+<a href=#886 id=886 data-nosnippet>886</a>
+<a href=#887 id=887 data-nosnippet>887</a><span class="attr">#[cfg(feature = <span class="string">"zeroize"</span>)]
+<a href=#888 id=888 data-nosnippet>888</a></span><span class="doccomment">/// "Best efforts" zeroing of the `ArrayVec`'s buffer when the `zeroize` feature is enabled.
+<a href=#889 id=889 data-nosnippet>889</a>///
+<a href=#890 id=890 data-nosnippet>890</a>/// The length is set to 0, and the buffer is dropped and zeroized.
+<a href=#891 id=891 data-nosnippet>891</a>/// Cannot ensure that previous moves of the `ArrayVec` did not leave values on the stack.
+<a href=#892 id=892 data-nosnippet>892</a>///
+<a href=#893 id=893 data-nosnippet>893</a>/// ```
+<a href=#894 id=894 data-nosnippet>894</a>/// use arrayvec::ArrayVec;
+<a href=#895 id=895 data-nosnippet>895</a>/// use zeroize::Zeroize;
+<a href=#896 id=896 data-nosnippet>896</a>/// let mut array = ArrayVec::from([1, 2, 3]);
+<a href=#897 id=897 data-nosnippet>897</a>/// array.zeroize();
+<a href=#898 id=898 data-nosnippet>898</a>/// assert_eq!(array.len(), 0);
+<a href=#899 id=899 data-nosnippet>899</a>/// let data = unsafe { core::slice::from_raw_parts(array.as_ptr(), array.capacity()) };
+<a href=#900 id=900 data-nosnippet>900</a>/// assert_eq!(data, [0, 0, 0]);
+<a href=#901 id=901 data-nosnippet>901</a>/// ```
+<a href=#902 id=902 data-nosnippet>902</a></span><span class="kw">impl</span>&lt;Z: zeroize::Zeroize, <span class="kw">const </span>CAP: usize&gt; zeroize::Zeroize <span class="kw">for </span>ArrayVec&lt;Z, CAP&gt; {
+<a href=#903 id=903 data-nosnippet>903</a>    <span class="kw">fn </span>zeroize(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#904 id=904 data-nosnippet>904</a>        <span class="comment">// Zeroize all the contained elements.
+<a href=#905 id=905 data-nosnippet>905</a>        </span><span class="self">self</span>.iter_mut().zeroize();
+<a href=#906 id=906 data-nosnippet>906</a>        <span class="comment">// Drop all the elements and set the length to 0.
+<a href=#907 id=907 data-nosnippet>907</a>        </span><span class="self">self</span>.clear();
+<a href=#908 id=908 data-nosnippet>908</a>        <span class="comment">// Zeroize the backing array.
+<a href=#909 id=909 data-nosnippet>909</a>        </span><span class="self">self</span>.xs.zeroize();
+<a href=#910 id=910 data-nosnippet>910</a>    }
+<a href=#911 id=911 data-nosnippet>911</a>}
+<a href=#912 id=912 data-nosnippet>912</a>
+<a href=#913 id=913 data-nosnippet>913</a><span class="doccomment">/// By-value iterator for `ArrayVec`.
+<a href=#914 id=914 data-nosnippet>914</a></span><span class="kw">pub struct </span><a href="../../arrayvec/struct.IntoIter.html">IntoIter</a>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; {
+<a href=#915 id=915 data-nosnippet>915</a>    index: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>,
+<a href=#916 id=916 data-nosnippet>916</a>    v: <a href="#43-47">ArrayVec</a>&lt;T, <a href="#914">CAP</a>&gt;,
+<a href=#917 id=917 data-nosnippet>917</a>}
+<a href=#918 id=918 data-nosnippet>918</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="#914-917">IntoIter</a>&lt;T, <a href="#918">CAP</a>&gt; {
+<a href=#919 id=919 data-nosnippet>919</a>    <span class="doccomment">/// Returns the remaining items of this iterator as a slice.
+<a href=#920 id=920 data-nosnippet>920</a>    </span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] {
+<a href=#921 id=921 data-nosnippet>921</a>        <span class="kw-2">&amp;</span><a class="self" href="#920">self</a>.v[<span class="self">self</span>.index..]
+<a href=#922 id=922 data-nosnippet>922</a>    }
+<a href=#923 id=923 data-nosnippet>923</a>
+<a href=#924 id=924 data-nosnippet>924</a>    <span class="doccomment">/// Returns the remaining items of this iterator as a mutable slice.
+<a href=#925 id=925 data-nosnippet>925</a>    </span><span class="kw">pub fn </span>as_mut_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>[T] {
+<a href=#926 id=926 data-nosnippet>926</a>        <span class="kw-2">&amp;mut </span><a class="self" href="#925">self</a>.v[<span class="self">self</span>.index..]
+<a href=#927 id=927 data-nosnippet>927</a>    }
+<a href=#928 id=928 data-nosnippet>928</a>}
+<a href=#929 id=929 data-nosnippet>929</a>
+<a href=#930 id=930 data-nosnippet>930</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a> <span class="kw">for </span><a href="#914-917">IntoIter</a>&lt;T, <a href="#930">CAP</a>&gt; {
+<a href=#931 id=931 data-nosnippet>931</a>    <span class="kw">type </span>Item = T;
+<a href=#932 id=932 data-nosnippet>932</a>
+<a href=#933 id=933 data-nosnippet>933</a>    <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="self">Self</span>::Item&gt; {
+<a href=#934 id=934 data-nosnippet>934</a>        <span class="kw">if </span><a class="self" href="#933">self</a>.index == <a class="self" href="#933">self</a>.v.<a href="#114">len</a>() {
+<a href=#935 id=935 data-nosnippet>935</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#936 id=936 data-nosnippet>936</a>        } <span class="kw">else </span>{
+<a href=#937 id=937 data-nosnippet>937</a>            <span class="kw">unsafe </span>{
+<a href=#938 id=938 data-nosnippet>938</a>                <span class="kw">let </span>index = <a class="self" href="#933">self</a>.index;
+<a href=#939 id=939 data-nosnippet>939</a>                <a class="self" href="#933">self</a>.index = <a href="#938">index</a> + <span class="number">1</span>;
+<a href=#940 id=940 data-nosnippet>940</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.read.html">read</a>(<a class="self" href="#933">self</a>.v.<a href="#260-262">get_unchecked_ptr</a>(<a href="#938">index</a>)))
+<a href=#941 id=941 data-nosnippet>941</a>            }
+<a href=#942 id=942 data-nosnippet>942</a>        }
+<a href=#943 id=943 data-nosnippet>943</a>    }
+<a href=#944 id=944 data-nosnippet>944</a>
+<a href=#945 id=945 data-nosnippet>945</a>    <span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt;) {
+<a href=#946 id=946 data-nosnippet>946</a>        <span class="kw">let </span>len = <a class="self" href="#945">self</a>.v.<a href="#114">len</a>() - <a class="self" href="#945">self</a>.index;
+<a href=#947 id=947 data-nosnippet>947</a>        (<a href="#946">len</a>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#946">len</a>))
+<a href=#948 id=948 data-nosnippet>948</a>    }
+<a href=#949 id=949 data-nosnippet>949</a>}
+<a href=#950 id=950 data-nosnippet>950</a>
+<a href=#951 id=951 data-nosnippet>951</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html">DoubleEndedIterator</a> <span class="kw">for </span><a href="#914-917">IntoIter</a>&lt;T, <a href="#951">CAP</a>&gt; {
+<a href=#952 id=952 data-nosnippet>952</a>    <span class="kw">fn </span>next_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="self">Self</span>::Item&gt; {
+<a href=#953 id=953 data-nosnippet>953</a>        <span class="kw">if </span><a class="self" href="#952">self</a>.index == <a class="self" href="#952">self</a>.v.<a href="#114">len</a>() {
+<a href=#954 id=954 data-nosnippet>954</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#955 id=955 data-nosnippet>955</a>        } <span class="kw">else </span>{
+<a href=#956 id=956 data-nosnippet>956</a>            <span class="kw">unsafe </span>{
+<a href=#957 id=957 data-nosnippet>957</a>                <span class="kw">let </span>new_len = <a class="self" href="#952">self</a>.v.<a href="#114">len</a>() - <span class="number">1</span>;
+<a href=#958 id=958 data-nosnippet>958</a>                <a class="self" href="#952">self</a>.v.<a href="#580-584">set_len</a>(<a href="#957">new_len</a>);
+<a href=#959 id=959 data-nosnippet>959</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.read.html">read</a>(<a class="self" href="#952">self</a>.v.<a href="#260-262">get_unchecked_ptr</a>(<a href="#957">new_len</a>)))
+<a href=#960 id=960 data-nosnippet>960</a>            }
+<a href=#961 id=961 data-nosnippet>961</a>        }
+<a href=#962 id=962 data-nosnippet>962</a>    }
+<a href=#963 id=963 data-nosnippet>963</a>}
+<a href=#964 id=964 data-nosnippet>964</a>
+<a href=#965 id=965 data-nosnippet>965</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/exact_size/trait.ExactSizeIterator.html">ExactSizeIterator</a> <span class="kw">for </span><a href="#914-917">IntoIter</a>&lt;T, <a href="#965">CAP</a>&gt; { }
+<a href=#966 id=966 data-nosnippet>966</a>
+<a href=#967 id=967 data-nosnippet>967</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#914-917">IntoIter</a>&lt;T, <a href="#967">CAP</a>&gt; {
+<a href=#968 id=968 data-nosnippet>968</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#969 id=969 data-nosnippet>969</a>        <span class="comment">// panic safety: Set length to 0 before dropping elements.
+<a href=#970 id=970 data-nosnippet>970</a>        </span><span class="kw">let </span>index = <a class="self" href="#968">self</a>.index;
+<a href=#971 id=971 data-nosnippet>971</a>        <span class="kw">let </span>len = <a class="self" href="#968">self</a>.v.<a href="#114">len</a>();
+<a href=#972 id=972 data-nosnippet>972</a>        <span class="kw">unsafe </span>{
+<a href=#973 id=973 data-nosnippet>973</a>            <a class="self" href="#968">self</a>.v.<a href="#580-584">set_len</a>(<span class="number">0</span>);
+<a href=#974 id=974 data-nosnippet>974</a>            <span class="kw">let </span>elements = slice::<a href="https://doc.rust-lang.org/nightly/core/slice/raw/fn.from_raw_parts_mut.html">from_raw_parts_mut</a>(
+<a href=#975 id=975 data-nosnippet>975</a>                <a class="self" href="#968">self</a>.v.<a href="#260-262">get_unchecked_ptr</a>(<a href="#970">index</a>),
+<a href=#976 id=976 data-nosnippet>976</a>                <a href="#971">len</a> - <a href="#970">index</a>);
+<a href=#977 id=977 data-nosnippet>977</a>            ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.drop_in_place.html">drop_in_place</a>(<a href="#974">elements</a>);
+<a href=#978 id=978 data-nosnippet>978</a>        }
+<a href=#979 id=979 data-nosnippet>979</a>    }
+<a href=#980 id=980 data-nosnippet>980</a>}
+<a href=#981 id=981 data-nosnippet>981</a>
+<a href=#982 id=982 data-nosnippet>982</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a> <span class="kw">for </span><a href="#914-917">IntoIter</a>&lt;T, <a href="#982">CAP</a>&gt;
+<a href=#983 id=983 data-nosnippet>983</a><span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>,
+<a href=#984 id=984 data-nosnippet>984</a>{
+<a href=#985 id=985 data-nosnippet>985</a>    <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="#914-917">IntoIter</a>&lt;T, <a href="#982">CAP</a>&gt; {
+<a href=#986 id=986 data-nosnippet>986</a>        <span class="kw">let </span><span class="kw-2">mut </span>v = <a href="#43-47">ArrayVec</a>::<a href="#83-88">new</a>();
+<a href=#987 id=987 data-nosnippet>987</a>        <a href="#986">v</a>.<a href="#1156-1165">extend_from_slice</a>(<span class="kw-2">&amp;</span><a class="self" href="#985">self</a>.v[<span class="self">self</span>.index..]);
+<a href=#988 id=988 data-nosnippet>988</a>        <a href="#986">v</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#989 id=989 data-nosnippet>989</a>    }
+<a href=#990 id=990 data-nosnippet>990</a>}
+<a href=#991 id=991 data-nosnippet>991</a>
+<a href=#992 id=992 data-nosnippet>992</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">fmt::Debug</a> <span class="kw">for </span><a href="#914-917">IntoIter</a>&lt;T, <a href="#992">CAP</a>&gt;
+<a href=#993 id=993 data-nosnippet>993</a><span class="kw">where
+<a href=#994 id=994 data-nosnippet>994</a>    </span>T: <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">fmt::Debug</a>,
+<a href=#995 id=995 data-nosnippet>995</a>{
+<a href=#996 id=996 data-nosnippet>996</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#997 id=997 data-nosnippet>997</a>        <a href="#996">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.debug_list">debug_list</a>()
+<a href=#998 id=998 data-nosnippet>998</a>            .<a href="https://doc.rust-lang.org/nightly/core/fmt/builders/struct.DebugList.html#method.entries">entries</a>(<span class="kw-2">&amp;</span><a class="self" href="#996">self</a>.v[<span class="self">self</span>.index..])
+<a href=#999 id=999 data-nosnippet>999</a>            .<a href="https://doc.rust-lang.org/nightly/core/fmt/builders/struct.DebugList.html#method.finish">finish</a>()
+<a href=#1000 id=1000 data-nosnippet>1000</a>    }
+<a href=#1001 id=1001 data-nosnippet>1001</a>}
+<a href=#1002 id=1002 data-nosnippet>1002</a>
+<a href=#1003 id=1003 data-nosnippet>1003</a><span class="doccomment">/// A draining iterator for `ArrayVec`.
+<a href=#1004 id=1004 data-nosnippet>1004</a></span><span class="kw">pub struct </span><a href="../../arrayvec/struct.Drain.html">Drain</a>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; {
+<a href=#1005 id=1005 data-nosnippet>1005</a>    <span class="doccomment">/// Index of tail to preserve
+<a href=#1006 id=1006 data-nosnippet>1006</a>    </span>tail_start: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>,
+<a href=#1007 id=1007 data-nosnippet>1007</a>    <span class="doccomment">/// Length of tail
+<a href=#1008 id=1008 data-nosnippet>1008</a>    </span>tail_len: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>,
+<a href=#1009 id=1009 data-nosnippet>1009</a>    <span class="doccomment">/// Current remaining range to remove
+<a href=#1010 id=1010 data-nosnippet>1010</a>    </span>iter: slice::<a href="https://doc.rust-lang.org/nightly/core/slice/iter/struct.Iter.html">Iter</a>&lt;<span class="lifetime">'a</span>, T&gt;,
+<a href=#1011 id=1011 data-nosnippet>1011</a>    vec: <span class="kw-2">*mut </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1004">CAP</a>&gt;,
+<a href=#1012 id=1012 data-nosnippet>1012</a>}
+<a href=#1013 id=1013 data-nosnippet>1013</a>
+<a href=#1014 id=1014 data-nosnippet>1014</a><span class="kw">unsafe impl</span>&lt;<span class="lifetime">'a</span>, T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html">Sync</a>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html">Sync</a> <span class="kw">for </span><a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'a</span>, T, <a href="#1014">CAP</a>&gt; {}
+<a href=#1015 id=1015 data-nosnippet>1015</a><span class="kw">unsafe impl</span>&lt;<span class="lifetime">'a</span>, T: <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> <span class="kw">for </span><a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'a</span>, T, <a href="#1015">CAP</a>&gt; {}
+<a href=#1016 id=1016 data-nosnippet>1016</a>
+<a href=#1017 id=1017 data-nosnippet>1017</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a> <span class="kw">for </span><a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'a</span>, T, <a href="#1017">CAP</a>&gt; {
+<a href=#1018 id=1018 data-nosnippet>1018</a>    <span class="kw">type </span>Item = T;
+<a href=#1019 id=1019 data-nosnippet>1019</a>
+<a href=#1020 id=1020 data-nosnippet>1020</a>    <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="self">Self</span>::Item&gt; {
+<a href=#1021 id=1021 data-nosnippet>1021</a>        <a class="self" href="#1020">self</a>.iter.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|elt|
+<a href=#1022 id=1022 data-nosnippet>1022</a>            <span class="kw">unsafe </span>{
+<a href=#1023 id=1023 data-nosnippet>1023</a>                ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.read.html">read</a>(<a href="#1021">elt</a> <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>)
+<a href=#1024 id=1024 data-nosnippet>1024</a>            }
+<a href=#1025 id=1025 data-nosnippet>1025</a>        )
+<a href=#1026 id=1026 data-nosnippet>1026</a>    }
+<a href=#1027 id=1027 data-nosnippet>1027</a>
+<a href=#1028 id=1028 data-nosnippet>1028</a>    <span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt;) {
+<a href=#1029 id=1029 data-nosnippet>1029</a>        <a class="self" href="#1028">self</a>.iter.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.size_hint">size_hint</a>()
+<a href=#1030 id=1030 data-nosnippet>1030</a>    }
+<a href=#1031 id=1031 data-nosnippet>1031</a>}
+<a href=#1032 id=1032 data-nosnippet>1032</a>
+<a href=#1033 id=1033 data-nosnippet>1033</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html">DoubleEndedIterator</a> <span class="kw">for </span><a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'a</span>, T, <a href="#1033">CAP</a>&gt;
+<a href=#1034 id=1034 data-nosnippet>1034</a>{
+<a href=#1035 id=1035 data-nosnippet>1035</a>    <span class="kw">fn </span>next_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="self">Self</span>::Item&gt; {
+<a href=#1036 id=1036 data-nosnippet>1036</a>        <a class="self" href="#1035">self</a>.iter.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html#tymethod.next_back">next_back</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|elt|
+<a href=#1037 id=1037 data-nosnippet>1037</a>            <span class="kw">unsafe </span>{
+<a href=#1038 id=1038 data-nosnippet>1038</a>                ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.read.html">read</a>(<a href="#1036">elt</a> <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>)
+<a href=#1039 id=1039 data-nosnippet>1039</a>            }
+<a href=#1040 id=1040 data-nosnippet>1040</a>        )
+<a href=#1041 id=1041 data-nosnippet>1041</a>    }
+<a href=#1042 id=1042 data-nosnippet>1042</a>}
+<a href=#1043 id=1043 data-nosnippet>1043</a>
+<a href=#1044 id=1044 data-nosnippet>1044</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/exact_size/trait.ExactSizeIterator.html">ExactSizeIterator</a> <span class="kw">for </span><a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'a</span>, T, <a href="#1044">CAP</a>&gt; {}
+<a href=#1045 id=1045 data-nosnippet>1045</a>
+<a href=#1046 id=1046 data-nosnippet>1046</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#1004-1012">Drain</a>&lt;<span class="lifetime">'a</span>, T, <a href="#1046">CAP</a>&gt; {
+<a href=#1047 id=1047 data-nosnippet>1047</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#1048 id=1048 data-nosnippet>1048</a>        <span class="comment">// len is currently 0 so panicking while dropping will not cause a double drop.
+<a href=#1049 id=1049 data-nosnippet>1049</a>
+<a href=#1050 id=1050 data-nosnippet>1050</a>        // exhaust self first
+<a href=#1051 id=1051 data-nosnippet>1051</a>        </span><span class="kw">while let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="self">self</span>.next() { }
+<a href=#1052 id=1052 data-nosnippet>1052</a>
+<a href=#1053 id=1053 data-nosnippet>1053</a>        <span class="kw">if </span><a class="self" href="#1047">self</a>.tail_len &gt; <span class="number">0 </span>{
+<a href=#1054 id=1054 data-nosnippet>1054</a>            <span class="kw">unsafe </span>{
+<a href=#1055 id=1055 data-nosnippet>1055</a>                <span class="kw">let </span>source_vec = <span class="kw-2">&amp;mut *</span><a class="self" href="#1047">self</a>.vec;
+<a href=#1056 id=1056 data-nosnippet>1056</a>                <span class="comment">// memmove back untouched tail, update to new length
+<a href=#1057 id=1057 data-nosnippet>1057</a>                </span><span class="kw">let </span>start = <a href="#1055">source_vec</a>.<a href="#114">len</a>();
+<a href=#1058 id=1058 data-nosnippet>1058</a>                <span class="kw">let </span>tail = <a class="self" href="#1047">self</a>.tail_start;
+<a href=#1059 id=1059 data-nosnippet>1059</a>                <span class="kw">let </span>ptr = <a href="#1055">source_vec</a>.<a href="#740-742">as_mut_ptr</a>();
+<a href=#1060 id=1060 data-nosnippet>1060</a>                ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.copy.html">copy</a>(<a href="#1059">ptr</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a href="#1058">tail</a>), <a href="#1059">ptr</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a href="#1057">start</a>), <a class="self" href="#1047">self</a>.tail_len);
+<a href=#1061 id=1061 data-nosnippet>1061</a>                <a href="#1055">source_vec</a>.<a href="#580-584">set_len</a>(<a href="#1057">start</a> + <a class="self" href="#1047">self</a>.tail_len);
+<a href=#1062 id=1062 data-nosnippet>1062</a>            }
+<a href=#1063 id=1063 data-nosnippet>1063</a>        }
+<a href=#1064 id=1064 data-nosnippet>1064</a>    }
+<a href=#1065 id=1065 data-nosnippet>1065</a>}
+<a href=#1066 id=1066 data-nosnippet>1066</a>
+<a href=#1067 id=1067 data-nosnippet>1067</a><span class="kw">struct </span>ScopeExitGuard&lt;T, Data, F&gt;
+<a href=#1068 id=1068 data-nosnippet>1068</a>    <span class="kw">where </span>F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;</span>Data, <span class="kw-2">&amp;mut </span>T)
+<a href=#1069 id=1069 data-nosnippet>1069</a>{
+<a href=#1070 id=1070 data-nosnippet>1070</a>    value: T,
+<a href=#1071 id=1071 data-nosnippet>1071</a>    data: Data,
+<a href=#1072 id=1072 data-nosnippet>1072</a>    f: F,
+<a href=#1073 id=1073 data-nosnippet>1073</a>}
+<a href=#1074 id=1074 data-nosnippet>1074</a>
+<a href=#1075 id=1075 data-nosnippet>1075</a><span class="kw">impl</span>&lt;T, Data, F&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#1067-1073">ScopeExitGuard</a>&lt;T, Data, F&gt;
+<a href=#1076 id=1076 data-nosnippet>1076</a>    <span class="kw">where </span>F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;</span>Data, <span class="kw-2">&amp;mut </span>T)
+<a href=#1077 id=1077 data-nosnippet>1077</a>{
+<a href=#1078 id=1078 data-nosnippet>1078</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#1079 id=1079 data-nosnippet>1079</a>        (<a class="self" href="#1078">self</a>.f)(<span class="kw-2">&amp;</span><a class="self" href="#1078">self</a>.data, <span class="kw-2">&amp;mut </span><a class="self" href="#1078">self</a>.value)
+<a href=#1080 id=1080 data-nosnippet>1080</a>    }
+<a href=#1081 id=1081 data-nosnippet>1081</a>}
+<a href=#1082 id=1082 data-nosnippet>1082</a>
+<a href=#1083 id=1083 data-nosnippet>1083</a>
+<a href=#1084 id=1084 data-nosnippet>1084</a>
+<a href=#1085 id=1085 data-nosnippet>1085</a><span class="doccomment">/// Extend the `ArrayVec` with an iterator.
+<a href=#1086 id=1086 data-nosnippet>1086</a>/// 
+<a href=#1087 id=1087 data-nosnippet>1087</a>/// ***Panics*** if extending the vector exceeds its capacity.
+<a href=#1088 id=1088 data-nosnippet>1088</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.Extend.html">Extend</a>&lt;T&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1088">CAP</a>&gt; {
+<a href=#1089 id=1089 data-nosnippet>1089</a>    <span class="doccomment">/// Extend the `ArrayVec` with an iterator.
+<a href=#1090 id=1090 data-nosnippet>1090</a>    /// 
+<a href=#1091 id=1091 data-nosnippet>1091</a>    /// ***Panics*** if extending the vector exceeds its capacity.
+<a href=#1092 id=1092 data-nosnippet>1092</a>    </span><span class="attr">#[track_caller]
+<a href=#1093 id=1093 data-nosnippet>1093</a>    </span><span class="kw">fn </span>extend&lt;I: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a>&lt;Item=T&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iter: I) {
+<a href=#1094 id=1094 data-nosnippet>1094</a>        <span class="kw">unsafe </span>{
+<a href=#1095 id=1095 data-nosnippet>1095</a>            <a class="self" href="#1093">self</a>.<a href="#1115-1152">extend_from_iter</a>::&lt;<span class="kw">_</span>, <span class="bool-val">true</span>&gt;(<a href="#1093">iter</a>)
+<a href=#1096 id=1096 data-nosnippet>1096</a>        }
+<a href=#1097 id=1097 data-nosnippet>1097</a>    }
+<a href=#1098 id=1098 data-nosnippet>1098</a>}
+<a href=#1099 id=1099 data-nosnippet>1099</a>
+<a href=#1100 id=1100 data-nosnippet>1100</a><span class="attr">#[inline(never)]
+<a href=#1101 id=1101 data-nosnippet>1101</a>#[cold]
+<a href=#1102 id=1102 data-nosnippet>1102</a>#[track_caller]
+<a href=#1103 id=1103 data-nosnippet>1103</a></span><span class="kw">fn </span>extend_panic() {
+<a href=#1104 id=1104 data-nosnippet>1104</a><span class="expansion"><input id=expand-1104 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded>::core::panicking::panic(<span class="string">"ArrayVec: capacity exceeded in extend/from_iter"</span>);</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.panic.html">panic!</a>(<span class="string">"ArrayVec: capacity exceeded in extend/from_iter"</span>)</span></span>;
+<a href=#1105 id=1105 data-nosnippet>1105</a>}
+<a href=#1106 id=1106 data-nosnippet>1106</a>
+<a href=#1107 id=1107 data-nosnippet>1107</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="#43-47">ArrayVec</a>&lt;T, <a href="#1107">CAP</a>&gt; {
+<a href=#1108 id=1108 data-nosnippet>1108</a>    <span class="doccomment">/// Extend the arrayvec from the iterable.
+<a href=#1109 id=1109 data-nosnippet>1109</a>    ///
+<a href=#1110 id=1110 data-nosnippet>1110</a>    /// ## Safety
+<a href=#1111 id=1111 data-nosnippet>1111</a>    ///
+<a href=#1112 id=1112 data-nosnippet>1112</a>    /// Unsafe because if CHECK is false, the length of the input is not checked.
+<a href=#1113 id=1113 data-nosnippet>1113</a>    /// The caller must ensure the length of the input fits in the capacity.
+<a href=#1114 id=1114 data-nosnippet>1114</a>    </span><span class="attr">#[track_caller]
+<a href=#1115 id=1115 data-nosnippet>1115</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>extend_from_iter&lt;I, <span class="kw">const </span>CHECK: <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iterable: I)
+<a href=#1116 id=1116 data-nosnippet>1116</a>        <span class="kw">where </span>I: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a>&lt;Item = T&gt;
+<a href=#1117 id=1117 data-nosnippet>1117</a>    {
+<a href=#1118 id=1118 data-nosnippet>1118</a>        <span class="kw">let </span>take = <a class="self" href="#1115">self</a>.<a href="#137">capacity</a>() - <a class="self" href="#1115">self</a>.<a href="#114">len</a>();
+<a href=#1119 id=1119 data-nosnippet>1119</a>        <span class="kw">let </span>len = <a class="self" href="#1115">self</a>.<a href="#114">len</a>();
+<a href=#1120 id=1120 data-nosnippet>1120</a>        <span class="kw">let </span><span class="kw-2">mut </span>ptr = <a href="#1169-1176">raw_ptr_add</a>(<a class="self" href="#1115">self</a>.<a href="#740-742">as_mut_ptr</a>(), <a href="#1119">len</a>);
+<a href=#1121 id=1121 data-nosnippet>1121</a>        <span class="kw">let </span>end_ptr = <a href="#1169-1176">raw_ptr_add</a>(<a href="#1120">ptr</a>, <a href="#1118">take</a>);
+<a href=#1122 id=1122 data-nosnippet>1122</a>        <span class="comment">// Keep the length in a separate variable, write it back on scope
+<a href=#1123 id=1123 data-nosnippet>1123</a>        // exit. To help the compiler with alias analysis and stuff.
+<a href=#1124 id=1124 data-nosnippet>1124</a>        // We update the length to handle panic in the iteration of the
+<a href=#1125 id=1125 data-nosnippet>1125</a>        // user's iterator, without dropping any elements on the floor.
+<a href=#1126 id=1126 data-nosnippet>1126</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>guard = <a href="#1067-1073">ScopeExitGuard</a> {
+<a href=#1127 id=1127 data-nosnippet>1127</a>            value: <span class="kw-2">&amp;mut </span><a class="self" href="#1115">self</a>.len,
+<a href=#1128 id=1128 data-nosnippet>1128</a>            data: <a href="#1119">len</a>,
+<a href=#1129 id=1129 data-nosnippet>1129</a>            f: <span class="kw">move </span>|<span class="kw-2">&amp;</span>len, self_len| {
+<a href=#1130 id=1130 data-nosnippet>1130</a>                <span class="kw-2">**</span><a href="#1129">self_len</a> = <a href="#1129">len</a> <span class="kw">as </span><a href="lib.rs.html#32">LenUint</a>;
+<a href=#1131 id=1131 data-nosnippet>1131</a>            }
+<a href=#1132 id=1132 data-nosnippet>1132</a>        };
+<a href=#1133 id=1133 data-nosnippet>1133</a>        <span class="kw">let </span><span class="kw-2">mut </span>iter = <a href="#1115">iterable</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>();
+<a href=#1134 id=1134 data-nosnippet>1134</a>        <span class="kw">loop </span>{
+<a href=#1135 id=1135 data-nosnippet>1135</a>            <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(elt) = <a href="#1133">iter</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>() {
+<a href=#1136 id=1136 data-nosnippet>1136</a>                <span class="kw">if </span><a href="#1120">ptr</a> == <a href="#1121">end_ptr</a> &amp;&amp; <a href="#1115">CHECK</a> { <a href="#1103-1105">extend_panic</a>(); }
+<a href=#1137 id=1137 data-nosnippet>1137</a><span class="expansion"><input id=expand-1137 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    {
+        <span class="kw">match </span>(<span class="kw-2">&amp;</span>ptr, <span class="kw-2">&amp;</span>end_ptr) {
+            (left_val, right_val) =&gt; {
+                <span class="kw">if </span><span class="kw-2">*</span>left_val == <span class="kw-2">*</span>right_val {
+                    <span class="kw">let </span>kind = ::core::panicking::AssertKind::Ne;
+                    ::core::panicking::assert_failed(kind, <span class="kw-2">&amp;*</span>left_val,
+                        <span class="kw-2">&amp;*</span>right_val, ::core::option::Option::None);
+                }
+            }
+        }
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert_ne.html">debug_assert_ne!</a>(ptr, end_ptr)</span></span>;
+<a href=#1138 id=1138 data-nosnippet>1138</a>                <span class="kw">if </span>mem::<a href="https://doc.rust-lang.org/nightly/core/mem/fn.size_of.html">size_of</a>::&lt;T&gt;() != <span class="number">0 </span>{
+<a href=#1139 id=1139 data-nosnippet>1139</a>                    <a href="#1120">ptr</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.write">write</a>(<a href="#1135">elt</a>);
+<a href=#1140 id=1140 data-nosnippet>1140</a>                } <span class="kw">else </span>{
+<a href=#1141 id=1141 data-nosnippet>1141</a>                    <span class="comment">// The ZST element has logically been moved into the vector.
+<a href=#1142 id=1142 data-nosnippet>1142</a>                    // There is no memory to write, but dropping `elt` here would
+<a href=#1143 id=1143 data-nosnippet>1143</a>                    // drop it once now and once again when the vector is dropped.
+<a href=#1144 id=1144 data-nosnippet>1144</a>                    </span>mem::<a href="https://doc.rust-lang.org/nightly/core/mem/fn.forget.html">forget</a>(<a href="#1135">elt</a>);
+<a href=#1145 id=1145 data-nosnippet>1145</a>                }
+<a href=#1146 id=1146 data-nosnippet>1146</a>                <a href="#1120">ptr</a> = <a href="#1169-1176">raw_ptr_add</a>(<a href="#1120">ptr</a>, <span class="number">1</span>);
+<a href=#1147 id=1147 data-nosnippet>1147</a>                <a href="#1126">guard</a>.data += <span class="number">1</span>;
+<a href=#1148 id=1148 data-nosnippet>1148</a>            } <span class="kw">else </span>{
+<a href=#1149 id=1149 data-nosnippet>1149</a>                <span class="kw">return</span>; <span class="comment">// success
+<a href=#1150 id=1150 data-nosnippet>1150</a>            </span>}
+<a href=#1151 id=1151 data-nosnippet>1151</a>        }
+<a href=#1152 id=1152 data-nosnippet>1152</a>    }
+<a href=#1153 id=1153 data-nosnippet>1153</a>
+<a href=#1154 id=1154 data-nosnippet>1154</a>    <span class="doccomment">/// Extend the ArrayVec with clones of elements from the slice;
+<a href=#1155 id=1155 data-nosnippet>1155</a>    /// the length of the slice must be &lt;= the remaining capacity in the arrayvec.
+<a href=#1156 id=1156 data-nosnippet>1156</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>extend_from_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>, slice: <span class="kw-2">&amp;</span>[T])
+<a href=#1157 id=1157 data-nosnippet>1157</a>        <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>
+<a href=#1158 id=1158 data-nosnippet>1158</a>    {
+<a href=#1159 id=1159 data-nosnippet>1159</a>        <span class="kw">let </span>take = <a class="self" href="#1156">self</a>.<a href="#137">capacity</a>() - <a class="self" href="#1156">self</a>.<a href="#114">len</a>();
+<a href=#1160 id=1160 data-nosnippet>1160</a><span class="expansion"><input id=expand-1160 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!(slice.len() &lt;= take) {
+        ::core::panicking::panic(<span class="string">"assertion failed: slice.len() &lt;= take"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(slice.len() &lt;= take)</span></span>;
+<a href=#1161 id=1161 data-nosnippet>1161</a>        <span class="kw">unsafe </span>{
+<a href=#1162 id=1162 data-nosnippet>1162</a>            <span class="kw">let </span>slice = <span class="kw">if </span><a href="#1159">take</a> &lt; <a href="#1156">slice</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() { <span class="kw-2">&amp;</span><a href="#1156">slice</a>[..take] } <span class="kw">else </span>{ <a href="#1156">slice</a> };
+<a href=#1163 id=1163 data-nosnippet>1163</a>            <a class="self" href="#1156">self</a>.<a href="#1115-1152">extend_from_iter</a>::&lt;<span class="kw">_</span>, <span class="bool-val">false</span>&gt;(<a href="#1162">slice</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.cloned">cloned</a>());
+<a href=#1164 id=1164 data-nosnippet>1164</a>        }
+<a href=#1165 id=1165 data-nosnippet>1165</a>    }
+<a href=#1166 id=1166 data-nosnippet>1166</a>}
+<a href=#1167 id=1167 data-nosnippet>1167</a>
+<a href=#1168 id=1168 data-nosnippet>1168</a><span class="doccomment">/// Rawptr add but uses arithmetic distance for ZST
+<a href=#1169 id=1169 data-nosnippet>1169</a></span><span class="kw">unsafe fn </span>raw_ptr_add&lt;T&gt;(ptr: <span class="kw-2">*mut </span>T, offset: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>) -&gt; <span class="kw-2">*mut </span>T {
+<a href=#1170 id=1170 data-nosnippet>1170</a>    <span class="kw">if </span>mem::<a href="https://doc.rust-lang.org/nightly/core/mem/fn.size_of.html">size_of</a>::&lt;T&gt;() == <span class="number">0 </span>{
+<a href=#1171 id=1171 data-nosnippet>1171</a>        <span class="comment">// Special case for ZST
+<a href=#1172 id=1172 data-nosnippet>1172</a>        </span><a href="#1169">ptr</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.cast">cast</a>::&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>&gt;().<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.wrapping_add">wrapping_add</a>(<a href="#1169">offset</a>).<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.cast">cast</a>::&lt;T&gt;()
+<a href=#1173 id=1173 data-nosnippet>1173</a>    } <span class="kw">else </span>{
+<a href=#1174 id=1174 data-nosnippet>1174</a>        <a href="#1169">ptr</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.pointer.html#method.add">add</a>(<a href="#1169">offset</a>)
+<a href=#1175 id=1175 data-nosnippet>1175</a>    }
+<a href=#1176 id=1176 data-nosnippet>1176</a>}
+<a href=#1177 id=1177 data-nosnippet>1177</a>
+<a href=#1178 id=1178 data-nosnippet>1178</a><span class="doccomment">/// Create an `ArrayVec` from an iterator.
+<a href=#1179 id=1179 data-nosnippet>1179</a>/// 
+<a href=#1180 id=1180 data-nosnippet>1180</a>/// ***Panics*** if the number of elements in the iterator exceeds the arrayvec's capacity.
+<a href=#1181 id=1181 data-nosnippet>1181</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.FromIterator.html">iter::FromIterator</a>&lt;T&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1181">CAP</a>&gt; {
+<a href=#1182 id=1182 data-nosnippet>1182</a>    <span class="doccomment">/// Create an `ArrayVec` from an iterator.
+<a href=#1183 id=1183 data-nosnippet>1183</a>    /// 
+<a href=#1184 id=1184 data-nosnippet>1184</a>    /// ***Panics*** if the number of elements in the iterator exceeds the arrayvec's capacity.
+<a href=#1185 id=1185 data-nosnippet>1185</a>    </span><span class="kw">fn </span>from_iter&lt;I: <a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html">IntoIterator</a>&lt;Item=T&gt;&gt;(iter: I) -&gt; <span class="self">Self </span>{
+<a href=#1186 id=1186 data-nosnippet>1186</a>        <span class="kw">let </span><span class="kw-2">mut </span>array = <a href="#43-47">ArrayVec</a>::<a href="#83-88">new</a>();
+<a href=#1187 id=1187 data-nosnippet>1187</a>        <a href="#1186">array</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.Extend.html#tymethod.extend">extend</a>(<a href="#1185">iter</a>);
+<a href=#1188 id=1188 data-nosnippet>1188</a>        <a href="#1186">array</a>
+<a href=#1189 id=1189 data-nosnippet>1189</a>    }
+<a href=#1190 id=1190 data-nosnippet>1190</a>}
+<a href=#1191 id=1191 data-nosnippet>1191</a>
+<a href=#1192 id=1192 data-nosnippet>1192</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1192">CAP</a>&gt;
+<a href=#1193 id=1193 data-nosnippet>1193</a>    <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>
+<a href=#1194 id=1194 data-nosnippet>1194</a>{
+<a href=#1195 id=1195 data-nosnippet>1195</a>    <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+<a href=#1196 id=1196 data-nosnippet>1196</a>        <a class="self" href="#1195">self</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.cloned">cloned</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>()
+<a href=#1197 id=1197 data-nosnippet>1197</a>    }
+<a href=#1198 id=1198 data-nosnippet>1198</a>
+<a href=#1199 id=1199 data-nosnippet>1199</a>    <span class="kw">fn </span>clone_from(<span class="kw-2">&amp;mut </span><span class="self">self</span>, rhs: <span class="kw-2">&amp;</span><span class="self">Self</span>) {
+<a href=#1200 id=1200 data-nosnippet>1200</a>        <span class="comment">// recursive case for the common prefix
+<a href=#1201 id=1201 data-nosnippet>1201</a>        </span><span class="kw">let </span>prefix = cmp::<a href="https://doc.rust-lang.org/nightly/core/cmp/fn.min.html">min</a>(<a class="self" href="#1199">self</a>.<a href="#114">len</a>(), <a href="#1199">rhs</a>.<a href="#114">len</a>());
+<a href=#1202 id=1202 data-nosnippet>1202</a>        <a class="self" href="#1199">self</a>[..prefix].<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.clone_from_slice">clone_from_slice</a>(<span class="kw-2">&amp;</span><a href="#1199">rhs</a>[..prefix]);
+<a href=#1203 id=1203 data-nosnippet>1203</a>
+<a href=#1204 id=1204 data-nosnippet>1204</a>        <span class="kw">if </span><a href="#1201">prefix</a> &lt; <a class="self" href="#1199">self</a>.<a href="#114">len</a>() {
+<a href=#1205 id=1205 data-nosnippet>1205</a>            <span class="comment">// rhs was shorter
+<a href=#1206 id=1206 data-nosnippet>1206</a>            </span><a class="self" href="#1199">self</a>.<a href="#249-251">truncate</a>(<a href="#1201">prefix</a>);
+<a href=#1207 id=1207 data-nosnippet>1207</a>        } <span class="kw">else </span>{
+<a href=#1208 id=1208 data-nosnippet>1208</a>            <span class="kw">let </span>rhs_elems = <span class="kw-2">&amp;</span><a href="#1199">rhs</a>[<span class="self">self</span>.len()..];
+<a href=#1209 id=1209 data-nosnippet>1209</a>            <a class="self" href="#1199">self</a>.<a href="#1156-1165">extend_from_slice</a>(<a href="#1208">rhs_elems</a>);
+<a href=#1210 id=1210 data-nosnippet>1210</a>        }
+<a href=#1211 id=1211 data-nosnippet>1211</a>    }
+<a href=#1212 id=1212 data-nosnippet>1212</a>}
+<a href=#1213 id=1213 data-nosnippet>1213</a>
+<a href=#1214 id=1214 data-nosnippet>1214</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html">Hash</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1214">CAP</a>&gt;
+<a href=#1215 id=1215 data-nosnippet>1215</a>    <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html">Hash</a>
+<a href=#1216 id=1216 data-nosnippet>1216</a>{
+<a href=#1217 id=1217 data-nosnippet>1217</a>    <span class="kw">fn </span>hash&lt;H: <a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hasher.html">Hasher</a>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>H) {
+<a href=#1218 id=1218 data-nosnippet>1218</a>        Hash::<a href="https://doc.rust-lang.org/nightly/core/hash/trait.Hash.html#tymethod.hash">hash</a>(<span class="kw-2">&amp;**</span><a class="self" href="#1217">self</a>, <a href="#1217">state</a>)
+<a href=#1219 id=1219 data-nosnippet>1219</a>    }
+<a href=#1220 id=1220 data-nosnippet>1220</a>}
+<a href=#1221 id=1221 data-nosnippet>1221</a>
+<a href=#1222 id=1222 data-nosnippet>1222</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html">PartialEq</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1222">CAP</a>&gt;
+<a href=#1223 id=1223 data-nosnippet>1223</a>    <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html">PartialEq</a>
+<a href=#1224 id=1224 data-nosnippet>1224</a>{
+<a href=#1225 id=1225 data-nosnippet>1225</a>    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#1226 id=1226 data-nosnippet>1226</a>        <span class="kw-2">**</span><a class="self" href="#1225">self</a> == <span class="kw-2">**</span><a href="#1225">other</a>
+<a href=#1227 id=1227 data-nosnippet>1227</a>    }
+<a href=#1228 id=1228 data-nosnippet>1228</a>}
+<a href=#1229 id=1229 data-nosnippet>1229</a>
+<a href=#1230 id=1230 data-nosnippet>1230</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html">PartialEq</a>&lt;[T]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1230">CAP</a>&gt;
+<a href=#1231 id=1231 data-nosnippet>1231</a>    <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html">PartialEq</a>
+<a href=#1232 id=1232 data-nosnippet>1232</a>{
+<a href=#1233 id=1233 data-nosnippet>1233</a>    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>[T]) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#1234 id=1234 data-nosnippet>1234</a>        <span class="kw-2">**</span><a class="self" href="#1233">self</a> == <span class="kw-2">*</span><a href="#1233">other</a>
+<a href=#1235 id=1235 data-nosnippet>1235</a>    }
+<a href=#1236 id=1236 data-nosnippet>1236</a>}
+<a href=#1237 id=1237 data-nosnippet>1237</a>
+<a href=#1238 id=1238 data-nosnippet>1238</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html">Eq</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1238">CAP</a>&gt; <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html">Eq</a> { }
+<a href=#1239 id=1239 data-nosnippet>1239</a>
+<a href=#1240 id=1240 data-nosnippet>1240</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html">Borrow</a>&lt;[T]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1240">CAP</a>&gt; {
+<a href=#1241 id=1241 data-nosnippet>1241</a>    <span class="kw">fn </span>borrow(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] { <a class="self" href="#1241">self</a> }
+<a href=#1242 id=1242 data-nosnippet>1242</a>}
+<a href=#1243 id=1243 data-nosnippet>1243</a>
+<a href=#1244 id=1244 data-nosnippet>1244</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html">BorrowMut</a>&lt;[T]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1244">CAP</a>&gt; {
+<a href=#1245 id=1245 data-nosnippet>1245</a>    <span class="kw">fn </span>borrow_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>[T] { <a class="self" href="#1245">self</a> }
+<a href=#1246 id=1246 data-nosnippet>1246</a>}
+<a href=#1247 id=1247 data-nosnippet>1247</a>
+<a href=#1248 id=1248 data-nosnippet>1248</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html">AsRef</a>&lt;[T]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1248">CAP</a>&gt; {
+<a href=#1249 id=1249 data-nosnippet>1249</a>    <span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[T] { <a class="self" href="#1249">self</a> }
+<a href=#1250 id=1250 data-nosnippet>1250</a>}
+<a href=#1251 id=1251 data-nosnippet>1251</a>
+<a href=#1252 id=1252 data-nosnippet>1252</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsMut.html">AsMut</a>&lt;[T]&gt; <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1252">CAP</a>&gt; {
+<a href=#1253 id=1253 data-nosnippet>1253</a>    <span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>[T] { <a class="self" href="#1253">self</a> }
+<a href=#1254 id=1254 data-nosnippet>1254</a>}
+<a href=#1255 id=1255 data-nosnippet>1255</a>
+<a href=#1256 id=1256 data-nosnippet>1256</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">fmt::Debug</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1256">CAP</a>&gt; <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">fmt::Debug</a> {
+<a href=#1257 id=1257 data-nosnippet>1257</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> { (<span class="kw-2">**</span><a class="self" href="#1257">self</a>).<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt">fmt</a>(<a href="#1257">f</a>) }
+<a href=#1258 id=1258 data-nosnippet>1258</a>}
+<a href=#1259 id=1259 data-nosnippet>1259</a>
+<a href=#1260 id=1260 data-nosnippet>1260</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html">Default</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1260">CAP</a>&gt; {
+<a href=#1261 id=1261 data-nosnippet>1261</a>    <span class="doccomment">/// Return an empty array
+<a href=#1262 id=1262 data-nosnippet>1262</a>    </span><span class="kw">fn </span>default() -&gt; <a href="#43-47">ArrayVec</a>&lt;T, <a href="#1260">CAP</a>&gt; {
+<a href=#1263 id=1263 data-nosnippet>1263</a>        <a href="#43-47">ArrayVec</a>::<a href="#83-88">new</a>()
+<a href=#1264 id=1264 data-nosnippet>1264</a>    }
+<a href=#1265 id=1265 data-nosnippet>1265</a>}
+<a href=#1266 id=1266 data-nosnippet>1266</a>
+<a href=#1267 id=1267 data-nosnippet>1267</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html">PartialOrd</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1267">CAP</a>&gt; <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html">PartialOrd</a> {
+<a href=#1268 id=1268 data-nosnippet>1268</a>    <span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;cmp::<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html">Ordering</a>&gt; {
+<a href=#1269 id=1269 data-nosnippet>1269</a>        (<span class="kw-2">**</span><a class="self" href="#1268">self</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#tymethod.partial_cmp">partial_cmp</a>(<a href="#1268">other</a>)
+<a href=#1270 id=1270 data-nosnippet>1270</a>    }
+<a href=#1271 id=1271 data-nosnippet>1271</a>
+<a href=#1272 id=1272 data-nosnippet>1272</a>    <span class="kw">fn </span>lt(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#1273 id=1273 data-nosnippet>1273</a>        (<span class="kw-2">**</span><a class="self" href="#1272">self</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.lt">lt</a>(<a href="#1272">other</a>)
+<a href=#1274 id=1274 data-nosnippet>1274</a>    }
+<a href=#1275 id=1275 data-nosnippet>1275</a>
+<a href=#1276 id=1276 data-nosnippet>1276</a>    <span class="kw">fn </span>le(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#1277 id=1277 data-nosnippet>1277</a>        (<span class="kw-2">**</span><a class="self" href="#1276">self</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.le">le</a>(<a href="#1276">other</a>)
+<a href=#1278 id=1278 data-nosnippet>1278</a>    }
+<a href=#1279 id=1279 data-nosnippet>1279</a>
+<a href=#1280 id=1280 data-nosnippet>1280</a>    <span class="kw">fn </span>ge(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#1281 id=1281 data-nosnippet>1281</a>        (<span class="kw-2">**</span><a class="self" href="#1280">self</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.ge">ge</a>(<a href="#1280">other</a>)
+<a href=#1282 id=1282 data-nosnippet>1282</a>    }
+<a href=#1283 id=1283 data-nosnippet>1283</a>
+<a href=#1284 id=1284 data-nosnippet>1284</a>    <span class="kw">fn </span>gt(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#1285 id=1285 data-nosnippet>1285</a>        (<span class="kw-2">**</span><a class="self" href="#1284">self</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html#method.gt">gt</a>(<a href="#1284">other</a>)
+<a href=#1286 id=1286 data-nosnippet>1286</a>    }
+<a href=#1287 id=1287 data-nosnippet>1287</a>}
+<a href=#1288 id=1288 data-nosnippet>1288</a>
+<a href=#1289 id=1289 data-nosnippet>1289</a><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html">Ord</a> <span class="kw">for </span><a href="#43-47">ArrayVec</a>&lt;T, <a href="#1289">CAP</a>&gt; <span class="kw">where </span>T: <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html">Ord</a> {
+<a href=#1290 id=1290 data-nosnippet>1290</a>    <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; cmp::<a href="https://doc.rust-lang.org/nightly/core/cmp/enum.Ordering.html">Ordering</a> {
+<a href=#1291 id=1291 data-nosnippet>1291</a>        (<span class="kw-2">**</span><a class="self" href="#1290">self</a>).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">cmp</a>(<a href="#1290">other</a>)
+<a href=#1292 id=1292 data-nosnippet>1292</a>    }
+<a href=#1293 id=1293 data-nosnippet>1293</a>}
+<a href=#1294 id=1294 data-nosnippet>1294</a>
+<a href=#1295 id=1295 data-nosnippet>1295</a><span class="attr">#[cfg(feature=<span class="string">"std"</span>)]
+<a href=#1296 id=1296 data-nosnippet>1296</a></span><span class="doccomment">/// `Write` appends written data to the end of the vector.
+<a href=#1297 id=1297 data-nosnippet>1297</a>///
+<a href=#1298 id=1298 data-nosnippet>1298</a>/// Requires `features="std"`.
+<a href=#1299 id=1299 data-nosnippet>1299</a></span><span class="kw">impl</span>&lt;<span class="kw">const </span>CAP: usize&gt; io::Write <span class="kw">for </span>ArrayVec&lt;u8, CAP&gt; {
+<a href=#1300 id=1300 data-nosnippet>1300</a>    <span class="kw">fn </span>write(<span class="kw-2">&amp;mut </span><span class="self">self</span>, data: <span class="kw-2">&amp;</span>[u8]) -&gt; io::Result&lt;usize&gt; {
+<a href=#1301 id=1301 data-nosnippet>1301</a>        <span class="kw">let </span>len = cmp::min(<span class="self">self</span>.remaining_capacity(), data.len());
+<a href=#1302 id=1302 data-nosnippet>1302</a>        <span class="kw">let </span>_result = <span class="self">self</span>.try_extend_from_slice(<span class="kw-2">&amp;</span>data[..len]);
+<a href=#1303 id=1303 data-nosnippet>1303</a>        <span class="macro">debug_assert!</span>(_result.is_ok());
+<a href=#1304 id=1304 data-nosnippet>1304</a>        <span class="prelude-val">Ok</span>(len)
+<a href=#1305 id=1305 data-nosnippet>1305</a>    }
+<a href=#1306 id=1306 data-nosnippet>1306</a>    <span class="kw">fn </span>flush(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; io::Result&lt;()&gt; { <span class="prelude-val">Ok</span>(()) }
+<a href=#1307 id=1307 data-nosnippet>1307</a>}
+<a href=#1308 id=1308 data-nosnippet>1308</a>
+<a href=#1309 id=1309 data-nosnippet>1309</a><span class="attr">#[cfg(feature=<span class="string">"serde"</span>)]
+<a href=#1310 id=1310 data-nosnippet>1310</a></span><span class="doccomment">/// Requires crate feature `"serde"`
+<a href=#1311 id=1311 data-nosnippet>1311</a></span><span class="kw">impl</span>&lt;T: Serialize, <span class="kw">const </span>CAP: usize&gt; Serialize <span class="kw">for </span>ArrayVec&lt;T, CAP&gt; {
+<a href=#1312 id=1312 data-nosnippet>1312</a>    <span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+<a href=#1313 id=1313 data-nosnippet>1313</a>        <span class="kw">where </span>S: Serializer
+<a href=#1314 id=1314 data-nosnippet>1314</a>    {
+<a href=#1315 id=1315 data-nosnippet>1315</a>        serializer.collect_seq(<span class="self">self</span>)
+<a href=#1316 id=1316 data-nosnippet>1316</a>    }
+<a href=#1317 id=1317 data-nosnippet>1317</a>}
+<a href=#1318 id=1318 data-nosnippet>1318</a>
+<a href=#1319 id=1319 data-nosnippet>1319</a><span class="attr">#[cfg(feature=<span class="string">"serde"</span>)]
+<a href=#1320 id=1320 data-nosnippet>1320</a></span><span class="doccomment">/// Requires crate feature `"serde"`
+<a href=#1321 id=1321 data-nosnippet>1321</a></span><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>, T: Deserialize&lt;<span class="lifetime">'de</span>&gt;, <span class="kw">const </span>CAP: usize&gt; Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>ArrayVec&lt;T, CAP&gt; {
+<a href=#1322 id=1322 data-nosnippet>1322</a>    <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+<a href=#1323 id=1323 data-nosnippet>1323</a>        <span class="kw">where </span>D: Deserializer&lt;<span class="lifetime">'de</span>&gt;
+<a href=#1324 id=1324 data-nosnippet>1324</a>    {
+<a href=#1325 id=1325 data-nosnippet>1325</a>        <span class="kw">use </span>serde::de::{Visitor, SeqAccess, Error};
+<a href=#1326 id=1326 data-nosnippet>1326</a>        <span class="kw">use </span>std::marker::PhantomData;
+<a href=#1327 id=1327 data-nosnippet>1327</a>
+<a href=#1328 id=1328 data-nosnippet>1328</a>        <span class="kw">struct </span>ArrayVecVisitor&lt;<span class="lifetime">'de</span>, T: Deserialize&lt;<span class="lifetime">'de</span>&gt;, <span class="kw">const </span>CAP: usize&gt;(PhantomData&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'de </span>(), [T; CAP])&gt;);
+<a href=#1329 id=1329 data-nosnippet>1329</a>
+<a href=#1330 id=1330 data-nosnippet>1330</a>        <span class="kw">impl</span>&lt;<span class="lifetime">'de</span>, T: Deserialize&lt;<span class="lifetime">'de</span>&gt;, <span class="kw">const </span>CAP: usize&gt; Visitor&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>ArrayVecVisitor&lt;<span class="lifetime">'de</span>, T, CAP&gt; {
+<a href=#1331 id=1331 data-nosnippet>1331</a>            <span class="kw">type </span>Value = ArrayVec&lt;T, CAP&gt;;
+<a href=#1332 id=1332 data-nosnippet>1332</a>
+<a href=#1333 id=1333 data-nosnippet>1333</a>            <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+<a href=#1334 id=1334 data-nosnippet>1334</a>                <span class="macro">write!</span>(formatter, <span class="string">"an array with no more than {} items"</span>, CAP)
+<a href=#1335 id=1335 data-nosnippet>1335</a>            }
+<a href=#1336 id=1336 data-nosnippet>1336</a>
+<a href=#1337 id=1337 data-nosnippet>1337</a>            <span class="kw">fn </span>visit_seq&lt;SA&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>seq: SA) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, SA::Error&gt;
+<a href=#1338 id=1338 data-nosnippet>1338</a>                <span class="kw">where </span>SA: SeqAccess&lt;<span class="lifetime">'de</span>&gt;,
+<a href=#1339 id=1339 data-nosnippet>1339</a>            {
+<a href=#1340 id=1340 data-nosnippet>1340</a>                <span class="kw">let </span><span class="kw-2">mut </span>values = ArrayVec::&lt;T, CAP&gt;::new();
+<a href=#1341 id=1341 data-nosnippet>1341</a>
+<a href=#1342 id=1342 data-nosnippet>1342</a>                <span class="kw">while let </span><span class="prelude-val">Some</span>(value) = seq.next_element()<span class="question-mark">? </span>{
+<a href=#1343 id=1343 data-nosnippet>1343</a>                    <span class="kw">if let </span><span class="prelude-val">Err</span>(<span class="kw">_</span>) = values.try_push(value) {
+<a href=#1344 id=1344 data-nosnippet>1344</a>                        <span class="kw">return </span><span class="prelude-val">Err</span>(SA::Error::invalid_length(CAP + <span class="number">1</span>, <span class="kw-2">&amp;</span><span class="self">self</span>));
+<a href=#1345 id=1345 data-nosnippet>1345</a>                    }
+<a href=#1346 id=1346 data-nosnippet>1346</a>                }
+<a href=#1347 id=1347 data-nosnippet>1347</a>
+<a href=#1348 id=1348 data-nosnippet>1348</a>                <span class="prelude-val">Ok</span>(values)
+<a href=#1349 id=1349 data-nosnippet>1349</a>            }
+<a href=#1350 id=1350 data-nosnippet>1350</a>        }
+<a href=#1351 id=1351 data-nosnippet>1351</a>
+<a href=#1352 id=1352 data-nosnippet>1352</a>        deserializer.deserialize_seq(ArrayVecVisitor::&lt;T, CAP&gt;(PhantomData))
+<a href=#1353 id=1353 data-nosnippet>1353</a>    }
+<a href=#1354 id=1354 data-nosnippet>1354</a>}
+<a href=#1355 id=1355 data-nosnippet>1355</a>
+<a href=#1356 id=1356 data-nosnippet>1356</a><span class="attr">#[cfg(feature = <span class="string">"borsh"</span>)]
+<a href=#1357 id=1357 data-nosnippet>1357</a></span><span class="doccomment">/// Requires crate feature `"borsh"`
+<a href=#1358 id=1358 data-nosnippet>1358</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: usize&gt; borsh::BorshSerialize <span class="kw">for </span>ArrayVec&lt;T, CAP&gt;
+<a href=#1359 id=1359 data-nosnippet>1359</a><span class="kw">where
+<a href=#1360 id=1360 data-nosnippet>1360</a>    </span>T: borsh::BorshSerialize,
+<a href=#1361 id=1361 data-nosnippet>1361</a>{
+<a href=#1362 id=1362 data-nosnippet>1362</a>    <span class="kw">fn </span>serialize&lt;W: borsh::io::Write&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span>W) -&gt; borsh::io::Result&lt;()&gt; {
+<a href=#1363 id=1363 data-nosnippet>1363</a>        &lt;[T] <span class="kw">as </span>borsh::BorshSerialize&gt;::serialize(<span class="self">self</span>.as_slice(), writer)
+<a href=#1364 id=1364 data-nosnippet>1364</a>    }
+<a href=#1365 id=1365 data-nosnippet>1365</a>}
+<a href=#1366 id=1366 data-nosnippet>1366</a>
+<a href=#1367 id=1367 data-nosnippet>1367</a><span class="attr">#[cfg(feature = <span class="string">"borsh"</span>)]
+<a href=#1368 id=1368 data-nosnippet>1368</a></span><span class="doccomment">/// Requires crate feature `"borsh"`
+<a href=#1369 id=1369 data-nosnippet>1369</a></span><span class="kw">impl</span>&lt;T, <span class="kw">const </span>CAP: usize&gt; borsh::BorshDeserialize <span class="kw">for </span>ArrayVec&lt;T, CAP&gt;
+<a href=#1370 id=1370 data-nosnippet>1370</a><span class="kw">where
+<a href=#1371 id=1371 data-nosnippet>1371</a>    </span>T: borsh::BorshDeserialize,
+<a href=#1372 id=1372 data-nosnippet>1372</a>{
+<a href=#1373 id=1373 data-nosnippet>1373</a>    <span class="kw">fn </span>deserialize_reader&lt;R: borsh::io::Read&gt;(reader: <span class="kw-2">&amp;mut </span>R) -&gt; borsh::io::Result&lt;<span class="self">Self</span>&gt; {
+<a href=#1374 id=1374 data-nosnippet>1374</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="self">Self</span>::new();
+<a href=#1375 id=1375 data-nosnippet>1375</a>        <span class="kw">let </span>len = &lt;u32 <span class="kw">as </span>borsh::BorshDeserialize&gt;::deserialize_reader(reader)<span class="question-mark">?</span>;
+<a href=#1376 id=1376 data-nosnippet>1376</a>        <span class="kw">for _ in </span><span class="number">0</span>..len {
+<a href=#1377 id=1377 data-nosnippet>1377</a>            <span class="kw">let </span>elem = &lt;T <span class="kw">as </span>borsh::BorshDeserialize&gt;::deserialize_reader(reader)<span class="question-mark">?</span>;
+<a href=#1378 id=1378 data-nosnippet>1378</a>            <span class="kw">if let </span><span class="prelude-val">Err</span>(<span class="kw">_</span>) = values.try_push(elem) {
+<a href=#1379 id=1379 data-nosnippet>1379</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(borsh::io::Error::new(
+<a href=#1380 id=1380 data-nosnippet>1380</a>                    borsh::io::ErrorKind::InvalidData,
+<a href=#1381 id=1381 data-nosnippet>1381</a>                    <span class="macro">format!</span>(<span class="string">"Expected an array with no more than {} items"</span>, CAP),
+<a href=#1382 id=1382 data-nosnippet>1382</a>                ));
+<a href=#1383 id=1383 data-nosnippet>1383</a>            }
+<a href=#1384 id=1384 data-nosnippet>1384</a>        }
+<a href=#1385 id=1385 data-nosnippet>1385</a>
+<a href=#1386 id=1386 data-nosnippet>1386</a>        <span class="prelude-val">Ok</span>(values)
+<a href=#1387 id=1387 data-nosnippet>1387</a>    }
+<a href=#1388 id=1388 data-nosnippet>1388</a>}
+</code></pre></div></section></main></body></html>

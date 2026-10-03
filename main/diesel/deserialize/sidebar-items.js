@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["FromSqlRow","Queryable","QueryableByName"],"trait":["FromSql","FromSqlRef","FromSqlRow","FromStaticSqlRow","Queryable","QueryableByName","StaticallySizedRow"],"type":["Result"]};

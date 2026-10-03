@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["DeleteStmt","InsertStmtWithOnConflictDoUpdate","InsertStmtWithoutOnConflictDoUpdate","NoReturningClause","OldIdent","ReturningClause","ReturningQuerySource","UpdateStmt"],"trait":["InsertStmtKind","ReturningClauseHelper"]};

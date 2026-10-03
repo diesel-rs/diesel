@@ -1,0 +1,1646 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/sqlite/connection/pragmas.rs`."><title>pragmas.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (0abfedbc7 2026-10-02)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">diesel/sqlite/connection/</div>pragmas.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="mod.rs.html#194-216"><span class="kw">super</span>::SqliteConnection</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><span class="kw">crate</span>::query_builder::{<a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>, <a href="../../query_builder/mod.rs.html#215-222">Query</a>, <a href="../../query_builder/mod.rs.html#255-325">QueryFragment</a>, <a href="../../../../diesel/query_builder/derive.QueryId.html">QueryId</a>};
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1953"><span class="kw">crate</span>::query_dsl::RunQueryDslSupport</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="../../result.rs.html#294"><span class="kw">crate</span>::result::QueryResult</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><a href="../backend.rs.html#10"><span class="kw">crate</span>::sqlite::Sqlite</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html">alloc::string::ToString</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">core::marker::PhantomData</a>;
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a><span class="doccomment">/// The `auto_vacuum` mode of a database, controlling whether and when SQLite
+<a href=#10 id=10 data-nosnippet>10</a>/// reclaims freed pages back to the file.
+<a href=#11 id=11 data-nosnippet>11</a>///
+<a href=#12 id=12 data-nosnippet>12</a>/// The mode is stored in the database file, not the connection. [`Full`] and
+<a href=#13 id=13 data-nosnippet>13</a>/// [`Incremental`] can be switched between at any time, but changing from or to
+<a href=#14 id=14 data-nosnippet>14</a>/// [`None`] only takes effect on a database with no tables yet, or after a
+<a href=#15 id=15 data-nosnippet>15</a>/// subsequent `VACUUM` rewrites the file.
+<a href=#16 id=16 data-nosnippet>16</a>///
+<a href=#17 id=17 data-nosnippet>17</a>/// [`None`]: AutoVacuumMode::None
+<a href=#18 id=18 data-nosnippet>18</a>/// [`Full`]: AutoVacuumMode::Full
+<a href=#19 id=19 data-nosnippet>19</a>/// [`Incremental`]: AutoVacuumMode::Incremental
+<a href=#20 id=20 data-nosnippet>20</a></span><span class="expansion"><input id=expand-20 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>AutoVacuumMode {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                AutoVacuumMode::None =&gt; <span class="string">"None"</span>,
+                AutoVacuumMode::Full =&gt; <span class="string">"Full"</span>,
+                AutoVacuumMode::Incremental =&gt; <span class="string">"Incremental"</span>,
+            })
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[doc(hidden)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>AutoVacuumMode { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>AutoVacuumMode {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>AutoVacuumMode { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>AutoVacuumMode { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>AutoVacuumMode {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        ::core::intrinsics::discriminant_value(<span class="self">self</span>) ==
+            ::core::intrinsics::discriminant_value(other)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>AutoVacuumMode { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="kw">const _</span>: () =
+    {
+        <span class="kw">use </span>diesel;
+        <span class="kw">impl</span>&lt;__DB&gt;
+            diesel::deserialize::FromSql&lt;<span class="kw">crate</span>::sql_types::Integer, __DB&gt; <span class="kw">for
+            </span>AutoVacuumMode <span class="kw">where </span>__DB: diesel::backend::Backend,
+            <span class="kw">crate</span>::sql_types::Integer: diesel::sql_types::EnumSqlType&lt;<span class="bool-val">true</span>,
+            __DB&gt;,
+            &lt;<span class="kw">crate</span>::sql_types::Integer <span class="kw">as
+            </span>diesel::sql_types::EnumSqlType&lt;<span class="bool-val">true</span>,
+            __DB&gt;&gt;::Strategy: diesel::internal::derives::enum_::EnumMapping&lt;__DB&gt;
+            {
+            <span class="kw">fn </span>from_sql(value:
+                    &lt;__DB <span class="kw">as </span>diesel::backend::Backend&gt;::RawValue&lt;<span class="lifetime">'_</span>&gt;)
+                -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                <span class="kw">const </span>VARIANTS:
+                    <span class="kw-2">&amp;</span>[diesel::internal::derives::enum_::EnumVariant] =
+                    <span class="kw-2">&amp;</span>[diesel::internal::derives::enum_::EnumVariant {
+                                    discriminant: <span class="number">0i128</span>,
+                                    rust_name: <span class="string">"None"</span>,
+                                    sql_name: <span class="string">"None"</span>,
+                                },
+                                diesel::internal::derives::enum_::EnumVariant {
+                                    discriminant: <span class="number">1i128</span>,
+                                    rust_name: <span class="string">"Full"</span>,
+                                    sql_name: <span class="string">"Full"</span>,
+                                },
+                                diesel::internal::derives::enum_::EnumVariant {
+                                    discriminant: <span class="number">2i128</span>,
+                                    rust_name: <span class="string">"Incremental"</span>,
+                                    sql_name: <span class="string">"Incremental"</span>,
+                                }];
+                <span class="kw">let </span>idx =
+                    &lt;&lt;<span class="kw">crate</span>::sql_types::Integer <span class="kw">as
+                                </span>diesel::sql_types::EnumSqlType&lt;<span class="bool-val">true</span>, __DB&gt;&gt;::Strategy <span class="kw">as
+                                </span>diesel::internal::derives::enum_::EnumMapping&lt;__DB&gt;&gt;::map_from_database_value(value,
+                            <span class="string">"AutoVacuumMode"</span>, VARIANTS)<span class="question-mark">?</span>;
+                <span class="kw">match </span>idx {
+                    <span class="number">0usize </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::None),
+                    <span class="number">1usize </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::Full),
+                    <span class="number">2usize </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>::Incremental),
+                    <span class="kw">_ </span>=&gt; {
+                        ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"internal error: entered unreachable code: {0}"</span>,
+                                <span class="macro">format_args!</span>(<span class="string">"We construct all relevant variants"</span>)));
+                    }
+                }
+            }
+        }
+        <span class="kw">impl</span>&lt;__DB&gt; diesel::serialize::ToSql&lt;<span class="kw">crate</span>::sql_types::Integer, __DB&gt;
+            <span class="kw">for </span>AutoVacuumMode <span class="kw">where </span>__DB: diesel::backend::Backend,
+            <span class="kw">crate</span>::sql_types::Integer: diesel::sql_types::EnumSqlType&lt;<span class="bool-val">true</span>,
+            __DB&gt;,
+            &lt;<span class="kw">crate</span>::sql_types::Integer <span class="kw">as
+            </span>diesel::sql_types::EnumSqlType&lt;<span class="bool-val">true</span>,
+            __DB&gt;&gt;::Strategy: diesel::internal::derives::enum_::EnumMapping&lt;__DB&gt;
+            {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>,
+                output: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, __DB&gt;)
+                -&gt; diesel::serialize::Result {
+                <span class="kw">let </span>variant =
+                    <span class="kw">match </span><span class="self">self </span>{
+                        <span class="self">Self</span>::None =&gt;
+                            <span class="kw-2">&amp;</span>diesel::internal::derives::enum_::EnumVariant {
+                                    discriminant: <span class="number">0i128</span>,
+                                    rust_name: <span class="string">"None"</span>,
+                                    sql_name: <span class="string">"None"</span>,
+                                },
+                        <span class="self">Self</span>::Full =&gt;
+                            <span class="kw-2">&amp;</span>diesel::internal::derives::enum_::EnumVariant {
+                                    discriminant: <span class="number">1i128</span>,
+                                    rust_name: <span class="string">"Full"</span>,
+                                    sql_name: <span class="string">"Full"</span>,
+                                },
+                        <span class="self">Self</span>::Incremental =&gt;
+                            <span class="kw-2">&amp;</span>diesel::internal::derives::enum_::EnumVariant {
+                                    discriminant: <span class="number">2i128</span>,
+                                    rust_name: <span class="string">"Incremental"</span>,
+                                    sql_name: <span class="string">"Incremental"</span>,
+                                },
+                    };
+                &lt;&lt;<span class="kw">crate</span>::sql_types::Integer <span class="kw">as
+                        </span>diesel::sql_types::EnumSqlType&lt;<span class="bool-val">true</span>, __DB&gt;&gt;::Strategy <span class="kw">as
+                        </span>diesel::internal::derives::enum_::EnumMapping&lt;__DB&gt;&gt;::map_to_database_value(output,
+                    variant)
+            }
+        }
+        <span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>&gt;
+            diesel::expression::AsExpression&lt;<span class="kw">crate</span>::sql_types::Integer&gt; <span class="kw">for
+            </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>AutoVacuumMode {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;<span class="kw">crate</span>::sql_types::Integer,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="attr">#[diagnostic::do_not_recommend]
+        </span><span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>&gt;
+            diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;
+            <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>AutoVacuumMode {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="attr">#[diagnostic::do_not_recommend]
+        </span><span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>, <span class="lifetime">'__expr2</span>&gt;
+            diesel::expression::AsExpression&lt;<span class="kw">crate</span>::sql_types::Integer&gt; <span class="kw">for
+            </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr2 </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>AutoVacuumMode {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;<span class="kw">crate</span>::sql_types::Integer,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="attr">#[diagnostic::do_not_recommend]
+        </span><span class="kw">impl</span>&lt;<span class="lifetime">'__expr</span>, <span class="lifetime">'__expr2</span>&gt;
+            diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;
+            <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr2 </span><span class="kw-2">&amp;</span><span class="lifetime">'__expr </span>AutoVacuumMode {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;__DB&gt;
+            diesel::serialize::ToSql&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;,
+            __DB&gt; <span class="kw">for </span>AutoVacuumMode <span class="kw">where </span>__DB: diesel::backend::Backend,
+            <span class="self">Self</span>: diesel::serialize::ToSql&lt;<span class="kw">crate</span>::sql_types::Integer, __DB&gt; {
+            <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'__b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'__b </span><span class="self">self</span>,
+                out: <span class="kw-2">&amp;mut </span>diesel::serialize::Output&lt;<span class="lifetime">'__b</span>, <span class="lifetime">'_</span>, __DB&gt;)
+                -&gt; diesel::serialize::Result {
+                diesel::serialize::ToSql::&lt;<span class="kw">crate</span>::sql_types::Integer,
+                        __DB&gt;::to_sql(<span class="self">self</span>, out)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::AsExpression&lt;<span class="kw">crate</span>::sql_types::Integer&gt; <span class="kw">for
+            </span>AutoVacuumMode {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;<span class="kw">crate</span>::sql_types::Integer,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;
+            <span class="kw">for </span>AutoVacuumMode {
+            <span class="kw">type </span>Expression =
+                diesel::internal::derives::as_expression::Bound&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;,
+                <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>as_expression(<span class="self">self</span>)
+                -&gt;
+                    &lt;<span class="self">Self </span><span class="kw">as
+                    </span>diesel::expression::AsExpression&lt;diesel::sql_types::Nullable&lt;<span class="kw">crate</span>::sql_types::Integer&gt;&gt;&gt;::Expression {
+                diesel::internal::derives::as_expression::Bound::new(<span class="self">self</span>)
+            }
+        }
+        <span class="kw">impl</span>&lt;__DB, __ST&gt; diesel::deserialize::Queryable&lt;__ST, __DB&gt; <span class="kw">for
+            </span>AutoVacuumMode <span class="kw">where </span>__DB: diesel::backend::Backend,
+            __ST: diesel::sql_types::SingleValue,
+            <span class="self">Self</span>: diesel::deserialize::FromSql&lt;__ST, __DB&gt; {
+            <span class="kw">type </span>Row = <span class="self">Self</span>;
+            <span class="kw">fn </span>build(row: <span class="self">Self</span>) -&gt; diesel::deserialize::Result&lt;<span class="self">Self</span>&gt; {
+                diesel::deserialize::Result::Ok(row)
+            }
+        }
+    };</span><span class="original"><a href="../../../../diesel/types/derive.Enum.html"><span class="kw">crate</span>::types::Enum</a></span></span></span><span class="attr">)]
+<a href=#21 id=21 data-nosnippet>21</a>#[diesel(sql_type = <span class="kw">crate</span>::sql_types::Integer)]
+<a href=#22 id=22 data-nosnippet>22</a>#[non_exhaustive]
+<a href=#23 id=23 data-nosnippet>23</a>#[repr(i32)]
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">pub enum </span><a href="../../../../diesel/sqlite/enum.AutoVacuumMode.html">AutoVacuumMode</a> {
+<a href=#25 id=25 data-nosnippet>25</a>    <span class="doccomment">/// Freed pages stay on the freelist and the file never shrinks (default).
+<a href=#26 id=26 data-nosnippet>26</a>    </span><span class="prelude-val">None </span>= <span class="number">0</span>,
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="doccomment">/// Freed pages are reclaimed and the file truncated at every commit.
+<a href=#28 id=28 data-nosnippet>28</a>    </span>Full = <span class="number">1</span>,
+<a href=#29 id=29 data-nosnippet>29</a>    <span class="doccomment">/// Freelist bookkeeping is kept, pages are reclaimed only when
+<a href=#30 id=30 data-nosnippet>30</a>    /// `incremental_vacuum` runs.
+<a href=#31 id=31 data-nosnippet>31</a>    </span>Incremental = <span class="number">2</span>,
+<a href=#32 id=32 data-nosnippet>32</a>}
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a><span class="doccomment">/// The mode of a [`wal_checkpoint`](SqliteConnection::wal_checkpoint) run,
+<a href=#35 id=35 data-nosnippet>35</a>/// matching the modes of
+<a href=#36 id=36 data-nosnippet>36</a>/// [`sqlite3_wal_checkpoint_v2`](https://www.sqlite.org/c3ref/wal_checkpoint_v2.html).
+<a href=#37 id=37 data-nosnippet>37</a></span><span class="expansion"><input id=expand-37 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>WalCheckpointMode {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::write_str(f,
+            <span class="kw">match </span><span class="self">self </span>{
+                WalCheckpointMode::Passive =&gt; <span class="string">"Passive"</span>,
+                WalCheckpointMode::Full =&gt; <span class="string">"Full"</span>,
+                WalCheckpointMode::Restart =&gt; <span class="string">"Restart"</span>,
+                WalCheckpointMode::Truncate =&gt; <span class="string">"Truncate"</span>,
+                WalCheckpointMode::Noop =&gt; <span class="string">"Noop"</span>,
+            })
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[doc(hidden)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>WalCheckpointMode { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>WalCheckpointMode {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>WalCheckpointMode { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>WalCheckpointMode { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>WalCheckpointMode {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        ::core::intrinsics::discriminant_value(<span class="self">self</span>) ==
+            ::core::intrinsics::discriminant_value(other)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>WalCheckpointMode { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#38 id=38 data-nosnippet>38</a>#[non_exhaustive]
+<a href=#39 id=39 data-nosnippet>39</a></span><span class="kw">pub enum </span><a href="../../../../diesel/sqlite/enum.WalCheckpointMode.html">WalCheckpointMode</a> {
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="doccomment">/// Checkpoint what is possible without waiting on readers or writers.
+<a href=#41 id=41 data-nosnippet>41</a>    </span>Passive,
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="doccomment">/// Wait until there is no writer and every reader reads from the most
+<a href=#43 id=43 data-nosnippet>43</a>    /// recent snapshot, then checkpoint every frame.
+<a href=#44 id=44 data-nosnippet>44</a>    </span>Full,
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="doccomment">/// Like [`Full`](Self::Full), then wait until no reader uses the WAL, so
+<a href=#46 id=46 data-nosnippet>46</a>    /// the next writer restarts the log.
+<a href=#47 id=47 data-nosnippet>47</a>    </span>Restart,
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="doccomment">/// Like [`Restart`](Self::Restart), then truncate the WAL file to zero
+<a href=#49 id=49 data-nosnippet>49</a>    /// bytes.
+<a href=#50 id=50 data-nosnippet>50</a>    </span>Truncate,
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="doccomment">/// Report the WAL state without checkpointing anything.
+<a href=#52 id=52 data-nosnippet>52</a>    ///
+<a href=#53 id=53 data-nosnippet>53</a>    /// Requires SQLite 3.51.0 or later. Older versions do not know this
+<a href=#54 id=54 data-nosnippet>54</a>    /// mode and silently run a [`Passive`](Self::Passive) checkpoint
+<a href=#55 id=55 data-nosnippet>55</a>    /// instead.
+<a href=#56 id=56 data-nosnippet>56</a>    </span>Noop,
+<a href=#57 id=57 data-nosnippet>57</a>}
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a><span class="doccomment">/// The result of a [`wal_checkpoint`](SqliteConnection::wal_checkpoint) run.
+<a href=#60 id=60 data-nosnippet>60</a></span><span class="expansion"><input id=expand-60 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>WalCheckpointOutcome {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field3_finish(f,
+            <span class="string">"WalCheckpointOutcome"</span>, <span class="string">"busy"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.busy, <span class="string">"log_frames"</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.log_frames, <span class="string">"checkpointed_frames"</span>,
+            &amp;&amp;<span class="self">self</span>.checkpointed_frames)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+#[doc(hidden)]
+</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>WalCheckpointOutcome { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>WalCheckpointOutcome {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;bool&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;<span class="prelude-ty">Option</span>&lt;i64&gt;&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;<span class="prelude-ty">Option</span>&lt;i64&gt;&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>WalCheckpointOutcome { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>WalCheckpointOutcome { }
+<span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>WalCheckpointOutcome {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.busy == other.busy &amp;&amp; <span class="self">self</span>.log_frames == other.log_frames &amp;&amp;
+            <span class="self">self</span>.checkpointed_frames == other.checkpointed_frames
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]
+</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>WalCheckpointOutcome {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;bool&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;i64&gt;&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;<span class="prelude-ty">Option</span>&lt;i64&gt;&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span></span></span><span class="attr">)]
+<a href=#61 id=61 data-nosnippet>61</a>#[non_exhaustive]
+<a href=#62 id=62 data-nosnippet>62</a></span><span class="kw">pub struct </span><a href="../../../../diesel/sqlite/struct.WalCheckpointOutcome.html">WalCheckpointOutcome</a> {
+<a href=#63 id=63 data-nosnippet>63</a>    <span class="doccomment">/// Whether a busy reader or writer stopped the checkpoint early. Only
+<a href=#64 id=64 data-nosnippet>64</a>    /// the blocking modes set it: [`Passive`](WalCheckpointMode::Passive)
+<a href=#65 id=65 data-nosnippet>65</a>    /// reports `false` even when it left frames behind.
+<a href=#66 id=66 data-nosnippet>66</a>    </span><span class="kw">pub </span>busy: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="doccomment">/// Frames in the WAL after the checkpoint, `None` when the database is
+<a href=#68 id=68 data-nosnippet>68</a>    /// not in WAL mode.
+<a href=#69 id=69 data-nosnippet>69</a>    </span><span class="kw">pub </span>log_frames: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>&gt;,
+<a href=#70 id=70 data-nosnippet>70</a>    <span class="doccomment">/// Frames of the WAL moved into the database file, `None` when the
+<a href=#71 id=71 data-nosnippet>71</a>    /// database is not in WAL mode. Counted within the current log, so a
+<a href=#72 id=72 data-nosnippet>72</a>    /// [`Truncate`](WalCheckpointMode::Truncate) run reports `Some(0)`
+<a href=#73 id=73 data-nosnippet>73</a>    /// because the log was emptied, not because nothing was moved.
+<a href=#74 id=74 data-nosnippet>74</a>    </span><span class="kw">pub </span>checkpointed_frames: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>&gt;,
+<a href=#75 id=75 data-nosnippet>75</a>}
+<a href=#76 id=76 data-nosnippet>76</a>
+<a href=#77 id=77 data-nosnippet>77</a><span class="kw">impl </span><a href="mod.rs.html#194-216">SqliteConnection</a> {
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="doccomment">/// Read the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+<a href=#79 id=79 data-nosnippet>79</a>    ///
+<a href=#80 id=80 data-nosnippet>80</a>    /// `schema` selects an attached database by name, `None` reads `main`.
+<a href=#81 id=81 data-nosnippet>81</a>    ///
+<a href=#82 id=82 data-nosnippet>82</a>    /// ```rust
+<a href=#83 id=83 data-nosnippet>83</a>    /// # include!("../../doctest_setup.rs");
+<a href=#84 id=84 data-nosnippet>84</a>    /// # fn main() {
+<a href=#85 id=85 data-nosnippet>85</a>    /// #     run_test().unwrap();
+<a href=#86 id=86 data-nosnippet>86</a>    /// # }
+<a href=#87 id=87 data-nosnippet>87</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#88 id=88 data-nosnippet>88</a>    /// use diesel::sqlite::AutoVacuumMode;
+<a href=#89 id=89 data-nosnippet>89</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#90 id=90 data-nosnippet>90</a>    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::None);
+<a href=#91 id=91 data-nosnippet>91</a>    /// #     Ok(())
+<a href=#92 id=92 data-nosnippet>92</a>    /// # }
+<a href=#93 id=93 data-nosnippet>93</a>    /// ```
+<a href=#94 id=94 data-nosnippet>94</a>    </span><span class="kw">pub fn </span>auto_vacuum(<span class="kw-2">&amp;mut </span><span class="self">self</span>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;<a href="#24-32">AutoVacuumMode</a>&gt; {
+<a href=#95 id=95 data-nosnippet>95</a>        <span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1555-1949"><span class="kw">crate</span>::query_dsl::RunQueryDsl</a>;
+<a href=#96 id=96 data-nosnippet>96</a>        <span class="kw">let </span>query: <a href="#369-373">Pragma</a>&lt;<span class="lifetime">'_</span>, <span class="kw">crate</span>::sql_types::<a href="../../sql_types/mod.rs.html#108">Integer</a>&gt; = <a href="#369-373">Pragma</a>::<a href="#376-382">new</a>(<span class="string">"auto_vacuum"</span>, <a href="#94">schema</a>);
+<a href=#97 id=97 data-nosnippet>97</a>        <a href="#96">query</a>.<a href="../../query_dsl/mod.rs.html#1886-1894">get_result</a>(<a class="self" href="#94">self</a>)
+<a href=#98 id=98 data-nosnippet>98</a>    }
+<a href=#99 id=99 data-nosnippet>99</a>
+<a href=#100 id=100 data-nosnippet>100</a>    <span class="doccomment">/// Set the [`auto_vacuum`](AutoVacuumMode) mode of a database.
+<a href=#101 id=101 data-nosnippet>101</a>    ///
+<a href=#102 id=102 data-nosnippet>102</a>    /// `schema` selects an attached database by name, `None` targets `main`.
+<a href=#103 id=103 data-nosnippet>103</a>    /// Changing from or to [`AutoVacuumMode::None`] only takes effect on a
+<a href=#104 id=104 data-nosnippet>104</a>    /// database with no tables yet, or after a subsequent `VACUUM`.
+<a href=#105 id=105 data-nosnippet>105</a>    ///
+<a href=#106 id=106 data-nosnippet>106</a>    /// ```rust
+<a href=#107 id=107 data-nosnippet>107</a>    /// # include!("../../doctest_setup.rs");
+<a href=#108 id=108 data-nosnippet>108</a>    /// # fn main() {
+<a href=#109 id=109 data-nosnippet>109</a>    /// #     run_test().unwrap();
+<a href=#110 id=110 data-nosnippet>110</a>    /// # }
+<a href=#111 id=111 data-nosnippet>111</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#112 id=112 data-nosnippet>112</a>    /// use diesel::sqlite::AutoVacuumMode;
+<a href=#113 id=113 data-nosnippet>113</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#114 id=114 data-nosnippet>114</a>    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+<a href=#115 id=115 data-nosnippet>115</a>    /// assert_eq!(conn.auto_vacuum(None)?, AutoVacuumMode::Incremental);
+<a href=#116 id=116 data-nosnippet>116</a>    /// #     Ok(())
+<a href=#117 id=117 data-nosnippet>117</a>    /// # }
+<a href=#118 id=118 data-nosnippet>118</a>    /// ```
+<a href=#119 id=119 data-nosnippet>119</a>    </span><span class="kw">pub fn </span>set_auto_vacuum(
+<a href=#120 id=120 data-nosnippet>120</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#121 id=121 data-nosnippet>121</a>        schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#122 id=122 data-nosnippet>122</a>        mode: <a href="#24-32">AutoVacuumMode</a>,
+<a href=#123 id=123 data-nosnippet>123</a>    ) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#124 id=124 data-nosnippet>124</a>        <span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1555-1949"><span class="kw">crate</span>::query_dsl::RunQueryDsl</a>;
+<a href=#125 id=125 data-nosnippet>125</a>        <span class="comment">// #[repr(i32)] guarantees the discriminant fits exactly in i32.
+<a href=#126 id=126 data-nosnippet>126</a>        </span><a href="#410-414">SetPragmaInt</a> {
+<a href=#127 id=127 data-nosnippet>127</a>            <a href="#121">schema</a>,
+<a href=#128 id=128 data-nosnippet>128</a>            name: <span class="string">"auto_vacuum"</span>,
+<a href=#129 id=129 data-nosnippet>129</a>            value: <a href="#122">mode</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>,
+<a href=#130 id=130 data-nosnippet>130</a>        }
+<a href=#131 id=131 data-nosnippet>131</a>        .<a href="../../query_dsl/mod.rs.html#1590-1596">execute</a>(<a class="self" href="#120">self</a>)
+<a href=#132 id=132 data-nosnippet>132</a>        .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(|<span class="kw">_</span>| ())
+<a href=#133 id=133 data-nosnippet>133</a>    }
+<a href=#134 id=134 data-nosnippet>134</a>
+<a href=#135 id=135 data-nosnippet>135</a>    <span class="doccomment">/// Total number of pages in a database, via `PRAGMA page_count`.
+<a href=#136 id=136 data-nosnippet>136</a>    ///
+<a href=#137 id=137 data-nosnippet>137</a>    /// `schema` selects an attached database by name, `None` reads `main`.
+<a href=#138 id=138 data-nosnippet>138</a>    /// Multiply by the page size for the size the database accounts for.
+<a href=#139 id=139 data-nosnippet>139</a>    ///
+<a href=#140 id=140 data-nosnippet>140</a>    /// ```rust
+<a href=#141 id=141 data-nosnippet>141</a>    /// # include!("../../doctest_setup.rs");
+<a href=#142 id=142 data-nosnippet>142</a>    /// # fn main() {
+<a href=#143 id=143 data-nosnippet>143</a>    /// #     run_test().unwrap();
+<a href=#144 id=144 data-nosnippet>144</a>    /// # }
+<a href=#145 id=145 data-nosnippet>145</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#146 id=146 data-nosnippet>146</a>    /// use diesel::connection::SimpleConnection;
+<a href=#147 id=147 data-nosnippet>147</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#148 id=148 data-nosnippet>148</a>    /// // An empty database occupies no pages until something is written.
+<a href=#149 id=149 data-nosnippet>149</a>    /// assert_eq!(conn.page_count(None)?, 0);
+<a href=#150 id=150 data-nosnippet>150</a>    /// conn.batch_execute("CREATE TABLE items (id INTEGER PRIMARY KEY)")?;
+<a href=#151 id=151 data-nosnippet>151</a>    /// assert!(conn.page_count(None)? &gt; 0);
+<a href=#152 id=152 data-nosnippet>152</a>    /// #     Ok(())
+<a href=#153 id=153 data-nosnippet>153</a>    /// # }
+<a href=#154 id=154 data-nosnippet>154</a>    /// ```
+<a href=#155 id=155 data-nosnippet>155</a>    </span><span class="kw">pub fn </span>page_count(<span class="kw-2">&amp;mut </span><span class="self">self</span>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>&gt; {
+<a href=#156 id=156 data-nosnippet>156</a>        <a class="self" href="#155">self</a>.<a href="#179-188">read_pragma_count</a>(<span class="string">"page_count"</span>, <a href="#155">schema</a>)
+<a href=#157 id=157 data-nosnippet>157</a>    }
+<a href=#158 id=158 data-nosnippet>158</a>
+<a href=#159 id=159 data-nosnippet>159</a>    <span class="doccomment">/// Unused pages on a database's freelist, via `PRAGMA freelist_count`.
+<a href=#160 id=160 data-nosnippet>160</a>    ///
+<a href=#161 id=161 data-nosnippet>161</a>    /// `schema` selects an attached database by name, `None` reads `main`. A
+<a href=#162 id=162 data-nosnippet>162</a>    /// growing freelist is reclaimable space, freed by `VACUUM`.
+<a href=#163 id=163 data-nosnippet>163</a>    ///
+<a href=#164 id=164 data-nosnippet>164</a>    /// ```rust
+<a href=#165 id=165 data-nosnippet>165</a>    /// # include!("../../doctest_setup.rs");
+<a href=#166 id=166 data-nosnippet>166</a>    /// # fn main() {
+<a href=#167 id=167 data-nosnippet>167</a>    /// #     run_test().unwrap();
+<a href=#168 id=168 data-nosnippet>168</a>    /// # }
+<a href=#169 id=169 data-nosnippet>169</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#170 id=170 data-nosnippet>170</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#171 id=171 data-nosnippet>171</a>    /// assert_eq!(conn.freelist_count(None)?, 0);
+<a href=#172 id=172 data-nosnippet>172</a>    /// #     Ok(())
+<a href=#173 id=173 data-nosnippet>173</a>    /// # }
+<a href=#174 id=174 data-nosnippet>174</a>    /// ```
+<a href=#175 id=175 data-nosnippet>175</a>    </span><span class="kw">pub fn </span>freelist_count(<span class="kw-2">&amp;mut </span><span class="self">self</span>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>&gt; {
+<a href=#176 id=176 data-nosnippet>176</a>        <a class="self" href="#175">self</a>.<a href="#179-188">read_pragma_count</a>(<span class="string">"freelist_count"</span>, <a href="#175">schema</a>)
+<a href=#177 id=177 data-nosnippet>177</a>    }
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">fn </span>read_pragma_count(
+<a href=#180 id=180 data-nosnippet>180</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#181 id=181 data-nosnippet>181</a>        pragma: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+<a href=#182 id=182 data-nosnippet>182</a>        schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#183 id=183 data-nosnippet>183</a>    ) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>&gt; {
+<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1555-1949"><span class="kw">crate</span>::query_dsl::RunQueryDsl</a>;
+<a href=#185 id=185 data-nosnippet>185</a>
+<a href=#186 id=186 data-nosnippet>186</a>        <span class="kw">let </span>query: <a href="#369-373">Pragma</a>&lt;<span class="lifetime">'_</span>, <span class="kw">crate</span>::sql_types::<a href="../../sql_types/mod.rs.html#128">BigInt</a>&gt; = <a href="#369-373">Pragma</a>::<a href="#376-382">new</a>(<a href="#181">pragma</a>, <a href="#182">schema</a>);
+<a href=#187 id=187 data-nosnippet>187</a>        <a href="#186">query</a>.<a href="../../query_dsl/mod.rs.html#1886-1894">get_result</a>(<a class="self" href="#180">self</a>)
+<a href=#188 id=188 data-nosnippet>188</a>    }
+<a href=#189 id=189 data-nosnippet>189</a>
+<a href=#190 id=190 data-nosnippet>190</a>    <span class="doccomment">/// Shrink a database by releasing freelist pages, without the full rewrite
+<a href=#191 id=191 data-nosnippet>191</a>    /// [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
+<a href=#192 id=192 data-nosnippet>192</a>    ///
+<a href=#193 id=193 data-nosnippet>193</a>    /// `schema` selects an attached database by name, `None` targets `main`. `pages`
+<a href=#194 id=194 data-nosnippet>194</a>    /// bounds how many pages are reclaimed. As SQLite specifies, `None` or a value
+<a href=#195 id=195 data-nosnippet>195</a>    /// below one clears the whole freelist, as does a bound larger than it. Only
+<a href=#196 id=196 data-nosnippet>196</a>    /// databases in [`AutoVacuumMode::Incremental`] have anything to reclaim, on any
+<a href=#197 id=197 data-nosnippet>197</a>    /// other mode this succeeds and does nothing.
+<a href=#198 id=198 data-nosnippet>198</a>    ///
+<a href=#199 id=199 data-nosnippet>199</a>    /// ```rust
+<a href=#200 id=200 data-nosnippet>200</a>    /// # include!("../../doctest_setup.rs");
+<a href=#201 id=201 data-nosnippet>201</a>    /// # fn main() {
+<a href=#202 id=202 data-nosnippet>202</a>    /// #     run_test().unwrap();
+<a href=#203 id=203 data-nosnippet>203</a>    /// # }
+<a href=#204 id=204 data-nosnippet>204</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#205 id=205 data-nosnippet>205</a>    /// use diesel::sqlite::AutoVacuumMode;
+<a href=#206 id=206 data-nosnippet>206</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#207 id=207 data-nosnippet>207</a>    /// conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)?;
+<a href=#208 id=208 data-nosnippet>208</a>    /// // Reclaim at most 8 pages, then whatever is left.
+<a href=#209 id=209 data-nosnippet>209</a>    /// conn.incremental_vacuum(None, Some(8))?;
+<a href=#210 id=210 data-nosnippet>210</a>    /// conn.incremental_vacuum(None, None)?;
+<a href=#211 id=211 data-nosnippet>211</a>    /// #     Ok(())
+<a href=#212 id=212 data-nosnippet>212</a>    /// # }
+<a href=#213 id=213 data-nosnippet>213</a>    /// ```
+<a href=#214 id=214 data-nosnippet>214</a>    </span><span class="kw">pub fn </span>incremental_vacuum(
+<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#216 id=216 data-nosnippet>216</a>        schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#217 id=217 data-nosnippet>217</a>        pages: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,
+<a href=#218 id=218 data-nosnippet>218</a>    ) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#219 id=219 data-nosnippet>219</a>        <span class="kw">use </span><a href="../../connection/mod.rs.html#73-79"><span class="kw">crate</span>::connection::SimpleConnection</a>;
+<a href=#220 id=220 data-nosnippet>220</a>        <span class="kw">use </span><a href="../../query_builder/mod.rs.html#184-202"><span class="kw">crate</span>::query_builder::QueryBuilder</a>;
+<a href=#221 id=221 data-nosnippet>221</a>        <span class="kw">use </span><a href="../query_builder/mod.rs.html#16-18"><span class="kw">crate</span>::sqlite::SqliteQueryBuilder</a>;
+<a href=#222 id=222 data-nosnippet>222</a>
+<a href=#223 id=223 data-nosnippet>223</a>        <span class="comment">// SQLite frees one page per step of this statement, so it only empties the
+<a href=#224 id=224 data-nosnippet>224</a>        // freelist when run to completion. `batch_execute` uses `sqlite3_exec`, which
+<a href=#225 id=225 data-nosnippet>225</a>        // does that. A prepared statement would not: `StatementUse::run` steps once,
+<a href=#226 id=226 data-nosnippet>226</a>        // which frees a single page and silently leaves the rest.
+<a href=#227 id=227 data-nosnippet>227</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>query = <a href="../query_builder/mod.rs.html#16-18">SqliteQueryBuilder</a>::<a href="../query_builder/mod.rs.html#22-24">new</a>();
+<a href=#228 id=228 data-nosnippet>228</a>        <a href="#227">query</a>.<a href="../../query_builder/mod.rs.html#186">push_sql</a>(<span class="string">"PRAGMA "</span>);
+<a href=#229 id=229 data-nosnippet>229</a>        query.push_identifier(schema.unwrap_or(<span class="string">"main"</span>))<span class="question-mark">?</span>;
+<a href=#230 id=230 data-nosnippet>230</a>        <a href="#227">query</a>.<a href="../../query_builder/mod.rs.html#186">push_sql</a>(<span class="string">".incremental_vacuum"</span>);
+<a href=#231 id=231 data-nosnippet>231</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(pages) = <a href="#217">pages</a> {
+<a href=#232 id=232 data-nosnippet>232</a>            <a href="#227">query</a>.<a href="../../query_builder/mod.rs.html#186">push_sql</a>(<span class="string">"("</span>);
+<a href=#233 id=233 data-nosnippet>233</a>            <a href="#227">query</a>.<a href="../../query_builder/mod.rs.html#186">push_sql</a>(<span class="kw-2">&amp;</span><a href="#231">pages</a>.<a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">to_string</a>());
+<a href=#234 id=234 data-nosnippet>234</a>            <a href="#227">query</a>.<a href="../../query_builder/mod.rs.html#186">push_sql</a>(<span class="string">")"</span>);
+<a href=#235 id=235 data-nosnippet>235</a>        }
+<a href=#236 id=236 data-nosnippet>236</a>        <a class="self" href="#215">self</a>.<a href="../../connection/mod.rs.html#78">batch_execute</a>(<span class="kw-2">&amp;</span><a href="#227">query</a>.<a href="../../query_builder/mod.rs.html#201">finish</a>())
+<a href=#237 id=237 data-nosnippet>237</a>    }
+<a href=#238 id=238 data-nosnippet>238</a>
+<a href=#239 id=239 data-nosnippet>239</a>    <span class="doccomment">/// Rebuild a database, repacking it into the smallest space it can occupy.
+<a href=#240 id=240 data-nosnippet>240</a>    ///
+<a href=#241 id=241 data-nosnippet>241</a>    /// `schema` selects an attached database by name, `None` targets `main`.
+<a href=#242 id=242 data-nosnippet>242</a>    ///
+<a href=#243 id=243 data-nosnippet>243</a>    /// This cannot run inside a transaction, needs free space of up to twice the size
+<a href=#244 id=244 data-nosnippet>244</a>    /// of the database while it runs, and renumbers the implicit `rowid` of any table
+<a href=#245 id=245 data-nosnippet>245</a>    /// declared without an `INTEGER PRIMARY KEY`.
+<a href=#246 id=246 data-nosnippet>246</a>    ///
+<a href=#247 id=247 data-nosnippet>247</a>    /// Naming a schema requires SQLite 3.24.0 or later, otherwise returns an error.
+<a href=#248 id=248 data-nosnippet>248</a>    ///
+<a href=#249 id=249 data-nosnippet>249</a>    /// ```rust
+<a href=#250 id=250 data-nosnippet>250</a>    /// # include!("../../doctest_setup.rs");
+<a href=#251 id=251 data-nosnippet>251</a>    /// # fn main() {
+<a href=#252 id=252 data-nosnippet>252</a>    /// #     run_test().unwrap();
+<a href=#253 id=253 data-nosnippet>253</a>    /// # }
+<a href=#254 id=254 data-nosnippet>254</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#255 id=255 data-nosnippet>255</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#256 id=256 data-nosnippet>256</a>    /// conn.vacuum(None)?;
+<a href=#257 id=257 data-nosnippet>257</a>    /// #     Ok(())
+<a href=#258 id=258 data-nosnippet>258</a>    /// # }
+<a href=#259 id=259 data-nosnippet>259</a>    /// ```
+<a href=#260 id=260 data-nosnippet>260</a>    </span><span class="kw">pub fn </span>vacuum(<span class="kw-2">&amp;mut </span><span class="self">self</span>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#261 id=261 data-nosnippet>261</a>        <span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1555-1949"><span class="kw">crate</span>::query_dsl::RunQueryDsl</a>;
+<a href=#262 id=262 data-nosnippet>262</a>
+<a href=#263 id=263 data-nosnippet>263</a>        <a href="#438-441">Vacuum</a> { <a href="#260">schema</a>, into: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> }.<a href="../../query_dsl/mod.rs.html#1590-1596">execute</a>(<a class="self" href="#260">self</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(|<span class="kw">_</span>| ())
+<a href=#264 id=264 data-nosnippet>264</a>    }
+<a href=#265 id=265 data-nosnippet>265</a>
+<a href=#266 id=266 data-nosnippet>266</a>    <span class="doccomment">/// Write a vacuumed copy of a database to `path`, leaving the original untouched.
+<a href=#267 id=267 data-nosnippet>267</a>    ///
+<a href=#268 id=268 data-nosnippet>268</a>    /// This is SQLite's online backup: the copy is consistent, defragmented, and taken
+<a href=#269 id=269 data-nosnippet>269</a>    /// without blocking readers. `schema` selects an attached database by name, `None`
+<a href=#270 id=270 data-nosnippet>270</a>    /// copies `main`. The path is a bind parameter, so it needs no quoting.
+<a href=#271 id=271 data-nosnippet>271</a>    ///
+<a href=#272 id=272 data-nosnippet>272</a>    /// `path` may name a file that does not exist or one that is empty, but writing
+<a href=#273 id=273 data-nosnippet>273</a>    /// over an existing database fails rather than replacing it.
+<a href=#274 id=274 data-nosnippet>274</a>    ///
+<a href=#275 id=275 data-nosnippet>275</a>    /// Requires SQLite 3.27.0 or later, otherwise returns an error.
+<a href=#276 id=276 data-nosnippet>276</a>    ///
+<a href=#277 id=277 data-nosnippet>277</a>    /// ```rust
+<a href=#278 id=278 data-nosnippet>278</a>    /// # include!("../../doctest_setup.rs");
+<a href=#279 id=279 data-nosnippet>279</a>    /// # fn main() {
+<a href=#280 id=280 data-nosnippet>280</a>    /// #     run_test().unwrap();
+<a href=#281 id=281 data-nosnippet>281</a>    /// # }
+<a href=#282 id=282 data-nosnippet>282</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#283 id=283 data-nosnippet>283</a>    /// # let dir = tempfile::tempdir().unwrap();
+<a href=#284 id=284 data-nosnippet>284</a>    /// # let backup = dir.path().join("backup.db");
+<a href=#285 id=285 data-nosnippet>285</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#286 id=286 data-nosnippet>286</a>    /// conn.vacuum_into(None, backup.to_str().unwrap())?;
+<a href=#287 id=287 data-nosnippet>287</a>    /// # assert!(backup.exists());
+<a href=#288 id=288 data-nosnippet>288</a>    /// #     Ok(())
+<a href=#289 id=289 data-nosnippet>289</a>    /// # }
+<a href=#290 id=290 data-nosnippet>290</a>    /// ```
+<a href=#291 id=291 data-nosnippet>291</a>    </span><span class="kw">pub fn </span>vacuum_into(<span class="kw-2">&amp;mut </span><span class="self">self</span>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;, path: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#292 id=292 data-nosnippet>292</a>        <span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1555-1949"><span class="kw">crate</span>::query_dsl::RunQueryDsl</a>;
+<a href=#293 id=293 data-nosnippet>293</a>
+<a href=#294 id=294 data-nosnippet>294</a>        <a href="#438-441">Vacuum</a> {
+<a href=#295 id=295 data-nosnippet>295</a>            <a href="#291">schema</a>,
+<a href=#296 id=296 data-nosnippet>296</a>            into: <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#291">path</a>),
+<a href=#297 id=297 data-nosnippet>297</a>        }
+<a href=#298 id=298 data-nosnippet>298</a>        .<a href="../../query_dsl/mod.rs.html#1590-1596">execute</a>(<a class="self" href="#291">self</a>)
+<a href=#299 id=299 data-nosnippet>299</a>        .<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map">map</a>(|<span class="kw">_</span>| ())
+<a href=#300 id=300 data-nosnippet>300</a>    }
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a>    <span class="doccomment">/// Checkpoint the [write-ahead log](https://www.sqlite.org/wal.html),
+<a href=#303 id=303 data-nosnippet>303</a>    /// moving committed frames from the WAL file into the database file.
+<a href=#304 id=304 data-nosnippet>304</a>    ///
+<a href=#305 id=305 data-nosnippet>305</a>    /// `schema` selects one attached database by name. Unlike the other
+<a href=#306 id=306 data-nosnippet>306</a>    /// maintenance helpers, `None` does not mean `main`: SQLite defines the
+<a href=#307 id=307 data-nosnippet>307</a>    /// unqualified pragma to checkpoint every attached database. With
+<a href=#308 id=308 data-nosnippet>308</a>    /// `None` and several attached databases the C API leaves the frame
+<a href=#309 id=309 data-nosnippet>309</a>    /// counts undefined.
+<a href=#310 id=310 data-nosnippet>310</a>    ///
+<a href=#311 id=311 data-nosnippet>311</a>    /// A checkpoint stopped early by a reader or writer on another
+<a href=#312 id=312 data-nosnippet>312</a>    /// connection is not an error: it sets
+<a href=#313 id=313 data-nosnippet>313</a>    /// [`busy`](WalCheckpointOutcome::busy). On a database that is not in
+<a href=#314 id=314 data-nosnippet>314</a>    /// WAL mode the call succeeds with both frame counts `None`, so it is
+<a href=#315 id=315 data-nosnippet>315</a>    /// safe to issue unconditionally. Inside a transaction on its own
+<a href=#316 id=316 data-nosnippet>316</a>    /// connection it fails with `SQLITE_LOCKED`.
+<a href=#317 id=317 data-nosnippet>317</a>    ///
+<a href=#318 id=318 data-nosnippet>318</a>    /// The mode argument requires SQLite 3.7.6 or later,
+<a href=#319 id=319 data-nosnippet>319</a>    /// [`Truncate`](WalCheckpointMode::Truncate) requires 3.8.8 or later,
+<a href=#320 id=320 data-nosnippet>320</a>    /// and [`Noop`](WalCheckpointMode::Noop) requires 3.51.0 or later.
+<a href=#321 id=321 data-nosnippet>321</a>    /// Older versions do not report an error and treat an unrecognized
+<a href=#322 id=322 data-nosnippet>322</a>    /// mode as [`Passive`](WalCheckpointMode::Passive).
+<a href=#323 id=323 data-nosnippet>323</a>    ///
+<a href=#324 id=324 data-nosnippet>324</a>    /// ```rust
+<a href=#325 id=325 data-nosnippet>325</a>    /// # include!("../../doctest_setup.rs");
+<a href=#326 id=326 data-nosnippet>326</a>    /// #
+<a href=#327 id=327 data-nosnippet>327</a>    /// # fn main() {
+<a href=#328 id=328 data-nosnippet>328</a>    /// #     run_test().unwrap();
+<a href=#329 id=329 data-nosnippet>329</a>    /// # }
+<a href=#330 id=330 data-nosnippet>330</a>    /// #
+<a href=#331 id=331 data-nosnippet>331</a>    /// # fn run_test() -&gt; QueryResult&lt;()&gt; {
+<a href=#332 id=332 data-nosnippet>332</a>    /// use diesel::connection::SimpleConnection;
+<a href=#333 id=333 data-nosnippet>333</a>    /// use diesel::sqlite::WalCheckpointMode;
+<a href=#334 id=334 data-nosnippet>334</a>    /// # let dir = tempfile::tempdir().unwrap();
+<a href=#335 id=335 data-nosnippet>335</a>    /// # let path = dir.path().join("app.db");
+<a href=#336 id=336 data-nosnippet>336</a>    /// let conn = &amp;mut SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+<a href=#337 id=337 data-nosnippet>337</a>    /// conn.batch_execute("PRAGMA journal_mode = WAL")?;
+<a href=#338 id=338 data-nosnippet>338</a>    /// conn.batch_execute("CREATE TABLE logs (line TEXT NOT NULL)")?;
+<a href=#339 id=339 data-nosnippet>339</a>    ///
+<a href=#340 id=340 data-nosnippet>340</a>    /// let outcome = conn.wal_checkpoint(None, WalCheckpointMode::Truncate)?;
+<a href=#341 id=341 data-nosnippet>341</a>    /// assert!(!outcome.busy);
+<a href=#342 id=342 data-nosnippet>342</a>    /// // The whole WAL was moved into the database file and the log truncated.
+<a href=#343 id=343 data-nosnippet>343</a>    /// assert_eq!(outcome.log_frames, Some(0));
+<a href=#344 id=344 data-nosnippet>344</a>    /// assert_eq!(outcome.checkpointed_frames, Some(0));
+<a href=#345 id=345 data-nosnippet>345</a>    /// #     Ok(())
+<a href=#346 id=346 data-nosnippet>346</a>    /// # }
+<a href=#347 id=347 data-nosnippet>347</a>    /// ```
+<a href=#348 id=348 data-nosnippet>348</a>    </span><span class="kw">pub fn </span>wal_checkpoint(
+<a href=#349 id=349 data-nosnippet>349</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#350 id=350 data-nosnippet>350</a>        schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#351 id=351 data-nosnippet>351</a>        mode: <a href="#39-57">WalCheckpointMode</a>,
+<a href=#352 id=352 data-nosnippet>352</a>    ) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;<a href="#62-75">WalCheckpointOutcome</a>&gt; {
+<a href=#353 id=353 data-nosnippet>353</a>        <span class="kw">use </span><a href="../../query_dsl/mod.rs.html#1555-1949"><span class="kw">crate</span>::query_dsl::RunQueryDsl</a>;
+<a href=#354 id=354 data-nosnippet>354</a>
+<a href=#355 id=355 data-nosnippet>355</a>        <span class="kw">let </span>(busy, log_frames, checkpointed_frames) =
+<a href=#356 id=356 data-nosnippet>356</a>            WalCheckpoint { schema, mode }.get_result::&lt;(i32, i64, i64)&gt;(<span class="self">self</span>)<span class="question-mark">?</span>;
+<a href=#357 id=357 data-nosnippet>357</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#62-75">WalCheckpointOutcome</a> {
+<a href=#358 id=358 data-nosnippet>358</a>            busy: <a href="#355">busy</a> != <span class="number">0</span>,
+<a href=#359 id=359 data-nosnippet>359</a>            <span class="comment">// On a database not in WAL mode both counts come back as -1.
+<a href=#360 id=360 data-nosnippet>360</a>            </span>log_frames: (<a href="#355">log_frames</a> &gt;= <span class="number">0</span>).<a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html#method.then_some">then_some</a>(<a href="#355">log_frames</a>),
+<a href=#361 id=361 data-nosnippet>361</a>            checkpointed_frames: (<a href="#355">checkpointed_frames</a> &gt;= <span class="number">0</span>).<a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html#method.then_some">then_some</a>(<a href="#355">checkpointed_frames</a>),
+<a href=#362 id=362 data-nosnippet>362</a>        })
+<a href=#363 id=363 data-nosnippet>363</a>    }
+<a href=#364 id=364 data-nosnippet>364</a>}
+<a href=#365 id=365 data-nosnippet>365</a>
+<a href=#366 id=366 data-nosnippet>366</a><span class="comment">// A `PRAGMA` accepts no bind parameters, neither for the schema it targets nor for the
+<a href=#367 id=367 data-nosnippet>367</a>// value it assigns, so the schema is rendered as a quoted identifier by the query
+<a href=#368 id=368 data-nosnippet>368</a>// builder. `name` is always a constant chosen here, never caller data.
+<a href=#369 id=369 data-nosnippet>369</a></span><span class="kw">struct </span>Pragma&lt;<span class="lifetime">'a</span>, ST&gt; {
+<a href=#370 id=370 data-nosnippet>370</a>    schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#371 id=371 data-nosnippet>371</a>    name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+<a href=#372 id=372 data-nosnippet>372</a>    sql_type: <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>&lt;ST&gt;,
+<a href=#373 id=373 data-nosnippet>373</a>}
+<a href=#374 id=374 data-nosnippet>374</a>
+<a href=#375 id=375 data-nosnippet>375</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, ST&gt; <a href="#369-373">Pragma</a>&lt;<span class="lifetime">'a</span>, ST&gt; {
+<a href=#376 id=376 data-nosnippet>376</a>    <span class="kw">fn </span>new(name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;) -&gt; <span class="self">Self </span>{
+<a href=#377 id=377 data-nosnippet>377</a>        <a href="#369-373">Pragma</a> {
+<a href=#378 id=378 data-nosnippet>378</a>            <a href="#376">schema</a>,
+<a href=#379 id=379 data-nosnippet>379</a>            <a href="#376">name</a>,
+<a href=#380 id=380 data-nosnippet>380</a>            sql_type: <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>,
+<a href=#381 id=381 data-nosnippet>381</a>        }
+<a href=#382 id=382 data-nosnippet>382</a>    }
+<a href=#383 id=383 data-nosnippet>383</a>}
+<a href=#384 id=384 data-nosnippet>384</a>
+<a href=#385 id=385 data-nosnippet>385</a><span class="kw">impl</span>&lt;ST&gt; <a href="../../query_builder/mod.rs.html#255-325">QueryFragment</a>&lt;<a href="../backend.rs.html#10">Sqlite</a>&gt; <span class="kw">for </span><a href="#369-373">Pragma</a>&lt;<span class="lifetime">'_</span>, ST&gt; {
+<a href=#386 id=386 data-nosnippet>386</a>    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, <span class="kw-2">mut </span>out: <a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, <a href="../backend.rs.html#10">Sqlite</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#387 id=387 data-nosnippet>387</a>        <a href="#386">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"PRAGMA "</span>);
+<a href=#388 id=388 data-nosnippet>388</a>        out.push_identifier(<span class="self">self</span>.schema.unwrap_or(<span class="string">"main"</span>))<span class="question-mark">?</span>;
+<a href=#389 id=389 data-nosnippet>389</a>        <a href="#386">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"."</span>);
+<a href=#390 id=390 data-nosnippet>390</a>        <a href="#386">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<a class="self" href="#386">self</a>.name);
+<a href=#391 id=391 data-nosnippet>391</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#392 id=392 data-nosnippet>392</a>    }
+<a href=#393 id=393 data-nosnippet>393</a>}
+<a href=#394 id=394 data-nosnippet>394</a>
+<a href=#395 id=395 data-nosnippet>395</a><span class="comment">// The schema name is runtime data, so the rendered SQL is not determined by the type.
+<a href=#396 id=396 data-nosnippet>396</a></span><span class="kw">impl</span>&lt;ST&gt; <a href="../../query_builder/query_id.rs.html#27-70">QueryId</a> <span class="kw">for </span><a href="#369-373">Pragma</a>&lt;<span class="lifetime">'_</span>, ST&gt; {
+<a href=#397 id=397 data-nosnippet>397</a>    <span class="kw">type </span>QueryId = ();
+<a href=#398 id=398 data-nosnippet>398</a>
+<a href=#399 id=399 data-nosnippet>399</a>    <span class="kw">const </span>HAS_STATIC_QUERY_ID: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> = <span class="bool-val">false</span>;
+<a href=#400 id=400 data-nosnippet>400</a>}
+<a href=#401 id=401 data-nosnippet>401</a>
+<a href=#402 id=402 data-nosnippet>402</a><span class="kw">impl</span>&lt;ST&gt; <a href="../../query_builder/mod.rs.html#215-222">Query</a> <span class="kw">for </span><a href="#369-373">Pragma</a>&lt;<span class="lifetime">'_</span>, ST&gt; {
+<a href=#403 id=403 data-nosnippet>403</a>    <span class="kw">type </span>SqlType = ST;
+<a href=#404 id=404 data-nosnippet>404</a>}
+<a href=#405 id=405 data-nosnippet>405</a>
+<a href=#406 id=406 data-nosnippet>406</a><span class="kw">impl</span>&lt;ST&gt; <a href="../../query_dsl/mod.rs.html#1953">RunQueryDslSupport</a> <span class="kw">for </span><a href="#369-373">Pragma</a>&lt;<span class="lifetime">'_</span>, ST&gt; {}
+<a href=#407 id=407 data-nosnippet>407</a>
+<a href=#408 id=408 data-nosnippet>408</a><span class="comment">// `PRAGMA name = value` takes no bind parameter for the value either, so the integer is
+<a href=#409 id=409 data-nosnippet>409</a>// rendered as a literal.
+<a href=#410 id=410 data-nosnippet>410</a></span><span class="kw">struct </span>SetPragmaInt&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#411 id=411 data-nosnippet>411</a>    schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#412 id=412 data-nosnippet>412</a>    name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+<a href=#413 id=413 data-nosnippet>413</a>    value: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a>,
+<a href=#414 id=414 data-nosnippet>414</a>}
+<a href=#415 id=415 data-nosnippet>415</a>
+<a href=#416 id=416 data-nosnippet>416</a><span class="kw">impl </span><a href="../../query_builder/mod.rs.html#255-325">QueryFragment</a>&lt;<a href="../backend.rs.html#10">Sqlite</a>&gt; <span class="kw">for </span><a href="#410-414">SetPragmaInt</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#417 id=417 data-nosnippet>417</a>    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, <span class="kw-2">mut </span>out: <a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, <a href="../backend.rs.html#10">Sqlite</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#418 id=418 data-nosnippet>418</a>        <a href="#417">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"PRAGMA "</span>);
+<a href=#419 id=419 data-nosnippet>419</a>        out.push_identifier(<span class="self">self</span>.schema.unwrap_or(<span class="string">"main"</span>))<span class="question-mark">?</span>;
+<a href=#420 id=420 data-nosnippet>420</a>        <a href="#417">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"."</span>);
+<a href=#421 id=421 data-nosnippet>421</a>        <a href="#417">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<a class="self" href="#417">self</a>.name);
+<a href=#422 id=422 data-nosnippet>422</a>        <a href="#417">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">" = "</span>);
+<a href=#423 id=423 data-nosnippet>423</a>        <a href="#417">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="kw-2">&amp;</span><a class="self" href="#417">self</a>.value.<a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">to_string</a>());
+<a href=#424 id=424 data-nosnippet>424</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#425 id=425 data-nosnippet>425</a>    }
+<a href=#426 id=426 data-nosnippet>426</a>}
+<a href=#427 id=427 data-nosnippet>427</a>
+<a href=#428 id=428 data-nosnippet>428</a><span class="kw">impl </span><a href="../../query_builder/query_id.rs.html#27-70">QueryId</a> <span class="kw">for </span><a href="#410-414">SetPragmaInt</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#429 id=429 data-nosnippet>429</a>    <span class="kw">type </span>QueryId = ();
+<a href=#430 id=430 data-nosnippet>430</a>
+<a href=#431 id=431 data-nosnippet>431</a>    <span class="kw">const </span>HAS_STATIC_QUERY_ID: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> = <span class="bool-val">false</span>;
+<a href=#432 id=432 data-nosnippet>432</a>}
+<a href=#433 id=433 data-nosnippet>433</a>
+<a href=#434 id=434 data-nosnippet>434</a><span class="kw">impl </span><a href="../../query_dsl/mod.rs.html#1953">RunQueryDslSupport</a> <span class="kw">for </span><a href="#410-414">SetPragmaInt</a>&lt;<span class="lifetime">'_</span>&gt; {}
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a><span class="comment">// `VACUUM` names its schema as an identifier, so that operand is quoted by the query
+<a href=#437 id=437 data-nosnippet>437</a>// builder, while the `INTO` destination is an expression and binds normally.
+<a href=#438 id=438 data-nosnippet>438</a></span><span class="kw">struct </span>Vacuum&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#439 id=439 data-nosnippet>439</a>    schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#440 id=440 data-nosnippet>440</a>    into: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#441 id=441 data-nosnippet>441</a>}
+<a href=#442 id=442 data-nosnippet>442</a>
+<a href=#443 id=443 data-nosnippet>443</a><span class="kw">impl </span><a href="../../query_builder/mod.rs.html#255-325">QueryFragment</a>&lt;<a href="../backend.rs.html#10">Sqlite</a>&gt; <span class="kw">for </span><a href="#438-441">Vacuum</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#444 id=444 data-nosnippet>444</a>    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, <span class="kw-2">mut </span>out: <a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, <a href="../backend.rs.html#10">Sqlite</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#445 id=445 data-nosnippet>445</a>        <a href="#444">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"VACUUM "</span>);
+<a href=#446 id=446 data-nosnippet>446</a>        out.push_identifier(<span class="self">self</span>.schema.unwrap_or(<span class="string">"main"</span>))<span class="question-mark">?</span>;
+<a href=#447 id=447 data-nosnippet>447</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(into) = <a class="self" href="#444">self</a>.into {
+<a href=#448 id=448 data-nosnippet>448</a>            <a href="#444">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">" INTO "</span>);
+<a href=#449 id=449 data-nosnippet>449</a>            out.push_bind_param::&lt;<span class="kw">crate</span>::sql_types::Text, <span class="kw">_</span>&gt;(into)<span class="question-mark">?</span>;
+<a href=#450 id=450 data-nosnippet>450</a>        }
+<a href=#451 id=451 data-nosnippet>451</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#452 id=452 data-nosnippet>452</a>    }
+<a href=#453 id=453 data-nosnippet>453</a>}
+<a href=#454 id=454 data-nosnippet>454</a>
+<a href=#455 id=455 data-nosnippet>455</a><span class="comment">// The schema name is runtime data, so the rendered SQL is not determined by the type.
+<a href=#456 id=456 data-nosnippet>456</a></span><span class="kw">impl </span><a href="../../query_builder/query_id.rs.html#27-70">QueryId</a> <span class="kw">for </span><a href="#438-441">Vacuum</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#457 id=457 data-nosnippet>457</a>    <span class="kw">type </span>QueryId = ();
+<a href=#458 id=458 data-nosnippet>458</a>
+<a href=#459 id=459 data-nosnippet>459</a>    <span class="kw">const </span>HAS_STATIC_QUERY_ID: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> = <span class="bool-val">false</span>;
+<a href=#460 id=460 data-nosnippet>460</a>}
+<a href=#461 id=461 data-nosnippet>461</a>
+<a href=#462 id=462 data-nosnippet>462</a><span class="kw">impl </span><a href="../../query_dsl/mod.rs.html#1953">RunQueryDslSupport</a> <span class="kw">for </span><a href="#438-441">Vacuum</a>&lt;<span class="lifetime">'_</span>&gt; {}
+<a href=#463 id=463 data-nosnippet>463</a>
+<a href=#464 id=464 data-nosnippet>464</a><span class="comment">// Like `Pragma`, no operand can be a bind parameter. Unlike `Pragma`, a
+<a href=#465 id=465 data-nosnippet>465</a>// `None` schema stays unqualified on purpose: the unqualified pragma
+<a href=#466 id=466 data-nosnippet>466</a>// checkpoints every attached database, while a qualified one targets a
+<a href=#467 id=467 data-nosnippet>467</a>// single schema. The whole checkpoint runs on the first step of the
+<a href=#468 id=468 data-nosnippet>468</a>// statement and yields exactly one row, so a prepared statement works here
+<a href=#469 id=469 data-nosnippet>469</a>// (unlike `incremental_vacuum`).
+<a href=#470 id=470 data-nosnippet>470</a></span><span class="kw">struct </span>WalCheckpoint&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#471 id=471 data-nosnippet>471</a>    schema: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt;,
+<a href=#472 id=472 data-nosnippet>472</a>    mode: <a href="#39-57">WalCheckpointMode</a>,
+<a href=#473 id=473 data-nosnippet>473</a>}
+<a href=#474 id=474 data-nosnippet>474</a>
+<a href=#475 id=475 data-nosnippet>475</a><span class="kw">impl </span><a href="../../query_builder/mod.rs.html#255-325">QueryFragment</a>&lt;<a href="../backend.rs.html#10">Sqlite</a>&gt; <span class="kw">for </span><a href="#470-473">WalCheckpoint</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#476 id=476 data-nosnippet>476</a>    <span class="kw">fn </span>walk_ast&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, <span class="kw-2">mut </span>out: <a href="../../query_builder/ast_pass.rs.html#25-34">AstPass</a>&lt;<span class="lifetime">'_</span>, <span class="lifetime">'b</span>, <a href="../backend.rs.html#10">Sqlite</a>&gt;) -&gt; <a href="../../result.rs.html#294">QueryResult</a>&lt;()&gt; {
+<a href=#477 id=477 data-nosnippet>477</a>        <a href="#476">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"PRAGMA "</span>);
+<a href=#478 id=478 data-nosnippet>478</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(schema) = <a class="self" href="#476">self</a>.schema {
+<a href=#479 id=479 data-nosnippet>479</a>            out.push_identifier(schema)<span class="question-mark">?</span>;
+<a href=#480 id=480 data-nosnippet>480</a>            <a href="#476">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="string">"."</span>);
+<a href=#481 id=481 data-nosnippet>481</a>        }
+<a href=#482 id=482 data-nosnippet>482</a>        <a href="#476">out</a>.<a href="../../query_builder/ast_pass.rs.html#193-199">push_sql</a>(<span class="kw">match </span><a class="self" href="#476">self</a>.mode {
+<a href=#483 id=483 data-nosnippet>483</a>            WalCheckpointMode::<a href="#41">Passive</a> =&gt; <span class="string">"wal_checkpoint(PASSIVE)"</span>,
+<a href=#484 id=484 data-nosnippet>484</a>            WalCheckpointMode::<a href="#44">Full</a> =&gt; <span class="string">"wal_checkpoint(FULL)"</span>,
+<a href=#485 id=485 data-nosnippet>485</a>            WalCheckpointMode::<a href="#47">Restart</a> =&gt; <span class="string">"wal_checkpoint(RESTART)"</span>,
+<a href=#486 id=486 data-nosnippet>486</a>            WalCheckpointMode::<a href="#50">Truncate</a> =&gt; <span class="string">"wal_checkpoint(TRUNCATE)"</span>,
+<a href=#487 id=487 data-nosnippet>487</a>            WalCheckpointMode::<a href="#56">Noop</a> =&gt; <span class="string">"wal_checkpoint(NOOP)"</span>,
+<a href=#488 id=488 data-nosnippet>488</a>        });
+<a href=#489 id=489 data-nosnippet>489</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#490 id=490 data-nosnippet>490</a>    }
+<a href=#491 id=491 data-nosnippet>491</a>}
+<a href=#492 id=492 data-nosnippet>492</a>
+<a href=#493 id=493 data-nosnippet>493</a><span class="comment">// The schema name and mode are runtime data, so the rendered SQL is not determined by the type.
+<a href=#494 id=494 data-nosnippet>494</a></span><span class="kw">impl </span><a href="../../query_builder/query_id.rs.html#27-70">QueryId</a> <span class="kw">for </span><a href="#470-473">WalCheckpoint</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#495 id=495 data-nosnippet>495</a>    <span class="kw">type </span>QueryId = ();
+<a href=#496 id=496 data-nosnippet>496</a>
+<a href=#497 id=497 data-nosnippet>497</a>    <span class="kw">const </span>HAS_STATIC_QUERY_ID: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> = <span class="bool-val">false</span>;
+<a href=#498 id=498 data-nosnippet>498</a>}
+<a href=#499 id=499 data-nosnippet>499</a>
+<a href=#500 id=500 data-nosnippet>500</a><span class="kw">impl </span><a href="../../query_builder/mod.rs.html#215-222">Query</a> <span class="kw">for </span><a href="#470-473">WalCheckpoint</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#501 id=501 data-nosnippet>501</a>    <span class="kw">type </span>SqlType = (
+<a href=#502 id=502 data-nosnippet>502</a>        <span class="kw">crate</span>::sql_types::<a href="../../sql_types/mod.rs.html#108">Integer</a>,
+<a href=#503 id=503 data-nosnippet>503</a>        <span class="kw">crate</span>::sql_types::<a href="../../sql_types/mod.rs.html#128">BigInt</a>,
+<a href=#504 id=504 data-nosnippet>504</a>        <span class="kw">crate</span>::sql_types::<a href="../../sql_types/mod.rs.html#128">BigInt</a>,
+<a href=#505 id=505 data-nosnippet>505</a>    );
+<a href=#506 id=506 data-nosnippet>506</a>}
+<a href=#507 id=507 data-nosnippet>507</a>
+<a href=#508 id=508 data-nosnippet>508</a><span class="kw">impl </span><a href="../../query_dsl/mod.rs.html#1953">RunQueryDslSupport</a> <span class="kw">for </span><a href="#470-473">WalCheckpoint</a>&lt;<span class="lifetime">'_</span>&gt; {}
+<a href=#509 id=509 data-nosnippet>509</a>
+<a href=#510 id=510 data-nosnippet>510</a><span class="attr">#[cfg(test)]
+<a href=#511 id=511 data-nosnippet>511</a></span><span class="kw">mod </span>tests {
+<a href=#512 id=512 data-nosnippet>512</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#513 id=513 data-nosnippet>513</a>    <span class="kw">use </span><span class="kw">crate</span>::connection::SimpleConnection;
+<a href=#514 id=514 data-nosnippet>514</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#515 id=515 data-nosnippet>515</a>    </span><span class="kw">use </span><span class="kw">crate</span>::dsl::sql;
+<a href=#516 id=516 data-nosnippet>516</a>    <span class="kw">use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#517 id=517 data-nosnippet>517</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#518 id=518 data-nosnippet>518</a>    </span><span class="kw">use </span><span class="kw">crate</span>::sql_types::{Integer, Text};
+<a href=#519 id=519 data-nosnippet>519</a>
+<a href=#520 id=520 data-nosnippet>520</a>    <span class="kw">fn </span>connection() -&gt; SqliteConnection {
+<a href=#521 id=521 data-nosnippet>521</a>        SqliteConnection::establish(<span class="string">":memory:"</span>).unwrap()
+<a href=#522 id=522 data-nosnippet>522</a>    }
+<a href=#523 id=523 data-nosnippet>523</a>
+<a href=#524 id=524 data-nosnippet>524</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#525 id=525 data-nosnippet>525</a>    </span><span class="kw">fn </span>auto_vacuum_all_modes_roundtrip_on_fresh_database() {
+<a href=#526 id=526 data-nosnippet>526</a>        <span class="kw">for </span>mode <span class="kw">in </span>[
+<a href=#527 id=527 data-nosnippet>527</a>            AutoVacuumMode::None,
+<a href=#528 id=528 data-nosnippet>528</a>            AutoVacuumMode::Full,
+<a href=#529 id=529 data-nosnippet>529</a>            AutoVacuumMode::Incremental,
+<a href=#530 id=530 data-nosnippet>530</a>        ] {
+<a href=#531 id=531 data-nosnippet>531</a>            <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#532 id=532 data-nosnippet>532</a>            conn.set_auto_vacuum(<span class="prelude-val">None</span>, mode).unwrap();
+<a href=#533 id=533 data-nosnippet>533</a>            <span class="macro">assert_eq!</span>(mode, conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap());
+<a href=#534 id=534 data-nosnippet>534</a>        }
+<a href=#535 id=535 data-nosnippet>535</a>    }
+<a href=#536 id=536 data-nosnippet>536</a>
+<a href=#537 id=537 data-nosnippet>537</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#538 id=538 data-nosnippet>538</a>    </span><span class="kw">fn </span>auto_vacuum_incremental_sticks_across_schema_creation() {
+<a href=#539 id=539 data-nosnippet>539</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#540 id=540 data-nosnippet>540</a>        conn.set_auto_vacuum(<span class="prelude-val">None</span>, AutoVacuumMode::Incremental)
+<a href=#541 id=541 data-nosnippet>541</a>            .unwrap();
+<a href=#542 id=542 data-nosnippet>542</a>        <span class="macro">assert_eq!</span>(AutoVacuumMode::Incremental, conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap());
+<a href=#543 id=543 data-nosnippet>543</a>
+<a href=#544 id=544 data-nosnippet>544</a>        <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE t (id INTEGER PRIMARY KEY)"</span>)
+<a href=#545 id=545 data-nosnippet>545</a>            .execute(conn)
+<a href=#546 id=546 data-nosnippet>546</a>            .unwrap();
+<a href=#547 id=547 data-nosnippet>547</a>        <span class="macro">assert_eq!</span>(
+<a href=#548 id=548 data-nosnippet>548</a>            AutoVacuumMode::Incremental,
+<a href=#549 id=549 data-nosnippet>549</a>            conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap(),
+<a href=#550 id=550 data-nosnippet>550</a>            <span class="string">"the mode survives once the schema exists"
+<a href=#551 id=551 data-nosnippet>551</a>        </span>);
+<a href=#552 id=552 data-nosnippet>552</a>    }
+<a href=#553 id=553 data-nosnippet>553</a>
+<a href=#554 id=554 data-nosnippet>554</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#555 id=555 data-nosnippet>555</a>    </span><span class="kw">fn </span>auto_vacuum_change_from_none_requires_vacuum_on_populated_database() {
+<a href=#556 id=556 data-nosnippet>556</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#557 id=557 data-nosnippet>557</a>        <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE t (id INTEGER PRIMARY KEY)"</span>)
+<a href=#558 id=558 data-nosnippet>558</a>            .execute(conn)
+<a href=#559 id=559 data-nosnippet>559</a>            .unwrap();
+<a href=#560 id=560 data-nosnippet>560</a>        <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO t (id) VALUES (1)"</span>)
+<a href=#561 id=561 data-nosnippet>561</a>            .execute(conn)
+<a href=#562 id=562 data-nosnippet>562</a>            .unwrap();
+<a href=#563 id=563 data-nosnippet>563</a>        <span class="macro">assert_eq!</span>(AutoVacuumMode::None, conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap());
+<a href=#564 id=564 data-nosnippet>564</a>
+<a href=#565 id=565 data-nosnippet>565</a>        <span class="comment">// On a populated database the switch away from `None` is silently
+<a href=#566 id=566 data-nosnippet>566</a>        // deferred until a full rewrite.
+<a href=#567 id=567 data-nosnippet>567</a>        </span>conn.set_auto_vacuum(<span class="prelude-val">None</span>, AutoVacuumMode::Full).unwrap();
+<a href=#568 id=568 data-nosnippet>568</a>        <span class="macro">assert_eq!</span>(
+<a href=#569 id=569 data-nosnippet>569</a>            AutoVacuumMode::None,
+<a href=#570 id=570 data-nosnippet>570</a>            conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap(),
+<a href=#571 id=571 data-nosnippet>571</a>            <span class="string">"the change does not take effect without a VACUUM"
+<a href=#572 id=572 data-nosnippet>572</a>        </span>);
+<a href=#573 id=573 data-nosnippet>573</a>
+<a href=#574 id=574 data-nosnippet>574</a>        <span class="kw">crate</span>::sql_query(<span class="string">"VACUUM"</span>).execute(conn).unwrap();
+<a href=#575 id=575 data-nosnippet>575</a>        <span class="macro">assert_eq!</span>(
+<a href=#576 id=576 data-nosnippet>576</a>            AutoVacuumMode::Full,
+<a href=#577 id=577 data-nosnippet>577</a>            conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap(),
+<a href=#578 id=578 data-nosnippet>578</a>            <span class="string">"VACUUM rewrites the file and applies the mode"
+<a href=#579 id=579 data-nosnippet>579</a>        </span>);
+<a href=#580 id=580 data-nosnippet>580</a>    }
+<a href=#581 id=581 data-nosnippet>581</a>
+<a href=#582 id=582 data-nosnippet>582</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#583 id=583 data-nosnippet>583</a>    </span><span class="kw">fn </span>auto_vacuum_targets_the_named_attached_database() {
+<a href=#584 id=584 data-nosnippet>584</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#585 id=585 data-nosnippet>585</a>        <span class="kw">crate</span>::sql_query(<span class="string">"ATTACH DATABASE ':memory:' AS aux"</span>)
+<a href=#586 id=586 data-nosnippet>586</a>            .execute(conn)
+<a href=#587 id=587 data-nosnippet>587</a>            .unwrap();
+<a href=#588 id=588 data-nosnippet>588</a>
+<a href=#589 id=589 data-nosnippet>589</a>        conn.set_auto_vacuum(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>), AutoVacuumMode::Full)
+<a href=#590 id=590 data-nosnippet>590</a>            .unwrap();
+<a href=#591 id=591 data-nosnippet>591</a>        <span class="macro">assert_eq!</span>(AutoVacuumMode::Full, conn.auto_vacuum(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap());
+<a href=#592 id=592 data-nosnippet>592</a>        <span class="macro">assert_eq!</span>(
+<a href=#593 id=593 data-nosnippet>593</a>            AutoVacuumMode::None,
+<a href=#594 id=594 data-nosnippet>594</a>            conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap(),
+<a href=#595 id=595 data-nosnippet>595</a>            <span class="string">"main keeps its own default"
+<a href=#596 id=596 data-nosnippet>596</a>        </span>);
+<a href=#597 id=597 data-nosnippet>597</a>    }
+<a href=#598 id=598 data-nosnippet>598</a>
+<a href=#599 id=599 data-nosnippet>599</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#600 id=600 data-nosnippet>600</a>    </span><span class="kw">fn </span>auto_vacuum_schema_name_with_double_quote_is_handled() {
+<a href=#601 id=601 data-nosnippet>601</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#602 id=602 data-nosnippet>602</a>        <span class="kw">let </span>schema = <span class="string">r#"we"ird"#</span>;
+<a href=#603 id=603 data-nosnippet>603</a>        <span class="kw">crate</span>::sql_query(<span class="macro">alloc::format!</span>(
+<a href=#604 id=604 data-nosnippet>604</a>            <span class="string">r#"ATTACH DATABASE ':memory:' AS "{}""#</span>,
+<a href=#605 id=605 data-nosnippet>605</a>            schema.replace(<span class="string">'"'</span>, <span class="string">"\"\""</span>)
+<a href=#606 id=606 data-nosnippet>606</a>        ))
+<a href=#607 id=607 data-nosnippet>607</a>        .execute(conn)
+<a href=#608 id=608 data-nosnippet>608</a>        .unwrap();
+<a href=#609 id=609 data-nosnippet>609</a>
+<a href=#610 id=610 data-nosnippet>610</a>        conn.set_auto_vacuum(<span class="prelude-val">Some</span>(schema), AutoVacuumMode::Incremental)
+<a href=#611 id=611 data-nosnippet>611</a>            .unwrap();
+<a href=#612 id=612 data-nosnippet>612</a>        <span class="macro">assert_eq!</span>(
+<a href=#613 id=613 data-nosnippet>613</a>            AutoVacuumMode::Incremental,
+<a href=#614 id=614 data-nosnippet>614</a>            conn.auto_vacuum(<span class="prelude-val">Some</span>(schema)).unwrap()
+<a href=#615 id=615 data-nosnippet>615</a>        );
+<a href=#616 id=616 data-nosnippet>616</a>    }
+<a href=#617 id=617 data-nosnippet>617</a>
+<a href=#618 id=618 data-nosnippet>618</a>    <span class="macro">table!</span> {
+<a href=#619 id=619 data-nosnippet>619</a>        pragma_probe (id) {
+<a href=#620 id=620 data-nosnippet>620</a>            id -&gt; Integer,
+<a href=#621 id=621 data-nosnippet>621</a>            payload -&gt; Text,
+<a href=#622 id=622 data-nosnippet>622</a>        }
+<a href=#623 id=623 data-nosnippet>623</a>    }
+<a href=#624 id=624 data-nosnippet>624</a>
+<a href=#625 id=625 data-nosnippet>625</a>    <span class="macro">table!</span> {
+<a href=#626 id=626 data-nosnippet>626</a>        aux.aux_pragma_probe (id) {
+<a href=#627 id=627 data-nosnippet>627</a>            id -&gt; Integer,
+<a href=#628 id=628 data-nosnippet>628</a>            payload -&gt; Text,
+<a href=#629 id=629 data-nosnippet>629</a>        }
+<a href=#630 id=630 data-nosnippet>630</a>    }
+<a href=#631 id=631 data-nosnippet>631</a>
+<a href=#632 id=632 data-nosnippet>632</a>    <span class="kw">const </span>PROBE_TABLE: <span class="kw-2">&amp;</span>str =
+<a href=#633 id=633 data-nosnippet>633</a>        <span class="string">"CREATE TABLE pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)"</span>;
+<a href=#634 id=634 data-nosnippet>634</a>
+<a href=#635 id=635 data-nosnippet>635</a>    <span class="kw">const </span>AUX_PROBE_TABLE: <span class="kw-2">&amp;</span>str =
+<a href=#636 id=636 data-nosnippet>636</a>        <span class="string">"CREATE TABLE aux.aux_pragma_probe (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)"</span>;
+<a href=#637 id=637 data-nosnippet>637</a>
+<a href=#638 id=638 data-nosnippet>638</a>    <span class="comment">// Large enough to spill onto overflow pages, so the database outgrows a single page
+<a href=#639 id=639 data-nosnippet>639</a>    // and leaves reclaimable pages behind once the row is deleted.
+<a href=#640 id=640 data-nosnippet>640</a>    </span><span class="kw">fn </span>overflowing_payload() -&gt; String {
+<a href=#641 id=641 data-nosnippet>641</a>        <span class="string">"x"</span>.repeat(<span class="number">64 </span>* <span class="number">1024</span>)
+<a href=#642 id=642 data-nosnippet>642</a>    }
+<a href=#643 id=643 data-nosnippet>643</a>
+<a href=#644 id=644 data-nosnippet>644</a>    <span class="kw">fn </span>insert_overflowing_row(conn: <span class="kw-2">&amp;mut </span>SqliteConnection) {
+<a href=#645 id=645 data-nosnippet>645</a>        <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#646 id=646 data-nosnippet>646</a>            .values((
+<a href=#647 id=647 data-nosnippet>647</a>                pragma_probe::id.eq(<span class="number">1</span>),
+<a href=#648 id=648 data-nosnippet>648</a>                pragma_probe::payload.eq(overflowing_payload()),
+<a href=#649 id=649 data-nosnippet>649</a>            ))
+<a href=#650 id=650 data-nosnippet>650</a>            .execute(conn)
+<a href=#651 id=651 data-nosnippet>651</a>            .unwrap();
+<a href=#652 id=652 data-nosnippet>652</a>    }
+<a href=#653 id=653 data-nosnippet>653</a>
+<a href=#654 id=654 data-nosnippet>654</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#655 id=655 data-nosnippet>655</a>    </span><span class="kw">fn </span>page_count_is_positive_and_grows() {
+<a href=#656 id=656 data-nosnippet>656</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#657 id=657 data-nosnippet>657</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#658 id=658 data-nosnippet>658</a>        <span class="kw">let </span>initial = conn.page_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#659 id=659 data-nosnippet>659</a>        <span class="macro">assert!</span>(initial &gt; <span class="number">0</span>, <span class="string">"an initialized database has at least one page"</span>);
+<a href=#660 id=660 data-nosnippet>660</a>
+<a href=#661 id=661 data-nosnippet>661</a>        insert_overflowing_row(conn);
+<a href=#662 id=662 data-nosnippet>662</a>
+<a href=#663 id=663 data-nosnippet>663</a>        <span class="macro">assert!</span>(
+<a href=#664 id=664 data-nosnippet>664</a>            conn.page_count(<span class="prelude-val">None</span>).unwrap() &gt; initial,
+<a href=#665 id=665 data-nosnippet>665</a>            <span class="string">"a row spanning overflow pages grows the page count"
+<a href=#666 id=666 data-nosnippet>666</a>        </span>);
+<a href=#667 id=667 data-nosnippet>667</a>    }
+<a href=#668 id=668 data-nosnippet>668</a>
+<a href=#669 id=669 data-nosnippet>669</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#670 id=670 data-nosnippet>670</a>    </span><span class="kw">fn </span>freelist_count_tracks_reclaimable_space() {
+<a href=#671 id=671 data-nosnippet>671</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#672 id=672 data-nosnippet>672</a>        <span class="macro">assert_eq!</span>(
+<a href=#673 id=673 data-nosnippet>673</a>            <span class="number">0</span>,
+<a href=#674 id=674 data-nosnippet>674</a>            conn.freelist_count(<span class="prelude-val">None</span>).unwrap(),
+<a href=#675 id=675 data-nosnippet>675</a>            <span class="string">"a fresh database has an empty freelist"
+<a href=#676 id=676 data-nosnippet>676</a>        </span>);
+<a href=#677 id=677 data-nosnippet>677</a>
+<a href=#678 id=678 data-nosnippet>678</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#679 id=679 data-nosnippet>679</a>        insert_overflowing_row(conn);
+<a href=#680 id=680 data-nosnippet>680</a>
+<a href=#681 id=681 data-nosnippet>681</a>        <span class="kw">crate</span>::delete(pragma_probe::table).execute(conn).unwrap();
+<a href=#682 id=682 data-nosnippet>682</a>        <span class="macro">assert!</span>(
+<a href=#683 id=683 data-nosnippet>683</a>            conn.freelist_count(<span class="prelude-val">None</span>).unwrap() &gt; <span class="number">0</span>,
+<a href=#684 id=684 data-nosnippet>684</a>            <span class="string">"deleting the row leaves reclaimable pages on the freelist"
+<a href=#685 id=685 data-nosnippet>685</a>        </span>);
+<a href=#686 id=686 data-nosnippet>686</a>
+<a href=#687 id=687 data-nosnippet>687</a>        <span class="comment">// `VACUUM` has no query DSL equivalent.
+<a href=#688 id=688 data-nosnippet>688</a>        </span><span class="kw">crate</span>::sql_query(<span class="string">"VACUUM"</span>).execute(conn).unwrap();
+<a href=#689 id=689 data-nosnippet>689</a>        <span class="macro">assert_eq!</span>(
+<a href=#690 id=690 data-nosnippet>690</a>            <span class="number">0</span>,
+<a href=#691 id=691 data-nosnippet>691</a>            conn.freelist_count(<span class="prelude-val">None</span>).unwrap(),
+<a href=#692 id=692 data-nosnippet>692</a>            <span class="string">"VACUUM reclaims the freelist"
+<a href=#693 id=693 data-nosnippet>693</a>        </span>);
+<a href=#694 id=694 data-nosnippet>694</a>    }
+<a href=#695 id=695 data-nosnippet>695</a>
+<a href=#696 id=696 data-nosnippet>696</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#697 id=697 data-nosnippet>697</a>    </span><span class="kw">fn </span>schema_targets_the_named_attached_database() {
+<a href=#698 id=698 data-nosnippet>698</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#699 id=699 data-nosnippet>699</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#700 id=700 data-nosnippet>700</a>        conn.attach_database(<span class="string">":memory:"</span>, <span class="string">"aux"</span>).unwrap();
+<a href=#701 id=701 data-nosnippet>701</a>        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+<a href=#702 id=702 data-nosnippet>702</a>        <span class="kw">crate</span>::insert_into(aux_pragma_probe::table)
+<a href=#703 id=703 data-nosnippet>703</a>            .values((
+<a href=#704 id=704 data-nosnippet>704</a>                aux_pragma_probe::id.eq(<span class="number">1</span>),
+<a href=#705 id=705 data-nosnippet>705</a>                aux_pragma_probe::payload.eq(overflowing_payload()),
+<a href=#706 id=706 data-nosnippet>706</a>            ))
+<a href=#707 id=707 data-nosnippet>707</a>            .execute(conn)
+<a href=#708 id=708 data-nosnippet>708</a>            .unwrap();
+<a href=#709 id=709 data-nosnippet>709</a>
+<a href=#710 id=710 data-nosnippet>710</a>        <span class="kw">let </span>main_pages = conn.page_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#711 id=711 data-nosnippet>711</a>        <span class="kw">let </span>aux_pages = conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap();
+<a href=#712 id=712 data-nosnippet>712</a>        <span class="macro">assert!</span>(
+<a href=#713 id=713 data-nosnippet>713</a>            aux_pages &gt; main_pages,
+<a href=#714 id=714 data-nosnippet>714</a>            <span class="string">"the attached database holds the data, main stays small"
+<a href=#715 id=715 data-nosnippet>715</a>        </span>);
+<a href=#716 id=716 data-nosnippet>716</a>        <span class="macro">assert_eq!</span>(
+<a href=#717 id=717 data-nosnippet>717</a>            main_pages,
+<a href=#718 id=718 data-nosnippet>718</a>            conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"main"</span>)).unwrap(),
+<a href=#719 id=719 data-nosnippet>719</a>            <span class="string">"an explicit main matches the default"
+<a href=#720 id=720 data-nosnippet>720</a>        </span>);
+<a href=#721 id=721 data-nosnippet>721</a>    }
+<a href=#722 id=722 data-nosnippet>722</a>
+<a href=#723 id=723 data-nosnippet>723</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#724 id=724 data-nosnippet>724</a>    </span><span class="kw">fn </span>schema_name_with_backtick_is_escaped() {
+<a href=#725 id=725 data-nosnippet>725</a>        <span class="comment">// The query builder quotes SQLite identifiers with backticks, so a backtick is
+<a href=#726 id=726 data-nosnippet>726</a>        // the character that has to be doubled.
+<a href=#727 id=727 data-nosnippet>727</a>        </span><span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#728 id=728 data-nosnippet>728</a>        <span class="kw">let </span>schema = <span class="string">"back`tick"</span>;
+<a href=#729 id=729 data-nosnippet>729</a>        conn.attach_database(<span class="string">":memory:"</span>, schema).unwrap();
+<a href=#730 id=730 data-nosnippet>730</a>        conn.batch_execute(<span class="string">"CREATE TABLE `back``tick`.probe (id INTEGER PRIMARY KEY)"</span>)
+<a href=#731 id=731 data-nosnippet>731</a>            .unwrap();
+<a href=#732 id=732 data-nosnippet>732</a>
+<a href=#733 id=733 data-nosnippet>733</a>        <span class="macro">assert!</span>(conn.page_count(<span class="prelude-val">Some</span>(schema)).unwrap() &gt; <span class="number">0</span>);
+<a href=#734 id=734 data-nosnippet>734</a>        <span class="macro">assert_eq!</span>(<span class="number">0</span>, conn.freelist_count(<span class="prelude-val">Some</span>(schema)).unwrap());
+<a href=#735 id=735 data-nosnippet>735</a>    }
+<a href=#736 id=736 data-nosnippet>736</a>
+<a href=#737 id=737 data-nosnippet>737</a>    <span class="attr">#[cfg(not(miri))] </span><span class="comment">// ffi string access
+<a href=#738 id=738 data-nosnippet>738</a>    </span><span class="attr">#[diesel_test_helper::test]
+<a href=#739 id=739 data-nosnippet>739</a>    </span><span class="kw">fn </span>unknown_schema_is_reported_as_an_error() {
+<a href=#740 id=740 data-nosnippet>740</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#741 id=741 data-nosnippet>741</a>
+<a href=#742 id=742 data-nosnippet>742</a>        <span class="macro">assert!</span>(conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"nope"</span>)).is_err());
+<a href=#743 id=743 data-nosnippet>743</a>        <span class="macro">assert!</span>(conn.freelist_count(<span class="prelude-val">Some</span>(<span class="string">"nope"</span>)).is_err());
+<a href=#744 id=744 data-nosnippet>744</a>    }
+<a href=#745 id=745 data-nosnippet>745</a>
+<a href=#746 id=746 data-nosnippet>746</a>    <span class="comment">// Leaves many pages on the freelist, so `incremental_vacuum` has something to
+<a href=#747 id=747 data-nosnippet>747</a>    // reclaim and a bound smaller than the freelist is meaningful.
+<a href=#748 id=748 data-nosnippet>748</a>    </span><span class="kw">fn </span>grow_then_empty_freelist(conn: <span class="kw-2">&amp;mut </span>SqliteConnection) {
+<a href=#749 id=749 data-nosnippet>749</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#750 id=750 data-nosnippet>750</a>        <span class="kw">let </span>rows = (<span class="number">1</span>..=<span class="number">200</span>)
+<a href=#751 id=751 data-nosnippet>751</a>            .map(|id| {
+<a href=#752 id=752 data-nosnippet>752</a>                (
+<a href=#753 id=753 data-nosnippet>753</a>                    pragma_probe::id.eq(id),
+<a href=#754 id=754 data-nosnippet>754</a>                    pragma_probe::payload.eq(<span class="string">"x"</span>.repeat(<span class="number">4000</span>)),
+<a href=#755 id=755 data-nosnippet>755</a>                )
+<a href=#756 id=756 data-nosnippet>756</a>            })
+<a href=#757 id=757 data-nosnippet>757</a>            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#758 id=758 data-nosnippet>758</a>        <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#759 id=759 data-nosnippet>759</a>            .values(rows)
+<a href=#760 id=760 data-nosnippet>760</a>            .execute(conn)
+<a href=#761 id=761 data-nosnippet>761</a>            .unwrap();
+<a href=#762 id=762 data-nosnippet>762</a>        <span class="kw">crate</span>::delete(pragma_probe::table).execute(conn).unwrap();
+<a href=#763 id=763 data-nosnippet>763</a>    }
+<a href=#764 id=764 data-nosnippet>764</a>
+<a href=#765 id=765 data-nosnippet>765</a>    <span class="comment">// The same, in an attached schema.
+<a href=#766 id=766 data-nosnippet>766</a>    </span><span class="kw">fn </span>grow_then_empty_aux_freelist(conn: <span class="kw-2">&amp;mut </span>SqliteConnection) {
+<a href=#767 id=767 data-nosnippet>767</a>        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+<a href=#768 id=768 data-nosnippet>768</a>        <span class="kw">let </span>rows = (<span class="number">1</span>..=<span class="number">200</span>)
+<a href=#769 id=769 data-nosnippet>769</a>            .map(|id| {
+<a href=#770 id=770 data-nosnippet>770</a>                (
+<a href=#771 id=771 data-nosnippet>771</a>                    aux_pragma_probe::id.eq(id),
+<a href=#772 id=772 data-nosnippet>772</a>                    aux_pragma_probe::payload.eq(<span class="string">"x"</span>.repeat(<span class="number">4000</span>)),
+<a href=#773 id=773 data-nosnippet>773</a>                )
+<a href=#774 id=774 data-nosnippet>774</a>            })
+<a href=#775 id=775 data-nosnippet>775</a>            .collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+<a href=#776 id=776 data-nosnippet>776</a>        <span class="kw">crate</span>::insert_into(aux_pragma_probe::table)
+<a href=#777 id=777 data-nosnippet>777</a>            .values(rows)
+<a href=#778 id=778 data-nosnippet>778</a>            .execute(conn)
+<a href=#779 id=779 data-nosnippet>779</a>            .unwrap();
+<a href=#780 id=780 data-nosnippet>780</a>        <span class="kw">crate</span>::delete(aux_pragma_probe::table)
+<a href=#781 id=781 data-nosnippet>781</a>            .execute(conn)
+<a href=#782 id=782 data-nosnippet>782</a>            .unwrap();
+<a href=#783 id=783 data-nosnippet>783</a>    }
+<a href=#784 id=784 data-nosnippet>784</a>
+<a href=#785 id=785 data-nosnippet>785</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#786 id=786 data-nosnippet>786</a>    </span><span class="kw">fn </span>incremental_vacuum_clears_the_whole_freelist() {
+<a href=#787 id=787 data-nosnippet>787</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#788 id=788 data-nosnippet>788</a>        conn.set_auto_vacuum(<span class="prelude-val">None</span>, AutoVacuumMode::Incremental)
+<a href=#789 id=789 data-nosnippet>789</a>            .unwrap();
+<a href=#790 id=790 data-nosnippet>790</a>        grow_then_empty_freelist(conn);
+<a href=#791 id=791 data-nosnippet>791</a>        <span class="macro">assert!</span>(
+<a href=#792 id=792 data-nosnippet>792</a>            conn.freelist_count(<span class="prelude-val">None</span>).unwrap() &gt; <span class="number">1</span>,
+<a href=#793 id=793 data-nosnippet>793</a>            <span class="string">"the deleted rows should leave many pages on the freelist"
+<a href=#794 id=794 data-nosnippet>794</a>        </span>);
+<a href=#795 id=795 data-nosnippet>795</a>
+<a href=#796 id=796 data-nosnippet>796</a>        conn.incremental_vacuum(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+<a href=#797 id=797 data-nosnippet>797</a>
+<a href=#798 id=798 data-nosnippet>798</a>        <span class="comment">// Stepping the pragma only once would free a single page and leave the rest, so
+<a href=#799 id=799 data-nosnippet>799</a>        // this also pins that the statement is driven to completion.
+<a href=#800 id=800 data-nosnippet>800</a>        </span><span class="macro">assert_eq!</span>(<span class="number">0</span>, conn.freelist_count(<span class="prelude-val">None</span>).unwrap());
+<a href=#801 id=801 data-nosnippet>801</a>    }
+<a href=#802 id=802 data-nosnippet>802</a>
+<a href=#803 id=803 data-nosnippet>803</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#804 id=804 data-nosnippet>804</a>    </span><span class="kw">fn </span>incremental_vacuum_reclaims_at_most_the_requested_pages() {
+<a href=#805 id=805 data-nosnippet>805</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#806 id=806 data-nosnippet>806</a>        conn.set_auto_vacuum(<span class="prelude-val">None</span>, AutoVacuumMode::Incremental)
+<a href=#807 id=807 data-nosnippet>807</a>            .unwrap();
+<a href=#808 id=808 data-nosnippet>808</a>        grow_then_empty_freelist(conn);
+<a href=#809 id=809 data-nosnippet>809</a>        <span class="kw">let </span>before = conn.freelist_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#810 id=810 data-nosnippet>810</a>        <span class="macro">assert!</span>(before &gt; <span class="number">10</span>, <span class="string">"the bound has to be smaller than the freelist"</span>);
+<a href=#811 id=811 data-nosnippet>811</a>
+<a href=#812 id=812 data-nosnippet>812</a>        conn.incremental_vacuum(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="number">10</span>)).unwrap();
+<a href=#813 id=813 data-nosnippet>813</a>
+<a href=#814 id=814 data-nosnippet>814</a>        <span class="kw">let </span>after = conn.freelist_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#815 id=815 data-nosnippet>815</a>        <span class="macro">assert!</span>(after &gt;= before - <span class="number">10</span>, <span class="string">"at most ten pages may be reclaimed"</span>);
+<a href=#816 id=816 data-nosnippet>816</a>        <span class="macro">assert!</span>(after &lt; before, <span class="string">"some pages should have been reclaimed"</span>);
+<a href=#817 id=817 data-nosnippet>817</a>    }
+<a href=#818 id=818 data-nosnippet>818</a>
+<a href=#819 id=819 data-nosnippet>819</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#820 id=820 data-nosnippet>820</a>    </span><span class="kw">fn </span>incremental_vacuum_is_a_no_op_outside_incremental_mode() {
+<a href=#821 id=821 data-nosnippet>821</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#822 id=822 data-nosnippet>822</a>        <span class="macro">assert_eq!</span>(AutoVacuumMode::None, conn.auto_vacuum(<span class="prelude-val">None</span>).unwrap());
+<a href=#823 id=823 data-nosnippet>823</a>        grow_then_empty_freelist(conn);
+<a href=#824 id=824 data-nosnippet>824</a>        <span class="kw">let </span>before = conn.freelist_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#825 id=825 data-nosnippet>825</a>        <span class="macro">assert!</span>(before &gt; <span class="number">0</span>);
+<a href=#826 id=826 data-nosnippet>826</a>
+<a href=#827 id=827 data-nosnippet>827</a>        conn.incremental_vacuum(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>).unwrap();
+<a href=#828 id=828 data-nosnippet>828</a>
+<a href=#829 id=829 data-nosnippet>829</a>        <span class="macro">assert_eq!</span>(
+<a href=#830 id=830 data-nosnippet>830</a>            before,
+<a href=#831 id=831 data-nosnippet>831</a>            conn.freelist_count(<span class="prelude-val">None</span>).unwrap(),
+<a href=#832 id=832 data-nosnippet>832</a>            <span class="string">"a database that is not in incremental mode keeps its freelist"
+<a href=#833 id=833 data-nosnippet>833</a>        </span>);
+<a href=#834 id=834 data-nosnippet>834</a>    }
+<a href=#835 id=835 data-nosnippet>835</a>
+<a href=#836 id=836 data-nosnippet>836</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#837 id=837 data-nosnippet>837</a>    </span><span class="kw">fn </span>incremental_vacuum_targets_the_named_attached_database() {
+<a href=#838 id=838 data-nosnippet>838</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#839 id=839 data-nosnippet>839</a>        conn.attach_database(<span class="string">":memory:"</span>, <span class="string">"aux"</span>).unwrap();
+<a href=#840 id=840 data-nosnippet>840</a>        conn.set_auto_vacuum(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>), AutoVacuumMode::Incremental)
+<a href=#841 id=841 data-nosnippet>841</a>            .unwrap();
+<a href=#842 id=842 data-nosnippet>842</a>
+<a href=#843 id=843 data-nosnippet>843</a>        grow_then_empty_aux_freelist(conn);
+<a href=#844 id=844 data-nosnippet>844</a>        <span class="macro">assert!</span>(conn.freelist_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap() &gt; <span class="number">0</span>);
+<a href=#845 id=845 data-nosnippet>845</a>
+<a href=#846 id=846 data-nosnippet>846</a>        conn.incremental_vacuum(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>), <span class="prelude-val">None</span>).unwrap();
+<a href=#847 id=847 data-nosnippet>847</a>
+<a href=#848 id=848 data-nosnippet>848</a>        <span class="macro">assert_eq!</span>(<span class="number">0</span>, conn.freelist_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap());
+<a href=#849 id=849 data-nosnippet>849</a>    }
+<a href=#850 id=850 data-nosnippet>850</a>
+<a href=#851 id=851 data-nosnippet>851</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#852 id=852 data-nosnippet>852</a>    </span><span class="kw">fn </span>incremental_vacuum_escapes_a_backtick_in_the_schema_name() {
+<a href=#853 id=853 data-nosnippet>853</a>        <span class="comment">// An unquoted identifier would be a syntax error, and the wrong quoting would
+<a href=#854 id=854 data-nosnippet>854</a>        // address a different database.
+<a href=#855 id=855 data-nosnippet>855</a>        </span><span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#856 id=856 data-nosnippet>856</a>        <span class="kw">let </span>schema = <span class="string">"back`tick"</span>;
+<a href=#857 id=857 data-nosnippet>857</a>        conn.attach_database(<span class="string">":memory:"</span>, schema).unwrap();
+<a href=#858 id=858 data-nosnippet>858</a>
+<a href=#859 id=859 data-nosnippet>859</a>        conn.incremental_vacuum(<span class="prelude-val">Some</span>(schema), <span class="prelude-val">None</span>).unwrap();
+<a href=#860 id=860 data-nosnippet>860</a>
+<a href=#861 id=861 data-nosnippet>861</a>        <span class="macro">assert_eq!</span>(<span class="number">0</span>, conn.freelist_count(<span class="prelude-val">Some</span>(schema)).unwrap());
+<a href=#862 id=862 data-nosnippet>862</a>    }
+<a href=#863 id=863 data-nosnippet>863</a>
+<a href=#864 id=864 data-nosnippet>864</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#865 id=865 data-nosnippet>865</a>    </span><span class="kw">fn </span>incremental_vacuum_of_zero_pages_clears_everything() {
+<a href=#866 id=866 data-nosnippet>866</a>        <span class="comment">// SQLite specifies that a bound below one clears the whole freelist.
+<a href=#867 id=867 data-nosnippet>867</a>        </span><span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#868 id=868 data-nosnippet>868</a>        conn.set_auto_vacuum(<span class="prelude-val">None</span>, AutoVacuumMode::Incremental)
+<a href=#869 id=869 data-nosnippet>869</a>            .unwrap();
+<a href=#870 id=870 data-nosnippet>870</a>        grow_then_empty_freelist(conn);
+<a href=#871 id=871 data-nosnippet>871</a>        <span class="macro">assert!</span>(conn.freelist_count(<span class="prelude-val">None</span>).unwrap() &gt; <span class="number">0</span>);
+<a href=#872 id=872 data-nosnippet>872</a>
+<a href=#873 id=873 data-nosnippet>873</a>        conn.incremental_vacuum(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="number">0</span>)).unwrap();
+<a href=#874 id=874 data-nosnippet>874</a>
+<a href=#875 id=875 data-nosnippet>875</a>        <span class="macro">assert_eq!</span>(<span class="number">0</span>, conn.freelist_count(<span class="prelude-val">None</span>).unwrap());
+<a href=#876 id=876 data-nosnippet>876</a>    }
+<a href=#877 id=877 data-nosnippet>877</a>
+<a href=#878 id=878 data-nosnippet>878</a>    <span class="attr">#[cfg(not(miri))] </span><span class="comment">// ffi string access
+<a href=#879 id=879 data-nosnippet>879</a>    </span><span class="attr">#[diesel_test_helper::test]
+<a href=#880 id=880 data-nosnippet>880</a>    </span><span class="kw">fn </span>incremental_vacuum_of_an_unknown_schema_is_an_error() {
+<a href=#881 id=881 data-nosnippet>881</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#882 id=882 data-nosnippet>882</a>
+<a href=#883 id=883 data-nosnippet>883</a>        <span class="macro">assert!</span>(conn.incremental_vacuum(<span class="prelude-val">Some</span>(<span class="string">"nope"</span>), <span class="prelude-val">None</span>).is_err());
+<a href=#884 id=884 data-nosnippet>884</a>    }
+<a href=#885 id=885 data-nosnippet>885</a>
+<a href=#886 id=886 data-nosnippet>886</a>    <span class="comment">// Leaves the database holding one small row but occupying many pages, so a rebuild
+<a href=#887 id=887 data-nosnippet>887</a>    // has something to reclaim.
+<a href=#888 id=888 data-nosnippet>888</a>    </span><span class="kw">fn </span>fill_then_delete(conn: <span class="kw-2">&amp;mut </span>SqliteConnection) {
+<a href=#889 id=889 data-nosnippet>889</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#890 id=890 data-nosnippet>890</a>        <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#891 id=891 data-nosnippet>891</a>            .values((
+<a href=#892 id=892 data-nosnippet>892</a>                pragma_probe::id.eq(<span class="number">1</span>),
+<a href=#893 id=893 data-nosnippet>893</a>                pragma_probe::payload.eq(<span class="string">"x"</span>.repeat(<span class="number">256 </span>* <span class="number">1024</span>)),
+<a href=#894 id=894 data-nosnippet>894</a>            ))
+<a href=#895 id=895 data-nosnippet>895</a>            .execute(conn)
+<a href=#896 id=896 data-nosnippet>896</a>            .unwrap();
+<a href=#897 id=897 data-nosnippet>897</a>        <span class="kw">crate</span>::delete(pragma_probe::table).execute(conn).unwrap();
+<a href=#898 id=898 data-nosnippet>898</a>        <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#899 id=899 data-nosnippet>899</a>            .values((pragma_probe::id.eq(<span class="number">2</span>), pragma_probe::payload.eq(<span class="string">"kept"</span>)))
+<a href=#900 id=900 data-nosnippet>900</a>            .execute(conn)
+<a href=#901 id=901 data-nosnippet>901</a>            .unwrap();
+<a href=#902 id=902 data-nosnippet>902</a>    }
+<a href=#903 id=903 data-nosnippet>903</a>
+<a href=#904 id=904 data-nosnippet>904</a>    <span class="comment">// The same, in an attached schema.
+<a href=#905 id=905 data-nosnippet>905</a>    </span><span class="kw">fn </span>fill_then_delete_aux(conn: <span class="kw-2">&amp;mut </span>SqliteConnection) {
+<a href=#906 id=906 data-nosnippet>906</a>        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+<a href=#907 id=907 data-nosnippet>907</a>        <span class="kw">crate</span>::insert_into(aux_pragma_probe::table)
+<a href=#908 id=908 data-nosnippet>908</a>            .values((
+<a href=#909 id=909 data-nosnippet>909</a>                aux_pragma_probe::id.eq(<span class="number">1</span>),
+<a href=#910 id=910 data-nosnippet>910</a>                aux_pragma_probe::payload.eq(<span class="string">"x"</span>.repeat(<span class="number">256 </span>* <span class="number">1024</span>)),
+<a href=#911 id=911 data-nosnippet>911</a>            ))
+<a href=#912 id=912 data-nosnippet>912</a>            .execute(conn)
+<a href=#913 id=913 data-nosnippet>913</a>            .unwrap();
+<a href=#914 id=914 data-nosnippet>914</a>        <span class="kw">crate</span>::delete(aux_pragma_probe::table)
+<a href=#915 id=915 data-nosnippet>915</a>            .execute(conn)
+<a href=#916 id=916 data-nosnippet>916</a>            .unwrap();
+<a href=#917 id=917 data-nosnippet>917</a>    }
+<a href=#918 id=918 data-nosnippet>918</a>
+<a href=#919 id=919 data-nosnippet>919</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#920 id=920 data-nosnippet>920</a>    </span><span class="kw">fn </span>vacuum_repacks_the_database() {
+<a href=#921 id=921 data-nosnippet>921</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#922 id=922 data-nosnippet>922</a>        fill_then_delete(conn);
+<a href=#923 id=923 data-nosnippet>923</a>        <span class="kw">let </span>before = conn.page_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#924 id=924 data-nosnippet>924</a>        <span class="macro">assert!</span>(before &gt; <span class="number">1</span>);
+<a href=#925 id=925 data-nosnippet>925</a>
+<a href=#926 id=926 data-nosnippet>926</a>        conn.vacuum(<span class="prelude-val">None</span>).unwrap();
+<a href=#927 id=927 data-nosnippet>927</a>
+<a href=#928 id=928 data-nosnippet>928</a>        <span class="macro">assert!</span>(
+<a href=#929 id=929 data-nosnippet>929</a>            conn.page_count(<span class="prelude-val">None</span>).unwrap() &lt; before,
+<a href=#930 id=930 data-nosnippet>930</a>            <span class="string">"rebuilding should release the pages the deleted row occupied"
+<a href=#931 id=931 data-nosnippet>931</a>        </span>);
+<a href=#932 id=932 data-nosnippet>932</a>        <span class="macro">assert_eq!</span>(
+<a href=#933 id=933 data-nosnippet>933</a>            <span class="number">1</span>,
+<a href=#934 id=934 data-nosnippet>934</a>            pragma_probe::table.count().get_result::&lt;i64&gt;(conn).unwrap(),
+<a href=#935 id=935 data-nosnippet>935</a>            <span class="string">"the surviving row is still there"
+<a href=#936 id=936 data-nosnippet>936</a>        </span>);
+<a href=#937 id=937 data-nosnippet>937</a>    }
+<a href=#938 id=938 data-nosnippet>938</a>
+<a href=#939 id=939 data-nosnippet>939</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#940 id=940 data-nosnippet>940</a>    </span><span class="kw">fn </span>vacuum_targets_the_named_attached_database() {
+<a href=#941 id=941 data-nosnippet>941</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#942 id=942 data-nosnippet>942</a>        conn.attach_database(<span class="string">":memory:"</span>, <span class="string">"aux"</span>).unwrap();
+<a href=#943 id=943 data-nosnippet>943</a>        fill_then_delete_aux(conn);
+<a href=#944 id=944 data-nosnippet>944</a>        <span class="kw">let </span>before = conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap();
+<a href=#945 id=945 data-nosnippet>945</a>        <span class="macro">assert!</span>(before &gt; <span class="number">1</span>);
+<a href=#946 id=946 data-nosnippet>946</a>
+<a href=#947 id=947 data-nosnippet>947</a>        conn.vacuum(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap();
+<a href=#948 id=948 data-nosnippet>948</a>
+<a href=#949 id=949 data-nosnippet>949</a>        <span class="macro">assert!</span>(conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap() &lt; before);
+<a href=#950 id=950 data-nosnippet>950</a>    }
+<a href=#951 id=951 data-nosnippet>951</a>
+<a href=#952 id=952 data-nosnippet>952</a>    <span class="attr">#[cfg(not(miri))]
+<a href=#953 id=953 data-nosnippet>953</a>    #[diesel_test_helper::test]
+<a href=#954 id=954 data-nosnippet>954</a>    </span><span class="kw">fn </span>vacuum_inside_a_transaction_is_an_error() {
+<a href=#955 id=955 data-nosnippet>955</a>        <span class="kw">use </span><span class="kw">crate</span>::connection::Connection;
+<a href=#956 id=956 data-nosnippet>956</a>
+<a href=#957 id=957 data-nosnippet>957</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#958 id=958 data-nosnippet>958</a>        <span class="kw">let </span>result: QueryResult&lt;()&gt; = conn.transaction(|conn| conn.vacuum(<span class="prelude-val">None</span>));
+<a href=#959 id=959 data-nosnippet>959</a>
+<a href=#960 id=960 data-nosnippet>960</a>        <span class="macro">assert!</span>(result.is_err());
+<a href=#961 id=961 data-nosnippet>961</a>    }
+<a href=#962 id=962 data-nosnippet>962</a>
+<a href=#963 id=963 data-nosnippet>963</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#964 id=964 data-nosnippet>964</a>    #[diesel_test_helper::test]
+<a href=#965 id=965 data-nosnippet>965</a>    </span><span class="kw">fn </span>vacuum_into_writes_a_readable_copy_through_a_quoted_path() {
+<a href=#966 id=966 data-nosnippet>966</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#967 id=967 data-nosnippet>967</a>        <span class="comment">// A quote in the path would break a hand-assembled statement. It is a bind
+<a href=#968 id=968 data-nosnippet>968</a>        // parameter, so it is taken verbatim.
+<a href=#969 id=969 data-nosnippet>969</a>        </span><span class="kw">let </span>destination = dir.path().join(<span class="string">"o'brien backup.db"</span>);
+<a href=#970 id=970 data-nosnippet>970</a>
+<a href=#971 id=971 data-nosnippet>971</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#972 id=972 data-nosnippet>972</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#973 id=973 data-nosnippet>973</a>        <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#974 id=974 data-nosnippet>974</a>            .values((pragma_probe::id.eq(<span class="number">1</span>), pragma_probe::payload.eq(<span class="string">"copied"</span>)))
+<a href=#975 id=975 data-nosnippet>975</a>            .execute(conn)
+<a href=#976 id=976 data-nosnippet>976</a>            .unwrap();
+<a href=#977 id=977 data-nosnippet>977</a>
+<a href=#978 id=978 data-nosnippet>978</a>        conn.vacuum_into(<span class="prelude-val">None</span>, destination.to_str().unwrap())
+<a href=#979 id=979 data-nosnippet>979</a>            .unwrap();
+<a href=#980 id=980 data-nosnippet>980</a>
+<a href=#981 id=981 data-nosnippet>981</a>        <span class="kw">let </span>copy = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+<a href=#982 id=982 data-nosnippet>982</a>        <span class="macro">assert_eq!</span>(
+<a href=#983 id=983 data-nosnippet>983</a>            <span class="string">"copied"</span>,
+<a href=#984 id=984 data-nosnippet>984</a>            pragma_probe::table
+<a href=#985 id=985 data-nosnippet>985</a>                .select(pragma_probe::payload)
+<a href=#986 id=986 data-nosnippet>986</a>                .get_result::&lt;String&gt;(copy)
+<a href=#987 id=987 data-nosnippet>987</a>                .unwrap()
+<a href=#988 id=988 data-nosnippet>988</a>        );
+<a href=#989 id=989 data-nosnippet>989</a>    }
+<a href=#990 id=990 data-nosnippet>990</a>
+<a href=#991 id=991 data-nosnippet>991</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#992 id=992 data-nosnippet>992</a>    #[diesel_test_helper::test]
+<a href=#993 id=993 data-nosnippet>993</a>    </span><span class="kw">fn </span>vacuum_into_refuses_to_overwrite_an_existing_database() {
+<a href=#994 id=994 data-nosnippet>994</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#995 id=995 data-nosnippet>995</a>        <span class="kw">let </span>destination = dir.path().join(<span class="string">"occupied.db"</span>);
+<a href=#996 id=996 data-nosnippet>996</a>        {
+<a href=#997 id=997 data-nosnippet>997</a>            <span class="kw">let </span>occupied = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+<a href=#998 id=998 data-nosnippet>998</a>            occupied.batch_execute(PROBE_TABLE).unwrap();
+<a href=#999 id=999 data-nosnippet>999</a>        }
+<a href=#1000 id=1000 data-nosnippet>1000</a>
+<a href=#1001 id=1001 data-nosnippet>1001</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1002 id=1002 data-nosnippet>1002</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1003 id=1003 data-nosnippet>1003</a>
+<a href=#1004 id=1004 data-nosnippet>1004</a>        <span class="macro">assert!</span>(
+<a href=#1005 id=1005 data-nosnippet>1005</a>            conn.vacuum_into(<span class="prelude-val">None</span>, destination.to_str().unwrap())
+<a href=#1006 id=1006 data-nosnippet>1006</a>                .is_err()
+<a href=#1007 id=1007 data-nosnippet>1007</a>        );
+<a href=#1008 id=1008 data-nosnippet>1008</a>    }
+<a href=#1009 id=1009 data-nosnippet>1009</a>
+<a href=#1010 id=1010 data-nosnippet>1010</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1011 id=1011 data-nosnippet>1011</a>    #[diesel_test_helper::test]
+<a href=#1012 id=1012 data-nosnippet>1012</a>    </span><span class="kw">fn </span>vacuum_into_copies_the_named_attached_database() {
+<a href=#1013 id=1013 data-nosnippet>1013</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1014 id=1014 data-nosnippet>1014</a>        <span class="kw">let </span>destination = dir.path().join(<span class="string">"aux copy.db"</span>);
+<a href=#1015 id=1015 data-nosnippet>1015</a>
+<a href=#1016 id=1016 data-nosnippet>1016</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1017 id=1017 data-nosnippet>1017</a>        conn.attach_database(<span class="string">":memory:"</span>, <span class="string">"aux"</span>).unwrap();
+<a href=#1018 id=1018 data-nosnippet>1018</a>        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+<a href=#1019 id=1019 data-nosnippet>1019</a>        <span class="kw">crate</span>::insert_into(aux_pragma_probe::table)
+<a href=#1020 id=1020 data-nosnippet>1020</a>            .values((
+<a href=#1021 id=1021 data-nosnippet>1021</a>                aux_pragma_probe::id.eq(<span class="number">7</span>),
+<a href=#1022 id=1022 data-nosnippet>1022</a>                aux_pragma_probe::payload.eq(<span class="string">"copied"</span>),
+<a href=#1023 id=1023 data-nosnippet>1023</a>            ))
+<a href=#1024 id=1024 data-nosnippet>1024</a>            .execute(conn)
+<a href=#1025 id=1025 data-nosnippet>1025</a>            .unwrap();
+<a href=#1026 id=1026 data-nosnippet>1026</a>
+<a href=#1027 id=1027 data-nosnippet>1027</a>        conn.vacuum_into(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>), destination.to_str().unwrap())
+<a href=#1028 id=1028 data-nosnippet>1028</a>            .unwrap();
+<a href=#1029 id=1029 data-nosnippet>1029</a>
+<a href=#1030 id=1030 data-nosnippet>1030</a>        <span class="kw">let </span>copy = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(destination.to_str().unwrap()).unwrap();
+<a href=#1031 id=1031 data-nosnippet>1031</a>        <span class="comment">// In the copy the table sits in `main`, while `aux_pragma_probe` is declared
+<a href=#1032 id=1032 data-nosnippet>1032</a>        // schema-qualified, so this one read cannot go through it.
+<a href=#1033 id=1033 data-nosnippet>1033</a>        </span><span class="kw">let </span>id = sql::&lt;Integer&gt;(<span class="string">"SELECT id FROM aux_pragma_probe"</span>)
+<a href=#1034 id=1034 data-nosnippet>1034</a>            .get_result::&lt;i32&gt;(copy)
+<a href=#1035 id=1035 data-nosnippet>1035</a>            .unwrap();
+<a href=#1036 id=1036 data-nosnippet>1036</a>        <span class="macro">assert_eq!</span>(<span class="number">7</span>, id);
+<a href=#1037 id=1037 data-nosnippet>1037</a>    }
+<a href=#1038 id=1038 data-nosnippet>1038</a>
+<a href=#1039 id=1039 data-nosnippet>1039</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#1040 id=1040 data-nosnippet>1040</a>    </span><span class="kw">fn </span>vacuum_escapes_a_backtick_in_the_schema_name() {
+<a href=#1041 id=1041 data-nosnippet>1041</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1042 id=1042 data-nosnippet>1042</a>        <span class="kw">let </span>schema = <span class="string">"back`tick"</span>;
+<a href=#1043 id=1043 data-nosnippet>1043</a>        conn.attach_database(<span class="string">":memory:"</span>, schema).unwrap();
+<a href=#1044 id=1044 data-nosnippet>1044</a>
+<a href=#1045 id=1045 data-nosnippet>1045</a>        conn.vacuum(<span class="prelude-val">Some</span>(schema)).unwrap();
+<a href=#1046 id=1046 data-nosnippet>1046</a>    }
+<a href=#1047 id=1047 data-nosnippet>1047</a>
+<a href=#1048 id=1048 data-nosnippet>1048</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#1049 id=1049 data-nosnippet>1049</a>    </span><span class="kw">fn </span>vacuuming_two_schemas_rebuilds_each_of_them() {
+<a href=#1050 id=1050 data-nosnippet>1050</a>        <span class="comment">// The schema is part of the rendered SQL, so the two calls must not share a
+<a href=#1051 id=1051 data-nosnippet>1051</a>        // prepared statement. If they did, the second would rebuild the first's
+<a href=#1052 id=1052 data-nosnippet>1052</a>        // database again and leave this one untouched.
+<a href=#1053 id=1053 data-nosnippet>1053</a>        </span><span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1054 id=1054 data-nosnippet>1054</a>        fill_then_delete(conn);
+<a href=#1055 id=1055 data-nosnippet>1055</a>        conn.attach_database(<span class="string">":memory:"</span>, <span class="string">"aux"</span>).unwrap();
+<a href=#1056 id=1056 data-nosnippet>1056</a>        fill_then_delete_aux(conn);
+<a href=#1057 id=1057 data-nosnippet>1057</a>
+<a href=#1058 id=1058 data-nosnippet>1058</a>        <span class="kw">let </span>main_before = conn.page_count(<span class="prelude-val">None</span>).unwrap();
+<a href=#1059 id=1059 data-nosnippet>1059</a>        <span class="kw">let </span>aux_before = conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap();
+<a href=#1060 id=1060 data-nosnippet>1060</a>
+<a href=#1061 id=1061 data-nosnippet>1061</a>        conn.vacuum(<span class="prelude-val">None</span>).unwrap();
+<a href=#1062 id=1062 data-nosnippet>1062</a>        conn.vacuum(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap();
+<a href=#1063 id=1063 data-nosnippet>1063</a>
+<a href=#1064 id=1064 data-nosnippet>1064</a>        <span class="macro">assert!</span>(
+<a href=#1065 id=1065 data-nosnippet>1065</a>            conn.page_count(<span class="prelude-val">None</span>).unwrap() &lt; main_before,
+<a href=#1066 id=1066 data-nosnippet>1066</a>            <span class="string">"main was rebuilt"
+<a href=#1067 id=1067 data-nosnippet>1067</a>        </span>);
+<a href=#1068 id=1068 data-nosnippet>1068</a>        <span class="macro">assert!</span>(
+<a href=#1069 id=1069 data-nosnippet>1069</a>            conn.page_count(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>)).unwrap() &lt; aux_before,
+<a href=#1070 id=1070 data-nosnippet>1070</a>            <span class="string">"aux was rebuilt too, not main a second time"
+<a href=#1071 id=1071 data-nosnippet>1071</a>        </span>);
+<a href=#1072 id=1072 data-nosnippet>1072</a>    }
+<a href=#1073 id=1073 data-nosnippet>1073</a>
+<a href=#1074 id=1074 data-nosnippet>1074</a>    <span class="comment">// WAL requires a real file.
+<a href=#1075 id=1075 data-nosnippet>1075</a>    </span><span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1076 id=1076 data-nosnippet>1076</a>    </span><span class="kw">fn </span>wal_connection(path: <span class="kw-2">&amp;</span>std::path::Path) -&gt; SqliteConnection {
+<a href=#1077 id=1077 data-nosnippet>1077</a>        <span class="kw">let </span><span class="kw-2">mut </span>conn = SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+<a href=#1078 id=1078 data-nosnippet>1078</a>        conn.batch_execute(<span class="string">"PRAGMA journal_mode = WAL"</span>).unwrap();
+<a href=#1079 id=1079 data-nosnippet>1079</a>        conn
+<a href=#1080 id=1080 data-nosnippet>1080</a>    }
+<a href=#1081 id=1081 data-nosnippet>1081</a>
+<a href=#1082 id=1082 data-nosnippet>1082</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1083 id=1083 data-nosnippet>1083</a>    #[diesel_test_helper::test]
+<a href=#1084 id=1084 data-nosnippet>1084</a>    </span><span class="kw">fn </span>wal_checkpoint_truncate_reports_an_emptied_wal() {
+<a href=#1085 id=1085 data-nosnippet>1085</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1086 id=1086 data-nosnippet>1086</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>wal_connection(<span class="kw-2">&amp;</span>dir.path().join(<span class="string">"wal.db"</span>));
+<a href=#1087 id=1087 data-nosnippet>1087</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1088 id=1088 data-nosnippet>1088</a>        insert_overflowing_row(conn);
+<a href=#1089 id=1089 data-nosnippet>1089</a>
+<a href=#1090 id=1090 data-nosnippet>1090</a>        <span class="kw">let </span>outcome = conn
+<a href=#1091 id=1091 data-nosnippet>1091</a>            .wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Truncate)
+<a href=#1092 id=1092 data-nosnippet>1092</a>            .unwrap();
+<a href=#1093 id=1093 data-nosnippet>1093</a>
+<a href=#1094 id=1094 data-nosnippet>1094</a>        <span class="macro">assert!</span>(!outcome.busy);
+<a href=#1095 id=1095 data-nosnippet>1095</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), outcome.log_frames, <span class="string">"the WAL file was truncated"</span>);
+<a href=#1096 id=1096 data-nosnippet>1096</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), outcome.checkpointed_frames);
+<a href=#1097 id=1097 data-nosnippet>1097</a>    }
+<a href=#1098 id=1098 data-nosnippet>1098</a>
+<a href=#1099 id=1099 data-nosnippet>1099</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#1100 id=1100 data-nosnippet>1100</a>    </span><span class="kw">fn </span>wal_checkpoint_outside_wal_mode_reports_no_frames() {
+<a href=#1101 id=1101 data-nosnippet>1101</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1102 id=1102 data-nosnippet>1102</a>
+<a href=#1103 id=1103 data-nosnippet>1103</a>        <span class="kw">let </span>outcome = conn
+<a href=#1104 id=1104 data-nosnippet>1104</a>            .wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Truncate)
+<a href=#1105 id=1105 data-nosnippet>1105</a>            .unwrap();
+<a href=#1106 id=1106 data-nosnippet>1106</a>
+<a href=#1107 id=1107 data-nosnippet>1107</a>        <span class="macro">assert!</span>(!outcome.busy);
+<a href=#1108 id=1108 data-nosnippet>1108</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, outcome.log_frames);
+<a href=#1109 id=1109 data-nosnippet>1109</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, outcome.checkpointed_frames);
+<a href=#1110 id=1110 data-nosnippet>1110</a>    }
+<a href=#1111 id=1111 data-nosnippet>1111</a>
+<a href=#1112 id=1112 data-nosnippet>1112</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1113 id=1113 data-nosnippet>1113</a>    #[diesel_test_helper::test]
+<a href=#1114 id=1114 data-nosnippet>1114</a>    </span><span class="kw">fn </span>wal_checkpoint_accepts_every_mode() {
+<a href=#1115 id=1115 data-nosnippet>1115</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1116 id=1116 data-nosnippet>1116</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>wal_connection(<span class="kw-2">&amp;</span>dir.path().join(<span class="string">"modes.db"</span>));
+<a href=#1117 id=1117 data-nosnippet>1117</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1118 id=1118 data-nosnippet>1118</a>
+<a href=#1119 id=1119 data-nosnippet>1119</a>        <span class="kw">for </span>(row, mode) <span class="kw">in </span>[
+<a href=#1120 id=1120 data-nosnippet>1120</a>            WalCheckpointMode::Passive,
+<a href=#1121 id=1121 data-nosnippet>1121</a>            WalCheckpointMode::Full,
+<a href=#1122 id=1122 data-nosnippet>1122</a>            WalCheckpointMode::Restart,
+<a href=#1123 id=1123 data-nosnippet>1123</a>            WalCheckpointMode::Truncate,
+<a href=#1124 id=1124 data-nosnippet>1124</a>            WalCheckpointMode::Noop,
+<a href=#1125 id=1125 data-nosnippet>1125</a>        ]
+<a href=#1126 id=1126 data-nosnippet>1126</a>        .into_iter()
+<a href=#1127 id=1127 data-nosnippet>1127</a>        .enumerate()
+<a href=#1128 id=1128 data-nosnippet>1128</a>        {
+<a href=#1129 id=1129 data-nosnippet>1129</a>            <span class="comment">// A fresh row per round gives every mode frames to move.
+<a href=#1130 id=1130 data-nosnippet>1130</a>            </span><span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#1131 id=1131 data-nosnippet>1131</a>                .values((
+<a href=#1132 id=1132 data-nosnippet>1132</a>                    pragma_probe::id.eq(i32::try_from(row).unwrap() + <span class="number">1</span>),
+<a href=#1133 id=1133 data-nosnippet>1133</a>                    pragma_probe::payload.eq(<span class="string">"row"</span>),
+<a href=#1134 id=1134 data-nosnippet>1134</a>                ))
+<a href=#1135 id=1135 data-nosnippet>1135</a>                .execute(conn)
+<a href=#1136 id=1136 data-nosnippet>1136</a>                .unwrap();
+<a href=#1137 id=1137 data-nosnippet>1137</a>
+<a href=#1138 id=1138 data-nosnippet>1138</a>            <span class="kw">let </span>outcome = conn.wal_checkpoint(<span class="prelude-val">None</span>, mode).unwrap();
+<a href=#1139 id=1139 data-nosnippet>1139</a>            <span class="macro">assert!</span>(!outcome.busy, <span class="string">"{mode:?} had no competing readers"</span>);
+<a href=#1140 id=1140 data-nosnippet>1140</a>            <span class="macro">assert!</span>(
+<a href=#1141 id=1141 data-nosnippet>1141</a>                outcome.log_frames.is_some(),
+<a href=#1142 id=1142 data-nosnippet>1142</a>                <span class="string">"{mode:?} ran on a WAL database"
+<a href=#1143 id=1143 data-nosnippet>1143</a>            </span>);
+<a href=#1144 id=1144 data-nosnippet>1144</a>            <span class="macro">assert!</span>(outcome.checkpointed_frames.is_some());
+<a href=#1145 id=1145 data-nosnippet>1145</a>            <span class="macro">assert!</span>(
+<a href=#1146 id=1146 data-nosnippet>1146</a>                outcome.checkpointed_frames &lt;= outcome.log_frames,
+<a href=#1147 id=1147 data-nosnippet>1147</a>                <span class="string">"{mode:?}: checkpointed frames cannot exceed the log size"
+<a href=#1148 id=1148 data-nosnippet>1148</a>            </span>);
+<a href=#1149 id=1149 data-nosnippet>1149</a>        }
+<a href=#1150 id=1150 data-nosnippet>1150</a>    }
+<a href=#1151 id=1151 data-nosnippet>1151</a>
+<a href=#1152 id=1152 data-nosnippet>1152</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1153 id=1153 data-nosnippet>1153</a>    #[diesel_test_helper::test]
+<a href=#1154 id=1154 data-nosnippet>1154</a>    </span><span class="kw">fn </span>wal_checkpoint_noop_reports_state_without_moving_frames() {
+<a href=#1155 id=1155 data-nosnippet>1155</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1156 id=1156 data-nosnippet>1156</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>wal_connection(<span class="kw-2">&amp;</span>dir.path().join(<span class="string">"noop.db"</span>));
+<a href=#1157 id=1157 data-nosnippet>1157</a>
+<a href=#1158 id=1158 data-nosnippet>1158</a>        <span class="comment">// NOOP exists since SQLite 3.51.0, older versions run PASSIVE instead.
+<a href=#1159 id=1159 data-nosnippet>1159</a>        </span><span class="kw">let </span>version = <span class="kw">crate</span>::select(sql::&lt;Text&gt;(<span class="string">"sqlite_version()"</span>))
+<a href=#1160 id=1160 data-nosnippet>1160</a>            .get_result::&lt;String&gt;(conn)
+<a href=#1161 id=1161 data-nosnippet>1161</a>            .unwrap();
+<a href=#1162 id=1162 data-nosnippet>1162</a>        <span class="kw">let </span><span class="kw-2">mut </span>parts = version.split(<span class="string">'.'</span>).map(|part| part.parse::&lt;u32&gt;().unwrap());
+<a href=#1163 id=1163 data-nosnippet>1163</a>        <span class="kw">if </span>(parts.next().unwrap(), parts.next().unwrap()) &lt; (<span class="number">3</span>, <span class="number">51</span>) {
+<a href=#1164 id=1164 data-nosnippet>1164</a>            <span class="kw">return</span>;
+<a href=#1165 id=1165 data-nosnippet>1165</a>        }
+<a href=#1166 id=1166 data-nosnippet>1166</a>
+<a href=#1167 id=1167 data-nosnippet>1167</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1168 id=1168 data-nosnippet>1168</a>        conn.wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Truncate)
+<a href=#1169 id=1169 data-nosnippet>1169</a>            .unwrap();
+<a href=#1170 id=1170 data-nosnippet>1170</a>        <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#1171 id=1171 data-nosnippet>1171</a>            .values((pragma_probe::id.eq(<span class="number">1</span>), pragma_probe::payload.eq(<span class="string">"noop"</span>)))
+<a href=#1172 id=1172 data-nosnippet>1172</a>            .execute(conn)
+<a href=#1173 id=1173 data-nosnippet>1173</a>            .unwrap();
+<a href=#1174 id=1174 data-nosnippet>1174</a>
+<a href=#1175 id=1175 data-nosnippet>1175</a>        <span class="kw">let </span>first = conn.wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Noop).unwrap();
+<a href=#1176 id=1176 data-nosnippet>1176</a>        <span class="kw">let </span>second = conn.wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Noop).unwrap();
+<a href=#1177 id=1177 data-nosnippet>1177</a>
+<a href=#1178 id=1178 data-nosnippet>1178</a>        <span class="macro">assert!</span>(!first.busy, <span class="string">"NOOP never blocks"</span>);
+<a href=#1179 id=1179 data-nosnippet>1179</a>        <span class="macro">assert!</span>(first.log_frames &gt; <span class="prelude-val">Some</span>(<span class="number">0</span>), <span class="string">"the insert sits in the WAL"</span>);
+<a href=#1180 id=1180 data-nosnippet>1180</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), first.checkpointed_frames, <span class="string">"nothing was moved"</span>);
+<a href=#1181 id=1181 data-nosnippet>1181</a>        <span class="macro">assert_eq!</span>(first, second, <span class="string">"a second NOOP reports the same state"</span>);
+<a href=#1182 id=1182 data-nosnippet>1182</a>    }
+<a href=#1183 id=1183 data-nosnippet>1183</a>
+<a href=#1184 id=1184 data-nosnippet>1184</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1185 id=1185 data-nosnippet>1185</a>    #[diesel_test_helper::test]
+<a href=#1186 id=1186 data-nosnippet>1186</a>    </span><span class="kw">fn </span>wal_checkpoint_reports_busy_while_a_reader_holds_an_old_snapshot() {
+<a href=#1187 id=1187 data-nosnippet>1187</a>        <span class="kw">use </span><span class="kw">crate</span>::connection::Connection;
+<a href=#1188 id=1188 data-nosnippet>1188</a>
+<a href=#1189 id=1189 data-nosnippet>1189</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1190 id=1190 data-nosnippet>1190</a>        <span class="kw">let </span>path = dir.path().join(<span class="string">"busy.db"</span>);
+<a href=#1191 id=1191 data-nosnippet>1191</a>        <span class="kw">let </span>writer = <span class="kw-2">&amp;mut </span>wal_connection(<span class="kw-2">&amp;</span>path);
+<a href=#1192 id=1192 data-nosnippet>1192</a>        writer.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1193 id=1193 data-nosnippet>1193</a>        insert_overflowing_row(writer);
+<a href=#1194 id=1194 data-nosnippet>1194</a>
+<a href=#1195 id=1195 data-nosnippet>1195</a>        <span class="kw">let </span>reader = <span class="kw-2">&amp;mut </span>SqliteConnection::establish(path.to_str().unwrap()).unwrap();
+<a href=#1196 id=1196 data-nosnippet>1196</a>        reader
+<a href=#1197 id=1197 data-nosnippet>1197</a>            .transaction::&lt;<span class="kw">_</span>, <span class="kw">crate</span>::result::Error, <span class="kw">_</span>&gt;(|reader| {
+<a href=#1198 id=1198 data-nosnippet>1198</a>                <span class="comment">// Take the read snapshot, BEGIN alone defers it to the first read.
+<a href=#1199 id=1199 data-nosnippet>1199</a>                </span><span class="kw">let _ </span>= pragma_probe::table.count().get_result::&lt;i64&gt;(reader)<span class="question-mark">?</span>;
+<a href=#1200 id=1200 data-nosnippet>1200</a>
+<a href=#1201 id=1201 data-nosnippet>1201</a>                <span class="comment">// Grow the WAL past the reader's snapshot, so a blocking
+<a href=#1202 id=1202 data-nosnippet>1202</a>                // checkpoint cannot complete.
+<a href=#1203 id=1203 data-nosnippet>1203</a>                </span><span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#1204 id=1204 data-nosnippet>1204</a>                    .values((pragma_probe::id.eq(<span class="number">2</span>), pragma_probe::payload.eq(<span class="string">"late"</span>)))
+<a href=#1205 id=1205 data-nosnippet>1205</a>                    .execute(writer)<span class="question-mark">?</span>;
+<a href=#1206 id=1206 data-nosnippet>1206</a>
+<a href=#1207 id=1207 data-nosnippet>1207</a>                <span class="comment">// Passive is never reported busy, it checkpoints up to the
+<a href=#1208 id=1208 data-nosnippet>1208</a>                // reader's snapshot and leaves the rest.
+<a href=#1209 id=1209 data-nosnippet>1209</a>                </span><span class="kw">let </span>outcome = writer.wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Passive)<span class="question-mark">?</span>;
+<a href=#1210 id=1210 data-nosnippet>1210</a>                <span class="macro">assert!</span>(!outcome.busy, <span class="string">"PASSIVE never reports busy"</span>);
+<a href=#1211 id=1211 data-nosnippet>1211</a>                <span class="macro">assert!</span>(
+<a href=#1212 id=1212 data-nosnippet>1212</a>                    outcome.checkpointed_frames &lt; outcome.log_frames,
+<a href=#1213 id=1213 data-nosnippet>1213</a>                    <span class="string">"the frames past the reader's snapshot stay in the WAL"
+<a href=#1214 id=1214 data-nosnippet>1214</a>                </span>);
+<a href=#1215 id=1215 data-nosnippet>1215</a>
+<a href=#1216 id=1216 data-nosnippet>1216</a>                <span class="kw">for </span>mode <span class="kw">in </span>[
+<a href=#1217 id=1217 data-nosnippet>1217</a>                    WalCheckpointMode::Full,
+<a href=#1218 id=1218 data-nosnippet>1218</a>                    WalCheckpointMode::Restart,
+<a href=#1219 id=1219 data-nosnippet>1219</a>                    WalCheckpointMode::Truncate,
+<a href=#1220 id=1220 data-nosnippet>1220</a>                ] {
+<a href=#1221 id=1221 data-nosnippet>1221</a>                    <span class="kw">let </span>outcome = writer.wal_checkpoint(<span class="prelude-val">None</span>, mode)<span class="question-mark">?</span>;
+<a href=#1222 id=1222 data-nosnippet>1222</a>                    <span class="macro">assert!</span>(outcome.busy, <span class="string">"the open reader blocks a {mode:?} checkpoint"</span>);
+<a href=#1223 id=1223 data-nosnippet>1223</a>                }
+<a href=#1224 id=1224 data-nosnippet>1224</a>                <span class="prelude-val">Ok</span>(())
+<a href=#1225 id=1225 data-nosnippet>1225</a>            })
+<a href=#1226 id=1226 data-nosnippet>1226</a>            .unwrap();
+<a href=#1227 id=1227 data-nosnippet>1227</a>
+<a href=#1228 id=1228 data-nosnippet>1228</a>        <span class="kw">let </span>outcome = writer
+<a href=#1229 id=1229 data-nosnippet>1229</a>            .wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Truncate)
+<a href=#1230 id=1230 data-nosnippet>1230</a>            .unwrap();
+<a href=#1231 id=1231 data-nosnippet>1231</a>        <span class="macro">assert!</span>(
+<a href=#1232 id=1232 data-nosnippet>1232</a>            !outcome.busy,
+<a href=#1233 id=1233 data-nosnippet>1233</a>            <span class="string">"the checkpoint completes once the reader is done"
+<a href=#1234 id=1234 data-nosnippet>1234</a>        </span>);
+<a href=#1235 id=1235 data-nosnippet>1235</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), outcome.log_frames);
+<a href=#1236 id=1236 data-nosnippet>1236</a>    }
+<a href=#1237 id=1237 data-nosnippet>1237</a>
+<a href=#1238 id=1238 data-nosnippet>1238</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1239 id=1239 data-nosnippet>1239</a>    #[diesel_test_helper::test]
+<a href=#1240 id=1240 data-nosnippet>1240</a>    </span><span class="kw">fn </span>wal_checkpoint_targets_the_named_attached_database() {
+<a href=#1241 id=1241 data-nosnippet>1241</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1242 id=1242 data-nosnippet>1242</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1243 id=1243 data-nosnippet>1243</a>        conn.attach_database(dir.path().join(<span class="string">"aux.db"</span>).to_str().unwrap(), <span class="string">"aux"</span>)
+<a href=#1244 id=1244 data-nosnippet>1244</a>            .unwrap();
+<a href=#1245 id=1245 data-nosnippet>1245</a>        conn.batch_execute(<span class="string">"PRAGMA aux.journal_mode = WAL"</span>).unwrap();
+<a href=#1246 id=1246 data-nosnippet>1246</a>        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+<a href=#1247 id=1247 data-nosnippet>1247</a>        <span class="kw">crate</span>::insert_into(aux_pragma_probe::table)
+<a href=#1248 id=1248 data-nosnippet>1248</a>            .values((
+<a href=#1249 id=1249 data-nosnippet>1249</a>                aux_pragma_probe::id.eq(<span class="number">1</span>),
+<a href=#1250 id=1250 data-nosnippet>1250</a>                aux_pragma_probe::payload.eq(<span class="string">"row"</span>),
+<a href=#1251 id=1251 data-nosnippet>1251</a>            ))
+<a href=#1252 id=1252 data-nosnippet>1252</a>            .execute(conn)
+<a href=#1253 id=1253 data-nosnippet>1253</a>            .unwrap();
+<a href=#1254 id=1254 data-nosnippet>1254</a>
+<a href=#1255 id=1255 data-nosnippet>1255</a>        <span class="kw">let </span>outcome = conn
+<a href=#1256 id=1256 data-nosnippet>1256</a>            .wal_checkpoint(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>), WalCheckpointMode::Truncate)
+<a href=#1257 id=1257 data-nosnippet>1257</a>            .unwrap();
+<a href=#1258 id=1258 data-nosnippet>1258</a>        <span class="macro">assert!</span>(!outcome.busy);
+<a href=#1259 id=1259 data-nosnippet>1259</a>        <span class="macro">assert_eq!</span>(
+<a href=#1260 id=1260 data-nosnippet>1260</a>            <span class="prelude-val">Some</span>(<span class="number">0</span>),
+<a href=#1261 id=1261 data-nosnippet>1261</a>            outcome.log_frames,
+<a href=#1262 id=1262 data-nosnippet>1262</a>            <span class="string">"the attached database was checkpointed"
+<a href=#1263 id=1263 data-nosnippet>1263</a>        </span>);
+<a href=#1264 id=1264 data-nosnippet>1264</a>
+<a href=#1265 id=1265 data-nosnippet>1265</a>        <span class="comment">// `main` is not in WAL mode, so a checkpoint naming it reports no frames.
+<a href=#1266 id=1266 data-nosnippet>1266</a>        </span><span class="kw">let </span>outcome = conn
+<a href=#1267 id=1267 data-nosnippet>1267</a>            .wal_checkpoint(<span class="prelude-val">Some</span>(<span class="string">"main"</span>), WalCheckpointMode::Truncate)
+<a href=#1268 id=1268 data-nosnippet>1268</a>            .unwrap();
+<a href=#1269 id=1269 data-nosnippet>1269</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">None</span>, outcome.log_frames);
+<a href=#1270 id=1270 data-nosnippet>1270</a>    }
+<a href=#1271 id=1271 data-nosnippet>1271</a>
+<a href=#1272 id=1272 data-nosnippet>1272</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1273 id=1273 data-nosnippet>1273</a>    #[diesel_test_helper::test]
+<a href=#1274 id=1274 data-nosnippet>1274</a>    </span><span class="kw">fn </span>wal_checkpoint_unqualified_covers_every_attached_database() {
+<a href=#1275 id=1275 data-nosnippet>1275</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1276 id=1276 data-nosnippet>1276</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>wal_connection(<span class="kw-2">&amp;</span>dir.path().join(<span class="string">"main.db"</span>));
+<a href=#1277 id=1277 data-nosnippet>1277</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1278 id=1278 data-nosnippet>1278</a>        insert_overflowing_row(conn);
+<a href=#1279 id=1279 data-nosnippet>1279</a>        conn.attach_database(dir.path().join(<span class="string">"aux.db"</span>).to_str().unwrap(), <span class="string">"aux"</span>)
+<a href=#1280 id=1280 data-nosnippet>1280</a>            .unwrap();
+<a href=#1281 id=1281 data-nosnippet>1281</a>        conn.batch_execute(<span class="string">"PRAGMA aux.journal_mode = WAL"</span>).unwrap();
+<a href=#1282 id=1282 data-nosnippet>1282</a>        conn.batch_execute(AUX_PROBE_TABLE).unwrap();
+<a href=#1283 id=1283 data-nosnippet>1283</a>        <span class="kw">crate</span>::insert_into(aux_pragma_probe::table)
+<a href=#1284 id=1284 data-nosnippet>1284</a>            .values((
+<a href=#1285 id=1285 data-nosnippet>1285</a>                aux_pragma_probe::id.eq(<span class="number">1</span>),
+<a href=#1286 id=1286 data-nosnippet>1286</a>                aux_pragma_probe::payload.eq(<span class="string">"row"</span>),
+<a href=#1287 id=1287 data-nosnippet>1287</a>            ))
+<a href=#1288 id=1288 data-nosnippet>1288</a>            .execute(conn)
+<a href=#1289 id=1289 data-nosnippet>1289</a>            .unwrap();
+<a href=#1290 id=1290 data-nosnippet>1290</a>
+<a href=#1291 id=1291 data-nosnippet>1291</a>        conn.wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Truncate)
+<a href=#1292 id=1292 data-nosnippet>1292</a>            .unwrap();
+<a href=#1293 id=1293 data-nosnippet>1293</a>
+<a href=#1294 id=1294 data-nosnippet>1294</a>        <span class="comment">// Both WALs are empty afterwards, which a qualified passive
+<a href=#1295 id=1295 data-nosnippet>1295</a>        // checkpoint reports without moving anything.
+<a href=#1296 id=1296 data-nosnippet>1296</a>        </span><span class="kw">let </span>main_after = conn
+<a href=#1297 id=1297 data-nosnippet>1297</a>            .wal_checkpoint(<span class="prelude-val">Some</span>(<span class="string">"main"</span>), WalCheckpointMode::Passive)
+<a href=#1298 id=1298 data-nosnippet>1298</a>            .unwrap();
+<a href=#1299 id=1299 data-nosnippet>1299</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), main_after.log_frames, <span class="string">"main was checkpointed"</span>);
+<a href=#1300 id=1300 data-nosnippet>1300</a>        <span class="kw">let </span>aux_after = conn
+<a href=#1301 id=1301 data-nosnippet>1301</a>            .wal_checkpoint(<span class="prelude-val">Some</span>(<span class="string">"aux"</span>), WalCheckpointMode::Passive)
+<a href=#1302 id=1302 data-nosnippet>1302</a>            .unwrap();
+<a href=#1303 id=1303 data-nosnippet>1303</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), aux_after.log_frames, <span class="string">"aux was checkpointed too"</span>);
+<a href=#1304 id=1304 data-nosnippet>1304</a>    }
+<a href=#1305 id=1305 data-nosnippet>1305</a>
+<a href=#1306 id=1306 data-nosnippet>1306</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1307 id=1307 data-nosnippet>1307</a>    #[diesel_test_helper::test]
+<a href=#1308 id=1308 data-nosnippet>1308</a>    </span><span class="kw">fn </span>wal_checkpoint_escapes_a_double_quote_in_the_schema_name() {
+<a href=#1309 id=1309 data-nosnippet>1309</a>        <span class="comment">// An unquoted identifier would be a syntax error, and the wrong quoting
+<a href=#1310 id=1310 data-nosnippet>1310</a>        // would address a different database.
+<a href=#1311 id=1311 data-nosnippet>1311</a>        </span><span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1312 id=1312 data-nosnippet>1312</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1313 id=1313 data-nosnippet>1313</a>        <span class="kw">let </span>schema = <span class="string">r#"we"ird"#</span>;
+<a href=#1314 id=1314 data-nosnippet>1314</a>        <span class="kw">let </span>quoted = schema.replace(<span class="string">'"'</span>, <span class="string">"\"\""</span>);
+<a href=#1315 id=1315 data-nosnippet>1315</a>        conn.attach_database(dir.path().join(<span class="string">"weird.db"</span>).to_str().unwrap(), schema)
+<a href=#1316 id=1316 data-nosnippet>1316</a>            .unwrap();
+<a href=#1317 id=1317 data-nosnippet>1317</a>        conn.batch_execute(<span class="kw-2">&amp;</span><span class="macro">alloc::format!</span>(<span class="string">r#"PRAGMA "{quoted}".journal_mode = WAL"#</span>))
+<a href=#1318 id=1318 data-nosnippet>1318</a>            .unwrap();
+<a href=#1319 id=1319 data-nosnippet>1319</a>        conn.batch_execute(<span class="kw-2">&amp;</span><span class="macro">alloc::format!</span>(
+<a href=#1320 id=1320 data-nosnippet>1320</a>            <span class="string">r#"CREATE TABLE "{quoted}".t (id INTEGER PRIMARY KEY)"#
+<a href=#1321 id=1321 data-nosnippet>1321</a>        </span>))
+<a href=#1322 id=1322 data-nosnippet>1322</a>        .unwrap();
+<a href=#1323 id=1323 data-nosnippet>1323</a>
+<a href=#1324 id=1324 data-nosnippet>1324</a>        <span class="kw">let </span>outcome = conn
+<a href=#1325 id=1325 data-nosnippet>1325</a>            .wal_checkpoint(<span class="prelude-val">Some</span>(schema), WalCheckpointMode::Truncate)
+<a href=#1326 id=1326 data-nosnippet>1326</a>            .unwrap();
+<a href=#1327 id=1327 data-nosnippet>1327</a>        <span class="macro">assert_eq!</span>(<span class="prelude-val">Some</span>(<span class="number">0</span>), outcome.log_frames, <span class="string">"the quoted schema was reached"</span>);
+<a href=#1328 id=1328 data-nosnippet>1328</a>    }
+<a href=#1329 id=1329 data-nosnippet>1329</a>
+<a href=#1330 id=1330 data-nosnippet>1330</a>    <span class="attr">#[cfg(not(miri))] </span><span class="comment">// ffi string access
+<a href=#1331 id=1331 data-nosnippet>1331</a>    </span><span class="attr">#[diesel_test_helper::test]
+<a href=#1332 id=1332 data-nosnippet>1332</a>    </span><span class="kw">fn </span>wal_checkpoint_of_an_unknown_schema_is_an_error() {
+<a href=#1333 id=1333 data-nosnippet>1333</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#1334 id=1334 data-nosnippet>1334</a>
+<a href=#1335 id=1335 data-nosnippet>1335</a>        <span class="macro">assert!</span>(
+<a href=#1336 id=1336 data-nosnippet>1336</a>            conn.wal_checkpoint(<span class="prelude-val">Some</span>(<span class="string">"nope"</span>), WalCheckpointMode::Passive)
+<a href=#1337 id=1337 data-nosnippet>1337</a>                .is_err()
+<a href=#1338 id=1338 data-nosnippet>1338</a>        );
+<a href=#1339 id=1339 data-nosnippet>1339</a>    }
+<a href=#1340 id=1340 data-nosnippet>1340</a>
+<a href=#1341 id=1341 data-nosnippet>1341</a>    <span class="attr">#[cfg(not(any(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>), miri)))]
+<a href=#1342 id=1342 data-nosnippet>1342</a>    #[diesel_test_helper::test]
+<a href=#1343 id=1343 data-nosnippet>1343</a>    </span><span class="kw">fn </span>wal_checkpoint_inside_a_transaction_is_an_error() {
+<a href=#1344 id=1344 data-nosnippet>1344</a>        <span class="kw">use </span><span class="kw">crate</span>::connection::Connection;
+<a href=#1345 id=1345 data-nosnippet>1345</a>
+<a href=#1346 id=1346 data-nosnippet>1346</a>        <span class="kw">let </span>dir = tempfile::tempdir().unwrap();
+<a href=#1347 id=1347 data-nosnippet>1347</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>wal_connection(<span class="kw-2">&amp;</span>dir.path().join(<span class="string">"txn.db"</span>));
+<a href=#1348 id=1348 data-nosnippet>1348</a>        conn.batch_execute(PROBE_TABLE).unwrap();
+<a href=#1349 id=1349 data-nosnippet>1349</a>
+<a href=#1350 id=1350 data-nosnippet>1350</a>        <span class="kw">let </span>result: QueryResult&lt;WalCheckpointOutcome&gt; = conn.transaction(|conn| {
+<a href=#1351 id=1351 data-nosnippet>1351</a>            <span class="kw">crate</span>::insert_into(pragma_probe::table)
+<a href=#1352 id=1352 data-nosnippet>1352</a>                .values((pragma_probe::id.eq(<span class="number">1</span>), pragma_probe::payload.eq(<span class="string">"txn"</span>)))
+<a href=#1353 id=1353 data-nosnippet>1353</a>                .execute(conn)<span class="question-mark">?</span>;
+<a href=#1354 id=1354 data-nosnippet>1354</a>            conn.wal_checkpoint(<span class="prelude-val">None</span>, WalCheckpointMode::Truncate)
+<a href=#1355 id=1355 data-nosnippet>1355</a>        });
+<a href=#1356 id=1356 data-nosnippet>1356</a>
+<a href=#1357 id=1357 data-nosnippet>1357</a>        <span class="macro">assert!</span>(result.is_err(), <span class="string">"SQLite reports SQLITE_LOCKED"</span>);
+<a href=#1358 id=1358 data-nosnippet>1358</a>    }
+<a href=#1359 id=1359 data-nosnippet>1359</a>}
+</code></pre></div></section></main></body></html>

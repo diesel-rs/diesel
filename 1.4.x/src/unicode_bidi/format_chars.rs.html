@@ -1,0 +1,89 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `&#x2F;home&#x2F;runner&#x2F;.cargo&#x2F;registry&#x2F;src&#x2F;github.com-1ecc6299db9ec823&#x2F;unicode-bidi-0.3.6&#x2F;src&#x2F;format_chars.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>format_chars.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../unicode_bidi/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input"name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+</pre><pre class="rust">
+<span class="comment">// Copyright 2017 The Servo Project Developers. See the</span>
+<span class="comment">// COPYRIGHT file at the top-level directory of this distribution.</span>
+<span class="comment">//</span>
+<span class="comment">// Licensed under the Apache License, Version 2.0 &lt;LICENSE-APACHE or</span>
+<span class="comment">// http://www.apache.org/licenses/LICENSE-2.0&gt; or the MIT license</span>
+<span class="comment">// &lt;LICENSE-MIT or http://opensource.org/licenses/MIT&gt;, at your</span>
+<span class="comment">// option. This file may not be copied, modified, or distributed</span>
+<span class="comment">// except according to those terms.</span>
+
+<span class="doccomment">//! Directional Formatting Characters</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! &lt;http://www.unicode.org/reports/tr9/#Directional_Formatting_Characters&gt;</span>
+
+<span class="comment">// == Implicit ==</span>
+<span class="doccomment">/// ARABIC LETTER MARK</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ALM</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{061C}&#39;</span>;
+<span class="doccomment">/// LEFT-TO-RIGHT MARK</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LRM</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{200E}&#39;</span>;
+<span class="doccomment">/// RIGHT-TO-LEFT MARK</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RLM</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{200F}&#39;</span>;
+
+<span class="comment">// == Explicit Isolates ==</span>
+<span class="doccomment">/// LEFT‑TO‑RIGHT ISOLATE</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LRI</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{2066}&#39;</span>;
+<span class="doccomment">/// RIGHT‑TO‑LEFT ISOLATE</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RLI</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{2067}&#39;</span>;
+<span class="doccomment">/// FIRST STRONG ISOLATE</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">FSI</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{2068}&#39;</span>;
+<span class="doccomment">/// POP DIRECTIONAL ISOLATE</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PDI</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{2069}&#39;</span>;
+
+<span class="comment">// == Explicit Embeddings and Overrides ==</span>
+<span class="doccomment">/// LEFT-TO-RIGHT EMBEDDING</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LRE</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{202A}&#39;</span>;
+<span class="doccomment">/// RIGHT-TO-LEFT EMBEDDING</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RLE</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{202B}&#39;</span>;
+<span class="doccomment">/// POP DIRECTIONAL FORMATTING</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PDF</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{202C}&#39;</span>;
+<span class="doccomment">/// LEFT-TO-RIGHT OVERRIDE</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LRO</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{202D}&#39;</span>;
+<span class="doccomment">/// RIGHT-TO-LEFT OVERRIDE</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RLO</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;\u{202E}&#39;</span>;
+</pre></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="unicode_bidi" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script>
+</body></html>

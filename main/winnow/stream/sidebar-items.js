@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CompareResult","Needed"],"struct":["BStr","Bytes","Checkpoint","LocatingSlice","Partial","Range","Stateful","TokenSlice"],"trait":["Accumulate","AsBStr","AsBytes","AsChar","Compare","ContainsToken","FindSlice","Location","Offset","ParseSlice","SliceLen","Stream","StreamIsPartial","ToUsize","UpdateSlice"],"type":["Str"]};
