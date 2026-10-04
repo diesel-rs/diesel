@@ -31,7 +31,6 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [rustfmt_and_clippy]
     strategy:
       fail-fast: false
       matrix:
