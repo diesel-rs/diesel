@@ -216,6 +216,24 @@ impl<F, S, D, W, O, LOf, G, H, LC> SelectStatement<F, S, D, W, O, LOf, G, H, LC>
             locking,
         }
     }
+
+    /// The statement with its order clause mapped through `f` and every other clause kept.
+    pub(crate) fn map_order<NewO>(
+        self,
+        f: impl FnOnce(O) -> NewO,
+    ) -> SelectStatement<F, S, D, W, NewO, LOf, G, H, LC> {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            f(self.order),
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
 }
 
 impl<F: QuerySource> SelectStatement<FromClause<F>> {

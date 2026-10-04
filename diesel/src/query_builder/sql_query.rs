@@ -457,20 +457,35 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
     }
 }
 
+/// Walk a boxed SQL query, whichever pointer holds its binds.
+fn walk_boxed_sql_query<'b, DB, Query, P>(
+    query: &'b Query,
+    sql: &'b str,
+    binds: &'b [P],
+    mut out: AstPass<'_, 'b, DB>,
+) -> QueryResult<()>
+where
+    DB: Backend,
+    Query: QueryFragment<DB>,
+    P: QueryFragment<DB>,
+{
+    out.unsafe_to_cache_prepared();
+    query.walk_ast(out.reborrow())?;
+    out.push_sql(sql);
+
+    for b in binds {
+        b.walk_ast(out.reborrow())?;
+    }
+    Ok(())
+}
+
 impl<DB, Query> QueryFragment<DB> for BoxedSqlQuery<'_, DB, Query>
 where
     DB: Backend + DieselReserveSpecialization,
     Query: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.unsafe_to_cache_prepared();
-        self.query.walk_ast(out.reborrow())?;
-        out.push_sql(&self.sql);
-
-        for b in &self.binds {
-            b.walk_ast(out.reborrow())?;
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        walk_boxed_sql_query(&self.query, &self.sql, &self.binds, out)
     }
 }
 
@@ -528,15 +543,8 @@ where
     DB: Backend + DieselReserveSpecialization,
     Query: QueryFragment<DB>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.unsafe_to_cache_prepared();
-        self.query.walk_ast(out.reborrow())?;
-        out.push_sql(&self.sql);
-
-        for b in &self.binds {
-            b.walk_ast(out.reborrow())?;
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        walk_boxed_sql_query(&self.query, &self.sql, &self.binds, out)
     }
 }
 

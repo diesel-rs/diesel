@@ -500,20 +500,8 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types
 }
 
-#[cfg(feature = "mysql")]
-fn mysql_diesel_types() -> HashSet<&'static str> {
-    let mut types = HashSet::new();
-    common_diesel_types(&mut types);
-
-    types.insert("TinyInt");
-    types.insert("Tinyint");
-    types.insert("Datetime");
-    types.insert("Json");
-    types
-}
-
-#[cfg(feature = "mariadb")]
-fn mariadb_diesel_types() -> HashSet<&'static str> {
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn mysql_like_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     common_diesel_types(&mut types);
 
@@ -580,9 +568,9 @@ pub(crate) fn load_custom_types(
         #[cfg(feature = "sqlite")]
         Backend::Sqlite => sqlite_diesel_types(),
         #[cfg(feature = "mysql")]
-        Backend::Mysql => mysql_diesel_types(),
+        Backend::Mysql => mysql_like_diesel_types(),
         #[cfg(feature = "mariadb")]
-        Backend::Mariadb => mariadb_diesel_types(),
+        Backend::Mariadb => mysql_like_diesel_types(),
     };
     let custom_types = data
         .iter()
