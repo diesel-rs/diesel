@@ -235,16 +235,18 @@ jobs:
           echo "SQLITE3_LIB_DIR=C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_ENV
           echo "SQLITE_DATABASE_URL=C:\test.db" >> $GITHUB_ENV
 
-      - name: Install postgres (Windows)
+      - name: Start postgres (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'postgres'
-        shell: bash
+        shell: pwsh
         run: |
-          choco install postgresql14 --force --params '/Password:root'
-          echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
-          echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
-          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\14\lib" >> $GITHUB_ENV
-          echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
-          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
+          Set-Service -Name postgresql-x64-17 -StartupType Manual
+          Start-Service -Name postgresql-x64-17
+          "OPENSSL_RUST_USE_NASM=0" >> $env:GITHUB_ENV
+          "OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl" >> $env:GITHUB_ENV
+          "PQ_LIB_DIR=$env:PGROOT\lib" >> $env:GITHUB_ENV
+          "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $env:GITHUB_ENV
+          "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $env:GITHUB_ENV
+          $env:PGBIN >> $env:GITHUB_PATH
 
       - name: Install mysql (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
