@@ -61,6 +61,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * Fixed `SqliteReadOnlyBlob::close` closing the underlying SQLite handle twice.
 * Fixed `SqliteReadOnlyBlob` seeks before byte zero to return `InvalidInput` without changing the cursor, instead of overflowing or clamping to zero.
+* Fixed PostgreSQL array serialization to set the header's null flag when an element is `NULL`. PostgreSQL ignored the missing flag, but Diesel could not deserialize such arrays.
 * Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
 * Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
@@ -76,8 +77,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
 * Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
 * Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
+* Negative MySQL and MariaDB `TIME` values now load into `MysqlTime` instead of being rejected while decoding. `chrono::NaiveTime` and `time::Time` cannot represent them, so those targets report that instead
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
+* Reject subselects that reference an ungrouped column of an aggregating outer query
 
 ### Changed
 
@@ -85,6 +88,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for no-std environments using the SQLite backend
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
+* Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
 
 
 ## [2.3.13] 2026-09-4

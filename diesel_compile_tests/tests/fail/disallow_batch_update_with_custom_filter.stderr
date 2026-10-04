@@ -6,20 +6,20 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<..., ...>,), ..., ...>`
+     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<_, _>,), id, table>`
      = note: the information about which rows to update are provided as part of the values
      = help: the following other types implement trait `AllowFilterForUpdate<P>`:
+               `(T,)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
+               `(T,)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<WhereClause<W>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<WhereClause<W>>`
              and N others
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `QueryFragment<_>`
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `ExecuteDsl<_, _>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `QueryFragment<_>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -38,20 +38,20 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<..., ...>,), ..., ...>`
+     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<_, _>,), id, table>`
      = note: the information about which rows to update are provided as part of the values
      = help: the following other types implement trait `AllowFilterForUpdate<P>`:
+               `(T,)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
+               `(T,)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<WhereClause<W>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<WhereClause<W>>`
              and N others
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `QueryFragment<_>`
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `ExecuteDsl<_, _>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `QueryFragment<_>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -70,20 +70,20 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<..., ...>,), ..., ...>`
+     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<_, _>,), id, table>`
      = note: the information about which rows to update are provided as part of the values
      = help: the following other types implement trait `AllowFilterForUpdate<P>`:
+               `(T,)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
+               `(T,)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<WhereClause<W>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<WhereClause<W>>`
              and N others
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `QueryFragment<_>`
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `ExecuteDsl<_, _>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `QueryFragment<_>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -102,20 +102,20 @@ error[E0277]: cannot apply a `WHERE` clause to batch updates
      |          |
      |          required by a bound introduced by this call
      |
-     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<..., ...>,), ..., ...>`
+     = help: the trait `diesel::query_builder::update_statement::private::AllowFilterForUpdate<diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>` is not implemented for `BatchUpdate<&i32, (Assign<_, _>,), id, table>`
      = note: the information about which rows to update are provided as part of the values
      = help: the following other types implement trait `AllowFilterForUpdate<P>`:
+               `(T,)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
+               `(T,)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2)` implements `AllowFilterForUpdate<WhereClause<W>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
                `(T, T1, T2, T3)` implements `AllowFilterForUpdate<WhereClause<W>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<BoxedWhereClause<'a, DB>>`
-               `(T, T1, T2, T3, T4)` implements `AllowFilterForUpdate<WhereClause<W>>`
              and N others
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `QueryFragment<_>`
-     = note: required for `UpdateStatement<table, WhereClause<...>, ...>` to implement `ExecuteDsl<_, _>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `QueryFragment<_>`
+     = note: required for `UpdateStatement<table, WhereClause<Grouped<_>>, _>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

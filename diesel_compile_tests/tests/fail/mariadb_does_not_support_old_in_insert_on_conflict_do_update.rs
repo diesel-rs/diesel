@@ -33,9 +33,9 @@ fn main() {
         .do_update()
         .set(users::name.eq(""))
         .returning(UpsertOldNew::as_select())
-        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<_, table>`
         .get_result::<UpsertOldNew>(&mut connection)
-        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<_, table>`
         .unwrap();
 
     // The plain tuple version mirrors the same constraint: writing
@@ -46,9 +46,9 @@ fn main() {
         .do_update()
         .set(users::name.eq(""))
         .returning(old_value(users::name))
-        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<_, table>`
         .get_result::<String>(&mut connection)
-        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `diesel::mariadb::returning::old_impl::OldValue<columns::name>` from `ReturningQuerySource<_, table>`
         .unwrap();
 
     // Even With Nullable this does not compile
@@ -58,9 +58,9 @@ fn main() {
         .do_update()
         .set(users::name.eq(""))
         .returning(old_value(users::name).nullable())
-        //~^ ERROR: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `NullableExpression<OldValue<name>>` from `ReturningQuerySource<_, table>`
         .get_result::<Option<String>>(&mut connection)
-        //~^ ERROR: cannot select `Nullable<OldValue<name>>` from `ReturningQuerySource<..., ...>`
+        //~^ ERROR: cannot select `NullableExpression<OldValue<name>>` from `ReturningQuerySource<_, table>`
         .unwrap();
 
     // Sanity check: returning the column itself works

@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `(Text, Nullable<(...,)>): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Text, Nullable<(_,)>): CompatibleType<_, _>` is not satisfied
     --> tests/fail/selectable_in_nullable_tuple_is_rejected.rs:41:56
      |
   LL |     let _ = query.get_result::<(String, Option<Post>)>(&mut conn).unwrap();
@@ -21,7 +21,7 @@ error[E0277]: the trait bound `(Text, Nullable<(...,)>): CompatibleType<..., _>`
                `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7)>` implements `CompatibleType<Option<__T>, __DB>`
                `Nullable<(ST, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)>` implements `CompatibleType<Option<__T>, __DB>`
              and N others
-     = note: required for `SelectStatement<FromClause<JoinOn<..., ...>>, ...>` to implement `LoadQuery<'_, _, (std::string::String, Option<Post>)>`
+     = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `LoadQuery<'_, _, (std::string::String, Option<Post>)>`
 note: required by a bound in `get_result`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
