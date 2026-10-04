@@ -54,6 +54,9 @@ opt-level = 3
 [profile.dev.package.similar]
 opt-level = 3
 
+[profile.test.package.diesel_tests]
+debug = "line-tables-only"
+
 [workspace.lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(diesel_docsrs)'] }
 
