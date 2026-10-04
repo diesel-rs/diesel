@@ -1,10 +1,6 @@
-use argon2::{
-    Argon2,
-    password_hash::{
-        PasswordHasher, PasswordVerifier,
-        phc::{PasswordHash, Salt},
-    },
-};
+use argon2::Argon2;
+use argon2::password_hash::phc::{PasswordHash, Salt};
+use argon2::password_hash::{PasswordHasher, PasswordVerifier};
 use diesel::prelude::*;
 use diesel::{self, insert_into};
 
