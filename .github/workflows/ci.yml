@@ -76,11 +76,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
-
-      - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
-        with:
-          key: ${{ matrix.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
 
       - name: Set environment variables
         shell: bash
@@ -305,10 +301,6 @@ jobs:
           cargo --version
           rustc --version
 
-      - uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
-        with:
-          tool: cargo-llvm-cov,nextest
-
       - name: Add Flags (nightly)
         if: matrix.rust == 'nightly'
         shell: bash
@@ -336,6 +328,17 @@ jobs:
         shell: bash
         run: |
           echo FLAGS="-F diesel/with-deprecated" >> $GITHUB_ENV
+
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
+          env-vars: FLAGS
+
+      - uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
+        with:
+          tool: cargo-llvm-cov,nextest
 
       - name: Skip Doc tests for windows/macos
         if: runner.os != 'Linux'
@@ -392,6 +395,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
@@ -400,6 +404,7 @@ jobs:
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
 
       - name: Install dependencies
         run: |
@@ -419,16 +424,23 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
           rustup override set stable
           rustup component add clippy
           rustup component add rustfmt
+      - name: Set environment variables
+        shell: bash
+        run: |
+          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
       - name: Fixing up rustup
         shell: bash
         run: |
@@ -447,11 +459,6 @@ jobs:
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
           tool: typos
-      - name: Set environment variables
-        shell: bash
-        run: |
-          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
-          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
       - name: Run clippy + rustfmt
         run: cargo xtask tidy --keep-going
 
@@ -463,6 +470,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
@@ -474,6 +482,7 @@ jobs:
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
 
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
@@ -498,6 +507,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
@@ -508,6 +518,7 @@ jobs:
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
 
       - name: Test diesel-cli
         run: cargo +stable test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
@@ -535,6 +546,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
@@ -545,6 +557,7 @@ jobs:
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
 
       - name: Install postgres (Linux)
         run: |
@@ -583,6 +596,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
@@ -593,6 +607,7 @@ jobs:
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
       - name: Install Mysql (Linux)
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
@@ -642,6 +657,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup install 1.88.0
@@ -653,6 +669,7 @@ jobs:
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
+          prefix-key: diesel-cache-identity-trial-1
       - name: Install dependencies
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
@@ -676,6 +693,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update stable
@@ -694,6 +712,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           cd examples/sqlite/embedded
@@ -716,6 +735,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           cd diesel
@@ -736,6 +756,7 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: 0fdbccdd278b31ea6fdcac8338c3a682260427e2
       - name: Setup rust toolchain
         run: |
           rustup update nightly --no-self-update
