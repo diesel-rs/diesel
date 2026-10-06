@@ -26,10 +26,10 @@ pub(crate) mod assume_not_null;
 pub(crate) mod bound;
 mod coerce;
 pub(crate) mod count;
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
 pub(crate) mod exists;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub mod exists;
+#[path = "exists.rs"]
+pub mod exists_implementation;
 pub(crate) mod grouped;
 pub(crate) mod helper_types;
 mod not;
