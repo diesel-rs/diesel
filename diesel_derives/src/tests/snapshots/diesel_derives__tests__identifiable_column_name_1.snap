@@ -5,7 +5,7 @@ info:
   input: "#[derive(Identifiable)]\n#[diesel(primary_key(user_id))]\nstruct User {\n    #[diesel(column_name = user_id)]\n    id: i32,\n    name: String,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl diesel::associations::HasTable for User {
         type Table = users::table;
         fn table() -> <Self as diesel::associations::HasTable>::Table {

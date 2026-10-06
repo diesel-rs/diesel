@@ -5,7 +5,7 @@ info:
   input: "#[derive(Enum)]\n#[derive(Debug, diesel::Enum)]\n#[diesel(sql_type = diesel::sql_types::Integer)]\nenum Color {\n    Red = 1,\n    Green = 2,\n    Blue = 3,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<__DB> diesel::deserialize::FromSql<diesel::sql_types::Integer, __DB> for Color
     where
         __DB: diesel::backend::Backend,

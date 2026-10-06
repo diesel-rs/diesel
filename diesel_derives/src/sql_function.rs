@@ -458,7 +458,7 @@ fn expand_nonvariadic(
         numeric_derive = None;
     } else {
         sql_type = Some(quote!((#(#arg_name),*): Expression,));
-        numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
+        numeric_derive = Some(quote!(#[derive(::diesel::sql_types::DieselNumericOps)]));
     }
 
     let helper_type_doc = format!("The return type of [`{fn_name}()`](fn@{fn_name})");
@@ -472,14 +472,14 @@ fn expand_nonvariadic(
 
     let args_iter = args.iter();
     let mut tokens = quote! {
-        use diesel::{self, QueryResult};
-        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping};
-        use diesel::query_builder::{QueryFragment, AstPass};
-        use diesel::sql_types::*;
-        use diesel::internal::sql_functions::*;
+        use ::diesel::QueryResult;
+        use ::diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping};
+        use ::diesel::query_builder::{QueryFragment, AstPass};
+        use ::diesel::sql_types::*;
+        use ::diesel::internal::sql_functions::*;
         use super::*;
 
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #[derive(Debug, Clone, Copy, ::diesel::query_builder::QueryId)]
         #numeric_derive
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
@@ -520,7 +520,7 @@ fn expand_nonvariadic(
         impl #impl_generics_internal FunctionFragment<__DieselInternal>
             for #fn_name #ty_generics
         where
-            __DieselInternal: diesel::backend::Backend,
+            __DieselInternal: ::diesel::backend::Backend,
             #(#arg_name: QueryFragment<__DieselInternal>,)*
         {
             const FUNCTION_NAME: &'static str = #sql_name;
@@ -600,7 +600,7 @@ fn expand_nonvariadic(
                     #[doc = #helper_type_doc]
                     pub type #fn_name #ty_generics = #internals_module_name::#fn_name <
                         #(#type_args,)*
-                        #(<#arg_name as diesel::expression::AsExpression<#arg_type>>::Expression,)*
+                        #(<#arg_name as ::diesel::expression::AsExpression<#arg_type>>::Expression,)*
                     >;
                 }),
                 quote! { #fn_name },
@@ -651,7 +651,7 @@ fn expand_nonvariadic(
                     pub type #fn_name<
                         #(#arg_names_iter,)*
                     > = super::#fn_name<
-                        #( <#auto_derived_types as diesel::expression::Expression>::SqlType, )*
+                        #( <#auto_derived_types as ::diesel::expression::Expression>::SqlType, )*
                         #(#arg_names_iter,)*
                     >;
                 }
@@ -670,7 +670,7 @@ fn expand_nonvariadic(
         pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
             -> #return_type_path #ty_generics
         #where_clause
-            #(#arg_name: diesel::expression::AsExpression<#arg_type>,)*
+            #(#arg_name: ::diesel::expression::AsExpression<#arg_type>,)*
         {
             #internals_module_name::#fn_name {
                 #(#arg_struct_assign,)*
@@ -751,7 +751,7 @@ fn generate_tokens_for_non_aggregate_functions(
         tokens = quote! {
             #tokens
 
-            diesel::internal::sql_functions::expand_sqlite_function!{
+            ::diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
@@ -765,23 +765,23 @@ fn generate_tokens_for_non_aggregate_functions(
                 /// instead, or [`register_impl_with_behavior`](self::register_impl_with_behavior)
                 /// for full control over the SQLite behavior flags.
                 pub fn register_impl<F, Ret, #(#arg_name,)*>(
-                    conn: &mut diesel::sqlite::SqliteConnection,
+                    conn: &mut ::diesel::sqlite::SqliteConnection,
                     f: F,
-                ) -> diesel::result::QueryResult<()>
+                ) -> ::diesel::result::QueryResult<()>
                 where
                     F: Fn(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
-                    diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
-                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                (#(#arg_name,)*): ::diesel::deserialize::FromSqlRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
+                    ::diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite>,
+                    Ret: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
                 {
                     register_impl_with_behavior(
                         conn,
-                        diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
+                        ::diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
                         f,
                     )
                 }
             }
-            diesel::internal::sql_functions::expand_sqlite_function!{
+            ::diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
@@ -797,23 +797,23 @@ fn generate_tokens_for_non_aggregate_functions(
                 /// the SQLite behavior flags, use
                 /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                 pub fn register_nondeterministic_impl<F, Ret, #(#arg_name,)*>(
-                    conn: &mut diesel::sqlite::SqliteConnection,
+                    conn: &mut ::diesel::sqlite::SqliteConnection,
                     f: F,
-                ) -> diesel::result::QueryResult<()>
+                ) -> ::diesel::result::QueryResult<()>
                 where
                     F: FnMut(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
-                    diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
-                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                (#(#arg_name,)*): ::diesel::deserialize::FromSqlRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
+                    ::diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite>,
+                    Ret: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
                 {
                     register_impl_with_behavior(
                         conn,
-                        diesel::sqlite::SqliteFunctionBehavior::empty(),
+                        ::diesel::sqlite::SqliteFunctionBehavior::empty(),
                         f,
                     )
                 }
             }
-            diesel::internal::sql_functions::expand_sqlite_function!{
+            ::diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
@@ -827,15 +827,15 @@ fn generate_tokens_for_non_aggregate_functions(
                 /// unless you need to set behavior flags explicitly. See
                 /// [`SqliteFunctionBehavior`] for the available flags.
                 pub fn register_impl_with_behavior<F, Ret, #(#arg_name,)*>(
-                    conn: &mut diesel::sqlite::SqliteConnection,
-                    behavior: diesel::sqlite::SqliteFunctionBehavior,
+                    conn: &mut ::diesel::sqlite::SqliteConnection,
+                    behavior: ::diesel::sqlite::SqliteFunctionBehavior,
                     mut f: F,
-                ) -> diesel::result::QueryResult<()>
+                ) -> ::diesel::result::QueryResult<()>
                 where
                     F: FnMut(#(#arg_name,)*) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
-                    diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite>,
-                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                (#(#arg_name,)*): ::diesel::deserialize::FromSqlRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
+                    ::diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite>,
+                    Ret: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
                         #sql_name,
@@ -850,7 +850,7 @@ fn generate_tokens_for_non_aggregate_functions(
     if !contains_none && arg_name.is_empty() {
         tokens = quote! {
             #tokens
-            diesel::internal::sql_functions::expand_sqlite_function!{
+            ::diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
@@ -864,21 +864,21 @@ fn generate_tokens_for_non_aggregate_functions(
                 /// instead, or [`register_impl_with_behavior`](self::register_impl_with_behavior)
                 /// for full control over the SQLite behavior flags.
                 pub fn register_impl<F, Ret>(
-                    conn: &mut diesel::sqlite::SqliteConnection,
+                    conn: &mut ::diesel::sqlite::SqliteConnection,
                     f: F,
-                ) -> diesel::result::QueryResult<()>
+                ) -> ::diesel::result::QueryResult<()>
                 where
                     F: Fn() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                    Ret: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
                 {
                     register_impl_with_behavior(
                         conn,
-                        diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
+                        ::diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
                         f,
                     )
                 }
             }
-            diesel::internal::sql_functions::expand_sqlite_function!{
+            ::diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
@@ -894,21 +894,21 @@ fn generate_tokens_for_non_aggregate_functions(
                 /// the SQLite behavior flags, use
                 /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                 pub fn register_nondeterministic_impl<F, Ret>(
-                    conn: &mut diesel::sqlite::SqliteConnection,
+                    conn: &mut ::diesel::sqlite::SqliteConnection,
                     f: F,
-                ) -> diesel::result::QueryResult<()>
+                ) -> ::diesel::result::QueryResult<()>
                 where
                     F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                    Ret: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
                 {
                     register_impl_with_behavior(
                         conn,
-                        diesel::sqlite::SqliteFunctionBehavior::empty(),
+                        ::diesel::sqlite::SqliteFunctionBehavior::empty(),
                         f,
                     )
                 }
             }
-            diesel::internal::sql_functions::expand_sqlite_function!{
+            ::diesel::internal::sql_functions::expand_sqlite_function!{
                 [#(#types_for_sqlite_impl,)*],
 
                 #[allow(dead_code)]
@@ -922,13 +922,13 @@ fn generate_tokens_for_non_aggregate_functions(
                 /// unless you need to set behavior flags explicitly. See
                 /// [`SqliteFunctionBehavior`] for the available flags.
                 pub fn register_impl_with_behavior<F, Ret>(
-                    conn: &mut diesel::sqlite::SqliteConnection,
-                    behavior: diesel::sqlite::SqliteFunctionBehavior,
+                    conn: &mut ::diesel::sqlite::SqliteConnection,
+                    behavior: ::diesel::sqlite::SqliteFunctionBehavior,
                     f: F,
-                ) -> diesel::result::QueryResult<()>
+                ) -> ::diesel::result::QueryResult<()>
                 where
                     F: FnMut() -> Ret + ::core::panic::UnwindSafe + Send + 'static,
-                    Ret: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
+                    Ret: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
                 {
                     conn.register_noarg_sql_function::<#return_type, _, _>(
                         #sql_name,
@@ -977,7 +977,7 @@ fn generate_tokens_for_aggregate_functions(
         impl #impl_generics_internal ValidGrouping<__DieselInternal>
             for #fn_name #ty_generics
         {
-            type IsAggregate = diesel::expression::is_aggregate::Yes;
+            type IsAggregate = ::diesel::expression::is_aggregate::Yes;
         }
 
         impl #impl_generics IsAggregateFunction for #fn_name #ty_generics {}
@@ -1006,7 +1006,7 @@ fn generate_tokens_for_aggregate_functions(
             x if x > 1 => {
                 tokens = quote! {
                     #tokens
-                    diesel::internal::sql_functions::expand_sqlite_function! {
+                    ::diesel::internal::sql_functions::expand_sqlite_function! {
                         [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
                         /// Registers an implementation for this aggregate function on the given connection.
@@ -1016,26 +1016,26 @@ fn generate_tokens_for_aggregate_functions(
                         /// the SQLite behavior flags, use
                         /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                         pub fn register_impl<A, #(#arg_name,)*>(
-                            conn: &mut diesel::sqlite::SqliteConnection,
-                        ) -> diesel::result::QueryResult<()>
+                            conn: &mut ::diesel::sqlite::SqliteConnection,
+                        ) -> ::diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
+                            A: ::diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
                             + ::core::panic::RefUnwindSafe,
-                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
-                        (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
-                            diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                            A::Output: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
+                        (#(#arg_name,)*): ::diesel::deserialize::FromSqlRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
+                            ::diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
                             register_impl_with_behavior::<A, #(#arg_name,)*>(
                                 conn,
-                                diesel::sqlite::SqliteFunctionBehavior::empty(),
+                                ::diesel::sqlite::SqliteFunctionBehavior::empty(),
                             )
                         }
                     }
-                    diesel::internal::sql_functions::expand_sqlite_function! {
+                    ::diesel::internal::sql_functions::expand_sqlite_function! {
                         [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
                         /// Registers an implementation for this aggregate function on the
@@ -1047,18 +1047,18 @@ fn generate_tokens_for_aggregate_functions(
                         /// behavior flags explicitly. See [`SqliteFunctionBehavior`] for the
                         /// available flags.
                         pub fn register_impl_with_behavior<A, #(#arg_name,)*>(
-                            conn: &mut diesel::sqlite::SqliteConnection,
-                            behavior: diesel::sqlite::SqliteFunctionBehavior,
-                        ) -> diesel::result::QueryResult<()>
+                            conn: &mut ::diesel::sqlite::SqliteConnection,
+                            behavior: ::diesel::sqlite::SqliteFunctionBehavior,
+                        ) -> ::diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
+                            A: ::diesel::sqlite::SqliteAggregateFunction<(#(#arg_name,)*)>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
                             + ::core::panic::RefUnwindSafe,
-                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
-                        (#(#arg_name,)*): diesel::deserialize::FromSqlRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
-                            diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), diesel::sqlite::Sqlite> +
+                            A::Output: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
+                        (#(#arg_name,)*): ::diesel::deserialize::FromSqlRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
+                            ::diesel::deserialize::StaticallySizedRow<(#(#arg_type,)*), ::diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
                             conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name, behavior)
@@ -1073,7 +1073,7 @@ fn generate_tokens_for_aggregate_functions(
                 tokens = quote! {
                     #tokens
 
-                    diesel::internal::sql_functions::expand_sqlite_function! {
+                    ::diesel::internal::sql_functions::expand_sqlite_function! {
                         [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
                         /// Registers an implementation for this aggregate function on the given connection.
@@ -1083,26 +1083,26 @@ fn generate_tokens_for_aggregate_functions(
                         /// the SQLite behavior flags, use
                         /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
                         pub fn register_impl<A, #arg_name>(
-                            conn: &mut diesel::sqlite::SqliteConnection,
-                        ) -> diesel::result::QueryResult<()>
+                            conn: &mut ::diesel::sqlite::SqliteConnection,
+                        ) -> ::diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
+                            A: ::diesel::sqlite::SqliteAggregateFunction<#arg_name>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
                             + ::core::panic::RefUnwindSafe,
-                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
-                        #arg_name: diesel::deserialize::FromSqlRow<#arg_type, diesel::sqlite::Sqlite> +
-                            diesel::deserialize::StaticallySizedRow<#arg_type, diesel::sqlite::Sqlite> +
+                            A::Output: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
+                        #arg_name: ::diesel::deserialize::FromSqlRow<#arg_type, ::diesel::sqlite::Sqlite> +
+                            ::diesel::deserialize::StaticallySizedRow<#arg_type, ::diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
                             register_impl_with_behavior::<A, #arg_name>(
                                 conn,
-                                diesel::sqlite::SqliteFunctionBehavior::empty(),
+                                ::diesel::sqlite::SqliteFunctionBehavior::empty(),
                             )
                         }
                     }
-                    diesel::internal::sql_functions::expand_sqlite_function! {
+                    ::diesel::internal::sql_functions::expand_sqlite_function! {
                         [#(#types_for_sqlite_impl,)*],
                         #[allow(dead_code)]
                         /// Registers an implementation for this aggregate function on the
@@ -1114,18 +1114,18 @@ fn generate_tokens_for_aggregate_functions(
                         /// behavior flags explicitly. See [`SqliteFunctionBehavior`] for the
                         /// available flags.
                         pub fn register_impl_with_behavior<A, #arg_name>(
-                            conn: &mut diesel::sqlite::SqliteConnection,
-                            behavior: diesel::sqlite::SqliteFunctionBehavior,
-                        ) -> diesel::result::QueryResult<()>
+                            conn: &mut ::diesel::sqlite::SqliteConnection,
+                            behavior: ::diesel::sqlite::SqliteFunctionBehavior,
+                        ) -> ::diesel::result::QueryResult<()>
                         where
-                            A: diesel::sqlite::SqliteAggregateFunction<#arg_name>
+                            A: ::diesel::sqlite::SqliteAggregateFunction<#arg_name>
                             + Send
                             + 'static
                             + ::core::panic::UnwindSafe
                             + ::core::panic::RefUnwindSafe,
-                            A::Output: diesel::serialize::ToSql<#return_type, diesel::sqlite::Sqlite>,
-                        #arg_name: diesel::deserialize::FromSqlRow<#arg_type, diesel::sqlite::Sqlite> +
-                            diesel::deserialize::StaticallySizedRow<#arg_type, diesel::sqlite::Sqlite> +
+                            A::Output: ::diesel::serialize::ToSql<#return_type, ::diesel::sqlite::Sqlite>,
+                        #arg_name: ::diesel::deserialize::FromSqlRow<#arg_type, ::diesel::sqlite::Sqlite> +
+                            ::diesel::deserialize::StaticallySizedRow<#arg_type, ::diesel::sqlite::Sqlite> +
                             ::core::panic::UnwindSafe,
                         {
                             conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name, behavior)
@@ -1315,7 +1315,7 @@ impl Parse for SqlFunctionDecl {
                 })
             })
         } else {
-            parse_quote!(diesel::expression::expression_types::NotSelectable)
+            parse_quote!(::diesel::expression::expression_types::NotSelectable)
         };
         let _semi = Option::<Token![;]>::parse(input).unwrap_or_else(|e| {
             combine_error(e);
@@ -1616,7 +1616,7 @@ impl BackendRestriction {
         generics.params.push(parse_quote!(__F));
         let order = if require_order {
             quote::quote! {
-                diesel::internal::sql_functions::Order<__O, true>
+                ::diesel::internal::sql_functions::Order<__O, true>
             }
         } else {
             quote::quote! {__O}
@@ -1627,7 +1627,7 @@ impl BackendRestriction {
                 let (impl_generics, _, _) = generics.split_for_impl();
                 Self::generate_window_fragment_impl(
                     parse_quote!(__DieselInternal),
-                    Some(parse_quote!(__DieselInternal: diesel::backend::Backend,)),
+                    Some(parse_quote!(__DieselInternal: ::diesel::backend::Backend,)),
                     &impl_generics,
                     ty_generics,
                     fn_name,
@@ -1642,8 +1642,8 @@ impl BackendRestriction {
                     impl #impl_generics WindowFunctionFragment<#fn_name #ty_generics, __DieselInternal>
                         for OverClause<__P, #order, __F>
                     where
-                        Self: WindowFunctionFragment<#fn_name #ty_generics, __DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::#dialect>,
-                        __DieselInternal: diesel::backend::Backend,
+                        Self: WindowFunctionFragment<#fn_name #ty_generics, __DieselInternal, <__DieselInternal as ::diesel::backend::SqlDialect>::#dialect>,
+                        __DieselInternal: ::diesel::backend::Backend,
                     {
                     }
 
@@ -1651,7 +1651,7 @@ impl BackendRestriction {
                 let specific_impl = Self::generate_window_fragment_impl(
                     parse_quote!(__DieselInternal),
                     Some(
-                        parse_quote!(__DieselInternal: diesel::backend::Backend + diesel::backend::SqlDialect<#dialect = #dialect_type>,),
+                        parse_quote!(__DieselInternal: ::diesel::backend::Backend + ::diesel::backend::SqlDialect<#dialect = #dialect_type>,),
                     ),
                     &impl_generics,
                     ty_generics,
@@ -1667,7 +1667,9 @@ impl BackendRestriction {
                 let (impl_generics, _, _) = generics.split_for_impl();
                 Self::generate_window_fragment_impl(
                     parse_quote!(__DieselInternal),
-                    Some(parse_quote!(__DieselInternal: diesel::backend::Backend + #restriction,)),
+                    Some(
+                        parse_quote!(__DieselInternal: ::diesel::backend::Backend + #restriction,),
+                    ),
                     &impl_generics,
                     ty_generics,
                     fn_name,
@@ -1734,7 +1736,7 @@ impl BackendRestriction {
                 let (impl_generics, _, _) = generics.split_for_impl();
                 Self::generate_queryfragment_impl(
                     parse_quote!(__DieselInternal),
-                    Some(parse_quote!(__DieselInternal: diesel::backend::Backend,)),
+                    Some(parse_quote!(__DieselInternal: ::diesel::backend::Backend,)),
                     &impl_generics,
                     ty_generics,
                     arg_name,
@@ -1747,7 +1749,9 @@ impl BackendRestriction {
                 let (impl_generics, _, _) = generics.split_for_impl();
                 Self::generate_queryfragment_impl(
                     parse_quote!(__DieselInternal),
-                    Some(parse_quote!(__DieselInternal: diesel::backend::Backend + #restriction,)),
+                    Some(
+                        parse_quote!(__DieselInternal: ::diesel::backend::Backend + #restriction,),
+                    ),
                     &impl_generics,
                     ty_generics,
                     arg_name,
@@ -1761,7 +1765,7 @@ impl BackendRestriction {
                 let specific_impl = Self::generate_queryfragment_impl(
                     parse_quote!(__DieselInternal),
                     Some(
-                        parse_quote!(__DieselInternal: diesel::backend::Backend + diesel::backend::SqlDialect<#dialect = #dialect_type>,),
+                        parse_quote!(__DieselInternal: ::diesel::backend::Backend + ::diesel::backend::SqlDialect<#dialect = #dialect_type>,),
                     ),
                     &impl_generics,
                     ty_generics,
@@ -1773,11 +1777,11 @@ impl BackendRestriction {
                     impl #impl_generics QueryFragment<__DieselInternal>
                         for #fn_name #ty_generics
                     where
-                        Self: QueryFragment<__DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::#dialect>,
-                        __DieselInternal: diesel::backend::Backend,
+                        Self: QueryFragment<__DieselInternal, <__DieselInternal as ::diesel::backend::SqlDialect>::#dialect>,
+                        __DieselInternal: ::diesel::backend::Backend,
                     {
                         fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
-                            <Self as QueryFragment<__DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::#dialect>>::walk_ast(self, out)
+                            <Self as QueryFragment<__DieselInternal, <__DieselInternal as ::diesel::backend::SqlDialect>::#dialect>>::walk_ast(self, out)
                         }
 
                     }
@@ -1950,16 +1954,16 @@ impl SqlFunctionAttribute {
             let _ = input.parse::<Token![,]>()?;
             let wrap_macro = match feature_value.as_str() {
                 "postgres_backend" => Some(syn::parse_quote!(
-                    diesel::internal::sql_functions::expand_pg
+                    ::diesel::internal::sql_functions::expand_pg
                 )),
                 "sqlite" | "__sqlite_shared" => Some(syn::parse_quote!(
-                    diesel::internal::sql_functions::expand_sqlite
+                    ::diesel::internal::sql_functions::expand_sqlite
                 )),
                 "mysql_backend" => Some(syn::parse_quote!(
-                    diesel::internal::sql_functions::expand_mysql
+                    ::diesel::internal::sql_functions::expand_mysql
                 )),
                 "mariadb_backend" => Some(syn::parse_quote!(
-                    diesel::internal::sql_functions::expand_mariadb
+                    ::diesel::internal::sql_functions::expand_mariadb
                 )),
                 feature => {
                     return Err(syn::Error::new(
