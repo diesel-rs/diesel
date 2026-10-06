@@ -27,6 +27,7 @@ members = [
     "examples/postgres/composite_types",
     "examples/postgres/relations",
     "examples/sqlite/all_about_inserts",
+	"examples/sqlite/all_about_updates",
     "examples/sqlite/getting_started_step_1",
     "examples/sqlite/getting_started_step_2",
     "examples/sqlite/getting_started_step_3",
