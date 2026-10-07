@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.3.13"
+version = "2.3.14"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -53,9 +53,11 @@ path = "../diesel_derives"
 libsqlite3-sys = { version = ">=0.17.2, <0.39.0", optional = true, features = ["bundled_bindings"] }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
-sqlite-wasm-rs = { version = ">=0.4.0, <0.6.0", optional = true, default-features = false }
+sqlite-wasm-rs = { version = ">=0.4.0, <0.7.0", optional = true, default-features = false }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dev-dependencies]
+# Tests run in wasm-bindgen; applications choose their own host adapter.
+sqlite-wasm-rs = { version = "0.6.1", features = ["wasm-bindgen"] }
 # Something is dependent on it, we use feature to override it.
 getrandom_02 = { version = "0.2", features = ["js"], package = "getrandom" }
 getrandom_04 = { version = "0.4", features = ["wasm_js"], package = "getrandom" }

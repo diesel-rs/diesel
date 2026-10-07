@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<SelectStatement<..., ...> as Query>::SqlType == (..., ..., ...)`
+error[E0271]: type mismatch resolving `<SelectStatement<_, _> as Query>::SqlType == (_, Text, _)`
     --> tests/fail/insert_from_select_requires_valid_column_list.rs:57:18
      |
   LL |         .execute(&mut conn)
@@ -6,12 +6,12 @@ error[E0271]: type mismatch resolving `<SelectStatement<..., ...> as Query>::Sql
      |          |
      |          required by a bound introduced by this call
      |
-     = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+     = note: expected tuple `(Integer, Text, Nullable<Text>)`
                 found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
-     = note: required for `InsertFromSelect<SelectStatement<..., ...>, ...>` to implement `QueryFragment<_>`
+     = note: required for `InsertFromSelect<SelectStatement<_, _>, _>` to implement `QueryFragment<_>`
      = note: 1 redundant requirement hidden
-     = note: required for `InsertStatement<table, InsertFromSelect<..., ...>>` to implement `QueryFragment<_>`
-     = note: required for `InsertStatement<table, InsertFromSelect<..., ...>>` to implement `ExecuteDsl<_, _>`
+     = note: required for `InsertStatement<table, InsertFromSelect<_, _>>` to implement `QueryFragment<_>`
+     = note: required for `InsertStatement<table, InsertFromSelect<_, _>>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |
@@ -83,14 +83,7 @@ error[E0277]: the trait bound `(post_id, title): ColumnList` is not satisfied
     |
     = help: the trait `diesel::query_builder::insert_statement::column_list::ColumnList` is not implemented for `(comments::columns::post_id, posts::columns::title)`
     = help: the following other types implement trait `diesel::query_builder::insert_statement::column_list::ColumnList`:
-              (T, T1)
-              (T, T1, T2)
-              (T, T1, T2, T3)
-              (T, T1, T2, T3, T4)
-              (T, T1, T2, T3, T4, T5)
-              (T, T1, T2, T3, T4, T5, T6)
-              (T, T1, T2, T3, T4, T5, T6, T7)
-              (T, T1, T2, T3, T4, T5, T6, T7, T8)
+              (T₁, T₂, …, Tₙ) for tuples of arity 1 up to and including 16
             and N others
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -192,8 +185,8 @@ LL | |         .insert_into(posts)
 LL | |         .into_columns((user_id, body));
    | |______________________________________^ expected `(Integer, Text)`, found `(Integer, Nullable<Text>)`
    |
-   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   = note: expected tuple `(Integer, Text)`
+              found tuple `(Integer, diesel::sql_types::Nullable<Text>)`
 
 error[E0271]: type mismatch resolving `<(title, body) as Expression>::SqlType == (Integer, Text)`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:95:5
@@ -205,5 +198,5 @@ LL | |         .insert_into(posts)
 LL | |         .into_columns((title, body));
    | |____________________________________^ expected `(Integer, Text)`, found `(Text, Nullable<Text>)`
    |
-   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
-              found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   = note: expected tuple `(diesel::sql_types::Integer, Text)`
+              found tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<Text>)`

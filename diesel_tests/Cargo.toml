@@ -33,8 +33,8 @@ diesel_test_helper = { path = "../diesel_test_helper" }
 getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
 getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
 getrandom_04 = { version = "0.4", features = ["wasm_js"], package = "getrandom" }
-wasm-bindgen-test = "0.3.49"
-sqlite-wasm-rs = "0.5.1"
+wasm-bindgen-test = "0.3.78"
+sqlite-wasm-rs = { version = "0.6.1", features = ["wasm-bindgen"] }
 
 [features]
 default = []
@@ -48,4 +48,3 @@ returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
-

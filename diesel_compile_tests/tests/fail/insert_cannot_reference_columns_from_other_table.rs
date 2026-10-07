@@ -22,8 +22,8 @@ fn main() {
     //~^ ERROR: type mismatch resolving `<id as Column>::Table == table`
 
     insert_into(users::table).values(&(posts::id.eq(1), users::id.eq(2)));
-    //~^ ERROR: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+    //~^ ERROR: type mismatch resolving `<&_ as Insertable<table>>::Values == ValuesClause<_, table>`
     //~| ERROR: type mismatch resolving `<id as Column>::Table == table`
-    //~| ERROR: type mismatch resolving `<&... as Insertable<...>>::Values == ValuesClause<..., ...>`
+    //~| ERROR: type mismatch resolving `<&_ as Insertable<table>>::Values == ValuesClause<_, table>`
     //FIXME: Bad error on the second one
 }
