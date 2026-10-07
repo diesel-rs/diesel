@@ -61,8 +61,11 @@ impl TidyArgs {
             }
         }
 
-        println!("Check for duplicated doctests with dejadoc");
-        let clean = match dejadoc::Dejadoc::default().run(metadata.workspace_root.as_std_path()) {
+        println!("Check for duplicated doctests and functions with dejadoc");
+        let clean = match dejadoc::Dejadoc::default()
+            .functions()
+            .run(metadata.workspace_root.as_std_path())
+        {
             Ok(report) => {
                 print!("{}", dejadoc::human(&report, false));
                 report.groups.is_empty()

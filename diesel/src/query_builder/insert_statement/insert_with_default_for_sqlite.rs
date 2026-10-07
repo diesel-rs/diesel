@@ -521,68 +521,17 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
-    LoadQuery<'query, SqliteConnection, U, B>
-    for (
-        Yes,
-        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op>,
-    )
-where
-    T: Table + Copy + QueryId + 'static,
-    Op: Copy + QueryId + QueryFragment<Sqlite>,
-    InsertStatement<T, ValuesClause<V, T>, Op>: LoadQuery<'query, SqliteConnection, U, B>,
-    Self: RunQueryDsl<SqliteConnection>,
-{
-    type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
-
-    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
-        let (Yes, query) = self;
-
-        conn.transaction(|conn| {
-            let mut results = Vec::with_capacity(query.records.values.len());
-
-            for record in query.records.values {
-                let stmt =
-                    InsertStatement::new(query.target, record, query.operator, query.returning);
-
-                let result = stmt
-                    .internal_load(conn)?
-                    .next()
-                    .ok_or(crate::result::Error::NotFound)?;
-
-                match &result {
-                    Ok(_) | Err(crate::result::Error::DeserializationError(_)) => {
-                        results.push(result)
-                    }
-                    Err(_) => {
-                        result?;
-                    }
-                };
-            }
-
-            Ok(results.into_iter())
-        })
-    }
-}
-
-#[diagnostic::do_not_recommend]
 impl<'query, V, T, QId, Op, Ret, U, B, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
         Yes,
-        InsertStatement<
-            T,
-            BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>,
-            Op,
-            ReturningClause<Ret>,
-        >,
+        InsertStatement<T, BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>, Op, Ret>,
     )
 where
     T: Table + Copy + QueryId + 'static,
     Op: Copy + QueryId + QueryFragment<Sqlite>,
-    ReturningClause<Ret>: Copy,
-    InsertStatement<T, ValuesClause<V, T>, Op, ReturningClause<Ret>>:
-        LoadQuery<'query, SqliteConnection, U, B>,
+    Ret: Copy,
+    InsertStatement<T, ValuesClause<V, T>, Op, Ret>: LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
     type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
@@ -596,73 +545,6 @@ where
             for record in query.records.values {
                 let stmt =
                     InsertStatement::new(query.target, record, query.operator, query.returning);
-
-                let result = stmt
-                    .internal_load(conn)?
-                    .next()
-                    .ok_or(crate::result::Error::NotFound)?;
-
-                match &result {
-                    Ok(_) | Err(crate::result::Error::DeserializationError(_)) => {
-                        results.push(result)
-                    }
-                    Err(_) => {
-                        result?;
-                    }
-                };
-            }
-
-            Ok(results.into_iter())
-        })
-    }
-}
-
-#[diagnostic::do_not_recommend]
-impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
-    LoadQuery<'query, SqliteConnection, U, B>
-    for (
-        Yes,
-        InsertStatement<
-            T,
-            OnConflictValues<
-                BatchInsert<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>,
-                Target,
-                ConflictOpt,
-            >,
-            Op,
-        >,
-    )
-where
-    T: Table + Copy + QueryId + 'static,
-    T::FromClause: Copy,
-    Op: Copy,
-    Target: Copy,
-    ConflictOpt: Copy,
-    InsertStatement<T, OnConflictValues<ValuesClause<V, T>, Target, ConflictOpt>, Op>:
-        LoadQuery<'query, SqliteConnection, U, B>,
-    Self: RunQueryDsl<SqliteConnection>,
-{
-    type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
-
-    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
-        let (Yes, query) = self;
-
-        conn.transaction(|conn| {
-            let mut results = Vec::with_capacity(query.records.values.values.len());
-
-            for record in query.records.values.values {
-                let stmt = InsertStatement {
-                    operator: query.operator,
-                    target: query.target,
-                    records: OnConflictValues {
-                        values: record,
-                        target: query.records.target,
-                        action: query.records.action,
-                        where_clause: query.records.where_clause,
-                    },
-                    returning: query.returning,
-                    into_clause: query.into_clause,
-                };
 
                 let result = stmt
                     .internal_load(conn)?
@@ -697,22 +579,18 @@ impl<'query, V, T, QId, Op, Ret, U, B, Target, ConflictOpt, const STATIC_QUERY_I
                 ConflictOpt,
             >,
             Op,
-            ReturningClause<Ret>,
+            Ret,
         >,
     )
 where
     T: Table + Copy + QueryId + 'static,
     T::FromClause: Copy,
     Op: Copy,
-    ReturningClause<Ret>: Copy,
+    Ret: Copy,
     Target: Copy,
     ConflictOpt: Copy,
-    InsertStatement<
-        T,
-        OnConflictValues<ValuesClause<V, T>, Target, ConflictOpt>,
-        Op,
-        ReturningClause<Ret>,
-    >: LoadQuery<'query, SqliteConnection, U, B>,
+    InsertStatement<T, OnConflictValues<ValuesClause<V, T>, Target, ConflictOpt>, Op, Ret>:
+        LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
     type RowIter<'conn> = alloc::vec::IntoIter<QueryResult<U>>;
@@ -891,15 +769,15 @@ where
 }
 
 #[diagnostic::do_not_recommend]
-impl<'query, V, T, QId, Op, U, B, const STATIC_QUERY_ID: bool>
+impl<'query, V, T, QId, Op, Ret, U, B, const STATIC_QUERY_ID: bool>
     LoadQuery<'query, SqliteConnection, U, B>
     for (
         No,
-        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
+        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op, Ret>,
     )
 where
     T: Table + QueryId + 'static,
-    InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>:
+    InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op, Ret>:
         LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
@@ -907,6 +785,7 @@ where
         T,
         SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>,
         Op,
+        Ret,
     > as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
@@ -916,91 +795,6 @@ where
             records: SqliteBatchInsertWrapper(query.records),
             operator: query.operator,
             target: query.target,
-            returning: query.returning,
-            into_clause: query.into_clause,
-        };
-
-        query.internal_load(conn)
-    }
-}
-
-#[diagnostic::do_not_recommend]
-impl<'query, V, T, QId, Op, Ret, U, B, const STATIC_QUERY_ID: bool>
-    LoadQuery<'query, SqliteConnection, U, B>
-    for (
-        No,
-        InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op, ReturningClause<Ret>>,
-    )
-where
-    T: Table + QueryId + 'static,
-    InsertStatement<
-        T,
-        SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>,
-        Op,
-        ReturningClause<Ret>,
-    >: LoadQuery<'query, SqliteConnection, U, B>,
-    Self: RunQueryDsl<SqliteConnection>,
-{
-    type RowIter<'conn> = <InsertStatement<
-        T,
-        SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>,
-        Op,
-        ReturningClause<Ret>,
-    > as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
-
-    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
-        let (No, query) = self;
-
-        let query = InsertStatement {
-            records: SqliteBatchInsertWrapper(query.records),
-            operator: query.operator,
-            target: query.target,
-            returning: query.returning,
-            into_clause: query.into_clause,
-        };
-
-        query.internal_load(conn)
-    }
-}
-
-#[diagnostic::do_not_recommend]
-impl<'query, V, T, QId, Op, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
-    LoadQuery<'query, SqliteConnection, U, B>
-    for (
-        No,
-        InsertStatement<
-            T,
-            OnConflictValues<BatchInsert<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
-            Op,
-        >,
-    )
-where
-    T: Table + QueryId + 'static,
-    InsertStatement<
-        T,
-        OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
-        Op,
-    >: LoadQuery<'query, SqliteConnection, U, B>,
-    Self: RunQueryDsl<SqliteConnection>,
-{
-    type RowIter<'conn> = <InsertStatement<
-        T,
-        OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
-        Op,
-    > as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
-
-    fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {
-        let (No, query) = self;
-
-        let query = InsertStatement {
-            operator: query.operator,
-            target: query.target,
-            records: OnConflictValues {
-                values: SqliteBatchInsertWrapper(query.records.values),
-                target: query.records.target,
-                action: query.records.action,
-                where_clause: query.records.where_clause,
-            },
             returning: query.returning,
             into_clause: query.into_clause,
         };
@@ -1018,7 +812,7 @@ impl<'query, V, T, QId, Op, Ret, U, B, Target, ConflictOpt, const STATIC_QUERY_I
             T,
             OnConflictValues<BatchInsert<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
             Op,
-            ReturningClause<Ret>,
+            Ret,
         >,
     )
 where
@@ -1027,7 +821,7 @@ where
         T,
         OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
         Op,
-        ReturningClause<Ret>,
+        Ret,
     >: LoadQuery<'query, SqliteConnection, U, B>,
     Self: RunQueryDsl<SqliteConnection>,
 {
@@ -1035,7 +829,7 @@ where
         T,
         OnConflictValues<SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Target, ConflictOpt>,
         Op,
-        ReturningClause<Ret>,
+        Ret,
     > as LoadQuery<'query, SqliteConnection, U, B>>::RowIter<'conn>;
 
     fn internal_load(self, conn: &mut SqliteConnection) -> QueryResult<Self::RowIter<'_>> {

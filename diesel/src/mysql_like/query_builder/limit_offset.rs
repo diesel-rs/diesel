@@ -41,34 +41,47 @@ where
     }
 }
 
+/// Walk the limit and the offset of a boxed limit/offset clause, whichever pointer holds them.
+fn walk_boxed_limit_offset<'b, DB, P>(
+    limit: Option<&'b P>,
+    offset: Option<&'b P>,
+    mut out: AstPass<'_, 'b, DB>,
+) -> QueryResult<()>
+where
+    DB: MysqlLikeBackend,
+    P: QueryFragment<DB>,
+{
+    match (limit, offset) {
+        (Some(limit), Some(offset)) => {
+            limit.walk_ast(out.reborrow())?;
+            offset.walk_ast(out.reborrow())?;
+        }
+        (Some(limit), None) => {
+            limit.walk_ast(out.reborrow())?;
+        }
+        (None, Some(offset)) => {
+            // Mysql requires a limit clause in front of any offset clause
+            // The documentation proposes the following:
+            // > To retrieve all rows from a certain offset up to the end of the
+            // > result set, you can use some large number for the second parameter.
+            // https://dev.mysql.com/doc/refman/8.0/en/select.html
+            // Therefore we just use u64::MAX as limit here
+            // That does not result in any limitations because Mysql only supports
+            // up to 64TB of data per table. Assuming 1 bit per row this means
+            // 1024 * 1024 * 1024 * 1024 * 8 = 562.949.953.421.312 rows which is smaller
+            // than 2^64 = 18.446.744.073.709.551.615
+            out.push_sql(" LIMIT 18446744073709551615 ");
+            offset.walk_ast(out.reborrow())?;
+        }
+        (None, None) => {}
+    }
+    Ok(())
+}
+
 #[diagnostic::do_not_recommend]
 impl<DB: MysqlLikeBackend> QueryFragment<DB> for BoxedLimitOffsetClause<'_, DB> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        match (self.limit.as_ref(), self.offset.as_ref()) {
-            (Some(limit), Some(offset)) => {
-                limit.walk_ast(out.reborrow())?;
-                offset.walk_ast(out.reborrow())?;
-            }
-            (Some(limit), None) => {
-                limit.walk_ast(out.reborrow())?;
-            }
-            (None, Some(offset)) => {
-                // Mysql requires a limit clause in front of any offset clause
-                // The documentation proposes the following:
-                // > To retrieve all rows from a certain offset up to the end of the
-                // > result set, you can use some large number for the second parameter.
-                // https://dev.mysql.com/doc/refman/8.0/en/select.html
-                // Therefore we just use u64::MAX as limit here
-                // That does not result in any limitations because Mysql only supports
-                // up to 64TB of data per table. Assuming 1 bit per row this means
-                // 1024 * 1024 * 1024 * 1024 * 8 = 562.949.953.421.312 rows which is smaller
-                // than 2^64 = 18.446.744.073.709.551.615
-                out.push_sql(" LIMIT 18446744073709551615 ");
-                offset.walk_ast(out.reborrow())?;
-            }
-            (None, None) => {}
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        walk_boxed_limit_offset(self.limit.as_ref(), self.offset.as_ref(), out)
     }
 }
 
@@ -120,22 +133,8 @@ where
 }
 
 impl<DB: MysqlLikeBackend> QueryFragment<DB> for BoxedCloneLimitOffsetClause<'_, DB> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        match (self.limit.as_ref(), self.offset.as_ref()) {
-            (Some(limit), Some(offset)) => {
-                limit.walk_ast(out.reborrow())?;
-                offset.walk_ast(out.reborrow())?;
-            }
-            (Some(limit), None) => {
-                limit.walk_ast(out.reborrow())?;
-            }
-            (None, Some(offset)) => {
-                out.push_sql(" LIMIT 18446744073709551615 ");
-                offset.walk_ast(out.reborrow())?;
-            }
-            (None, None) => {}
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        walk_boxed_limit_offset(self.limit.as_ref(), self.offset.as_ref(), out)
     }
 }
 

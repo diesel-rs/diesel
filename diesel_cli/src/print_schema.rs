@@ -456,6 +456,16 @@ fn common_diesel_types(types: &mut HashSet<&str>) {
     types.insert("Bit");
 }
 
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn mysql_like_diesel_types(types: &mut HashSet<&str>) {
+    common_diesel_types(types);
+
+    types.insert("TinyInt");
+    types.insert("Tinyint");
+    types.insert("Datetime");
+    types.insert("Json");
+}
+
 #[cfg(feature = "postgres")]
 fn pg_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
@@ -503,24 +513,14 @@ fn pg_diesel_types() -> HashSet<&'static str> {
 #[cfg(feature = "mysql")]
 fn mysql_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
-    common_diesel_types(&mut types);
-
-    types.insert("TinyInt");
-    types.insert("Tinyint");
-    types.insert("Datetime");
-    types.insert("Json");
+    mysql_like_diesel_types(&mut types);
     types
 }
 
 #[cfg(feature = "mariadb")]
 fn mariadb_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
-    common_diesel_types(&mut types);
-
-    types.insert("TinyInt");
-    types.insert("Tinyint");
-    types.insert("Datetime");
-    types.insert("Json");
+    mysql_like_diesel_types(&mut types);
     types
 }
 

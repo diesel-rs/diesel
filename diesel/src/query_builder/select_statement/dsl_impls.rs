@@ -294,18 +294,7 @@ where
         SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, NoGroupByClause, H, LC>;
 
     fn order(self, expr: Expr) -> Self::Output {
-        let order = OrderClause(expr);
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            order,
-            self.limit_offset,
-            self.group_by,
-            self.having,
-            self.locking,
-        )
+        self.map_order(|_| OrderClause(expr))
     }
 }
 
@@ -328,18 +317,7 @@ where
         SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, GroupByClause<GB>, H, LC>;
 
     fn order(self, expr: Expr) -> Self::Output {
-        let order = OrderClause(expr);
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            order,
-            self.limit_offset,
-            self.group_by,
-            self.having,
-            self.locking,
-        )
+        self.map_order(|_| OrderClause(expr))
     }
 }
 
@@ -370,17 +348,7 @@ where
     >;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            OrderClause((self.order.0, expr)),
-            self.limit_offset,
-            self.group_by,
-            self.having,
-            self.locking,
-        )
+        self.map_order(|order| OrderClause((order.0, expr)))
     }
 }
 
@@ -409,17 +377,7 @@ where
     >;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
-        SelectStatement::new(
-            self.select,
-            self.from,
-            self.distinct,
-            self.where_clause,
-            OrderClause((self.order.0, expr)),
-            self.limit_offset,
-            self.group_by,
-            self.having,
-            self.locking,
-        )
+        self.map_order(|order| OrderClause((order.0, expr)))
     }
 }
 

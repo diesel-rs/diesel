@@ -238,37 +238,18 @@ impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
     }
 }
 
+// A primitive datetime carries no offset, so it reads and writes as a plain `Timestamp`.
 #[cfg(all(feature = "__sqlite-shared", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
-    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
-        value.parse_string(|text| {
-            for format in PRIMITIVE_DATETIME_FORMATS {
-                if let Ok(dt) = Self::parse(text, format) {
-                    return Ok(dt);
-                }
-            }
-
-            if let Ok(julian_days) = text.parse::<f64>()
-                && let Ok(timestamp) = parse_julian(julian_days)
-            {
-                return Ok(timestamp);
-            }
-
-            Err(format!("Invalid datetime {text}").into())
-        })
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        FromSql::<Timestamp, Sqlite>::from_sql(value)
     }
 }
 
 #[cfg(all(feature = "__sqlite-shared", feature = "time"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        let format = if self.nanosecond() == 0 {
-            ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
-        } else {
-            ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
-        };
-        out.set_value(self.format(format).map_err(|err| err.to_string())?);
-        Ok(IsNull::No)
+        ToSql::<Timestamp, Sqlite>::to_sql(self, out)
     }
 }
 

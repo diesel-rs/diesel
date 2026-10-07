@@ -278,6 +278,26 @@ where
     }
 }
 
+impl<'a, ST, QS, DB, GB> BoxedSelectStatement<'a, ST, QS, DB, GB> {
+    /// The statement with `select` as its select clause and every other clause kept.
+    fn with_select<NewST>(
+        self,
+        select: Box<dyn QueryFragment<DB> + Send + 'a>,
+    ) -> BoxedSelectStatement<'a, NewST, QS, DB, GB> {
+        BoxedSelectStatement {
+            select,
+            from: self.from,
+            distinct: self.distinct,
+            where_clause: self.where_clause,
+            order: self.order,
+            limit_offset: self.limit_offset,
+            group_by: self.group_by,
+            having: self.having,
+            _marker: PhantomData,
+        }
+    }
+}
+
 impl<'a, ST, QS, DB, Selection, GB> SelectDsl<Selection>
     for BoxedSelectStatement<'a, ST, FromClause<QS>, DB, GB>
 where
@@ -288,17 +308,7 @@ where
     type Output = BoxedSelectStatement<'a, Selection::SqlType, FromClause<QS>, DB, GB>;
 
     fn select(self, selection: Selection) -> Self::Output {
-        BoxedSelectStatement {
-            select: Box::new(selection),
-            from: self.from,
-            distinct: self.distinct,
-            where_clause: self.where_clause,
-            order: self.order,
-            limit_offset: self.limit_offset,
-            group_by: self.group_by,
-            having: self.having,
-            _marker: PhantomData,
-        }
+        self.with_select(Box::new(selection))
     }
 }
 
@@ -312,17 +322,7 @@ where
     type Output = BoxedSelectStatement<'a, Selection::SqlType, NoFromClause, DB, GB>;
 
     fn select(self, selection: Selection) -> Self::Output {
-        BoxedSelectStatement {
-            select: Box::new(selection),
-            from: self.from,
-            distinct: self.distinct,
-            where_clause: self.where_clause,
-            order: self.order,
-            limit_offset: self.limit_offset,
-            group_by: self.group_by,
-            having: self.having,
-            _marker: PhantomData,
-        }
+        self.with_select(Box::new(selection))
     }
 }
 
