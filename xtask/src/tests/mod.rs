@@ -235,6 +235,7 @@ impl TestArgs {
                 command.args(["nextest", "run"]);
             }
             command
+                .arg("--timings")
                 .args(["--workspace", "--no-default-features"])
                 .current_dir(&metadata.workspace_root)
                 .args(exclude)
