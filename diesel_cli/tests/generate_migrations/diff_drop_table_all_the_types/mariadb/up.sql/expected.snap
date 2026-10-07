@@ -1,0 +1,8 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 314
+description: "Test: diff_drop_table_all_the_types"
+---
+-- Your SQL goes here
+DROP TABLE IF EXISTS `test`;
+

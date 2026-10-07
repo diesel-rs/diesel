@@ -1,0 +1,9 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 309
+description: "Test: diff_drop_table_with_fk"
+---
+-- Your SQL goes here
+DROP TABLE IF EXISTS `posts`;
+
+

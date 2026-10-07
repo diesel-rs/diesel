@@ -5,6 +5,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression::operators::{And, Or};
 use crate::expression::*;
 use crate::sql_types::BoolOrNullableBool;
+use alloc::sync::Arc;
 
 /// Add `Predicate` to the current `WHERE` clause, joining with `AND` if
 /// applicable.
@@ -66,6 +67,12 @@ where
 impl<DB> From<NoWhereClause> for BoxedWhereClause<'_, DB> {
     fn from(_: NoWhereClause) -> Self {
         BoxedWhereClause::None
+    }
+}
+
+impl<DB> From<NoWhereClause> for BoxedCloneWhereClause<'_, DB> {
+    fn from(_: NoWhereClause) -> Self {
+        BoxedCloneWhereClause::None
     }
 }
 
@@ -136,6 +143,16 @@ where
     }
 }
 
+impl<'a, DB, Predicate> From<WhereClause<Predicate>> for BoxedCloneWhereClause<'a, DB>
+where
+    DB: Backend,
+    Predicate: QueryFragment<DB> + Send + Sync + 'a,
+{
+    fn from(where_clause: WhereClause<Predicate>) -> Self {
+        BoxedCloneWhereClause::Where(Arc::new(where_clause.0))
+    }
+}
+
 /// Marker trait indicating that a `WHERE` clause is valid for a given query
 /// source.
 pub trait ValidWhereClause<QS> {}
@@ -152,6 +169,14 @@ where
 impl<Expr> ValidWhereClause<NoFromClause> for WhereClause<Expr> where
     Expr: AppearsOnTable<NoFromClause>
 {
+}
+
+impl<GB> ValidGrouping<GB> for NoWhereClause {
+    type IsAggregate = is_aggregate::Never;
+}
+
+impl<GB, Expr: ValidGrouping<GB>> ValidGrouping<GB> for WhereClause<Expr> {
+    type IsAggregate = Expr::IsAggregate;
 }
 
 #[allow(missing_debug_implementations)] // We can't...
@@ -213,6 +238,78 @@ where
         match self {
             Where(where_clause) => Where(Box::new(Grouped(Or::new(where_clause, predicate)))),
             BoxedWhereClause::None => Where(Box::new(predicate)),
+        }
+    }
+}
+
+#[allow(missing_debug_implementations)] // We can't...
+pub enum BoxedCloneWhereClause<'a, DB> {
+    Where(Arc<dyn QueryFragment<DB> + Send + Sync + 'a>),
+    None,
+}
+
+impl<DB> Clone for BoxedCloneWhereClause<'_, DB> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Where(clause) => Self::Where(Arc::clone(clause)),
+            Self::None => Self::None,
+        }
+    }
+}
+
+impl<DB> QueryFragment<DB> for BoxedCloneWhereClause<'_, DB>
+where
+    DB: Backend + DieselReserveSpecialization,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        match *self {
+            BoxedCloneWhereClause::Where(ref where_clause) => {
+                out.push_sql(" WHERE ");
+                where_clause.walk_ast(out)
+            }
+            BoxedCloneWhereClause::None => Ok(()),
+        }
+    }
+}
+
+impl<DB> QueryId for BoxedCloneWhereClause<'_, DB> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<'a, DB, Predicate> WhereAnd<Predicate> for BoxedCloneWhereClause<'a, DB>
+where
+    DB: Backend + 'a,
+    Predicate: QueryFragment<DB> + Send + Sync + 'a,
+    Grouped<And<Arc<dyn QueryFragment<DB> + Send + Sync + 'a>, Predicate>>: QueryFragment<DB>,
+{
+    type Output = Self;
+
+    fn and(self, predicate: Predicate) -> Self::Output {
+        use self::BoxedCloneWhereClause::Where;
+
+        match self {
+            Where(where_clause) => Where(Arc::new(Grouped(And::new(where_clause, predicate)))),
+            BoxedCloneWhereClause::None => Where(Arc::new(predicate)),
+        }
+    }
+}
+
+impl<'a, DB, Predicate> WhereOr<Predicate> for BoxedCloneWhereClause<'a, DB>
+where
+    DB: Backend + 'a,
+    Predicate: QueryFragment<DB> + Send + Sync + 'a,
+    Grouped<Or<Arc<dyn QueryFragment<DB> + Send + Sync + 'a>, Predicate>>: QueryFragment<DB>,
+{
+    type Output = Self;
+
+    fn or(self, predicate: Predicate) -> Self::Output {
+        use self::BoxedCloneWhereClause::Where;
+
+        match self {
+            Where(where_clause) => Where(Arc::new(Grouped(Or::new(where_clause, predicate)))),
+            BoxedCloneWhereClause::None => Where(Arc::new(predicate)),
         }
     }
 }

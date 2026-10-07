@@ -79,6 +79,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn rank() -> BigInt;
 
     /// Rank of current row within its partition, without gaps
@@ -122,6 +126,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn dense_rank() -> BigInt;
 
@@ -168,6 +176,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn percent_rank() -> Double;
 
     /// Cumulative distribution value
@@ -212,6 +224,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn cume_dist() -> Double;
 
@@ -292,8 +308,12 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lag<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(value: T)
-        -> T::Nullable;
+    -> T::Nullable;
 
     /// Value of argument from row lagging current row within partition
     ///
@@ -341,6 +361,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lag_with_offset<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(
         value: T,
         offset: Integer,
@@ -367,7 +391,7 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
-    /// # #[cfg(not(feature = "mysql"))] // mariadb doesn't support this variant
+    /// # #[cfg(not(feature = "mariadb"))]
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::sql_types::{Integer, Nullable};
@@ -421,7 +445,7 @@ extern "SQL" {
     /// assert_eq!(expected, res);
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(feature = "mariadb")]
     /// # fn main() {}
     /// ```
     #[doc(alias = "lag")]
@@ -433,6 +457,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn lag_with_offset_and_default<
         T: SqlType
@@ -492,6 +520,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lead<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(
         value: T,
     ) -> T::Nullable;
@@ -544,6 +576,10 @@ extern "SQL" {
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
     )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
+    )]
     fn lead_with_offset<T: SqlType + SingleValue + IntoNullable<Nullable: SingleValue>>(
         value: T,
         offset: Integer,
@@ -570,7 +606,7 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
-    /// # #[cfg(not(feature = "mysql"))] // mariadb doesn't support this variant
+    /// # #[cfg(not(feature = "mariadb"))]
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::sql_types::{Integer, Nullable};
@@ -624,7 +660,7 @@ extern "SQL" {
     /// assert_eq!(expected, res);
     /// # Ok(())
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(feature = "mariadb")]
     /// fn main() {}
     /// ```
     #[doc(alias = "lead")]
@@ -636,6 +672,10 @@ extern "SQL" {
     #[cfg_attr(
         feature = "mysql_backend",
         window(backends(diesel::mysql::Mysql), require_order = true)
+    )]
+    #[cfg_attr(
+        feature = "mariadb_backend",
+        window(backends(diesel::mariadb::Mariadb), require_order = true)
     )]
     fn lead_with_offset_and_default<
         T: SqlType

@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse_quote;
 use syn::DeriveInput;
+use syn::parse_quote;
 
 use crate::util::wrap_in_dummy_mod;
 
@@ -14,10 +14,10 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
     let is_window_function = item.attrs.iter().any(|a| {
         if a.path().is_ident("diesel") {
-            if let Ok(nested) = a.parse_args_with(
+            match a.parse_args_with(
                 syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
             ) {
-                nested.iter().any(|n| match n {
+                Ok(nested) => nested.iter().any(|n| match n {
                     syn::Meta::NameValue(n) => {
                         n.path.is_ident("diesel_internal_is_window")
                             && matches!(
@@ -29,9 +29,8 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
                             )
                     }
                     _ => false,
-                })
-            } else {
-                false
+                }),
+                _ => false,
             }
         } else {
             false
@@ -39,7 +38,20 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
     });
 
     let struct_name = &item.ident;
-    let lifetimes = item.generics.lifetimes();
+    // Arguments must follow the declaration order of the parameters, so walk them in
+    // order rather than grouping by kind. Lifetimes become `'static`, which is both
+    // required (`Any` implies `'static`) and correct (a lifetime cannot change the SQL).
+    let query_id_args = item.generics.params.iter().map(|param| match param {
+        syn::GenericParam::Lifetime(_) => quote!('static),
+        syn::GenericParam::Type(ty_param) => {
+            let ident = &ty_param.ident;
+            quote!(<#ident as diesel::query_builder::QueryId>::QueryId)
+        }
+        syn::GenericParam::Const(const_param) => {
+            let ident = &const_param.ident;
+            quote!(#ident)
+        }
+    });
 
     let ty_params = item
         .generics
@@ -47,15 +59,6 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         .map(|ty_param| &ty_param.ident)
         .collect::<Vec<_>>();
 
-    let consts = item
-        .generics
-        .const_params()
-        .map(|const_param| &const_param.ident)
-        .collect::<Vec<_>>();
-
-    let query_id_ty_params = ty_params
-        .iter()
-        .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::QueryId));
     let has_static_query_id = ty_params
         .iter()
         .map(|ty_param| quote!(<#ty_param as diesel::query_builder::QueryId>::HAS_STATIC_QUERY_ID));
@@ -73,7 +76,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         impl #impl_generics diesel::query_builder::QueryId for #struct_name #ty_generics
         #where_clause
         {
-            type QueryId = #struct_name<#(#lifetimes,)* #(#query_id_ty_params,)* #(#consts,)*>;
+            type QueryId = #struct_name<#(#query_id_args,)*>;
 
             const HAS_STATIC_QUERY_ID: bool = #(#has_static_query_id &&)* true;
 

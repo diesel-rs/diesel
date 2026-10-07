@@ -205,7 +205,7 @@ fn precedence_with_parens_is_maintained() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn test_adding_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
@@ -223,7 +223,7 @@ fn test_adding_unsigned() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 #[allow(clippy::eq_op)]
 // As this creates a sql expression clippy is wrong here
 fn test_subtracting_unsigned() {
@@ -243,7 +243,7 @@ fn test_subtracting_unsigned() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 #[allow(clippy::identity_op)]
 // As this creates a sql expression clippy is wrong here
 fn test_multiplying_unsigned() {
@@ -263,7 +263,7 @@ fn test_multiplying_unsigned() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 #[allow(clippy::identity_op, clippy::eq_op)]
 // As this creates a sql expression clippy is wrong here
 fn test_dividing_unsigned() {
@@ -283,7 +283,7 @@ fn test_dividing_unsigned() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn test_multiple_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();

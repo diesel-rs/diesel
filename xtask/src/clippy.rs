@@ -42,7 +42,7 @@ impl ClippyArgs {
     }
 
     fn run_for_backend(&self, backend: Backend, metadata: &Metadata) -> bool {
-        let exclude = crate::utils::get_exclude_for_backend(&backend.to_string(), metadata);
+        let exclude = crate::utils::get_exclude_for_backend(&backend.to_string(), metadata, false);
         let flags = [
             "-F".into(),
             format!("diesel/{backend}"),

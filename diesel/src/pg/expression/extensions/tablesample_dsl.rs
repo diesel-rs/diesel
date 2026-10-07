@@ -1,6 +1,6 @@
+use crate::Table;
 use crate::pg::query_builder::tablesample::{BernoulliMethod, SystemMethod};
 use crate::query_builder::Tablesample;
-use crate::Table;
 
 /// The `tablesample` method
 ///

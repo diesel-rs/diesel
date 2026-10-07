@@ -1,0 +1,7 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_alter_table_add_column"
+---
+-- Your SQL goes here
+ALTER TABLE `users` ADD COLUMN `hair_color` TEXT;
+

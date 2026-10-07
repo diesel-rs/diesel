@@ -1,0 +1,26 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_drop_table_all_the_types"
+---
+-- This file should undo anything in `up.sql`
+CREATE TABLE `test`(
+	`id` INTEGER NOT NULL PRIMARY KEY,
+	`int` INTEGER,
+	`smallint` SMALLINT,
+	`tinyint` TINYINT,
+	`bigint` BIGINT,
+	`decimal` DECIMAL,
+	`numeric` DECIMAL,
+	`float` FLOAT,
+	`double` DOUBLE,
+	`unsigned_int` INTEGER UNSIGNED,
+	`date` DATE,
+	`datetime` DATETIME,
+	`timestamp` TIMESTAMP NOT NULL,
+	`time` TIME,
+	`char` CHAR(50),
+	`blob` BLOB,
+	`text` TEXT
+);
+
+

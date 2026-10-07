@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_add_table_auto_increment"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        #[auto_increment]
+        id -> Integer,
+        name -> Text,
+    }
+}

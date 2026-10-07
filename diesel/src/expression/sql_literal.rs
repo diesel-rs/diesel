@@ -1,10 +1,10 @@
-use std::marker::PhantomData;
-
 use crate::expression::*;
 use crate::query_builder::*;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sql_types::DieselNumericOps;
+use alloc::string::String;
+use core::marker::PhantomData;
 
 #[derive(Debug, Clone, DieselNumericOps)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
@@ -107,17 +107,18 @@ where
         UncheckedBind::new(self, bind_value.as_expression())
     }
 
-    /// Use literal SQL in the query builder
+    /// Append raw SQL to this literal.
     ///
-    /// This function is intended for use when you need a small bit of raw SQL in
-    /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](crate::sql_query()) instead.
+    /// The SQL built so far renders first, then the given SQL text. This
+    /// allows interleaving raw SQL fragments with [`bind`] calls when the
+    /// expression DSL cannot express the fragment.
     ///
     /// # Safety
     ///
-    /// This function should be used with care, as Diesel cannot validate that
-    /// the value is of the right type nor can it validate that you have passed
-    /// the correct number of parameters.
+    /// Diesel passes the given string to the database as written. It must
+    /// therefore never contain values that come from outside your own code,
+    /// because anything interpolated into the SQL text can carry an SQL
+    /// injection. Pass such values with [`bind`] instead.
     ///
     /// # Examples
     ///
@@ -146,6 +147,8 @@ where
     /// assert_eq!(Ok(expected), query);
     /// # }
     /// ```
+    ///
+    /// [`bind`]: Self::bind()
     pub fn sql(self, sql: &str) -> SqlLiteral<ST, Self> {
         SqlLiteral::new(sql.into(), self)
     }
@@ -184,7 +187,7 @@ where
     type SqlType = ST;
 }
 
-impl<ST, T, Conn> RunQueryDsl<Conn> for SqlLiteral<ST, T> {}
+impl<ST, T> RunQueryDslSupport for SqlLiteral<ST, T> {}
 
 impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
@@ -211,6 +214,11 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// The compiler will be unable to verify the correctness of the annotated type.
 /// If you give the wrong type, it'll either return an error when deserializing
 /// the query result or produce unexpected values.
+///
+/// Diesel also passes the given string to the database as written. It must
+/// therefore never contain values that come from outside your own code,
+/// because anything interpolated into the SQL text can carry an SQL
+/// injection. Pass such values with [`SqlLiteral::bind()`] instead.
 ///
 /// # Examples
 ///
@@ -280,17 +288,19 @@ where
         UncheckedBind { query, value }
     }
 
-    /// Use literal SQL in the query builder.
+    /// Append raw SQL after this literal and the values bound to it.
     ///
-    /// This function is intended for use when you need a small bit of raw SQL in
-    /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](crate::sql_query()) instead.
+    /// The literal and its bound values render first, then the given SQL
+    /// text. This allows interleaving raw SQL fragments with
+    /// [`SqlLiteral::bind()`] calls when the expression DSL cannot express
+    /// the fragment.
     ///
     /// # Safety
     ///
-    /// This function should be used with care, as Diesel cannot validate that
-    /// the value is of the right type nor can it validate that you have passed
-    /// the correct number of parameters.
+    /// Diesel passes the given string to the database as written. It must
+    /// therefore never contain values that come from outside your own code,
+    /// because anything interpolated into the SQL text can carry an SQL
+    /// injection. Pass such values with [`SqlLiteral::bind()`] instead.
     ///
     /// # Examples
     ///
@@ -366,7 +376,7 @@ impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> 
 
 impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value> where Self: Expression {}
 
-impl<Query, Value, Conn> RunQueryDsl<Conn> for UncheckedBind<Query, Value> {}
+impl<Query, Value> RunQueryDslSupport for UncheckedBind<Query, Value> {}
 
 mod private {
     use crate::backend::{Backend, DieselReserveSpecialization};

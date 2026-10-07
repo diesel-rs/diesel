@@ -5,22 +5,23 @@ authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 autotests = false
 autobenches = false
-edition = "2021"
+edition.workspace = true
 publish = false
 
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated", "std"] }
 diesel_migrations = { path = "../diesel_migrations" }
 dotenvy = "0.15"
 quickcheck = "1.0.3"
 uuid = { version = "1.0.0" }
-serde_json = { version=">=0.9, <2.0" }
+serde_json = { version = "1.0.54", features = ["float_roundtrip"] }
 ipnet = { version = "2.5.0" }
 ipnetwork = ">=0.12.2, <0.22.0"
 bigdecimal = ">= 0.0.13, < 0.5.0"
 libsqlite3-sys = { workspace = true, optional = true }
+time = { version = "0.3.9", optional = true }
 rand = "0.9.0"
 pq-sys = { workspace = true, optional = true }
 pq-src = { version = "0.3", optional = true }
@@ -30,18 +31,19 @@ diesel_test_helper = { path = "../diesel_test_helper" }
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
 # Something is dependent on it, so we use feature to override it.
+getrandom = { version = "0.4", features = ["wasm_js"] }
 getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
-getrandom_02 = { version = "0.2", package = "getrandom", features = ["js"] }
-getrandom_04 = { version = "0.4", features = ["wasm_js"], package = "getrandom" }
 wasm-bindgen-test = "0.3.78"
 sqlite-wasm-rs = { version = "0.6.1", features = ["wasm-bindgen"] }
 
 [features]
 default = []
 unstable = ["diesel/unstable"]
-postgres = ["diesel/postgres"]
+postgres = ["diesel/postgres", "diesel/network-address", "diesel/ipnet-address"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
+mariadb = ["diesel/mariadb"]
+time = ["diesel/time", "dep:time"]
 returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 
 [[test]]

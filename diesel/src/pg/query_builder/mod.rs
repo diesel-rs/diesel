@@ -2,6 +2,7 @@ use super::backend::Pg;
 use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
 
+mod batch_update;
 pub(crate) mod copy;
 mod distinct_on;
 mod limit_offset;

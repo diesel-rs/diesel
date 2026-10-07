@@ -7,7 +7,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 rust-version.workspace = true
 include.workspace = true
-edition = "2021"
+edition.workspace = true
 keywords = ["diesel", "internal"]
 
 [dependencies]

@@ -1,10 +1,10 @@
+use crate::Expression;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
 use crate::query_builder::AsQuery;
 use crate::query_builder::FromClause;
 use crate::query_builder::SelectStatement;
-use crate::query_source::Table;
-use crate::Expression;
+use crate::query_source::QueryRelation;
 
 /// Methods related to locking select statements
 ///
@@ -30,7 +30,7 @@ pub trait LockingDsl<Lock> {
 #[diagnostic::do_not_recommend]
 impl<T, Lock> LockingDsl<Lock> for T
 where
-    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    T: QueryRelation + AsQuery<Query = SelectStatement<FromClause<T>>>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {

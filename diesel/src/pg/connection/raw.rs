@@ -4,10 +4,11 @@
 extern crate pq_sys;
 
 use self::pq_sys::*;
-use std::ffi::{CStr, CString};
-use std::os::raw as libc;
-use std::ptr::NonNull;
-use std::{ptr, str};
+use alloc::ffi::CString;
+use core::ffi as libc;
+use core::ffi::CStr;
+use core::ptr::NonNull;
+use core::{ptr, str};
 
 use crate::result::*;
 
@@ -214,7 +215,7 @@ impl RawConnection {
         let error = error
             .as_ref()
             .map(|l| l.as_ptr())
-            .unwrap_or(std::ptr::null());
+            .unwrap_or(core::ptr::null());
         let ret = unsafe { pq_sys::PQputCopyEnd(self.internal_connection.as_ptr(), error) };
         if ret == 1 {
             Ok(())
@@ -252,7 +253,7 @@ impl RawConnection {
                 fn drop(&mut self) {
                     unsafe {
                         // SAFETY: We know that this value is not null here
-                        PQfreemem(self.value as *mut pgNotify as *mut std::ffi::c_void)
+                        PQfreemem(self.value as *mut pgNotify as *mut core::ffi::c_void)
                     };
                 }
             }

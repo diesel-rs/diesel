@@ -17,6 +17,7 @@ LL |         id -> Integer,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
    = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<posts::columns::id>`
 

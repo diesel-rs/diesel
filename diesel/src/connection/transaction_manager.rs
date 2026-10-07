@@ -1,7 +1,8 @@
 use crate::connection::Connection;
 use crate::result::{Error, QueryResult};
-use std::borrow::Cow;
-use std::num::NonZeroU32;
+use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use core::num::NonZeroU32;
 
 /// Manages the internal transaction state for a connection.
 ///
@@ -139,6 +140,7 @@ impl TransactionManagerStatus {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "postgres",
         feature = "mysql",
+        feature = "mariadb"
     ))]
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
@@ -345,9 +347,9 @@ where
         let transaction_depth = transaction_state.transaction_depth();
         let start_transaction_sql = match transaction_depth {
             None => Cow::from("BEGIN"),
-            Some(transaction_depth) => {
-                Cow::from(format!("SAVEPOINT diesel_savepoint_{transaction_depth}"))
-            }
+            Some(transaction_depth) => Cow::from(alloc::format!(
+                "SAVEPOINT diesel_savepoint_{transaction_depth}"
+            )),
         };
         let instrumentation_depth =
             NonZeroU32::new(transaction_depth.map_or(0, NonZeroU32::get).wrapping_add(1));
@@ -377,7 +379,7 @@ where
                 match in_transaction.transaction_depth.get() {
                     1 => (Cow::Borrowed("ROLLBACK"), true),
                     depth_gt1 => (
-                        Cow::Owned(format!(
+                        Cow::Owned(alloc::format!(
                             "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
                             depth_gt1 - 1
                         )),
@@ -465,7 +467,7 @@ where
                 (Cow::Borrowed("COMMIT"), true)
             }
             Some(transaction_depth) => (
-                Cow::Owned(format!(
+                Cow::Owned(alloc::format!(
                     "RELEASE SAVEPOINT diesel_savepoint_{}",
                     transaction_depth.get() - 1
                 )),
@@ -500,17 +502,16 @@ where
                             ..
                         }),
                 }) = conn.transaction_state().status
+                    && (committing_top_level || requires_rollback_maybe_up_to_top_level)
                 {
-                    if committing_top_level || requires_rollback_maybe_up_to_top_level {
-                        match Self::rollback_transaction(conn) {
-                            Ok(()) => {}
-                            Err(rollback_error) => {
-                                conn.transaction_state().status.set_in_error();
-                                return Err(Error::RollbackErrorOnCommit {
-                                    rollback_error: Box::new(rollback_error),
-                                    commit_error: Box::new(commit_error),
-                                });
-                            }
+                    match Self::rollback_transaction(conn) {
+                        Ok(()) => {}
+                        Err(rollback_error) => {
+                            conn.transaction_state().status.set_in_error();
+                            return Err(Error::RollbackErrorOnCommit {
+                                rollback_error: Box::new(rollback_error),
+                                commit_error: Box::new(commit_error),
+                            });
                         }
                     }
                 }
@@ -530,8 +531,8 @@ where
 mod test {
     // Mock connection.
     mod mock {
-        use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::Instrumentation;
+        use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::{
             Connection, ConnectionSealed, SimpleConnection, TransactionManager,
         };
@@ -605,10 +606,10 @@ mod test {
     #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
+        use crate::PgConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
         use crate::result::Error;
-        use crate::PgConnection;
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -624,10 +625,10 @@ mod test {
     #[diesel_test_helper::test]
     #[cfg(feature = "postgres")]
     fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
+        use crate::PgConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
         use crate::result::Error;
-        use crate::PgConnection;
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -642,9 +643,9 @@ mod test {
 
     #[diesel_test_helper::test]
     fn transaction_manager_enters_broken_state_when_connection_is_broken() {
+        use crate::connection::TransactionManagerStatus;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
-        use crate::connection::TransactionManagerStatus;
         use crate::result::{DatabaseErrorKind, Error};
         use crate::*;
 
@@ -790,7 +791,11 @@ mod test {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
@@ -1099,12 +1104,16 @@ mod test {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    #[cfg(feature = "__sqlite-shared")]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
+        use crate::connection::SimpleConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
-        use crate::connection::SimpleConnection;
         use crate::prelude::*;
         use crate::result::{DatabaseErrorKind, Error};
 
@@ -1169,11 +1178,15 @@ mod test {
     }
 
     #[diesel_test_helper::test]
-    #[cfg(feature = "sqlite")]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[cfg(feature = "__sqlite-shared")]
     fn sqlite_transaction_commits_after_a_recovered_statement_error() {
+        use crate::connection::SimpleConnection;
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
-        use crate::connection::SimpleConnection;
         use crate::prelude::*;
         use crate::result::Error;
 

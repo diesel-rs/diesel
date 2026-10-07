@@ -14,7 +14,7 @@ pub use diesel_derives::sql_function_proc as sql_function;
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 macro_rules! no_arg_sql_function_body_except_to_sql {
-    ($type_name:ident, $return_type:ty, $docs:expr) => {
+    ($type_name:ident, $return_type:ty, $docs:expr_2021) => {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
         #[derive(
@@ -36,7 +36,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 macro_rules! no_arg_sql_function_body {
-    ($type_name:ident, $return_type:ty, $docs:expr, $($constraint:ident)::+) => {
+    ($type_name:ident, $return_type:ty, $docs:expr_2021, $($constraint:ident)::+) => {
         no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
@@ -50,7 +50,7 @@ macro_rules! no_arg_sql_function_body {
         }
     };
 
-    ($type_name:ident, $return_type:ty, $docs:expr) => {
+    ($type_name:ident, $return_type:ty, $docs:expr_2021) => {
         no_arg_sql_function_body_except_to_sql!($type_name, $return_type, $docs);
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $type_name where
@@ -92,11 +92,11 @@ macro_rules! no_arg_sql_function {
         no_arg_sql_function!($type_name, $return_type, "");
     };
 
-    ($type_name:ident, $return_type:ty, $docs:expr) => {
+    ($type_name:ident, $return_type:ty, $docs:expr_2021) => {
         no_arg_sql_function_body!($type_name, $return_type, $docs);
     };
 
-    ($type_name:ident, $return_type:ty, $docs:expr, $($constraint:ident)::+) => {
+    ($type_name:ident, $return_type:ty, $docs:expr_2021, $($constraint:ident)::+) => {
         no_arg_sql_function_body!($type_name, $return_type, $docs, $($constraint)::+);
     };
 }

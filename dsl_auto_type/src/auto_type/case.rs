@@ -42,7 +42,7 @@ impl Case {
                             `PascalCase`, `snake_case`, `UpperCamelCase`, `lowerCamelCase`, \
                             `SHOUTY_SNAKE_CASE`, `dO_nOt_cHaNgE_cAsE`"
                     ),
-                ))
+                ));
             }
         })
     }

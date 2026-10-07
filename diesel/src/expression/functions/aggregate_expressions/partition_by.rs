@@ -1,13 +1,13 @@
+use super::NoWindow;
 use super::aggregate_filter::NoFilter;
 use super::aggregate_order::NoOrder;
 use super::frame_clause::NoFrame;
 use super::over_clause::{OverClause, ValidAggregateFilterForWindow};
 use super::prefix::NoPrefix;
-use super::NoWindow;
 use super::{AggregateExpression, IsWindowFunction};
+use crate::QueryResult;
 use crate::query_builder::QueryFragment;
 use crate::query_builder::{AstPass, QueryId};
-use crate::QueryResult;
 
 empty_clause!(NoPartition);
 

@@ -86,10 +86,10 @@ impl Project {
             .read_dir()
             .expect("Error reading directory")
             .filter_map(|e| {
-                if let Ok(e) = e {
-                    if e.path().is_dir() {
-                        return Some(Migration { path: e.path() });
-                    }
+                if let Ok(e) = e
+                    && e.path().is_dir()
+                {
+                    return Some(Migration { path: e.path() });
                 }
                 None
             })
@@ -101,7 +101,7 @@ impl Project {
         fs::remove_file(file).unwrap();
     }
 
-    #[cfg(any(feature = "postgres", feature = "mysql"))]
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     fn database_url_from_env(&self, var: &str) -> url::Url {
         use self::dotenvy::dotenv;
         use std::env;
@@ -121,6 +121,12 @@ impl Project {
     #[cfg(feature = "mysql")]
     pub fn database_url(&self) -> String {
         self.database_url_from_env("MYSQL_DATABASE_URL").to_string()
+    }
+
+    #[cfg(feature = "mariadb")]
+    pub fn database_url(&self) -> String {
+        self.database_url_from_env("MARIADB_DATABASE_URL")
+            .to_string()
     }
 
     #[cfg(feature = "sqlite")]

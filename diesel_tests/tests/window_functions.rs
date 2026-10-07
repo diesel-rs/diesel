@@ -100,7 +100,7 @@ fn frame_no_following() {
     assert_eq!(res, vec![1, 2]);
 }
 
-#[cfg(not(feature = "mysql"))] // mysql doesn't support exclusion
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql doesn't support exclusion
 #[diesel_test_helper::test]
 fn frame_skip_current_row() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -133,7 +133,7 @@ fn frame_current_row_only() {
     assert_eq!(res, vec![1, 1]);
 }
 
-#[cfg(not(feature = "mysql"))] // mysql doesn't support exclusion
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql doesn't support exclusion
 #[diesel_test_helper::test]
 fn frame_current_row_exclude_current_row() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -151,7 +151,7 @@ fn frame_current_row_exclude_current_row() {
     assert_eq!(res, vec![0, 0]);
 }
 
-#[cfg(not(feature = "mysql"))] // mysql doesn't support exclusion
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql doesn't support exclusion
 #[diesel_test_helper::test]
 fn frame_current_row_exclude_group() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -168,7 +168,7 @@ fn frame_current_row_exclude_group() {
     assert_eq!(res, vec![0, 0]);
 }
 
-#[cfg(not(feature = "mysql"))] // mysql doesn't support exclusion
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql doesn't support exclusion
 #[diesel_test_helper::test]
 fn frame_current_row_exclude_ties() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -185,7 +185,7 @@ fn frame_current_row_exclude_ties() {
     assert_eq!(res, vec![1, 1]);
 }
 
-#[cfg(not(feature = "mysql"))] // mysql doesn't support exclusion
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql doesn't support exclusion
 #[diesel_test_helper::test]
 fn frame_current_row_exclude_no_others() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -217,7 +217,7 @@ fn frame_range() {
     assert_eq!(res, vec![2, 2]);
 }
 
-#[cfg(not(feature = "mysql"))] // mysql doesn't support group frame clauses
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))] // mysql doesn't support group frame clauses
 #[diesel_test_helper::test]
 fn frame_groups() {
     let mut conn = connection_with_sean_and_tess_in_users_table();

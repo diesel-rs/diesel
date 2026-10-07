@@ -1,4 +1,4 @@
-use crate::query_source::Table;
+use crate::query_source::QueryRelation;
 
 /// The `offset` method
 ///
@@ -17,7 +17,7 @@ pub trait OffsetDsl<DummyArgForAutoType = i64> {
 
 impl<T> OffsetDsl for T
 where
-    T: Table,
+    T: QueryRelation,
     T::Query: OffsetDsl,
 {
     type Output = <T::Query as OffsetDsl>::Output;

@@ -13,16 +13,25 @@
 //! requires a where clause on sqlite due to a ambiguity in their
 //! parser. See [the corresponding documentation](https://www.sqlite.org/lang_UPSERT.html)
 //! for details.
+pub(crate) use self::on_conflict_extension::OnConflictHelper;
 use crate::query_builder::upsert::on_conflict_actions::Excluded;
 
 mod on_conflict_extension;
 
-pub use self::on_conflict_extension::DecoratableTarget;
-pub use self::on_conflict_extension::*;
+#[doc(inline)]
+pub use self::on_conflict_extension::{
+    DecoratableTarget, IncompleteDoUpdate, IncompleteOnConflict,
+};
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::on_constraint::*;
 
-/// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause.
+/// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause,
+/// and `VALUES(column)` for MySQL and MariaDB.
 pub fn excluded<T>(excluded: T) -> Excluded<T> {
     Excluded::new(excluded)
 }
+
+/// Reexports `excluded` as `values` for MySQL and MariaDB using
+/// `VALUES(column)`, which MySQL deprecates but whose replacement requires MySQL 8.0.19.
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+pub use excluded as values;

@@ -5,14 +5,22 @@ mod table_data;
 
 #[cfg(feature = "uses_information_schema")]
 mod information_schema;
+#[cfg(feature = "mariadb")]
+pub mod mariadb;
 #[cfg(feature = "mysql")]
-mod mysql;
+pub mod mysql;
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+pub(crate) mod mysql_like;
+
 #[cfg(feature = "postgres")]
-mod pg;
+pub mod pg;
+mod schema_resolver;
 #[cfg(feature = "sqlite")]
 mod sqlite;
 
 pub use self::data_structures::*;
 pub use self::foreign_keys::*;
 pub use self::inference::*;
+pub use self::schema_resolver::SchemaResolverImpl;
 pub use self::table_data::*;

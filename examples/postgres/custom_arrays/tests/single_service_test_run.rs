@@ -1,8 +1,8 @@
+use custom_arrays::Connection;
 use custom_arrays::model::endpoint_type::Endpoint;
 use custom_arrays::model::protocol_type::ProtocolType;
 use custom_arrays::model::service;
 use custom_arrays::model::service::{CreateService, UpdateService};
-use custom_arrays::Connection;
 use diesel::{Connection as DieselConnection, PgConnection};
 use dotenvy::dotenv;
 use std::env;

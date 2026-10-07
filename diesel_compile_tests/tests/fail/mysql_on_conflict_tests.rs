@@ -33,6 +33,12 @@ fn main() {
         .do_update()
         .set(name.eq("Jane"))
         .execute(&mut connection);
+    insert_into(users)
+        .values((id.eq(42), name.eq("John")))
+        .on_conflict(dsl::DuplicatedKeys)
+        .do_update()
+        .set(name.eq(upsert::values(name)))
+        .execute(&mut connection);
 
     // do not allow columns as on_conflict target
     insert_into(users)
@@ -65,15 +71,6 @@ fn main() {
         .execute(&mut connection);
     //~^ ERROR: `OnConflictValues<ValuesClause<_, table>, _, _>` is no valid SQL fragment for the `Mysql` backend
 
-    // do not allow excluded
-    insert_into(users)
-        .values((id.eq(42), name.eq("John")))
-        .on_conflict(dsl::DuplicatedKeys)
-        .do_update()
-        .set(name.eq(upsert::excluded(name)))
-        .execute(&mut connection);
-    //~^ ERROR: `OnConflictValues<ValuesClause<_, table>, _, _>` is no valid SQL fragment for the `Mysql` backend
-
     let mut connection = PgConnection::establish("postgres://localhost").unwrap();
 
     // do not allow `DuplicatedKeys` for other backends:
@@ -82,7 +79,7 @@ fn main() {
         .on_conflict(dsl::DuplicatedKeys)
         .do_nothing()
         .execute(&mut connection);
-    //~^ ERROR: `ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
+    //~^ ERROR: `diesel::query_builder::ConflictTarget<DuplicatedKeys>` is no valid SQL fragment for the `Pg` backend
 
     insert_into(users)
         .values((id.eq(42), name.eq("John")))

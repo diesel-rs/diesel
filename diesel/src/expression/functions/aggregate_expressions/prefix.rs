@@ -3,8 +3,8 @@ use super::IsAggregateFunction;
 use super::NoFilter;
 use super::NoOrder;
 use super::NoWindow;
-use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::QueryResult;
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
 
 empty_clause!(NoPrefix);
 

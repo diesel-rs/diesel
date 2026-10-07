@@ -21,6 +21,7 @@ mod project_builder;
 #[cfg_attr(feature = "sqlite", path = "sqlite_database.rs")]
 #[cfg_attr(feature = "postgres", path = "postgres_database.rs")]
 #[cfg_attr(feature = "mysql", path = "mysql_database.rs")]
+#[cfg_attr(feature = "mariadb", path = "mariadb_database.rs")]
 pub mod database;
 
 #[cfg(rustfmt)]
@@ -30,7 +31,7 @@ mod postgres_database;
 #[cfg(rustfmt)]
 mod sqlite_database;
 
-pub use self::project_builder::{project, Project};
+pub use self::project_builder::{Project, project};
 
 pub fn database(url: &str) -> database::Database {
     database::Database::new(url)

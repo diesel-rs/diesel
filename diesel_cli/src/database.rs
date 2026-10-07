@@ -1,8 +1,10 @@
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use super::query_helper;
-use clap::ArgMatches;
+use clap::{ArgAction, Args, Subcommand};
 use diesel::connection::InstrumentationEvent;
 use diesel::dsl::sql;
+#[cfg(feature = "mariadb")]
+use diesel::mariadb::MariadbConnection;
 use diesel::sql_types::Bool;
 use diesel::*;
 use diesel_migrations::FileBasedMigrations;
@@ -12,6 +14,36 @@ use std::env;
 use std::fs::{self};
 use std::path::Path;
 
+#[derive(Debug, Args)]
+pub struct DatabaseArgs {
+    #[command(subcommand)]
+    pub command: DatabaseCommand,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum DatabaseCommand {
+    /// Creates the database specified in your DATABASE_URL, and
+    /// then runs any existing migrations.
+    Setup {
+        /// Don't generate the default migration.
+        #[arg(id = "NO_DEFAULT_MIGRATION", long = "no-default-migration", action = ArgAction::SetTrue)]
+        no_default_migration: bool,
+    },
+
+    /// Resets your database by dropping the database specified
+    /// in your DATABASE_URL and then running `diesel database
+    /// setup`.
+    Reset {
+        /// Don't generate the default migration.
+        #[arg(id = "NO_DEFAULT_MIGRATION", long = "no-default-migration", action = ArgAction::SetTrue)]
+        no_default_migration: bool,
+    },
+
+    /// Drops the database specified in your DATABASE_URL.
+    #[command(hide = true)]
+    Drop,
+}
+
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Backend {
     #[cfg(feature = "postgres")]
@@ -20,6 +52,8 @@ pub enum Backend {
     Sqlite,
     #[cfg(feature = "mysql")]
     Mysql,
+    #[cfg(feature = "mariadb")]
+    Mariadb,
 }
 
 impl Backend {
@@ -39,8 +73,7 @@ impl Backend {
                     );
                 }
             }
-            _ if database_url.starts_with("mysql://") =>
-            {
+            _ if database_url.starts_with("mysql://") => {
                 #[cfg(feature = "mysql")]
                 {
                     Backend::Mysql
@@ -49,6 +82,19 @@ impl Backend {
                 {
                     panic!(
                         "Database url `{database_url}` requires the `mysql` feature but it's not enabled."
+                    );
+                }
+            }
+            _ if database_url.starts_with("mariadb://") => {
+                #[cfg(feature = "mariadb")]
+                {
+                    Backend::Mariadb
+                }
+                #[cfg(not(feature = "mariadb"))]
+                {
+                    panic!(
+                        "Database url `{}` requires the `mariadb` feature but it's not enabled.",
+                        database_url
                     );
                 }
             }
@@ -73,6 +119,9 @@ impl Backend {
                 if cfg!(feature = "mysql") {
                     available_schemes.push("`mysql://`");
                 }
+                if cfg!(feature = "mariadb") {
+                    available_schemes.push("`mariadb://`");
+                }
 
                 panic!(
                     "`{}` is not a valid database URL. It should start with {}, or maybe you meant to use the `sqlite` feature which is not enabled.",
@@ -80,11 +129,16 @@ impl Backend {
                     available_schemes.join(" or ")
                 );
             }
-            #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
+            #[cfg(not(any(
+                feature = "mysql",
+                feature = "sqlite",
+                feature = "postgres",
+                feature = "mariadb"
+            )))]
             _ => compile_error!(
                 "At least one backend must be specified for use with this crate. \
                  You may omit the unneeded dependencies in the following command. \n\n \
-                 ex. `cargo install diesel_cli --no-default-features --features mysql postgres sqlite` \n"
+                 ex. `cargo install diesel_cli --no-default-features --features mysql mariadb postgres sqlite` \n"
             ),
         }
     }
@@ -97,6 +151,8 @@ impl Backend {
             InferConnection::Sqlite(_) => Self::Sqlite,
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => Self::Mysql,
+            #[cfg(feature = "mariadb")]
+            InferConnection::Mariadb(_) => Self::Mariadb,
         }
     }
 }
@@ -109,11 +165,13 @@ pub enum InferConnection {
     Sqlite(SqliteConnection),
     #[cfg(feature = "mysql")]
     Mysql(MysqlConnection),
+    #[cfg(feature = "mariadb")]
+    Mariadb(MariadbConnection),
 }
 
 impl InferConnection {
-    pub fn from_matches(matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
-        let database_url = database_url(matches)?;
+    pub fn from_maybe_url(url: Option<String>) -> Result<Self, crate::errors::Error> {
+        let database_url = database_url(url)?;
         Self::from_url(database_url)
     }
 
@@ -127,6 +185,8 @@ impl InferConnection {
             Backend::Pg => PgConnection::establish(&database_url).map(Self::Pg),
             #[cfg(feature = "mysql")]
             Backend::Mysql => MysqlConnection::establish(&database_url).map(Self::Mysql),
+            #[cfg(feature = "mariadb")]
+            Backend::Mariadb => MariadbConnection::establish(&database_url).map(Self::Mariadb),
             #[cfg(feature = "sqlite")]
             Backend::Sqlite => SqliteConnection::establish(&database_url).map(Self::Sqlite),
         };
@@ -149,23 +209,70 @@ impl InferConnection {
     }
 }
 
-pub fn reset_database(
-    args: &ArgMatches,
-    migrations_dir: &Path,
+#[tracing::instrument]
+pub fn run_setup_command(
+    database_url: Option<String>,
+    migration_dir: Option<std::path::PathBuf>,
+    config_file: Option<std::path::PathBuf>,
+    no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
-    drop_database(&database_url(args)?)?;
-    setup_database(args, migrations_dir)
+    let migration_dir = crate::create_migrations_dir(migration_dir, config_file.clone())?;
+    crate::create_config_file(config_file, &migration_dir)?;
+
+    setup_database(database_url, &migration_dir, no_default_migration)?;
+    Ok(())
+}
+
+#[tracing::instrument]
+pub fn run_database_command(
+    args: DatabaseArgs,
+    config_file: Option<std::path::PathBuf>,
+    database_url: Option<String>,
+    locked_schema: bool,
+    migration_dir: Option<std::path::PathBuf>,
+) -> Result<(), crate::errors::Error> {
+    match args.command {
+        DatabaseCommand::Setup {
+            no_default_migration,
+        } => {
+            let migration_dir =
+                crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
+            setup_database(database_url.clone(), &migration_dir, no_default_migration)?;
+            crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
+        }
+        DatabaseCommand::Reset {
+            no_default_migration,
+        } => {
+            let migration_dir =
+                crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
+            reset_database(database_url.clone(), &migration_dir, no_default_migration)?;
+            crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
+        }
+        DatabaseCommand::Drop => crate::database::drop_database_command(database_url)?,
+    }
+
+    Ok(())
+}
+
+pub fn reset_database(
+    db_url: Option<String>,
+    migrations_dir: &Path,
+    no_default_migration: bool,
+) -> Result<(), crate::errors::Error> {
+    drop_database(&database_url(db_url.clone())?)?;
+    setup_database(db_url, migrations_dir, no_default_migration)
 }
 
 pub fn setup_database(
-    args: &ArgMatches,
+    db_url: Option<String>,
     migrations_dir: &Path,
+    no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
-    let database_url = database_url(args)?;
+    let database_url = database_url(db_url)?;
 
     create_database_if_needed(&database_url)?;
 
-    let default_migrations = !args.get_flag("NO_DEFAULT_MIGRATION");
+    let default_migrations = !no_default_migration;
 
     if default_migrations {
         create_default_migration_if_needed(&database_url, migrations_dir)?;
@@ -175,8 +282,8 @@ pub fn setup_database(
     Ok(())
 }
 
-pub fn drop_database_command(args: &ArgMatches) -> Result<(), crate::errors::Error> {
-    drop_database(&database_url(args)?)
+pub fn drop_database_command(db_url: Option<String>) -> Result<(), crate::errors::Error> {
+    drop_database(&database_url(db_url)?)
 }
 
 /// Creates the database specified in the connection url. It returns an error
@@ -220,6 +327,21 @@ fn create_database_if_needed(database_url: &str) -> Result<(), crate::errors::Er
                     crate::errors::Error::ConnectionError {
                         error,
                         url: mysql_url,
+                    }
+                })?;
+                query_helper::create_database(&database).execute(&mut conn)?;
+            }
+        }
+        #[cfg(feature = "mariadb")]
+        Backend::Mariadb => {
+            if MariadbConnection::establish(database_url).is_err() {
+                let (database, mariadb_url) =
+                    change_database_of_url(database_url, "information_schema")?;
+                println!("Creating database: {database}");
+                let mut conn = MariadbConnection::establish(&mariadb_url).map_err(|error| {
+                    crate::errors::Error::ConnectionError {
+                        error,
+                        url: mariadb_url,
                     }
                 })?;
                 query_helper::create_database(&database).execute(&mut conn)?;
@@ -334,6 +456,23 @@ fn drop_database(database_url: &str) -> Result<(), crate::errors::Error> {
                     .execute(&mut conn)?;
             }
         }
+        #[cfg(feature = "mariadb")]
+        Backend::Mariadb => {
+            let (database, mariadb_url) =
+                change_database_of_url(database_url, "information_schema")?;
+            let mut conn = MariadbConnection::establish(&mariadb_url).map_err(|e| {
+                crate::errors::Error::ConnectionError {
+                    error: e,
+                    url: mariadb_url,
+                }
+            })?;
+            if mariadb_database_exists(&mut conn, &database)? {
+                println!("Dropping database: {database}");
+                query_helper::drop_database(&database)
+                    .if_exists()
+                    .execute(&mut conn)?;
+            }
+        }
     }
     Ok(())
 }
@@ -359,7 +498,7 @@ fn pg_database_exists(conn: &mut PgConnection, database_name: &str) -> QueryResu
         .map(|x| x.is_some())
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 table! {
     information_schema.schemata (schema_name) {
         schema_name -> Text,
@@ -368,6 +507,18 @@ table! {
 
 #[cfg(feature = "mysql")]
 fn mysql_database_exists(conn: &mut MysqlConnection, database_name: &str) -> QueryResult<bool> {
+    use self::schemata::dsl::*;
+
+    schemata
+        .select(schema_name)
+        .filter(schema_name.eq(database_name))
+        .get_result::<String>(conn)
+        .optional()
+        .map(|x| x.is_some())
+}
+
+#[cfg(feature = "mariadb")]
+fn mariadb_database_exists(conn: &mut MariadbConnection, database_name: &str) -> QueryResult<bool> {
     use self::schemata::dsl::*;
 
     schemata
@@ -408,19 +559,26 @@ pub fn schema_table_exists(database_url: &str) -> Result<bool, crate::errors::Er
                      AND table_schema = DATABASE())",
         ))
         .get_result(&mut conn),
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(mut conn) => select(sql::<Bool>(
+            "EXISTS \
+                    (SELECT 1 \
+                     FROM information_schema.tables \
+                     WHERE table_name = '__diesel_schema_migrations'
+                     AND table_schema = DATABASE())",
+        ))
+        .get_result(&mut conn),
     }
     .map_err(Into::into)
 }
 
-pub fn database_url(matches: &ArgMatches) -> Result<String, crate::errors::Error> {
-    matches
-        .get_one::<String>("DATABASE_URL")
-        .cloned()
+pub fn database_url(database_url: Option<String>) -> Result<String, crate::errors::Error> {
+    database_url
         .or_else(|| env::var("DATABASE_URL").ok())
         .ok_or(crate::errors::Error::DatabaseUrlMissing)
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn change_database_of_url(
     database_url: &str,
     default_database: &str,
@@ -433,7 +591,7 @@ fn change_database_of_url(
     Ok((database, new_url.into()))
 }
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 fn get_database_and_url(database_url: &str) -> Result<(String, url::Url), crate::errors::Error> {
     let base = url::Url::parse(database_url)?;
     let database = base
@@ -478,7 +636,10 @@ fn path_from_sqlite_url(database_url: &str) -> Result<std::path::PathBuf, crate:
     }
 }
 
-#[cfg(all(test, any(feature = "postgres", feature = "mysql")))]
+#[cfg(all(
+    test,
+    any(feature = "postgres", feature = "mysql", feature = "mariadb")
+))]
 mod tests {
     use super::change_database_of_url;
 

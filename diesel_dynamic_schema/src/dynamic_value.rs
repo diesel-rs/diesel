@@ -41,7 +41,7 @@
 //! #     }
 //! # }
 //! #
-//! # #[cfg(feature = "sqlite")]
+//! # #[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 //! # impl FromSql<Any, diesel::sqlite::Sqlite> for MyDynamicValue {
 //! #     fn from_sql(value: diesel::sqlite::SqliteValue) -> deserialize::Result<Self> {
 //! #         use diesel::sqlite::{Sqlite, SqliteType};
@@ -69,6 +69,22 @@
 //! #                      .map(MyDynamicValue::String)
 //! #              }
 //! #              MysqlType::Long => <i32 as FromSql<diesel::sql_types::Integer, Mysql>>::from_sql(value)
+//! #                 .map(MyDynamicValue::Integer),
+//! #             e => Err(format!("Unknown data type: {:?}", e).into()),
+//! #         }
+//! #     }
+//! # }
+//!
+//! # #[cfg(feature = "mariadb")]
+//! # impl FromSql<Any, diesel::mariadb::Mariadb> for MyDynamicValue {
+//! #    fn from_sql(value: diesel::mariadb::MariadbValue) -> deserialize::Result<Self> {
+//! #         use diesel::mariadb::{Mariadb, MariadbType};
+//! #         match value.value_type() {
+//! #              MariadbType::String => {
+//! #                  <String as FromSql<diesel::sql_types::Text, Mariadb>>::from_sql(value)
+//! #                      .map(MyDynamicValue::String)
+//! #              }
+//! #              MariadbType::Long => <i32 as FromSql<diesel::sql_types::Integer, Mariadb>>::from_sql(value)
 //! #                 .map(MyDynamicValue::Integer),
 //! #             e => Err(format!("Unknown data type: {:?}", e).into()),
 //! #         }
@@ -147,13 +163,16 @@
 //! }
 //! ```
 
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::iter::FromIterator;
+use core::ops::{Index, IndexMut};
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
 use diesel::expression::TypedExpressionType;
 use diesel::row::{Field, NamedRow, Row};
 use diesel::QueryableByName;
-use std::iter::FromIterator;
-use std::ops::Index;
 
 /// A marker type used to indicate that
 /// the provided `FromSql` impl does handle
@@ -170,7 +189,7 @@ impl diesel::expression::QueryMetadata<Any> for diesel::pg::Pg {
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl diesel::expression::QueryMetadata<Any> for diesel::sqlite::Sqlite {
     fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
@@ -184,17 +203,47 @@ impl diesel::expression::QueryMetadata<Any> for diesel::mysql::Mysql {
     }
 }
 
+#[cfg(feature = "mariadb")]
+impl diesel::expression::QueryMetadata<Any> for diesel::mariadb::Mariadb {
+    fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+        out.push(None)
+    }
+}
 /// A dynamically sized container that allows to receive
 /// a not at compile time known number of columns from the database
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DynamicRow<I> {
     values: Vec<I>,
+}
+
+impl<I> From<DynamicRow<I>> for Vec<I> {
+    fn from(row: DynamicRow<I>) -> Self {
+        row.values
+    }
+}
+
+impl<I> From<DynamicRow<NamedField<I>>> for Vec<I> {
+    fn from(row: DynamicRow<NamedField<I>>) -> Self {
+        row.values.into_iter().map(|f| f.value).collect()
+    }
+}
+
+impl<I> From<Vec<I>> for DynamicRow<I> {
+    fn from(values: Vec<I>) -> Self {
+        Self { values }
+    }
+}
+
+impl<I> AsRef<DynamicRow<I>> for DynamicRow<I> {
+    fn as_ref(&self) -> &DynamicRow<I> {
+        self
+    }
 }
 
 /// A helper struct used as field type in `DynamicRow`
 /// to also return the name of the field along with the
 /// value
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NamedField<I> {
     /// Name of the field
     pub name: String,
@@ -221,6 +270,13 @@ impl<I> DynamicRow<I> {
         self.values.get(index)
     }
 
+    /// Get the mutable field value at the provided row index
+    ///
+    /// Returns `None` if the index is outside the bounds of the row
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut I> {
+        self.values.get_mut(index)
+    }
+
     /// Get the number of fields in the current row
     pub fn len(&self) -> usize {
         self.values.len()
@@ -229,6 +285,16 @@ impl<I> DynamicRow<I> {
     /// Check if the current row is empty
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
+    }
+
+    /// Returns an iterator over the values of the row
+    pub fn iter(&self) -> impl Iterator<Item = &I> {
+        self.values.iter()
+    }
+
+    /// Returns a mutable iterator over the values of the row
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut I> {
+        self.values.iter_mut()
     }
 
     /// Create a new dynamic row from an existing database row
@@ -263,6 +329,18 @@ impl<I> DynamicRow<NamedField<I>> {
             .iter()
             .find(|f| f.name == name.as_ref())
             .map(|f| &f.value)
+    }
+
+    /// Get the mutable field value by the provided field name
+    ///
+    /// Returns `None` if the field with the specified name is not found.
+    /// If there are multiple fields with the same name, the behaviour
+    /// of this function is unspecified.
+    pub fn get_mut_by_name<S: AsRef<str>>(&mut self, name: S) -> Option<&mut I> {
+        self.values
+            .iter_mut()
+            .find(|f| f.name == name.as_ref())
+            .map(|f| &mut f.value)
     }
 }
 
@@ -320,7 +398,17 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "mariadb")]
+impl<I> QueryableByName<diesel::mariadb::Mariadb> for DynamicRow<I>
+where
+    I: FromSql<Any, diesel::mariadb::Mariadb>,
+{
+    fn build<'a>(row: &impl NamedRow<'a, diesel::mariadb::Mariadb>) -> deserialize::Result<Self> {
+        Self::from_row(row)
+    }
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl<I> QueryableByName<diesel::sqlite::Sqlite> for DynamicRow<I>
 where
     I: FromSql<Any, diesel::sqlite::Sqlite>,
@@ -397,7 +485,17 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "mariadb")]
+impl<I> QueryableByName<diesel::mariadb::Mariadb> for DynamicRow<NamedField<Option<I>>>
+where
+    I: FromSql<Any, diesel::mariadb::Mariadb>,
+{
+    fn build<'a>(row: &impl NamedRow<'a, diesel::mariadb::Mariadb>) -> deserialize::Result<Self> {
+        Self::from_nullable_row(row)
+    }
+}
+
+#[cfg(any(feature = "sqlite", feature = "sqlite-no-std"))]
 impl<I> QueryableByName<diesel::sqlite::Sqlite> for DynamicRow<NamedField<Option<I>>>
 where
     I: FromSql<Any, diesel::sqlite::Sqlite>,
@@ -415,6 +513,12 @@ impl<I> Index<usize> for DynamicRow<I> {
     }
 }
 
+impl<I> IndexMut<usize> for DynamicRow<I> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.values[index]
+    }
+}
+
 impl<'a, I> Index<&'a str> for DynamicRow<NamedField<I>> {
     type Output = I;
 
@@ -427,6 +531,16 @@ impl<'a, I> Index<&'a str> for DynamicRow<NamedField<I>> {
     }
 }
 
+impl<'a, I> IndexMut<&'a str> for DynamicRow<NamedField<I>> {
+    fn index_mut(&mut self, field_name: &'a str) -> &mut Self::Output {
+        self.values
+            .iter_mut()
+            .find(|f| f.name == field_name)
+            .map(|f| &mut f.value)
+            .expect("Field not found")
+    }
+}
+
 impl<'a, I> Index<&'a String> for DynamicRow<NamedField<I>> {
     type Output = I;
 
@@ -435,11 +549,23 @@ impl<'a, I> Index<&'a String> for DynamicRow<NamedField<I>> {
     }
 }
 
+impl<'a, I> IndexMut<&'a String> for DynamicRow<NamedField<I>> {
+    fn index_mut(&mut self, field_name: &'a String) -> &mut Self::Output {
+        self.index_mut(field_name as &str)
+    }
+}
+
 impl<I> Index<String> for DynamicRow<NamedField<I>> {
     type Output = I;
 
     fn index(&self, field_name: String) -> &Self::Output {
         self.index(&field_name)
+    }
+}
+
+impl<I> IndexMut<String> for DynamicRow<NamedField<I>> {
+    fn index_mut(&mut self, field_name: String) -> &mut Self::Output {
+        self.index_mut(&field_name)
     }
 }
 
@@ -458,5 +584,14 @@ impl<'a, V> IntoIterator for &'a DynamicRow<V> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.values.iter()
+    }
+}
+
+impl<'a, V> IntoIterator for &'a mut DynamicRow<V> {
+    type Item = &'a mut V;
+    type IntoIter = <&'a mut Vec<V> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.values.iter_mut()
     }
 }

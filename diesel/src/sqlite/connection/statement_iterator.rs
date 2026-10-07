@@ -1,5 +1,6 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use alloc::rc::Rc;
+use alloc::string::String;
+use core::cell::RefCell;
 
 use super::row::{PrivateSqliteRow, SqliteRow};
 use super::stmt::StatementUse;
@@ -41,7 +42,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
                 // The statement is not advanced, so the row it holds stays current.
                 Err(e) => return Some(Err(e)),
             };
-            std::mem::replace(last_row, duplicated)
+            core::mem::replace(last_row, duplicated)
         };
         if let PrivateSqliteRow::Direct(mut stmt) = last_row {
             let res = unsafe {

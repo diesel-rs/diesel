@@ -1,13 +1,14 @@
 use super::HasTable;
 use crate::dsl::{Eq, EqAny, Filter, FindBy};
-use crate::expression::array_comparison::AsInExpression;
 use crate::expression::AsExpression;
+use crate::expression::array_comparison::AsInExpression;
 use crate::prelude::*;
 use crate::query_dsl::methods::FilterDsl;
 use crate::sql_types::SqlType;
+use alloc::vec::Vec;
 
-use std::borrow::Borrow;
-use std::hash::Hash;
+use core::borrow::Borrow;
+use core::hash::Hash;
 
 /// Indicates that a type belongs to `Parent`
 ///
@@ -18,7 +19,7 @@ use std::hash::Hash;
 /// This trait is not capable of supporting composite foreign keys
 pub trait BelongsTo<Parent> {
     /// The foreign key of this struct
-    type ForeignKey: Hash + ::std::cmp::Eq;
+    type ForeignKey: Hash + ::core::cmp::Eq;
     /// The database column representing the foreign key
     /// of the table this struct represents
     type ForeignKeyColumn: Column;
@@ -296,8 +297,8 @@ where
     Id<&'a Parent>: Borrow<Child::ForeignKey>,
 {
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Child>> {
-        use std::collections::HashMap;
-        use std::iter;
+        use crate::util::std_compat::HashMap;
+        use core::iter;
 
         let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
 
@@ -323,8 +324,8 @@ where
         self,
         parents: &'a [Parent],
     ) -> Result<Vec<Vec<Child>>, TryGroupedByError<Child>> {
-        use std::collections::HashMap;
-        use std::iter;
+        use crate::util::std_compat::HashMap;
+        use core::iter;
 
         let mut grouped: Vec<_> = iter::repeat_with(Vec::new).take(parents.len()).collect();
         let mut ungrouped: Vec<_> = Vec::new();

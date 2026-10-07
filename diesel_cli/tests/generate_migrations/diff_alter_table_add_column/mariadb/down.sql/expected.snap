@@ -1,0 +1,8 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_alter_table_add_column"
+---
+-- This file should undo anything in `up.sql`
+ALTER TABLE `users` DROP COLUMN `hair_color`;
+
+

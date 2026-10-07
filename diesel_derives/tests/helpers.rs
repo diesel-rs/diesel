@@ -53,6 +53,9 @@ cfg_if! {
                 type VARCHAR DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
+            sql_query("CREATE TABLE cars (\
+                id SERIAL PRIMARY KEY,
+                paint_color color not null)").execute(&mut conn).unwrap();
             conn
         }
     } else if #[cfg(feature = "mysql")] {
@@ -79,6 +82,39 @@ cfg_if! {
                 type VARCHAR(255) DEFAULT 'regular')")
                 .execute(&mut conn)
                 .unwrap();
+            sql_query("CREATE TEMPORARY TABLE cars (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                paint_color ENUM('Blue', 'Red') NOT NULL)").execute(&mut conn).unwrap();
+            conn.begin_test_transaction().unwrap();
+            conn
+        }
+    } else if #[cfg(feature = "mariadb")] {
+        extern crate dotenvy;
+
+        pub type TestConnection = MariadbConnection;
+
+        pub fn connection() -> TestConnection {
+            let database_url = dotenvy::var("MARIADB_UNIT_TEST_DATABASE_URL")
+                .or_else(|_| dotenvy::var("DATABASE_URL"))
+                .expect("DATABASE_URL must be set in order to run tests");
+            let mut conn = MariadbConnection::establish(&database_url).unwrap();
+            sql_query("CREATE TEMPORARY TABLE users (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+                name TEXT NOT NULL, \
+                hair_color VARCHAR(255) DEFAULT 'Green',
+                type VARCHAR(255) DEFAULT 'regular')")
+                .execute(&mut conn)
+                .unwrap();
+            sql_query("CREATE TEMPORARY TABLE users_ (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+                name TEXT NOT NULL, \
+                hair_color VARCHAR(255) DEFAULT 'Green',
+                type VARCHAR(255) DEFAULT 'regular')")
+                .execute(&mut conn)
+                .unwrap();
+            sql_query("CREATE TEMPORARY TABLE cars (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                paint_color ENUM('Blue', 'Red') NOT NULL)").execute(&mut conn).unwrap();
             conn.begin_test_transaction().unwrap();
             conn
         }
@@ -86,8 +122,8 @@ cfg_if! {
         compile_error!(
             "At least one backend must be used to test this crate.\n \
             Pass argument `--features \"<backend>\"` with one or more of the following backends, \
-            'mysql', 'postgres', or 'sqlite'. \n\n \
-            ex. cargo test --features \"mysql postgres sqlite\"\n"
+            'mysql', 'mariadb', 'postgres', or 'sqlite'. \n\n \
+            ex. cargo test --features \"mysql mariadb postgres sqlite\"\n"
         );
      }
 }

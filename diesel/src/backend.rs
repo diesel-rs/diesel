@@ -7,7 +7,8 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
     not(any(
         feature = "postgres_backend",
         feature = "mysql_backend",
-        feature = "sqlite",
+        feature = "__sqlite-shared",
+        feature = "mariadb_backend",
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )),
     allow(unused_imports)
@@ -146,7 +147,7 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        doc = "implementation for [`ReturningClause`](crate::query_builder::ReturningClause)"
+        doc = "implementation for [`ReturningClause`](crate::query_builder::returning::ReturningClause)"
     )]
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
@@ -193,6 +194,23 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::batch_insert_support`] for provided default implementations"
     )]
     type BatchInsertSupport;
+    /// Configures how this backend handles Batch update statements
+    ///
+    /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`BatchUpdate`](crate::query_builder::BatchUpdate)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `BatchUpdate`"
+    )]
+    ///
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::batch_update_support`] for provided default implementations"
+    )]
+    type BatchUpdateSupport;
     /// Configures how this backend handles the Concat clauses in
     /// select statements.
     ///
@@ -470,6 +488,23 @@ pub(crate) mod sql_dialect {
 
         impl SupportsBatchInsert for PostgresLikeBatchInsertSupport {}
     }
+
+    /// This module contains all reusable options to configure
+    /// [`SqlDialect::BatchUpdateSupport`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod batch_update_support {
+        /// A marker trait indicating if batch update statements
+        /// are supported for this backend or not
+        pub trait SupportsBatchUpdate {}
+
+        /// Indicates that this backend does not support batch
+        /// update statements.
+        #[derive(Debug, Copy, Clone)]
+        pub struct DoesNotSupportBatchUpdate;
+    }
+
     /// This module contains all reusable options to configure
     /// [`SqlDialect::ConcatClause`]
     #[diesel_derives::__diesel_public_if(

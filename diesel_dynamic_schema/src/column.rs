@@ -1,11 +1,13 @@
+use core::borrow::Borrow;
+use core::marker::PhantomData;
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, TypedExpressionType, ValidGrouping};
+use diesel::internal::table_macro::SubselectGroupBy;
 use diesel::prelude::*;
 use diesel::query_builder::*;
-use std::borrow::Borrow;
-use std::marker::PhantomData;
+use diesel::query_source::ColumnHasTable;
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 /// A database table column.
 /// This type is created by the [`column`](crate::Table::column()) function.
 pub struct Column<T, U, ST> {
@@ -54,6 +56,14 @@ impl<T, U, ST> ValidGrouping<()> for Column<T, U, ST> {
     type IsAggregate = is_aggregate::No;
 }
 
+// The relation of a dynamic column is unknown, so it counts as an outer reference
+impl<T, U, ST, GB, From> ValidGrouping<SubselectGroupBy<GB, From>> for Column<T, U, ST>
+where
+    Self: ValidGrouping<GB>,
+{
+    type IsAggregate = <Self as ValidGrouping<GB>>::IsAggregate;
+}
+
 impl<T, U, ST, DB> QueryFragment<DB> for Column<T, U, ST>
 where
     DB: Backend,
@@ -66,5 +76,21 @@ where
         out.push_sql(".");
         out.push_identifier(self.name.borrow())?;
         Ok(())
+    }
+}
+
+impl<T, U, ST> ColumnHasTable for Column<T, U, ST>
+where
+    U: Borrow<str>,
+    T: Clone,
+{
+    type Table = T;
+
+    fn table(&self) -> Self::Table {
+        self.table.clone()
+    }
+
+    fn name(&self) -> &str {
+        self.name.borrow()
     }
 }

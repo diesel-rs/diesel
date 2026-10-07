@@ -1,0 +1,8 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 304
+description: "Test: diff_drop_table"
+---
+// @generated automatically by Diesel CLI.
+
+

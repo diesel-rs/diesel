@@ -89,10 +89,10 @@ impl TypeInferrer<'_> {
             type_hint.filter(|h| !matches!(h, syn::Type::Infer(_))),
         ) {
             (syn::Expr::Group(syn::ExprGroup { expr, .. }), type_hint) => {
-                return self.try_infer_expression_type(expr, type_hint)
+                return self.try_infer_expression_type(expr, type_hint);
             }
             (syn::Expr::Paren(syn::ExprParen { expr, .. }), type_hint) => {
-                return self.try_infer_expression_type(expr, type_hint)
+                return self.try_infer_expression_type(expr, type_hint);
             }
             (
                 syn::Expr::Tuple(syn::ExprTuple {
@@ -127,6 +127,7 @@ impl TypeInferrer<'_> {
                         .map(|e| self.infer_expression_type(e, None))
                         .collect(),
                     paren_token: Default::default(),
+                    attrs: Vec::new(),
                 })
             }
             (syn::Expr::Path(syn::ExprPath { path, .. }), None) => {
@@ -148,6 +149,7 @@ impl TypeInferrer<'_> {
                     syn::Type::Path(syn::TypePath {
                         path: path.clone(),
                         qself: None,
+                        attrs: Vec::new(),
                     })
                 }
             }
@@ -170,14 +172,13 @@ impl TypeInferrer<'_> {
                     .inferrer_settings
                     .function_types_case
                     != Case::DoNotChange
+                    && let Some(last) = type_path.segments.last_mut()
                 {
-                    if let Some(last) = type_path.segments.last_mut() {
-                        last.ident = self
-                            .local_variables_map
-                            .inferrer_settings
-                            .function_types_case
-                            .ident_with_case(&last.ident);
-                    }
+                    last.ident = self
+                        .local_variables_map
+                        .inferrer_settings
+                        .function_types_case
+                        .ident_with_case(&last.ident);
                 }
                 // Then we will add the generic arguments
                 let last_segment = type_path
@@ -191,13 +192,14 @@ impl TypeInferrer<'_> {
                         syn::PathArguments::None => None,
                         syn::PathArguments::AngleBracketed(ab) => Some(ab),
                         syn::PathArguments::Parenthesized(_) => {
-                            return Err(unsupported_function_type())
+                            return Err(unsupported_function_type());
                         }
                     },
                 )?;
                 syn::Type::Path(syn::TypePath {
                     path: type_path,
                     qself: None,
+                    attrs: Vec::new(),
                 })
             }
             (
@@ -236,6 +238,7 @@ impl TypeInferrer<'_> {
                     leading_colon: None,
                 },
                 qself: None,
+                attrs: Vec::new(),
             }),
             (syn::Expr::Lit(syn::ExprLit { lit, .. }), None) => match lit {
                 syn::Lit::Str(_) => parse_quote_spanned!(lit.span()=> &'static str),
@@ -249,7 +252,7 @@ impl TypeInferrer<'_> {
                     return Err(syn::Error::new(
                         lit.span(),
                         "unsupported literal for auto_type, please provide a type hint",
-                    ))
+                    ));
                 }
             },
             (syn::Expr::Block(syn::ExprBlock { block, .. }), type_hint) => {
@@ -354,7 +357,7 @@ impl TypeInferrer<'_> {
                 return Err(syn::Error::new(
                     expr.span(),
                     "unsupported expression for auto_type, please provide a type hint",
-                ))
+                ));
             }
             (_, Some(type_hint)) => type_hint.clone(),
         };

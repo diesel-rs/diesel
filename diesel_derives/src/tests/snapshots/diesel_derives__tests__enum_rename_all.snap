@@ -1,0 +1,218 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(Enum)]\n#[derive(Debug, diesel::Enum)]\n#[diesel(sql_type = diesel::sql_types::Text)]\n#[diesel(rename_all = \"snake_case\")]\nenum Color {\n    RedColor,\n    GreenColor,\n    BlueColor,\n}\n"
+---
+const _: () = {
+    use diesel;
+    impl<__DB> diesel::deserialize::FromSql<diesel::sql_types::Text, __DB> for Color
+    where
+        __DB: diesel::backend::Backend,
+        diesel::sql_types::Text: diesel::sql_types::EnumSqlType<false, __DB>,
+        <diesel::sql_types::Text as diesel::sql_types::EnumSqlType<
+            false,
+            __DB,
+        >>::Strategy: diesel::internal::derives::enum_::EnumMapping<__DB>,
+    {
+        fn from_sql(
+            value: <__DB as diesel::backend::Backend>::RawValue<'_>,
+        ) -> diesel::deserialize::Result<Self> {
+            const VARIANTS: &[diesel::internal::derives::enum_::EnumVariant] = &[
+                diesel::internal::derives::enum_::EnumVariant {
+                    discriminant: 0i128,
+                    rust_name: stringify!(RedColor),
+                    sql_name: "red_color",
+                },
+                diesel::internal::derives::enum_::EnumVariant {
+                    discriminant: 1i128,
+                    rust_name: stringify!(GreenColor),
+                    sql_name: "green_color",
+                },
+                diesel::internal::derives::enum_::EnumVariant {
+                    discriminant: 2i128,
+                    rust_name: stringify!(BlueColor),
+                    sql_name: "blue_color",
+                },
+            ];
+            let idx = <<diesel::sql_types::Text as diesel::sql_types::EnumSqlType<
+                false,
+                __DB,
+            >>::Strategy as diesel::internal::derives::enum_::EnumMapping<
+                __DB,
+            >>::map_from_database_value(value, stringify!(Color), VARIANTS)?;
+            match idx {
+                0usize => Ok(Self::RedColor),
+                1usize => Ok(Self::GreenColor),
+                2usize => Ok(Self::BlueColor),
+                _ => unreachable!("We construct all relevant variants"),
+            }
+        }
+    }
+    impl<__DB> diesel::serialize::ToSql<diesel::sql_types::Text, __DB> for Color
+    where
+        __DB: diesel::backend::Backend,
+        diesel::sql_types::Text: diesel::sql_types::EnumSqlType<false, __DB>,
+        <diesel::sql_types::Text as diesel::sql_types::EnumSqlType<
+            false,
+            __DB,
+        >>::Strategy: diesel::internal::derives::enum_::EnumMapping<__DB>,
+    {
+        fn to_sql<'b>(
+            &'b self,
+            output: &mut diesel::serialize::Output<'b, '_, __DB>,
+        ) -> diesel::serialize::Result {
+            let variant = match self {
+                Self::RedColor => {
+                    &diesel::internal::derives::enum_::EnumVariant {
+                        discriminant: 0i128,
+                        rust_name: stringify!(RedColor),
+                        sql_name: "red_color",
+                    }
+                }
+                Self::GreenColor => {
+                    &diesel::internal::derives::enum_::EnumVariant {
+                        discriminant: 1i128,
+                        rust_name: stringify!(GreenColor),
+                        sql_name: "green_color",
+                    }
+                }
+                Self::BlueColor => {
+                    &diesel::internal::derives::enum_::EnumVariant {
+                        discriminant: 2i128,
+                        rust_name: stringify!(BlueColor),
+                        sql_name: "blue_color",
+                    }
+                }
+            };
+            <<diesel::sql_types::Text as diesel::sql_types::EnumSqlType<
+                false,
+                __DB,
+            >>::Strategy as diesel::internal::derives::enum_::EnumMapping<
+                __DB,
+            >>::map_to_database_value(output, variant)
+        }
+    }
+    impl<'__expr> diesel::expression::AsExpression<diesel::sql_types::Text>
+    for &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Text,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Text,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    #[diagnostic::do_not_recommend]
+    impl<
+        '__expr,
+    > diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<diesel::sql_types::Text>,
+    > for &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    #[diagnostic::do_not_recommend]
+    impl<'__expr, '__expr2> diesel::expression::AsExpression<diesel::sql_types::Text>
+    for &'__expr2 &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Text,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Text,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    #[diagnostic::do_not_recommend]
+    impl<
+        '__expr,
+        '__expr2,
+    > diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<diesel::sql_types::Text>,
+    > for &'__expr2 &'__expr Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<
+        __DB,
+    > diesel::serialize::ToSql<
+        diesel::sql_types::Nullable<diesel::sql_types::Text>,
+        __DB,
+    > for Color
+    where
+        __DB: diesel::backend::Backend,
+        Self: diesel::serialize::ToSql<diesel::sql_types::Text, __DB>,
+    {
+        fn to_sql<'__b>(
+            &'__b self,
+            out: &mut diesel::serialize::Output<'__b, '_, __DB>,
+        ) -> diesel::serialize::Result {
+            diesel::serialize::ToSql::<diesel::sql_types::Text, __DB>::to_sql(self, out)
+        }
+    }
+    impl diesel::expression::AsExpression<diesel::sql_types::Text> for Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Text,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Text,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl diesel::expression::AsExpression<
+        diesel::sql_types::Nullable<diesel::sql_types::Text>,
+    > for Color {
+        type Expression = diesel::internal::derives::as_expression::Bound<
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+            Self,
+        >;
+        fn as_expression(
+            self,
+        ) -> <Self as diesel::expression::AsExpression<
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+        >>::Expression {
+            diesel::internal::derives::as_expression::Bound::new(self)
+        }
+    }
+    impl<__DB, __ST> diesel::deserialize::Queryable<__ST, __DB> for Color
+    where
+        __DB: diesel::backend::Backend,
+        __ST: diesel::sql_types::SingleValue,
+        Self: diesel::deserialize::FromSql<__ST, __DB>,
+    {
+        type Row = Self;
+        fn build(row: Self) -> diesel::deserialize::Result<Self> {
+            diesel::deserialize::Result::Ok(row)
+        }
+    }
+};

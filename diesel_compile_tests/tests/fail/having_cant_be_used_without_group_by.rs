@@ -39,7 +39,7 @@ fn main() {
         .select(users::name)
         .group_by(users::id)
         .having(posts::id.eq(42))
-        //~^ ERROR: ype mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+        //~^ ERROR: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn);
 
     users::table

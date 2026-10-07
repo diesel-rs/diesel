@@ -285,7 +285,7 @@ fn count_all() {
     assert_eq!(res, 3);
 }
 
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 #[diesel_test_helper::test]
 fn filter() {
     use crate::schema::users;
@@ -299,7 +299,7 @@ fn filter() {
     assert_eq!(res, 1);
 }
 
-#[cfg(not(feature = "mysql"))]
+#[cfg(not(any(feature = "mysql", feature = "mariadb")))]
 #[diesel_test_helper::test]
 fn order() {
     use crate::schema::users;

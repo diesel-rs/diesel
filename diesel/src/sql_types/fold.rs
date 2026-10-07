@@ -1,4 +1,4 @@
-use crate::sql_types::{self, is_nullable, SingleValue, SqlType};
+use crate::sql_types::{self, SingleValue, SqlType, is_nullable};
 
 /// Represents SQL types which can be used with `SUM` and `AVG`
 pub trait Foldable: SingleValue {
@@ -39,7 +39,7 @@ foldable_impls! {
     sql_types::Interval => (sql_types::Interval, sql_types::Interval),
 }
 
-#[cfg(feature = "mysql_backend")]
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
 foldable_impls! {
     sql_types::Unsigned<sql_types::SmallInt> => (sql_types::Unsigned<sql_types::BigInt>, sql_types::Numeric),
     sql_types::Unsigned<sql_types::Integer> => (sql_types::Unsigned<sql_types::BigInt>, sql_types::Numeric),

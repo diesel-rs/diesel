@@ -25,7 +25,7 @@ fn managing_updated_at_for_table() {
 
     // transactions have frozen time, so we can't use them
     let connection = &mut connection_without_transaction();
-    create_table(
+    create_temporary_table(
         "auto_time",
         (
             integer("id").primary_key().auto_increment(),
@@ -35,12 +35,6 @@ fn managing_updated_at_for_table() {
     )
     .execute(connection)
     .unwrap();
-    let mut _drop_conn = connection_without_transaction();
-    let _guard = DropTable {
-        connection: &mut _drop_conn,
-        table_name: "auto_time",
-        can_drop: !cfg!(feature = "sqlite"),
-    };
 
     sql_query("SELECT diesel_manage_updated_at('auto_time')")
         .execute(connection)
@@ -150,7 +144,7 @@ fn use_the_same_connection_multiple_times() {
     // We can extend `schema_dsl` module to accommodate UNIQUE constraint.
     sql_query(
         r#"
-          CREATE TABLE github_issue_3342 (
+          CREATE TEMPORARY TABLE github_issue_3342 (
             id SERIAL PRIMARY KEY,
             uid INTEGER NOT NULL UNIQUE
           )
@@ -158,13 +152,6 @@ fn use_the_same_connection_multiple_times() {
     )
     .execute(connection)
     .unwrap();
-
-    let mut _drop_conn = connection_without_transaction();
-    let _guard = DropTable {
-        connection: &mut _drop_conn,
-        table_name: "github_issue_3342",
-        can_drop: true,
-    };
 
     // helper method to simulate database error.
     fn insert_or_fetch(conn: &mut PgConnection, input: i32) {

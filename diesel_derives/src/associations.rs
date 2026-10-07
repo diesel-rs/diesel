@@ -5,8 +5,8 @@ use syn::parse_quote;
 use syn::{DeriveInput, Ident, Lifetime, Result};
 
 use crate::model::Model;
-use crate::parsers::BelongsTo;
 use crate::util::{camel_to_snake, wrap_in_dummy_mod};
+use diesel_attribute_parser::parsers::BelongsTo;
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;

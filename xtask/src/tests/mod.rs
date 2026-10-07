@@ -1,5 +1,4 @@
 use crate::Backend;
-use cargo_metadata::camino::Utf8PathBuf;
 use cargo_metadata::{Metadata, MetadataCommand};
 use std::process::Command;
 use std::process::Stdio;
@@ -25,6 +24,12 @@ pub(crate) struct TestArgs {
     // run wasm tests, currently only supports sqlite
     #[clap(long = "wasm")]
     wasm: bool,
+    /// run a subset of the unit tests under miri, linking the sqlite backend
+    /// against the system libsqlite3 via miri's `-Zmiri-native-lib` flag.
+    /// Currently only supports sqlite and only runs the lib tests of the
+    /// `diesel` crate.
+    #[clap(long = "miri")]
+    miri: bool,
     /// additional flags passed to cargo nextest while running
     /// unit/integration tests.
     ///
@@ -56,10 +61,83 @@ impl TestArgs {
         }
     }
 
+    /// Runs the miri-compatible subset of the sqlite unit tests.
+    ///
+    /// Miri does not interpret the native libsqlite3, so we load it via
+    /// `-Zmiri-native-lib` and only run the lib tests of the `diesel` crate.
+    /// Tests that require native -> rust callbacks (hooks, custom sql
+    /// functions, …) or that read memory allocated by the native library are
+    /// compiled out via `#[cfg(not(miri))]` and are therefore not part of
+    /// the run.
+    fn run_miri_tests(&self, metadata: &Metadata) -> bool {
+        let native_lib = match std::env::var("MIRI_NATIVE_LIB") {
+            Ok(path) => path,
+            Err(_) => match Command::new("pkg-config")
+                .args(["--variable=libdir", "sqlite3"])
+                .output()
+            {
+                Ok(output) if output.status.success() => {
+                    let libdir = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    format!("{libdir}/libsqlite3.so")
+                }
+                _ => {
+                    eprintln!(
+                        "Failed to locate libsqlite3. Install pkg-config + libsqlite3-dev \
+                         or set `MIRI_NATIVE_LIB` to the path of the sqlite library"
+                    );
+                    return false;
+                }
+            },
+        };
+        if !std::path::Path::new(&native_lib).exists() {
+            eprintln!(
+                "The sqlite library `{native_lib}` does not exist. \
+                 Set `MIRI_NATIVE_LIB` to the path of the sqlite library"
+            );
+            return false;
+        }
+
+        // The lib tests all use in-memory sqlite databases,
+        // so no migration setup is required here.
+        // Additional flags are documented as custom test filters/arguments,
+        // which are passed to the test harness and therefore have to go
+        // after the `--` separator.
+        let mut command = Command::new("cargo");
+        command
+            .args(["+nightly", "miri", "test", "-p", "diesel", "--lib"])
+            .args(["--no-default-features", "-F", "sqlite"])
+            .args(["-F", "serde_json"])
+            .current_dir(&metadata.workspace_root)
+            .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"));
+        if !self.flags.is_empty() {
+            command.arg("--").args(&self.flags);
+        }
+        println!("Running miri tests via `{command:?}`: ");
+        let status = command
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .unwrap();
+        if !status.success() {
+            eprintln!("Failed to run miri tests");
+            return false;
+        }
+        true
+    }
+
     fn run_tests(&self, metadata: &Metadata) -> bool {
         let backend_name = self.backend.to_string();
         println!("Running tests for {backend_name}");
-        let exclude = crate::utils::get_exclude_for_backend(&backend_name, metadata);
+        if self.miri && !matches!(self.backend, Backend::Sqlite) {
+            eprintln!(
+                "Only the sqlite backend supports miri for now, skipping the current backend ({backend_name})"
+            );
+            return true;
+        }
+        if self.miri {
+            return self.run_miri_tests(metadata);
+        }
+        let exclude = crate::utils::get_exclude_for_backend(&backend_name, metadata, self.wasm);
         if std::env::var("DATABASE_URL").is_err() {
             match self.backend {
                 Backend::Postgres => {
@@ -80,94 +158,84 @@ impl TestArgs {
                     if std::env::var("MYSQL_DATABASE_URL").is_err()
                         || std::env::var("MYSQL_UNIT_TEST_DATABASE_URL").is_err()
                     {
-                        println!("Remember to set `MYSQL_DATABASE_URL` and `MYSQL_UNIT_TEST_DATABASE_URL` for running the mysql tests");
+                        println!(
+                            "Remember to set `MYSQL_DATABASE_URL` and `MYSQL_UNIT_TEST_DATABASE_URL` for running the mysql tests"
+                        );
+                    }
+                }
+                Backend::Mariadb => {
+                    if std::env::var("MARIADB_DATABASE_URL").is_err()
+                        || std::env::var("MARIADB_UNIT_TEST_DATABASE_URL").is_err()
+                    {
+                        println!(
+                            "Remember to set `MARIADB_DATABASE_URL` and `MARIADB_UNIT_TEST_DATABASE_URL` for running the mariadb tests"
+                        );
                     }
                 }
                 Backend::All => unreachable!(),
             }
         }
         let backend = &self.backend;
-        if self.wasm {
-            if matches!(backend, Backend::Sqlite) {
-                fn run_tests(path: Utf8PathBuf) -> bool {
-                    let mut command = Command::new("cargo");
-                    command
-                        .args([
-                            "test",
-                            "--features",
-                            "sqlite",
-                            "--target",
-                            "wasm32-unknown-unknown",
-                        ])
-                        .current_dir(path)
-                        .env("WASM_BINDGEN_TEST_TIMEOUT", "120")
-                        .env(
-                            "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER",
-                            "wasm-bindgen-test-runner",
-                        )
-                        .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
-                        .stderr(Stdio::inherit())
-                        .stdout(Stdio::inherit())
-                        .status()
-                        .unwrap()
-                        .success()
-                }
-                if !run_tests(metadata.workspace_root.join("diesel")) {
-                    eprintln!("Failed to run wasm diesel unit tests");
-                    return false;
-                }
-                if !run_tests(metadata.workspace_root.join("diesel_tests")) {
-                    eprintln!("Failed to run wasm integration tests");
-                    return false;
-                }
-                return true;
-            } else {
-                eprintln!(
-                    "Only the sqlite backend supports wasm for now, the current backend is {backend}"
-                );
-                return true;
-            }
+        if matches!(backend, Backend::Postgres | Backend::Mysql | Backend::Mariadb | Backend::All if self.wasm)
+        {
+            eprintln!(
+                "Only the sqlite backend supports wasm for now, the current backend is {backend}"
+            );
+            return true;
         }
         let url = match backend {
             Backend::Postgres => std::env::var("PG_DATABASE_URL"),
             Backend::Sqlite => std::env::var("SQLITE_DATABASE_URL"),
             Backend::Mysql => std::env::var("MYSQL_DATABASE_URL"),
+            Backend::Mariadb => std::env::var("MARIADB_DATABASE_URL"),
             Backend::All => unreachable!(),
         };
         let url = url
             .or_else(|_| std::env::var("DATABASE_URL"))
             .expect("DATABASE_URL is set for tests");
 
-        // run the migrations
-        let mut command = Command::new("cargo");
-        command
-            .args(["run", "-p", "diesel_cli", "--no-default-features", "-F"])
-            .arg(backend.to_string())
-            .args(["--", "migration", "run", "--migration-dir"])
-            .arg(
-                metadata
-                    .workspace_root
-                    .join("migrations")
-                    .join(backend.to_string()),
-            )
-            .arg("--database-url")
-            .arg(&url);
-        println!("Run database migration via `{command:?}`");
-        let status = command
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .status()
-            .unwrap();
-        if !status.success() {
-            eprintln!("Failed to run migrations");
-            return false;
+        if !self.wasm {
+            // run the migrations
+            let mut command = Command::new("cargo");
+            command
+                .args(["run", "-p", "diesel_cli", "--no-default-features", "-F"])
+                .arg(backend.to_string())
+                .args(["--", "migration", "run", "--migration-dir"])
+                .arg(
+                    metadata
+                        .workspace_root
+                        .join("migrations")
+                        .join(backend.to_string()),
+                )
+                .arg("--database-url")
+                .arg(&url);
+            println!("Run database migration via `{command:?}`");
+            let status = command
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .status()
+                .unwrap();
+            if !status.success() {
+                eprintln!("Failed to run migrations");
+                return false;
+            }
         }
 
         if !self.no_integration_tests {
             // run the normal tests via nextest
             let mut command = Command::new("cargo");
+            // wasm tests are slow with cargo nextest
+            // as this spawns a new node.js runtime for each test
+            // which then needs to translate the wasm to bytecode which takes a bit time.
+            // ordinary cargo test only spawns one node.js instance and therefore needs
+            // to translate the wasm only once
+            if self.wasm {
+                command.args(["test", "--tests", "--benches", "--examples"]);
+            } else {
+                command.args(["nextest", "run"]);
+            }
             command
-                .args(["nextest", "run", "--workspace", "--no-default-features"])
+                .args(["--workspace", "--no-default-features"])
                 .current_dir(&metadata.workspace_root)
                 .args(exclude)
                 .arg("-F")
@@ -176,8 +244,6 @@ impl TestArgs {
                 .arg("-F")
                 .arg(format!("diesel_derives/{backend}"))
                 .arg("-F")
-                .arg(format!("diesel_cli/{backend}"))
-                .arg("-F")
                 .arg(format!("migrations_macros/{backend}"))
                 .arg("-F")
                 .arg(format!("diesel_migrations/{backend}"))
@@ -185,11 +251,26 @@ impl TestArgs {
                 .arg(format!("diesel_tests/{backend}"))
                 .arg("-F")
                 .arg(format!("diesel-dynamic-schema/{backend}"))
+                .arg("-F")
+                .arg(format!("diesel_migrations/{backend}"))
                 .args(&self.flags);
 
-            if matches!(self.backend, Backend::Mysql) {
+            if matches!(self.backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);
+            }
+            if self.wasm {
+                command
+                    .env("WASM_BINDGEN_TEST_TIMEOUT", "120")
+                    .env(
+                        "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER",
+                        "wasm-bindgen-test-runner",
+                    )
+                    .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
+                    .arg("--target")
+                    .arg("wasm32-unknown-unknown");
+            } else {
+                command.arg("-F").arg(format!("diesel_cli/{backend}"));
             }
             println!("Running tests via `{command:?}`: ");
 
@@ -241,9 +322,20 @@ impl TestArgs {
                 .arg(format!("diesel_migrations/{backend}"))
                 .arg("-F")
                 .arg(format!("migrations_macros/{backend}"));
-            if matches!(backend, Backend::Mysql) {
+            if matches!(backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);
+            }
+            if self.wasm {
+                command
+                    .env("WASM_BINDGEN_TEST_TIMEOUT", "120")
+                    .env(
+                        "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER",
+                        "wasm-bindgen-test-runner",
+                    )
+                    .env("RUSTFLAGS", "--cfg getrandom_backend=\"wasm_js\"")
+                    .arg("--target")
+                    .arg("wasm32-unknown-unknown");
             }
             println!("Running tests via `{command:?}`: ");
             let status = command

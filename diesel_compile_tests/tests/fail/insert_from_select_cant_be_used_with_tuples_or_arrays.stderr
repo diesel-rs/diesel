@@ -9,11 +9,7 @@ help: the trait `diesel::internal::derives::insertable::UndecoratedInsertRecord<
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> Text,
-...  |
-LL | | }
-   | |_^
+   | |_________^
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
              `&T` implements `UndecoratedInsertRecord<Tab>`
              `(T,)` implements `UndecoratedInsertRecord<Tab>`

@@ -1,9 +1,11 @@
+use super::TableName;
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
-use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
+use diesel::dsl::AsExprOf;
 use diesel::pg::Pg;
+use diesel::prelude::table;
 use diesel::prelude::*;
 use diesel::sql_types;
 use heck::ToUpperCamelCase;
@@ -26,6 +28,45 @@ extern "SQL" {
 
     fn quote_ident(ident: sql_types::Text) -> sql_types::Text;
 }
+
+mod information_schema {
+    use diesel::prelude::table;
+
+    table! {
+        information_schema.columns (table_schema, table_name, column_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            column_name -> VarChar,
+            #[sql_name = "is_nullable"]
+            __is_nullable -> VarChar,
+            character_maximum_length -> Nullable<Integer>,
+            ordinal_position -> BigInt,
+            udt_name -> VarChar,
+            udt_schema -> VarChar,
+            domain_name -> Nullable<VarChar>,
+            domain_schema -> Nullable<VarChar>,
+        }
+    }
+}
+
+table! {
+    pg_type(oid) {
+        oid -> Oid,
+        typname -> Text,
+        typnamespace -> Oid,
+    }
+}
+
+table! {
+    pg_enum(oid) {
+        oid -> Oid,
+        enumtypid -> Oid,
+        enumsortorder -> Float,
+        enumlabel -> Text,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(pg_type, pg_enum);
 
 #[tracing::instrument]
 pub fn determine_column_type(
@@ -50,8 +91,7 @@ pub fn determine_column_type(
         tracing::info!("Cannot coerce varchar[] into text[]");
         eprintln!(
             "The column `{}` is of type `{}[]`. This will cause problems when using Diesel. You should consider changing the column type to `text[]`.",
-            attr.column_name,
-            tpe
+            attr.column_name, tpe
         );
     }
 
@@ -70,6 +110,7 @@ pub fn determine_column_type(
         is_unsigned: false,
         record: None,
         max_length: attr.max_length,
+        unmodified_type: attr.type_name.clone(),
     })
 }
 
@@ -89,6 +130,12 @@ fn regclass<'a, QS>(
     };
 
     Regclass::new(table_name)
+}
+
+diesel::postfix_operator!(RegNamespace, "::regnamespace", sql_types::Oid, backend: Pg);
+
+fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_types::Text>>> {
+    RegNamespace::new(quote_ident(schema))
 }
 
 pub fn get_table_data(
@@ -166,6 +213,7 @@ pub fn get_table_data(
                 row.nullable == "YES",
                 max_length,
                 row.comment,
+                false,
             ))
         })
         .collect()
@@ -176,26 +224,6 @@ pub fn get_table_comment(
     table: &TableName,
 ) -> QueryResult<Option<String>> {
     diesel::select(obj_description(regclass(table), "pg_class")).get_result(conn)
-}
-
-mod information_schema {
-    use diesel::prelude::table;
-
-    table! {
-        information_schema.columns (table_schema, table_name, column_name) {
-            table_schema -> VarChar,
-            table_name -> VarChar,
-            column_name -> VarChar,
-            #[sql_name = "is_nullable"]
-            __is_nullable -> VarChar,
-            character_maximum_length -> Nullable<Integer>,
-            ordinal_position -> BigInt,
-            udt_name -> VarChar,
-            udt_schema -> VarChar,
-            domain_name -> Nullable<VarChar>,
-            domain_schema -> Nullable<VarChar>,
-        }
-    }
 }
 
 #[allow(clippy::similar_names)]
@@ -248,6 +276,32 @@ pub fn load_foreign_key_constraints(
         .collect()
 }
 
+pub fn load_enum_variants(
+    conn: &mut PgConnection,
+    enum_name: &str,
+    schema_name: Option<&str>,
+) -> QueryResult<Option<Vec<EnumVariant>>> {
+    let default_schema = Pg::default_schema(conn)?;
+
+    let r = pg_enum::table
+        .select((
+            pg_enum::enumsortorder.cast::<diesel::sql_types::Integer>(),
+            pg_enum::enumlabel,
+        ))
+        .filter(
+            pg_enum::enumtypid.nullable().eq(pg_type::table
+                .select(pg_type::oid)
+                .filter(pg_type::typname.eq(enum_name))
+                .filter(
+                    pg_type::typnamespace.eq(regnamespace(schema_name.unwrap_or(&default_schema))),
+                )
+                .single_value()),
+        )
+        .order_by(pg_enum::enumsortorder)
+        .load::<EnumVariant>(conn)?;
+    if r.is_empty() { Ok(None) } else { Ok(Some(r)) }
+}
+
 #[cfg(test)]
 mod test {
     extern crate dotenvy;
@@ -295,6 +349,7 @@ mod test {
             false,
             None,
             Some("column comment".to_string()),
+            false,
         );
         let text_col = ColumnInformation::new(
             "text_col",
@@ -303,11 +358,26 @@ mod test {
             true,
             Some(128),
             None,
+            false,
         );
-        let not_null =
-            ColumnInformation::new("not_null", "text", pg_catalog.clone(), false, None, None);
-        let array_col =
-            ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None, None);
+        let not_null = ColumnInformation::new(
+            "not_null",
+            "text",
+            pg_catalog.clone(),
+            false,
+            None,
+            None,
+            false,
+        );
+        let array_col = ColumnInformation::new(
+            "array_col",
+            "_varchar",
+            pg_catalog,
+            false,
+            None,
+            None,
+            false,
+        );
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(
@@ -472,6 +542,7 @@ mod test {
             false,
             None,
             None,
+            false,
         );
         let id_domain = ColumnInformation::new(
             "id",
@@ -480,6 +551,7 @@ mod test {
             false,
             None,
             None,
+            false,
         );
 
         assert_eq!(
@@ -511,5 +583,33 @@ mod test {
                 &[&"int".try_into().unwrap()]
             )
         );
+    }
+
+    #[test]
+    fn load_enum_variants() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE TYPE test AS ENUM ('A', 'B')")
+            .execute(&mut connection)
+            .unwrap();
+
+        let variants = super::load_enum_variants(&mut connection, "test", None).unwrap();
+        assert!(variants.is_some());
+        assert_eq!(
+            variants.unwrap(),
+            [
+                EnumVariant {
+                    order: 1,
+                    sql_name: "A".into()
+                },
+                EnumVariant {
+                    order: 2,
+                    sql_name: "B".into()
+                }
+            ]
+        );
+
+        let variants = super::load_enum_variants(&mut connection, "non_existing", None).unwrap();
+        assert!(variants.is_none());
     }
 }

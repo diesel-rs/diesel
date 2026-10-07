@@ -14,6 +14,13 @@ filter = 'package(diesel_cli)'
 test-group = 'cli_tests'
 
 [[profile.default.overrides]]
-# fails sometimes due to a deadlock
-filter = 'test(insert_get_results_batch)'
-retries = 2 
+# Retry flaky tests:
+# - on MySQL/SQLite, `now`/`CURRENT_TIMESTAMP` is statement-bound, so
+#   `select(diesel::dsl::now)` and the implicit `CURRENT_TIMESTAMP`
+#   default applied by the INSERT can disagree when run as separate
+#   statements straddling a second boundary;
+# - `insert_get_results_batch` fails sometimes due to a deadlock.
+# This is substring matching so `test(insert_get_result)` covers
+# `insert_get_results_batch`, and `insert_get_results_batch`.
+filter = 'test(insert_get_result) | test(insert_insertable_struct_get_results_batch)'
+retries = 2

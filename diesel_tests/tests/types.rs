@@ -1,6 +1,6 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
 #![allow(warnings)]
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 extern crate bigdecimal;
 extern crate chrono;
 
@@ -13,7 +13,7 @@ use diesel::query_dsl::LoadQuery;
 use diesel::sql_types::*;
 use diesel::*;
 
-#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
 use quickcheck::quickcheck;
 
 table! {
@@ -28,6 +28,12 @@ table! {
         datetime -> Timestamp,
         date -> Date,
         time -> Time,
+    }
+}
+
+table! {
+    time_values(time_value) {
+        time_value -> Time,
     }
 }
 
@@ -139,6 +145,148 @@ fn test_chrono_types_sqlite() {
     assert_eq!(result.time, dt.time());
 }
 
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn insert_time(connection: &mut TestConnection, value: diesel::data_types::MysqlTime) {
+    use crate::schema_dsl::*;
+
+    create_temporary_table(
+        "time_values",
+        (time_with_fractional_seconds("time_value").not_null(),),
+    )
+    .execute(connection)
+    .unwrap();
+
+    insert_into(time_values::table)
+        .values(time_values::time_value.eq(value))
+        .execute(connection)
+        .unwrap();
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn insert_negative_time(connection: &mut TestConnection) {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    insert_time(
+        connection,
+        MysqlTime::new(
+            0,
+            0,
+            0,
+            10,
+            11,
+            12,
+            123456,
+            true,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        ),
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_mysql_time() {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let actual = time_values::table
+        .select(time_values::time_value)
+        .first::<MysqlTime>(connection)
+        .unwrap();
+
+    assert!(actual.neg);
+    assert_eq!(0, actual.year);
+    assert_eq!(0, actual.month);
+    assert_eq!(0, actual.day);
+    assert_eq!(10, actual.hour);
+    assert_eq!(11, actual.minute);
+    assert_eq!(12, actual.second);
+    assert_eq!(123456, actual.second_part);
+    assert_eq!(MysqlTimestampType::MYSQL_TIMESTAMP_TIME, actual.time_type);
+    assert_eq!(0, actual.time_zone_displacement);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_chrono_time_fails() {
+    use diesel::result::Error::DeserializationError;
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let result = time_values::table
+        .select(time_values::time_value)
+        .first::<chrono::NaiveTime>(connection);
+
+    assert_matches!(result, Err(DeserializationError(_)));
+}
+
+#[diesel_test_helper::test]
+#[cfg(all(any(feature = "mysql", feature = "mariadb"), feature = "time"))]
+fn negative_time_loads_as_time_crate_time_fails() {
+    use diesel::result::Error::DeserializationError;
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let result = time_values::table
+        .select(time_values::time_value)
+        .first::<time::Time>(connection);
+
+    assert_matches!(result, Err(DeserializationError(_)));
+}
+
+// TIME range, 838 hours folded as 34 days plus 22 hours:
+// https://dev.mysql.com/doc/refman/8.4/en/time.html
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn assert_extreme_time_round_trip(neg: bool) {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    let connection = &mut connection();
+    insert_time(
+        connection,
+        MysqlTime::new(
+            0,
+            0,
+            34,
+            22,
+            59,
+            59,
+            0,
+            neg,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        ),
+    );
+
+    let actual = time_values::table
+        .select(time_values::time_value)
+        .first::<MysqlTime>(connection)
+        .unwrap();
+
+    assert_eq!(neg, actual.neg);
+    // The server may redistribute the hours across `day` and `hour`.
+    assert_eq!(838, actual.day * 24 + actual.hour);
+    assert_eq!(59, actual.minute);
+    assert_eq!(59, actual.second);
+    assert_eq!(0, actual.second_part);
+    assert_eq!(MysqlTimestampType::MYSQL_TIMESTAMP_TIME, actual.time_type);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn minimum_time_loads_as_mysql_time() {
+    assert_extreme_time_round_trip(true);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn maximum_time_loads_as_mysql_time() {
+    assert_extreme_time_round_trip(false);
+}
+
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn boolean_from_sql() {
@@ -198,7 +346,7 @@ fn i32_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u8_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<TinyInt>, u8>("255", 255));
     assert!(query_to_sql_equality::<Unsigned<TinyInt>, u8>("0", 0));
@@ -209,7 +357,7 @@ fn u8_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u8_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<TinyInt>, u8>("0"));
     assert_eq!(255, query_single_value::<Unsigned<TinyInt>, u8>("255"));
@@ -218,7 +366,7 @@ fn u8_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u16_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<SmallInt>, u16>(
         "65535", 65535
@@ -238,7 +386,7 @@ fn u16_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u16_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<SmallInt>, u16>("0"));
     assert_eq!(
@@ -253,7 +401,7 @@ fn u16_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u32_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<Integer>, u32>(
         "4294967295",
@@ -275,7 +423,7 @@ fn u32_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u32_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<Integer>, u32>("0"));
     assert_eq!(
@@ -290,7 +438,7 @@ fn u32_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u64_to_sql_integer() {
     assert!(query_to_sql_equality::<Unsigned<BigInt>, u64>(
         "18446744073709551615",
@@ -312,7 +460,7 @@ fn u64_to_sql_integer() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn u64_from_sql() {
     assert_eq!(0, query_single_value::<Unsigned<BigInt>, u64>("0"));
     assert_eq!(
@@ -406,7 +554,7 @@ fn i64_to_sql_bigint() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_json_from_sql() {
     let query = "'true'";
     let expected_value = serde_json::Value::Bool(true);
@@ -417,7 +565,7 @@ fn mysql_json_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_json_to_sql_json() {
     let expected_value = "'false'";
     let value = serde_json::Value::Bool(false);
@@ -448,7 +596,7 @@ fn f32_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 #[allow(clippy::float_cmp)]
 fn f32_from_sql() {
     assert_eq!(0.0, query_single_value::<Float, f32>("0.0"));
@@ -490,7 +638,7 @@ fn f32_to_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 fn f32_to_sql() {
     assert!(query_to_sql_equality::<Float, f32>("0.0", 0.0));
     assert!(query_to_sql_equality::<Float, f32>("0.5", 0.5));
@@ -534,7 +682,7 @@ fn f64_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 #[allow(clippy::float_cmp)]
 fn f64_from_sql() {
     assert_eq!(0.0, query_single_value::<Double, f64>("0.0"));
@@ -590,7 +738,7 @@ fn f64_to_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(any(feature = "mysql", feature = "sqlite"))]
+#[cfg(any(feature = "mysql", feature = "mariadb", feature = "sqlite"))]
 fn f64_to_sql() {
     assert!(query_to_sql_equality::<Double, f64>("0.0", 0.0));
     assert!(query_to_sql_equality::<Double, f64>("0.5", 0.5));
@@ -787,6 +935,102 @@ fn pg_array_from_sql() {
     );
 }
 
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_ndim_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let ndarray =
+        query_single_value::<Array<Bool>, NdArray<bool>>("ARRAY[ARRAY['t', 'f', 't']]::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    let ndarray = query_single_value::<Array<Bool>, NdArray<bool>>(
+        "ARRAY[ARRAY['t', 'f'], ARRAY['f', 't']]::bool[]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(vec![true, false, false, true], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>("'{{{1, 2, 3}}}'::int[]");
+    assert_eq!(vec![1, 1, 3], ndarray.dims);
+    assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>("'{{{1}, {2}, {3}}}'::int[]");
+    assert_eq!(vec![1, 3, 1], ndarray.dims);
+    assert_eq!(vec![1, 2, 3], ndarray.data);
+    let ndarray = query_single_value::<Array<Integer>, NdArray<i32>>(
+        "'{{{1, 2}, {3, 4}, {5, 6}},{{3, 4}, {5, 6}, {7, 8}},{{5, 6}, {7, 8}, {9, 10}}}'::int[]",
+    );
+    assert_eq!(vec![3, 3, 2], ndarray.dims);
+    assert_eq!(
+        vec![1, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8, 5, 6, 7, 8, 9, 10],
+        ndarray.data
+    );
+    let ndarray = query_single_value::<Array<VarChar>, NdArray<String>>(
+        "ARRAY[ARRAY['Hello', 'world'], ARRAY['', 'world']]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(
+        ndarray.data,
+        vec![
+            "Hello".to_string(),
+            "world".to_string(),
+            "".to_string(),
+            "world".to_string()
+        ],
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_array_element_oid_uses_array_header() {
+    use diesel::data_types::NdArray;
+    use diesel::deserialize::FromSql;
+    use diesel::pg::PgValue;
+
+    #[derive(Debug, Clone, Copy, QueryId, SqlType)]
+    struct ElementOidInteger;
+
+    #[derive(Debug, PartialEq)]
+    struct ElementWithOid {
+        value: i32,
+        oid: u32,
+    }
+
+    impl HasSqlType<ElementOidInteger> for Pg {
+        fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
+            <Pg as HasSqlType<Integer>>::metadata(lookup)
+        }
+    }
+
+    impl FromSql<ElementOidInteger, Pg> for ElementWithOid {
+        fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+            let oid = bytes.get_oid().get();
+            let value = FromSql::<Integer, Pg>::from_sql(bytes)?;
+            Ok(Self { value, oid })
+        }
+    }
+
+    assert_eq!(
+        vec![
+            ElementWithOid { value: 1, oid: 23 },
+            ElementWithOid { value: 2, oid: 23 },
+        ],
+        query_single_value::<Array<ElementOidInteger>, Vec<ElementWithOid>>("ARRAY[1, 2]::int4[]")
+    );
+
+    let ndarray = query_single_value::<Array<ElementOidInteger>, NdArray<ElementWithOid>>(
+        "ARRAY[ARRAY[1, 2], ARRAY[3, 4]]::int4[]",
+    );
+    assert_eq!(vec![2, 2], ndarray.dims);
+    assert_eq!(
+        vec![
+            ElementWithOid { value: 1, oid: 23 },
+            ElementWithOid { value: 2, oid: 23 },
+            ElementWithOid { value: 3, oid: 23 },
+            ElementWithOid { value: 4, oid: 23 },
+        ],
+        ndarray.data
+    );
+}
+
 #[cfg(feature = "postgres")]
 #[diesel_test_helper::test]
 fn pg_array_from_sql_non_one_lower_bound() {
@@ -802,6 +1046,23 @@ fn pg_array_from_sql_non_one_lower_bound() {
         vec![true, false, true],
         query_single_value::<Array<Bool>, Vec<bool>>("'[2:4]={t, f, t}'::bool[]")
     );
+}
+
+#[cfg(feature = "postgres")]
+#[diesel_test_helper::test]
+fn pg_ndim_array_from_sql_non_one_lower_bound() {
+    use diesel::data_types::NdArray;
+
+    let ndarray =
+        query_single_value::<Array<Bool>, NdArray<bool>>("'[0:0][0:2]={{t, f, t}}'::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    query_single_value::<Array<Bool>, NdArray<bool>>("'[1:1][1:3]={{t, f, t}}'::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
+    query_single_value::<Array<Bool>, NdArray<bool>>("'[3:3][2:4]={{t, f, t}}'::bool[]");
+    assert_eq!(vec![1, 3], ndarray.dims);
+    assert_eq!(vec![true, false, true], ndarray.data);
 }
 
 #[diesel_test_helper::test]
@@ -841,6 +1102,51 @@ fn pg_array_containing_null() {
         Some("world".to_string()),
     ];
     assert_eq!(expected, data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_ndim_array_containing_null() {
+    use diesel::data_types::NdArray;
+
+    let query = "ARRAY[ARRAY['Hello', '', NULL, 'world']]";
+    let ndarray = query_single_value::<Array<Nullable<VarChar>>, NdArray<Option<String>>>(query);
+    let expected = vec![
+        Some("Hello".to_string()),
+        Some("".to_string()),
+        None,
+        Some("world".to_string()),
+    ];
+    assert_eq!(expected, ndarray.data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_empty_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let res =
+        query_single_value::<Array<Nullable<VarChar>>, Vec<Option<String>>>("ARRAY[]::text[]");
+    assert_eq!(Vec::<Option<String>>::new(), res);
+
+    let ndarray = query_single_value::<Array<Nullable<VarChar>>, NdArray<Option<String>>>(
+        "ARRAY[ARRAY[]]::text[]",
+    );
+    assert_eq!(Vec::<usize>::new(), ndarray.dims);
+    assert_eq!(Vec::<Option<String>>::new(), ndarray.data);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn pg_nullable_array_from_sql() {
+    use diesel::data_types::NdArray;
+
+    let res = query_single_value::<Nullable<Array<Integer>>, Option<Vec<i32>>>("NULL::int4[]");
+    assert_eq!(None, res);
+
+    let ndarray =
+        query_single_value::<Nullable<Array<Integer>>, Option<NdArray<i32>>>("NULL::int4[][]");
+    assert_eq!(None, ndarray);
 }
 
 #[diesel_test_helper::test]
@@ -957,7 +1263,7 @@ fn pg_numeric_bigdecimal_to_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_numeric_bigdecimal_to_sql() {
     use self::bigdecimal::BigDecimal;
 
@@ -1025,7 +1331,7 @@ fn pg_numeric_bigdecimal_from_sql() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn mysql_numeric_bigdecimal_from_sql() {
     use self::bigdecimal::BigDecimal;
 
@@ -1045,7 +1351,7 @@ fn mysql_numeric_bigdecimal_from_sql() {
 
     // Some non standard values:
     let query = "cast(18446744073709551616 as decimal)"; // 2^64; doesn't fit in u64
-                                                         // It is mysql, it will trim it even in strict mode
+    // It is mysql, it will trim it even in strict mode
     let expected_value: BigDecimal = "9999999999.00"
         .parse()
         .expect("Could not parse to a BigDecimal");
@@ -1271,6 +1577,32 @@ fn pg_v4address_to_sql_v4address() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn pg_cidr_with_host_bits_to_sql_is_masked() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let v4 = "'10.0.0.0/8'::cidr";
+    let v6 = "'2001:4f8::/32'::cidr";
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
+        v4,
+        ipnetwork::IpNetwork::from_str("10.0.0.5/8").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
+        v6,
+        ipnetwork::IpNetwork::from_str("2001:4f8:3:ba::1/32").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnet::IpNet>(
+        v4,
+        ipnet::IpNet::from_str("10.0.0.5/8").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnet::IpNet>(
+        v6,
+        ipnet::IpNet::from_str("2001:4f8:3:ba::1/32").unwrap()
+    ));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 fn pg_v4address_to_sql_v4address_ipnet() {
     use std::str::FromStr;
 
@@ -1444,7 +1776,7 @@ where
     select(sql::<T>(sql_str)).first(connection).unwrap()
 }
 
-use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
+use diesel::expression::{AsExpression, SqlLiteral, ValidGrouping, is_aggregate};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
 
@@ -1514,9 +1846,11 @@ fn test_range_from_sql() {
     );
 
     let query = "SELECT '[2,1)'::int4range";
-    assert!(sql::<Range<Int4>>(query)
-        .load::<(Bound<i32>, Bound<i32>)>(connection)
-        .is_err());
+    assert!(
+        sql::<Range<Int4>>(query)
+            .load::<(Bound<i32>, Bound<i32>)>(connection)
+            .is_err()
+    );
 
     let query = "'empty'::int4range";
     let expected_value = (Bound::Excluded(0), Bound::Excluded(0));
@@ -1800,6 +2134,33 @@ fn citext_fields() {
         .unwrap();
 
     assert_eq!(lowercase_in_db, Some("lowercase_value".to_string()));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn deserialize_1d_array_to_ndarray() {
+    use diesel::data_types::NdArray;
+    use diesel::sql_types::{Array, Bool};
+
+    let conn = &mut connection();
+
+    diesel::sql_query(
+        "CREATE TABLE test_table(\
+                       bool_array BOOLEAN[], \
+                       float_array FLOAT4[] \
+                       )",
+    )
+    .execute(conn)
+    .unwrap();
+    diesel::sql_query("INSERT INTO test_table VALUES('{true, false}', '{{{1.0, 2.0}}}')")
+        .execute(conn)
+        .unwrap();
+
+    let res = diesel::dsl::sql::<Array<Bool>>("SELECT bool_array FROM test_table")
+        .get_result::<NdArray<bool>>(conn)
+        .unwrap();
+    assert_eq!(res.dims, vec![2]);
+    assert_eq!(res.data, vec![true, false]);
 }
 
 #[diesel_test_helper::test]

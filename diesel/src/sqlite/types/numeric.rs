@@ -5,10 +5,10 @@ mod bigdecimal {
     use crate::deserialize::{self, FromSql};
     use crate::serialize::{self, IsNull, Output, ToSql};
     use crate::sql_types::{Double, Numeric};
-    use crate::sqlite::connection::SqliteValue;
     use crate::sqlite::Sqlite;
+    use crate::sqlite::connection::SqliteValue;
 
-    #[cfg(all(feature = "sqlite", feature = "numeric"))]
+    #[cfg(all(feature = "__sqlite-shared", feature = "numeric"))]
     impl ToSql<Numeric, Sqlite> for BigDecimal {
         fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
             let x = self
@@ -19,7 +19,7 @@ mod bigdecimal {
         }
     }
 
-    #[cfg(all(feature = "sqlite", feature = "numeric"))]
+    #[cfg(all(feature = "__sqlite-shared", feature = "numeric"))]
     impl FromSql<Numeric, Sqlite> for BigDecimal {
         fn from_sql(bytes: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
             let x = <f64 as FromSql<Double, Sqlite>>::from_sql(bytes)?;

@@ -7,28 +7,20 @@
 pub(crate) mod backend;
 #[cfg(feature = "mysql")]
 mod connection;
-mod value;
 
-pub(crate) mod query_builder;
-mod types;
+use crate::mysql_like::query_builder::MysqlLikeQueryBuilder;
 
-pub use self::backend::{Mysql, MysqlType};
+#[doc(inline)]
+pub use self::backend::Mysql;
 #[cfg(feature = "mysql")]
+#[doc(inline)]
 pub use self::connection::MysqlConnection;
-pub use self::query_builder::MysqlQueryBuilder;
-pub use self::value::{MysqlValue, NumericRepresentation};
+#[doc(inline)]
+pub use super::mysql_like::sql_types;
+#[doc(inline)]
+pub use super::mysql_like::{MysqlType, MysqlValue, NumericRepresentation};
+#[doc(inline)]
+pub use crate::mysql_like::data_types;
 
-/// Data structures for MySQL types which have no corresponding Rust type
-///
-/// Most of these types are used to implement `ToSql` and `FromSql` for higher
-/// level types.
-pub mod data_types {
-    #[doc(inline)]
-    pub use super::types::date_and_time::{MysqlTime, MysqlTimestampType};
-}
-
-/// MySQL specific sql types
-pub mod sql_types {
-    #[doc(inline)]
-    pub use super::types::{Datetime, Unsigned};
-}
+/// The MySQL query builder
+pub type MysqlQueryBuilder = MysqlLikeQueryBuilder<Mysql>;

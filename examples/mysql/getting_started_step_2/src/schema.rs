@@ -2,6 +2,7 @@
 
 diesel::table! {
     posts (id) {
+        #[auto_increment]
         id -> Integer,
         #[max_length = 255]
         title -> Varchar,

@@ -1,5 +1,5 @@
 use crate::migrations::migration_directory_from_given_path;
-use migrations_internals::{migrations_directories, version_from_string, TomlMetadata};
+use migrations_internals::{TomlMetadata, migrations_directories, version_from_string};
 use quote::quote;
 use std::error::Error;
 use std::fs::DirEntry;

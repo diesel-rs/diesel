@@ -1,0 +1,7 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: remove_enum"
+---
+-- This file should undo anything in `up.sql`
+ALTER TABLE `resource` ADD COLUMN `some_field` enum('a', 'b', 'c') NOT NULL;
+ALTER TABLE `resource` ADD COLUMN `some_field2` enum('FOOBAR', 'BAZBOOM') NOT NULL;

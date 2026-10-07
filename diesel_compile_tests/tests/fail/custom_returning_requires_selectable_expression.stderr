@@ -1,4 +1,4 @@
-error[E0277]: cannot select `bad::columns::age` from `users::table`
+error[E0277]: cannot select `bad::columns::age` from `ReturningQuerySource<UpdateStmt, table>`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:32:20
     |
  LL |         .returning(bad::age);
@@ -6,12 +6,12 @@ error[E0277]: cannot select `bad::columns::age` from `users::table`
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+help: the trait `SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::UpdateStmt, users::table>>` is not implemented for `bad::columns::age`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
     |       ^^^
-    = note: `bad::columns::age` is no valid selection for `users::table`
+    = note: `bad::columns::age` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
     = help: `bad::columns::age` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<bad::table>>
               SelectableExpression<Tablesample<bad::table, TSM>>
@@ -20,6 +20,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `bad
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
     = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
@@ -32,7 +33,7 @@ LL |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `bad::columns::age` from `users::table`
+error[E0277]: cannot select `bad::columns::age` from `ReturningQuerySource<_, table>`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
  LL |         .returning((name, bad::age));
@@ -40,12 +41,12 @@ error[E0277]: cannot select `bad::columns::age` from `users::table`
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+help: the trait `SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `bad::columns::age`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
     |       ^^^
-    = note: `bad::columns::age` is no valid selection for `users::table`
+    = note: `bad::columns::age` is no valid selection for `ReturningQuerySource<_, table>`
     = help: `bad::columns::age` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<bad::table>>
               SelectableExpression<Tablesample<bad::table, TSM>>
@@ -54,7 +55,8 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `bad
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
@@ -67,7 +69,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:40:20
     |
  LL |         .returning((name, bad::age));
@@ -75,15 +77,15 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
     |          |
     |          required by a bound introduced by this call
     |
-note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
+note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQuerySource<_, table>>`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
  LL |       age -> Integer,
     |       ^^^
     = note: associated types for the current `impl` cannot be restricted in `where` clauses
     = note: 1 redundant requirement hidden
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<users::table>`
-    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
+    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<ReturningQuerySource<_, table>>`
+    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs

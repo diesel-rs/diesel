@@ -6,11 +6,12 @@ use crate::expression::{
 };
 use crate::query_builder::*;
 use crate::result::QueryResult;
+use alloc::vec::Vec;
 
 #[derive(Debug)]
 pub struct SelectBy<T: Selectable<DB>, DB: Backend> {
     selection: T::SelectExpression,
-    p: std::marker::PhantomData<(T, DB)>,
+    p: core::marker::PhantomData<(T, DB)>,
 }
 
 impl<T, DB> Clone for SelectBy<T, DB>
@@ -21,7 +22,7 @@ where
     fn clone(&self) -> Self {
         Self {
             selection: T::construct_selection(),
-            p: std::marker::PhantomData,
+            p: core::marker::PhantomData,
         }
     }
 }
@@ -53,7 +54,7 @@ where
     pub(crate) fn new() -> Self {
         Self {
             selection: T::construct_selection(),
-            p: std::marker::PhantomData,
+            p: core::marker::PhantomData,
         }
     }
 }

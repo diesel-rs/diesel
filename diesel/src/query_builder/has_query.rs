@@ -1,5 +1,8 @@
 use super::group_by_clause::ValidGroupByClause;
-use super::{BoxedSelectStatement, FromClause, NoFromClause, Query, QueryId, SelectStatement};
+use super::{
+    BoxedCloneSelectStatement, BoxedSelectStatement, FromClause, NoFromClause, Query, QueryId,
+    SelectStatement,
+};
 use crate::backend::Backend;
 use crate::expression::ValidGrouping;
 use crate::query_dsl::methods::SelectDsl;
@@ -154,6 +157,25 @@ mod private {
     }
 
     impl<'a, ST, F, DB, GB> AcceptedQueries for BoxedSelectStatement<'a, ST, FromClause<F>, DB, GB>
+    where
+        F: QuerySource,
+        GB: ValidGroupByClause,
+    {
+        type From = F;
+
+        type GroupBy = GB::Expressions;
+    }
+
+    impl<'a, ST, DB, GB> AcceptedQueries for BoxedCloneSelectStatement<'a, ST, NoFromClause, DB, GB>
+    where
+        GB: ValidGroupByClause,
+    {
+        type From = NoFromClause;
+
+        type GroupBy = GB::Expressions;
+    }
+
+    impl<'a, ST, F, DB, GB> AcceptedQueries for BoxedCloneSelectStatement<'a, ST, FromClause<F>, DB, GB>
     where
         F: QuerySource,
         GB: ValidGroupByClause,

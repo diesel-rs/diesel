@@ -1,0 +1,21 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "#[derive(QueryId)]\nstruct Query<'a, const N: usize, T> {\n    f: &'a str,\n    g: T,\n}\n"
+---
+const _: () = {
+    use diesel;
+    #[allow(non_camel_case_types)]
+    impl<
+        'a,
+        const N: usize,
+        T: diesel::query_builder::QueryId,
+    > diesel::query_builder::QueryId for Query<'a, N, T> {
+        type QueryId = Query<'static, N, <T as diesel::query_builder::QueryId>::QueryId>;
+        const HAS_STATIC_QUERY_ID: bool = <T as diesel::query_builder::QueryId>::HAS_STATIC_QUERY_ID
+            && true;
+        const IS_WINDOW_FUNCTION: bool = <T as diesel::query_builder::QueryId>::IS_WINDOW_FUNCTION
+            || false;
+    }
+};

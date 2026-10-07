@@ -35,13 +35,12 @@ pub(crate) fn extract_referenced_generics(
                     lifetime,
                     "`#[auto_type]` requires named lifetimes",
                 )));
-            } else if lifetime.ident != "static" {
-                if let Ok(lifetime_idx) = self
+            } else if lifetime.ident != "static"
+                && let Ok(lifetime_idx) = self
                     .lifetimes
                     .binary_search_by_key(&lifetime, |(lt, _)| *lt)
-                {
-                    self.lifetimes[lifetime_idx].1 = true;
-                }
+            {
+                self.lifetimes[lifetime_idx].1 = true;
             }
             visit::visit_lifetime(self, lifetime)
         }
@@ -57,13 +56,12 @@ pub(crate) fn extract_referenced_generics(
         }
 
         fn visit_type_path(&mut self, type_path: &'ast syn::TypePath) {
-            if let Some(path_ident) = type_path.path.get_ident() {
-                if let Ok(type_param_idx) = self
+            if let Some(path_ident) = type_path.path.get_ident()
+                && let Ok(type_param_idx) = self
                     .type_parameters
                     .binary_search_by_key(&path_ident, |tp| tp.0)
-                {
-                    self.type_parameters[type_param_idx].1 = true;
-                }
+            {
+                self.type_parameters[type_param_idx].1 = true;
             }
             visit::visit_type_path(self, type_path)
         }

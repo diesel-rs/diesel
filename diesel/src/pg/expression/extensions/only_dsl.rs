@@ -1,5 +1,5 @@
-use crate::query_builder::Only;
 use crate::Table;
+use crate::query_builder::Only;
 
 /// The `only` method
 ///

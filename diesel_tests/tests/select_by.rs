@@ -50,11 +50,10 @@ table! {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use crate::schema_dsl::*;
     let connection = &mut connection();
-    create_table(
+    create_temporary_table(
         "select",
         (
             integer("id").primary_key().auto_increment(),
@@ -63,7 +62,15 @@ fn selecting_columns_and_tables_with_reserved_names() {
     )
     .execute(connection)
     .unwrap();
-    diesel::sql_query("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+
+    let records = vec![
+        select::columns::join.eq(1),
+        select::columns::join.eq(2),
+        select::columns::join.eq(3),
+    ];
+
+    insert_into(select::table)
+        .values(&records)
         .execute(connection)
         .unwrap();
 
@@ -85,12 +92,10 @@ fn selecting_columns_and_tables_with_reserved_names() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     use crate::schema_dsl::*;
     let connection = &mut connection();
-    drop_table_cascade(connection, "users");
-    create_table(
+    create_temporary_table(
         "users",
         (
             integer("id").primary_key().auto_increment(),
@@ -166,7 +171,7 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
 #[diesel_test_helper::test]
 fn selecting_multiple_aggregate_expressions_without_group_by() {
     use self::users::dsl::*;
-    use diesel::dsl::{count_star, max, CountStar};
+    use diesel::dsl::{CountStar, count_star, max};
     use diesel::helper_types::max;
 
     #[derive(Queryable)]

@@ -1,12 +1,12 @@
-use crate::backend::sql_dialect;
-use crate::query_builder::{QueryFragment, QueryId};
-
 use super::aggregate_filter::NoFilter;
 use super::aggregate_order::{NoOrder, Order};
 use super::over_clause::{NoWindow, OverClause, ValidAggregateFilterForWindow};
 use super::partition_by::NoPartition;
 use super::prefix::NoPrefix;
 use super::{AggregateExpression, IsWindowFunction};
+use crate::backend::sql_dialect;
+use crate::query_builder::{QueryFragment, QueryId};
+use alloc::string::ToString;
 
 empty_clause!(NoFrame);
 
@@ -28,7 +28,7 @@ where
 }
 
 macro_rules! simple_frame_expr {
-    ($(#[doc = $doc: literal])* $name: ident, $kind: expr) => {
+    ($(#[doc = $doc: literal])* $name: ident, $kind: expr_2021) => {
         #[derive(QueryId, Clone, Copy, Debug)]
         $(#[doc = $doc])*
         pub struct $name;
@@ -49,7 +49,7 @@ macro_rules! simple_frame_expr {
 }
 
 macro_rules! simple_frame_expr_with_bound {
-    ($(#[doc = $doc:literal])* $name: ident, $option: ident, $bound: ty, $kind: expr) => {
+    ($(#[doc = $doc:literal])* $name: ident, $option: ident, $bound: ty, $kind: expr_2021) => {
         #[derive(QueryId, Clone, Copy, Debug)]
         $(#[doc = $doc])*
         pub struct $name;

@@ -1,0 +1,29 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: drop_enum_variant"
+---
+-- This file should undo anything in `up.sql`
+ALTER TYPE "some_enum" ADD VALUE 'c';
+-- Rename the old type
+ALTER TYPE "some_enum2" RENAME TO "some_enum2_tmp";
+-- Create a new type definition
+CREATE TYPE "some_enum2" AS enum('FOOBAR', 'BAZBOOM');
+
+-- Convert existing data
+-- Rename the existing column
+ALTER TABLE "resource" RENAME COLUMN "some_field2" TO "some_field2_tmp";
+-- Add a new column with the new type
+ALTER TABLE "resource" ADD COLUMN "some_field2" "some_enum2";
+
+-- Add a section here to migrate your data to not contain
+-- any of the removed variants anymore
+
+-- Restore the existing data
+UPDATE "resource" SET "some_field2" = "some_field2_tmp"::text::"some_enum2";
+-- Mark the column as NOT NULL again
+ALTER TABLE "resource" ALTER COLUMN "some_field2" SET NOT NULL;
+-- Drop the column with the old enum type
+ALTER TABLE "resource" DROP COLUMN "some_field2_tmp";
+
+-- Finally drop the old enum type
+DROP TYPE "some_enum2_tmp";

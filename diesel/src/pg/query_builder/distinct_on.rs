@@ -1,3 +1,4 @@
+use crate::QuerySource;
 use crate::expression::{SelectableExpression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
@@ -11,7 +12,6 @@ use crate::query_dsl::methods::DistinctOnDsl;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
 use crate::sql_types::SingleValue;
-use crate::QuerySource;
 use diesel::query_builder::order_clause::OrderClause;
 
 /// Represents `DISTINCT ON (...)`
@@ -95,7 +95,7 @@ macro_rules! valid_ordering {
         /* skip this one */
     };
     (@impl_one:
-     [allow_plain = $allow_plain: expr]
+     [allow_plain = $allow_plain: expr_2021]
      [generics: $($T:ident)*]
      [distinct: $($D:ident)*]
      [other: $($O:ident)*]
@@ -248,7 +248,7 @@ macro_rules! valid_ordering {
 // If we would generate these impls up to max_table_column_count tuple elements that
 // would be a really large number for 128 tuple elements (~64k trait impls)
 // It's fine to increase this number at some point in the future gradually
-diesel_derives::__diesel_for_each_tuple!(valid_ordering, 5);
+crate::for_each_tuple!(valid_ordering, 5);
 
 /// A decorator trait for `OrderClause`
 /// It helps to have bounds on either Col, Asc<Col> and Desc<Col>.

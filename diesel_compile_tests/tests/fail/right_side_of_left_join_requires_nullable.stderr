@@ -49,6 +49,7 @@ LL |         title -> Text,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -112,6 +113,7 @@ LL |         title -> Text,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -134,8 +136,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              &'__expr MigrationVersion<'a>
              &'__expr std::string::String
              &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
              MigrationVersion<'a>
-             std::string::String
+           and N others
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
@@ -157,8 +163,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              &'__expr MigrationVersion<'a>
              &'__expr std::string::String
              &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
              MigrationVersion<'a>
-             std::string::String
+           and N others
 
    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -212,6 +222,7 @@ LL |         title -> Text,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -275,6 +286,7 @@ LL |         title -> Text,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -297,8 +309,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              &'__expr MigrationVersion<'a>
              &'__expr std::string::String
              &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
              MigrationVersion<'a>
-             std::string::String
+           and N others
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
@@ -320,8 +336,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
              &'__expr MigrationVersion<'a>
              &'__expr std::string::String
              &'__expr str
+             Arc<std::string::String>
+             Arc<str>
+             Box<std::string::String>
+             Box<str>
              MigrationVersion<'a>
-             std::string::String
+           and N others
 
    
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -375,6 +395,7 @@ LL |         title -> Text,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -438,6 +459,7 @@ LL |         title -> Text,
              SelectableExpression<Join<Left, Right, LeftOuter>>
              SelectableExpression<JoinOn<Join, On>>
              SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
              SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -460,8 +482,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -483,8 +509,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
  
     
 error[E0271]: type mismatch resolving `<SelectStatement<_> as AppearsInFromClause<table>>::Count == Never`
@@ -528,6 +558,7 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, _, _>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -581,6 +612,7 @@ help: the trait `SelectableExpression<pets::table>` is not implemented for `post
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, _, _>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -603,8 +635,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -626,8 +662,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
  
     
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
@@ -681,6 +721,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -744,6 +785,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `pos
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<posts::table>
 note: required for `posts::columns::title` to implement `SelectableExpression<Join<table, table, _>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:16:9
@@ -766,8 +808,12 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
@@ -789,5 +835,9 @@ LL |     let _ = join.select(lower(posts::title.nullable()));
               &'__expr MigrationVersion<'a>
               &'__expr std::string::String
               &'__expr str
+              Arc<std::string::String>
+              Arc<str>
+              Box<std::string::String>
+              Box<str>
               MigrationVersion<'a>
-              std::string::String
+            and N others

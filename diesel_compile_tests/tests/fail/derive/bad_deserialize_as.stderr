@@ -11,14 +11,68 @@ error: expected `=`
 LL |     #[diesel(deserialize_as(Foo))]
    |                            ^
 
-error: expected identifier
+error: expected type
   --> tests/fail/derive/bad_deserialize_as.rs:23:31
    |
 LL |     #[diesel(deserialize_as = "foo")]
    |                               ^^^^^
 
-error: expected identifier
+error: expected type
   --> tests/fail/derive/bad_deserialize_as.rs:31:31
    |
 LL |     #[diesel(deserialize_as = 1omg)]
    |                               ^^^^
+
+error: `deserialize_as` does not support reference types
+  --> tests/fail/derive/bad_deserialize_as.rs:39:31
+   |
+LL |     #[diesel(deserialize_as = &'static str)]
+   |                               ^^^^^^^^^^^^
+
+error: `deserialize_as` does not support unsized slice types, use an array instead
+  --> tests/fail/derive/bad_deserialize_as.rs:47:31
+   |
+LL |     #[diesel(deserialize_as = [u8])]
+   |                               ^^^^
+
+error: `deserialize_as` does not support trait objects
+  --> tests/fail/derive/bad_deserialize_as.rs:55:31
+   |
+LL |     #[diesel(deserialize_as = dyn ToString)]
+   |                               ^^^^^^^^^^^^
+
+error: `deserialize_as` does not support impl trait types
+  --> tests/fail/derive/bad_deserialize_as.rs:63:31
+   |
+LL |     #[diesel(deserialize_as = impl ToString)]
+   |                               ^^^^^^^^^^^^^
+
+error: `deserialize_as` does not support inference types
+  --> tests/fail/derive/bad_deserialize_as.rs:71:31
+   |
+LL |     #[diesel(deserialize_as = _)]
+   |                               ^
+
+error: `deserialize_as` does not support reference types
+  --> tests/fail/derive/bad_deserialize_as.rs:79:32
+   |
+LL |     #[diesel(deserialize_as = (&'static str, i32))]
+   |                                ^^^^^^^^^^^^
+
+error: `deserialize_as` does not support pointer types
+  --> tests/fail/derive/bad_deserialize_as.rs:87:31
+   |
+LL |     #[diesel(deserialize_as = *const u8)]
+   |                               ^^^^^^^^^
+
+error: `deserialize_as` does not support function pointer types
+  --> tests/fail/derive/bad_deserialize_as.rs:95:31
+   |
+LL |     #[diesel(deserialize_as = fn() -> i32)]
+   |                               ^^^^^^^^^^^
+
+error: macro invocation is not supported in `deserialize_as`
+   --> tests/fail/derive/bad_deserialize_as.rs:103:31
+    |
+LL |     #[diesel(deserialize_as = concat_idents!(Foo, Bar))]
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^

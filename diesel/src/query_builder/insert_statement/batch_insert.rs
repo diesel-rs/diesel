@@ -1,9 +1,11 @@
 use super::ValuesClause;
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::QueryResult;
+use crate::backend::{Backend, SqlDialect, sql_dialect};
 use crate::insertable::CanInsertInSingleQuery;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::QueryResult;
-use std::marker::PhantomData;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::marker::PhantomData;
 
 /// This type represents a batch insert clause, which allows
 /// to insert multiple rows at once.
@@ -61,6 +63,24 @@ DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_
 }
 
 impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for Box<[T; N]>
+where
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
+{
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(N)
+    }
+}
+
+impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for alloc::rc::Rc<[T; N]>
+where
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
+{
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(N)
+    }
+}
+
+impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for alloc::sync::Arc<[T; N]>
 where
     DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
 {

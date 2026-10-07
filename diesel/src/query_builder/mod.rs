@@ -27,7 +27,6 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-pub(crate) mod returning_clause;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -44,7 +43,12 @@ pub use self::collected_query::CollectedQuery;
 #[doc(inline)]
 pub use self::debug_query::DebugQuery;
 #[doc(inline)]
-pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
+pub use self::delete_statement::{
+    BoxedCloneDeleteStatement, BoxedDeleteStatement, DeleteStatement,
+};
+#[cfg(any(feature = "mysql_backend", feature = "mariadb_backend"))]
+#[doc(inline)]
+pub use self::insert_statement::SingleRowInsertValues;
 #[doc(inline)]
 pub use self::insert_statement::{
     IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement, IncompleteReplaceStatement,
@@ -53,7 +57,11 @@ pub use self::insert_statement::{
 #[doc(inline)]
 pub use self::query_id::QueryId;
 #[doc(inline)]
-pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
+pub use self::sql_query::{BoxedCloneSqlQuery, BoxedSqlQuery, SqlQuery};
+#[doc(inline)]
+pub use self::upsert::into_conflict_clause::IntoConflictValueClause;
+#[doc(inline)]
+pub use self::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 #[doc(inline)]
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
@@ -62,7 +70,9 @@ pub use self::update_statement::changeset::AsChangeset;
 #[doc(inline)]
 pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
 #[doc(inline)]
-pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
+pub use self::update_statement::{
+    BoxedCloneUpdateStatement, BoxedUpdateStatement, UpdateStatement,
+};
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::combination_clause::{
@@ -71,7 +81,9 @@ pub use self::combination_clause::{
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+pub use self::limit_offset_clause::{
+    BoxedCloneLimitOffsetClause, BoxedLimitOffsetClause, LimitOffsetClause,
+};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
@@ -91,9 +103,10 @@ pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
 #[doc(inline)]
 pub use self::insert_statement::{DefaultValues, InsertOrIgnore, Replace};
 
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod returning;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-#[doc(inline)]
-pub use self::returning_clause::ReturningClause;
+pub mod returning;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(
@@ -112,6 +125,20 @@ pub(crate) use self::select_clause::SelectClauseExpression;
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) use self::from_clause::{FromClause, NoFromClause};
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    allow(unused_imports)
+)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::group_by_clause::{GroupByClause, NoGroupByClause};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::select_statement::BoxedCloneSelectStatement;
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
@@ -136,7 +163,10 @@ pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
 pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
 use crate::result::QueryResult;
-use std::error::Error;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::error::Error;
 
 pub(crate) use self::private::NotSpecialized;
 
@@ -304,6 +334,26 @@ where
     }
 }
 
+impl<T: ?Sized, DB> QueryFragment<DB> for alloc::rc::Rc<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
+    }
+}
+
+impl<T: ?Sized, DB> QueryFragment<DB> for alloc::sync::Arc<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&**self, pass)
+    }
+}
+
 impl<T: ?Sized, DB> QueryFragment<DB> for &T
 where
     DB: Backend,
@@ -345,6 +395,20 @@ pub trait IntoBoxedClause<'a, DB> {
 
     /// Convert the given query node in it's boxed representation
     fn into_boxed(self) -> Self::BoxedClause;
+}
+
+/// A trait used to construct type erased boxed cloneable variant of the current query node
+///
+/// Mainly useful for implementing third party backends
+#[diagnostic::on_unimplemented(
+    note = "this usually means that `{Self}` is no valid SQL for `{DB}`"
+)]
+pub trait IntoBoxedCloneClause<'a, DB> {
+    /// Resulting type
+    type BoxedCloneClause;
+
+    /// Convert the given query node in it's boxed cloneable representation
+    fn into_boxed_clone(self) -> Self::BoxedCloneClause;
 }
 
 /// Types that can be converted into a complete, typed SQL query.

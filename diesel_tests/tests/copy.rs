@@ -183,6 +183,7 @@ fn copy_from_from_insertable_struct() {
     assert_eq!(user_count, 2);
     let users = users::table
         .select((users::name, users::hair_color))
+        .order(users::id)
         .load::<(String, Option<String>)>(conn)
         .unwrap();
 
@@ -211,6 +212,7 @@ fn copy_from_from_insertable_tuple() {
     assert_eq!(user_count, 2);
     let users = users::table
         .select((users::name, users::hair_color))
+        .order(users::id)
         .load::<(String, Option<String>)>(conn)
         .unwrap();
 
@@ -239,6 +241,7 @@ fn copy_from_from_insertable_vec() {
     assert_eq!(user_count, 2);
     let users = users::table
         .select((users::name, users::hair_color))
+        .order(users::id)
         .load::<(String, Option<String>)>(conn)
         .unwrap();
 

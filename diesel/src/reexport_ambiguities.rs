@@ -40,12 +40,15 @@ macro_rules! make_proxy_mod {
             type avg = ();
             type broadcast = ();
             type cardinality = ();
+            type daterange = ();
             type family = ();
             type first_value = ();
             type host = ();
             type hostmask = ();
             type inet_merge = ();
             type inet_same_family = ();
+            type int4range = ();
+            type int8range = ();
             type isempty = ();
             type json_array_length = ();
             type json_build_array_0 = ();
@@ -96,6 +99,7 @@ macro_rules! make_proxy_mod {
             type netmask = ();
             type network = ();
             type nth_value = ();
+            type numrange = ();
             type range_merge = ();
             type row_to_json = ();
             type set_masklen = ();
@@ -103,6 +107,8 @@ macro_rules! make_proxy_mod {
             type to_json = ();
             type to_jsonb = ();
             type trim_array = ();
+            type tsrange = ();
+            type tstzrange = ();
             type upper_inc = ();
             type upper_inf = ();
             type upper = ();
@@ -114,8 +120,16 @@ macro_rules! make_proxy_mod {
             type json_array_2 = ();
             type json_array_length_with_path = ();
             type json_error_position = ();
+            type json_extract_double = ();
+            type json_extract_integer = ();
+            type json_extract_json_1 = ();
+            type json_extract_json_2 = ();
+            type json_extract_string = ();
             type json_group_array = ();
             type json_group_object = ();
+            type json_insert_0 = ();
+            type json_insert_1 = ();
+            type json_insert_2 = ();
             type json_object_0 = ();
             type json_object_1 = ();
             type json_object_2 = ();
@@ -126,6 +140,12 @@ macro_rules! make_proxy_mod {
             type json_remove_0 = ();
             type json_remove_1 = ();
             type json_remove_2 = ();
+            type json_replace_0 = ();
+            type json_replace_1 = ();
+            type json_replace_2 = ();
+            type json_set_0 = ();
+            type json_set_1 = ();
+            type json_set_2 = ();
             type json_type = ();
             type json_type_with_path = ();
             type json_valid = ();
@@ -134,8 +154,16 @@ macro_rules! make_proxy_mod {
             type jsonb_array_0 = ();
             type jsonb_array_1 = ();
             type jsonb_array_2 = ();
+            type jsonb_extract_double = ();
+            type jsonb_extract_integer = ();
+            type jsonb_extract_jsonb_1 = ();
+            type jsonb_extract_jsonb_2 = ();
+            type jsonb_extract_string = ();
             type jsonb_group_array = ();
             type jsonb_group_object = ();
+            type jsonb_insert_0 = ();
+            type jsonb_insert_1 = ();
+            type jsonb_insert_2 = ();
             type jsonb_object_0 = ();
             type jsonb_object_1 = ();
             type jsonb_object_2 = ();
@@ -143,6 +171,12 @@ macro_rules! make_proxy_mod {
             type jsonb_remove_0 = ();
             type jsonb_remove_1 = ();
             type jsonb_remove_2 = ();
+            type jsonb_replace_0 = ();
+            type jsonb_replace_1 = ();
+            type jsonb_replace_2 = ();
+            type jsonb_set_0 = ();
+            type jsonb_set_1 = ();
+            type jsonb_set_2 = ();
         }
     };
 }

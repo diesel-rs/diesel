@@ -1,4 +1,4 @@
-error[E0277]: cannot select `non_users::columns::noname` from `users::table`
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<DeleteStmt, table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:27:20
     |
  LL |         .returning(non_users::columns::noname);
@@ -6,12 +6,12 @@ error[E0277]: cannot select `non_users::columns::noname` from `users::table`
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::DeleteStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `users::table`
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<DeleteStmt, table>`
     = help: `non_users::columns::noname` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<non_users::table>>
               SelectableExpression<Tablesample<non_users::table, TSM>>
@@ -19,19 +19,21 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<non_users::table>
+    = note: required for `DeleteStatement<table, WhereClause<Grouped<_>>, _>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
    --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
 LL |     where
-LL |         E: SelectableExpression<T>,
-    |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
+LL |         DeleteStatement<T, U, ReturningClause<E>>: Query,
+    |                                                    ^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `non_users::columns::noname` from `users::table`
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<_, table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:32:20
     |
  LL |         .returning(non_users::columns::noname);
@@ -39,12 +41,12 @@ error[E0277]: cannot select `non_users::columns::noname` from `users::table`
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::InsertStmtWithoutOnConflictDoUpdate, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `users::table`
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<_, table>`
     = help: `non_users::columns::noname` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<non_users::table>>
               SelectableExpression<Tablesample<non_users::table, TSM>>
@@ -52,6 +54,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<non_users::table>
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
@@ -65,7 +68,7 @@ LL |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: cannot select `non_users::columns::noname` from `users::table`
+error[E0277]: cannot select `non_users::columns::noname` from `ReturningQuerySource<UpdateStmt, table>`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:37:20
     |
  LL |         .returning(non_users::columns::noname);
@@ -73,12 +76,12 @@ error[E0277]: cannot select `non_users::columns::noname` from `users::table`
     |          |
     |          required by a bound introduced by this call
     |
-help: the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+help: the trait `SelectableExpression<diesel::internal::table_macro::returning::ReturningQuerySource<diesel::internal::table_macro::returning::UpdateStmt, users::table>>` is not implemented for `non_users::columns::noname`
    --> tests/fail/returning_clause_requires_selectable_expression.rs:19:9
     |
  LL |         noname -> VarChar,
     |         ^^^^^^
-    = note: `non_users::columns::noname` is no valid selection for `users::table`
+    = note: `non_users::columns::noname` is no valid selection for `ReturningQuerySource<UpdateStmt, table>`
     = help: `non_users::columns::noname` implements trait `SelectableExpression<QS>`:
               SelectableExpression<Only<non_users::table>>
               SelectableExpression<Tablesample<non_users::table, TSM>>
@@ -86,6 +89,7 @@ help: the trait `SelectableExpression<users::table>` is not implemented for `non
               SelectableExpression<Join<Left, Right, LeftOuter>>
               SelectableExpression<JoinOn<Join, On>>
               SelectableExpression<SelectStatement<_>>
+              SelectableExpression<ReturningQuerySource<__StmtKind, table>>
               SelectableExpression<non_users::table>
     = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`

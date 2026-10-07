@@ -9,16 +9,13 @@ help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> VarChar,
- LL | |     }
-LL | | }
-   | |_^
+   | |_________^
    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: `users::table` implements trait `JoinTo<T>`:
              JoinTo<Alias<S>>
              JoinTo<Only<S>>
              JoinTo<Tablesample<S, TSM>>
+             JoinTo<BoxedCloneSelectStatement<'_, _, ST, DB>>
              JoinTo<BoxedSelectStatement<'_, _, ST, DB>>
              JoinTo<diesel::internal::table_macro::Join<Left, Right, Kind>>
              JoinTo<diesel::internal::table_macro::JoinOn<Join, On>>
@@ -38,16 +35,13 @@ help: the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |
  LL | / table! {
  LL | |     users {
- LL | |         id -> Integer,
- LL | |         name -> VarChar,
- LL | |     }
-LL | | }
-   | |_^
+   | |_________^
    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: `users::table` implements trait `JoinTo<T>`:
              JoinTo<Alias<S>>
              JoinTo<Only<S>>
              JoinTo<Tablesample<S, TSM>>
+             JoinTo<BoxedCloneSelectStatement<'_, _, ST, DB>>
              JoinTo<BoxedSelectStatement<'_, _, ST, DB>>
              JoinTo<diesel::internal::table_macro::Join<Left, Right, Kind>>
              JoinTo<diesel::internal::table_macro::JoinOn<Join, On>>
@@ -67,17 +61,14 @@ help: the trait `JoinTo<users::table>` is not implemented for `posts::table`
    |
 LL | / table! {
 LL | |     posts {
-LL | |         id -> Integer,
-LL | |         title -> VarChar,
-LL | |     }
-LL | | }
-   | |_^
+   | |_________^
    = note: joining tables directly either requires a `diesel::joinable!` definition or calling `JoinOnDsl::on` to manually specify the `ON` clause of the join`
    = help: `posts::table` implements trait `JoinTo<T>`:
              JoinTo<Alias<S>>
              JoinTo<Only<S>>
              JoinTo<Tablesample<S, TSM>>
              JoinTo<comments::table>
+             JoinTo<BoxedCloneSelectStatement<'_, _, ST, DB>>
              JoinTo<BoxedSelectStatement<'_, _, ST, DB>>
              JoinTo<diesel::internal::table_macro::Join<Left, Right, Kind>>
              JoinTo<diesel::internal::table_macro::JoinOn<Join, On>>

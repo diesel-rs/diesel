@@ -1,0 +1,7 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: drop_enum_variant"
+---
+-- This file should undo anything in `up.sql`
+ALTER TABLE `resource` MODIFY COLUMN `some_field` enum('a', 'b', 'c') NOT NULL;
+ALTER TABLE `resource` MODIFY COLUMN `some_field2` enum('FOOBAR', 'BAZBOOM') NOT NULL;

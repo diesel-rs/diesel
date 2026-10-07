@@ -1,6 +1,8 @@
 use diesel::RunQueryDsl;
 use std::marker::PhantomData;
 
+pub struct Temporary<T>(pub(super) T);
+
 pub struct CreateTable<'a, Cols> {
     name: &'a str,
     columns: Cols,
@@ -13,6 +15,7 @@ impl<'a, Cols> CreateTable<'a, Cols> {
 }
 
 impl<Cols, Conn> RunQueryDsl<Conn> for CreateTable<'_, Cols> {}
+impl<Cols, Conn> RunQueryDsl<Conn> for Temporary<CreateTable<'_, Cols>> {}
 
 pub struct Column<'a, T> {
     name: &'a str,
@@ -72,6 +75,8 @@ pub struct Default<'a, Col> {
 }
 
 use diesel::backend::*;
+#[cfg(feature = "mariadb")]
+use diesel::mariadb::Mariadb;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -88,7 +93,7 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        out.push_sql("CREATE TABLE IF NOT EXISTS ");
+        out.push_sql("CREATE TABLE ");
         out.push_identifier(self.name)?;
         out.push_sql(" (");
         self.columns.walk_ast(out.reborrow())?;
@@ -98,6 +103,28 @@ where
 }
 
 impl<Cols> QueryId for CreateTable<'_, Cols> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<DB, Cols> QueryFragment<DB> for Temporary<CreateTable<'_, Cols>>
+where
+    DB: Backend,
+    Cols: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        out.push_sql("CREATE TEMPORARY TABLE ");
+        out.push_identifier(self.0.name)?;
+        out.push_sql(" (");
+        self.0.columns.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl<Cols> QueryId for Temporary<CreateTable<'_, Cols>> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
@@ -160,6 +187,19 @@ where
     Col: QueryFragment<Mysql>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        self.0.walk_ast(out.reborrow())?;
+        out.push_sql(" AUTO_INCREMENT");
+        Ok(())
+    }
+}
+
+#[cfg(feature = "mariadb")]
+impl<Col> QueryFragment<Mariadb> for AutoIncrement<Col>
+where
+    Col: QueryFragment<Mariadb>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTO_INCREMENT");

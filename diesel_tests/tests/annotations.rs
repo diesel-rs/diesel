@@ -32,7 +32,7 @@ fn association_where_struct_name_doesnt_match_table_name() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(feature = "sqlite", feature = "mysql", feature = "mariadb")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
     #[diesel(belongs_to(User))]

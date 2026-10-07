@@ -4,7 +4,7 @@ use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::error::Error;
+use core::error::Error;
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -41,8 +41,8 @@ pub enum PgNumeric {
 #[allow(dead_code)] // that's used by debug in the error impl
 struct InvalidNumericSign(u16);
 
-impl ::std::fmt::Display for InvalidNumericSign {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+impl core::fmt::Display for InvalidNumericSign {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_str("sign for numeric field was not one of 0, 0x4000, 0xC000")
     }
 }

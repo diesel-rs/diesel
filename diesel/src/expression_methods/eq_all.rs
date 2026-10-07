@@ -1,6 +1,6 @@
+use crate::expression::Expression;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::And;
-use crate::expression::Expression;
 use crate::expression_methods::*;
 use crate::sql_types::Bool;
 
@@ -69,4 +69,4 @@ macro_rules! impl_eq_all_for_all_tuples {
     };
 }
 
-diesel_derives::__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);
+crate::for_each_tuple!(impl_eq_all_for_all_tuples);

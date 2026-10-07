@@ -82,9 +82,9 @@ We try to keep a number of issues [marked as good first issue](https://github.co
 4. Create a `.env` file in this directory, and add the connection details for
    your databases.
 
-   *Additional note:* The MySQL tests currently fail when running on MySQL 5.6
-   or lower. If you have 5.6 or lower installed locally and cannot upgrade for
-   some reason, you may want to consider setting up Docker as mentioned below.
+   *Additional note:* The MySQL tests require MySQL 8.4 in order to pass. If you
+   have a different version installed locally, you may want to consider setting
+   up Docker as mentioned below.
 
    See [.env.sample](.env.sample) for an example that works with a trivial
    local setup.
@@ -95,12 +95,12 @@ We try to keep a number of issues [marked as good first issue](https://github.co
    user that you've specified.
 
    If you have [Docker](https://www.docker.com/), the following snippet might help you
-   to get Postgres and MySQL running (with the above `.env` file):
+   to get Postgres and MySQL 8.4 running (with the above `.env` file):
 
    ```bash
    #!/usr/bin/env sh
    set -e
-   docker run -d --name diesel.mysql -p 3306:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql
+   docker run -d --name diesel.mysql -p 3306:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql:8.4
    while
      sleep 1;
      ! echo 'CREATE DATABASE diesel_test; CREATE DATABASE diesel_unit_test;' | docker exec -i diesel.mysql mysql
@@ -151,6 +151,27 @@ To run rustfmt tests locally:
 
 You can also use rustfmt to make corrections or highlight issues in your editor.
 Check out [their README](https://github.com/rust-lang/rustfmt) for details.
+
+### Usage of LLM's/AI agents
+
+The Diesel project does not strictly forbid the usage of LLM's and AI agents for submitting pull requests. 
+There are still a number of restrictions and rules you as a PR author are asked to follow:
+
+* You need to make sure that the code you are trying to submit can be licensed under the relevant open source license used by Diesel. It cannot contain any code that is incompatible with the licenses used by Diesel.
+* You need to fully understand and review any generated code before submitting a PR. The expectation from the reviewer team is 
+  to discuss these changes with you as a person.
+* You need to ensure that the submitted code satisfies the general requirements of submitting PR's to Diesel. That especially includes the following points:
+    + The Code passes all tests and style checks
+    + The change is as minimal as possible. Huge changes will be just dismissed
+    + You verified that the change actually fixes/implements what it is supposed to fix/implement
+    + The change contains a sufficient amount of documentation to help others following the code
+* The usage of LLM's/AI need to be disclosed (See the linked NlNet resource on how to do that in a meaningful way)
+* We ask you to write pull request descriptions and discussion comments on your own. 
+  We are able to ask an AI agent on our own if we feel that might be helpful.
+* For issues marked as "mentoring available" or "good first issue" the usage of LLM/AI is banned. These issues are especially for people that want to learn Rust and Diesel.
+
+For a more in depth description we would like to point to NlNet's policies about [using generative AI](https://nlnet.nl/foundation/policies/generativeAI/) in projects they are funding. This document outlines many of the points 
+above in with more details and explanations. 
 
 ### Common Abbreviations
 

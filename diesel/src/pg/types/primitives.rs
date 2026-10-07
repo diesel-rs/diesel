@@ -55,7 +55,7 @@ impl ToSql<sql_types::CChar, Pg> for u8 {
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Text, Pg> for *const str {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
-        use std::str;
+        use core::str;
         let string = str::from_utf8(value.as_bytes())?;
         Ok(string as *const _)
     }
@@ -98,6 +98,27 @@ impl FromSql<sql_types::Citext, Pg> for String {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let string = String::from_utf8(value.as_bytes().to_vec())?;
         Ok(string)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<crate::pg::sql_types::Bpchar, Pg> for str {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        <str as ToSql<sql_types::Text, Pg>>::to_sql(self, out)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl ToSql<crate::pg::sql_types::Bpchar, Pg> for String {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        <String as ToSql<sql_types::Text, Pg>>::to_sql(self, out)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl<'a> FromSqlRef<'a, crate::pg::sql_types::Bpchar, Pg> for &'a str {
+    fn from_sql(value: &'a mut PgValue<'_>) -> deserialize::Result<Self> {
+        Ok(core::str::from_utf8(value.as_bytes())?)
     }
 }
 

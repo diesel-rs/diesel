@@ -1,16 +1,21 @@
 use std::borrow::Cow;
+use std::str::FromStr;
 
 use diesel::backend::Backend;
 use diesel::connection::LoadConnection;
 use diesel::deserialize::FromSql;
 use diesel::dsl::*;
 use diesel::expression::QueryMetadata;
+#[cfg(feature = "mariadb")]
+use diesel::mariadb::Mariadb;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::query_builder::QueryFragment;
 use diesel::*;
+
+use crate::infer_schema_internals::SupportedQueryRelationStructures;
 
 use self::information_schema::{key_column_usage, table_constraints, tables};
 use super::inference;
@@ -30,7 +35,7 @@ impl DefaultSchema for Pg {
     }
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
 #[diesel::declare_sql_function]
 extern "SQL" {
     fn database() -> VarChar;
@@ -38,6 +43,17 @@ extern "SQL" {
 
 #[cfg(feature = "mysql")]
 impl DefaultSchema for Mysql {
+    fn default_schema<C>(conn: &mut C) -> QueryResult<String>
+    where
+        C: LoadConnection<Backend = Self>,
+        String: FromSql<sql_types::Text, C::Backend>,
+    {
+        select(database()).get_result(conn)
+    }
+}
+
+#[cfg(feature = "mariadb")]
+impl DefaultSchema for Mariadb {
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: LoadConnection<Backend = Self>,
@@ -86,6 +102,14 @@ pub mod information_schema {
             constraint_name -> VarChar,
             unique_constraint_schema -> Nullable<VarChar>,
             unique_constraint_name -> Nullable<VarChar>,
+        }
+    }
+
+    table! {
+        information_schema.views (table_schema, table_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            view_definition -> VarChar,
         }
     }
 
@@ -143,7 +167,7 @@ where
 pub fn load_table_names<'a, Conn>(
     connection: &mut Conn,
     schema_name: Option<&'a str>,
-) -> Result<Vec<TableName>, crate::errors::Error>
+) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error>
 where
     Conn: LoadConnection,
     Conn::Backend: DefaultSchema + 'static,
@@ -151,12 +175,12 @@ where
     Filter<
         Filter<
             Filter<
-                Select<tables::table, tables::table_name>,
+                Select<tables::table, (tables::table_name, tables::table_type)>,
                 Eq<tables::table_schema, Cow<'a, str>>,
             >,
             NotLike<tables::table_name, &'static str>,
         >,
-        Like<tables::table_type, &'static str>,
+        EqAny<tables::table_type, &'static [&'static str]>,
     >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<sql_types::Text>,
 {
@@ -168,28 +192,66 @@ where
         .unwrap_or_else(|| Cow::Owned(default_schema.clone()));
 
     let mut table_names = tables
-        .select(table_name)
+        .select((table_name, table_type))
         .filter(table_schema.eq(db_schema_name))
         .filter(table_name.not_like("\\_\\_%"))
-        .filter(table_type.like("BASE TABLE"))
-        .load::<String>(connection)?;
+        .filter(table_type.eq_any(&SupportedQueryRelationStructures::ALL_NAMES))
+        .load::<(String, String)>(connection)?;
     table_names.sort_unstable();
-    let schema = schema_name
-        .filter(|&schema| schema != default_schema)
-        .map(|schema| schema.to_owned());
-    let rust_schema = schema
-        .as_deref()
-        .map(|s| super::inference::rust_name_for_sql_name(s, None));
-
     Ok(table_names
         .into_iter()
-        .map(|name| TableName {
-            rust_name: inference::rust_name_for_sql_name(&name, None),
-            sql_name: name,
-            rust_schema: rust_schema.clone(),
-            schema: schema.clone(),
+        .map(|(name, tpy)| {
+            let tpy = SupportedQueryRelationStructures::from_str(&tpy)
+                .expect("This should never happen.");
+            let schema_name = schema_name
+                .filter(|&schema| schema != default_schema)
+                .map(|schema| schema.to_owned());
+            let data = TableName {
+                rust_name: inference::rust_name_for_sql_name(&name, None),
+                sql_name: name,
+                rust_schema: schema_name
+                    .as_deref()
+                    .map(|s| inference::rust_name_for_sql_name(s, None)),
+                schema: schema_name,
+            };
+            (tpy, data)
         })
         .collect())
+}
+
+pub(super) fn load_view_sql_definition<'a, Conn>(
+    conn: &mut Conn,
+    view: &'a TableName,
+) -> QueryResult<String>
+where
+    Conn: LoadConnection,
+    Conn::Backend: DefaultSchema,
+    String: FromSql<sql_types::Text, Conn::Backend>,
+    Limit<
+        Select<
+            Filter<
+                Filter<
+                    information_schema::views::table,
+                    Eq<information_schema::views::table_name, &'a String>,
+                >,
+                Eq<information_schema::views::table_schema, Cow<'a, String>>,
+            >,
+            information_schema::views::view_definition,
+        >,
+    >: QueryFragment<Conn::Backend>,
+    Conn::Backend: QueryMetadata<sql_types::Text> + 'static,
+{
+    let schema_name = match view.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Conn::Backend::default_schema(conn)?),
+    };
+
+    information_schema::views::table
+        .filter(information_schema::views::table_name.eq(&view.sql_name))
+        .filter(information_schema::views::table_schema.eq(schema_name))
+        .select(information_schema::views::view_definition)
+        .limit(1)
+        .get_result(conn)
 }
 
 #[cfg(all(test, feature = "postgres"))]
@@ -212,7 +274,7 @@ mod tests {
     }
 
     #[test]
-    fn skip_views() {
+    fn include_views() {
         let mut connection = connection();
 
         diesel::sql_query("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)")
@@ -222,10 +284,14 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(&mut connection, None).unwrap();
+        let table_names = load_table_names(&mut connection, None)
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
 
         assert!(table_names.contains(&TableName::from_name("a_regular_table")));
-        assert!(!table_names.contains(&TableName::from_name("a_view")));
+        assert!(table_names.contains(&TableName::from_name("a_view")));
     }
 
     #[test]
@@ -238,12 +304,18 @@ mod tests {
             .unwrap();
 
         let table_names = load_table_names(&mut connection, None).unwrap();
-        for TableName { schema, .. } in &table_names {
+        for (_, TableName { schema, .. }) in &table_names {
             assert_eq!(None, *schema);
         }
-        assert!(table_names.contains(&TableName::from_name(
-            "load_table_names_loads_from_public_schema_if_none_given",
-        ),));
+        assert!(
+            table_names
+                .into_iter()
+                .map(|(_, table)| table)
+                .collect::<Vec<_>>()
+                .contains(&TableName::from_name(
+                    "load_table_names_loads_from_public_schema_if_none_given",
+                ),)
+        );
     }
 
     #[test]
@@ -257,14 +329,22 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         assert_eq!(vec![TableName::new("table_1", "test_schema")], table_names);
 
         diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         let expected = vec![
             TableName::new("table_1", "test_schema"),
             TableName::new("table_2", "test_schema"),
@@ -278,13 +358,21 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         let expected = vec![
             TableName::new("table_1", "test_schema"),
             TableName::new("table_2", "test_schema"),
         ];
         assert_eq!(expected, table_names);
-        let table_names = load_table_names(&mut connection, Some("other_test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("other_test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         assert_eq!(
             vec![TableName::new("table_1", "other_test_schema")],
             table_names
@@ -310,7 +398,7 @@ mod tests {
         let table_names = load_table_names(&mut connection, Some("test_schema"))
             .unwrap()
             .iter()
-            .map(|table| table.to_string())
+            .map(|(_, table)| table.to_string())
             .collect::<Vec<_>>();
         assert_eq!(
             vec!["test_schema.aaa", "test_schema.bbb", "test_schema.ccc"],
@@ -344,6 +432,34 @@ mod tests {
         assert_eq!(
             vec!["id".to_string(), "id2".to_string()],
             get_primary_keys(&mut connection, &table_2).unwrap()
+        );
+    }
+
+    /// Regression test for https://github.com/diesel-rs/diesel/issues/436
+    ///
+    /// When a primary key column is renamed, `get_primary_keys` must return the
+    /// new name, not the old one.  The old `pg_attribute`-based implementation
+    /// kept a stale entry for the original name; the current
+    /// `information_schema.key_column_usage` implementation always reflects the
+    /// live constraint definition.
+    #[test]
+    fn get_primary_keys_reflects_renamed_primary_key_column() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_1 (non_standard_pk SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("ALTER TABLE test_schema.table_1 RENAME COLUMN non_standard_pk TO id")
+            .execute(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", "test_schema");
+        assert_eq!(
+            vec!["id".to_string()],
+            get_primary_keys(&mut connection, &table_1).unwrap()
         );
     }
 }

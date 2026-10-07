@@ -7,32 +7,30 @@ on:
       - "2.[0-9]+.x"
 
 permissions:
-  contents: "write"
-  pages: "write"
+  contents: "read"
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
 
 name: Publish Docs
 jobs:
-  publish_docs:
+  build_docs:
     if: github.repository == 'diesel-rs/diesel'
-    name: Publish Docs
+    name: Build Docs
     runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
     steps:
       - name: Checkout sources
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
         with:
           key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - name: Get the branch name
-        id: current_branch
-        shell: bash
-        run: |
-          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
-      - uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561 # master
-        with:
-          toolchain: nightly
+      - name: Install rust toolchain
+        run: rustup update nightly
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -42,7 +40,35 @@ jobs:
           RUSTFLAGS: "--cfg diesel_docsrs"
           RUSTDOCFLAGS: "--cfg diesel_docsrs  -Z unstable-options --generate-link-to-definition --generate-macro-expansion"
         run: cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: documentation
+          path: target/doc
+          retention-days: 1
 
+  publish_docs:
+    if: github.repository == 'diesel-rs/diesel'
+    name: Publish Docs
+    needs: build_docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "write"
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Get the branch name
+        id: current_branch
+        shell: bash
+        run: |
+          echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
+      - name: Download documentation artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: documentation
+          path: target/doc
       - name: Publish documentation
         if: success()
         uses: JamesIves/github-pages-deploy-action@9d877eea73427180ae43cf98e8914934fe157a1a # v4.7.6

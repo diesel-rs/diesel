@@ -16,6 +16,8 @@ pub(crate) fn has_query_1() {
         "has_query_1 (postgres)"
     } else if cfg!(feature = "mysql") {
         "has_query_1 (mysql)"
+    } else if cfg!(feature = "mariadb") {
+        "has_query_1 (mariadb)"
     } else {
         unimplemented!()
     };

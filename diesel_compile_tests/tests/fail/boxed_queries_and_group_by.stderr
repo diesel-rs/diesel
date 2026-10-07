@@ -110,7 +110,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `BoxedSelectStatement<'_, Text, _, _, name>: Table` is not satisfied
+error[E0277]: the trait bound `BoxedSelectStatement<'_, Text, _, _, name>: QueryRelation` is not satisfied
   --> tests/fail/boxed_queries_and_group_by.rs:77:10
    |
 LL |         .inner_join(posts::table)
@@ -123,6 +123,7 @@ LL |         .inner_join(posts::table)
              pg::metadata_lookup::pg_type::table
              posts::table
              users::table
+   = note: required for `BoxedSelectStatement<'_, Text, _, _, name>` to implement `QueryRelation`
    = note: required for `BoxedSelectStatement<'_, Text, _, _, name>` to implement `JoinTo<query_source::joins::OnClauseWrapper<_, _>>`
    = note: required for `BoxedSelectStatement<'_, Text, _, _, name>` to implement `JoinWithImplicitOnClause<OnClauseWrapper<_, _>, Inner>`
 
@@ -185,25 +186,6 @@ LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
     | |_______________________________________________^
  
     
-error[E0277]: the trait bound `BoxedSelectStatement<'_, (_, Text), _, _>: Table` is not satisfied
-   --> tests/fail/boxed_queries_and_group_by.rs:91:10
-    |
- LL |         .group_by(users::id)
-    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), _, _>`
-    |
-help: the trait `GroupByDsl<Expr>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
-    |
-LL | / impl<S, Expr> GroupByDsl<Expr> for Alias<S>
-LL | | where
-LL | |     Expr: Expression,
-LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
-...   |
-LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
-LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
-    | |_______________________________________________^
- 
-    
 error[E0277]: the trait bound `SelectStatement<FromClause<_>>: GroupByDsl<_>` is not satisfied
    --> tests/fail/boxed_queries_and_group_by.rs:91:10
     |
@@ -222,3 +204,22 @@ LL | | where
 LL | |     SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, H>: SelectQuery,
 LL | |     Expr: Expression + AppearsOnTable<F>,
     | |_________________________________________^
+ 
+    
+error[E0277]: the trait bound `BoxedSelectStatement<'_, _, _, _>: QueryRelation` is not satisfied
+   --> tests/fail/boxed_queries_and_group_by.rs:91:10
+    |
+ LL |         .group_by(users::id)
+    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedSelectStatement<'_, (Integer, Text), _, _>`
+    |
+help: the trait `GroupByDsl<Expr>` is implemented for `Alias<S>`
+   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+    |
+LL | / impl<S, Expr> GroupByDsl<Expr> for Alias<S>
+LL | | where
+LL | |     Expr: Expression,
+LL | |     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
+...   |
+LL | |     <Self as AsQuery>::SqlType: TypedExpressionType,
+LL | |     <Self as AsQuery>::Query: GroupByDsl<Expr>,
+    | |_______________________________________________^

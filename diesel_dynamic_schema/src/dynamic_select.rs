@@ -1,9 +1,12 @@
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::iter::FromIterator;
+use core::marker::PhantomData;
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, NonAggregate, ValidGrouping};
 use diesel::query_builder::{AstPass, QueryFragment, QueryId};
 use diesel::sql_types::Untyped;
 use diesel::{AppearsOnTable, Expression, QueryResult, SelectableExpression};
-use std::marker::PhantomData;
 
 /// Represents a dynamically sized select clause
 #[allow(missing_debug_implementations)]
@@ -40,6 +43,28 @@ impl<'a, DB, QS> DynamicSelectClause<'a, DB, QS> {
     {
         self.selects.push(Box::new(field))
     }
+
+    /// Add multiple fields to the dynamically sized select clause
+    pub fn add_fields<I, F>(&mut self, fields: I)
+    where
+        I: IntoIterator<Item = F>,
+        F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
+        DB: Backend,
+    {
+        for field in fields {
+            self.add_field(field);
+        }
+    }
+
+    /// Returns the number of fields in the select clause
+    pub fn len(&self) -> usize {
+        self.selects.len()
+    }
+
+    /// Returns whether the select clause is empty
+    pub fn is_empty(&self) -> bool {
+        self.selects.is_empty()
+    }
 }
 
 impl<DB, QS> AppearsOnTable<QS> for DynamicSelectClause<'_, DB, QS> where Self: Expression {}
@@ -73,4 +98,26 @@ where
 
 impl<DB, QS> ValidGrouping<()> for DynamicSelectClause<'_, DB, QS> {
     type IsAggregate = is_aggregate::No;
+}
+
+impl<'a, DB, QS, F> FromIterator<F> for DynamicSelectClause<'a, DB, QS>
+where
+    F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
+    DB: Backend,
+{
+    fn from_iter<I: IntoIterator<Item = F>>(iter: I) -> Self {
+        let mut select_clause = DynamicSelectClause::new();
+        select_clause.add_fields(iter);
+        select_clause
+    }
+}
+
+impl<'a, DB, QS, F> core::iter::Extend<F> for DynamicSelectClause<'a, DB, QS>
+where
+    F: QueryFragment<DB> + SelectableExpression<QS> + NonAggregate + Send + 'a,
+    DB: Backend,
+{
+    fn extend<I: IntoIterator<Item = F>>(&mut self, iter: I) {
+        self.add_fields(iter)
+    }
 }

@@ -1,12 +1,32 @@
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::fmt;
+use core::fmt;
+use core::num::NonZeroU32;
 use std::io::Write;
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
+
+#[cfg(feature = "postgres_backend")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Array<T>)]
+/// Postgres allows multi-dimensional arrays of at most 6 dimensions. Internally they are stored as a flattened
+/// representation with the dimension information encoded in the header. This struct represents a
+/// multi-dimensional array with elements of type `T` as opposed to `Vec<T>` which can be used for 1d-arrays.
+pub struct NdArray<T> {
+    /// A list that describes how many values for each dimension are returned
+    pub dims: Vec<usize>,
+    /// The actual data flattened to a single array
+    ///
+    /// This array contains values ordered by the left most dimension
+    /// which means there will be dim\[0\] values for the first element of the second dimension
+    /// followed by dim\[0\] values for the second element of the second dimensions
+    /// and so up to dim\[1\] times. Afterwards that number of values is repeated for dim\[2\],
+    /// and so for all dimensions in the dimension field above
+    pub data: Vec<T>,
+}
 
 #[cfg(feature = "postgres_backend")]
 impl<T> HasSqlType<Array<T>> for Pg
@@ -30,7 +50,8 @@ where
         let mut bytes = value.as_bytes();
         let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
         let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
-        let _oid = bytes.read_i32::<NetworkEndian>()?;
+        let element_oid =
+            NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?).ok_or("Oid's aren't zero")?;
 
         if num_dimensions == 0 {
             return Ok(Vec::new());
@@ -58,15 +79,78 @@ where
                             )
                         })?;
                     bytes = new_bytes;
-                    T::from_sql(PgValue::new_internal(elem_bytes, &value))
+                    T::from_sql(PgValue::new_internal(elem_bytes, &element_oid))
                 }
             })
             .collect()
     }
 }
 
-use crate::expression::bound::Bound;
+#[cfg(feature = "postgres_backend")]
+impl<T, ST> FromSql<Array<ST>, Pg> for NdArray<T>
+where
+    T: FromSql<ST, Pg>,
+{
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
+        let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
+        let element_oid =
+            NonZeroU32::new(bytes.read_u32::<NetworkEndian>()?).ok_or("Oid's aren't zero")?;
+
+        if num_dimensions == 0 {
+            return Ok(NdArray {
+                dims: Vec::new(),
+                data: Vec::new(),
+            });
+        }
+
+        let num_dims: usize = num_dimensions
+            .try_into()
+            .map_err(|_| "number of dimensions must be positive")?;
+
+        let dims = (0..num_dims)
+            .map(|_| {
+                let num_elements = bytes.read_i32::<NetworkEndian>()?;
+                let _lower_bound = bytes.read_i32::<NetworkEndian>()?;
+
+                let dim: usize = num_elements
+                    .try_into()
+                    .map_err(|_| "array dimension length must be positive")?;
+                Ok(dim)
+            })
+            .collect::<deserialize::Result<Vec<_>>>()?;
+
+        let max_dim = dims
+            .iter()
+            .try_fold(1_usize, |a, b| a.checked_mul(*b))
+            .ok_or("Overflow while deserializing package size")?;
+
+        let data = (0..max_dim)
+            .map(|_| -> deserialize::Result<T> {
+                let elem_size = bytes.read_i32::<NetworkEndian>()?;
+                if has_null && elem_size == -1 {
+                    T::from_nullable_sql(None)
+                } else {
+                    let (elem_bytes, new_bytes) = bytes
+                        .split_at_checked(elem_size.try_into()?)
+                        .ok_or_else(|| {
+                            format!(
+                                "Invalid element byte count: Expected at least {elem_size} bytes, but only {} bytes were received",
+                                bytes.len()
+                            )
+                        })?;
+                    bytes = new_bytes;
+                    T::from_sql(PgValue::new_internal(elem_bytes, &element_oid))
+                }
+            })
+            .collect::<deserialize::Result<Vec<T>>>()?;
+        Ok(NdArray { dims, data })
+    }
+}
+
 use crate::expression::AsExpression;
+use crate::expression::bound::Bound;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
@@ -104,6 +188,8 @@ where
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let num_dimensions = 1;
         out.write_i32::<NetworkEndian>(num_dimensions)?;
+        // The null flag depends on the elements, so it is patched once they are written.
+        let flags_offset = out.reborrow().into_inner().0.len();
         let flags = 0;
         out.write_i32::<NetworkEndian>(flags)?;
         let element_oid = Pg::metadata(out.metadata_lookup()).oid()?;
@@ -115,6 +201,7 @@ where
         // This buffer is created outside of the loop to reuse the underlying memory allocation
         // For most cases all array elements will have the same serialized size
         let mut buffer = Vec::new();
+        let mut has_nulls = false;
 
         for elem in self.iter() {
             let is_null = {
@@ -127,9 +214,15 @@ where
                 out.write_all(&buffer)?;
                 buffer.clear();
             } else {
+                has_nulls = true;
                 // https://github.com/postgres/postgres/blob/82f8107b92c9104ec9d9465f3f6a4c6dab4c124a/src/backend/utils/adt/arrayfuncs.c#L1461
                 out.write_i32::<NetworkEndian>(-1)?;
             }
+        }
+
+        if has_nulls {
+            out.reborrow().into_inner().0[flags_offset..flags_offset + 4]
+                .copy_from_slice(&1_i32.to_be_bytes());
         }
 
         Ok(IsNull::No)
@@ -174,9 +267,101 @@ where
 mod tests {
     use byteorder::{NetworkEndian, WriteBytesExt};
 
-    use crate::deserialize::FromSql;
-    use crate::pg::{Pg, PgValue};
-    use crate::sql_types::{Array, Integer};
+    use super::ByteWrapper;
+    use crate::data_types::NdArray;
+    use crate::deserialize::{self, FromSql};
+    use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+    use crate::serialize::{Output, ToSql};
+    use crate::sql_types::{Array, Integer, Nullable};
+
+    #[derive(Debug, PartialEq)]
+    struct ElementOid(u32);
+
+    impl FromSql<Integer, Pg> for ElementOid {
+        fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+            Ok(Self(value.get_oid().get()))
+        }
+    }
+
+    fn one_element_array_value(element_oid: u32) -> Vec<u8> {
+        let mut value = Vec::<u8>::new();
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        value.write_u32::<NetworkEndian>(element_oid).unwrap();
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        value.write_i32::<NetworkEndian>(42).unwrap();
+        value
+    }
+
+    #[test]
+    fn zero_element_oid_is_rejected() {
+        let value = one_element_array_value(0);
+        let value = PgValue::for_test(&value);
+        let res = <Vec<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(format!("{}", res.unwrap_err()), "Oid's aren't zero");
+
+        let value = one_element_array_value(0);
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(format!("{}", res.unwrap_err()), "Oid's aren't zero");
+    }
+
+    #[test]
+    fn nonzero_header_oid_is_used_for_element() {
+        let value = one_element_array_value(23);
+        let value = PgValue::for_test(&value);
+        let res = <Vec<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert_eq!(vec![ElementOid(23)], res.unwrap());
+
+        let value = one_element_array_value(23);
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<ElementOid> as FromSql<Array<Integer>, Pg>>::from_sql(value).unwrap();
+        assert_eq!(vec![1], res.dims);
+        assert_eq!(vec![ElementOid(23)], res.data);
+    }
+
+    /// Built-in element types have static OIDs, so serializing them never looks one up.
+    struct StaticOidsOnly;
+
+    impl PgMetadataLookup for StaticOidsOnly {
+        fn lookup_type(&mut self, type_name: &str, _schema: Option<&str>) -> PgTypeMetadata {
+            panic!("unexpected type lookup for `{type_name}`")
+        }
+    }
+
+    #[test]
+    fn serialized_null_flag_matches_elements() {
+        // The decoder treats a `-1` element length as NULL only when this flag is set,
+        // so arrays containing NULL previously failed to read back.
+        for (array, flags) in [
+            (vec![Some(7), None, Some(-9)], 1),
+            (vec![Some(7), Some(-9)], 0),
+        ] {
+            // The flag is patched after the elements, so serialize after unrelated bytes.
+            let prefix = [0xAA; 3];
+            let mut buffer = prefix.to_vec();
+            ToSql::<Array<Nullable<Integer>>, Pg>::to_sql(
+                &array,
+                &mut Output::new(
+                    ByteWrapper(&mut buffer),
+                    &mut StaticOidsOnly as &mut dyn PgMetadataLookup,
+                ),
+            )
+            .unwrap();
+
+            let (written_prefix, value) = buffer.split_at(prefix.len());
+            assert_eq!(written_prefix, prefix);
+            assert_eq!(value[4..8], i32::to_be_bytes(flags));
+            let decoded = <Vec<Option<i32>> as FromSql<Array<Nullable<Integer>>, Pg>>::from_sql(
+                PgValue::for_test(value),
+            );
+            assert_eq!(decoded.unwrap(), array);
+        }
+    }
 
     #[test]
     fn check_invalid_element_size_for_array() {
@@ -188,7 +373,7 @@ mod tests {
         // has null
         value.write_i32::<NetworkEndian>(0).unwrap();
         // oid
-        value.write_i32::<NetworkEndian>(0).unwrap();
+        value.write_u32::<NetworkEndian>(23).unwrap();
         // num elements
         value.write_i32::<NetworkEndian>(2).unwrap();
         // lower bound
@@ -214,7 +399,7 @@ mod tests {
         // has null
         value.write_i32::<NetworkEndian>(0).unwrap();
         // oid
-        value.write_i32::<NetworkEndian>(0).unwrap();
+        value.write_u32::<NetworkEndian>(23).unwrap();
         // num elements
         value.write_i32::<NetworkEndian>(2).unwrap();
         // lower bound
@@ -226,6 +411,61 @@ mod tests {
 
         let value = PgValue::for_test(&value);
         let res = <Vec<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "failed to fill whole buffer"
+        );
+    }
+
+    #[test]
+    fn check_invalid_element_size_for_multidimensional_array() {
+        // check for the wrong element size
+        let mut value = Vec::<u8>::new();
+
+        // dimensions
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // has null
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // oid
+        value.write_u32::<NetworkEndian>(23).unwrap();
+        // num elements
+        value.write_i32::<NetworkEndian>(2).unwrap();
+        // lower bound
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // elem size element 1
+        value.write_i32::<NetworkEndian>(6).unwrap();
+        // the element itself
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
+        assert!(res.is_err());
+        assert_eq!(
+            format!("{}", res.unwrap_err()),
+            "Invalid element byte count: Expected at least 6 bytes, but only 4 bytes were received",
+        );
+
+        // check for the wrong number of elements
+        let mut value = Vec::<u8>::new();
+
+        // dimensions
+        value.write_i32::<NetworkEndian>(1).unwrap();
+        // has null
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // oid
+        value.write_u32::<NetworkEndian>(23).unwrap();
+        // num elements
+        value.write_i32::<NetworkEndian>(2).unwrap();
+        // lower bound
+        value.write_i32::<NetworkEndian>(0).unwrap();
+        // elem size element 1
+        value.write_i32::<NetworkEndian>(4).unwrap();
+        // the element itself
+        value.write_i32::<NetworkEndian>(42).unwrap();
+
+        let value = PgValue::for_test(&value);
+        let res = <NdArray<i32> as FromSql<Array<Integer>, Pg>>::from_sql(value);
         assert!(res.is_err());
         assert_eq!(
             format!("{}", res.unwrap_err()),

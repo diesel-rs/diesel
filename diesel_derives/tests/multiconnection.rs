@@ -10,9 +10,11 @@ pub enum InferConnection {
     Sqlite(SqliteConnection),
     #[cfg(feature = "mysql")]
     Mysql(MysqlConnection),
+    #[cfg(feature = "mariadb")]
+    Mariadb(MariadbConnection),
 }
 
-#[derive(Queryable, Selectable, Insertable, AsChangeset)]
+#[derive(Queryable, Selectable, Insertable, AsChangeset, Identifiable)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -76,10 +78,10 @@ fn check_queries_work() {
     let b = Box::new(users::name.eq("John"))
         as Box<
             dyn BoxableExpression<
-                users::table,
-                self::multi_connection_impl::MultiBackend,
-                SqlType = _,
-            >,
+                    users::table,
+                    self::multi_connection_impl::MultiBackend,
+                    SqlType = _,
+                >,
         >;
 
     let _ = users::table
@@ -113,6 +115,15 @@ fn check_queries_work() {
         .execute(&mut conn)
         .unwrap();
 
+    // batch update
+    // currently unsupported :(
+    // diesel::update(users::table)
+    //     .set([User {
+    //         id: 42,
+    //         name: "Jane".into(),
+    //     }])
+    //     .execute(&mut conn);
+
     // delete
     diesel::delete(users::table).execute(&mut conn).unwrap();
 }
@@ -120,6 +131,8 @@ fn check_queries_work() {
 fn establish_connection() -> InferConnection {
     let database_url = if cfg!(feature = "mysql") {
         dotenvy::var("MYSQL_UNIT_TEST_DATABASE_URL").or_else(|_| dotenvy::var("DATABASE_URL"))
+    } else if cfg!(feature = "mariadb") {
+        dotenvy::var("MARIADB_UNIT_TEST_DATABASE_URL").or_else(|_| dotenvy::var("DATABASE_URL"))
     } else if cfg!(feature = "postgres") {
         dotenvy::var("PG_DATABASE_URL").or_else(|_| dotenvy::var("DATABASE_URL"))
     } else {
@@ -134,7 +147,7 @@ fn establish_connection() -> InferConnection {
 fn make_test_table(conn: &mut InferConnection) {
     match conn {
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref mut conn) => {
+        InferConnection::Pg(conn) => {
             diesel::sql_query(
                 "CREATE TEMPORARY TABLE type_test( \
                      small_int SMALLINT,\
@@ -157,7 +170,7 @@ fn make_test_table(conn: &mut InferConnection) {
             .unwrap();
         }
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref mut conn) => {
+        InferConnection::Sqlite(conn) => {
             diesel::sql_query(
                 "CREATE TEMPORARY TABLE type_test( \
                      small_int SMALLINT,\
@@ -180,7 +193,30 @@ fn make_test_table(conn: &mut InferConnection) {
             .unwrap();
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut conn) => {
+        InferConnection::Mysql(conn) => {
+            diesel::sql_query(
+                "CREATE TEMPORARY TABLE type_test( \
+                     `small_int` SMALLINT,\
+                     `integer` INT,\
+                     `big_int` BIGINT,\
+                     `float` FLOAT,\
+                     `double` DOUBLE,\
+                     `string` TEXT,\
+                     `blob` BLOB,\
+                     `timestamp1` DATETIME,
+                     `date1` DATE,\
+                     `time1` TIME,\
+                     `timestamp2` DATETIME,
+                     `date2` DATE,\
+                     `time2` TIME,\
+                     `numeric` NUMERIC
+                 )",
+            )
+            .execute(conn)
+            .unwrap();
+        }
+        #[cfg(feature = "mariadb")]
+        InferConnection::Mariadb(conn) => {
             diesel::sql_query(
                 "CREATE TEMPORARY TABLE type_test( \
                      `small_int` SMALLINT,\
@@ -459,14 +495,13 @@ fn nullable_type_checks() {
 }
 
 #[test]
-#[cfg(not(feature = "mysql"))] // such binds are broken for mysql + multiconnection
 fn contains_binds() {
     use diesel::connection::InstrumentationEvent;
 
     let mut conn = establish_connection();
     conn.set_instrumentation(|event: InstrumentationEvent<'_>| {
         if let InstrumentationEvent::StartQuery { query, .. } = event {
-            #[cfg(any(feature = "sqlite", feature = "mysql"))]
+            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "mariadb"))]
             assert_eq!(query.to_string(), "SELECT ? -- binds: [1]");
             #[cfg(feature = "postgres")]
             assert_eq!(query.to_string(), "SELECT $1 -- binds: [1]");
@@ -477,4 +512,42 @@ fn contains_binds() {
         .get_result::<i32>(&mut conn)
         .unwrap();
     assert_eq!(res, 1);
+}
+
+#[test]
+fn check_enum_works() {
+    #[derive(Debug, Clone, Copy, diesel::types::Enum, PartialEq)]
+    #[diesel(sql_type = diesel::sql_types::Text)]
+    #[diesel(sql_type = diesel::sql_types::Integer)]
+    enum Color {
+        Blue = 0,
+        Red = 1,
+    }
+
+    let mut conn = establish_connection();
+    let v = Color::Red;
+
+    let r = diesel::select(v.into_sql::<diesel::sql_types::Integer>())
+        .get_result::<i32>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, 1);
+
+    let r = diesel::select(v.into_sql::<diesel::sql_types::Text>())
+        .get_result::<String>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, "Red");
+
+    let r = diesel::select(1_i32.into_sql::<diesel::sql_types::Integer>())
+        .get_result::<Color>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, v);
+
+    let r = diesel::select("Red".into_sql::<diesel::sql_types::Text>())
+        .get_result::<Color>(&mut conn)
+        .unwrap();
+
+    assert_eq!(r, v);
 }

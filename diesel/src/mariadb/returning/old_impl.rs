@@ -1,0 +1,202 @@
+//! `UPDATE ... RETURNING OLD_VALUE(col)` support for MariaDB 13.0 and later.
+
+use crate::deserialize::SqlTypeLikeMarker;
+use crate::expression::subselect::SubselectGroupBy;
+use crate::expression::{
+    AppearsOnTable, Expression, QueryMetadata, SelectableExpression, TypedExpressionType,
+    ValidGrouping, is_aggregate,
+};
+use crate::mariadb::Mariadb;
+use crate::query_builder::returning::{OldIdent, ReturningQuerySource, UpdateStmt};
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::query_dsl::load_dsl::CompatibleType;
+use crate::query_source::{AppearsInFromClause, Column};
+use crate::result::QueryResult;
+use crate::sql_types::{IntoNotNullable, IntoNullable, SingleValue};
+use crate::util::TupleSize;
+use core::marker::PhantomData;
+
+/// Wraps a column to refer to its pre-modification value in the `RETURNING`
+/// clause of a Mariadb `UPDATE` statement.
+///
+/// This is the type returned by [`old_value()`](old_value()).
+#[derive(Debug, Clone, Copy, QueryId)]
+pub struct OldValue<C> {
+    _column: C,
+}
+
+impl<C> OldValue<C> {
+    pub(crate) fn new(c: C) -> Self {
+        OldValue { _column: c }
+    }
+}
+
+/// Refer to the pre-modification value of `col` in a Mariadb `RETURNING`
+/// clause.
+///
+/// This corresponds to the SQL `RETURNING OLD_VALUE(col)` syntax introduced in
+/// Mariadb 13.0.
+///
+/// # Requires Mariadb 13.0 or newer
+///
+/// Diesel emits `OLD_VALUE(col)` in the SQL it sends to the database. Earlier
+/// versions of Mariadb will reject the query at execution time.
+///
+/// # Statement compatibility
+///
+/// `old_value(col)` is valid inside the `RETURNING` clause of:
+///
+/// * an `UPDATE` statement, as a whole `RETURNING` item that loads into the
+///   same Rust types as `col` (since every returned row necessarily came from a
+///   pre-existing row).
+///
+/// Use of `old_value(col)` in `INSERT` or `DELETE` `RETURNING`
+/// is rejected at compile time, because it is invalid
+/// there. (Note that `ON CONFLICT DO NOTHING` never returns untouched rows.)
+///
+/// On MariaDB 13.0, `old_value` of a view column that is an expression or a
+/// constant crashes the server
+/// ([MDEV-40125](https://jira.mariadb.org/browse/MDEV-40125)). MariaDB 13.1.1
+/// returns the right value.
+///
+/// # Example
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # #[cfg(feature = "mariadb")]
+/// # fn main() {
+/// #     use schema::users::dsl::*;
+/// #     use diesel::mariadb::returning::old_value;
+/// #     let connection = &mut establish_connection();
+/// #     // `RETURNING OLD_VALUE(col)` requires Mariadb 13.0+
+/// #     if !mariadb_server_supports_update_returning(connection) { return; }
+/// let was_and_now = diesel::update(users.find(1))
+///     .set(name.eq("Updated"))
+///     .returning((old_value(name), name))
+///     .get_result::<(String, String)>(connection);
+/// assert_eq!(Ok(("Sean".to_string(), "Updated".to_string())), was_and_now);
+/// # }
+/// # #[cfg(not(feature = "mariadb"))]
+/// # fn main() {}
+/// ```
+pub fn old_value<C: Column>(col: C) -> old_value<C> {
+    OldValue::new(col)
+}
+
+impl<C> Expression for OldValue<C>
+where
+    C: Column + Expression,
+    C::SqlType: SingleValue,
+{
+    type SqlType = OldValueOf<C::SqlType>;
+}
+
+/// SQL type of [`old_value(col)`](old_value()). It loads into the same Rust
+/// types as `ST` through `CompatibleType`, and since it implements neither
+/// `SqlType` nor `SingleValue`, no operator, function or comparison accepts it.
+/// Those are the positions where
+/// [MDEV-40126](https://jira.mariadb.org/browse/MDEV-40126) breaks `OLD_VALUE`.
+#[derive(Debug, Clone, Copy, Default, QueryId)]
+pub struct OldValueOf<ST>(PhantomData<ST>);
+
+#[diagnostic::do_not_recommend]
+impl<U, ST> CompatibleType<U, Mariadb> for OldValueOf<ST>
+where
+    ST: CompatibleType<U, Mariadb>,
+{
+    type SqlType = ST;
+}
+
+impl<ST> TypedExpressionType for OldValueOf<ST> {}
+
+impl<ST> SqlTypeLikeMarker for OldValueOf<ST> {
+    type SqlType = ST;
+}
+
+impl<ST: TupleSize> TupleSize for OldValueOf<ST> {
+    const SIZE: usize = ST::SIZE;
+}
+
+impl<C> ValidGrouping<()> for OldValue<C>
+where
+    C: Column,
+{
+    type IsAggregate = is_aggregate::No;
+}
+
+// `OLD_VALUE` always names the row of the outer statement
+impl<C, GB, From> ValidGrouping<SubselectGroupBy<GB, From>> for OldValue<C>
+where
+    C: Column,
+    Self: ValidGrouping<GB>,
+{
+    type IsAggregate = <Self as ValidGrouping<GB>>::IsAggregate;
+}
+
+impl<ST: IntoNullable> IntoNullable for OldValueOf<ST> {
+    type Nullable = OldValueOf<ST::Nullable>;
+}
+
+impl<ST: IntoNotNullable> IntoNotNullable for OldValueOf<ST> {
+    type NotNullable = OldValueOf<ST::NotNullable>;
+}
+
+impl<ST> QueryMetadata<OldValueOf<ST>> for Mariadb
+where
+    Self: QueryMetadata<ST>,
+{
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+        <Self as QueryMetadata<ST>>::row_metadata(lookup, out);
+    }
+}
+
+// `OldValue<C>` is selectable on a `RETURNING` clause whose statement-kind marker
+// is `UpdateStmt`. Since `OLD_VALUE` is only valid in `UPDATE ... RETURNING`
+//
+// It's not selectable on any subqueries in the returning clause
+impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
+where
+    C: Column,
+    Self: Expression,
+    // Check that we have exactly one `old` identifier in the `RETURNING` clause.
+    ReturningQuerySource<UpdateStmt, QS>:
+        AppearsInFromClause<OldIdent, Count = crate::query_source::Once>,
+    // Check that the `old` identifier relates the table of that column.
+    ReturningQuerySource<UpdateStmt, QS>: AppearsInFromClause<
+            ReturningQuerySource<OldIdent, C::Table>,
+            Count = crate::query_source::Once,
+        >,
+{
+}
+
+// `old_value(col)` is only valid in `UPDATE ... RETURNING` for Mariadb,
+// so we don't need to implement `SelectableExpression` for any other statement kinds.
+impl<C> SelectableExpression<ReturningQuerySource<UpdateStmt, C::Table>> for OldValue<C>
+where
+    C: Column,
+    Self: AppearsOnTable<ReturningQuerySource<UpdateStmt, C::Table>>,
+{
+}
+
+impl<C> QueryFragment<Mariadb> for OldValue<C>
+where
+    C: Column,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mariadb>) -> QueryResult<()> {
+        out.push_sql("OLD_VALUE(");
+        out.push_identifier(C::NAME)?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+pub use return_type_helpers_reexported::*;
+
+pub(crate) mod return_type_helpers_reexported {
+    use super::OldValue;
+
+    /// The return type of [`old_value(col)`](super::old_value()).
+    #[allow(non_camel_case_types)]
+    pub type old_value<C> = OldValue<C>;
+}

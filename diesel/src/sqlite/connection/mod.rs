@@ -4,40 +4,67 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
+mod attach;
+pub mod authorizer;
 mod bind_collector;
+mod collation_needed;
+mod db_config;
 mod functions;
-#[cfg(all(test, not(all(target_family = "wasm", target_os = "unknown"))))]
+mod hooks;
+mod limits;
+#[cfg(all(
+    test,
+    feature = "std",
+    not(all(target_family = "wasm", target_os = "unknown")),
+    not(miri)
+))]
 #[allow(unsafe_code)]
 mod oom_test_support;
 mod owned_row;
+mod pragmas;
 mod raw;
 mod row;
 mod serialized_database;
+pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
+mod trace;
+mod update_hook;
 
+pub use self::authorizer::{AuthorizerContext, AuthorizerDecision};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::bind_collector::{OwnedSqliteBindValue, SqliteBindCollectorData, SqliteBindValueRef};
+pub use self::collation_needed::{CollationNeededContext, SqliteTextRep};
+pub use self::limits::SqliteLimit;
+pub use self::pragmas::{AutoVacuumMode, WalCheckpointMode, WalCheckpointOutcome};
+use self::raw::RawConnection;
 pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
-
-use std::os::raw as libc;
-
-use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
+pub use self::update_hook::{
+    SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
+};
 use super::SqliteAggregateFunction;
 use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
-use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
 use crate::query_builder::*;
 use crate::result::*;
-use crate::serialize::ToSql;
-use crate::sql_types::{HasSqlType, TypeMetadata};
+use crate::sql_types::TypeMetadata;
 use crate::sqlite::Sqlite;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::ffi as libc;
+use core::num::NonZeroI64;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
 /// connection URLs are:
@@ -61,7 +88,7 @@ use crate::sqlite::Sqlite;
 /// `SqliteConnection` only supports a single loading mode, which loads
 /// values row by row from the result set.
 ///
-/// ```rust
+/// ```rust,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -96,7 +123,7 @@ use crate::sqlite::Sqlite;
 /// This mode does **not support** creating
 /// multiple iterators using the same connection.
 ///
-/// ```compile_fail
+/// ```compile_fail,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -145,6 +172,7 @@ use crate::sqlite::Sqlite;
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users;
 /// use diesel::connection::SimpleConnection;
+/// use diesel::sqlite::WalCheckpointMode;
 /// let conn = &mut establish_connection();
 /// // see https://fractaledmind.github.io/2023/09/07/enhancing-rails-sqlite-fine-tuning/
 /// // sleep if the database is busy, this corresponds to up to 2 seconds sleeping time.
@@ -157,12 +185,12 @@ use crate::sqlite::Sqlite;
 /// // May affect readers if number is increased
 /// conn.batch_execute("PRAGMA wal_autocheckpoint = 1000;")?;
 /// // free some space by truncating possibly massive WAL files from the last run
-/// conn.batch_execute("PRAGMA wal_checkpoint(TRUNCATE);")?;
+/// conn.wal_checkpoint(None, WalCheckpointMode::Truncate)?;
 /// #   Ok(())
 /// # }
 /// ```
 #[allow(missing_debug_implementations)]
-#[cfg(feature = "sqlite")]
+#[cfg(feature = "__sqlite-shared")]
 pub struct SqliteConnection {
     // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the
@@ -324,15 +352,45 @@ impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
 impl MultiConnectionHelper for SqliteConnection {
     fn to_any<'a>(
         lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
-    ) -> &mut (dyn std::any::Any + 'a) {
+    ) -> &mut (dyn core::any::Any + 'a) {
         lookup
     }
 
     fn from_any(
-        lookup: &mut dyn std::any::Any,
+        lookup: &mut dyn core::any::Any,
     ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
         lookup.downcast_mut()
     }
+}
+
+/// The decision returned by an [`on_commit`](SqliteConnection::on_commit)
+/// callback, controlling whether a pending commit completes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommitDecision {
+    /// Let the commit proceed normally.
+    Proceed,
+    /// Convert the commit into a rollback.
+    Rollback,
+}
+
+/// The decision returned by an [`on_progress`](SqliteConnection::on_progress)
+/// callback, controlling whether a long-running query keeps executing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProgressDecision {
+    /// Let the query continue executing.
+    Continue,
+    /// Interrupt the query (causes `SQLITE_INTERRUPT`).
+    Interrupt,
+}
+
+/// The decision returned by an [`on_busy`](SqliteConnection::on_busy)
+/// callback when the database is locked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BusyDecision {
+    /// Retry the locked operation.
+    Retry,
+    /// Give up, returning `SQLITE_BUSY` to the caller.
+    GiveUp,
 }
 
 impl SqliteConnection {
@@ -394,6 +452,45 @@ impl SqliteConnection {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
     }
 
+    /// Returns the rowid of the most recent successful INSERT on this connection.
+    ///
+    /// Returns `None` if no successful INSERT into a rowid table has been performed
+    /// on this connection, and `Some(rowid)` otherwise.
+    ///
+    /// See [the SQLite documentation](https://www.sqlite.org/c3ref/last_insert_rowid.html)
+    /// for details.
+    ///
+    /// # Caveats
+    /// - Inserts into `WITHOUT ROWID` tables are not recorded
+    /// - Failed `INSERT` (constraint violations) do not change the value
+    /// - `INSERT OR REPLACE` always updates the value
+    /// - Within triggers, returns the rowid of the trigger's INSERT;
+    ///   reverts after the trigger completes
+    ///
+    /// # Example
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
+    /// use core::num::NonZeroI64;
+    /// use diesel::connection::SimpleConnection;
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// conn.batch_execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")?;
+    /// conn.batch_execute("INSERT INTO users (name) VALUES ('Sean')")?;
+    /// let rowid = conn.last_insert_rowid();
+    /// assert_eq!(rowid, NonZeroI64::new(1));
+    /// conn.batch_execute("INSERT INTO users (name) VALUES ('Tess')")?;
+    /// let rowid = conn.last_insert_rowid();
+    /// assert_eq!(rowid, NonZeroI64::new(2));
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn last_insert_rowid(&self) -> Option<NonZeroI64> {
+        NonZeroI64::new(self.raw_connection.last_insert_rowid())
+    }
+
     fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
         F: FnOnce(&mut Self) -> Result<T, E>,
@@ -446,99 +543,6 @@ impl SqliteConnection {
         };
 
         StatementUse::bind(statement, source, &mut *self.instrumentation)
-    }
-
-    #[doc(hidden)]
-    pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
-        &mut self,
-        fn_name: &str,
-        deterministic: bool,
-        mut f: F,
-    ) -> QueryResult<()>
-    where
-        F: FnMut(Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
-        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
-        Ret: ToSql<RetSqlType, Sqlite>,
-        Sqlite: HasSqlType<RetSqlType>,
-    {
-        functions::register(
-            &self.raw_connection,
-            fn_name,
-            deterministic,
-            move |_, args| f(args),
-        )
-    }
-
-    #[doc(hidden)]
-    pub fn register_noarg_sql_function<RetSqlType, Ret, F>(
-        &self,
-        fn_name: &str,
-        deterministic: bool,
-        f: F,
-    ) -> QueryResult<()>
-    where
-        F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
-        Ret: ToSql<RetSqlType, Sqlite>,
-        Sqlite: HasSqlType<RetSqlType>,
-    {
-        functions::register_noargs(&self.raw_connection, fn_name, deterministic, f)
-    }
-
-    #[doc(hidden)]
-    pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
-        &mut self,
-        fn_name: &str,
-    ) -> QueryResult<()>
-    where
-        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
-        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
-        Ret: ToSql<RetSqlType, Sqlite>,
-        Sqlite: HasSqlType<RetSqlType>,
-    {
-        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
-    }
-
-    /// Register a collation function.
-    ///
-    /// `collation` must always return the same answer given the same inputs.
-    /// If `collation` panics and unwinds the stack, the process is aborted, since it is used
-    /// across a C FFI boundary, which cannot be unwound across and there is no way to
-    /// signal failures via the SQLite interface in this case..
-    ///
-    /// If the name is already registered it will be overwritten.
-    ///
-    /// This method will return an error if registering the function fails, either due to an
-    /// out-of-memory situation or because a collation with that name already exists and is
-    /// currently being used in parallel by a query.
-    ///
-    /// The collation needs to be specified when creating a table:
-    /// `CREATE TABLE my_table ( str TEXT COLLATE MY_COLLATION )`,
-    /// where `MY_COLLATION` corresponds to name passed as `collation_name`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    /// // sqlite NOCASE only works for ASCII characters,
-    /// // this collation allows handling UTF-8 (barring locale differences)
-    /// conn.register_collation("RUSTNOCASE", |rhs, lhs| {
-    ///     rhs.to_lowercase().cmp(&lhs.to_lowercase())
-    /// })
-    /// # }
-    /// ```
-    pub fn register_collation<F>(&mut self, collation_name: &str, collation: F) -> QueryResult<()>
-    where
-        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static + std::panic::UnwindSafe,
-    {
-        self.raw_connection
-            .register_collation_function(collation_name, collation)
     }
 
     /// Serialize the current SQLite database into a byte buffer.
@@ -610,25 +614,190 @@ impl SqliteConnection {
         }
     }
 
-    fn register_diesel_sql_functions(&self) -> QueryResult<()> {
-        use crate::sql_types::{Integer, Text};
+    /// Provides temporary access to the raw SQLite database connection handle.
+    ///
+    /// This method provides a way to access the underlying `sqlite3` pointer,
+    /// enabling direct use of the SQLite C API for advanced features that
+    /// Diesel does not wrap, such as the [session extension](https://www.sqlite.org/sessionintro.html),
+    /// [hooks](https://www.sqlite.org/c3ref/update_hook.html), or other advanced APIs.
+    ///
+    /// # Why Diesel Doesn't Wrap These APIs
+    ///
+    /// Certain SQLite features, such as the session extension, are **optional** and only
+    /// available when SQLite is compiled with specific flags (e.g., `-DSQLITE_ENABLE_SESSION`
+    /// and `-DSQLITE_ENABLE_PREUPDATE_HOOK` for sessions). These compile-time options determine
+    /// whether the corresponding C API functions exist in the SQLite library's ABI.
+    ///
+    /// Because Diesel must work with any SQLite library at runtime—including system-provided
+    /// libraries that may lack these optional features—it **cannot safely provide wrappers**
+    /// for APIs that may or may not exist. Doing so would either:
+    ///
+    /// - Cause **linker errors** at compile time if the user's `libsqlite3-sys` wasn't compiled
+    ///   with the required flags, or
+    /// - Cause **undefined behavior** at runtime if Diesel called functions that don't exist
+    ///   in the linked library.
+    ///
+    /// While feature gates could theoretically solve this problem, Diesel already has an
+    /// extensive API surface with many existing feature combinations. Each new feature gate
+    /// adds a **combinatorial explosion** of test configurations that must be validated,
+    /// making the library increasingly difficult to maintain. Therefore, exposing the raw
+    /// connection is the preferred approach for niche SQLite features.
+    ///
+    /// By exposing the raw connection handle, Diesel allows users who **know** they have
+    /// access to a properly configured SQLite build to use these advanced features directly
+    /// through their own FFI bindings.
+    ///
+    /// # Safety
+    ///
+    /// This method is marked `unsafe` because improper use of the raw connection handle
+    /// can lead to undefined behavior. The caller must ensure that:
+    ///
+    /// - The connection handle is **not closed** during the callback.
+    /// - The connection handle is **not stored** beyond the callback's scope.
+    /// - Concurrent access rules are respected (SQLite connections are not thread-safe
+    ///   unless using serialized threading mode).
+    /// - **Transaction state is not modified** — do not execute `BEGIN`, `COMMIT`,
+    ///   `ROLLBACK`, or `SAVEPOINT` statements via the raw handle. Diesel's
+    ///   [`AnsiTransactionManager`] tracks transaction nesting internally, and
+    ///   bypassing it will cause Diesel's view of the transaction state to diverge
+    ///   from SQLite's actual state.
+    /// - **Diesel's prepared statements are not disturbed** — do not call
+    ///   `sqlite3_finalize()` or `sqlite3_reset()` on statements that belong to
+    ///   Diesel's `StatementCache`. Doing so will cause use-after-free or
+    ///   double-free when Diesel later accesses those statements.
+    ///
+    /// [`AnsiTransactionManager`]: crate::connection::AnsiTransactionManager
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use diesel::sqlite::SqliteConnection;
+    /// use diesel::Connection;
+    ///
+    /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // SAFETY: We do not close or store the connection handle,
+    /// // and we do not modify Diesel-managed state (transactions, cached statements).
+    /// let is_valid = unsafe {
+    ///     conn.with_raw_connection(|raw_conn| {
+    ///         // The raw connection pointer can be passed to SQLite C API functions
+    ///         // from your own `libsqlite3-sys` (native) or `sqlite-wasm-rs` (WASM)
+    ///         // dependency — for example, `sqlite3_get_autocommit(raw_conn)` or
+    ///         // `sqlite3session_create(raw_conn, ...)`.
+    ///         !raw_conn.is_null()
+    ///     })
+    /// };
+    /// assert!(is_valid);
+    /// ```
+    ///
+    /// # Platform Notes
+    ///
+    /// This method works identically on both native and WASM targets. However,
+    /// you must depend on the appropriate FFI crate for your target:
+    ///
+    /// - **Native**: Add `libsqlite3-sys` as a dependency
+    /// - **WASM** (`wasm32-unknown-unknown`): Add `sqlite-wasm-rs` as a dependency
+    ///
+    /// Both crates expose a compatible `sqlite3` type that can be used with the
+    /// pointer returned by this method.
+    #[allow(unsafe_code)]
+    pub unsafe fn with_raw_connection<R, F>(&mut self, f: F) -> R
+    where
+        F: FnOnce(*mut ffi::sqlite3) -> R,
+    {
+        f(self.raw_connection.internal_connection.as_ptr())
+    }
 
-        // This function has side effects (creates triggers), so it should not
-        // be deterministic. We use DIRECTONLY to prevent it from being called
-        // from malicious schema objects in untrusted databases.
-        functions::register::<Text, Integer, _, _, _>(
-            &self.raw_connection,
-            "diesel_manage_updated_at",
-            false,
-            |conn, table_name: String| {
-                conn.exec(&format!(
-                    include_str!("diesel_manage_updated_at.sql"),
-                    table_name = table_name
-                ))
-                .expect("Failed to create trigger");
-                0 // have to return *something*
-            },
-        )
+    /// Runs `f` with a borrowed `SqliteConnection` wrapping `db`, giving SQLite
+    /// callbacks the full connection API. Statements prepared during `f` are
+    /// finalized on return, but `db` is left open, since SQLite owns it.
+    ///
+    /// # Safety
+    ///
+    /// `db` must be a valid `sqlite3` handle that stays open for the duration
+    /// of the call.
+    #[allow(unsafe_code)]
+    pub(crate) unsafe fn with_borrowed_connection<R>(
+        db: core::ptr::NonNull<ffi::sqlite3>,
+        f: impl FnOnce(&mut SqliteConnection) -> R,
+    ) -> R {
+        // Tears the borrowed connection down on every exit path, including a
+        // panic unwinding out of `f`.
+        struct Borrowed(core::mem::ManuallyDrop<SqliteConnection>);
+
+        impl Drop for Borrowed {
+            fn drop(&mut self) {
+                // SAFETY: `self.0` is not touched again after this take.
+                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
+                let SqliteConnection {
+                    statement_cache,
+                    raw_connection,
+                    ..
+                } = conn;
+                // Finalize prepared statements, but do not run `RawConnection`'s
+                // `Drop`, which would close a handle we do not own.
+                drop(statement_cache);
+                core::mem::forget(raw_connection);
+            }
+        }
+
+        let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
+            statement_cache: StatementCache::new(),
+            raw_connection: RawConnection::from_ptr(db),
+            transaction_state: AnsiTransactionManager::default(),
+            metadata_lookup: (),
+            instrumentation: DynInstrumentation::default_instrumentation(),
+            serialized_data: Vec::new(),
+        }));
+
+        let result = f(&mut conn.0);
+
+        // The borrowed connection is discarded without committing or rolling
+        // back, so a transaction left open by `f` would leak onto the handle.
+        debug_assert!(
+            matches!(
+                AnsiTransactionManager::transaction_manager_status_mut(&mut *conn.0)
+                    .transaction_depth(),
+                Ok(None)
+            ),
+            "callback must not leave an open transaction on the borrowed connection"
+        );
+
+        result
+    }
+
+    fn register_diesel_sql_functions(&self) -> QueryResult<()> {
+        // When running under miri with a native libsqlite3 (see
+        // `-Zmiri-native-lib`), native code is not allowed to call back into
+        // Rust. Registering `diesel_manage_updated_at` hands a Rust function
+        // pointer to sqlite, whose `xDestroy` callback is invoked by native
+        // code when the connection is closed, which miri rejects. As miri is
+        // only used to run a subset of the test suite, we skip the registration
+        // entirely in that case.
+        #[cfg(miri)]
+        return Ok(());
+
+        #[cfg(not(miri))]
+        {
+            use crate::sql_types::{Integer, Text};
+
+            // This function has side effects (creates triggers), so it should not
+            // be deterministic. We use DIRECTONLY to prevent it from being called
+            // from malicious schema objects in untrusted databases.
+            functions::register::<Text, Integer, _, _, _>(
+                &self.raw_connection,
+                "diesel_manage_updated_at",
+                crate::sqlite::SqliteFunctionBehavior::DIRECTONLY,
+                |conn, table_name: String| {
+                    conn.exec(&alloc::format!(
+                        include_str!("diesel_manage_updated_at.sql"),
+                        table_name = table_name
+                    ))
+                    .expect("Failed to create trigger");
+                    0 // have to return *something*
+                },
+            )
+        }
     }
 
     fn establish_inner(database_url: &str) -> Result<SqliteConnection, ConnectionError> {
@@ -658,25 +827,292 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::{Integer, Text};
+    #[cfg(not(miri))]
     use crate::test_helpers::format_error;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
     }
 
-    #[declare_sql_function]
-    extern "SQL" {
-        fn fun_case(x: Text) -> Text;
-        fn my_add(x: Integer, y: Integer) -> Integer;
-        fn answer() -> Integer;
-        fn add_counter(x: Integer) -> Integer;
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_return_values() {
+        let connection = &mut connection();
 
-        #[aggregate]
-        fn my_sum(expr: Integer) -> Integer;
-        #[aggregate]
-        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
+        // SAFETY: We only read connection status, which doesn't modify state.
+        let autocommit_status = unsafe {
+            connection.with_raw_connection(|raw_conn| ffi::sqlite3_get_autocommit(raw_conn))
+        };
+
+        // Outside a transaction, autocommit should be enabled (returns non-zero)
+        assert_ne!(autocommit_status, 0, "Expected autocommit to be enabled");
     }
 
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_works_after_diesel_operations() {
+        let connection = &mut connection();
+
+        // First, do some Diesel operations
+        crate::sql_query("CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)")
+            .execute(connection)
+            .unwrap();
+        crate::sql_query("INSERT INTO test_table (value) VALUES ('hello')")
+            .execute(connection)
+            .unwrap();
+
+        // SAFETY: We only read the last insert rowid, which is a read-only operation.
+        let last_rowid = unsafe {
+            connection.with_raw_connection(|raw_conn| ffi::sqlite3_last_insert_rowid(raw_conn))
+        };
+
+        assert_eq!(last_rowid, 1, "Last insert rowid should be 1");
+
+        // Verify Diesel still works after using raw connection
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM test_table")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_execute_raw_sql() {
+        let connection = &mut connection();
+
+        // Create a table using Diesel first
+        crate::sql_query("CREATE TABLE raw_test (id INTEGER PRIMARY KEY, name TEXT)")
+            .execute(connection)
+            .unwrap();
+
+        // SAFETY: We execute a simple INSERT via raw SQLite API.
+        // This modifies the database but in a way compatible with Diesel.
+        let result = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let sql = c"INSERT INTO raw_test (name) VALUES ('from_raw')";
+                let mut err_msg: *mut libc::c_char = core::ptr::null_mut();
+                let rc = ffi::sqlite3_exec(
+                    raw_conn,
+                    sql.as_ptr(),
+                    None,
+                    core::ptr::null_mut(),
+                    &mut err_msg,
+                );
+                if rc != ffi::SQLITE_OK && !err_msg.is_null() {
+                    ffi::sqlite3_free(err_msg as *mut libc::c_void);
+                }
+                rc
+            })
+        };
+
+        assert_eq!(result, ffi::SQLITE_OK, "Raw SQL execution should succeed");
+
+        // Verify the insert worked using Diesel
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM raw_test")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1);
+
+        let name: String = sql::<Text>("SELECT name FROM raw_test WHERE id = 1")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(name, "from_raw");
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_works_within_transaction() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE txn_test (id INTEGER PRIMARY KEY, value INTEGER)")
+            .execute(connection)
+            .unwrap();
+
+        connection
+            .transaction::<_, crate::result::Error, _>(|conn| {
+                crate::sql_query("INSERT INTO txn_test (value) VALUES (42)")
+                    .execute(conn)
+                    .unwrap();
+
+                // SAFETY: We only read the autocommit status inside a transaction.
+                let autocommit = unsafe {
+                    conn.with_raw_connection(|raw_conn| ffi::sqlite3_get_autocommit(raw_conn))
+                };
+
+                // Inside a transaction, autocommit should be disabled (returns 0)
+                assert_eq!(
+                    autocommit, 0,
+                    "Autocommit should be disabled inside transaction"
+                );
+
+                Ok(())
+            })
+            .unwrap();
+
+        // After transaction commits, autocommit should be re-enabled
+        let autocommit = unsafe {
+            connection.with_raw_connection(|raw_conn| ffi::sqlite3_get_autocommit(raw_conn))
+        };
+        assert_ne!(
+            autocommit, 0,
+            "Autocommit should be enabled after transaction"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[allow(unsafe_code)]
+    fn with_raw_connection_can_read_database_filename() {
+        let connection = &mut connection();
+
+        // SAFETY: We only read the database filename, which is a read-only operation.
+        let filename = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let db_name = c"main";
+                let filename_ptr = ffi::sqlite3_db_filename(raw_conn, db_name.as_ptr());
+                if filename_ptr.is_null() {
+                    None
+                } else {
+                    // For :memory: databases, this might return empty string or special value
+                    let cstr = core::ffi::CStr::from_ptr(filename_ptr);
+                    Some(cstr.to_string_lossy().into_owned())
+                }
+            })
+        };
+
+        // For in-memory databases, sqlite3_db_filename returns a non-null pointer
+        // to an empty string
+        assert_eq!(
+            filename,
+            Some(String::new()),
+            "In-memory database filename should be an empty string"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    fn with_raw_connection_changes_count() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE changes_test (id INTEGER PRIMARY KEY, value INTEGER)")
+            .execute(connection)
+            .unwrap();
+
+        crate::sql_query("INSERT INTO changes_test (value) VALUES (1), (2), (3)")
+            .execute(connection)
+            .unwrap();
+
+        // Update all rows using raw connection
+        let changes = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let sql = c"UPDATE changes_test SET value = value + 10";
+                let mut err_msg: *mut libc::c_char = core::ptr::null_mut();
+                let rc = ffi::sqlite3_exec(
+                    raw_conn,
+                    sql.as_ptr(),
+                    None,
+                    core::ptr::null_mut(),
+                    &mut err_msg,
+                );
+                if rc != ffi::SQLITE_OK && !err_msg.is_null() {
+                    ffi::sqlite3_free(err_msg as *mut libc::c_void);
+                    return -1;
+                }
+                ffi::sqlite3_changes(raw_conn)
+            })
+        };
+
+        assert_eq!(changes, 3, "Should have updated 3 rows");
+
+        // Verify the updates using Diesel
+        let values: Vec<i32> = sql::<Integer>("SELECT value FROM changes_test ORDER BY id")
+            .load(connection)
+            .unwrap();
+        assert_eq!(values, vec![11, 12, 13]);
+    }
+
+    // catch_unwind is not available in WASM (panic = "abort")
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn with_raw_connection_recovers_after_panic() {
+        let connection = &mut connection();
+
+        crate::sql_query("CREATE TABLE panic_test (id INTEGER PRIMARY KEY, value TEXT)")
+            .execute(connection)
+            .unwrap();
+
+        // Panic inside the callback
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
+            connection.with_raw_connection(|_raw_conn| {
+                panic!("intentional panic inside with_raw_connection");
+            })
+        }));
+        assert!(result.is_err(), "Should have caught the panic");
+
+        // Connection should still be usable after the panic
+        crate::sql_query("INSERT INTO panic_test (value) VALUES ('after_panic')")
+            .execute(connection)
+            .unwrap();
+
+        let count: i64 = sql::<crate::sql_types::BigInt>("SELECT COUNT(*) FROM panic_test")
+            .get_result(connection)
+            .unwrap();
+        assert_eq!(count, 1, "Connection should work after panic in callback");
+    }
+
+    // Filesystem access is not available in WASM
+    #[diesel_test_helper::test]
+    #[allow(unsafe_code)]
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn with_raw_connection_can_read_file_database_filename() {
+        let dir = std::env::temp_dir().join("diesel_test_filename.db");
+        let db_path = dir.to_str().unwrap();
+
+        // Clean up from any previous run
+        let _ = std::fs::remove_file(db_path);
+
+        let connection = &mut SqliteConnection::establish(db_path).unwrap();
+
+        // SAFETY: We only read the database filename, which is a read-only operation.
+        let filename = unsafe {
+            connection.with_raw_connection(|raw_conn| {
+                let db_name = c"main";
+                let filename_ptr = ffi::sqlite3_db_filename(raw_conn, db_name.as_ptr());
+                if filename_ptr.is_null() {
+                    None
+                } else {
+                    let cstr = core::ffi::CStr::from_ptr(filename_ptr);
+                    Some(cstr.to_string_lossy().into_owned())
+                }
+            })
+        };
+
+        let filename = filename.expect("File-based database should have a filename");
+        assert!(
+            filename.contains("diesel_test_filename.db"),
+            "Filename should contain the database name, got: {filename}"
+        );
+
+        // Clean up
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn database_serializes_and_deserializes_successfully() {
         let expected_users = vec![
@@ -725,6 +1161,10 @@ mod tests {
         }
     }
 
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn database_deserialize_random_bytes() {
         let buffer = vec![0, 1, 2, 3, 4];
@@ -788,11 +1228,18 @@ mod tests {
         assert!(serialized.try_as_slice().unwrap().is_empty());
     }
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown")),
+        // These tests read memory allocated by the native library or rely on
+        // native code invoking a panic hook, neither of which is supported when
+        // running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+        not(miri)
+    ))]
     #[allow(unsafe_code)]
     mod sqlite_serialize_oom {
         use super::super::oom_test_support::{panic_message, run_in_child, with_heap_limit};
-        use super::super::{ffi, SerializedDatabase};
+        use super::super::{SerializedDatabase, ffi};
         use crate::connection::{Connection, SimpleConnection};
         use crate::sqlite::SqliteConnection;
         use crate::test_helpers::format_error;
@@ -882,275 +1329,6 @@ mod tests {
         }
     }
 
-    #[diesel_test_helper::test]
-    fn register_custom_function() {
-        let connection = &mut connection();
-        fun_case_utils::register_impl(connection, |x: String| {
-            x.chars()
-                .enumerate()
-                .map(|(i, c)| {
-                    if i % 2 == 0 {
-                        c.to_lowercase().to_string()
-                    } else {
-                        c.to_uppercase().to_string()
-                    }
-                })
-                .collect::<String>()
-        })
-        .unwrap();
-
-        let mapped_string = crate::select(fun_case("foobar"))
-            .get_result::<String>(connection)
-            .unwrap();
-        assert_eq!("fOoBaR", mapped_string);
-    }
-
-    #[diesel_test_helper::test]
-    fn register_multiarg_function() {
-        let connection = &mut connection();
-        my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
-
-        let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
-        assert_eq!(Ok(3), added);
-    }
-
-    #[diesel_test_helper::test]
-    fn register_noarg_function() {
-        let connection = &mut connection();
-        answer_utils::register_impl(connection, || 42).unwrap();
-
-        let answer = crate::select(answer()).get_result::<i32>(connection);
-        assert_eq!(Ok(42), answer);
-    }
-
-    #[diesel_test_helper::test]
-    fn register_nondeterministic_noarg_function() {
-        let connection = &mut connection();
-        answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
-
-        let answer = crate::select(answer()).get_result::<i32>(connection);
-        assert_eq!(Ok(42), answer);
-    }
-
-    #[diesel_test_helper::test]
-    fn register_nondeterministic_function() {
-        let connection = &mut connection();
-        let mut y = 0;
-        add_counter_utils::register_nondeterministic_impl(connection, move |x: i32| {
-            y += 1;
-            x + y
-        })
-        .unwrap();
-
-        let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
-            .get_result::<(i32, i32, i32)>(connection);
-        assert_eq!(Ok((2, 3, 4)), added);
-    }
-
-    #[derive(Default)]
-    struct MySum {
-        sum: i32,
-    }
-
-    impl SqliteAggregateFunction<i32> for MySum {
-        type Output = i32;
-
-        fn step(&mut self, expr: i32) {
-            self.sum += expr;
-        }
-
-        fn finalize(aggregator: Option<Self>) -> Self::Output {
-            aggregator.map(|a| a.sum).unwrap_or_default()
-        }
-    }
-
-    table! {
-        my_sum_example {
-            id -> Integer,
-            value -> Integer,
-        }
-    }
-
-    #[diesel_test_helper::test]
-    fn register_aggregate_function() {
-        use self::my_sum_example::dsl::*;
-
-        let connection = &mut connection();
-        crate::sql_query(
-            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-        )
-        .execute(connection)
-        .unwrap();
-        crate::sql_query("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
-            .execute(connection)
-            .unwrap();
-
-        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
-
-        let result = my_sum_example
-            .select(my_sum(value))
-            .get_result::<i32>(connection);
-        assert_eq!(Ok(6), result);
-    }
-
-    #[diesel_test_helper::test]
-    fn register_aggregate_function_returns_finalize_default_on_empty_set() {
-        use self::my_sum_example::dsl::*;
-
-        let connection = &mut connection();
-        crate::sql_query(
-            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-        )
-        .execute(connection)
-        .unwrap();
-
-        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
-
-        let result = my_sum_example
-            .select(my_sum(value))
-            .get_result::<i32>(connection);
-        assert_eq!(Ok(0), result);
-    }
-
-    #[derive(Default)]
-    struct RangeMax<T> {
-        max_value: Option<T>,
-    }
-
-    impl<T: Default + Ord + Copy + Clone> SqliteAggregateFunction<(T, T, T)> for RangeMax<T> {
-        type Output = Option<T>;
-
-        fn step(&mut self, (x0, x1, x2): (T, T, T)) {
-            let max = if x0 >= x1 && x0 >= x2 {
-                x0
-            } else if x1 >= x0 && x1 >= x2 {
-                x1
-            } else {
-                x2
-            };
-
-            self.max_value = match self.max_value {
-                Some(current_max_value) if max > current_max_value => Some(max),
-                None => Some(max),
-                _ => self.max_value,
-            };
-        }
-
-        fn finalize(aggregator: Option<Self>) -> Self::Output {
-            aggregator?.max_value
-        }
-    }
-
-    table! {
-        range_max_example {
-            id -> Integer,
-            value1 -> Integer,
-            value2 -> Integer,
-            value3 -> Integer,
-        }
-    }
-
-    #[diesel_test_helper::test]
-    fn register_aggregate_multiarg_function() {
-        use self::range_max_example::dsl::*;
-
-        let connection = &mut connection();
-        crate::sql_query(
-            r#"CREATE TABLE range_max_example (
-                id integer primary key autoincrement,
-                value1 integer,
-                value2 integer,
-                value3 integer
-            )"#,
-        )
-        .execute(connection)
-        .unwrap();
-        crate::sql_query(
-            "INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)",
-        )
-        .execute(connection)
-        .unwrap();
-
-        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
-        let result = range_max_example
-            .select(range_max(value1, value2, value3))
-            .get_result::<Option<i32>>(connection)
-            .unwrap();
-        assert_eq!(Some(3), result);
-    }
-
-    table! {
-        my_collation_example {
-            id -> Integer,
-            value -> Text,
-        }
-    }
-
-    #[diesel_test_helper::test]
-    fn register_collation_function() {
-        use self::my_collation_example::dsl::*;
-
-        let connection = &mut connection();
-
-        connection
-            .register_collation("RUSTNOCASE", |rhs, lhs| {
-                rhs.to_lowercase().cmp(&lhs.to_lowercase())
-            })
-            .unwrap();
-
-        crate::sql_query(
-                "CREATE TABLE my_collation_example (id integer primary key autoincrement, value text collate RUSTNOCASE)",
-            ).execute(connection)
-            .unwrap();
-        crate::sql_query(
-            "INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')",
-        )
-        .execute(connection)
-        .unwrap();
-
-        let result = my_collation_example
-            .filter(value.eq("foo"))
-            .select(value)
-            .load::<String>(connection);
-        assert_eq!(
-            Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
-            result.as_ref().map(|vec| vec.as_ref())
-        );
-
-        let result = my_collation_example
-            .filter(value.eq("FOO"))
-            .select(value)
-            .load::<String>(connection);
-        assert_eq!(
-            Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
-            result.as_ref().map(|vec| vec.as_ref())
-        );
-
-        let result = my_collation_example
-            .filter(value.eq("f00"))
-            .select(value)
-            .load::<String>(connection);
-        assert_eq!(
-            Ok(&["f00".to_owned()][..]),
-            result.as_ref().map(|vec| vec.as_ref())
-        );
-
-        let result = my_collation_example
-            .filter(value.eq("F00"))
-            .select(value)
-            .load::<String>(connection);
-        assert_eq!(
-            Ok(&["f00".to_owned()][..]),
-            result.as_ref().map(|vec| vec.as_ref())
-        );
-
-        let result = my_collation_example
-            .filter(value.eq("oof"))
-            .select(value)
-            .load::<String>(connection);
-        assert_eq!(Ok(&[][..]), result.as_ref().map(|vec| vec.as_ref()));
-    }
-
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
     #[diesel_test_helper::test]
     fn test_correct_serialization_of_owned_strings() {
@@ -1230,95 +1408,91 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    fn aggregate_function_works_with_aligned_data() {
-        #[derive(Debug, Default)]
-        #[repr(align(64))]
-        struct OverAligned;
-
-        impl SqliteAggregateFunction<i32> for OverAligned {
-            type Output = i64;
-
-            fn step(&mut self, _value: i32) {
-                let need = core::mem::align_of::<Self>();
-                let got = core::mem::align_of_val(self);
-                assert_eq!(need, got);
-            }
-
-            fn finalize(_agg: Option<Self>) -> i64 {
-                0
-            }
-        }
-        #[declare_sql_function]
-        extern "SQL" {
-            #[aggregate]
-            fn over_aligned_sum(x: Integer) -> diesel::sql_types::BigInt;
-        }
-
-        let mut conn = SqliteConnection::establish(":memory:").unwrap();
-        over_aligned_sum_utils::register_impl::<OverAligned, _>(&mut conn).unwrap();
-
-        diesel::select(over_aligned_sum(1))
-            .execute(&mut conn)
-            .unwrap();
+    fn last_insert_rowid_returns_none_on_fresh_connection() {
+        let conn = &mut connection();
+        assert_eq!(conn.last_insert_rowid(), None);
     }
 
     #[diesel_test_helper::test]
-    fn sum_twice() {
-        #[derive(Default)]
-        struct Sum(i32);
+    fn last_insert_rowid_returns_rowid_after_insert() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
+            .unwrap();
 
-        impl SqliteAggregateFunction<i32> for Sum {
-            type Output = i32;
+        crate::sql_query("INSERT INTO li_test (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
 
-            fn step(&mut self, value: i32) {
-                self.0 += value;
-            }
+        crate::sql_query("INSERT INTO li_test (val) VALUES ('b')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(2));
+    }
 
-            fn finalize(agg: Option<Self>) -> i32 {
-                agg.map(|s| s.0).unwrap_or_default()
-            }
-        }
-
-        #[declare_sql_function]
-        extern "SQL" {
-            #[aggregate]
-            fn my_sum(x: Integer) -> Integer;
-        }
-
-        let mut conn = SqliteConnection::establish(":memory:").unwrap();
-        my_sum_utils::register_impl::<Sum, _>(&mut conn).unwrap();
-
-        conn.batch_execute(
-            "
-            CREATE TABLE test(key1 INTEGER, key2 INTEGER);
-            INSERT INTO test(key1, key2) VALUES (1, 2), (2, 4), (3, 6);
-",
+    // Registers a callback that is invoked by the native library, or reads memory
+    // allocated by it, which is not supported when running under miri with a native
+    // libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_unchanged_after_failed_insert() {
+        let conn = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE li_test2 (id INTEGER PRIMARY KEY, val TEXT NOT NULL UNIQUE)",
         )
+        .execute(conn)
         .unwrap();
 
-        table! {
-            test (key1, key2) {
-                key1 -> Integer,
-                key2 -> Integer,
-            }
-        }
+        crate::sql_query("INSERT INTO li_test2 (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        let rowid = conn.last_insert_rowid();
+        assert_eq!(rowid, NonZeroI64::new(1));
 
-        let (first_res, second_res) = test::table
-            .select((my_sum(test::key1), my_sum(test::key2)))
-            .get_result::<(i32, i32)>(&mut conn)
+        // This should fail due to UNIQUE constraint
+        let result = crate::sql_query("INSERT INTO li_test2 (val) VALUES ('a')").execute(conn);
+        assert!(result.is_err());
+
+        // rowid should be unchanged
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+    }
+
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_with_explicit_rowid() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test3 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
             .unwrap();
 
-        assert_eq!(first_res, 6);
-        assert_eq!(second_res, 12);
+        crate::sql_query("INSERT INTO li_test3 (id, val) VALUES (42, 'a')")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(42));
+    }
 
-        conn.batch_execute("DELETE FROM test").unwrap();
-        let (first_res, second_res) = test::table
-            .select((my_sum(test::key1), my_sum(test::key2)))
-            .get_result::<(i32, i32)>(&mut conn)
+    #[diesel_test_helper::test]
+    fn last_insert_rowid_unchanged_after_delete_and_update() {
+        let conn = &mut connection();
+        crate::sql_query("CREATE TABLE li_test4 (id INTEGER PRIMARY KEY, val TEXT NOT NULL)")
+            .execute(conn)
             .unwrap();
 
-        assert_eq!(first_res, 0);
-        assert_eq!(second_res, 0);
+        crate::sql_query("INSERT INTO li_test4 (val) VALUES ('a')")
+            .execute(conn)
+            .unwrap();
+        let rowid = conn.last_insert_rowid();
+        assert_eq!(rowid, NonZeroI64::new(1));
+
+        crate::sql_query("UPDATE li_test4 SET val = 'b' WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
+
+        crate::sql_query("DELETE FROM li_test4 WHERE id = 1")
+            .execute(conn)
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), NonZeroI64::new(1));
     }
 
     #[diesel_test_helper::test]
@@ -1341,9 +1515,12 @@ mod tests {
             .execute(&mut conn)
             .unwrap();
 
-        let data = quote_table::table
-            .load::<(Option<i32>, Option<String>)>(&mut conn)
-            .unwrap();
-        assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+        if cfg!(not(miri)) {
+            // string access over ffi
+            let data = quote_table::table
+                .load::<(Option<i32>, Option<String>)>(&mut conn)
+                .unwrap();
+            assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
+        }
     }
 }

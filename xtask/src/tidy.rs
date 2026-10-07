@@ -2,8 +2,8 @@ use std::process::{Command, Stdio};
 
 use cargo_metadata::MetadataCommand;
 
-use crate::clippy::ClippyArgs;
 use crate::Backend;
+use crate::clippy::ClippyArgs;
 
 #[derive(Debug, clap::Args)]
 pub struct TidyArgs {
@@ -42,7 +42,7 @@ impl TidyArgs {
 
         let mut command = Command::new("typos");
 
-        command.current_dir(metadata.workspace_root);
+        command.current_dir(&metadata.workspace_root);
         println!("Check source code for spelling mistakes with `{command:?}`");
 
         let status = command
@@ -59,6 +59,28 @@ impl TidyArgs {
             } else {
                 success = false;
             }
+        }
+
+        println!("Check for duplicated doctests and functions with dejadoc");
+        let clean = match dejadoc::Dejadoc::default()
+            .functions()
+            .run(metadata.workspace_root.as_std_path())
+        {
+            Ok(report) => {
+                print!("{}", dejadoc::human(&report, false));
+                report.groups.is_empty()
+            }
+            Err(error) => {
+                println!("Could not scan for duplicated doctests: {error}");
+                false
+            }
+        };
+
+        if !clean {
+            if !self.keep_going {
+                std::process::exit(1);
+            }
+            success = false;
         }
 
         println!("Run clippy: ");

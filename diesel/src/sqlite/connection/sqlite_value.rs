@@ -5,12 +5,12 @@ extern crate libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
-use std::cell::Ref;
-use std::ptr::NonNull;
-use std::{slice, str};
+use core::cell::Ref;
+use core::ptr::NonNull;
+use core::{slice, str};
 
+use crate::result::QueryResult;
 use crate::sqlite::SqliteType;
-use crate::QueryResult;
 
 use super::owned_row::OwnedSqliteRow;
 use super::row::PrivateSqliteRow;
@@ -41,7 +41,7 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
     // stable and doesn't return a `Result`. We instead
     // use `String::from_utf8_lossy` there and need
     // to store the potential owned result here
-    string_ref: Option<Box<str>>,
+    string_ref: Option<alloc::boxed::Box<str>>,
     // The type the value declared before any read converted it, as
     // https://www.sqlite.org/c3ref/value_blob.html requires asking first
     initial_type: SqliteType,
@@ -255,7 +255,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         if str::from_utf8(self.as_byte_string()).is_err() {
             // Read again to drop the byte borrow before storing the lossy copy, as
             // repeated reads of one value do not convert it again.
-            let lossy = String::from_utf8_lossy(self.as_byte_string()).into_owned();
+            let lossy = alloc::string::String::from_utf8_lossy(self.as_byte_string()).into_owned();
             self.string_ref = Some(lossy.into_boxed_str());
             let s = self
                 .string_ref
@@ -453,10 +453,19 @@ mod tests {
     use crate::connection::{LoadConnection, SimpleConnection};
     use crate::row::Field;
     use crate::row::Row;
+    #[cfg(not(miri))]
     use crate::sql_types::{Blob, Double, Int4, Text};
+    #[cfg(not(miri))]
     use crate::*;
 
-    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown")),
+        // These tests read memory allocated by the native library or rely on
+        // native code invoking a panic hook, neither of which is supported when
+        // running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+        not(miri)
+    ))]
     mod allocation_failure {
         use super::super::SqliteValue;
         use crate::connection::{LoadConnection, SimpleConnection};
@@ -469,6 +478,7 @@ mod tests {
         };
         use crate::sqlite::{Sqlite, SqliteConnection};
         use crate::test_helpers::format_error;
+        use alloc::string::{String, ToString};
 
         const VALUE_LEN: usize = 1_048_576;
 
@@ -544,7 +554,7 @@ mod tests {
                 crate::insert_into(oom_blob::table)
                     .values((
                         oom_blob::id.eq(id),
-                        oom_blob::value.eq(vec![b'x'; VALUE_LEN]),
+                        oom_blob::value.eq(alloc::vec![b'x'; VALUE_LEN]),
                     ))
                     .execute(&mut conn)
                     .unwrap();
@@ -697,8 +707,8 @@ mod tests {
                     ))
                     .execute(&mut conn)
                     .unwrap();
-                let observed = std::sync::Arc::new(core::sync::atomic::AtomicBool::new(false));
-                let callback_observed = std::sync::Arc::clone(&observed);
+                let observed = alloc::sync::Arc::new(core::sync::atomic::AtomicBool::new(false));
+                let callback_observed = alloc::sync::Arc::clone(&observed);
                 read_blob_under_pressure_utils::register_impl(
                     &mut conn,
                     move |value: BlobUnderPressure| {
@@ -808,6 +818,10 @@ mod tests {
         assert_eq!(zero_blob_value.read_blob(), b"");
     }
 
+    // Reads text values, which requires accessing memory allocated by the
+    // native library. That is not supported when running under miri with a
+    // native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn blob_bytes_survive_a_text_read_of_the_same_value() {
         use crate::prelude::*;
@@ -839,6 +853,10 @@ mod tests {
         );
     }
 
+    // Reads text values, which requires accessing memory allocated by the
+    // native library. That is not supported when running under miri with a
+    // native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[expect(clippy::approx_constant)] // we really want to use 3.14
     #[diesel_test_helper::test]
     fn can_convert_all_values() {
