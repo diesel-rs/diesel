@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["uses_lifetimes",1],["uses_type_params",1]],"mod":["ast","error","usage","util"],"struct":["Error"],"trait":["FromAttributes","FromDeriveInput","FromField","FromGenericParam","FromGenerics","FromMeta","FromTypeParam","FromVariant"],"type":["Result"]};

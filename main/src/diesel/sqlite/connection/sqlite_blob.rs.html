@@ -1,0 +1,490 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/sqlite/connection/sqlite_blob.rs`."><title>sqlite_blob.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (8d1a76430 2026-10-06)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">diesel/sqlite/connection/</div>sqlite_blob.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="attr">#![allow(unsafe_code)] </span><span class="comment">// ffi calls
+<a href=#2 id=2 data-nosnippet>2</a></span><span class="attr">#[cfg(not(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>)))]
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">extern crate </span>libsqlite3_sys <span class="kw">as </span>ffi;
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a><span class="attr">#[cfg(all(target_family = <span class="string">"wasm"</span>, target_os = <span class="string">"unknown"</span>))]
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="kw">use </span>sqlite_wasm_rs <span class="kw">as </span>ffi;
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><a href="mod.rs.html#194-216"><span class="kw">super</span>::SqliteConnection</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><span class="kw">crate</span>::query_source::{<a href="../../query_source/mod.rs.html#364-372">ColumnHasTable</a>, <a href="../../query_source/mod.rs.html#301-309">NamedTable</a>};
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><a href="../../result.rs.html#17-106"><span class="kw">crate</span>::result::Error</a>;
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="doccomment">/// A read only SQLite Blob
+<a href=#13 id=13 data-nosnippet>13</a>///
+<a href=#14 id=14 data-nosnippet>14</a>/// This interface allows to incrementally read a blob from a SQLite database.
+<a href=#15 id=15 data-nosnippet>15</a>/// Notably this type implements [`std::io::Read`] and [`std::io::Seek`] to integrate
+<a href=#16 id=16 data-nosnippet>16</a>/// with standard Rust IO mechanisms.
+<a href=#17 id=17 data-nosnippet>17</a>///
+<a href=#18 id=18 data-nosnippet>18</a>/// You can use [`SqliteConnection::get_read_only_blob`](super::SqliteConnection::get_read_only_blob)
+<a href=#19 id=19 data-nosnippet>19</a>/// to get a new instance of this type
+<a href=#20 id=20 data-nosnippet>20</a>///
+<a href=#21 id=21 data-nosnippet>21</a>/// See the [SQLite documentation](https://sqlite.org/c3ref/blob_open.html) for more details
+<a href=#22 id=22 data-nosnippet>22</a></span><span class="attr">#[expect(missing_debug_implementations)]
+<a href=#23 id=23 data-nosnippet>23</a>#[cfg_attr(not(feature = <span class="string">"std"</span>), expect(dead_code))]
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">pub struct </span><a href="../../../../diesel/sqlite/struct.SqliteReadOnlyBlob.html">SqliteReadOnlyBlob</a>&lt;<span class="lifetime">'conn</span>&gt; {
+<a href=#25 id=25 data-nosnippet>25</a>    <span class="comment">// `None` once closed, so the handle is closed at most once
+<a href=#26 id=26 data-nosnippet>26</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) blob: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;core::ptr::<a href="https://doc.rust-lang.org/nightly/core/ptr/non_null/struct.NonNull.html">NonNull</a>&lt;ffi::<a href="../../../../libsqlite3_sys/bindings/struct.sqlite3_blob.html">sqlite3_blob</a>&gt;&gt;,
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) read_index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#28 id=28 data-nosnippet>28</a>
+<a href=#29 id=29 data-nosnippet>29</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) blob_size: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#30 id=30 data-nosnippet>30</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) _pd: core::marker::<a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="kw-2">mut </span>ffi::<a href="../../../../libsqlite3_sys/bindings/struct.sqlite3_blob.html">sqlite3_blob</a>&gt;,
+<a href=#31 id=31 data-nosnippet>31</a>}
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html">Drop</a> <span class="kw">for </span><a href="#24-31">SqliteReadOnlyBlob</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#35 id=35 data-nosnippet>35</a>        <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/thread/functions/fn.panicking.html"><span class="kw">crate</span>::util::std_compat::panicking</a>;
+<a href=#36 id=36 data-nosnippet>36</a>
+<a href=#37 id=37 data-nosnippet>37</a>        <span class="comment">// `close` already closed the handle
+<a href=#38 id=38 data-nosnippet>38</a>        </span><span class="kw">if </span><a class="self" href="#34">self</a>.blob.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_none">is_none</a>() {
+<a href=#39 id=39 data-nosnippet>39</a>            <span class="kw">return</span>;
+<a href=#40 id=40 data-nosnippet>40</a>        }
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(error_message) = <a class="self" href="#34">self</a>.<a href="#74-96">close_inner</a>() {
+<a href=#43 id=43 data-nosnippet>43</a>            <span class="kw">if </span><a href="https://doc.rust-lang.org/nightly/std/thread/functions/fn.panicking.html">panicking</a>() {
+<a href=#44 id=44 data-nosnippet>44</a>                <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#45 id=45 data-nosnippet>45</a></span><span class="expansion"><input id=expand-45 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    ::std::io::_eprint(<span class="macro">format_args!</span>(<span class="string">"Error closing SQLite blob: {0}\n"</span>,
+            error_message));
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/std/macro.eprintln.html">eprintln!</a>(<span class="string">"Error closing SQLite blob: {error_message}"</span>)</span></span>;
+<a href=#46 id=46 data-nosnippet>46</a>            } <span class="kw">else </span>{
+<a href=#47 id=47 data-nosnippet>47</a><span class="expansion"><input id=expand-47 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"Error closing SQLite blob: {0}"</span>,
+            error_message));
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/std/macro.panic.html">panic!</a>(<span class="string">"Error closing SQLite blob: {error_message}"</span>)</span></span>;
+<a href=#48 id=48 data-nosnippet>48</a>            }
+<a href=#49 id=49 data-nosnippet>49</a>        }
+<a href=#50 id=50 data-nosnippet>50</a>    }
+<a href=#51 id=51 data-nosnippet>51</a>}
+<a href=#52 id=52 data-nosnippet>52</a>
+<a href=#53 id=53 data-nosnippet>53</a><span class="kw">impl </span><a href="#24-31">SqliteReadOnlyBlob</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#54 id=54 data-nosnippet>54</a>    <span class="doccomment">/// Is the blob storage empty
+<a href=#55 id=55 data-nosnippet>55</a>    </span><span class="kw">pub fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#56 id=56 data-nosnippet>56</a>        <a class="self" href="#55">self</a>.<a href="#60-62">len</a>() == <span class="number">0
+<a href=#57 id=57 data-nosnippet>57</a>    </span>}
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="doccomment">/// The size of the underlying blob in bytes
+<a href=#60 id=60 data-nosnippet>60</a>    </span><span class="kw">pub fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a> {
+<a href=#61 id=61 data-nosnippet>61</a>        <a class="self" href="#60">self</a>.blob_size
+<a href=#62 id=62 data-nosnippet>62</a>    }
+<a href=#63 id=63 data-nosnippet>63</a>
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="doccomment">/// Close the handle
+<a href=#65 id=65 data-nosnippet>65</a>    ///
+<a href=#66 id=66 data-nosnippet>66</a>    /// Even if an error is returned, the handle is still closed (from the sqlite documentation):
+<a href=#67 id=67 data-nosnippet>67</a>    ///
+<a href=#68 id=68 data-nosnippet>68</a>    /// &gt; The BLOB handle is closed unconditionally. Even if this routine returns an error code,
+<a href=#69 id=69 data-nosnippet>69</a>    /// &gt; the handle is still closed.
+<a href=#70 id=70 data-nosnippet>70</a>    </span><span class="kw">pub fn </span>close(<span class="kw-2">mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <span class="kw">crate</span>::result::<a href="../../result.rs.html#17-106">Error</a>&gt; {
+<a href=#71 id=71 data-nosnippet>71</a>        <a class="self" href="#70">self</a>.<a href="#74-96">close_inner</a>()
+<a href=#72 id=72 data-nosnippet>72</a>    }
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="kw">fn </span>close_inner(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;(), <span class="kw">crate</span>::result::<a href="../../result.rs.html#17-106">Error</a>&gt; {
+<a href=#75 id=75 data-nosnippet>75</a>        <span class="kw">let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(blob) = <a class="self" href="#74">self</a>.blob.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.take">take</a>() <span class="kw">else </span>{
+<a href=#76 id=76 data-nosnippet>76</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<span class="kw">crate</span>::result::Error::<a href="../../result.rs.html#105">ClosingHandle</a>(<span class="string">"handle already closed"</span>));
+<a href=#77 id=77 data-nosnippet>77</a>        };
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a>        <span class="comment">// SAFETY: `blob` came from a successful `sqlite3_blob_open`, and taking it out of `self`
+<a href=#80 id=80 data-nosnippet>80</a>        // guarantees that this open handle is closed at most once.
+<a href=#81 id=81 data-nosnippet>81</a>        //
+<a href=#82 id=82 data-nosnippet>82</a>        // From the sqlite3_blob_close documentation:
+<a href=#83 id=83 data-nosnippet>83</a>        //
+<a href=#84 id=84 data-nosnippet>84</a>        //     If an error occurs while committing the transaction, an error code is returned and
+<a href=#85 id=85 data-nosnippet>85</a>        //     the transaction rolled back.
+<a href=#86 id=86 data-nosnippet>86</a>        //
+<a href=#87 id=87 data-nosnippet>87</a>        // As we are in read-only mode here, this is not an issue
+<a href=#88 id=88 data-nosnippet>88</a>        </span><span class="kw">let </span>close_result = <span class="kw">unsafe </span>{ ffi::<a href="../../../../libsqlite3_sys/bindings/fn.sqlite3_blob_close.html">sqlite3_blob_close</a>(<a href="#75">blob</a>.<a href="https://doc.rust-lang.org/nightly/core/ptr/non_null/struct.NonNull.html#method.as_ptr">as_ptr</a>()) };
+<a href=#89 id=89 data-nosnippet>89</a>
+<a href=#90 id=90 data-nosnippet>90</a>        <span class="kw">if </span><a href="#88">close_result</a> != ffi::<a href="../../../../libsqlite3_sys/bindings/constant.SQLITE_OK.html">SQLITE_OK</a> {
+<a href=#91 id=91 data-nosnippet>91</a>            <span class="kw">let </span>error_message = <span class="kw">super</span>::<a href="mod.rs.html#820-822">error_message</a>(<a href="#88">close_result</a>);
+<a href=#92 id=92 data-nosnippet>92</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(<span class="kw">crate</span>::result::Error::<a href="../../result.rs.html#105">ClosingHandle</a>(<a href="#91">error_message</a>));
+<a href=#93 id=93 data-nosnippet>93</a>        }
+<a href=#94 id=94 data-nosnippet>94</a>
+<a href=#95 id=95 data-nosnippet>95</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(())
+<a href=#96 id=96 data-nosnippet>96</a>    }
+<a href=#97 id=97 data-nosnippet>97</a>}
+<a href=#98 id=98 data-nosnippet>98</a>
+<a href=#99 id=99 data-nosnippet>99</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#100 id=100 data-nosnippet>100</a>#[allow(clippy::std_instead_of_core)] </span><span class="comment">// needs a newer rust version
+<a href=#101 id=101 data-nosnippet>101</a></span><span class="kw">fn </span>to_io_error(error: core::num::<a href="https://doc.rust-lang.org/nightly/core/num/error/struct.TryFromIntError.html">TryFromIntError</a>) -&gt; std::io::<a href="https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html">Error</a> {
+<a href=#102 id=102 data-nosnippet>102</a>    std::io::<a href="https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html">Error</a>::<a href="https://doc.rust-lang.org/nightly/std/io/struct.Error.html#method.new">new</a>(std::io::ErrorKind::<a href="https://doc.rust-lang.org/nightly/core/io/error/enum.ErrorKind.html#variant.InvalidInput">InvalidInput</a>, <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<a href="#101">error</a>))
+<a href=#103 id=103 data-nosnippet>103</a>}
+<a href=#104 id=104 data-nosnippet>104</a>
+<a href=#105 id=105 data-nosnippet>105</a><span class="comment">// SEE https://github.com/rust-lang/rust/issues/48331
+<a href=#106 id=106 data-nosnippet>106</a></span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#107 id=107 data-nosnippet>107</a></span><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/alloc/io/read/trait.Read.html">std::io::Read</a> <span class="kw">for </span><a href="#24-31">SqliteReadOnlyBlob</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="kw">fn </span>read(<span class="kw-2">&amp;mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; std::io::<a href="https://doc.rust-lang.org/nightly/core/io/error/type.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#109 id=109 data-nosnippet>109</a>        <span class="kw">let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(blob) = <a class="self" href="#108">self</a>.blob <span class="kw">else </span>{
+<a href=#110 id=110 data-nosnippet>110</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(std::io::<a href="https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html">Error</a>::<a href="https://doc.rust-lang.org/nightly/std/io/struct.Error.html#method.other">other</a>(<span class="string">"SQLite blob handle is closed"</span>));
+<a href=#111 id=111 data-nosnippet>111</a>        };
+<a href=#112 id=112 data-nosnippet>112</a>        <span class="kw">let </span>buflen: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a> = buf.len().try_into().map_err(to_io_error)<span class="question-mark">?</span>;
+<a href=#113 id=113 data-nosnippet>113</a>        <span class="kw">let </span>offset: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a> = <span class="self">self</span>.read_index.try_into().map_err(to_io_error)<span class="question-mark">?</span>;
+<a href=#114 id=114 data-nosnippet>114</a>
+<a href=#115 id=115 data-nosnippet>115</a>        <span class="comment">// From the sqlite docs:
+<a href=#116 id=116 data-nosnippet>116</a>        //
+<a href=#117 id=117 data-nosnippet>117</a>        // &gt; If offset iOffset is less than N bytes from the end of the BLOB, SQLITE_ERROR is returned and no data is read.
+<a href=#118 id=118 data-nosnippet>118</a>        //
+<a href=#119 id=119 data-nosnippet>119</a>        // Thus we need to make sure to not provide a buffer that is too big for the remaining data
+<a href=#120 id=120 data-nosnippet>120</a>        // from the blob.
+<a href=#121 id=121 data-nosnippet>121</a>        </span><span class="kw">let </span>read_length: <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html">i32</a> = (i32::try_from(<span class="self">self</span>.blob_size)
+<a href=#122 id=122 data-nosnippet>122</a>            .map_err(to_io_error)<span class="question-mark">?
+<a href=#123 id=123 data-nosnippet>123</a>            </span>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i32.html#method.saturating_sub">saturating_sub</a>(<a href="#113">offset</a>))
+<a href=#124 id=124 data-nosnippet>124</a>        .<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.min">min</a>(<a href="#112">buflen</a>);
+<a href=#125 id=125 data-nosnippet>125</a>
+<a href=#126 id=126 data-nosnippet>126</a>        <span class="comment">// SAFETY: `blob` is `Some`, so the handle is open, and `'conn` keeps its connection alive.
+<a href=#127 id=127 data-nosnippet>127</a>        // `read_length` is at most `buf.len()` and the bytes left after `offset`, so the write
+<a href=#128 id=128 data-nosnippet>128</a>        // stays within `buf` and the read within the blob.
+<a href=#129 id=129 data-nosnippet>129</a>        </span><span class="kw">let </span>ret = <span class="kw">unsafe </span>{
+<a href=#130 id=130 data-nosnippet>130</a>            ffi::<a href="../../../../libsqlite3_sys/bindings/fn.sqlite3_blob_read.html">sqlite3_blob_read</a>(
+<a href=#131 id=131 data-nosnippet>131</a>                <a href="#109">blob</a>.<a href="https://doc.rust-lang.org/nightly/core/ptr/non_null/struct.NonNull.html#method.as_ptr">as_ptr</a>(),
+<a href=#132 id=132 data-nosnippet>132</a>                <a href="#108">buf</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.as_mut_ptr">as_mut_ptr</a>() <span class="kw">as </span><span class="kw-2">*mut </span>core::ffi::<a href="https://doc.rust-lang.org/nightly/core/ffi/enum.c_void.html">c_void</a>,
+<a href=#133 id=133 data-nosnippet>133</a>                <a href="#121">read_length</a>,
+<a href=#134 id=134 data-nosnippet>134</a>                <a href="#113">offset</a>,
+<a href=#135 id=135 data-nosnippet>135</a>            )
+<a href=#136 id=136 data-nosnippet>136</a>        };
+<a href=#137 id=137 data-nosnippet>137</a>
+<a href=#138 id=138 data-nosnippet>138</a>        <span class="kw">if </span><a href="#129">ret</a> != ffi::<a href="../../../../libsqlite3_sys/bindings/constant.SQLITE_OK.html">SQLITE_OK</a> {
+<a href=#139 id=139 data-nosnippet>139</a>            <span class="kw">let </span>error_message = <span class="kw">crate</span>::sqlite::connection::<a href="mod.rs.html#820-822">error_message</a>(<a href="#129">ret</a>);
+<a href=#140 id=140 data-nosnippet>140</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(std::io::<a href="https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html">Error</a>::<a href="https://doc.rust-lang.org/nightly/std/io/struct.Error.html#method.other">other</a>(<a href="#139">error_message</a>.<a href="https://doc.rust-lang.org/nightly/alloc/string/trait.ToString.html#tymethod.to_string">to_string</a>()));
+<a href=#141 id=141 data-nosnippet>141</a>        }
+<a href=#142 id=142 data-nosnippet>142</a>
+<a href=#143 id=143 data-nosnippet>143</a>        <a class="self" href="#108">self</a>.read_index += usize::try_from(read_length).map_err(to_io_error)<span class="question-mark">?</span>;
+<a href=#144 id=144 data-nosnippet>144</a><span class="expansion"><input id=expand-144 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!(<span class="self">self</span>.read_index &lt;= <span class="self">self</span>.blob_size) {
+        ::core::panicking::panic(<span class="string">"assertion failed: self.read_index &lt;= self.blob_size"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(<span class="self">self</span>.read_index &lt;= <span class="self">self</span>.blob_size)</span></span>;
+<a href=#145 id=145 data-nosnippet>145</a>
+<a href=#146 id=146 data-nosnippet>146</a>        <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from">try_from</a>(<a href="#121">read_length</a>).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map_err">map_err</a>(<a href="#101-103">to_io_error</a>)
+<a href=#147 id=147 data-nosnippet>147</a>    }
+<a href=#148 id=148 data-nosnippet>148</a>}
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#151 id=151 data-nosnippet>151</a></span><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/io/seek/trait.Seek.html">std::io::Seek</a> <span class="kw">for </span><a href="#24-31">SqliteReadOnlyBlob</a>&lt;<span class="lifetime">'_</span>&gt; {
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="kw">fn </span>seek(<span class="kw-2">&amp;mut </span><span class="self">self</span>, pos: std::io::<a href="https://doc.rust-lang.org/nightly/core/io/seek/enum.SeekFrom.html">SeekFrom</a>) -&gt; std::io::<a href="https://doc.rust-lang.org/nightly/core/io/error/type.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt; {
+<a href=#153 id=153 data-nosnippet>153</a>        <span class="kw">match </span><a href="#152">pos</a> {
+<a href=#154 id=154 data-nosnippet>154</a>            std::io::SeekFrom::<a href="https://doc.rust-lang.org/nightly/core/io/seek/enum.SeekFrom.html#variant.Start">Start</a>(n) =&gt; {
+<a href=#155 id=155 data-nosnippet>155</a>                <a class="self" href="#152">self</a>.read_index = usize::try_from(n).map_err(to_io_error)<span class="question-mark">?</span>.<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.min">min</a>(<a class="self" href="#152">self</a>.blob_size);
+<a href=#156 id=156 data-nosnippet>156</a>            }
+<a href=#157 id=157 data-nosnippet>157</a>            std::io::SeekFrom::<a href="https://doc.rust-lang.org/nightly/core/io/seek/enum.SeekFrom.html#variant.End">End</a>(n) =&gt; {
+<a href=#158 id=158 data-nosnippet>158</a>                <a class="self" href="#152">self</a>.read_index = <span class="kw">if </span><a href="#157">n</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html#method.is_positive">is_positive</a>() {
+<a href=#159 id=159 data-nosnippet>159</a>                    <a class="self" href="#152">self</a>.blob_size
+<a href=#160 id=160 data-nosnippet>160</a>                } <span class="kw">else </span>{
+<a href=#161 id=161 data-nosnippet>161</a>                    <span class="self">self</span>.blob_size
+<a href=#162 id=162 data-nosnippet>162</a>                        .checked_sub(usize::try_from(n.unsigned_abs()).map_err(to_io_error)<span class="question-mark">?</span>)
+<a href=#163 id=163 data-nosnippet>163</a>                        .ok_or(std::io::ErrorKind::InvalidInput)<span class="question-mark">?
+<a href=#164 id=164 data-nosnippet>164</a>                </span>};
+<a href=#165 id=165 data-nosnippet>165</a>            }
+<a href=#166 id=166 data-nosnippet>166</a>            std::io::SeekFrom::<a href="https://doc.rust-lang.org/nightly/core/io/seek/enum.SeekFrom.html#variant.Current">Current</a>(n) =&gt; {
+<a href=#167 id=167 data-nosnippet>167</a>                <span class="kw">let </span>n = isize::try_from(n).map_err(to_io_error)<span class="question-mark">?</span>;
+<a href=#168 id=168 data-nosnippet>168</a>
+<a href=#169 id=169 data-nosnippet>169</a>                <span class="kw">if </span><a href="#167">n</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.isize.html#method.is_negative">is_negative</a>() {
+<a href=#170 id=170 data-nosnippet>170</a>                    <a class="self" href="#152">self</a>.read_index = <span class="self">self
+<a href=#171 id=171 data-nosnippet>171</a>                        </span>.read_index
+<a href=#172 id=172 data-nosnippet>172</a>                        .checked_sub(n.unsigned_abs())
+<a href=#173 id=173 data-nosnippet>173</a>                        .ok_or(std::io::ErrorKind::InvalidInput)<span class="question-mark">?</span>;
+<a href=#174 id=174 data-nosnippet>174</a>                } <span class="kw">else </span>{
+<a href=#175 id=175 data-nosnippet>175</a>                    <a class="self" href="#152">self</a>.read_index = (<a class="self" href="#152">self</a>.read_index + <a href="#167">n</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.isize.html#method.unsigned_abs">unsigned_abs</a>()).<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#method.min">min</a>(<a class="self" href="#152">self</a>.blob_size);
+<a href=#176 id=176 data-nosnippet>176</a>                }
+<a href=#177 id=177 data-nosnippet>177</a>            }
+<a href=#178 id=178 data-nosnippet>178</a>        }
+<a href=#179 id=179 data-nosnippet>179</a>
+<a href=#180 id=180 data-nosnippet>180</a>        <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from">try_from</a>(<a class="self" href="#152">self</a>.read_index).<a href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#method.map_err">map_err</a>(<a href="#101-103">to_io_error</a>)
+<a href=#181 id=181 data-nosnippet>181</a>    }
+<a href=#182 id=182 data-nosnippet>182</a>}
+<a href=#183 id=183 data-nosnippet>183</a>
+<a href=#184 id=184 data-nosnippet>184</a><span class="kw">impl </span><a href="mod.rs.html#194-216">SqliteConnection</a> {
+<a href=#185 id=185 data-nosnippet>185</a>    <span class="doccomment">/// Returns an object that can be used to stream a BLOB from the database
+<a href=#186 id=186 data-nosnippet>186</a>    ///
+<a href=#187 id=187 data-nosnippet>187</a>    /// # Example
+<a href=#188 id=188 data-nosnippet>188</a>    ///
+<a href=#189 id=189 data-nosnippet>189</a>    /// ```rust
+<a href=#190 id=190 data-nosnippet>190</a>    /// # include!("../../doctest_setup.rs");
+<a href=#191 id=191 data-nosnippet>191</a>    /// # table! {
+<a href=#192 id=192 data-nosnippet>192</a>    /// #     myblobs {
+<a href=#193 id=193 data-nosnippet>193</a>    /// #         id -&gt; Integer,
+<a href=#194 id=194 data-nosnippet>194</a>    /// #         mydata -&gt; Blob,
+<a href=#195 id=195 data-nosnippet>195</a>    /// #     }
+<a href=#196 id=196 data-nosnippet>196</a>    /// # }
+<a href=#197 id=197 data-nosnippet>197</a>    /// # fn main() {
+<a href=#198 id=198 data-nosnippet>198</a>    /// #     run_test().unwrap();
+<a href=#199 id=199 data-nosnippet>199</a>    /// # }
+<a href=#200 id=200 data-nosnippet>200</a>    /// # fn run_test() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#201 id=201 data-nosnippet>201</a>    /// use std::io::Read;
+<a href=#202 id=202 data-nosnippet>202</a>    /// use diesel::connection::SimpleConnection;
+<a href=#203 id=203 data-nosnippet>203</a>    /// let conn = &amp;mut SqliteConnection::establish(":memory:").unwrap();
+<a href=#204 id=204 data-nosnippet>204</a>    /// conn.batch_execute("CREATE TABLE myblobs (id INTEGER PRIMARY KEY, mydata BLOB)")?;
+<a href=#205 id=205 data-nosnippet>205</a>    /// conn.batch_execute("INSERT INTO myblobs (mydata) VALUES ('abc')")?;
+<a href=#206 id=206 data-nosnippet>206</a>    /// let mut data = conn.get_read_only_blob(myblobs::mydata, 1)?;
+<a href=#207 id=207 data-nosnippet>207</a>    /// let mut buf = vec![];
+<a href=#208 id=208 data-nosnippet>208</a>    /// data.read_to_end(&amp;mut buf)?;
+<a href=#209 id=209 data-nosnippet>209</a>    /// assert_eq!(buf, b"abc");
+<a href=#210 id=210 data-nosnippet>210</a>    /// # Ok(())
+<a href=#211 id=211 data-nosnippet>211</a>    /// # }
+<a href=#212 id=212 data-nosnippet>212</a>    /// ```
+<a href=#213 id=213 data-nosnippet>213</a>    </span><span class="kw">pub fn </span>get_read_only_blob&lt;<span class="lifetime">'conn</span>, <span class="lifetime">'query</span>, U&gt;(
+<a href=#214 id=214 data-nosnippet>214</a>        <span class="kw-2">&amp;</span><span class="lifetime">'conn </span><span class="self">self</span>,
+<a href=#215 id=215 data-nosnippet>215</a>        blob_column: U,
+<a href=#216 id=216 data-nosnippet>216</a>        row_id: <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>,
+<a href=#217 id=217 data-nosnippet>217</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="#24-31">SqliteReadOnlyBlob</a>&lt;<span class="lifetime">'conn</span>&gt;, <a href="../../result.rs.html#17-106">Error</a>&gt;
+<a href=#218 id=218 data-nosnippet>218</a>    <span class="kw">where
+<a href=#219 id=219 data-nosnippet>219</a>        </span><span class="lifetime">'query</span>: <span class="lifetime">'conn</span>,
+<a href=#220 id=220 data-nosnippet>220</a>        U: <a href="../../query_source/mod.rs.html#364-372">ColumnHasTable</a>,
+<a href=#221 id=221 data-nosnippet>221</a>        U::Table: <a href="../../query_source/mod.rs.html#301-309">NamedTable</a>,
+<a href=#222 id=222 data-nosnippet>222</a>    {
+<a href=#223 id=223 data-nosnippet>223</a>        <span class="kw">let </span>table = <a href="#215">blob_column</a>.<a href="../../query_source/mod.rs.html#369">table</a>();
+<a href=#224 id=224 data-nosnippet>224</a>
+<a href=#225 id=225 data-nosnippet>225</a>        <span class="kw">let </span>database_name = <a href="#223">table</a>.<a href="../../query_source/mod.rs.html#306">schema</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_or">unwrap_or</a>(<span class="string">"main"</span>);
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="kw">let </span>column_name = <a href="#215">blob_column</a>.<a href="../../query_source/mod.rs.html#371">name</a>();
+<a href=#227 id=227 data-nosnippet>227</a>        <span class="kw">let </span>table_name = <a href="#223">table</a>.<a href="../../query_source/mod.rs.html#308">table</a>();
+<a href=#228 id=228 data-nosnippet>228</a>
+<a href=#229 id=229 data-nosnippet>229</a>        <a class="self" href="#214">self</a>.raw_connection
+<a href=#230 id=230 data-nosnippet>230</a>            .<a href="raw.rs.html#403-450">blob_open</a>(<a href="#225">database_name</a>, <a href="#227">table_name</a>, <a href="#226">column_name</a>, <a href="#216">row_id</a>)
+<a href=#231 id=231 data-nosnippet>231</a>    }
+<a href=#232 id=232 data-nosnippet>232</a>}
+<a href=#233 id=233 data-nosnippet>233</a>
+<a href=#234 id=234 data-nosnippet>234</a><span class="attr">#[cfg(test)]
+<a href=#235 id=235 data-nosnippet>235</a></span><span class="kw">mod </span>tests {
+<a href=#236 id=236 data-nosnippet>236</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="kw">use </span><span class="kw">crate</span>::prelude::<span class="kw-2">*</span>;
+<a href=#238 id=238 data-nosnippet>238</a>
+<a href=#239 id=239 data-nosnippet>239</a>    <span class="kw">fn </span>connection() -&gt; SqliteConnection {
+<a href=#240 id=240 data-nosnippet>240</a>        SqliteConnection::establish(<span class="string">":memory:"</span>).unwrap()
+<a href=#241 id=241 data-nosnippet>241</a>    }
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#244 id=244 data-nosnippet>244</a>    </span><span class="kw">fn </span>read_bytes_from_blob() {
+<a href=#245 id=245 data-nosnippet>245</a>        <span class="macro">table!</span> {
+<a href=#246 id=246 data-nosnippet>246</a>            blobs {
+<a href=#247 id=247 data-nosnippet>247</a>                id -&gt; Integer,
+<a href=#248 id=248 data-nosnippet>248</a>                data -&gt; Blob,
+<a href=#249 id=249 data-nosnippet>249</a>                data2 -&gt; Blob,
+<a href=#250 id=250 data-nosnippet>250</a>            }
+<a href=#251 id=251 data-nosnippet>251</a>        }
+<a href=#252 id=252 data-nosnippet>252</a>
+<a href=#253 id=253 data-nosnippet>253</a>        <span class="kw">use </span>std::io::Read;
+<a href=#254 id=254 data-nosnippet>254</a>
+<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#256 id=256 data-nosnippet>256</a>
+<a href=#257 id=257 data-nosnippet>257</a>        <span class="kw">let _ </span>=
+<a href=#258 id=258 data-nosnippet>258</a>            <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB, data2 BLOB)"</span>)
+<a href=#259 id=259 data-nosnippet>259</a>                .execute(conn);
+<a href=#260 id=260 data-nosnippet>260</a>
+<a href=#261 id=261 data-nosnippet>261</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(
+<a href=#262 id=262 data-nosnippet>262</a>            <span class="string">"INSERT INTO blobs (data, data2) VALUES ('abc', 'def'), ('123', '456')"</span>,
+<a href=#263 id=263 data-nosnippet>263</a>        )
+<a href=#264 id=264 data-nosnippet>264</a>        .execute(conn);
+<a href=#265 id=265 data-nosnippet>265</a>
+<a href=#266 id=266 data-nosnippet>266</a>        <span class="kw">let </span><span class="kw-2">mut </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#267 id=267 data-nosnippet>267</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+<a href=#268 id=268 data-nosnippet>268</a>        data.read_to_end(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#269 id=269 data-nosnippet>269</a>
+<a href=#270 id=270 data-nosnippet>270</a>        <span class="macro">assert_eq!</span>(buf, <span class="string">b"abc"</span>);
+<a href=#271 id=271 data-nosnippet>271</a>
+<a href=#272 id=272 data-nosnippet>272</a>        <span class="kw">let </span><span class="kw-2">mut </span>data2 = conn.get_read_only_blob(blobs::data2, <span class="number">1</span>).unwrap();
+<a href=#273 id=273 data-nosnippet>273</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+<a href=#274 id=274 data-nosnippet>274</a>        data2.read_to_end(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#275 id=275 data-nosnippet>275</a>
+<a href=#276 id=276 data-nosnippet>276</a>        <span class="macro">assert_eq!</span>(buf, <span class="string">b"def"</span>);
+<a href=#277 id=277 data-nosnippet>277</a>    }
+<a href=#278 id=278 data-nosnippet>278</a>
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#280 id=280 data-nosnippet>280</a>    </span><span class="kw">fn </span>read_seek_bytes() {
+<a href=#281 id=281 data-nosnippet>281</a>        <span class="macro">table!</span> {
+<a href=#282 id=282 data-nosnippet>282</a>            blobs {
+<a href=#283 id=283 data-nosnippet>283</a>                id -&gt; Integer,
+<a href=#284 id=284 data-nosnippet>284</a>                data -&gt; Blob,
+<a href=#285 id=285 data-nosnippet>285</a>            }
+<a href=#286 id=286 data-nosnippet>286</a>        }
+<a href=#287 id=287 data-nosnippet>287</a>
+<a href=#288 id=288 data-nosnippet>288</a>        <span class="kw">use </span>std::io::Read;
+<a href=#289 id=289 data-nosnippet>289</a>        <span class="kw">use </span>std::io::Seek;
+<a href=#290 id=290 data-nosnippet>290</a>        <span class="kw">use </span>std::io::SeekFrom;
+<a href=#291 id=291 data-nosnippet>291</a>
+<a href=#292 id=292 data-nosnippet>292</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#293 id=293 data-nosnippet>293</a>
+<a href=#294 id=294 data-nosnippet>294</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)"</span>)
+<a href=#295 id=295 data-nosnippet>295</a>            .execute(conn);
+<a href=#296 id=296 data-nosnippet>296</a>
+<a href=#297 id=297 data-nosnippet>297</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('abcdefghi')"</span>).execute(conn);
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a>        <span class="kw">let </span><span class="kw-2">mut </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#300 id=300 data-nosnippet>300</a>
+<a href=#301 id=301 data-nosnippet>301</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#302 id=302 data-nosnippet>302</a>        <span class="macro">assert_eq!</span>(data.read(<span class="kw-2">&amp;mut </span>buf).unwrap(), <span class="number">1</span>);
+<a href=#303 id=303 data-nosnippet>303</a>        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>buf, <span class="string">b"a"</span>);
+<a href=#304 id=304 data-nosnippet>304</a>
+<a href=#305 id=305 data-nosnippet>305</a>        <span class="comment">// Seek one forward
+<a href=#306 id=306 data-nosnippet>306</a>        </span><span class="macro">assert_eq!</span>(data.seek(SeekFrom::Current(<span class="number">1</span>)).unwrap(), <span class="number">2</span>);
+<a href=#307 id=307 data-nosnippet>307</a>
+<a href=#308 id=308 data-nosnippet>308</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="macro">assert_eq!</span>(data.read(<span class="kw-2">&amp;mut </span>buf).unwrap(), <span class="number">1</span>);
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>buf, <span class="string">b"c"</span>);
+<a href=#311 id=311 data-nosnippet>311</a>
+<a href=#312 id=312 data-nosnippet>312</a>        <span class="comment">// Seek back to start
+<a href=#313 id=313 data-nosnippet>313</a>        </span><span class="macro">assert_eq!</span>(data.seek(SeekFrom::Start(<span class="number">0</span>)).unwrap(), <span class="number">0</span>);
+<a href=#314 id=314 data-nosnippet>314</a>
+<a href=#315 id=315 data-nosnippet>315</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#316 id=316 data-nosnippet>316</a>        <span class="macro">assert_eq!</span>(data.read(<span class="kw-2">&amp;mut </span>buf).unwrap(), <span class="number">1</span>);
+<a href=#317 id=317 data-nosnippet>317</a>        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>buf, <span class="string">b"a"</span>);
+<a href=#318 id=318 data-nosnippet>318</a>
+<a href=#319 id=319 data-nosnippet>319</a>        <span class="comment">// Seek relative to end
+<a href=#320 id=320 data-nosnippet>320</a>        </span><span class="macro">assert_eq!</span>(data.seek(SeekFrom::End(-<span class="number">2</span>)).unwrap(), <span class="number">7</span>);
+<a href=#321 id=321 data-nosnippet>321</a>
+<a href=#322 id=322 data-nosnippet>322</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#323 id=323 data-nosnippet>323</a>        <span class="macro">assert_eq!</span>(data.read(<span class="kw-2">&amp;mut </span>buf).unwrap(), <span class="number">1</span>);
+<a href=#324 id=324 data-nosnippet>324</a>        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>buf, <span class="string">b"h"</span>);
+<a href=#325 id=325 data-nosnippet>325</a>
+<a href=#326 id=326 data-nosnippet>326</a>        <span class="comment">// Seek after end
+<a href=#327 id=327 data-nosnippet>327</a>        </span>data.seek(SeekFrom::Current(<span class="number">100</span>)).unwrap();
+<a href=#328 id=328 data-nosnippet>328</a>
+<a href=#329 id=329 data-nosnippet>329</a>        <span class="comment">// Now we don't get any bytes back
+<a href=#330 id=330 data-nosnippet>330</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#331 id=331 data-nosnippet>331</a>        <span class="macro">assert_eq!</span>(data.read(<span class="kw-2">&amp;mut </span>buf).unwrap(), <span class="number">0</span>);
+<a href=#332 id=332 data-nosnippet>332</a>    }
+<a href=#333 id=333 data-nosnippet>333</a>
+<a href=#334 id=334 data-nosnippet>334</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#335 id=335 data-nosnippet>335</a>    </span><span class="kw">fn </span>before_start_blob_seeks_return_errors_without_moving_cursor() {
+<a href=#336 id=336 data-nosnippet>336</a>        <span class="macro">table!</span> {
+<a href=#337 id=337 data-nosnippet>337</a>            blobs {
+<a href=#338 id=338 data-nosnippet>338</a>                id -&gt; Integer,
+<a href=#339 id=339 data-nosnippet>339</a>                data -&gt; Blob,
+<a href=#340 id=340 data-nosnippet>340</a>            }
+<a href=#341 id=341 data-nosnippet>341</a>        }
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>        <span class="kw">use </span>std::io::{ErrorKind, Read, Seek, SeekFrom};
+<a href=#344 id=344 data-nosnippet>344</a>
+<a href=#345 id=345 data-nosnippet>345</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#346 id=346 data-nosnippet>346</a>        <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)"</span>)
+<a href=#347 id=347 data-nosnippet>347</a>            .execute(conn)
+<a href=#348 id=348 data-nosnippet>348</a>            .unwrap();
+<a href=#349 id=349 data-nosnippet>349</a>        <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('abc')"</span>)
+<a href=#350 id=350 data-nosnippet>350</a>            .execute(conn)
+<a href=#351 id=351 data-nosnippet>351</a>            .unwrap();
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a>        <span class="kw">let </span><span class="kw-2">mut </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#354 id=354 data-nosnippet>354</a>        <span class="kw">for </span>position <span class="kw">in </span>[
+<a href=#355 id=355 data-nosnippet>355</a>            SeekFrom::End(-<span class="number">4</span>),
+<a href=#356 id=356 data-nosnippet>356</a>            SeekFrom::Current(-<span class="number">2</span>),
+<a href=#357 id=357 data-nosnippet>357</a>            SeekFrom::End(i64::MIN),
+<a href=#358 id=358 data-nosnippet>358</a>            SeekFrom::Current(i64::MIN),
+<a href=#359 id=359 data-nosnippet>359</a>        ] {
+<a href=#360 id=360 data-nosnippet>360</a>            <span class="macro">assert_eq!</span>(data.seek(SeekFrom::Start(<span class="number">1</span>)).unwrap(), <span class="number">1</span>);
+<a href=#361 id=361 data-nosnippet>361</a>            <span class="macro">assert_eq!</span>(
+<a href=#362 id=362 data-nosnippet>362</a>                data.seek(position).unwrap_err().kind(),
+<a href=#363 id=363 data-nosnippet>363</a>                ErrorKind::InvalidInput
+<a href=#364 id=364 data-nosnippet>364</a>            );
+<a href=#365 id=365 data-nosnippet>365</a>            <span class="macro">assert_eq!</span>(data.stream_position().unwrap(), <span class="number">1</span>);
+<a href=#366 id=366 data-nosnippet>366</a>
+<a href=#367 id=367 data-nosnippet>367</a>            <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#368 id=368 data-nosnippet>368</a>            data.read_exact(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#369 id=369 data-nosnippet>369</a>            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>buf, <span class="string">b"b"</span>);
+<a href=#370 id=370 data-nosnippet>370</a>        }
+<a href=#371 id=371 data-nosnippet>371</a>
+<a href=#372 id=372 data-nosnippet>372</a>        <span class="macro">assert_eq!</span>(data.seek(SeekFrom::End(-<span class="number">3</span>)).unwrap(), <span class="number">0</span>);
+<a href=#373 id=373 data-nosnippet>373</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">1</span>];
+<a href=#374 id=374 data-nosnippet>374</a>        data.read_exact(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#375 id=375 data-nosnippet>375</a>        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>buf, <span class="string">b"a"</span>);
+<a href=#376 id=376 data-nosnippet>376</a>        <span class="macro">assert_eq!</span>(data.seek(SeekFrom::Current(-<span class="number">1</span>)).unwrap(), <span class="number">0</span>);
+<a href=#377 id=377 data-nosnippet>377</a>    }
+<a href=#378 id=378 data-nosnippet>378</a>
+<a href=#379 id=379 data-nosnippet>379</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#380 id=380 data-nosnippet>380</a>    </span><span class="kw">fn </span>use_conn_after_blob_drop() {
+<a href=#381 id=381 data-nosnippet>381</a>        <span class="macro">table!</span> {
+<a href=#382 id=382 data-nosnippet>382</a>            blobs {
+<a href=#383 id=383 data-nosnippet>383</a>                id -&gt; Integer,
+<a href=#384 id=384 data-nosnippet>384</a>                data -&gt; Blob,
+<a href=#385 id=385 data-nosnippet>385</a>            }
+<a href=#386 id=386 data-nosnippet>386</a>        }
+<a href=#387 id=387 data-nosnippet>387</a>
+<a href=#388 id=388 data-nosnippet>388</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#389 id=389 data-nosnippet>389</a>
+<a href=#390 id=390 data-nosnippet>390</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)"</span>)
+<a href=#391 id=391 data-nosnippet>391</a>            .execute(conn);
+<a href=#392 id=392 data-nosnippet>392</a>
+<a href=#393 id=393 data-nosnippet>393</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('abc')"</span>).execute(conn);
+<a href=#394 id=394 data-nosnippet>394</a>
+<a href=#395 id=395 data-nosnippet>395</a>        <span class="kw">let </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#396 id=396 data-nosnippet>396</a>        drop(data);
+<a href=#397 id=397 data-nosnippet>397</a>
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('def')"</span>).execute(conn);
+<a href=#399 id=399 data-nosnippet>399</a>    }
+<a href=#400 id=400 data-nosnippet>400</a>
+<a href=#401 id=401 data-nosnippet>401</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#402 id=402 data-nosnippet>402</a>    </span><span class="kw">fn </span>use_conn_after_blob_close() {
+<a href=#403 id=403 data-nosnippet>403</a>        <span class="comment">// Explicit close previously let `Drop` close the native handle a second time.
+<a href=#404 id=404 data-nosnippet>404</a>        // Reusing the connection verifies that the handle is closed exactly once.
+<a href=#405 id=405 data-nosnippet>405</a>        </span><span class="macro">table!</span> {
+<a href=#406 id=406 data-nosnippet>406</a>            blobs {
+<a href=#407 id=407 data-nosnippet>407</a>                id -&gt; Integer,
+<a href=#408 id=408 data-nosnippet>408</a>                data -&gt; Blob,
+<a href=#409 id=409 data-nosnippet>409</a>            }
+<a href=#410 id=410 data-nosnippet>410</a>        }
+<a href=#411 id=411 data-nosnippet>411</a>
+<a href=#412 id=412 data-nosnippet>412</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#413 id=413 data-nosnippet>413</a>
+<a href=#414 id=414 data-nosnippet>414</a>        <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)"</span>)
+<a href=#415 id=415 data-nosnippet>415</a>            .execute(conn)
+<a href=#416 id=416 data-nosnippet>416</a>            .unwrap();
+<a href=#417 id=417 data-nosnippet>417</a>        <span class="macro">assert_eq!</span>(
+<a href=#418 id=418 data-nosnippet>418</a>            <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('abc')"</span>)
+<a href=#419 id=419 data-nosnippet>419</a>                .execute(conn)
+<a href=#420 id=420 data-nosnippet>420</a>                .unwrap(),
+<a href=#421 id=421 data-nosnippet>421</a>            <span class="number">1
+<a href=#422 id=422 data-nosnippet>422</a>        </span>);
+<a href=#423 id=423 data-nosnippet>423</a>
+<a href=#424 id=424 data-nosnippet>424</a>        <span class="kw">let </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#425 id=425 data-nosnippet>425</a>        data.close().unwrap();
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>        <span class="macro">assert_eq!</span>(
+<a href=#428 id=428 data-nosnippet>428</a>            <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('def')"</span>)
+<a href=#429 id=429 data-nosnippet>429</a>                .execute(conn)
+<a href=#430 id=430 data-nosnippet>430</a>                .unwrap(),
+<a href=#431 id=431 data-nosnippet>431</a>            <span class="number">1
+<a href=#432 id=432 data-nosnippet>432</a>        </span>);
+<a href=#433 id=433 data-nosnippet>433</a>        <span class="macro">assert_eq!</span>(blobs::table.count().get_result::&lt;i64&gt;(conn).unwrap(), <span class="number">2</span>);
+<a href=#434 id=434 data-nosnippet>434</a>    }
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a>    <span class="attr">#[diesel_test_helper::test]
+<a href=#437 id=437 data-nosnippet>437</a>    </span><span class="kw">fn </span>blob_transaction() {
+<a href=#438 id=438 data-nosnippet>438</a>        <span class="macro">table!</span> {
+<a href=#439 id=439 data-nosnippet>439</a>            blobs {
+<a href=#440 id=440 data-nosnippet>440</a>                id -&gt; Integer,
+<a href=#441 id=441 data-nosnippet>441</a>                data -&gt; Blob,
+<a href=#442 id=442 data-nosnippet>442</a>            }
+<a href=#443 id=443 data-nosnippet>443</a>        }
+<a href=#444 id=444 data-nosnippet>444</a>
+<a href=#445 id=445 data-nosnippet>445</a>        <span class="kw">use </span>std::io::Read;
+<a href=#446 id=446 data-nosnippet>446</a>
+<a href=#447 id=447 data-nosnippet>447</a>        <span class="kw">let </span>conn = <span class="kw-2">&amp;mut </span>connection();
+<a href=#448 id=448 data-nosnippet>448</a>
+<a href=#449 id=449 data-nosnippet>449</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"CREATE TABLE blobs (id INTEGER PRIMARY KEY, data BLOB)"</span>)
+<a href=#450 id=450 data-nosnippet>450</a>            .execute(conn);
+<a href=#451 id=451 data-nosnippet>451</a>
+<a href=#452 id=452 data-nosnippet>452</a>        <span class="kw">let _ </span>= <span class="kw">crate</span>::sql_query(<span class="string">"INSERT INTO blobs (data) VALUES ('abc')"</span>).execute(conn);
+<a href=#453 id=453 data-nosnippet>453</a>
+<a href=#454 id=454 data-nosnippet>454</a>        {
+<a href=#455 id=455 data-nosnippet>455</a>            <span class="kw">let </span><span class="kw-2">mut </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#456 id=456 data-nosnippet>456</a>            <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+<a href=#457 id=457 data-nosnippet>457</a>            data.read_to_end(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#458 id=458 data-nosnippet>458</a>            <span class="macro">assert_eq!</span>(buf, <span class="string">b"abc"</span>);
+<a href=#459 id=459 data-nosnippet>459</a>        }
+<a href=#460 id=460 data-nosnippet>460</a>
+<a href=#461 id=461 data-nosnippet>461</a>        <span class="kw">let </span>res = conn.exclusive_transaction(|conn| {
+<a href=#462 id=462 data-nosnippet>462</a>            <span class="kw">crate</span>::sql_query(<span class="string">"UPDATE blobs SET data = 'def' WHERE id = 1"</span>).execute(conn)<span class="question-mark">?</span>;
+<a href=#463 id=463 data-nosnippet>463</a>
+<a href=#464 id=464 data-nosnippet>464</a>            <span class="kw">let </span><span class="kw-2">mut </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#465 id=465 data-nosnippet>465</a>            <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+<a href=#466 id=466 data-nosnippet>466</a>            data.read_to_end(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#467 id=467 data-nosnippet>467</a>            <span class="macro">assert_eq!</span>(buf, <span class="string">b"def"</span>);
+<a href=#468 id=468 data-nosnippet>468</a>
+<a href=#469 id=469 data-nosnippet>469</a>            <span class="prelude-ty">Result</span>::&lt;(), <span class="kw">_</span>&gt;::Err(Error::RollbackTransaction)
+<a href=#470 id=470 data-nosnippet>470</a>        });
+<a href=#471 id=471 data-nosnippet>471</a>
+<a href=#472 id=472 data-nosnippet>472</a>        <span class="macro">assert_eq!</span>(res.unwrap_err(), Error::RollbackTransaction);
+<a href=#473 id=473 data-nosnippet>473</a>
+<a href=#474 id=474 data-nosnippet>474</a>        <span class="kw">let </span><span class="kw-2">mut </span>data = conn.get_read_only_blob(blobs::data, <span class="number">1</span>).unwrap();
+<a href=#475 id=475 data-nosnippet>475</a>        <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
+<a href=#476 id=476 data-nosnippet>476</a>        data.read_to_end(<span class="kw-2">&amp;mut </span>buf).unwrap();
+<a href=#477 id=477 data-nosnippet>477</a>        <span class="macro">assert_eq!</span>(buf, <span class="string">b"abc"</span>);
+<a href=#478 id=478 data-nosnippet>478</a>    }
+<a href=#479 id=479 data-nosnippet>479</a>}
+</code></pre></div></section></main></body></html>

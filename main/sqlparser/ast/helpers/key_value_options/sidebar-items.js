@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["KeyValueOptionKind","KeyValueOptionsDelimiter"],"struct":["KeyValueOption","KeyValueOptions"]};

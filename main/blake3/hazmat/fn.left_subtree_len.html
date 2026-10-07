@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Given the length in bytes of either a complete input or a subtree input, return the number of bytes that belong to its left child subtree. The rest belong to its right child subtree."><title>left_subtree_len in blake3::hazmat - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="blake3" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (8d1a76430 2026-10-06)" data-channel="nightly" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">left_subtree_len</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../blake3/index.html">blake3</a><span class="version">1.8.7</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">left_<wbr>subtree_<wbr>len</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In blake3::<wbr>hazmat</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">blake3</a>::<wbr><a href="index.html">hazmat</a></div><h1>Function <span class="fn">left_<wbr>subtree_<wbr>len</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/blake3/hazmat.rs.html#378-382">Source</a> </span></div><pre class="rust item-decl"><code>pub fn left_subtree_len(input_len: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u64.html">u64</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u64.html">u64</a></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Given the length in bytes of either a complete input or a subtree input, return the number of
+bytes that belong to its left child subtree. The rest belong to its right child subtree.</p>
+<p>Concretely, this function returns the largest power-of-two number of bytes that’s strictly less
+than <code>input_len</code>. This leads to a tree where all left subtrees are “complete” and at least as
+large as their sibling right subtrees, as specified in section 2.1 of <a href="https://github.com/BLAKE3-team/BLAKE3-specs/blob/master/blake3.pdf">the BLAKE3
+paper</a>. For example, if an
+input is exactly two chunks, the left subtree gets the first chunk and the right subtree gets
+the second chunk. But if an input is two chunks plus one more byte, then its left subtree gets
+two chunks, and its right subtree only gets one byte.</p>
+<p>This function isn’t meaningful for one chunk of input, because chunks don’t have children. It
+currently panics in debug mode if <code>input_len &lt;= CHUNK_LEN</code>.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>Hash a input of random length as two subtrees:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>blake3::hazmat::{left_subtree_len, merge_subtrees_root, HasherExt, Mode};
+<span class="kw">use </span>blake3::{Hasher, CHUNK_LEN};
+
+<span class="comment">// Generate a random-length input. Note that to be split into two subtrees, the input length
+// must be greater than CHUNK_LEN.
+</span><span class="kw">let </span>input_len = rand::random_range(CHUNK_LEN + <span class="number">1</span>..<span class="number">1_000_000</span>);
+<span class="kw">let </span><span class="kw-2">mut </span>input = <span class="macro">vec!</span>[<span class="number">0</span>; input_len];
+rand::fill(<span class="kw-2">&amp;mut </span>input[..]);
+
+<span class="comment">// Compute the left and right subtree hashes and then the root hash. left_subtree_len() tells
+// us exactly where to split the input. Any other split would either panic (if we're lucky) or
+// lead to an incorrect root hash.
+</span><span class="kw">let </span>left_len = left_subtree_len(input_len <span class="kw">as </span>u64) <span class="kw">as </span>usize;
+<span class="kw">let </span>left_subtree_cv = Hasher::new()
+    .update(<span class="kw-2">&amp;</span>input[..left_len])
+    .finalize_non_root();
+<span class="kw">let </span>right_subtree_cv = Hasher::new()
+    .set_input_offset(left_len <span class="kw">as </span>u64)
+    .update(<span class="kw-2">&amp;</span>input[left_len..])
+    .finalize_non_root();
+<span class="kw">let </span>root_hash = merge_subtrees_root(<span class="kw-2">&amp;</span>left_subtree_cv, <span class="kw-2">&amp;</span>right_subtree_cv, Mode::Hash);
+
+<span class="comment">// Double check the answer.
+</span><span class="macro">assert_eq!</span>(root_hash, blake3::hash(<span class="kw-2">&amp;</span>input));</code></pre></div></div></details></section></div></main></body></html>

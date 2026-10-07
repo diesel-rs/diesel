@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MaybeCached","PrepareForCache","StatementCacheKey"],"mod":["strategy"],"struct":["StatementCache"],"trait":["QueryFragmentForCachedStatement","StatementCallbackReturnType"]};
