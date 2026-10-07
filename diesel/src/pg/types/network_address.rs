@@ -113,7 +113,7 @@ macro_rules! impl_Sql {
                         let addr = if net_type == 0 {
                             net.ip().octets()
                         } else {
-                            net.network().octets()
+                            network_v4(net).octets()
                         };
                         data[0] = af;
                         data[1] = prefix;
@@ -130,7 +130,7 @@ macro_rules! impl_Sql {
                         let addr = if net_type == 0 {
                             net.ip().octets()
                         } else {
-                            net.network().octets()
+                            network_v6(net).octets()
                         };
                         data[0] = af;
                         data[1] = prefix;
@@ -147,6 +147,18 @@ macro_rules! impl_Sql {
 
 impl_Sql!(Inet, 0);
 impl_Sql!(Cidr, 1);
+
+fn network_v4(net: &Ipv4Network) -> Ipv4Addr {
+    let mask = u32::from(net.mask());
+    let ip = u32::from(net.ip()) & mask;
+    Ipv4Addr::from(ip)
+}
+
+fn network_v6(net: &Ipv6Network) -> Ipv6Addr {
+    let mask = u128::from(net.mask());
+    let network = u128::from(net.ip()) & mask;
+    Ipv6Addr::from(network)
+}
 
 #[cfg(test)]
 mod tests {
