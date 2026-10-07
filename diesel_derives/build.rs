@@ -333,6 +333,10 @@ fn main() {
             vec![Example::new("diesel_derives__tests__view_1.snap")],
         ),
         (
+            "composite_type",
+            vec![Example::new("diesel_derives__tests__composite_type_1.snap")],
+        ),
+        (
             "valid_grouping",
             vec![Example::new("diesel_derives__tests__valid_grouping_1.snap")],
         ),

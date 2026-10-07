@@ -20,9 +20,17 @@ mod ord;
 pub use self::fold::Foldable;
 pub use self::ord::SqlOrd;
 
+use crate::SelectableExpression;
 use crate::backend::Backend;
 use crate::expression::TypedExpressionType;
+use crate::expression::ValidGrouping;
 use crate::query_builder::QueryId;
+
+pub(crate) mod sealed {
+    /// A helper trait to prevent downstream crates form implementing certain traits
+    #[doc(hidden)]
+    pub trait Sealed {}
+}
 
 /// The boolean SQL type.
 ///
@@ -708,6 +716,14 @@ pub trait SqlType: 'static {
 
     #[doc(hidden)]
     const IS_ARRAY: bool = false;
+}
+
+/// Marker trait for composite SQL types.
+pub trait CompositeType: SqlType + sealed::Sealed {
+    /// The type returned by [`Self::all_fields`]
+    type AllFields: SelectableExpression<Self> + ValidGrouping<()>;
+    /// Returns a tuple of all fields belonging to this composite type.
+    fn all_fields() -> Self::AllFields;
 }
 
 /// A marker trait for SQL types representing database side enums
