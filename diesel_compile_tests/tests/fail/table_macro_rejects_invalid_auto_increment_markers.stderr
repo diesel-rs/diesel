@@ -6,7 +6,7 @@ LL |         other -> Integer,
   |
   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: `#[auto_increment]` is not supported in `view!` definitions
+error: `#[auto_increment]` is not supported in `view!` or `composite_type!` definitions
   --> tests/fail/table_macro_rejects_invalid_auto_increment_markers.rs:16:9
    |
 LL |         id -> Integer,

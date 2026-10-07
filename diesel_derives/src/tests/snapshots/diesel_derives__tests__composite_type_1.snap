@@ -1,0 +1,269 @@
+---
+source: diesel_derives/src/tests/mod.rs
+expression: out
+info:
+  input: "composite_type! {\n    test_type { a -> Integer, b -> Text, }\n}\n"
+---
+#[allow(unused_imports, dead_code, unreachable_pub, unused_qualifications)]
+pub mod test_type {
+    const _: () = {
+        assert!(
+            2u16 <= diesel::internal::table_macro::MAX_COLUMN_COUNT,
+            "`test_type` contains 2 columns, which is more than the supported maximum number of columns\nTry enabling a crate level feature to support more columns"
+        );
+    };
+    use ::diesel;
+    pub use self::columns::*;
+    use diesel::sql_types::*;
+    #[doc = concat!(
+        "Re-exports all of the columns of this ", "composite_type", ", as well as the"
+    )]
+    #[doc = concat!(
+        "composite_type", " struct renamed to the module name. This is meant to be"
+    )]
+    #[doc = concat!(
+        "glob imported for functions which only deal with one ", "composite_type", "."
+    )]
+    pub mod dsl {
+        pub use super::columns::a;
+        pub use super::columns::b;
+        pub use super::composite_type as test_type;
+    }
+    #[allow(non_upper_case_globals, dead_code)]
+    #[doc = concat!("A tuple of all of the columns on this", "composite_type")]
+    pub const all_columns: AllColumns = (a, b);
+    #[allow(non_camel_case_types)]
+    #[derive(
+        Debug,
+        Clone,
+        Copy,
+        diesel::query_builder::QueryId,
+        Default,
+        PartialEq,
+        Eq,
+        PartialOrd,
+        Ord,
+        Hash
+    )]
+    #[derive(diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "test_type"))]
+    #[doc = concat!("The actual ", "composite_type", " struct")]
+    pub struct composite_type;
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "composite_type")]
+    pub type AllColumns = (a, b);
+    #[doc = concat!("The SQL type of all of the columns on this ", "composite_type")]
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
+    impl<DB> diesel::query_builder::QueryFragment<DB> for composite_type
+    where
+        DB: diesel::backend::Backend,
+        <Self as diesel::internal::table_macro::StaticQueryFragment>::Component: diesel::query_builder::QueryFragment<
+            DB,
+        >,
+    {
+        fn walk_ast<'b>(
+            &'b self,
+            __diesel_internal_pass: diesel::query_builder::AstPass<'_, 'b, DB>,
+        ) -> diesel::result::QueryResult<()> {
+            <Self as diesel::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT
+                .walk_ast(__diesel_internal_pass)
+        }
+    }
+    impl diesel::internal::table_macro::StaticQueryFragment for composite_type {
+        type Component = diesel::internal::table_macro::Identifier<'static>;
+        const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::Identifier(
+            "test_type",
+        );
+    }
+    impl diesel::internal::table_macro::sql_types::Sealed for composite_type {}
+    impl diesel::sql_types::CompositeType for composite_type {
+        type AllFields = AllColumns;
+        fn all_fields() -> Self::AllFields {
+            all_columns
+        }
+    }
+    #[doc = concat!("Contains all of the columns of this ", "composite_type")]
+    pub mod columns {
+        use ::diesel;
+        use super::composite_type;
+        use diesel::sql_types::*;
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
+        pub struct a;
+        impl diesel::expression::Expression for a {
+            type SqlType = Integer;
+        }
+        impl<DB> diesel::query_builder::QueryFragment<DB> for a
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                composite_type,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        composite_type,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("a")
+            }
+        }
+        impl diesel::SelectableExpression<super::composite_type> for a {}
+        impl diesel::expression::ValidGrouping<()> for a {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl<T> diesel::EqAll<T> for a
+        where
+            T: diesel::expression::AsExpression<Integer>,
+            diesel::dsl::Eq<
+                a,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        impl<Rhs> ::core::ops::Add<Rhs> for a
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<a as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Add<Self, Rhs::Expression>;
+            fn add(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Add::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::core::ops::Sub<Rhs> for a
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<a as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Sub<Self, Rhs::Expression>;
+            fn sub(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Sub::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::core::ops::Div<Rhs> for a
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<a as diesel::Expression>::SqlType as diesel::sql_types::ops::Div>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Div<Self, Rhs::Expression>;
+            fn div(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Div::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::core::ops::Mul<Rhs> for a
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<a as diesel::Expression>::SqlType as diesel::sql_types::ops::Mul>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Mul<Self, Rhs::Expression>;
+            fn mul(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Mul::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl diesel::AppearsOnTable<super::composite_type> for a {}
+        #[allow(non_camel_case_types, dead_code)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            diesel::query_builder::QueryId,
+            Default,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash
+        )]
+        pub struct b;
+        impl diesel::expression::Expression for b {
+            type SqlType = Text;
+        }
+        impl<DB> diesel::query_builder::QueryFragment<DB> for b
+        where
+            DB: diesel::backend::Backend,
+            diesel::internal::table_macro::StaticQueryFragmentInstance<
+                composite_type,
+            >: diesel::query_builder::QueryFragment<DB>,
+        {
+            #[allow(non_snake_case)]
+            fn walk_ast<'b>(
+                &'b self,
+                mut __diesel_internal_out: diesel::query_builder::AstPass<'_, 'b, DB>,
+            ) -> diesel::result::QueryResult<()> {
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: diesel::internal::table_macro::StaticQueryFragmentInstance<
+                        composite_type,
+                    > = diesel::internal::table_macro::StaticQueryFragmentInstance::new();
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier("b")
+            }
+        }
+        impl diesel::SelectableExpression<super::composite_type> for b {}
+        impl diesel::expression::ValidGrouping<()> for b {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl<T> diesel::EqAll<T> for b
+        where
+            T: diesel::expression::AsExpression<Text>,
+            diesel::dsl::Eq<
+                b,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        impl diesel::AppearsOnTable<super::composite_type> for b {}
+        impl diesel::expression::IsContainedInGroupBy<a> for b {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+        impl diesel::expression::IsContainedInGroupBy<b> for a {
+            type Output = diesel::expression::is_contained_in_group_by::No;
+        }
+    }
+}
