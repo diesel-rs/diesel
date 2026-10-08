@@ -373,6 +373,48 @@ pub fn get_primary_keys(
     Ok(collected)
 }
 
+pub fn map_column_type(
+    type_name: &str,
+    table: &TableName,
+    attr: &ColumnInformation,
+    config: &PrintSchema,
+) -> Option<ColumnType> {
+    let Some(type_mappings) = &config.type_map else {
+        return None;
+    };
+
+    let Some(type_map) = type_mappings.iter().find(|map| {
+        map.database_typename.to_lowercase() == type_name
+            && map
+                .table_name
+                .as_deref()
+                .is_none_or(|t| t == table.sql_name)
+            && map
+                .schema_name
+                .as_deref()
+                .is_none_or(|s| Some(s) == table.schema.as_deref())
+            && map
+                .column_name
+                .as_deref()
+                .is_none_or(|c| c == attr.column_name)
+    }) else {
+        return None;
+    };
+
+    let path = type_map.schema_typename.clone();
+    Some(ColumnType {
+        schema: None,
+        rust_name: path.clone(),
+        sql_name: path,
+        is_array: false,
+        is_nullable: attr.nullable,
+        is_unsigned: false,
+        record: None,
+        max_length: attr.max_length,
+        unmodified_type: attr.type_name.to_owned(),
+    })
+}
+
 #[tracing::instrument(skip(conn))]
 pub fn determine_column_type(
     conn: &mut SqliteConnection,
@@ -385,6 +427,10 @@ pub fn determine_column_type(
     let mut type_name = attr.type_name.to_lowercase();
     if type_name == "generated always" {
         type_name.clear();
+    }
+
+    if let Some(type_map) = map_column_type(&type_name, table, attr, config) {
+        return Ok(type_map);
     }
 
     let path = if is_bool(&type_name) {

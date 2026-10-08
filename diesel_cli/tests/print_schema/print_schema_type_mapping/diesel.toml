@@ -1,0 +1,6 @@
+[print_schema]
+file = "src/schema.rs"
+
+[[print_schema.type_map]]
+database_typename = "real"
+schema_typename = "Double"
