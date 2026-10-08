@@ -153,6 +153,9 @@ impl SqlDialect for Pg {
 
     type BuiltInWindowFunctionRequireOrder =
         sql_dialect::built_in_window_function_require_order::NoOrderRequired;
+
+    type SqlFunctionParameterNotation =
+        sql_dialect::sql_function_parameter_notation::PositionalOrNamedNotation;
 }
 
 impl DieselReserveSpecialization for Pg {}

@@ -59,6 +59,11 @@ impl SqlDialect for Mariadb {
         sql_dialect::aggregate_function_expressions::NoAggregateFunctionExpressions;
 
     type BuiltInWindowFunctionRequireOrder = MariadbRequiresOrderForWindowFunctions;
+
+    // TODO: It appears MariaDB may support named notation in the future, in which case this type
+    //  could be changed to `PositionalOrNamedNotation`. See: <https://jira.mariadb.org/browse/MDEV-38329>
+    type SqlFunctionParameterNotation =
+        sql_dialect::sql_function_parameter_notation::PositionalNotationOnly;
 }
 
 impl DieselReserveSpecialization for Mariadb {}

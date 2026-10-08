@@ -1,0 +1,5 @@
+---
+source: diesel_tests/tests/macros.rs
+expression: "diesel::debug_query::<diesel::pg::Pg,\n_>(&has_positional_parameters(10, \"text\")).to_string()"
+---
+has_positional_parameters($1, $2) -- binds: [10, "text"]

@@ -78,6 +78,9 @@ impl SqlDialect for Sqlite {
         sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions;
     type BuiltInWindowFunctionRequireOrder =
         sql_dialect::built_in_window_function_require_order::NoOrderRequired;
+
+    type SqlFunctionParameterNotation =
+        sql_dialect::sql_function_parameter_notation::PositionalNotationOnly;
 }
 
 impl DieselReserveSpecialization for Sqlite {}

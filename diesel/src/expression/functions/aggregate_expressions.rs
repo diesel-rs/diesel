@@ -150,7 +150,7 @@ pub trait IsAggregateFunction {}
 
 /// A specialized QueryFragment helper trait that allows us to walk the function name
 /// and the function arguments in separate steps
-pub trait FunctionFragment<DB: Backend> {
+pub trait FunctionFragment<DB: Backend, SP = NotSpecialized> {
     /// The name of the sql function
     const FUNCTION_NAME: &'static str;
 

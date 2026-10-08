@@ -2,25 +2,20 @@
 source: diesel_derives/src/tests/mod.rs
 expression: out
 info:
-  input: "define_sql_function! {\n    fn lower(input : Text) -> Text;\n}\n"
+  input: "sql_function! {\n    #[named_parameters = true] fn lower(input : Text) -> Text;\n}\n"
 ---
 #[allow(non_camel_case_types)]
-pub fn lower<input>(input: input) -> lower<input>
+pub fn lower<input>(input: input) -> lower::HelperType<input>
 where
     input: diesel::expression::AsExpression<Text>,
 {
-    lower_utils::lower {
+    lower::lower {
         input: input.as_expression(),
     }
 }
-#[allow(non_camel_case_types, non_snake_case)]
-///The return type of [`lower()`](fn@lower)
-pub type lower<input> = lower_utils::lower<
-    <input as diesel::expression::AsExpression<Text>>::Expression,
->;
 #[doc(hidden)]
 #[allow(non_camel_case_types, non_snake_case, unused_imports)]
-pub(crate) mod lower_utils {
+pub(crate) mod lower {
     use diesel::{self, QueryResult};
     use diesel::expression::{
         AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
@@ -133,6 +128,8 @@ pub(crate) mod lower_utils {
                 if needs_comma {
                     out.push_sql(", ");
                 }
+                out.push_sql(stringify!(input));
+                out.push_sql("=>");
                 self.input.walk_ast(out.reborrow())?;
                 needs_comma = true;
             }
@@ -177,7 +174,93 @@ pub(crate) mod lower_utils {
             input,
         > as ValidGrouping<__DieselInternal>>::IsAggregate;
     }
-
-
-
+    #[allow(dead_code)]
+    /// Registers an implementation for this function on the given connection.
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite. The implementation must be
+    /// deterministic (returns the same result given the same arguments). If
+    /// the function is nondeterministic, call
+    /// [`register_nondeterministic_impl`](self::register_nondeterministic_impl)
+    /// instead, or [`register_impl_with_behavior`](self::register_impl_with_behavior)
+    /// for full control over the SQLite behavior flags.
+    pub fn register_impl<F, Ret, input>(
+        conn: &mut diesel::sqlite::SqliteConnection,
+        f: F,
+    ) -> diesel::result::QueryResult<()>
+    where
+        F: Fn(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+        (
+            input,
+        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
+            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
+        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+    {
+        register_impl_with_behavior(
+            conn,
+            diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
+            f,
+        )
+    }
+    #[allow(dead_code)]
+    /// Registers a nondeterministic implementation for this function on the
+    /// given connection.
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite.
+    /// `register_nondeterministic_impl` should only be used if your
+    /// function can return different results with the same arguments (e.g.
+    /// `random`). If your function is deterministic, you should call
+    /// [`register_impl`](self::register_impl) instead. For full control over
+    /// the SQLite behavior flags, use
+    /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
+    pub fn register_nondeterministic_impl<F, Ret, input>(
+        conn: &mut diesel::sqlite::SqliteConnection,
+        f: F,
+    ) -> diesel::result::QueryResult<()>
+    where
+        F: FnMut(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+        (
+            input,
+        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
+            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
+        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+    {
+        register_impl_with_behavior(
+            conn,
+            diesel::sqlite::SqliteFunctionBehavior::empty(),
+            f,
+        )
+    }
+    #[allow(dead_code)]
+    /// Registers an implementation for this function on the given connection,
+    /// with explicit control over the SQLite behavior flags.
+    ///
+    /// This function must be called for every `SqliteConnection` before
+    /// this SQL function can be used on SQLite. Prefer
+    /// [`register_impl`](self::register_impl) (deterministic) or
+    /// [`register_nondeterministic_impl`](self::register_nondeterministic_impl)
+    /// unless you need to set behavior flags explicitly. See
+    /// [`SqliteFunctionBehavior`] for the available flags.
+    pub fn register_impl_with_behavior<F, Ret, input>(
+        conn: &mut diesel::sqlite::SqliteConnection,
+        behavior: diesel::sqlite::SqliteFunctionBehavior,
+        mut f: F,
+    ) -> diesel::result::QueryResult<()>
+    where
+        F: FnMut(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
+        (
+            input,
+        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
+            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
+        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+    {
+        conn.register_sql_function::<
+                (Text,),
+                Text,
+                _,
+                _,
+                _,
+            >("lower", behavior, move |(input,)| f(input))
+    }
 }
