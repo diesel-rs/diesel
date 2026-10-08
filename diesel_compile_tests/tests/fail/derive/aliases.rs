@@ -42,9 +42,9 @@ pub fn check(conn: &mut PgConnection) {
         .inner_join(post_alias)
         .inner_join(post_alias)
         //~^ ERROR: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
-        //~| ERROR: type mismatch resolving `<Join<..., ..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~| ERROR: type mismatch resolving `<Join<_, Alias<posts2>, Inner> as AppearsInFromClause<Alias<posts2>>>::Count == Once`
         .select(users::id)
-        //~^ ERROR: the method `select` exists for struct `SelectStatement<FromClause<JoinOn<..., ...>>>`, but its trait bounds were not satisfied
+        //~^ ERROR: no method named `select` found for struct `SelectStatement<From, Select, Distinct, Where, Order, LimitOffset, GroupBy, Having, Locking>` in the current scope
         .load::<i32>(conn)
         .unwrap();
 
@@ -67,15 +67,15 @@ pub fn check(conn: &mut PgConnection) {
     let post_alias_2 = alias!(posts as posts3);
     let posts = post_alias
         .inner_join(
-            //~^ ERROR: the trait bound `Join<..., ..., ...>: AppearsInFromClause<...>` is not satisfied
-            //~| ERROR: the trait bound `Join<..., ..., ...>: AppearsInFromClause<...>` is not satisfied
+        //~^ ERROR: the trait bound `Join<Alias<posts2>, Alias<posts3>, Inner>: AppearsInFromClause<Alias<posts3>>` is not satisfied
+        //~| ERROR: the trait bound `Join<Alias<posts2>, Alias<posts3>, Inner>: AppearsInFromClause<Alias<posts2>>` is not satisfied
             post_alias_2.on(post_alias
                 .field(posts::author)
                 .eq(post_alias_2.field(posts::author))),
             //~^^^ ERROR: the trait bound `Alias<posts3>: AppearsInFromClause<Alias<posts2>>` is not satisfied
         )
         .select((post_alias.field(posts::id), post_alias_2.field(posts::id)))
-        //~^ ERROR:  the method `select` exists for struct `SelectStatement<FromClause<JoinOn<..., ...>>>`, but its trait bounds were not satisfied
+        //~^ ERROR: no method named `select` found for struct `SelectStatement<From, Select, Distinct, Where, Order, LimitOffset, GroupBy, Having, Locking>` in the current scope
         .load::<(i32, i32)>(conn)
         .unwrap();
 }

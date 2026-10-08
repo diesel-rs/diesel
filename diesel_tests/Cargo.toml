@@ -21,6 +21,7 @@ ipnet = { version = "2.5.0" }
 ipnetwork = ">=0.12.2, <0.22.0"
 bigdecimal = ">= 0.0.13, < 0.5.0"
 libsqlite3-sys = { workspace = true, optional = true }
+time = { version = "0.3.9", optional = true }
 rand = "0.9.0"
 pq-sys = { workspace = true, optional = true }
 pq-src = { version = "0.3", optional = true }
@@ -35,8 +36,8 @@ insta = "1.48.0"
 # Something is dependent on it, so we use feature to override it.
 getrandom = { version = "0.4", features = ["wasm_js"] }
 getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" }
-wasm-bindgen-test = "0.3.49"
-sqlite-wasm-rs = "0.5.1"
+wasm-bindgen-test = "0.3.78"
+sqlite-wasm-rs = { version = "0.6.1", features = ["wasm-bindgen"] }
 
 [features]
 default = []
@@ -45,6 +46,7 @@ postgres = ["diesel/postgres", "diesel/network-address", "diesel/ipnet-address"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
 mariadb = ["diesel/mariadb"]
+time = ["diesel/time", "dep:time"]
 returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 
 [[test]]

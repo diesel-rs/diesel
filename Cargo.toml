@@ -33,7 +33,8 @@ members = [
     "examples/sqlite/relations",
     "examples/sqlite/wasm",
     "xtask",
-    "diesel_infer_query", "diesel_attribute_parser",
+    "diesel_infer_query",
+    "diesel_attribute_parser",
 ]
 
 [workspace.package]

@@ -1,19 +1,16 @@
-error[E0277]: `BatchInsert<Vec<...>, ..., (), false>` may insert zero or several rows
+error[E0277]: `BatchInsert<Vec<_>, table, (), false>` may insert zero or several rows
    --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:24:10
     |
  LL |         .execute_returning_id(&mut conn)
     |          ^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `BatchInsert<Vec<...>, ..., (), false>`
+    = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `BatchInsert<Vec<_>, table, (), false>`
     = note: the database client reports one generated id per statement, so this operation supports only single-row inserts
 help: the following other types implement trait `SingleRowInsertValues<Tab>`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |   impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::ValuesClause<V, Tab>`
-...
-LL |   impl<Tab> SingleRowInsertValues<Tab> for DefaultValues {}
-    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::DefaultValues`
 ...
 LL | / impl<V, Tab, Target, Action, WhereClause> SingleRowInsertValues<Tab>
 LL | |     for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<
@@ -66,22 +63,19 @@ LL |         T: AutoIncrementTable,
    |            ^^^^^^^^^^^^^^^^^^ required by this bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: `InsertFromSelect<SelectStatement<..., ...>, ...>` may insert zero or several rows
+error[E0277]: `InsertFromSelect<SelectStatement<_, _>, name>` may insert zero or several rows
    --> tests/fail/execute_returning_id_requires_single_row_auto_increment_insert.rs:40:10
     |
  LL |         .execute_returning_id(&mut conn)
     |          ^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `InsertFromSelect<SelectStatement<..., ...>, ...>`
+    = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `InsertFromSelect<SelectStatement<_, _>, name>`
     = note: the database client reports one generated id per statement, so this operation supports only single-row inserts
 help: the following other types implement trait `SingleRowInsertValues<Tab>`
    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |   impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::ValuesClause<V, Tab>`
-...
-LL |   impl<Tab> SingleRowInsertValues<Tab> for DefaultValues {}
-    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::DefaultValues`
 ...
 LL | / impl<V, Tab, Target, Action, WhereClause> SingleRowInsertValues<Tab>
 LL | |     for crate::query_builder::upsert::on_conflict_clause::OnConflictValues<

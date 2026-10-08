@@ -51,7 +51,7 @@ LL |     id: String,
    = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`
    = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `(String, i32): FromStaticSqlRow<(..., ...), ...>` is not satisfied
+error[E0277]: the trait bound `(String, i32): FromStaticSqlRow<(_, Text), Pg>` is not satisfied
   --> tests/fail/selectable_with_typemisamatch.rs:34:17
    |
 LL | #[derive(Selectable, Queryable)]
@@ -79,7 +79,8 @@ LL | #[derive(Selectable, Queryable)]
 ...
 LL | struct User {
    |        ^^^^
-   = help: consider manually implementing `Queryable<(Integer, Text), Pg>` to avoid undesired bounds
+   = help: consider manually implementing `Queryable<(Integer, Text), Pg>` to avoid undesired bounds caused by "imperfect derives"
+   = note: to learn more, visit <https://github.com/rust-lang/rust/issues/26925>
    = note: required for `User` to implement `FromSqlRow<(Integer, Text), Pg>`
 
       = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -103,16 +104,14 @@ help: the trait `diesel::query_dsl::load_dsl::private::CompatibleType<U, DB>` is
  LL | /     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
  LL | |     where
  LL | |         DB: Backend,
- LL | |         ST: SqlType + TypedExpressionType,
+ LL | |         ST: TypedExpressionType + SqlTypeLikeMarker,
  LL | |         U: Selectable<DB, SelectExpression = E>,
  LL | |         E: Expression<SqlType = ST>,
- LL | |         U: FromSqlRow<ST, DB>,
-     | |____________------------------^
+ LL | |         U: FromSqlRow<<ST as SqlTypeLikeMarker>::SqlType, DB>,
+     | |____________--------------------------------------------------^
      |              |
-     |              unsatisfied requirement introduced here: `User: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), _>`
-     |              unsatisfied requirement introduced here: `User: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), _>`
-     |              unsatisfied requirement introduced here: `User: FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text), _>`
-     = note: required for `SelectStatement<FromClause<table>, ...>` to implement `LoadQuery<'_, _, _>`
+     |              unsatisfied requirement introduced here: `User: FromSqlRow<<(diesel::sql_types::Integer, diesel::sql_types::Text) as diesel::deserialize::SqlTypeLikeMarker>::SqlType, _>`
+     = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
      |

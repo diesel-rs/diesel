@@ -4,6 +4,7 @@
 extern crate bigdecimal;
 extern crate chrono;
 
+use crate::format_error;
 use crate::schema::*;
 use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "postgres")]
@@ -27,6 +28,12 @@ table! {
         datetime -> Timestamp,
         date -> Date,
         time -> Time,
+    }
+}
+
+table! {
+    time_values(time_value) {
+        time_value -> Time,
     }
 }
 
@@ -136,6 +143,148 @@ fn test_chrono_types_sqlite() {
     assert_eq!(result.datetime, dt);
     assert_eq!(result.date, dt.date());
     assert_eq!(result.time, dt.time());
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn insert_time(connection: &mut TestConnection, value: diesel::data_types::MysqlTime) {
+    use crate::schema_dsl::*;
+
+    create_temporary_table(
+        "time_values",
+        (time_with_fractional_seconds("time_value").not_null(),),
+    )
+    .execute(connection)
+    .unwrap();
+
+    insert_into(time_values::table)
+        .values(time_values::time_value.eq(value))
+        .execute(connection)
+        .unwrap();
+}
+
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn insert_negative_time(connection: &mut TestConnection) {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    insert_time(
+        connection,
+        MysqlTime::new(
+            0,
+            0,
+            0,
+            10,
+            11,
+            12,
+            123456,
+            true,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        ),
+    );
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_mysql_time() {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let actual = time_values::table
+        .select(time_values::time_value)
+        .first::<MysqlTime>(connection)
+        .unwrap();
+
+    assert!(actual.neg);
+    assert_eq!(0, actual.year);
+    assert_eq!(0, actual.month);
+    assert_eq!(0, actual.day);
+    assert_eq!(10, actual.hour);
+    assert_eq!(11, actual.minute);
+    assert_eq!(12, actual.second);
+    assert_eq!(123456, actual.second_part);
+    assert_eq!(MysqlTimestampType::MYSQL_TIMESTAMP_TIME, actual.time_type);
+    assert_eq!(0, actual.time_zone_displacement);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn negative_time_loads_as_chrono_time_fails() {
+    use diesel::result::Error::DeserializationError;
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let result = time_values::table
+        .select(time_values::time_value)
+        .first::<chrono::NaiveTime>(connection);
+
+    assert_matches!(result, Err(DeserializationError(_)));
+}
+
+#[diesel_test_helper::test]
+#[cfg(all(any(feature = "mysql", feature = "mariadb"), feature = "time"))]
+fn negative_time_loads_as_time_crate_time_fails() {
+    use diesel::result::Error::DeserializationError;
+
+    let connection = &mut connection();
+    insert_negative_time(connection);
+
+    let result = time_values::table
+        .select(time_values::time_value)
+        .first::<time::Time>(connection);
+
+    assert_matches!(result, Err(DeserializationError(_)));
+}
+
+// TIME range, 838 hours folded as 34 days plus 22 hours:
+// https://dev.mysql.com/doc/refman/8.4/en/time.html
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn assert_extreme_time_round_trip(neg: bool) {
+    use diesel::data_types::{MysqlTime, MysqlTimestampType};
+
+    let connection = &mut connection();
+    insert_time(
+        connection,
+        MysqlTime::new(
+            0,
+            0,
+            34,
+            22,
+            59,
+            59,
+            0,
+            neg,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        ),
+    );
+
+    let actual = time_values::table
+        .select(time_values::time_value)
+        .first::<MysqlTime>(connection)
+        .unwrap();
+
+    assert_eq!(neg, actual.neg);
+    // The server may redistribute the hours across `day` and `hour`.
+    assert_eq!(838, actual.day * 24 + actual.hour);
+    assert_eq!(59, actual.minute);
+    assert_eq!(59, actual.second);
+    assert_eq!(0, actual.second_part);
+    assert_eq!(MysqlTimestampType::MYSQL_TIMESTAMP_TIME, actual.time_type);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn minimum_time_loads_as_mysql_time() {
+    assert_extreme_time_round_trip(true);
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn maximum_time_loads_as_mysql_time() {
+    assert_extreme_time_round_trip(false);
 }
 
 #[diesel_test_helper::test]
@@ -1428,6 +1577,32 @@ fn pg_v4address_to_sql_v4address() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn pg_cidr_with_host_bits_to_sql_is_masked() {
+    extern crate ipnetwork;
+    use std::str::FromStr;
+
+    let v4 = "'10.0.0.0/8'::cidr";
+    let v6 = "'2001:4f8::/32'::cidr";
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
+        v4,
+        ipnetwork::IpNetwork::from_str("10.0.0.5/8").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnetwork::IpNetwork>(
+        v6,
+        ipnetwork::IpNetwork::from_str("2001:4f8:3:ba::1/32").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnet::IpNet>(
+        v4,
+        ipnet::IpNet::from_str("10.0.0.5/8").unwrap()
+    ));
+    assert!(query_to_sql_equality::<Cidr, ipnet::IpNet>(
+        v6,
+        ipnet::IpNet::from_str("2001:4f8:3:ba::1/32").unwrap()
+    ));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 fn pg_v4address_to_sql_v4address_ipnet() {
     use std::str::FromStr;
 
@@ -2012,7 +2187,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<SmallInt>("SELECT bool FROM test_table").get_result::<i16>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'bool': \
          Received less than 2 bytes while decoding an i16. \
          Was an expression of a different type accidentally marked as SmallInt?"
@@ -2021,7 +2196,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<SmallInt>("SELECT int FROM test_table").get_result::<i16>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'int': \
          Received more than 2 bytes while decoding an i16. \
          Was an Integer expression accidentally marked as SmallInt?"
@@ -2030,7 +2205,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Integer>("SELECT small FROM test_table").get_result::<i32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'small': \
          Received less than 4 bytes while decoding an i32. \
          Was an SmallInt expression accidentally marked as Integer?"
@@ -2039,7 +2214,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Integer>("SELECT big FROM test_table").get_result::<i32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'big': \
          Received more than 4 bytes while decoding an i32. \
          Was an BigInt expression accidentally marked as Integer?"
@@ -2048,7 +2223,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<BigInt>("SELECT int FROM test_table").get_result::<i64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'int': \
          Received less than 8 bytes while decoding an i64. \
          Was an Integer expression accidentally marked as BigInt?"
@@ -2057,7 +2232,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<BigInt>("SELECT text FROM test_table").get_result::<i64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'text': \
          Received more than 8 bytes while decoding an i64. \
          Was an expression of a different type expression accidentally marked as BigInt?"
@@ -2066,7 +2241,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Float>("SELECT small FROM test_table").get_result::<f32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'small': \
          Received less than 4 bytes while decoding an f32. \
          Was a numeric accidentally marked as float?"
@@ -2075,7 +2250,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Float>("SELECT double FROM test_table").get_result::<f32>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'double': \
          Received more than 4 bytes while decoding an f32. \
          Was a double accidentally marked as float?"
@@ -2084,7 +2259,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Double>("SELECT float FROM test_table").get_result::<f64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'float': \
          Received less than 8 bytes while decoding an f64. \
          Was a float accidentally marked as double?"
@@ -2093,7 +2268,7 @@ fn deserialize_wrong_primitive_gives_good_error() {
     let res = diesel::dsl::sql::<Double>("SELECT text FROM test_table").get_result::<f64>(conn);
     assert!(res.is_err());
     assert_eq!(
-        res.unwrap_err().to_string(),
+        format_error(&res.unwrap_err()),
         "Error deserializing field 'text': \
          Received more than 8 bytes while decoding an f64. \
          Was a numeric accidentally marked as double?"

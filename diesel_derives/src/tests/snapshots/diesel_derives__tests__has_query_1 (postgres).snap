@@ -25,11 +25,15 @@ const _: () = {
     fn _check_field_compatibility_pg()
     where
         i32: diesel::deserialize::FromSqlRow<
-            diesel::dsl::SqlTypeOf<users::r#id>,
+            <diesel::dsl::SqlTypeOf<
+                users::r#id,
+            > as diesel::internal::derives::selectable::SqlTypeLikeMarker>::SqlType,
             diesel::pg::Pg,
         >,
         String: diesel::deserialize::FromSqlRow<
-            diesel::dsl::SqlTypeOf<users::r#name>,
+            <diesel::dsl::SqlTypeOf<
+                users::r#name,
+            > as diesel::internal::derives::selectable::SqlTypeLikeMarker>::SqlType,
             diesel::pg::Pg,
         >,
     {}

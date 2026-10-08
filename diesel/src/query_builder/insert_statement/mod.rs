@@ -429,7 +429,7 @@ impl<Tab> Insertable<Tab> for &DefaultValues {
 }
 
 /// Insert values that produce exactly one row: a single record's values,
-/// [`default_values`](InsertStatement::default_values), or an upsert wrapping
+/// [`default_values`](crate::query_builder::IncompleteInsertStatement::default_values), or an upsert wrapping
 /// either. Batch inserts and `INSERT ... SELECT` do not qualify.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` may insert zero or several rows",

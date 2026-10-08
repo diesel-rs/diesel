@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:58:54
      |
   LL |     let _ = users::table.load::<UserWithToFewFields>(conn);
@@ -32,7 +32,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:61:55
      |
   LL |     let _ = users::table.load::<UserWithToManyFields>(conn);
@@ -66,7 +66,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:64:49
      |
   LL |     let _ = users::table.load::<UserWrongOrder>(conn);
@@ -100,7 +100,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:67:51
      |
   LL |     let _ = users::table.load::<UserTypeMismatch>(conn);
@@ -134,7 +134,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:70:59
      |
   LL |     let _ = users::table.load::<UserNullableTypeMismatch>(conn);

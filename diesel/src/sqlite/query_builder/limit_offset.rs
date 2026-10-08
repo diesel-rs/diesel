@@ -51,45 +51,42 @@ where
     }
 }
 
-impl QueryFragment<Sqlite> for BoxedLimitOffsetClause<'_, Sqlite> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        match (self.limit.as_ref(), self.offset.as_ref()) {
-            (Some(limit), Some(offset)) => {
-                limit.walk_ast(out.reborrow())?;
-                offset.walk_ast(out.reborrow())?;
-            }
-            (Some(limit), None) => {
-                limit.walk_ast(out.reborrow())?;
-            }
-            (None, Some(offset)) => {
-                // See the `QueryFragment` implementation for `LimitOffsetClause` for details.
-                out.push_sql(" LIMIT -1 ");
-                offset.walk_ast(out.reborrow())?;
-            }
-            (None, None) => {}
+/// Walk the limit and the offset of a boxed limit/offset clause, whichever pointer holds them.
+fn walk_boxed_limit_offset<'b, P>(
+    limit: Option<&'b P>,
+    offset: Option<&'b P>,
+    mut out: AstPass<'_, 'b, Sqlite>,
+) -> QueryResult<()>
+where
+    P: QueryFragment<Sqlite>,
+{
+    match (limit, offset) {
+        (Some(limit), Some(offset)) => {
+            limit.walk_ast(out.reborrow())?;
+            offset.walk_ast(out.reborrow())?;
         }
-        Ok(())
+        (Some(limit), None) => {
+            limit.walk_ast(out.reborrow())?;
+        }
+        (None, Some(offset)) => {
+            // See the `QueryFragment` implementation for `LimitOffsetClause` for details.
+            out.push_sql(" LIMIT -1 ");
+            offset.walk_ast(out.reborrow())?;
+        }
+        (None, None) => {}
+    }
+    Ok(())
+}
+
+impl QueryFragment<Sqlite> for BoxedLimitOffsetClause<'_, Sqlite> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        walk_boxed_limit_offset(self.limit.as_ref(), self.offset.as_ref(), out)
     }
 }
 
 impl QueryFragment<Sqlite> for BoxedCloneLimitOffsetClause<'_, Sqlite> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        match (self.limit.as_ref(), self.offset.as_ref()) {
-            (Some(limit), Some(offset)) => {
-                limit.walk_ast(out.reborrow())?;
-                offset.walk_ast(out.reborrow())?;
-            }
-            (Some(limit), None) => {
-                limit.walk_ast(out.reborrow())?;
-            }
-            (None, Some(offset)) => {
-                // See the `QueryFragment` implementation for `LimitOffsetClause` for details.
-                out.push_sql(" LIMIT -1 ");
-                offset.walk_ast(out.reborrow())?;
-            }
-            (None, None) => {}
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        walk_boxed_limit_offset(self.limit.as_ref(), self.offset.as_ref(), out)
     }
 }
 

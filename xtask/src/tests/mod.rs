@@ -24,6 +24,12 @@ pub(crate) struct TestArgs {
     // run wasm tests, currently only supports sqlite
     #[clap(long = "wasm")]
     wasm: bool,
+    /// run a subset of the unit tests under miri, linking the sqlite backend
+    /// against the system libsqlite3 via miri's `-Zmiri-native-lib` flag.
+    /// Currently only supports sqlite and only runs the lib tests of the
+    /// `diesel` crate.
+    #[clap(long = "miri")]
+    miri: bool,
     /// additional flags passed to cargo nextest while running
     /// unit/integration tests.
     ///
@@ -55,9 +61,82 @@ impl TestArgs {
         }
     }
 
+    /// Runs the miri-compatible subset of the sqlite unit tests.
+    ///
+    /// Miri does not interpret the native libsqlite3, so we load it via
+    /// `-Zmiri-native-lib` and only run the lib tests of the `diesel` crate.
+    /// Tests that require native -> rust callbacks (hooks, custom sql
+    /// functions, …) or that read memory allocated by the native library are
+    /// compiled out via `#[cfg(not(miri))]` and are therefore not part of
+    /// the run.
+    fn run_miri_tests(&self, metadata: &Metadata) -> bool {
+        let native_lib = match std::env::var("MIRI_NATIVE_LIB") {
+            Ok(path) => path,
+            Err(_) => match Command::new("pkg-config")
+                .args(["--variable=libdir", "sqlite3"])
+                .output()
+            {
+                Ok(output) if output.status.success() => {
+                    let libdir = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    format!("{libdir}/libsqlite3.so")
+                }
+                _ => {
+                    eprintln!(
+                        "Failed to locate libsqlite3. Install pkg-config + libsqlite3-dev \
+                         or set `MIRI_NATIVE_LIB` to the path of the sqlite library"
+                    );
+                    return false;
+                }
+            },
+        };
+        if !std::path::Path::new(&native_lib).exists() {
+            eprintln!(
+                "The sqlite library `{native_lib}` does not exist. \
+                 Set `MIRI_NATIVE_LIB` to the path of the sqlite library"
+            );
+            return false;
+        }
+
+        // The lib tests all use in-memory sqlite databases,
+        // so no migration setup is required here.
+        // Additional flags are documented as custom test filters/arguments,
+        // which are passed to the test harness and therefore have to go
+        // after the `--` separator.
+        let mut command = Command::new("cargo");
+        command
+            .args(["+nightly", "miri", "test", "-p", "diesel", "--lib"])
+            .args(["--no-default-features", "-F", "sqlite"])
+            .args(["-F", "serde_json"])
+            .current_dir(&metadata.workspace_root)
+            .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"));
+        if !self.flags.is_empty() {
+            command.arg("--").args(&self.flags);
+        }
+        println!("Running miri tests via `{command:?}`: ");
+        let status = command
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status()
+            .unwrap();
+        if !status.success() {
+            eprintln!("Failed to run miri tests");
+            return false;
+        }
+        true
+    }
+
     fn run_tests(&self, metadata: &Metadata) -> bool {
         let backend_name = self.backend.to_string();
         println!("Running tests for {backend_name}");
+        if self.miri && !matches!(self.backend, Backend::Sqlite) {
+            eprintln!(
+                "Only the sqlite backend supports miri for now, skipping the current backend ({backend_name})"
+            );
+            return true;
+        }
+        if self.miri {
+            return self.run_miri_tests(metadata);
+        }
         let exclude = crate::utils::get_exclude_for_backend(&backend_name, metadata, self.wasm);
         if std::env::var("DATABASE_URL").is_err() {
             match self.backend {
@@ -228,6 +307,8 @@ impl TestArgs {
                     "dsl_auto_type",
                     "-p",
                     "diesel_table_macro_syntax",
+                    "-p",
+                    "migrations_macros",
                     "-F",
                     "diesel/extras",
                 ])
@@ -238,7 +319,9 @@ impl TestArgs {
                 .arg("-F")
                 .arg(format!("diesel-dynamic-schema/{backend}"))
                 .arg("-F")
-                .arg(format!("diesel_migrations/{backend}"));
+                .arg(format!("diesel_migrations/{backend}"))
+                .arg("-F")
+                .arg(format!("migrations_macros/{backend}"));
             if matches!(backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);
