@@ -11,6 +11,9 @@ autotests = false
 sqlparser = { version = "0.63.0", features = ["visitor"] }
 thiserror = "2"
 
+[dev-dependencies]
+insta = "1.43"
+
 [[test]]
 path = "tests/lib.rs"
 name = "integration_tests"

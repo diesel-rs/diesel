@@ -47,8 +47,9 @@ pub enum Expression {
         schema: Option<String>,
         /// the name of the query source
         query_source: Option<String>,
-        /// the name of the field
+        /// the derived table or CTE this field refers to, `None` for a database relation
         source_id: Option<usize>,
+        /// the name of the field
         field_name: String,
         /// is this field coming from a query source joined via a `LEFT JOIN`
         via_left_join: bool,
