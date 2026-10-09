@@ -1,6 +1,10 @@
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn execute_query_by_raw_sql() {
     let conn = &mut connection();
@@ -13,6 +17,10 @@ fn execute_query_by_raw_sql() {
     assert_eq!(Ok(expected_users), users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn query_by_raw_sql() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
@@ -24,6 +32,10 @@ fn query_by_raw_sql() {
     assert_eq!(Ok(expected), users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn sql_query_deserializes_by_name_not_index() {
     let conn = &mut connection_with_sean_and_tess_in_users_table();
@@ -35,6 +47,10 @@ fn sql_query_deserializes_by_name_not_index() {
     assert_eq!(Ok(expected), users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn sql_query_can_take_bind_params() {
     use diesel::sql_types::Text;
@@ -53,6 +69,10 @@ fn sql_query_can_take_bind_params() {
     assert_eq!(Ok(expected), users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn sql_query_can_take_bind_params_boxed() {
     use diesel::sql_types::Text;

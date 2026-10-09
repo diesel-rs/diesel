@@ -25,6 +25,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::{SqliteConnection, CommitDecision};
     /// use std::sync::{Arc, Mutex};
@@ -55,6 +59,9 @@ impl SqliteConnection {
     /// }).unwrap();
     ///
     /// assert_eq!(*commits.lock().unwrap(), 1);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_commit<F>(&mut self, hook: F)
     where
@@ -90,6 +97,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::SqliteConnection;
     /// use std::sync::Arc;
@@ -111,6 +122,9 @@ impl SqliteConnection {
     /// });
     ///
     /// assert_eq!(rollbacks.load(Ordering::Relaxed), 1);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_rollback<F>(&mut self, hook: F)
     where

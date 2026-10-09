@@ -133,6 +133,11 @@ where
     /// #     name: &'a str,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #    run_test().unwrap()
     /// # }
@@ -553,6 +558,11 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -645,6 +655,11 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -781,6 +796,11 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// # include!("on_conflict_docs_setup.rs");
     /// #
     /// # #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use diesel::QueryDsl;
     /// #     use diesel::query_dsl::methods::FilterDsl;

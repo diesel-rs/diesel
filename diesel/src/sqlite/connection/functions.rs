@@ -305,6 +305,11 @@ impl SqliteConnection {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // This test registers a Rust callback that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
