@@ -4,7 +4,7 @@ use super::{
 };
 use crate::config::PrintSchema;
 use crate::database::InferConnection;
-use diesel_infer_query::{SchemaField, SchemaResolver};
+use diesel_infer_query::{IsNull, SchemaField, SchemaResolver};
 use std::collections::HashMap;
 
 pub struct SchemaResolverImpl<'a, 'b> {
@@ -110,12 +110,15 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
     fn resolve_field(
         &mut self,
         schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
         field_name: &str,
     ) -> Result<
         &dyn diesel_infer_query::SchemaField,
         Box<dyn std::error::Error + Send + Sync + 'static>,
     > {
+        let Some(query_relation) = query_relation else {
+            return Err("Unnamed query source cannot be resolved".into());
+        };
         let (table_name, relation) = self.load_relation_data(schema, query_relation)?;
         Ok(relation
             .columns()
@@ -130,8 +133,11 @@ impl<'a> SchemaResolver for SchemaResolverImpl<'a, '_> {
     fn list_fields<'s>(
         &'s mut self,
         relation_schema: Option<&str>,
-        query_relation: &str,
+        query_relation: Option<&str>,
     ) -> Result<Vec<&'s dyn SchemaField>, Box<dyn std::error::Error + Send + Sync + 'static>> {
+        let Some(query_relation) = query_relation else {
+            return Err("Unnamed query source cannot be resolved".into());
+        };
         let (_table_name, relation) = self.load_relation_data(relation_schema, query_relation)?;
         let ret = relation
             .columns()
@@ -166,11 +172,15 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
 }
 
 impl SchemaField for ColumnDefinition {
-    fn is_nullable(&self) -> bool {
-        self.ty.is_nullable
+    fn is_nullable(&self) -> IsNull {
+        if self.ty.is_nullable {
+            IsNull::IsNullable
+        } else {
+            IsNull::NotNullable
+        }
     }
 
-    fn name(&self) -> &str {
-        &self.sql_name
+    fn name(&self) -> Option<&str> {
+        Some(&self.sql_name)
     }
 }

@@ -13,8 +13,11 @@ ViewData {
                 arguments: [
                     Wildcard {
                         schema: None,
-                        relation: "bar",
+                        relation: Some(
+                            "bar",
+                        ),
                         is_left_joined: false,
+                        source_id: None,
                     },
                 ],
             },
@@ -27,7 +30,10 @@ ViewData {
                 arguments: [
                     Field {
                         schema: None,
-                        query_source: "bar",
+                        query_source: Some(
+                            "bar",
+                        ),
+                        source_id: None,
                         field_name: "foo",
                         via_left_join: false,
                     },
@@ -35,4 +41,5 @@ ViewData {
             },
         },
     ],
+    subqueries: [],
 }
