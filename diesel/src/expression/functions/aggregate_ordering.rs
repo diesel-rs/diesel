@@ -37,6 +37,11 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
@@ -106,6 +111,11 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
     /// #     let connection = &mut establish_connection();

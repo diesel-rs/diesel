@@ -29,6 +29,10 @@ fn having_generates_having_sql() {
     assert!(source.execute(conn).is_ok());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn simple_having_with_group_by() {
     let connection = &mut connection();
@@ -59,6 +63,10 @@ fn simple_having_with_group_by() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_simple_having_with_group_by() {
     let connection = &mut connection();
@@ -90,6 +98,10 @@ fn boxed_simple_having_with_group_by() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn multi_condition_having_with_group_by() {
     let connection = &mut connection();
@@ -120,6 +132,10 @@ fn multi_condition_having_with_group_by() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_multi_condition_having_with_group_by() {
     let connection = &mut connection();

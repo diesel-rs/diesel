@@ -68,6 +68,11 @@ macro_rules! test_round_trip {
         test_round_trip!($test_name, $sql_type, $tpe, $map_fn, ne);
     };
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
+        // These are randomized quickcheck property tests: every case performs
+        // a full round trip through the database, which takes minutes per
+        // test when interpreted by miri. That would blow the miri job's time
+        // budget, so only run them outside of miri.
+        #[cfg(not(miri))]
         #[diesel_test_helper::test]
         #[allow(clippy::type_complexity)]
         fn $test_name() {
@@ -115,7 +120,15 @@ test_round_trip!(i32_roundtrips, Integer, i32);
 test_round_trip!(i64_roundtrips, BigInt, i64);
 test_round_trip!(f32_roundtrips, Float, FloatWrapper, mk_f32, f32_ne);
 test_round_trip!(f64_roundtrips, Double, DoubleWrapper, mk_f64, f64_ne);
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 test_round_trip!(string_roundtrips, VarChar, String);
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 test_round_trip!(text_roundtrips, Text, String);
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
 test_round_trip!(bool_roundtrips, Bool, bool);
@@ -124,11 +137,35 @@ test_round_trip!(bool_roundtrips, Bool, bool);
 mod sqlite_types {
     use super::*;
 
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(date_roundtrips, Date, String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(time_roundtrips, Time, String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(timestamp_roundtrips, Timestamp, String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(
         naive_datetime_roundtrips,
         Timestamp,

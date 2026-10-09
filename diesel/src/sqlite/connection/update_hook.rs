@@ -201,6 +201,10 @@ impl Route {
 /// and [`on_any`](Self::on_any), then install it:
 ///
 /// ```rust
+/// # // This test registers Rust callbacks that sqlite invokes through the
+/// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+/// # #[cfg(not(miri))]
+/// # fn main() {
 /// use diesel::prelude::*;
 /// use diesel::sqlite::{SqliteConnection, SqliteChangeOps, SqliteUpdateRouter};
 /// use std::sync::{Arc, Mutex};
@@ -226,6 +230,9 @@ impl Route {
 ///     .unwrap();
 ///
 /// assert_eq!(*inserted.lock().unwrap(), vec![1]);
+/// # }
+/// # #[cfg(miri)]
+/// # fn main() {}
 /// ```
 ///
 /// Every matching route fires for a given event, so overlapping routes (for
@@ -341,6 +348,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::{SqliteChangeOps, SqliteConnection, SqliteUpdateRouter};
     /// use std::sync::{Arc, Mutex};
@@ -367,6 +378,9 @@ impl SqliteConnection {
     ///     .unwrap();
     ///
     /// assert_eq!(*changes.lock().unwrap(), vec![1]);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_update(&mut self, router: SqliteUpdateRouter) {
         self.raw_connection.set_update_hook(router.into_hook());

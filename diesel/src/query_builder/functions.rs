@@ -493,6 +493,11 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -560,6 +565,11 @@ pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T> {
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -632,6 +642,11 @@ where
 /// # include!("../doctest_setup.rs");
 /// #
 /// # #[cfg(not(feature = "postgres"))]
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::{insert_into, replace_into};
@@ -698,6 +713,11 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 /// #     name: String,
 /// # }
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test_1().unwrap();
 /// #     run_test_2().unwrap();

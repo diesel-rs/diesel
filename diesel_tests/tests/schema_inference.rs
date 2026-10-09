@@ -95,6 +95,10 @@ mod sqlite {
         col10: Vec<u8>,
     }
 
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn strings_infer_to_semantically_correct_types() {
         let conn = &mut connection();
@@ -163,6 +167,10 @@ mod sqlite {
         timestamp: NaiveDateTime,
     }
 
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     #[diesel_test_helper::test]
     fn datetime_types_are_correctly_inferred() {
         let conn = &mut connection();

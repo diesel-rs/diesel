@@ -276,6 +276,11 @@ impl SqliteConnection {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // This test creates a temporary directory, which is not available
+    /// # // when miri runs with isolation enabled.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
@@ -324,6 +329,11 @@ impl SqliteConnection {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // This test creates a temporary directory, which is not available
+    /// # // when miri runs with isolation enabled.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }

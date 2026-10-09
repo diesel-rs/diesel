@@ -72,6 +72,10 @@ fn transaction_is_rolled_back_when_returned_an_error() {
 // The same trick seems to work for MySQL as well based on the
 // test result, but I cannot find a document support yet. Hence
 // this test is marked for "sqlite" only as this moment. FIXME.
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn transaction_rollback_returns_error() {

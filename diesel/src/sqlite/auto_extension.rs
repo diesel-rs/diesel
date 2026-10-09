@@ -62,6 +62,10 @@ use ffi as auto_extension_ffi;
 /// # Example
 ///
 /// ```rust
+/// # // This test registers Rust callbacks that sqlite invokes through the
+/// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+/// # #[cfg(not(miri))]
+/// # fn main() {
 /// use diesel::dsl::sql;
 /// use diesel::prelude::*;
 /// use diesel::sql_types::Integer;
@@ -81,6 +85,9 @@ use ffi as auto_extension_ffi;
 ///     .unwrap();
 /// assert_eq!(equal, 1);
 /// # reset_auto_extension();
+/// # }
+/// # #[cfg(miri)]
+/// # fn main() {}
 /// ```
 #[allow(unsafe_code)]
 pub fn register_auto_extension<F>(extension: F) -> QueryResult<()>

@@ -157,13 +157,29 @@ mod infallible_cast {
     #[cfg(feature = "postgres")]
     test_infallible_cast!(float4_to_text, 3.1 => f32, Float4 => Text, String::from("3.1") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(float8_to_text, 3.1 => f64, Float8 => Text, String::from("3.1") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(int4_to_text, 3 => i32, Integer => Text, String::from("3") => String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(int8_to_text, 3 => i64, BigInt => Text, String::from("3") => String);
     #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
     test_infallible_cast!(date_to_text, chrono::NaiveDate::from_ymd_opt(2025, 9, 19).unwrap() => chrono::NaiveDate, Date => Text, String::from("2025-09-19") => String);
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_infallible_cast!(json_to_text, serde_json::json!([1,2,3]) => serde_json::Value, Json => Text, String::from("[1,2,3]") => String);
     #[cfg(feature = "postgres")]
     test_infallible_cast!(jsonb_to_text, serde_json::json!([1,2,3]) => serde_json::Value, Jsonb => Text, String::from("[1, 2, 3]") => String);

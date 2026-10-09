@@ -6,6 +6,10 @@ use diesel::*;
     all(target_family = "wasm", target_os = "unknown"),
     ignore = "can't sleep"
 )]
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn managing_updated_at_for_table() {
@@ -88,6 +92,9 @@ fn strips_sqlite_url_prefix() {
     assert!(SqliteConnection::establish(&format!("sqlite://{}", path.display())).is_ok());
 }
 
+// This test needs the file system, which is not available under
+// miri with isolation enabled.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn file_uri_created_in_memory() {
@@ -102,6 +109,9 @@ fn file_uri_created_in_memory() {
     all(target_family = "wasm", target_os = "unknown"),
     ignore = "no filesystem on this platform"
 )]
+// This test needs the file system, which is not available under
+// miri with isolation enabled.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn sqlite_uri_prefix_interpreted_as_file() {
@@ -111,6 +121,10 @@ fn sqlite_uri_prefix_interpreted_as_file() {
     assert!(path.exists());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxable_connection_downcast_mut_usable() {
     use crate::schema::users::dsl::*;

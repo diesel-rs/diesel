@@ -15,6 +15,10 @@ fn delete_records() {
     assert_eq!(Ok(1), num_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn delete_single_record() {
     use crate::schema::users::dsl::*;
