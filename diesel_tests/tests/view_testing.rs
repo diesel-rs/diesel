@@ -169,6 +169,43 @@ fn alias() {
     assert_eq!(name, "John");
 }
 
+#[test]
+fn nullable_selection_through_a_join() {
+    let conn = &mut view_test_setup();
+    let res = view::view
+        .left_join(view2::view.on(view::not_id.eq(view2::not_view_id)))
+        .select((view::name, view2::title.nullable()))
+        .load::<(String, Option<String>)>(conn)
+        .unwrap();
+
+    assert_eq!(res, [("John".to_string(), Some("views!!".into()))]);
+}
+
+#[test]
+fn union() {
+    let conn = &mut view_test_setup();
+    let mut res = view::view
+        .union(view2::view)
+        .load::<(i32, String)>(conn)
+        .unwrap();
+    res.sort();
+
+    assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
+}
+
+#[test]
+fn union_through_an_alias() {
+    let conn = &mut view_test_setup();
+    let view_alias = diesel::alias!(view as view1);
+    let mut res = view_alias
+        .union(view2::view)
+        .load::<(i32, String)>(conn)
+        .unwrap();
+    res.sort();
+
+    assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
+}
+
 // todo: test larger parts of `QueryDsl`
 // todo: lock dsl
 // todo: having
