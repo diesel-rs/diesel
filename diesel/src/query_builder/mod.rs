@@ -66,6 +66,8 @@ pub use self::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 #[doc(inline)]
+pub use self::update_statement::batch_update::BatchUpdateRecord;
+#[doc(inline)]
 pub use self::update_statement::changeset::AsChangeset;
 #[doc(inline)]
 pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};

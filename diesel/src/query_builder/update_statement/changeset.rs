@@ -6,6 +6,7 @@ use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
+use crate::util::TupleSize;
 use crate::{Identifiable, Table};
 use alloc::borrow::ToOwned;
 
@@ -90,6 +91,12 @@ where
 pub struct Assign<Target, Expr> {
     pub(crate) target: Target,
     expr: Expr,
+}
+
+// A changeset is a (possibly nested) tuple of assignments, each of which sends
+// one value per record of a batch update
+impl<T, U> TupleSize for Assign<T, U> {
+    const SIZE: usize = 1;
 }
 
 impl<T, U, DB> QueryFragment<DB> for Assign<T, U>

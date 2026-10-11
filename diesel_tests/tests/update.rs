@@ -1,5 +1,6 @@
 use crate::format_error;
 use crate::schema::*;
+use diesel::query_builder::BatchUpdateRecord;
 use diesel::*;
 
 #[diesel_test_helper::test]
@@ -1422,4 +1423,105 @@ fn named_struct_batch_empty() {
         format_error(&update_users.unwrap_err()),
         "There are no changes to save. This query cannot be built"
     );
+}
+
+/// The number of bind parameters of `query`
+fn bind_count<T>(query: &T) -> usize
+where
+    T: query_builder::QueryFragment<crate::schema::TestBackend>,
+{
+    let query = diesel::debug_query::<crate::schema::TestBackend, _>(query).to_string();
+    let (sql, _binds) = query.split_once(" -- binds: ").unwrap();
+    let placeholder = if cfg!(feature = "postgres") { '$' } else { '?' };
+    sql.matches(placeholder).count()
+}
+
+#[diesel_test_helper::test]
+fn named_struct_batch_values_per_row() {
+    #[derive(AsChangeset, Identifiable)]
+    struct User {
+        id: i32,
+        name: String,
+        hair_color: String,
+    }
+
+    let users_batch = [User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue"),
+    }];
+
+    assert_eq!(3, User::VALUES_PER_ROW);
+    assert_eq!(3, bind_count(&update(users::table).set(&users_batch)));
+}
+
+#[diesel_test_helper::test]
+fn named_struct_batch_grouped_pkey_values_per_row() {
+    table! {
+        #[sql_name = "users"]
+        users_alt (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+        }
+    }
+
+    #[derive(AsChangeset, Identifiable)]
+    #[diesel(primary_key(id, name))]
+    #[diesel(table_name = users_alt)]
+    struct User {
+        id: i32,
+        name: String,
+        hair_color: String,
+    }
+
+    let users_batch = [User {
+        id: 1,
+        name: String::from("Sean"),
+        hair_color: String::from("blue"),
+    }];
+
+    assert_eq!(3, User::VALUES_PER_ROW);
+    assert_eq!(3, bind_count(&update(users_alt::table).set(&users_batch)));
+}
+
+#[diesel_test_helper::test]
+fn borrowed_struct_batch_values_per_row() {
+    #[derive(AsChangeset, Identifiable)]
+    struct User<'a> {
+        id: i32,
+        name: &'a str,
+    }
+
+    /// Splits `records` into batches that send at most `max_binds` bind parameters each
+    fn batches<U: BatchUpdateRecord>(
+        records: &[U],
+        max_binds: usize,
+    ) -> impl Iterator<Item = &[U]> {
+        records.chunks(max_binds / U::VALUES_PER_ROW)
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let names = [String::from("Jim"), String::from("Tom")];
+    let users_batch = names
+        .iter()
+        .zip([1, 2])
+        .map(|(name, id)| User { id, name })
+        .collect::<Vec<_>>();
+
+    assert_eq!(2, User::VALUES_PER_ROW);
+    assert_eq!(2, bind_count(&update(users::table).set(&users_batch[..1])));
+
+    // One user per statement
+    for batch in batches(&users_batch, 3) {
+        assert_eq!(1, batch.len());
+        update(users::table).set(batch).execute(connection).unwrap();
+    }
+
+    let actual = users::table
+        .select(users::name)
+        .order(users::id)
+        .load::<String>(connection);
+    assert_eq!(Ok(vec![String::from("Jim"), String::from("Tom")]), actual);
 }
