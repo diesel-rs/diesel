@@ -132,6 +132,94 @@ fn now_can_be_used_as_nullable_timestamptz() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn now_can_be_used_as_timestamptz_in_borrowed_changesets() {
+    use self::has_timestamptzs::{created_at, id, updated_at};
+
+    #[derive(AsChangeset, Identifiable)]
+    #[diesel(table_name = has_timestamptzs)]
+    struct Touch {
+        id: i32,
+        updated_at: now,
+    }
+
+    let connection = &mut connection();
+    setup_test_table(connection);
+    diesel::sql_query(
+        "INSERT INTO has_timestamptzs (id, created_at, updated_at) VALUES \
+             (1, NOW(), NOW() - '1 day'::interval), \
+             (2, NOW(), NOW() - '1 day'::interval), \
+             (3, NOW(), NOW() - '1 day'::interval), \
+             (4, NOW(), NOW() - '1 day'::interval)",
+    )
+    .execute(connection)
+    .unwrap();
+
+    let batch = [
+        Touch {
+            id: 1,
+            updated_at: now,
+        },
+        Touch {
+            id: 2,
+            updated_at: now,
+        },
+    ];
+    update(has_timestamptzs::table)
+        .set(&batch)
+        .execute(connection)
+        .unwrap();
+    update(has_timestamptzs::table.find(3))
+        .set(&Touch {
+            id: 3,
+            updated_at: now,
+        })
+        .execute(connection)
+        .unwrap();
+
+    let touched = has_timestamptzs::table
+        .select(id)
+        .filter(updated_at.ge(created_at))
+        .order(id)
+        .load::<i32>(connection);
+    assert_eq!(Ok(vec![1, 2, 3]), touched);
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn now_and_today_can_be_used_as_nullable_in_borrowed_changesets() {
+    use self::nullable_date_and_time::{date, timestamp, timestamptz};
+
+    #[derive(AsChangeset)]
+    #[diesel(table_name = nullable_date_and_time)]
+    struct Touch {
+        timestamp: now,
+        timestamptz: now,
+        date: today,
+    }
+
+    let connection = &mut connection();
+    setup_test_table(connection);
+    diesel::sql_query("INSERT INTO nullable_date_and_time (time) VALUES (NULL)")
+        .execute(connection)
+        .unwrap();
+
+    update(nullable_date_and_time::table)
+        .set(&Touch {
+            timestamp: now,
+            timestamptz: now,
+            date: today,
+        })
+        .execute(connection)
+        .unwrap();
+
+    let touched = nullable_date_and_time::table
+        .select((timestamp.eq(now), timestamptz.eq(now), date.eq(today)))
+        .get_result(connection);
+    assert_eq!(Ok((Some(true), Some(true), Some(true))), touched);
+}
+
+#[diesel_test_helper::test]
 fn now_can_be_used_as_nullable() {
     use diesel::sql_types::Timestamp;
 

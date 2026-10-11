@@ -60,6 +60,14 @@ impl AsExpression<Nullable<Timestamp>> for now {
     }
 }
 
+impl AsExpression<Nullable<Timestamp>> for &now {
+    type Expression = Coerce<now, Nullable<Timestamp>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(*self)
+    }
+}
+
 #[cfg(feature = "postgres_backend")]
 impl AsExpression<Timestamptz> for now {
     type Expression = Coerce<now, Timestamptz>;
@@ -70,11 +78,29 @@ impl AsExpression<Timestamptz> for now {
 }
 
 #[cfg(feature = "postgres_backend")]
+impl AsExpression<Timestamptz> for &now {
+    type Expression = Coerce<now, Timestamptz>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(*self)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
 impl AsExpression<Nullable<Timestamptz>> for now {
     type Expression = Coerce<now, Nullable<Timestamptz>>;
 
     fn as_expression(self) -> Self::Expression {
         Coerce::new(self)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl AsExpression<Nullable<Timestamptz>> for &now {
+    type Expression = Coerce<now, Nullable<Timestamptz>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(*self)
     }
 }
 
@@ -88,11 +114,29 @@ impl AsExpression<TimestamptzSqlite> for now {
 }
 
 #[cfg(feature = "__sqlite-shared")]
+impl AsExpression<TimestamptzSqlite> for &now {
+    type Expression = Coerce<now, TimestamptzSqlite>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(*self)
+    }
+}
+
+#[cfg(feature = "__sqlite-shared")]
 impl AsExpression<Nullable<TimestamptzSqlite>> for now {
     type Expression = Coerce<now, Nullable<TimestamptzSqlite>>;
 
     fn as_expression(self) -> Self::Expression {
         Coerce::new(self)
+    }
+}
+
+#[cfg(feature = "__sqlite-shared")]
+impl AsExpression<Nullable<TimestamptzSqlite>> for &now {
+    type Expression = Coerce<now, Nullable<TimestamptzSqlite>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(*self)
     }
 }
 
@@ -122,5 +166,13 @@ impl AsExpression<Nullable<Date>> for today {
 
     fn as_expression(self) -> Self::Expression {
         Coerce::new(self)
+    }
+}
+
+impl AsExpression<Nullable<Date>> for &today {
+    type Expression = Coerce<today, Nullable<Date>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(*self)
     }
 }
