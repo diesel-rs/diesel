@@ -66,7 +66,10 @@ impl ColumnType {
             max_length,
             unmodified_type: last.ident.to_string(),
         };
-        let is_range = last.ident == "Range";
+        // A type without generic arguments named like a generic Diesel type is a custom type,
+        // like the one generated for a PostgreSQL type named `range`.
+        let is_range = last.ident == "Range"
+            && matches!(last.arguments, syn::PathArguments::AngleBracketed(_));
         let is_multirange = last.ident == "Multirange";
         let is_record = last.ident == "Record";
 

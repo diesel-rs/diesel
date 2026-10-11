@@ -292,6 +292,48 @@ fn migration_generate_postgres_specific_types() {
 
 #[cfg(feature = "postgres")]
 #[test]
+fn migration_generate_postgres_custom_type_named_range_without_changes() {
+    // A PostgreSQL type named `range` is a custom type in the generated schema, not
+    // Diesel's generic `Range`, so diffing it against the unchanged database finds nothing.
+    let p = project("migration_generate_postgres_custom_type_named_range").build();
+    let db = crate::support::database(&p.database_url());
+    p.command("setup").run();
+    db.execute(
+        "CREATE TYPE range AS ENUM ('ideal', 'rated');
+        CREATE TABLE settings (
+            id SERIAL PRIMARY KEY,
+            preferred_range range NOT NULL,
+            int_range int4range NOT NULL,
+            maybe_int_range int4range
+        );",
+    );
+
+    let result = p.command("print-schema").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    let schema_rs = p.directory_path().join("schema.rs");
+    std::fs::write(&schema_rs, result.stdout()).unwrap();
+
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("unchanged")
+        .arg("--version=12345")
+        .arg(format!("--diff-schema={}", schema_rs.display()))
+        .run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    for file in ["up.sql", "down.sql"] {
+        let sql = p.file_contents(format!("migrations/12345_unchanged/{file}"));
+        assert!(
+            sql.lines()
+                .all(|l| l.trim().is_empty() || l.starts_with("--")),
+            "Expected no changes in {file}, got:\n{sql}"
+        );
+    }
+}
+
+#[cfg(feature = "postgres")]
+#[test]
 fn migration_generate_postgres_add_record() {
     test_generate_migration("postgres_add_record", Vec::new())
 }
