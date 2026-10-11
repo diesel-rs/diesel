@@ -280,6 +280,12 @@ fn print_schema_default_is_to_generate_custom_types() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn print_schema_custom_type_named_range() {
+    test_print_schema("print_schema_custom_type_named_range", vec![])
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn print_schema_specifying_schema_name_with_custom_type() {
     test_print_schema(
         "print_schema_specifying_schema_name_with_custom_type",

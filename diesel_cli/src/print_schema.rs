@@ -477,7 +477,6 @@ fn pg_diesel_types() -> HashSet<&'static str> {
     types.insert("MacAddr8");
     types.insert("Money");
     types.insert("Oid");
-    types.insert("Range");
     types.insert("Timestamptz");
     types.insert("Uuid");
     types.insert("Json");
@@ -568,6 +567,23 @@ pub(crate) struct CustomTypeInfos {
     pub(crate) enum_variant_list: HashMap<(String, Option<String>), Vec<EnumVariant>>,
 }
 
+/// The name under which a column type is looked up in the types provided by Diesel.
+///
+/// PostgreSQL types are looked up by their SQL name, because a user defined type can share
+/// its Rust name with a generic Diesel type like `Range`, while built-in range types have
+/// their own SQL names like `int4range`.
+fn diesel_type_lookup_name(backend: Backend, ty: &ColumnType) -> Cow<'_, str> {
+    match backend {
+        #[cfg(feature = "postgres")]
+        Backend::Pg => {
+            use heck::ToUpperCamelCase;
+            Cow::Owned(ty.sql_name.to_upper_camel_case())
+        }
+        #[allow(unreachable_patterns)]
+        _ => Cow::Borrowed(&ty.rust_name),
+    }
+}
+
 pub(crate) fn load_custom_types(
     connection: &mut InferConnection,
     data: &[QueryRelationData],
@@ -591,7 +607,10 @@ pub(crate) fn load_custom_types(
                 .iter()
                 .map(|c| {
                     Some(&c.ty)
-                        .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
+                        .filter(|ty| {
+                            !diesel_provided_types
+                                .contains(diesel_type_lookup_name(backend, ty).as_ref())
+                        })
                         // Skip generating custom SQL type definitions if the type matches any
                         // regex specified in `except_custom_type_definitions`.
                         // Matching is performed against:
