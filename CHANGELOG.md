@@ -82,6 +82,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `_2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`
 
 ### Changed
 
