@@ -57,8 +57,8 @@ fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
 /// Makes `name` a valid Rust identifier by prefixing it with `_` if it starts with a digit, and
 /// appending `_` if it is reserved.
 ///
-/// Names built from SQL names must go through this function after any case conversion, as the
-/// conversion can strip a `_` added before it, or produce a keyword (`self` -> `Self`).
+/// Names built from SQL names must go through this function after any case conversion as case
+/// conversions strip trailing `_`
 pub fn make_valid_identifier(name: &str) -> String {
     if name.starts_with(|c: char| c.is_ascii_digit()) {
         // Rust identifiers cannot start with a digit
