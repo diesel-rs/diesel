@@ -677,7 +677,9 @@ pub(crate) fn load_custom_types(
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub(crate) fn mysql_enum_name(table_name: &str, column_name: &str, ty: &ColumnType) -> String {
     use heck::ToUpperCamelCase;
-    format!("{} {} {}", table_name, column_name, ty.rust_name).to_upper_camel_case()
+    crate::infer_schema_internals::make_valid_identifier(
+        &format!("{} {} {}", table_name, column_name, ty.rust_name).to_upper_camel_case(),
+    )
 }
 
 fn safe_tables_for_config(

@@ -305,16 +305,6 @@ pub struct EnumVariant {
 
 impl EnumVariant {
     pub fn rust_name(&self) -> String {
-        // Check the name after the case conversion, which drops a `_` added before it and can
-        // produce a keyword (`self` -> `Self`)
-        let name = self.sql_name.to_pascal_case();
-        if name.starts_with(|c: char| c.is_ascii_digit()) {
-            // Rust identifiers cannot start with a digit
-            format!("_{name}")
-        } else if super::inference::is_reserved_name(&name) {
-            format!("{name}_")
-        } else {
-            name
-        }
+        super::inference::make_valid_identifier(&self.sql_name.to_pascal_case())
     }
 }

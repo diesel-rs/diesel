@@ -13,7 +13,7 @@ use crate::print_schema::{ColumnSorting, DocConfig};
 
 static RESERVED_NAMES: &[&str] = &["table", "columns", "is_nullable"];
 
-pub(super) fn is_reserved_name(name: &str) -> bool {
+fn is_reserved_name(name: &str) -> bool {
     syn::parse_str::<syn::Ident>(name).is_err()
         || RESERVED_NAMES.contains(&name)
         || (
@@ -35,11 +35,6 @@ fn replace_unmappable_chars(name: &str) -> Cow<'_, str> {
             let tail = &name[idx..];
             replace_chars(&mut s, tail, false);
             return Cow::Owned(s);
-            // rust identifier don't start with digits
-        } else if idx == 0 && c.is_ascii_digit() {
-            let mut out = String::from("_");
-            replace_chars(&mut out, &name[idx..], true);
-            return Cow::Owned(out);
         }
     }
     Cow::Borrowed(name)
@@ -59,12 +54,28 @@ fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
     }
 }
 
-pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
-    let name = replace_unmappable_chars(sql_name);
-    if is_reserved_name(&name) || Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
+/// Makes `name` a valid Rust identifier by prefixing it with `_` if it starts with a digit, and
+/// appending `_` if it is reserved.
+///
+/// Names built from SQL names must go through this function after any case conversion, as the
+/// conversion can strip a `_` added before it, or produce a keyword (`self` -> `Self`).
+pub fn make_valid_identifier(name: &str) -> String {
+    if name.starts_with(|c: char| c.is_ascii_digit()) {
+        // Rust identifiers cannot start with a digit
+        format!("_{name}")
+    } else if is_reserved_name(name) {
         format!("{name}_")
     } else {
-        name.into_owned()
+        name.to_owned()
+    }
+}
+
+pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
+    let name = make_valid_identifier(&replace_unmappable_chars(sql_name));
+    if Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
+        format!("{name}_")
+    } else {
+        name
     }
 }
 
@@ -266,9 +277,7 @@ pub fn load_foreign_key_constraints(
         ct.sort();
         ct.iter_mut().for_each(|foreign_key_constraint| {
             for name in &mut foreign_key_constraint.foreign_key_columns_rust {
-                if is_reserved_name(name) {
-                    *name = format!("{name}_");
-                }
+                *name = make_valid_identifier(name);
             }
         });
         tracing::info!(?ct, "Loaded foreign key constraints");
