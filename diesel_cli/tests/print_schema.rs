@@ -219,6 +219,12 @@ fn print_schema_custom_enum_derives() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_unmappable_enum_variants() {
+    test_print_schema("print_schema_unmappable_enum_variants", vec![]);
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
