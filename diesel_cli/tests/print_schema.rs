@@ -18,6 +18,7 @@ fn run_except_custom_type_definitions() {
         "print_schema_except_custom_type_definitions",
         vec!["--except-custom-type-definitions", "MyType2"],
         false, // we exclude a certain required type
+        vec![],
     );
 }
 
@@ -185,6 +186,7 @@ fn print_schema_custom_types() {
         vec!["--import-types", "foo::*", "--import-types", "bar::*"],
         // these modules don't exist so it's not meaningful to check if this compiles
         false,
+        vec![],
     );
 }
 
@@ -257,6 +259,7 @@ fn print_schema_disabling_custom_type_works() {
         "print_schema_disabling_custom_type_works",
         vec!["--no-generate-missing-sql-type-definitions"],
         false, // explicitly exclude required types
+        vec![],
     )
 }
 
@@ -660,6 +663,24 @@ include!(env!("SCHEMA")); mod y
     )
 }
 
+#[test]
+fn print_schema_respects_schema_keys() {
+    let path_to_config = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/print_schema/print_schema_respects_schema_keys/diesel.toml");
+    test_print_schema_with_options(
+        "print_schema_respects_schema_keys",
+        vec![
+            "--config-file",
+            path_to_config.to_str().unwrap(),
+            "--schema-key",
+            "key1",
+            "--with-docs",
+        ],
+        true,
+        vec!["--schema-key", "key1"],
+    );
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
@@ -699,7 +720,7 @@ fn test_multiple_print_schema(test_name: &str, args: Vec<&str>) {
     let schema = read_file(&backend_file_path(test_name, "schema.sql"));
     db.execute(&schema);
 
-    let result = p.command("print-schema").args(args).run();
+    let result = p.command("print-schema").args(args.clone()).run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
@@ -711,19 +732,39 @@ fn test_multiple_print_schema(test_name: &str, args: Vec<&str>) {
     setting.set_description(format!("Test: {test_name}"));
     setting.set_prepend_module_to_snapshot(false);
 
+    let mut schema_args = Vec::new();
+    let mut last_was_schema_key = false;
+    for arg in args {
+        if arg == "--schema-key" {
+            schema_args.push(arg);
+            last_was_schema_key = true;
+        } else {
+            if last_was_schema_key {
+                schema_args.push(arg);
+            }
+            last_was_schema_key = false;
+        }
+    }
+
     setting.bind(|| {
         insta::assert_snapshot!("expected", result);
-        test_multiple_print_schema_config(test_name, &test_path, schema);
+
+        test_multiple_print_schema_config(test_name, &test_path, schema, schema_args);
     });
 }
 
 #[track_caller]
 fn test_print_schema(test_name: &str, args: Vec<&str>) {
-    test_print_schema_with_options(test_name, args, true);
+    test_print_schema_with_options(test_name, args, true, Vec::new());
 }
 
 #[track_caller]
-fn test_print_schema_with_options(test_name: &str, args: Vec<&str>, check_compile: bool) {
+fn test_print_schema_with_options(
+    test_name: &str,
+    args: Vec<&str>,
+    check_compile: bool,
+    config_args: Vec<&str>,
+) {
     let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("print_schema")
@@ -751,7 +792,7 @@ fn test_print_schema_with_options(test_name: &str, args: Vec<&str>, check_compil
     setting.bind(|| {
         insta::assert_snapshot!("expected", result);
 
-        test_print_schema_config(test_name, &test_path, &schema);
+        test_print_schema_config(test_name, &test_path, &schema, config_args);
     });
     if check_compile {
         assert_schema_compiles(test_name, result);
@@ -759,7 +800,12 @@ fn test_print_schema_with_options(test_name: &str, args: Vec<&str>, check_compil
 }
 
 #[track_caller]
-fn test_print_schema_config(test_name: &str, test_path: &Path, schema: &str) {
+fn test_print_schema_config(
+    test_name: &str,
+    test_path: &Path,
+    schema: &str,
+    config_args: Vec<&str>,
+) {
     let config = read_file(&test_path.join("diesel.toml"));
     let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
 
@@ -776,10 +822,12 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: &str) {
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    let schema = p.file_contents("src/schema.rs").replace("\r\n", "\n");
-    insta::assert_snapshot!("expected", schema);
+    if config_args.is_empty() {
+        let schema = p.file_contents("src/schema.rs").replace("\r\n", "\n");
+        insta::assert_snapshot!("expected", schema);
+    }
 
-    let result = p.command("print-schema").run();
+    let result = p.command("print-schema").args(config_args).run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     let result = result.stdout().replace("\r\n", "\n");
@@ -859,7 +907,12 @@ fn assert_schema_compiles(test_name: &str, schema: String) {
     }
 }
 
-fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
+fn test_multiple_print_schema_config(
+    test_name: &str,
+    test_path: &Path,
+    schema: String,
+    schema_args: Vec<&str>,
+) {
     let config = read_file(&test_path.join("diesel.toml"));
     // prevent name collisions by shorting the original name
     // Postgres allows database names up to 63 bytes, "_config` is 7 bytes
@@ -890,7 +943,7 @@ fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: 
     let schema = p.file_contents("src/schema2.rs").replace("\r\n", "\n");
     insta::assert_snapshot!("expected_2", schema);
 
-    let result = p.command("print-schema").run();
+    let result = p.command("print-schema").args(schema_args).run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     let result = result.stdout().replace("\r\n", "\n");
