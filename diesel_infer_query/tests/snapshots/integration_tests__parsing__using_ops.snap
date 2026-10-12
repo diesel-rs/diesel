@@ -25,7 +25,10 @@ ViewData {
             kind: BinaryOp {
                 left: Field {
                     schema: None,
-                    query_source: "bar",
+                    query_source: Some(
+                        "bar",
+                    ),
+                    source_id: None,
                     field_name: "json",
                     via_left_join: false,
                 },
@@ -44,7 +47,10 @@ ViewData {
             kind: PostfixOp {
                 expr: Field {
                     schema: None,
-                    query_source: "bar",
+                    query_source: Some(
+                        "bar",
+                    ),
+                    source_id: None,
                     field_name: "name",
                     via_left_join: false,
                 },
@@ -53,4 +59,5 @@ ViewData {
             },
         },
     ],
+    subqueries: [],
 }

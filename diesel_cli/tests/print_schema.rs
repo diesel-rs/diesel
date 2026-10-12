@@ -569,6 +569,15 @@ fn print_schema_view_infer_nullable_simple() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_view_infer_nullable_resolution_failure() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_resolution_failure",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    );
+}
+
+#[test]
 fn print_schema_view_infer_nullable_from_table() {
     test_print_schema(
         "print_schema_view_infer_nullable_from_table",
