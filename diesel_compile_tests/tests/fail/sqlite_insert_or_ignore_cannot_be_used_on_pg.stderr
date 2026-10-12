@@ -8,14 +8,14 @@ error[E0277]: `diesel::query_builder::insert_statement::private::InsertOrIgnore`
      = note: this usually means that the `Pg` database system does not support 
              this SQL syntax
 help: the trait `QueryFragment<Sqlite>` is implemented for `diesel::query_builder::insert_statement::private::InsertOrIgnore`
-    --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+    --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
      |
  LL |     impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      = note: required for `InsertStatement<table, ValuesClause<_, table>, _>` to implement `QueryFragment<Pg>`
      = note: required for `InsertStatement<table, ValuesClause<_, table>, _>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
      |        ------- required by a bound in this associated function

@@ -15,7 +15,7 @@ LL | | }
              (T₁, T₂, …, Tₙ) for tuples of arity 1 up to and including 16
            and N others
 note: required by a bound in `diesel::QuerySource::DefaultSelection`
-  --> DIESEL/diesel/diesel/src/query_source/mod.rs
+  --> ROOT/diesel/src/query_source/mod.rs
    |
 LL |     type DefaultSelection: SelectableExpression<Self>;
    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QuerySource::DefaultSelection`
@@ -69,7 +69,7 @@ error[E0277]: the trait bound `(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, 
               `(T, T1, T2, T3, T4, T5, T6)` implements `ValidGrouping<__GroupByClause>`
             and N others
 note: required by a bound in `diesel::Table::AllColumns`
-   --> DIESEL/diesel/diesel/src/query_source/mod.rs
+   --> ROOT/diesel/src/query_source/mod.rs
     |
 LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
     |                                                   ^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
@@ -93,7 +93,7 @@ error[E0277]: cannot select `(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
               (T₁, T₂, …, Tₙ) for tuples of arity 1 up to and including 16
             and N others
 note: required by a bound in `diesel::Table::AllColumns`
-   --> DIESEL/diesel/diesel/src/query_source/mod.rs
+   --> ROOT/diesel/src/query_source/mod.rs
     |
 LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`

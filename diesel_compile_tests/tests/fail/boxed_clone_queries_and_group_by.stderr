@@ -7,7 +7,7 @@ error[E0277]: cannot box `SelectStatement<_, _, _, _, _, _, _>` for backend `_`
     = note: this either means `SelectStatement<_, _, _, _, _, _, _>` is no valid SQL for `_`
     = note: or this means `SelectStatement<_, _, _, _, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedCloneDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedCloneDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -63,7 +63,7 @@ error[E0277]: cannot box `SelectStatement<_, _, _, _, _, _, _>` for backend `_`
     = note: this either means `SelectStatement<_, _, _, _, _, _, _>` is no valid SQL for `_`
     = note: or this means `SelectStatement<_, _, _, _, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedCloneDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedCloneDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -150,7 +150,7 @@ help: the return type of this call is `posts::table` due to the type of the argu
     |                       |
     |                       this argument influences the return type of `inner_join`
 note: method defined here
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+   --> ROOT/diesel/src/query_dsl/mod.rs
     |
 LL |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
     |        ^^^^^^^^^^
@@ -174,7 +174,7 @@ error[E0277]: the trait bound `BoxedCloneSelectStatement<'_, _, _, _>: GroupByDs
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedCloneSelectStatement<'_, (_, Text), _, _>`
     |
 help: the trait `GroupByDsl<Expr>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Expr> GroupByDsl<Expr> for Alias<S>
 LL | | where
@@ -193,7 +193,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: GroupByDsl<_>` is
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<_>>`
     |
 help: the trait `GroupByDsl<Expr>` is conditionally implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::BoxedCloneSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), diesel::internal::table_macro::FromClause<users::table>, _>>>: Sized`
@@ -213,7 +213,7 @@ error[E0277]: the trait bound `BoxedCloneSelectStatement<'_, _, _, _>: QueryRela
     |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `BoxedCloneSelectStatement<'_, (_, Text), _, _>`
     |
 help: the trait `GroupByDsl<Expr>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Expr> GroupByDsl<Expr> for Alias<S>
 LL | | where

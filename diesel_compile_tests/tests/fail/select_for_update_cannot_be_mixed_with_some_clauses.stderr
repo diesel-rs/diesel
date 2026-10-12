@@ -6,7 +6,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Disti
     |
     = note: a `DISTINCT` clause is not compatible with various other clauses like `LOCKING` clauses
 help: the trait `DistinctDsl` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H> DistinctDsl for SelectStatement<F, S, D, W, O, LOf, G, H>
 LL | | where
@@ -23,7 +23,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: DistinctDsl` is n
     |
     = note: a `DISTINCT` clause is not compatible with various other clauses like `LOCKING` clauses
 help: the trait `DistinctDsl` is conditionally implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<ST, F, S, D, W, O, LOf, G, H> DistinctDsl for SelectStatement<F, S, D, W, O, LOf, G, H>
     |   ^           - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>: Sized`
@@ -43,7 +43,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Query
     |                        ^^^^^^^^ the trait `DistinctDsl` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, _>`
     |
 help: the trait `DistinctDsl` is implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H> DistinctDsl for SelectStatement<F, S, D, W, O, LOf, G, H>
 LL | | where
@@ -61,7 +61,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _>: LockingDsl<_>` is not s
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, diesel::query_builder::distinct_clause::DistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, _, _, _>`
       but it is implemented for `SelectStatement<_, _, diesel::query_builder::distinct_clause::NoDistinctClause, _, _, _, _, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -78,7 +78,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<_>>`
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<Lock>` is conditionally implemented for `SelectStatement<F, S, NoDistinctClause, W, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, diesel::query_builder::distinct_clause::DistinctClause>>>: Sized`
@@ -97,7 +97,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _>: QueryRelation` is not s
     |
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, diesel::query_builder::distinct_clause::DistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, _, _, _>`
       but it is implemented for `SelectStatement<_, _, diesel::query_builder::distinct_clause::NoDistinctClause, _, _, _, _, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -115,7 +115,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Disti
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
 help: the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -136,7 +136,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Query
     |
 help: the trait `DistinctOnDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -159,7 +159,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Disti
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
 help: the trait `DistinctOnDsl<columns::id>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -181,7 +181,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _>: LockingDsl<_>` is not s
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, DistinctOnClause<columns::id>, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, _, _, _>`
       but it is implemented for `SelectStatement<_, _, diesel::query_builder::distinct_clause::NoDistinctClause, _, _, _, _, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -198,7 +198,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<_>>`
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<Lock>` is conditionally implemented for `SelectStatement<F, S, NoDistinctClause, W, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, DistinctOnClause<columns::id>>>>: Sized`
@@ -217,7 +217,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _>: QueryRelation` is not s
     |
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, DistinctOnClause<columns::id>, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, _, _, _>`
       but it is implemented for `SelectStatement<_, _, diesel::query_builder::distinct_clause::NoDistinctClause, _, _, _, _, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -233,7 +233,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Group
     |
 help: the trait `GroupByDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
 LL | | where
@@ -250,7 +250,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: GroupByDsl<_>` is
     |                        ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<_>>`
     |
 help: the trait `GroupByDsl<Expr>` is conditionally implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>: Sized`
@@ -271,7 +271,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Query
     |
 help: the trait `GroupByDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
 LL | | where
@@ -290,7 +290,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: LockingDsl<
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, _, _>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -307,7 +307,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<_>>`
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<Lock>` is conditionally implemented for `SelectStatement<F, S, NoDistinctClause, W, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>>>: Sized`
@@ -326,7 +326,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: QueryRelati
     |
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, _, _>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -343,7 +343,7 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, _, _, _>: LockingDsl<_>`
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `BoxedSelectStatement<'_, (Integer,), _, _>`
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<Lock>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Lock> LockingDsl<Lock> for Alias<S>
 LL | | where
@@ -363,7 +363,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<_>>`
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<Lock>` is conditionally implemented for `SelectStatement<F, S, NoDistinctClause, W, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::BoxedSelectStatement<'_, (diesel::sql_types::Integer,), diesel::internal::table_macro::FromClause<users::table>, _>>>: Sized`
@@ -382,7 +382,7 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, _, _, _>: QueryRelation`
     |
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `BoxedSelectStatement<'_, (Integer,), _, _>`
 help: the trait `LockingDsl<Lock>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Lock> LockingDsl<Lock> for Alias<S>
 LL | | where
@@ -402,7 +402,7 @@ error[E0277]: cannot box `SelectStatement<_, _, _, _, _, _, _, _, _>` for backen
     = note: this either means `SelectStatement<_, _, _, _, _, _, _, _, _>` is no valid SQL for `_`
     = note: or this means `SelectStatement<_, _, _, _, _, _, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -430,7 +430,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Query
     |                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, _>`
     |
 help: the following other types implement trait `BoxedDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -462,7 +462,7 @@ error[E0277]: cannot box `SelectStatement<_, _, _, _, _, _, _, _, _>` for backen
      = note: this either means `SelectStatement<_, _, _, _, _, _, _, _, _>` is no valid SQL for `_`
      = note: or this means `SelectStatement<_, _, _, _, _, _, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
-    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
      |
  LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
  LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -482,7 +482,7 @@ help: the following other types implement trait `BoxedDsl<'a, DB>`
  LL | |     H: QueryFragment<DB> + Send + 'a,
      | |_____________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H>`
 note: required by a bound in `diesel::QueryDsl::into_boxed`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
      |        ---------- required by a bound in this associated function
@@ -499,7 +499,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Group
     |
 help: the trait `GroupByDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
 LL | | where
@@ -516,7 +516,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: GroupByDsl<_>` is
     |                        ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<FromClause<_>>`
     |
 help: the trait `GroupByDsl<Expr>` is conditionally implemented for `SelectStatement<F, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>>>: Sized`
@@ -537,7 +537,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _, _>: Query
     |
 help: the trait `GroupByDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::LockingClause>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, _, _, diesel::query_builder::locking_clause::NoLockingClause>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, ...
 LL | | where
@@ -556,7 +556,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _>: LockingD
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, diesel::query_builder::having_clause::HavingClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>, _>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
@@ -573,7 +573,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<_>>: LockingDsl<_>` is
     = help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<FromClause<_>>`
     = note: a `LOCKING` clause is incompatible with various other clauses like a `DISTINCT` clause
 help: the trait `LockingDsl<Lock>` is conditionally implemented for `SelectStatement<F, S, NoDistinctClause, W, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL |   impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
     |   ^    -  - unsatisfied requirement introduced here: `diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<diesel::internal::table_macro::FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, diesel::query_builder::having_clause::HavingClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>>>: Sized`
@@ -592,7 +592,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _, _>: QueryRel
     |
 help: the trait `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<columns::id>, diesel::query_builder::having_clause::HavingClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Gt<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>, _>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
 LL | |     for SelectStatement<F, S, NoDistinctClause, W, O, LOf>

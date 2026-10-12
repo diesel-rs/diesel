@@ -32,7 +32,7 @@ note: `users::table` is defined in module `crate::users` of the current crate
     = note: 1 redundant requirement hidden
     = note: required for `&Grouped<Eq<id, Bound<Integer, i32>>>` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     |            ------ required by a bound in this associated function
@@ -90,7 +90,7 @@ note: `users::table` is defined in module `crate::users` of the current crate
     = note: 1 redundant requirement hidden
     = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, _)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     |            ------ required by a bound in this associated function
@@ -134,7 +134,7 @@ note: `users::table` is defined in module `crate::users` of the current crate
     = note: 3 redundant requirements hidden
     = note: required for `&(Grouped<Eq<id, Bound<Integer, i32>>>, _)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     |            ------ required by a bound in this associated function

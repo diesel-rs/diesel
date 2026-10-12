@@ -7,7 +7,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: DistinctOnD
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
 help: the trait `DistinctOnDsl<Selection>` is conditionally implemented for `SelectStatement<_, S, D, W, O, LOf, G, H>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
 LL | / impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -29,7 +29,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: SelectDsl<_
     |          ^^^^^^ the trait `SelectDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _>`
     |
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -61,7 +61,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -84,7 +84,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -103,7 +103,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _>: SelectDsl<_>` is not sa
     |
     = help: the trait `SelectDsl<diesel::dsl::CountStar>` is not implemented for `SelectStatement<FromClause<table>, _, _>`
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -135,7 +135,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`

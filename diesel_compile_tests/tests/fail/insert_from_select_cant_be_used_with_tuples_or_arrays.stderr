@@ -68,7 +68,7 @@ note: expected this to be `diesel::query_builder::insert_statement::ValuesClause
                found struct `diesel...ment::insert...body)>`
     = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     |            ------ required by a bound in this associated function

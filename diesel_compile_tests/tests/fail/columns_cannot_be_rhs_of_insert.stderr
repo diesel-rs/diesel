@@ -30,7 +30,7 @@ note: required for `columns::hair_color` to implement `AppearsOnTable<diesel::in
      = note: required for `InsertStatement<table, ValuesClause<_, table>>` to implement `QueryFragment<_>`
      = note: required for `InsertStatement<table, ValuesClause<_, table>>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
      |        ------- required by a bound in this associated function

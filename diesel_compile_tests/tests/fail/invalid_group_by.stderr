@@ -75,7 +75,7 @@ LL |         .select(user_alias.field(users::id))
    |
    = help: the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`
 help: the following other types implement trait `ValidGrouping<GroupByClause>`
-  --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
+  --> ROOT/diesel/src/query_source/aliasing/aliased_field.rs
    |
 LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
 LL | | where
@@ -158,7 +158,7 @@ LL |         .select(user_alias.field(users::id))
    |
    = help: the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`
 help: the following other types implement trait `ValidGrouping<GroupByClause>`
-  --> DIESEL/diesel/diesel/src/query_source/aliasing/aliased_field.rs
+  --> ROOT/diesel/src/query_source/aliasing/aliased_field.rs
    |
 LL | / impl<S, C> ValidGrouping<()> for AliasedField<S, C>
 LL | | where
