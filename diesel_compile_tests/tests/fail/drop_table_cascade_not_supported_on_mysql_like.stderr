@@ -1,0 +1,54 @@
+error[E0277]: `DROP TABLE ... CASCADE` has no cascade semantics for the `Mysql` backend
+    --> tests/fail/drop_table_cascade_not_supported_on_mysql_like.rs:17:18
+     |
+  LL |         .execute(mysql_connection);
+     |          ------- ^^^^^^^^^^^^^^^^ the trait `SupportsDropTableCascade` is not implemented for `Mysql`
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `SupportsDropTableCascade` is implemented for `Pg`
+    --> DIESEL/diesel/diesel/src/ddl/drop_table.rs
+     |
+ LL | impl SupportsDropTableCascade for crate::pg::Pg {}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = note: required for `diesel::ddl::Cascade` to implement `QueryFragment<Mysql>`
+     = note: 1 redundant requirement hidden
+     = note: required for `DropTableStatement<table, NoIfExists, Cascade>` to implement `QueryFragment<Mysql>`
+     = note: required for `DropTableStatement<table, NoIfExists, Cascade>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
+...
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+     
+error[E0277]: `DROP TABLE ... CASCADE` has no cascade semantics for the `Mariadb` backend
+    --> tests/fail/drop_table_cascade_not_supported_on_mysql_like.rs:24:18
+     |
+  LL |         .execute(mariadb_connection);
+     |          ------- ^^^^^^^^^^^^^^^^^^ the trait `SupportsDropTableCascade` is not implemented for `Mariadb`
+     |          |
+     |          required by a bound introduced by this call
+     |
+help: the trait `SupportsDropTableCascade` is implemented for `Pg`
+    --> DIESEL/diesel/diesel/src/ddl/drop_table.rs
+     |
+ LL | impl SupportsDropTableCascade for crate::pg::Pg {}
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = note: required for `diesel::ddl::Cascade` to implement `QueryFragment<Mariadb>`
+     = note: 1 redundant requirement hidden
+     = note: required for `DropTableStatement<table, NoIfExists, Cascade>` to implement `QueryFragment<Mariadb>`
+     = note: required for `DropTableStatement<table, NoIfExists, Cascade>` to implement `ExecuteDsl<MysqlLikeConnection<Mariadb>, Mariadb>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
+...
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+     For more information about this error, try `rustc --explain E0277`.
