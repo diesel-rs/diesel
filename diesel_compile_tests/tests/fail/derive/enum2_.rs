@@ -47,5 +47,5 @@ fn main() {
     let _r = diesel::select(diesel::dsl::sql::<SqlEnum>("_")).get_result::<Test4>(pg_conn);
     // it fails with a sqlite connection
     let r = diesel::select(diesel::dsl::sql::<SqlEnum>("_")).get_result::<Test4>(conn);
-    //~^ ERROR: `types::enum_::EnumTypeMapping` is no valid strategy to map an enum for backend `Sqlite`
+    //~^ ERROR: `diesel::internal::derives::sql_type::EnumTypeMapping` is no valid strategy to map an enum for backend `Sqlite`
 }

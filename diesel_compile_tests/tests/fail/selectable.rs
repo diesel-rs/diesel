@@ -195,13 +195,13 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
-        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<_, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<_, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn)
-        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<..., ...>`
-        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<..., ...>`
-        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<_, table>`
+        //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<_, table>`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 
     // cannot load results from more than one table via
@@ -211,11 +211,11 @@ fn main() {
         .returning(UserWithEmbeddedPost::as_select())
         //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
         //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
-        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn)
         //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<UpdateStmt, table>`
         //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<UpdateStmt, table>`
-        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 
     // cannot load results from more than one table via
@@ -224,11 +224,11 @@ fn main() {
         .returning(UserWithEmbeddedPost::as_select())
         //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
         //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
-        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
         .load(&mut conn)
         //~^ ERROR: cannot select `posts::columns::id` from `ReturningQuerySource<DeleteStmt, table>`
         //~| ERROR: cannot select `posts::columns::title` from `ReturningQuerySource<DeleteStmt, table>`
-        //~| ERROR: type mismatch resolving `<ReturningQuerySource<..., ...> as AppearsInFromClause<...>>::Count == Once`
+        //~| ERROR: type mismatch resolving `<ReturningQuerySource<_, table> as AppearsInFromClause<table>>::Count == Once`
         .unwrap();
 
     // cannot use this method without deriving selectable
@@ -255,14 +255,14 @@ fn main() {
     let _ = posts::table
         .select((Post::as_select(), posts::title))
         .load::<((i32, String), String)>(&mut conn)
-        //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<..., _>` is not satisfied
+        //~^ ERROR: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<_, _>` is not satisfied
         .unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())
         .load::<(i32, String, i32)>(&mut conn)
         //~^ ERROR: the trait bound `diesel::expression::select_by::SelectBy<Post, _>: SingleValue` is not satisfied
-        //~| ERROR: the trait bound `(i32, String, i32): Queryable<SelectBy<..., _>, _>` is not satisfied
+        //~| ERROR: the trait bound `(i32, String, i32): Queryable<_, _>` is not satisfied
         .unwrap();
 
     // cannot use backend specific selectable with other backend

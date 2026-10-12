@@ -10,7 +10,7 @@ error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
  LL | | ...   ) as Box<dyn BoxableExpression<_, _, SqlType = _>>)
     | |_______^ unsatisfied trait bound
     |
-    = help: the trait `QueryFragment<Mysql, backend::sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
+    = help: the trait `QueryFragment<Mysql, diesel::internal::derives::multiconnection::sql_dialect::window_frame_exclusion_support::NoFrameFrameExclusionSupport>` is not implemented for `ExcludeGroup`
     = note: this usually means that the `Mysql` database system does not support 
             this SQL syntax
 help: `ExcludeGroup` implements trait `QueryFragment<DB, SP>`
@@ -37,9 +37,9 @@ LL | | );
     | |_- in this macro invocation
     = note: required for `ExcludeGroup` to implement `QueryFragment<Mysql>`
     = note: 4 redundant requirements hidden
-    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `QueryFragment<Mysql>`
-    = note: required for `AggregateExpression<..., ..., ..., ..., ...>` to implement `diesel::BoxableExpression<users::table, Mysql>`
-    = note: required for the cast from `Box<AggregateExpression<..., ..., ..., ..., ...>>` to `Box<...>`
+    = note: required for `AggregateExpression<count<_, id>, _, _, _, _>` to implement `QueryFragment<Mysql>`
+    = note: required for `AggregateExpression<count<_, id>, _, _, _, _>` to implement `diesel::BoxableExpression<users::table, Mysql>`
+    = note: required for the cast from `Box<AggregateExpression<count<_, id>, _, _, _, _>>` to `Box<_>`
  
         = note: this error originates in the macro `simple_frame_expr_with_bound` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

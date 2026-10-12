@@ -11,6 +11,7 @@ pub struct TableName {
     pub sql_name: String,
     pub rust_name: String,
     pub schema: Option<String>,
+    pub rust_schema: Option<String>,
 }
 
 impl TableName {
@@ -21,6 +22,7 @@ impl TableName {
             rust_name: inference::rust_name_for_sql_name(&name, None),
             sql_name: name,
             schema: None,
+            rust_schema: None,
         }
     }
 
@@ -30,11 +32,12 @@ impl TableName {
         U: Into<String>,
     {
         let name = name.into();
-
+        let schema = schema.into();
         TableName {
             rust_name: inference::rust_name_for_sql_name(&name, None),
             sql_name: name,
-            schema: Some(schema.into()),
+            rust_schema: Some(inference::rust_name_for_sql_name(&schema, None)),
+            schema: Some(schema),
         }
     }
 
@@ -42,6 +45,7 @@ impl TableName {
     pub fn strip_schema_if_matches(&mut self, schema: &str) {
         if self.schema.as_deref() == Some(schema) {
             self.schema = None;
+            self.rust_schema = None;
         }
     }
 
@@ -67,7 +71,7 @@ where
 
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self.schema {
+        match self.rust_schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.rust_name),
             None => write!(out, "{}", self.rust_name),
         }

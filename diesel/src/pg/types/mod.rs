@@ -565,6 +565,9 @@ pub mod sql_types {
 
     /// The [`CIDR`](https://www.postgresql.org/docs/postgresql/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
+    /// A network written as `CIDR` is stored with its host bits cleared, so `10.0.0.5/8` becomes
+    /// `10.0.0.0/8`.
+    ///
     /// ### [`ToSql`] impls
     #[cfg_attr(
         feature = "network-address",

@@ -22,7 +22,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -53,7 +53,7 @@ LL |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
    = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), ..., ...)>`
+   = note: required for `SelectStatement<FromClause<_>, _, _, _, _, _, _>` to implement `SelectDsl<((id, name, hair_color), _, id)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -86,6 +86,6 @@ LL |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
    = note: required for `((id, name, hair_color), (id, title, user_id), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), ..., ...)>`
+   = note: required for `SelectStatement<FromClause<_>, _, _, _, _, _, _>` to implement `SelectDsl<((id, name, hair_color), _, id)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

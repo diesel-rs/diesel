@@ -1,10 +1,8 @@
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:132:58
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:132:46
     |
 LL |     let _ = users::table.order_by(users::id).distinct_on(users::name);
-    |                                              ----------- ^^^^^^^^^^^ unsatisfied trait bound
-    |                                              |
-    |                                              required by a bound introduced by this call
+    |                                              ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -29,24 +27,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<users::columns::name>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<users::columns::name>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:139:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:139:10
     |
 LL |         .distinct_on(users::name);
-    |          ----------- ^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -71,24 +59,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<users::columns::name>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<users::columns::name>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:146:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:146:10
     |
 LL |         .distinct_on(users::name);
-    |          ----------- ^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -113,24 +91,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<users::columns::name>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<users::columns::name>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:151:60
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:151:51
     |
 LL |     let _ = users::table.distinct_on(users::name).order_by(users::id);
-    |                                                   -------- ^^^^^^^^^ unsatisfied trait bound
-    |                                                   |
-    |                                                   required by a bound introduced by this call
+    |                                                   ^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -155,24 +123,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `OrderDsl<users::columns::id>`
-note: required by a bound in `order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
-    |        -------- required by a bound in this associated function
-...
-LL |         Self: methods::OrderDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
+    = note: required for `SelectStatement<FromClause<table>, _, _>` to implement `OrderDsl<users::columns::id>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:157:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:157:10
     |
 LL |         .distinct_on(users::name)
-    |          ----------- ^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -197,24 +155,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<users::columns::name>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<users::columns::name>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:165:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:165:10
     |
 LL |         .distinct_on(users::name)
-    |          ----------- ^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -239,24 +187,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<users::columns::name>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<users::columns::name>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:173:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:173:10
     |
 LL |         .distinct_on((users::name, users::id))
-    |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::name, users::columns::id)>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -281,24 +219,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<(users::columns::name, users::columns::id)>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<(users::columns::name, users::columns::id)>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:181:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:181:10
     |
 LL |         .distinct_on((users::name, users::id))
-    |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::name, users::columns::id)>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -323,24 +251,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<(users::columns::name, users::columns::id)>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<(users::columns::name, users::columns::id)>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:189:22
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:189:10
     |
 LL |         .distinct_on(users::name)
-    |          ----------- ^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -365,24 +283,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `DistinctOnDsl<users::columns::name>`
-note: required by a bound in `diesel::QueryDsl::distinct_on`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-    |        ----------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::DistinctOnDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `DistinctOnDsl<users::columns::name>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:197:19
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:197:10
     |
 LL |         .order_by(users::id)
-    |          -------- ^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -407,24 +315,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<FromClause<table>, ..., ...>` to implement `OrderDsl<users::columns::id>`
-note: required by a bound in `order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
-    |        -------- required by a bound in this associated function
-...
-LL |         Self: methods::OrderDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
+    = note: required for `SelectStatement<FromClause<table>, _, _>` to implement `OrderDsl<users::columns::id>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:213:24
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:213:10
     |
 LL |         .then_order_by(users::hair_color);
-    |          ------------- ^^^^^^^^^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::name, users::columns::id)>>` is not implemented for `OrderClause<(name, hair_color)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -449,24 +347,14 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `ThenOrderDsl<users::columns::hair_color>`
-note: required by a bound in `diesel::QueryDsl::then_order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
-    |        ------------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::ThenOrderDsl<Order>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
+    = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `ThenOrderDsl<users::columns::hair_color>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:229:19
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:229:10
     |
 LL |         .order_by(posts::id);
-    |          -------- ^^^^^^^^^ unsatisfied trait bound
-    |          |
-    |          required by a bound introduced by this call
+    |          ^^^^^^^^ unsatisfied trait bound
     |
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::id>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
@@ -491,33 +379,16 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ...>` to implement `OrderDsl<posts::columns::id>`
-note: required by a bound in `order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
-    |        -------- required by a bound in this associated function
-...
-LL |         Self: methods::OrderDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
+    = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _, _>` to implement `OrderDsl<posts::columns::id>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:237:19
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:237:10
     |
-LL |   ...   .order_by((
-    |  ________--------_^
-    | |        |
-    | |        required by a bound introduced by this call
-LL | | ...
-LL | | ...       users::id,
-LL | | ...       posts::id,
-...   |
-LL | | ...       posts::body,
-LL | | ...   ));
-    | |_______^ unsatisfied trait bound
+LL |         .order_by((
+    |          ^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::id>>` is not implemented for `OrderClause<(id, id, hair_color, name, ..., ...)>`
+    = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::id>>` is not implemented for `OrderClause<(id, id, _, name, title, body)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
@@ -540,33 +411,16 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<FromClause<...>, ..., ...>` to implement `OrderDsl<(id, id, hair_color, name, title, body)>`
-note: required by a bound in `order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
-    |        -------- required by a bound in this associated function
-...
-LL |         Self: methods::OrderDsl<Expr>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
+    = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _, _>` to implement `OrderDsl<(id, id, hair_color, name, title, body)>`
  
     
 error[E0277]: invalid order of elements in your `DISTINCT ON` clause in relation to your `ORDER BY` clause
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:251:24
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:251:10
     |
-LL |   ...   .then_order_by((
-    |  ________-------------_^
-    | |        |
-    | |        required by a bound introduced by this call
-LL | | ...
-LL | | ...       posts::id,
-LL | | ...       users::hair_color,
-...   |
-LL | | ...       posts::user_id,
-LL | | ...   ));
-    | |_______^ unsatisfied trait bound
+LL |         .then_order_by((
+    |          ^^^^^^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::id, posts::columns::id)>>` is not implemented for `OrderClause<(id, (id, ..., ..., ..., ..., ...))>`
+    = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::id, posts::columns::id)>>` is not implemented for `OrderClause<(id, (id, _, name, title, body, _))>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
    --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
@@ -589,14 +443,6 @@ help: the following other types implement trait `query_dsl::order_dsl::ValidOrde
  LL | |     T: crate::Expression,
  LL | |     T::SqlType: SingleValue,
     | |____________________________^ `OrderClause<Desc<T>>`
-    = note: required for `SelectStatement<..., ..., ..., ..., ...>` to implement `ThenOrderDsl<(id, hair_color, ..., ..., ..., ...)>`
-note: required by a bound in `diesel::QueryDsl::then_order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
-    |
-LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
-    |        ------------- required by a bound in this associated function
-LL |     where
-LL |         Self: methods::ThenOrderDsl<Order>,
-    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::then_order_by`
+    = note: required for `SelectStatement<FromClause<_>, _, _, _, _>` to implement `ThenOrderDsl<(id, _, name, title, body, _)>`
  
     For more information about this error, try `rustc --explain E0277`.

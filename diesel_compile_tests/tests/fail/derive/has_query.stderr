@@ -36,7 +36,7 @@ help: if you import `name`, refer to it directly
 27 + #[diesel(table_name = name: String,
    |
 
-error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<...>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<_>` is not satisfied
    --> tests/fail/derive/has_query.rs:25:10
     |
  LL | #[derive(HasQuery)]
@@ -53,7 +53,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
 LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
-    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |___________________________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
@@ -62,7 +62,7 @@ LL | |     G: ValidGroupByClause,
 LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |__________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
  
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -281,7 +281,7 @@ LL |     id: String,
 
       = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<...>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<_>` is not satisfied
    --> tests/fail/derive/has_query.rs:50:10
     |
  LL | #[derive(HasQuery)]
@@ -298,7 +298,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
 LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
-    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |___________________________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
@@ -307,7 +307,7 @@ LL | |     G: ValidGroupByClause,
 LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |__________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
  
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -375,13 +375,13 @@ LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQuer
     |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
     = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `SelectStatement<..., ..., ..., ...>: SelectDsl<...>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<_, _, _, _>: SelectDsl<_>` is not satisfied
    --> tests/fail/derive/has_query.rs:60:10
     |
  LL | #[derive(HasQuery)]
     |          ^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<BaseQueryStillRequiresValidSelect, __DB>>` is not implemented for `SelectStatement<FromClause<table>, ..., ..., ...>`
+    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<BaseQueryStillRequiresValidSelect, __DB>>` is not implemented for `SelectStatement<FromClause<table>, _, _, _>`
 help: the following other types implement trait `SelectDsl<Selection>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
@@ -392,7 +392,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
 LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
-    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |___________________________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
@@ -401,7 +401,7 @@ LL | |     G: ValidGroupByClause,
 LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |__________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
  
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -469,13 +469,13 @@ LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQuer
     |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `HasQuery`
     = note: this error originates in the derive macro `HasQuery` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: SelectDsl<...>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: SelectDsl<_>` is not satisfied
    --> tests/fail/derive/has_query.rs:70:10
     |
  LL | #[derive(HasQuery)]
     |          ^^^^^^^^ unsatisfied trait bound
     |
-    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<GroupByIsRespected, __DB>>` is not implemented for `SelectStatement<..., ..., ..., ..., ..., ..., ...>`
+    = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<GroupByIsRespected, __DB>>` is not implemented for `SelectStatement<_, _, _, _, _, _, _>`
 help: the following other types implement trait `SelectDsl<Selection>`
    --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
@@ -486,7 +486,7 @@ LL | |     G: ValidGroupByClause,
 ...   |
 LL | |     <Selection as ValidGrouping<G::Expressions>>::IsAggregate:
 LL | |         MixedAggregates<<O as ValidGrouping<G::Expressions>>::IsAggregate>,
-    | |___________________________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |___________________________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
 ...
 LL | / impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
@@ -495,7 +495,7 @@ LL | |     G: ValidGroupByClause,
 LL | |     Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
 LL | |     SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: Selec...
 LL | |     D: ValidDistinctForGroupBy<Selection, G::Expressions>,
-    | |__________________________________________________________^ `SelectStatement<..., ..., ..., ..., ..., ..., ..., ..., ...>`
+    | |__________________________________________________________^ `SelectStatement<_, S, D, W, O, LOf, G, H, LC>`
  
         = note: this error originates in the derive macro `HasQuery` (in Nightly builds, run with -Z macro-backtrace for more info)
 

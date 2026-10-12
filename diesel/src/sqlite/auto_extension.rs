@@ -237,7 +237,11 @@ fn set_error_message(pz_err_msg: *mut *mut c_char, message: &str) {
     }
 }
 
-#[cfg(test)]
+// These tests either rely on sqlite calling a registered auto extension, or
+// read an error message allocated by the native library, neither of which is
+// supported when running under miri with a native libsqlite3
+// (`-Zmiri-native-lib`), so the whole module is compiled out in that case.
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
     use crate::dsl::sql;

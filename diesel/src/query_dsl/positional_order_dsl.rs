@@ -56,8 +56,17 @@ impl<T: PositionalOrderExpr> IntoPositionalOrderExpr for Desc<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy, QueryId)]
+#[derive(Debug, Clone, Copy)]
 pub struct OrderColumn(pub u32);
+
+impl QueryId for OrderColumn {
+    type QueryId = ();
+
+    // it's not safe to cache by type id
+    // as we inline a dynamic value (the offset) directly
+    // into the SQL
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
 
 impl Expression for OrderColumn {
     type SqlType = crate::sql_types::Integer;
@@ -68,6 +77,7 @@ where
     DB: Backend + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        // unfortunally binds are not supported in this position
         pass.push_sql(&self.0.to_string());
         Ok(())
     }

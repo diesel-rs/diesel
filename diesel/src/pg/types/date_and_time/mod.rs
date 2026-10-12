@@ -174,9 +174,9 @@ impl ToSql<sql_types::Interval, Pg> for PgInterval {
 impl FromSql<sql_types::Interval, Pg> for PgInterval {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(PgInterval {
-            microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(value.subslice(0..8))?,
-            days: FromSql::<sql_types::Integer, Pg>::from_sql(value.subslice(8..12))?,
-            months: FromSql::<sql_types::Integer, Pg>::from_sql(value.subslice(12..16))?,
+            microseconds: FromSql::<sql_types::BigInt, Pg>::from_sql(value.subslice(0..8)?)?,
+            days: FromSql::<sql_types::Integer, Pg>::from_sql(value.subslice(8..12)?)?,
+            months: FromSql::<sql_types::Integer, Pg>::from_sql(value.subslice(12..16)?)?,
         })
     }
 }
@@ -190,5 +190,18 @@ impl Add<PgInterval> for PgInterval {
             days: self.days + other.days,
             months: self.months + other.months,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prevent_panic_on_too_short_buffer() {
+        let bytes: &[u8] = &[0u8; 4];
+        let v = PgValue::for_test(bytes);
+        let r = <PgInterval as FromSql<Interval, Pg>>::from_sql(v);
+        assert!(r.is_err());
     }
 }

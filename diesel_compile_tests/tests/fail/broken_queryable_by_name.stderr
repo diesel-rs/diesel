@@ -163,7 +163,7 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
 ...    |
  LL | |     O: Default,
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
-     | |_________________________________________________________^ `InsertStatement<T, ..., ...>`
+     | |_________________________________________________________^ `InsertStatement<T, _, Op>`
 ...
  LL | / impl<'query, V, T, QId, Op, Ret, O, U, B, const STATIC_QUERY_ID: bool>
  LL | |     LoadQuery<'query, SqliteConnection, U, B>
@@ -172,7 +172,7 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
 ...    |
  LL | |     O: Default,
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
-     | |_________________________________________________________^ `InsertStatement<T, ..., ..., ...>`
+     | |_________________________________________________________^ `InsertStatement<T, _, Op, _>`
 ...
  LL | / impl<'query, V, T, QId, Op, O, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
  LL | |     LoadQuery<'query, SqliteConnection, U, B>
@@ -181,7 +181,7 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
 ...    |
  LL | |     O: Default,
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
-     | |_________________________________________________________^ `InsertStatement<T, ..., ...>`
+     | |_________________________________________________________^ `InsertStatement<T, _, Op>`
 ...
  LL | / impl<'query, V, T, QId, Op, Ret, O, U, B, Target, ConflictOpt, const STATIC_QUERY_ID: bool>
  LL | |     LoadQuery<'query, SqliteConnection, U, B>
@@ -190,7 +190,7 @@ help: the following other types implement trait `LoadQuery<'query, Conn, U, B>`
 ...    |
  LL | |     O: Default,
  LL | |     (O, Self): LoadQuery<'query, SqliteConnection, U, B>,
-     | |_________________________________________________________^ `InsertStatement<T, ..., ..., ...>`
+     | |_________________________________________________________^ `InsertStatement<T, _, Op, _>`
      = note: required for `SqlQuery` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `load`
     --> DIESEL/diesel/diesel/src/query_dsl/mod.rs

@@ -1,0 +1,225 @@
+error[E0277]: cannot select `parents::columns::name` from `children::table`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:30:14
+   |
+LL |             .select(parents::name)
+   |              ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<children::table>` is not implemented for `parents::columns::name`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: `parents::columns::name` is no valid selection for `children::table`
+   = help: `parents::columns::name` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<parents::table>>
+             SelectableExpression<Tablesample<parents::table, TSM>>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<parents::table>
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `SelectDsl<parents::columns::name>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `SelectStatement<_, _, _, _>: LimitDsl` is not satisfied
+   --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:32:14
+    |
+ LL |             .single_value(),
+    |              ^^^^^^^^^^^^ the trait `LimitDsl` is not implemented for `SelectStatement<FromClause<table>, _, _, _>`
+    |
+help: the trait `LimitDsl` is conditionally implemented for `SelectStatement<F, S, D, W, O, _, G, H, LC>`
+   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+    |
+LL | / impl<ST, F, S, D, W, O, L, Of, G, H, LC> LimitDsl
+LL | |     for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, H, LC>
+LL | | where
+LL | |     Self: SelectQuery<SqlType = ST>,
+    | |                       ------------ unsatisfied requirement introduced here: `<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<children::table>, diesel::query_builder::select_clause::SelectClause<parents::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<children::columns::parent_id, parents::columns::id>>>> as SelectQuery>::SqlType == _`
+LL | |     SelectStatement<F, S, D, W, O, LimitOffsetClause<LimitClause<Limit>, Of>, G, H, LC>:
+LL | |         SelectQuery<SqlType = ST>,
+    | |__________________________________^
+    = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `SingleValueDsl`
+ 
+    
+error[E0277]: cannot select `parents::columns::name` from `children::table`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:32:14
+   |
+LL |             .single_value(),
+   |              ^^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<children::table>` is not implemented for `parents::columns::name`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: `parents::columns::name` is no valid selection for `children::table`
+   = help: `parents::columns::name` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<parents::table>>
+             SelectableExpression<Tablesample<parents::table, TSM>>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<parents::table>
+   = note: required for `SelectClause<name>` to implement `SelectClauseExpression<FromClause<table>>`
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `SingleValueDsl`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot select `parents::columns::name` from `children::table`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:43:18
+   |
+LL |                 .select((parents::name, children::id)),
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<children::table>` is not implemented for `parents::columns::name`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: `parents::columns::name` is no valid selection for `children::table`
+   = help: `parents::columns::name` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<parents::table>>
+             SelectableExpression<Tablesample<parents::table, TSM>>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<parents::table>
+   = note: required for `(parents::columns::name, children::columns::id)` to implement `SelectableExpression<children::table>`
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `SelectDsl<(parents::columns::name, children::columns::id)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:43:18
+   |
+LL |                 .select((parents::name, children::id)),
+   |                  ^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `parents::columns::name` to implement `AppearsOnTable<children::table>`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 1 redundant requirement hidden
+   = note: required for `(parents::columns::name, children::columns::id)` to implement `AppearsOnTable<children::table>`
+   = note: required for `(parents::columns::name, children::columns::id)` to implement `SelectableExpression<children::table>`
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `SelectDsl<(parents::columns::name, children::columns::id)>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `(id, Exists<_>): Expression` is not satisfied
+   --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:37:50
+    |
+ LL |       let _ = parents::table.group_by(parents::id).select((
+    |  __________________________________________________^^^^^^_-
+    | |                                                  |
+    | |                                                  the trait `Expression` is not implemented for `(id, Exists<SelectStatement<_, _, _, _>>)`
+ LL | |
+ LL | |         parents::id,
+ LL | |         dsl::exists(
+...   |
+ LL | |         ),
+ LL | |     ));
+    | |_____- `(parents::columns::id, diesel::internal::derives::multiconnection::Exists<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<children::table>, diesel::query_builder::select_clause::SelectClause<(parents::columns::name, children::columns::id)>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<children::columns::id, parents::columns::id>>>>>)` doesn't satisfy the trait bound
+    |
+    = help: the following other types implement trait `Expression`:
+              &T
+              AliasedField<S, C>
+              Arc<T>
+              Box<T>
+              CaseWhen<_, E>
+              CaseWhen<CaseWhenConditionsLeaf<W, T>, _>
+              CaseWhen<CaseWhenConditionsLeaf<W, T>, _>
+              Collate<T, C>
+            and N others
+note: required by a bound in `diesel::QueryDsl::select`
+   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    |
+LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
+    |        ------ required by a bound in this associated function
+LL |     where
+LL |         Selection: Expression,
+    |                    ^^^^^^^^^^ required by this bound in `QueryDsl::select`
+ 
+    
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:53:14
+   |
+LL |             .order_by(parents::name)
+   |              ^^^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `parents::columns::name` to implement `AppearsOnTable<children::table>`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `OrderDsl<parents::columns::name>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:63:14
+   |
+LL |             .group_by(parents::name)
+   |              ^^^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `parents::columns::name` to implement `AppearsOnTable<FromClause<table>>`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `GroupByDsl<parents::columns::name>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:74:14
+   |
+LL |             .having(parents::name.eq(""))
+   |              ^^^^^^ expected `Once`, found `Never`
+   |
+note: required for `parents::columns::name` to implement `AppearsOnTable<children::table>`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: associated types for the current `impl` cannot be restricted in `where` clauses
+   = note: 2 redundant requirements hidden
+   = note: required for `Grouped<Eq<name, Bound<Text, &str>>>` to implement `AppearsOnTable<children::table>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `HavingDsl<Grouped<Eq<name, Bound<Text, &str>>>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: cannot select `parents::columns::name` from `children::table`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:84:14
+   |
+LL |             .distinct_on(parents::name)
+   |              ^^^^^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectableExpression<children::table>` is not implemented for `parents::columns::name`
+  --> tests/fail/subselect_clauses_cannot_reference_outer_columns.rs:9:9
+   |
+ LL |         name -> Text,
+   |         ^^^^
+   = note: `parents::columns::name` is no valid selection for `children::table`
+   = help: `parents::columns::name` implements trait `SelectableExpression<QS>`:
+             SelectableExpression<Only<parents::table>>
+             SelectableExpression<Tablesample<parents::table, TSM>>
+             SelectableExpression<Join<Left, Right, Inner>>
+             SelectableExpression<Join<Left, Right, LeftOuter>>
+             SelectableExpression<JoinOn<Join, On>>
+             SelectableExpression<SelectStatement<_>>
+             SelectableExpression<ReturningQuerySource<__StmtKind, table>>
+             SelectableExpression<parents::table>
+   = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `DistinctOnDsl<parents::columns::name>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

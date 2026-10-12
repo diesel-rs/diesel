@@ -6,6 +6,13 @@ extern crate assert_matches;
 #[macro_use]
 extern crate diesel;
 
+fn format_error(error: &dyn std::error::Error) -> String {
+    std::iter::successors(Some(error), |error| error.source())
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>()
+        .join(": ")
+}
+
 mod aggregate_expressions;
 mod alias;
 mod allow_tables_to_appear_in_same_query;

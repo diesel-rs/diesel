@@ -206,36 +206,6 @@ fn filter_by_ilike() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
-fn filter_by_any() {
-    use crate::schema::users::dsl::*;
-
-    let connection = &mut connection_with_3_users();
-    let sean = User::new(1, "Sean");
-    let tess = User::new(2, "Tess");
-    let jim = User::new(3, "Jim");
-
-    let owned_names = vec!["Sean", "Tess"];
-    let borrowed_names: &[&str] = &["Sean", "Jim"];
-    assert_eq!(
-        vec![sean.clone(), tess],
-        users
-            .filter(name.eq_any(owned_names))
-            .order(id.asc())
-            .load(connection)
-            .unwrap()
-    );
-    assert_eq!(
-        vec![sean, jim],
-        users
-            .filter(name.eq_any(borrowed_names))
-            .order(id.asc())
-            .load(connection)
-            .unwrap()
-    );
-}
-
-#[diesel_test_helper::test]
 fn filter_by_in() {
     use crate::schema::users::dsl::*;
 

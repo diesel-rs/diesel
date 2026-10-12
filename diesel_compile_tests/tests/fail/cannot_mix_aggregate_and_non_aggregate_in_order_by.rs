@@ -142,7 +142,7 @@ fn main() {
         .order_by(child::value)
         .group_by(parent::id)
         .get_result(conn);
-    //~^ ERROR: the trait bound `SkipSelectableExpressionBoundCheckWrapper<...>: ValidGrouping<...>` is not satisfied
+    //~^ ERROR: the trait bound `SkipSelectableExpressionBoundCheckWrapper<_>: ValidGrouping<id>` is not satisfied
 
     // also check existing order clause
     let _ = parent::table
@@ -150,5 +150,5 @@ fn main() {
         .order_by(child::value)
         .group_by(parent::id)
         .then_order_by(parent::id);
-    //~^ ERROR: the trait bound `SelectStatement<..., ..., ..., ..., ..., ..., ...>: ThenOrderDsl<_>` is not satisfied
+    //~^ ERROR: the trait bound `SelectStatement<_, _, _, _, _, _, _>: ThenOrderDsl<_>` is not satisfied
 }

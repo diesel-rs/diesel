@@ -333,6 +333,12 @@ impl<T: QuerySource, U, V, Ret> RunQueryDslSupport for UpdateStatement<T, U, V, 
 
 impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// Specify what expression is returned after execution of the `update`.
+    ///
+    /// On MariaDB, rows that match the filter but whose values do not change
+    /// are left out of the result, so `get_result` returns `NotFound` where
+    /// `execute` reports one updated row
+    /// ([MDEV-41113](https://jira.mariadb.org/browse/MDEV-41113)).
+    ///
     /// # Examples
     ///
     /// ### Updating a single record:

@@ -1,7 +1,8 @@
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
 use crate::deserialize::{
-    self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
+    self, CompatibleTupleElement, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeLikeMarker,
+    StaticallySizedRow,
 };
 use crate::expression::{
     AppearsOnTable, Expression, IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable,
@@ -78,15 +79,15 @@ macro_rules! tuple_impls {
             }
             fake_variadic! {
                 $Tuple ->
-                impl<$($T: SqlType + TypedExpressionType,)*> TypedExpressionType for Nullable<($($T,)*)>
-                where ($($T,)*): SqlType
+                impl<$($T: SqlTypeLikeMarker + TypedExpressionType,)*> TypedExpressionType for Nullable<($($T,)*)>
+                where ($($T,)*): SqlTypeLikeMarker
                 {
                 }
             }
             fake_variadic! {
                 $Tuple ->
-                impl<$($T: SqlType,)*> IntoNullable for ($($T,)*)
-                where Self: SqlType,
+                impl<$($T: SqlTypeLikeMarker,)*> IntoNullable for ($($T,)*)
+                where Self: SqlTypeLikeMarker,
                 {
                     type Nullable = Nullable<($($T,)*)>;
                 }
@@ -508,9 +509,10 @@ macro_rules! tuple_impls {
             impl<__T, $($ST,)* __DB> CompatibleType<__T, __DB> for ($($ST,)*)
             where
                 __DB: Backend,
-                __T: FromSqlRow<($($ST,)*), __DB>,
+                $($ST: CompatibleTupleElement,)*
+                __T: FromSqlRow<($($ST::SqlType,)*), __DB>,
             {
-                type SqlType = Self;
+                type SqlType = ($($ST::SqlType,)*);
             }
 
             impl<__T, $($ST,)* __DB> CompatibleType<Option<__T>, __DB> for Nullable<($($ST,)*)>
@@ -521,13 +523,17 @@ macro_rules! tuple_impls {
                 type SqlType = Nullable<<($($ST,)*) as CompatibleType<__T, __DB>>::SqlType>;
             }
 
-            impl<$($ST,)*> SqlTypeOrSelectable for ($($ST,)*)
-            where $($ST: SqlTypeOrSelectable,)*
-            {}
+            impl<$($ST,)*> SqlTypeLikeMarker for ($($ST,)*)
+            where $($ST: SqlTypeLikeMarker,)*
+            {
+                type SqlType = ($($ST::SqlType,)*);
+            }
 
-            impl<$($ST,)*> SqlTypeOrSelectable for Nullable<($($ST,)*)>
-            where ($($ST,)*): SqlTypeOrSelectable
-            {}
+            impl<$($ST,)*> SqlTypeLikeMarker for Nullable<($($ST,)*)>
+            where ($($ST,)*): SqlTypeLikeMarker
+            {
+                type SqlType = Nullable<<($($ST,)*) as SqlTypeLikeMarker>::SqlType>;
+            }
         )+
     }
 }

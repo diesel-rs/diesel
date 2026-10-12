@@ -21,15 +21,27 @@ where
     }
 }
 
+/// Walk the limit and the offset of a boxed limit/offset clause, whichever pointer holds them.
+fn walk_boxed_limit_offset<'b, P>(
+    limit: Option<&'b P>,
+    offset: Option<&'b P>,
+    mut out: AstPass<'_, 'b, Pg>,
+) -> QueryResult<()>
+where
+    P: QueryFragment<Pg>,
+{
+    if let Some(limit) = limit {
+        limit.walk_ast(out.reborrow())?;
+    }
+    if let Some(offset) = offset {
+        offset.walk_ast(out.reborrow())?;
+    }
+    Ok(())
+}
+
 impl QueryFragment<Pg> for BoxedCloneLimitOffsetClause<'_, Pg> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        if let Some(ref limit) = self.limit {
-            limit.walk_ast(out.reborrow())?;
-        }
-        if let Some(ref offset) = self.offset {
-            offset.walk_ast(out.reborrow())?;
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        walk_boxed_limit_offset(self.limit.as_ref(), self.offset.as_ref(), out)
     }
 }
 
@@ -49,14 +61,8 @@ where
 }
 
 impl QueryFragment<Pg> for BoxedLimitOffsetClause<'_, Pg> {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        if let Some(ref limit) = self.limit {
-            limit.walk_ast(out.reborrow())?;
-        }
-        if let Some(ref offset) = self.offset {
-            offset.walk_ast(out.reborrow())?;
-        }
-        Ok(())
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+        walk_boxed_limit_offset(self.limit.as_ref(), self.offset.as_ref(), out)
     }
 }
 

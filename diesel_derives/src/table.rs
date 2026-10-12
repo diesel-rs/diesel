@@ -1247,6 +1247,15 @@ fn expand_column_def(
         }
 
         #(#cfg_attrs)*
+        impl<__GB, __F> diesel::expression::ValidGrouping<diesel::internal::table_macro::SubselectGroupBy<__GB, __F>> for #column_name
+        where
+            __F: diesel::query_source::AppearsInFromClause<super::#query_source_ident>,
+            __F::Count: diesel::internal::table_macro::SubselectFieldGrouping<Self, __GB>,
+        {
+            type IsAggregate = <__F::Count as diesel::internal::table_macro::SubselectFieldGrouping<Self, __GB>>::IsAggregate;
+        }
+
+        #(#cfg_attrs)*
         impl diesel::expression::IsContainedInGroupBy<#column_name> for #column_name {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
         }

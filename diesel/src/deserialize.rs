@@ -544,20 +544,47 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
 }
 
 #[doc(hidden)]
-pub trait SqlTypeOrSelectable {}
+pub trait SqlTypeLikeMarker {
+    /// The SQL type a `Selectable` field of this type is deserialized from
+    type SqlType;
+}
 
-impl<ST> SqlTypeOrSelectable for ST where ST: SqlType + SingleValue {}
-impl<U, DB> SqlTypeOrSelectable for SelectBy<U, DB>
+impl<ST> SqlTypeLikeMarker for ST
+where
+    ST: SqlType + SingleValue,
+{
+    type SqlType = ST;
+}
+
+impl<U, DB> SqlTypeLikeMarker for SelectBy<U, DB>
 where
     U: Selectable<DB>,
     DB: Backend,
 {
+    type SqlType = Self;
+}
+
+#[doc(hidden)]
+pub trait CompatibleTupleElement {
+    /// The SQL type this tuple element is loaded from
+    type SqlType;
+}
+
+impl<ST> CompatibleTupleElement for ST
+where
+    ST: SqlTypeLikeMarker,
+{
+    type SqlType = ST::SqlType;
+}
+
+impl CompatibleTupleElement for Untyped {
+    type SqlType = Untyped;
 }
 
 impl<T, ST, DB> FromSqlRow<ST, DB> for T
 where
     T: Queryable<ST, DB>,
-    ST: SqlTypeOrSelectable,
+    ST: SqlTypeLikeMarker,
     DB: Backend,
     T::Row: FromStaticSqlRow<ST, DB>,
 {
@@ -614,7 +641,7 @@ where
 
 impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
 where
-    ST: SqlTypeOrSelectable + crate::util::TupleSize,
+    ST: SqlTypeLikeMarker + crate::util::TupleSize,
     T: Queryable<ST, DB>,
     DB: Backend,
 {

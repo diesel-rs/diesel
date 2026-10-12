@@ -5,12 +5,8 @@ use std::error::Error;
 use std::fs::DirEntry;
 use std::path::Path;
 
-pub fn expand(path: String) -> proc_macro2::TokenStream {
-    let migrations_path_opt = if path.is_empty() {
-        None
-    } else {
-        Some(path.replace('"', ""))
-    };
+pub fn expand(path: Option<syn::LitStr>) -> proc_macro2::TokenStream {
+    let migrations_path_opt = path.map(|l| l.value());
     let migrations_expr = migration_directory_from_given_path(migrations_path_opt.as_deref())
         .unwrap_or_else(|_| {
             panic!("Failed to receive migrations dir from {migrations_path_opt:?}")

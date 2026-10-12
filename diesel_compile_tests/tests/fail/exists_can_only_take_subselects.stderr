@@ -1,92 +1,98 @@
-error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
+error[E0277]: `bool` cannot be used as a subselect
    --> tests/fail/exists_can_only_take_subselects.rs:26:18
     |
  LL |     users::table.filter(exists(true));
-    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
+    |                  ^^^^^^ the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is not implemented for `bool`
     |
-help: the following other types implement trait `SelectQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
+    = note: only select statements and their combinations can be used as subselects
+help: the trait `diesel::expression::subselect::ValidSubselectGrouping<GB>` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
+   --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
     |
-LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB, GB>
+LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 LL | | where
-LL | |     DB: Backend,
-    | |________________^ `BoxedSelectStatement<'_, ST, QS, DB, GB>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
-    |
-LL | / impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G,...
-LL | | where
-LL | |     S: SelectClauseExpression<F>,
-LL | |     O: ValidOrderingForDistinct<D>,
-    | |___________________________________^ `SelectStatement<F, S, D, W, O, LOf, G, H, LC>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
-    |
- LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
- LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
- LL | | where
- LL | |     Source: SelectQuery,
- LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed_clone.rs
-    |
-LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
-LL | | where
-LL | |     DB: Backend,
-    | |________________^ `BoxedCloneSelectStatement<'_, ST, QS, DB, GB>`
-    = note: required for `Subselect<bool, Bool>` to implement `Expression`
-    = note: 1 redundant requirement hidden
-    = note: required for `diesel::expression::exists::Exists<bool>` to implement `Expression`
-    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<diesel::expression::exists::Exists<bool>>`
+LL | |     Source: ValidSubselectGrouping<GB>,
+LL | |     Rhs: ValidSubselectGrouping<GB>,
+LL | |     Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
+    | |___________________________________________________________^
+    = note: required for `Subselect<bool, Bool>` to implement `ValidGrouping<()>`
+    = note: required for `diesel::internal::derives::multiconnection::Exists<bool>` to implement `NonAggregate`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<bool>>`
  
     
-error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
-   --> tests/fail/exists_can_only_take_subselects.rs:28:18
+error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
+  --> tests/fail/exists_can_only_take_subselects.rs:26:18
+   |
+LL |     users::table.filter(exists(true));
+   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
+   |
+help: the trait `SelectQuery` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
+  --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+   |
+LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+LL | | where
+LL | |     Source: SelectQuery,
+LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
+   | |________________________________________________^
+   = note: required for `Subselect<bool, Bool>` to implement `Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `diesel::internal::derives::multiconnection::Exists<bool>` to implement `Expression`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<bool>>`
+
+   
+error[E0277]: `users::columns::id` cannot be used as a subselect
+   --> tests/fail/exists_can_only_take_subselects.rs:29:18
     |
  LL |     users::table.filter(exists(users::id));
     |                  ^^^^^^ unsatisfied trait bound
     |
-help: the trait `SelectQuery` is not implemented for `users::columns::id`
+help: the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is not implemented for `users::columns::id`
    --> tests/fail/exists_can_only_take_subselects.rs:8:9
     |
   LL |         id -> Integer,
     |         ^^
-help: the following other types implement trait `SelectQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/boxed.rs
+    = note: only select statements and their combinations can be used as subselects
+help: the trait `diesel::expression::subselect::ValidSubselectGrouping<GB>` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
+   --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
     |
-LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedSelectStatement<'_, ST, QS, DB, GB>
+LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
 LL | | where
-LL | |     DB: Backend,
-    | |________________^ `BoxedSelectStatement<'_, ST, QS, DB, GB>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/mod.rs
-    |
-LL | / impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G,...
-LL | | where
-LL | |     S: SelectClauseExpression<F>,
-LL | |     O: ValidOrderingForDistinct<D>,
-    | |___________________________________^ `SelectStatement<F, S, D, W, O, LOf, G, H, LC>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
-    |
- LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
- LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
- LL | | where
- LL | |     Source: SelectQuery,
- LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
-    | |________________________________________________^ `CombinationClause<..., ..., ..., ..., ..., ...>`
-    |
-   ::: DIESEL/diesel/diesel/src/query_builder/select_statement/boxed_clone.rs
-    |
-LL | / impl<ST, QS, DB, GB> SelectQuery for BoxedCloneSelectStatement<'_, ST, QS, DB, GB>
-LL | | where
-LL | |     DB: Backend,
-    | |________________^ `BoxedCloneSelectStatement<'_, ST, QS, DB, GB>`
-    = note: required for `Subselect<id, Bool>` to implement `Expression`
-    = note: 1 redundant requirement hidden
-    = note: required for `diesel::expression::exists::Exists<users::columns::id>` to implement `Expression`
-    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<diesel::expression::exists::Exists<users::columns::id>>`
+LL | |     Source: ValidSubselectGrouping<GB>,
+LL | |     Rhs: ValidSubselectGrouping<GB>,
+LL | |     Source::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
+    | |___________________________________________________________^
+    = note: required for `Subselect<id, Bool>` to implement `ValidGrouping<()>`
+    = note: required for `Exists<id>` to implement `NonAggregate`
+    = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<id>>`
  
         = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
+  --> tests/fail/exists_can_only_take_subselects.rs:29:18
+   |
+LL |     users::table.filter(exists(users::id));
+   |                  ^^^^^^ unsatisfied trait bound
+   |
+help: the trait `SelectQuery` is not implemented for `users::columns::id`
+  --> tests/fail/exists_can_only_take_subselects.rs:8:9
+   |
+ LL |         id -> Integer,
+   |         ^^
+help: the trait `SelectQuery` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
+  --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+   |
+LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
+LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
+LL | | where
+LL | |     Source: SelectQuery,
+LL | |     Rhs: SelectQuery<SqlType = Source::SqlType>,
+   | |________________________________________________^
+   = note: required for `Subselect<id, Bool>` to implement `Expression`
+   = note: 1 redundant requirement hidden
+   = note: required for `Exists<id>` to implement `Expression`
+   = note: required for `SelectStatement<FromClause<table>>` to implement `FilterDsl<Exists<id>>`
+
+      = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0277`.

@@ -575,8 +575,11 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             .and_then(|c| unsafe { c.as_ref() })
     }
 
-    pub(super) fn copy_value(&self, idx: i32) -> Option<OwnedSqliteValue> {
-        OwnedSqliteValue::copy_from_ptr(self.column_value(idx)?)
+    pub(super) fn copy_value(&self, idx: i32) -> QueryResult<Option<OwnedSqliteValue>> {
+        match self.column_value(idx) {
+            Some(ptr) => OwnedSqliteValue::copy_from_ptr(ptr),
+            None => Ok(None),
+        }
     }
 
     pub(super) fn column_value(&self, idx: i32) -> Option<NonNull<ffi::sqlite3_value>> {
@@ -585,15 +588,26 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         };
         NonNull::new(ptr)
     }
+
+    pub(super) fn raw_connection(&self) -> *mut ffi::sqlite3 {
+        self.statement.statement.raw_connection()
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
     use crate::prelude::*;
+    #[cfg(not(miri))]
     use crate::sql_types::Text;
 
     // this is a regression test for
     // https://github.com/diesel-rs/diesel/issues/3558
+    //
+    // Reading sqlite's error message requires accessing memory allocated by
+    // the native library, which is not supported when running under miri with
+    // a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn check_out_of_bounds_bind_does_not_panic_on_drop() {
         let mut conn = SqliteConnection::establish(":memory:").unwrap();
