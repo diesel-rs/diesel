@@ -460,12 +460,6 @@ mod test {
         diesel::sql_query("COMMENT ON TYPE test_schema.commented_enum IS 'schema enum comment'")
             .execute(&mut connection)
             .unwrap();
-        diesel::sql_query("CREATE DOMAIN commented_domain AS INTEGER")
-            .execute(&mut connection)
-            .unwrap();
-        diesel::sql_query("COMMENT ON DOMAIN commented_domain IS 'domain comment'")
-            .execute(&mut connection)
-            .unwrap();
         diesel::sql_query("CREATE TYPE uncommented_enum AS ENUM ('d')")
             .execute(&mut connection)
             .unwrap();
@@ -477,10 +471,6 @@ mod test {
         assert_eq!(
             Ok(Some("schema enum comment".to_string())),
             get_type_comment(&mut connection, "commented_enum", Some("test_schema"))
-        );
-        assert_eq!(
-            Ok(Some("domain comment".to_string())),
-            get_type_comment(&mut connection, "commented_domain", None)
         );
         assert_eq!(
             Ok(None),

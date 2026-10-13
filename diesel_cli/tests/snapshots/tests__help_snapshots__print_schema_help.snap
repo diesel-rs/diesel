@@ -41,10 +41,10 @@ Options:
           Exclude tables from table-name that matches regex
 
       --with-docs
-          Render documentation comments for tables, columns and custom types
+          Render documentation comments for tables and columns
 
       --with-docs-config <WITH_DOCS_CONFIG>
-          Render documentation comments for tables, columns and custom types
+          Render documentation comments for tables and columns
 
       --allow-tables-to-appear-in-same-query-config <ALLOW_TABLES_TO_APPEAR_IN_SAME_QUERY_CONFIG>
           Group tables in allow_tables_to_appear_in_same_query!()

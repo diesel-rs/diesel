@@ -56,7 +56,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
-* `diesel print-schema` now uses a PostgreSQL type's `COMMENT ON TYPE` (or `COMMENT ON DOMAIN`) as the doc comment of the generated SQL type and Rust enum when `with_docs` is enabled. This includes the comments that PostgreSQL and extensions ship on the types Diesel generates as custom types, such as `tsvector` or `cube`. A Rust enum whose type has no comment keeps its generated doc comment, whatever `with_docs` is set to.
+* `diesel print-schema` now uses the `COMMENT ON TYPE` of a PostgreSQL enum as the doc comment of its generated Rust enum when `with_docs` is enabled. A Rust enum whose type has no comment keeps its generated doc comment, whatever `with_docs` is set to.
 
 ### Fixed
 

@@ -218,7 +218,7 @@ pub struct InnerPrintSchemaArgs {
     )]
     pub except_tables: Vec<bool>,
 
-    /// Render documentation comments for tables, columns and custom types.
+    /// Render documentation comments for tables and columns.
     #[arg(
         id = PrintSchemaArgs::WITH_DOCS,
         long = "with-docs",
@@ -230,7 +230,7 @@ pub struct InnerPrintSchemaArgs {
     )]
     pub with_docs: Vec<bool>,
 
-    /// Render documentation comments for tables, columns and custom types.
+    /// Render documentation comments for tables and columns.
     #[arg(id = PrintSchemaArgs::WITH_DOCS_CONFIG, long = "with-docs-config", action = ArgAction::Append, value_enum, num_args = 1)]
     pub with_docs_config: Vec<DocConfig>,
 
@@ -661,17 +661,19 @@ pub(crate) fn load_custom_types(
                     &t.sql_name,
                     t.schema.as_deref(),
                 )? {
+                    // No point in loading type comments if they are not going to be displayed:
+                    // only the generated Rust enums carry them
+                    if config.generate_rust_enum_definitions()
+                        && !matches!(config.with_docs, DocConfig::NoDocComments)
+                        && let Some(comment) = crate::infer_schema_internals::pg::get_type_comment(
+                            pg_connection,
+                            &t.sql_name,
+                            t.schema.as_deref(),
+                        )?
+                    {
+                        type_comments.insert((t.sql_name.clone(), t.schema.clone()), comment);
+                    }
                     out.insert((t.sql_name.clone(), t.schema.clone()), variants);
-                }
-                // No point in loading type comments if they are not going to be displayed
-                if !matches!(config.with_docs, DocConfig::NoDocComments)
-                    && let Some(comment) = crate::infer_schema_internals::pg::get_type_comment(
-                        pg_connection,
-                        &t.sql_name,
-                        t.schema.as_deref(),
-                    )?
-                {
-                    type_comments.insert((t.sql_name.clone(), t.schema.clone()), comment);
                 }
             }
             (out, type_comments)
@@ -1010,7 +1012,8 @@ struct CustomTypesForTables {
     // To be zipped with tables then columns
     types_overrides_sorted: Vec<Vec<Option<ColumnType>>>,
     enum_variants: HashMap<(String, Option<String>), Vec<EnumVariant>>,
-    // Empty under `DocConfig::NoDocComments`: `load_custom_types` does not load them
+    // Comments of the enum types, for their Rust enums: `load_custom_types` loads none under
+    // `DocConfig::NoDocComments` or when no Rust enum is generated
     type_comments: HashMap<(String, Option<String>), String>,
     with_docs: bool,
     sql_type_derives: BTreeSet<String>,
@@ -1045,11 +1048,6 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out, "pub mod sql_types {{")?;
                 for (idx, &ct) in types_to_generate.iter().enumerate() {
-                    let comment = self
-                        .custom_types
-                        .type_comments
-                        .get(&(ct.sql_name.clone(), ct.schema.clone()))
-                        .map(String::as_str);
                     let is_enum = if let Some(variants) = self
                         .custom_types
                         .enum_variants
@@ -1059,7 +1057,11 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                             tpe: ct,
                             variants: variants.clone(),
                             custom_derives: &self.custom_types.rust_type_derives,
-                            comment,
+                            comment: self
+                                .custom_types
+                                .type_comments
+                                .get(&(ct.sql_name.clone(), ct.schema.clone()))
+                                .map(String::as_str),
                         });
                         true
                     } else {
@@ -1069,9 +1071,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                     if idx != 0 {
                         writeln!(out)?;
                     }
-                    if let Some(comment) = comment {
-                        write_doc_comments(&mut out, comment)?;
-                    } else if self.custom_types.with_docs {
+                    if self.custom_types.with_docs {
                         if let Some(ref schema) = ct.schema {
                             writeln!(
                                 out,

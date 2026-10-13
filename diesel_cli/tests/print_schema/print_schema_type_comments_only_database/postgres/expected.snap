@@ -5,10 +5,6 @@ description: "Test: print_schema_type_comments_only_database"
 // @generated automatically by Diesel CLI.
 
 pub mod sql_types {
-    /// An enum with a comment
-    /// - first: the first label
-    ///
-    /// - second: the second label
     #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "commented_enum"))]
     #[diesel(enum_type)]
