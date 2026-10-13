@@ -431,12 +431,12 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
-    /// # #[cfg(not(feature = "mariadb"))]
     /// # // Reading the query result requires reading memory allocated by the
     /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(not(feature = "mariadb"))]
     /// # #[cfg(miri)]
     /// # fn main() {}
-    /// # #[cfg(not(miri))]
+    /// # #[cfg(all(not(miri), not(feature = "mariadb")))]
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::sql_types::{Integer, Nullable};
@@ -661,12 +661,12 @@ extern "SQL" {
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
-    /// # #[cfg(not(feature = "mariadb"))]
     /// # // Reading the query result requires reading memory allocated by the
     /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(not(feature = "mariadb"))]
     /// # #[cfg(miri)]
     /// # fn main() {}
-    /// # #[cfg(not(miri))]
+    /// # #[cfg(all(not(miri), not(feature = "mariadb")))]
     /// # fn main() -> QueryResult<()> {
     /// #     use schema::posts::dsl::*;
     /// #     use diesel::sql_types::{Integer, Nullable};
@@ -721,7 +721,7 @@ extern "SQL" {
     /// # Ok(())
     /// # }
     /// # #[cfg(feature = "mariadb")]
-    /// fn main() {}
+    /// # fn main() {}
     /// ```
     #[doc(alias = "lead")]
     #[sql_name = "lead"]
