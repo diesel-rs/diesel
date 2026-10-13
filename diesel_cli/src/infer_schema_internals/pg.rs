@@ -302,6 +302,22 @@ pub fn load_enum_variants(
     if r.is_empty() { Ok(None) } else { Ok(Some(r)) }
 }
 
+pub fn get_type_comment(
+    conn: &mut PgConnection,
+    type_name: &str,
+    schema_name: Option<&str>,
+) -> QueryResult<Option<String>> {
+    let default_schema = Pg::default_schema(conn)?;
+
+    pg_type::table
+        .select(obj_description(pg_type::oid, "pg_type"))
+        .filter(pg_type::typname.eq(type_name))
+        .filter(pg_type::typnamespace.eq(regnamespace(schema_name.unwrap_or(&default_schema))))
+        .get_result::<Option<String>>(conn)
+        .optional()
+        .map(Option::flatten)
+}
+
 #[cfg(test)]
 mod test {
     extern crate dotenvy;
@@ -423,6 +439,57 @@ mod test {
             get_table_comment(&mut connection, &table_1)
         );
         assert_eq!(Ok(None), get_table_comment(&mut connection, &table_2));
+    }
+
+    #[test]
+    fn gets_type_comment() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TYPE commented_enum AS ENUM ('a', 'b')")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("COMMENT ON TYPE commented_enum IS 'enum comment'")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TYPE test_schema.commented_enum AS ENUM ('c')")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("COMMENT ON TYPE test_schema.commented_enum IS 'schema enum comment'")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE DOMAIN commented_domain AS INTEGER")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("COMMENT ON DOMAIN commented_domain IS 'domain comment'")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TYPE uncommented_enum AS ENUM ('d')")
+            .execute(&mut connection)
+            .unwrap();
+
+        assert_eq!(
+            Ok(Some("enum comment".to_string())),
+            get_type_comment(&mut connection, "commented_enum", None)
+        );
+        assert_eq!(
+            Ok(Some("schema enum comment".to_string())),
+            get_type_comment(&mut connection, "commented_enum", Some("test_schema"))
+        );
+        assert_eq!(
+            Ok(Some("domain comment".to_string())),
+            get_type_comment(&mut connection, "commented_domain", None)
+        );
+        assert_eq!(
+            Ok(None),
+            get_type_comment(&mut connection, "uncommented_enum", None)
+        );
+        assert_eq!(
+            Ok(None),
+            get_type_comment(&mut connection, "non_existing", None)
+        );
     }
 
     #[test]
