@@ -184,10 +184,13 @@ pub trait BatchUpdateRecord {
     /// The number of values each record sends in a batch update: one for each
     /// column of the primary key, plus one for each updated column
     ///
-    /// Each value is a bind parameter, unless the record holds an SQL
-    /// expression such as [`now`](crate::dsl::now) for that column. This is
+    /// Each value is a bind parameter when the record holds a Rust value for
+    /// that column. An SQL expression sends its own bind parameters instead:
+    /// none for [`now`](crate::dsl::now), two for `a.concat(b)`. This is
     /// therefore the number of bind parameters of a record when all its fields
-    /// hold Rust values, and an upper bound of it when some hold `now`.
+    /// hold Rust values, an upper bound of it when some hold an expression
+    /// without bind parameters such as `now`, and less than it when some hold
+    /// an expression with several.
     const VALUES_PER_ROW: usize;
 }
 
