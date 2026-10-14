@@ -52,93 +52,55 @@ extern "SQL" {
     fn date(expr: Timestamp) -> Date;
 }
 
-impl AsExpression<Nullable<Timestamp>> for now {
-    type Expression = Coerce<now, Nullable<Timestamp>>;
+/// Implements `AsExpression<$sql_type>` for `$expr`, `&$expr` and `&&$expr`, each
+/// coercing `$expr` to `$sql_type`.
+///
+/// The reference impls mirror the `&T` and `&&T` impls that `#[derive(AsExpression)]`
+/// generates: `#[derive(AsChangeset)]` on a struct also implements `AsChangeset` for a
+/// reference to it, built from references to its fields. Passing a struct by reference
+/// to `.set()`, as batch updates do, therefore needs `&now` for a `now` field and
+/// `&&now` for a `&now` field.
+macro_rules! coerce_as_expression {
+    ($expr:ident => $sql_type:ty) => {
+        impl AsExpression<$sql_type> for $expr {
+            type Expression = Coerce<$expr, $sql_type>;
 
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
+            fn as_expression(self) -> Self::Expression {
+                Coerce::new(self)
+            }
+        }
+
+        impl AsExpression<$sql_type> for &$expr {
+            type Expression = Coerce<$expr, $sql_type>;
+
+            fn as_expression(self) -> Self::Expression {
+                Coerce::new(*self)
+            }
+        }
+
+        impl AsExpression<$sql_type> for &&$expr {
+            type Expression = Coerce<$expr, $sql_type>;
+
+            fn as_expression(self) -> Self::Expression {
+                Coerce::new(**self)
+            }
+        }
+    };
 }
 
-impl AsExpression<Nullable<Timestamp>> for &now {
-    type Expression = Coerce<now, Nullable<Timestamp>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(*self)
-    }
-}
+coerce_as_expression!(now => Nullable<Timestamp>);
 
 #[cfg(feature = "postgres_backend")]
-impl AsExpression<Timestamptz> for now {
-    type Expression = Coerce<now, Timestamptz>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}
+coerce_as_expression!(now => Timestamptz);
 
 #[cfg(feature = "postgres_backend")]
-impl AsExpression<Timestamptz> for &now {
-    type Expression = Coerce<now, Timestamptz>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(*self)
-    }
-}
-
-#[cfg(feature = "postgres_backend")]
-impl AsExpression<Nullable<Timestamptz>> for now {
-    type Expression = Coerce<now, Nullable<Timestamptz>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}
-
-#[cfg(feature = "postgres_backend")]
-impl AsExpression<Nullable<Timestamptz>> for &now {
-    type Expression = Coerce<now, Nullable<Timestamptz>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(*self)
-    }
-}
+coerce_as_expression!(now => Nullable<Timestamptz>);
 
 #[cfg(feature = "__sqlite-shared")]
-impl AsExpression<TimestamptzSqlite> for now {
-    type Expression = Coerce<now, TimestamptzSqlite>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}
+coerce_as_expression!(now => TimestamptzSqlite);
 
 #[cfg(feature = "__sqlite-shared")]
-impl AsExpression<TimestamptzSqlite> for &now {
-    type Expression = Coerce<now, TimestamptzSqlite>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(*self)
-    }
-}
-
-#[cfg(feature = "__sqlite-shared")]
-impl AsExpression<Nullable<TimestamptzSqlite>> for now {
-    type Expression = Coerce<now, Nullable<TimestamptzSqlite>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}
-
-#[cfg(feature = "__sqlite-shared")]
-impl AsExpression<Nullable<TimestamptzSqlite>> for &now {
-    type Expression = Coerce<now, Nullable<TimestamptzSqlite>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(*self)
-    }
-}
+coerce_as_expression!(now => Nullable<TimestamptzSqlite>);
 
 /// Represents the SQL `CURRENT_DATE` constant.
 #[allow(non_camel_case_types)]
@@ -161,18 +123,4 @@ impl_selectable_expression!(today);
 operator_allowed!(today, Add, add);
 operator_allowed!(today, Sub, sub);
 
-impl AsExpression<Nullable<Date>> for today {
-    type Expression = Coerce<today, Nullable<Date>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}
-
-impl AsExpression<Nullable<Date>> for &today {
-    type Expression = Coerce<today, Nullable<Date>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(*self)
-    }
-}
+coerce_as_expression!(today => Nullable<Date>);
