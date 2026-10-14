@@ -517,6 +517,9 @@ pub struct PrintSchema {
     pub include_views: bool,
     #[serde(default)]
     pub experimental_infer_nullable_for_views: bool,
+    /// Additional derives for generated Rust enums. An absent or empty list defaults to
+    /// `Clone`, `Copy`, `PartialEq`, `Eq`, and `Hash`. `Debug` and `diesel::types::Enum`
+    /// are always included. A nonempty list replaces the optional defaults.
     #[serde(default)]
     pub custom_enum_derives: Option<BTreeSet<String>>,
     #[serde(default)]
@@ -565,6 +568,9 @@ impl PrintSchema {
 
     pub fn custom_rust_types_derives(&self) -> BTreeSet<String> {
         let mut derives = self.custom_enum_derives.clone().unwrap_or_default();
+        if derives.is_empty() {
+            derives.extend(["Clone", "Copy", "PartialEq", "Eq", "Hash"].map(str::to_owned));
+        }
         derives.insert("diesel::types::Enum".into());
         derives.insert("Debug".into());
         derives
@@ -681,5 +687,52 @@ impl<'de> Deserialize<'de> for Filtering {
         }
 
         deserializer.deserialize_map(FilteringVisitor)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PrintSchema;
+
+    #[test]
+    fn rust_enum_derives_default_for_absent_or_empty_config() {
+        for config in ["", "custom_enum_derives = []"] {
+            let schema: PrintSchema = toml::from_str(config).unwrap();
+            assert_eq!(
+                schema.custom_rust_types_derives(),
+                [
+                    "Clone",
+                    "Copy",
+                    "Debug",
+                    "Eq",
+                    "Hash",
+                    "PartialEq",
+                    "diesel::types::Enum"
+                ]
+                .map(str::to_owned)
+                .into()
+            );
+        }
+    }
+
+    #[test]
+    fn rust_enum_derives_custom_config_replaces_optional_defaults() {
+        let schema: PrintSchema =
+            toml::from_str("custom_enum_derives = [\"Clone\", \"Copy\"]").unwrap();
+        assert_eq!(
+            schema.custom_rust_types_derives(),
+            ["Clone", "Copy", "Debug", "diesel::types::Enum"]
+                .map(str::to_owned)
+                .into()
+        );
+    }
+
+    #[test]
+    fn rust_enum_derives_can_opt_out_of_all_optional_defaults() {
+        let schema: PrintSchema = toml::from_str("custom_enum_derives = [\"Debug\"]").unwrap();
+        assert_eq!(
+            schema.custom_rust_types_derives(),
+            ["Debug", "diesel::types::Enum"].map(str::to_owned).into()
+        );
     }
 }
