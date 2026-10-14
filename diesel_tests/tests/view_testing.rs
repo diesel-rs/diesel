@@ -1,6 +1,7 @@
 use crate::schema::TestConnection;
 use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
+use diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
 
 diesel::view! {
     view {
@@ -184,11 +185,11 @@ fn nullable_selection_through_a_join() {
 #[test]
 fn union() {
     let conn = &mut view_test_setup();
-    let mut res = view::view
+    let res = view::view
         .union(view2::view)
+        .positional_order_by(2) // name is the second column
         .load::<(i32, String)>(conn)
         .unwrap();
-    res.sort();
 
     assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
 }
@@ -197,11 +198,11 @@ fn union() {
 fn union_through_an_alias() {
     let conn = &mut view_test_setup();
     let view_alias = diesel::alias!(view as view1);
-    let mut res = view_alias
+    let res = view_alias
         .union(view2::view)
+        .positional_order_by(2) // name is the second column
         .load::<(i32, String)>(conn)
         .unwrap();
-    res.sort();
 
     assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
 }
