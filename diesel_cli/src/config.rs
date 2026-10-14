@@ -517,9 +517,10 @@ pub struct PrintSchema {
     pub include_views: bool,
     #[serde(default)]
     pub experimental_infer_nullable_for_views: bool,
-    /// Additional derives for generated Rust enums. An absent or empty list defaults to
-    /// `Clone`, `Copy`, `PartialEq`, `Eq`, and `Hash`. `Debug` and `diesel::types::Enum`
-    /// are always included. A nonempty list replaces the optional defaults.
+    /// Additional derives for generated Rust enums. Defaults to `Clone`, `Copy`, `PartialEq`,
+    /// `Eq`, and `Hash` if not specified.
+    ///
+    /// `Debug` and `diesel::types::Enum` are always included.
     #[serde(default)]
     pub custom_enum_derives: Option<BTreeSet<String>>,
     #[serde(default)]
@@ -567,10 +568,13 @@ impl PrintSchema {
     }
 
     pub fn custom_rust_types_derives(&self) -> BTreeSet<String> {
-        let mut derives = self.custom_enum_derives.clone().unwrap_or_default();
-        if derives.is_empty() {
-            derives.extend(["Clone", "Copy", "PartialEq", "Eq", "Hash"].map(str::to_owned));
-        }
+        let mut derives = match self.custom_enum_derives.clone() {
+            Some(derives) => derives,
+            None => ["Clone", "Copy", "PartialEq", "Eq", "Hash"]
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+        };
         derives.insert("diesel::types::Enum".into());
         derives.insert("Debug".into());
         derives
