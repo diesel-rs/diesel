@@ -1,4 +1,5 @@
 use super::schema::*;
+use diesel::query_builder::BatchOperationValueCount;
 use diesel::*;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 use std::num::NonZeroU64;
@@ -1547,4 +1548,96 @@ fn execute_returning_id_with_default_values() {
     assert_eq!(stored.len(), 1);
     assert_eq!(generated.get(), u64::try_from(stored[0].0).unwrap());
     assert_eq!(stored[0].1, 7);
+}
+
+#[diesel_test_helper::test]
+fn insertable_struct_batch_values_per_record() {
+    let new_users = [
+        NewUser::new("Sean", Some("Black")),
+        NewUser::new("Tess", None),
+    ];
+
+    assert_eq!(2, insert_into(users::table).values_per_record(&new_users));
+    assert_eq!(
+        2,
+        insert_or_ignore_into(users::table).values_per_record(&new_users)
+    );
+    assert_eq!(
+        2,
+        bind_count(&insert_into(users::table).values(&new_users[0]))
+    );
+    // `None` sends no bind parameter
+    assert_eq!(
+        1,
+        bind_count(&insert_into(users::table).values(&new_users[1]))
+    );
+}
+
+#[diesel_test_helper::test]
+fn insertable_tuple_batch_values_per_record() {
+    let new_users = [(users::name.eq("Sean"), users::hair_color.eq("Black"))];
+
+    assert_eq!(2, insert_into(users::table).values_per_record(&new_users));
+    assert_eq!(
+        2,
+        bind_count(&insert_into(users::table).values(new_users[0]))
+    );
+}
+
+#[diesel_test_helper::test]
+fn insertable_embedded_struct_batch_values_per_record() {
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    struct HairColor<'a> {
+        hair_color: &'a str,
+    }
+
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    struct NewUser<'a> {
+        name: &'a str,
+        #[diesel(embed)]
+        hair_color: HairColor<'a>,
+    }
+
+    let new_users = [NewUser {
+        name: "Sean",
+        hair_color: HairColor {
+            hair_color: "Black",
+        },
+    }];
+
+    assert_eq!(2, insert_into(users::table).values_per_record(&new_users));
+    assert_eq!(
+        2,
+        bind_count(&insert_into(users::table).values(&new_users[0]))
+    );
+}
+
+#[diesel_test_helper::test]
+fn inserted_and_updated_struct_values_per_record() {
+    #[derive(Insertable, AsChangeset, Identifiable)]
+    #[diesel(table_name = users)]
+    struct User<'a> {
+        id: i32,
+        name: &'a str,
+        #[diesel(skip_update)]
+        hair_color: &'a str,
+    }
+
+    let users_batch = [User {
+        id: 1,
+        name: "Sean",
+        hair_color: "Black",
+    }];
+
+    // Inserted: id, name and hair_color
+    assert_eq!(3, insert_into(users::table).values_per_record(&users_batch));
+    assert_eq!(
+        3,
+        bind_count(&insert_into(users::table).values(&users_batch[0]))
+    );
+    // Updated: the id, then name
+    assert_eq!(2, update(users::table).values_per_record(&users_batch));
+    assert_eq!(2, bind_count(&update(users::table).set(&users_batch)));
 }

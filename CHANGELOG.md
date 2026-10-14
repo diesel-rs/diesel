@@ -56,7 +56,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
-* Added `BatchUpdateRecord::VALUES_PER_ROW`, the number of values a record sends in a batch update, to split a large batch into statements that stay under the bind parameter limit of the database
+* Added `BatchOperationValueCount`, implemented by `insert_into(table)` and `update(table)` for the type of the records of a batch insert or a batch update: the number of values each record sends, to split a large batch into statements that stay under the bind parameter limit of the database
 
 ### Fixed
 

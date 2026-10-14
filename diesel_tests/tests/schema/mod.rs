@@ -325,6 +325,17 @@ pub type TestConnection = MariadbConnection;
 
 pub type TestBackend = <TestConnection as Connection>::Backend;
 
+/// The number of bind parameters of `query`
+pub fn bind_count<T>(query: &T) -> usize
+where
+    T: query_builder::QueryFragment<TestBackend>,
+{
+    let query = diesel::debug_query::<TestBackend, _>(query).to_string();
+    let (sql, _binds) = query.split_once(" -- binds: ").unwrap();
+    let placeholder = if cfg!(feature = "postgres") { '$' } else { '?' };
+    sql.matches(placeholder).count()
+}
+
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
 #[cfg(not(feature = "sqlite"))]
 pub struct DropTable<'a> {

@@ -1,10 +1,8 @@
 #[cfg(doc)]
 use crate::backend::SqlDialect;
 use crate::backend::{Backend, sql_dialect};
-use crate::expression::Expression;
 use crate::query_builder::{AstPass, QueryFragment};
-use crate::util::TupleSize;
-use crate::{QueryResult, Table, query_builder::*};
+use crate::{QueryResult, query_builder::*};
 use core::marker::PhantomData;
 
 #[cfg(any(
@@ -128,78 +126,4 @@ where
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::BatchUpdateSupport>>::walk_ast(self, pass)
     }
-}
-
-/// A record of a batch update
-///
-/// A batch update takes a slice, an array, a `Vec` or a boxed slice of
-/// records that derive both [`AsChangeset`](derive@crate::AsChangeset) and
-/// [`Identifiable`](derive@crate::Identifiable), as described in
-/// [`update`](crate::update()#batch-update). This trait is implemented for
-/// every [`AsChangeset`] type whose changeset assigns a fixed set of columns,
-/// which includes these records.
-///
-/// # Example
-///
-/// Splitting a large batch into statements that stay under a bind parameter
-/// limit:
-///
-/// ```rust
-/// # include!("../../doctest_setup.rs");
-/// # use schema::users;
-/// use diesel::query_builder::BatchUpdateRecord;
-///
-/// #[derive(AsChangeset, Identifiable)]
-/// struct User<'a> {
-///     id: i32,
-///     name: &'a str,
-/// }
-///
-/// /// Splits `records` into batches that send at most `max_binds` bind parameters each
-/// fn batches<U: BatchUpdateRecord>(records: &[U], max_binds: usize) -> impl Iterator<Item = &[U]> {
-///     records.chunks(max_binds / U::VALUES_PER_ROW)
-/// }
-///
-/// # fn main() {
-/// #     run_test().unwrap();
-/// # }
-/// #
-/// # fn run_test() -> QueryResult<()> {
-/// #     let connection = &mut establish_connection();
-/// let renamed = vec![User { id: 1, name: "Jim" }, User { id: 2, name: "Tom" }];
-/// // Each user sends its id and its name: one user per statement
-/// for batch in batches(&renamed, 3) {
-///     diesel::update(users::table).set(batch).execute(connection)?;
-/// }
-///
-/// let names = users::table
-///     .select(users::name)
-///     .order(users::id)
-///     .load::<String>(connection)?;
-/// assert_eq!(vec!["Jim", "Tom"], names);
-/// #     Ok(())
-/// # }
-/// ```
-pub trait BatchUpdateRecord {
-    /// The number of values each record sends in a batch update: one for each
-    /// column of the primary key, plus one for each updated column
-    ///
-    /// Each value is a bind parameter when the record holds a Rust value for
-    /// that column. An SQL expression sends its own bind parameters instead:
-    /// none for [`now`](crate::dsl::now), two for `a.concat(b)`. This is
-    /// therefore the number of bind parameters of a record when all its fields
-    /// hold Rust values, an upper bound of it when some hold an expression
-    /// without bind parameters such as `now`, and less than it when some hold
-    /// an expression with several.
-    const VALUES_PER_ROW: usize;
-}
-
-impl<U> BatchUpdateRecord for U
-where
-    U: AsChangeset<Changeset: TupleSize>,
-    U::Target: Table<PrimaryKey: Expression<SqlType: TupleSize>>,
-{
-    const VALUES_PER_ROW: usize =
-        <<<U::Target as Table>::PrimaryKey as Expression>::SqlType as TupleSize>::SIZE
-            + <U::Changeset as TupleSize>::SIZE;
 }
