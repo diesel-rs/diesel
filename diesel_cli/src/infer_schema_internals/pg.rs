@@ -314,8 +314,6 @@ pub fn get_type_comment(
         .filter(pg_type::typname.eq(type_name))
         .filter(pg_type::typnamespace.eq(regnamespace(schema_name.unwrap_or(&default_schema))))
         .get_result::<Option<String>>(conn)
-        .optional()
-        .map(Option::flatten)
 }
 
 #[cfg(test)]
@@ -477,7 +475,7 @@ mod test {
             get_type_comment(&mut connection, "uncommented_enum", None)
         );
         assert_eq!(
-            Ok(None),
+            Err(diesel::result::Error::NotFound),
             get_type_comment(&mut connection, "non_existing", None)
         );
     }
