@@ -1,9 +1,0 @@
-[print_schema.user1]
-file = "src/schema1.rs"
-filter = { only_tables = ["1a_users"] }
-leading_digit_prefixes = { table = "first_" }
-
-[print_schema.user2]
-file = "src/schema2.rs"
-filter = { only_tables = ["2b_users"] }
-leading_digit_prefixes = { table = "second_" }

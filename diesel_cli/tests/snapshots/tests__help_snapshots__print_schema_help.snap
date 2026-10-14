@@ -93,8 +93,5 @@ Options:
       --no-generate-rust-enum-types
           Generate Rust enum type definitions for sql side enum types
 
-      --leading-digit-prefix <KIND=PREFIX>
-          The prefix to put before a generated Rust name that starts with a digit, for a kind of name among `table`, `column`, `custom_type` and `enum_variant` (`_` by default). The `migration` commands read the prefixes from diesel.toml only
-
   -h, --help
           Print help (see a summary with '-h')

@@ -56,7 +56,6 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
-* Added the `leading_digit_prefixes` option of `[print_schema]` in `diesel.toml` and the `--leading-digit-prefix <kind>=<prefix>` flag of `diesel print-schema`, which set the prefix put before a generated Rust name that starts with a digit for tables, columns, custom types or enum variants (`_` by default)
 
 ### Fixed
 
@@ -83,7 +82,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
-* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `_2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
 
 ### Changed
 
@@ -93,6 +92,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+* `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
 ## [2.3.14] 2026-10-07

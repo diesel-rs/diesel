@@ -15,7 +15,6 @@ use diesel::pg::Pg;
 use diesel::query_builder::QueryFragment;
 use diesel::*;
 
-use crate::config::LeadingDigitPrefixes;
 use crate::infer_schema_internals::SupportedQueryRelationStructures;
 
 use self::information_schema::{key_column_usage, table_constraints, tables};
@@ -168,7 +167,6 @@ where
 pub fn load_table_names<'a, Conn>(
     connection: &mut Conn,
     schema_name: Option<&'a str>,
-    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error>
 where
     Conn: LoadConnection,
@@ -211,16 +209,12 @@ where
             let data = TableName {
                 rust_name: inference::rust_name_for_sql_name(
                     &name,
+                    inference::IdentifierKind::Table,
                     None,
-                    leading_digit_prefixes.table.as_str(),
                 ),
                 sql_name: name,
                 rust_schema: schema_name.as_deref().map(|s| {
-                    inference::rust_name_for_sql_name(
-                        s,
-                        None,
-                        inference::SCHEMA_LEADING_DIGIT_PREFIX,
-                    )
+                    inference::rust_name_for_sql_name(s, inference::IdentifierKind::Schema, None)
                 }),
                 schema: schema_name,
             };
@@ -294,20 +288,14 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(&mut connection, None, &LeadingDigitPrefixes::default())
+        let table_names = load_table_names(&mut connection, None)
             .unwrap()
             .into_iter()
             .map(|(_, table)| table)
             .collect::<Vec<_>>();
 
-        assert!(table_names.contains(&TableName::from_name(
-            "a_regular_table",
-            &LeadingDigitPrefixes::default()
-        )));
-        assert!(table_names.contains(&TableName::from_name(
-            "a_view",
-            &LeadingDigitPrefixes::default()
-        )));
+        assert!(table_names.contains(&TableName::from_name("a_regular_table")));
+        assert!(table_names.contains(&TableName::from_name("a_view")));
     }
 
     #[test]
@@ -319,8 +307,7 @@ mod tests {
             ).execute(&mut connection)
             .unwrap();
 
-        let table_names =
-            load_table_names(&mut connection, None, &LeadingDigitPrefixes::default()).unwrap();
+        let table_names = load_table_names(&mut connection, None).unwrap();
         for (_, TableName { schema, .. }) in &table_names {
             assert_eq!(None, *schema);
         }
@@ -331,7 +318,6 @@ mod tests {
                 .collect::<Vec<_>>()
                 .contains(&TableName::from_name(
                     "load_table_names_loads_from_public_schema_if_none_given",
-                    &LeadingDigitPrefixes::default()
                 ),)
         );
     }
@@ -347,40 +333,25 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(
-            &mut connection,
-            Some("test_schema"),
-            &LeadingDigitPrefixes::default(),
-        )
-        .unwrap()
-        .into_iter()
-        .map(|(_, table)| table)
-        .collect::<Vec<_>>();
-        assert_eq!(
-            vec![TableName::new(
-                "table_1",
-                "test_schema",
-                &LeadingDigitPrefixes::default()
-            )],
-            table_names
-        );
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
+        assert_eq!(vec![TableName::new("table_1", "test_schema")], table_names);
 
         diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(
-            &mut connection,
-            Some("test_schema"),
-            &LeadingDigitPrefixes::default(),
-        )
-        .unwrap()
-        .into_iter()
-        .map(|(_, table)| table)
-        .collect::<Vec<_>>();
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         let expected = vec![
-            TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default()),
-            TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default()),
+            TableName::new("table_1", "test_schema"),
+            TableName::new("table_2", "test_schema"),
         ];
         assert_eq!(expected, table_names);
 
@@ -391,35 +362,23 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(
-            &mut connection,
-            Some("test_schema"),
-            &LeadingDigitPrefixes::default(),
-        )
-        .unwrap()
-        .into_iter()
-        .map(|(_, table)| table)
-        .collect::<Vec<_>>();
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         let expected = vec![
-            TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default()),
-            TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default()),
+            TableName::new("table_1", "test_schema"),
+            TableName::new("table_2", "test_schema"),
         ];
         assert_eq!(expected, table_names);
-        let table_names = load_table_names(
-            &mut connection,
-            Some("other_test_schema"),
-            &LeadingDigitPrefixes::default(),
-        )
-        .unwrap()
-        .into_iter()
-        .map(|(_, table)| table)
-        .collect::<Vec<_>>();
+        let table_names = load_table_names(&mut connection, Some("other_test_schema"))
+            .unwrap()
+            .into_iter()
+            .map(|(_, table)| table)
+            .collect::<Vec<_>>();
         assert_eq!(
-            vec![TableName::new(
-                "table_1",
-                "other_test_schema",
-                &LeadingDigitPrefixes::default()
-            )],
+            vec![TableName::new("table_1", "other_test_schema")],
             table_names
         );
     }
@@ -440,15 +399,11 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_names = load_table_names(
-            &mut connection,
-            Some("test_schema"),
-            &LeadingDigitPrefixes::default(),
-        )
-        .unwrap()
-        .iter()
-        .map(|(_, table)| table.to_string())
-        .collect::<Vec<_>>();
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
+            .unwrap()
+            .iter()
+            .map(|(_, table)| table.to_string())
+            .collect::<Vec<_>>();
         assert_eq!(
             vec!["test_schema.aaa", "test_schema.bbb", "test_schema.ccc"],
             table_names
@@ -472,8 +427,8 @@ mod tests {
             ).execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
-        let table_2 = TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
         assert_eq!(
             vec!["id".to_string()],
             get_primary_keys(&mut connection, &table_1).unwrap()
@@ -505,7 +460,7 @@ mod tests {
             .execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
         assert_eq!(
             vec!["id".to_string()],
             get_primary_keys(&mut connection, &table_1).unwrap()

@@ -1,8 +1,10 @@
+use diesel::backend::Backend;
+use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 use std::fmt;
+use std::str::FromStr;
 
 use super::data_structures::ColumnDefinition;
 use super::inference;
-use crate::config::LeadingDigitPrefixes;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TableName {
@@ -13,17 +15,14 @@ pub struct TableName {
 }
 
 impl TableName {
-    pub fn from_name<T: Into<String>>(
-        name: T,
-        leading_digit_prefixes: &LeadingDigitPrefixes,
-    ) -> Self {
+    pub fn from_name<T: Into<String>>(name: T) -> Self {
         let name = name.into();
 
         TableName {
             rust_name: inference::rust_name_for_sql_name(
                 &name,
+                inference::IdentifierKind::Table,
                 None,
-                leading_digit_prefixes.table.as_str(),
             ),
             sql_name: name,
             schema: None,
@@ -31,7 +30,7 @@ impl TableName {
         }
     }
 
-    pub fn new<T, U>(name: T, schema: U, leading_digit_prefixes: &LeadingDigitPrefixes) -> Self
+    pub fn new<T, U>(name: T, schema: U) -> Self
     where
         T: Into<String>,
         U: Into<String>,
@@ -41,14 +40,14 @@ impl TableName {
         TableName {
             rust_name: inference::rust_name_for_sql_name(
                 &name,
+                inference::IdentifierKind::Table,
                 None,
-                leading_digit_prefixes.table.as_str(),
             ),
             sql_name: name,
             rust_schema: Some(inference::rust_name_for_sql_name(
                 &schema,
+                inference::IdentifierKind::Schema,
                 None,
-                inference::SCHEMA_LEADING_DIGIT_PREFIX,
             )),
             schema: Some(schema),
         }
@@ -70,11 +69,39 @@ impl TableName {
     }
 }
 
+impl<ST, DB> Queryable<ST, DB> for TableName
+where
+    (String, String): FromStaticSqlRow<ST, DB>,
+    DB: Backend,
+{
+    type Row = (String, String);
+
+    fn build((name, schema): Self::Row) -> deserialize::Result<Self> {
+        Ok(TableName::new(name, schema))
+    }
+}
+
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.rust_schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.rust_name),
             None => write!(out, "{}", self.rust_name),
+        }
+    }
+}
+
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
+pub enum Never {}
+
+impl FromStr for TableName {
+    type Err = Never;
+
+    fn from_str(table_name: &str) -> Result<Self, Self::Err> {
+        let mut parts = table_name.split('.');
+        match (parts.next(), parts.next()) {
+            (Some(schema), Some(name)) => Ok(TableName::new(name, schema)),
+            _ => Ok(TableName::from_name(table_name)),
         }
     }
 }
@@ -94,4 +121,39 @@ pub struct ViewData {
     pub comment: Option<String>,
     #[expect(dead_code, reason = "Will be used later")]
     pub sql_definition: String,
+}
+
+mod serde_impls {
+    extern crate serde;
+
+    use self::serde::de::Visitor;
+    use self::serde::{Deserialize, Deserializer, de};
+    use super::TableName;
+    use std::fmt;
+
+    impl<'de> Deserialize<'de> for TableName {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            struct TableNameVisitor;
+
+            impl Visitor<'_> for TableNameVisitor {
+                type Value = TableName;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("A valid table name")
+                }
+
+                fn visit_str<E>(self, value: &str) -> Result<TableName, E>
+                where
+                    E: de::Error,
+                {
+                    value.parse().map_err(|_| unreachable!())
+                }
+            }
+
+            deserializer.deserialize_string(TableNameVisitor)
+        }
+    }
 }

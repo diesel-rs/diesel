@@ -4,6 +4,7 @@ CREATE TYPE "self" AS ENUM ('pickup', 'locker');
 
 CREATE TABLE "24h_orders" (
     id SERIAL PRIMARY KEY,
+    "1st_choice" INTEGER NOT NULL,
     delivery delivery_option NOT NULL,
     second_factor "2fa_method" NOT NULL,
     collection "self" NOT NULL

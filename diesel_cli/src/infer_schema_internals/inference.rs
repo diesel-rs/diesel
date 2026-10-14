@@ -6,16 +6,12 @@ use diesel::result::Error::NotFound;
 use super::table_data::*;
 use super::{SchemaResolverImpl, data_structures::*};
 
-use crate::config::{Filtering, LeadingDigitPrefixes, PrintSchema};
+use crate::config::{Filtering, PrintSchema};
 
 use crate::database::InferConnection;
 use crate::print_schema::{ColumnSorting, DocConfig};
 
 static RESERVED_NAMES: &[&str] = &["table", "columns", "is_nullable"];
-
-/// The prefix for schema names, which is not configurable as `table!` also uses the Rust name of
-/// the schema as its SQL name
-pub const SCHEMA_LEADING_DIGIT_PREFIX: &str = "_";
 
 fn is_reserved_name(name: &str) -> bool {
     syn::parse_str::<syn::Ident>(name).is_err()
@@ -58,15 +54,43 @@ fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
     }
 }
 
-/// Makes `name` a valid Rust identifier by prefixing it with `leading_digit_prefix` if it starts
-/// with a digit, and appending `_` if it is reserved.
+/// The kind of item a Rust name is derived for, which sets the prefix put before a name that
+/// starts with a digit
+#[derive(Debug, Clone, Copy)]
+pub enum IdentifierKind {
+    /// A schema, whose Rust name `table!` also uses as its SQL name, so the only prefix that
+    /// keeps it valid is `_`
+    Schema,
+    Table,
+    Column,
+    /// A custom type, and the Rust enum generated for it
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+    Type,
+    EnumVariant,
+}
+
+impl IdentifierKind {
+    fn leading_digit_prefix(self) -> &'static str {
+        match self {
+            IdentifierKind::Schema => "_",
+            IdentifierKind::Table => "table_",
+            IdentifierKind::Column => "column_",
+            #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+            IdentifierKind::Type => "Type",
+            IdentifierKind::EnumVariant => "Variant",
+        }
+    }
+}
+
+/// Makes `name` a valid Rust identifier by prefixing it according to its `kind` if it starts with
+/// a digit, and appending `_` if it is reserved.
 ///
 /// Names built from SQL names must go through this function after any case conversion as case
 /// conversions strip trailing `_`
-pub fn make_valid_identifier<'a>(name: Cow<'a, str>, leading_digit_prefix: &str) -> Cow<'a, str> {
+pub fn make_valid_identifier(name: Cow<'_, str>, kind: IdentifierKind) -> Cow<'_, str> {
     if name.starts_with(|c: char| c.is_ascii_digit()) {
         // Rust identifiers cannot start with a digit
-        Cow::Owned(format!("{leading_digit_prefix}{name}"))
+        Cow::Owned(format!("{}{name}", kind.leading_digit_prefix()))
     } else if is_reserved_name(&name) {
         Cow::Owned(format!("{name}_"))
     } else {
@@ -76,10 +100,10 @@ pub fn make_valid_identifier<'a>(name: Cow<'a, str>, leading_digit_prefix: &str)
 
 pub fn rust_name_for_sql_name(
     sql_name: &str,
+    kind: IdentifierKind,
     table_name: Option<&TableName>,
-    leading_digit_prefix: &str,
 ) -> String {
-    let name = make_valid_identifier(replace_unmappable_chars(sql_name), leading_digit_prefix);
+    let name = make_valid_identifier(replace_unmappable_chars(sql_name), kind);
     if Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
         format!("{name}_")
     } else {
@@ -91,25 +115,16 @@ pub fn rust_name_for_sql_name(
 pub fn load_table_names(
     connection: &mut InferConnection,
     schema_name: Option<&str>,
-    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     let tables = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(c) => {
-            super::sqlite::load_table_names(c, schema_name, leading_digit_prefixes)
-        }
+        InferConnection::Sqlite(c) => super::sqlite::load_table_names(c, schema_name),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(c) => {
-            super::information_schema::load_table_names(c, schema_name, leading_digit_prefixes)
-        }
+        InferConnection::Pg(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(c) => {
-            super::information_schema::load_table_names(c, schema_name, leading_digit_prefixes)
-        }
+        InferConnection::Mysql(c) => super::information_schema::load_table_names(c, schema_name),
         #[cfg(feature = "mariadb")]
-        InferConnection::Mariadb(c) => {
-            super::information_schema::load_table_names(c, schema_name, leading_digit_prefixes)
-        }
+        InferConnection::Mariadb(c) => super::information_schema::load_table_names(c, schema_name),
     }?;
 
     tracing::info!(?tables, "Loaded tables");
@@ -234,11 +249,7 @@ fn determine_column_type(
         InferConnection::Pg(ref mut conn) => {
             use crate::infer_schema_internals::information_schema::DefaultSchema;
 
-            super::pg::determine_column_type(
-                attr,
-                diesel::pg::Pg::default_schema(conn)?,
-                config.leading_digit_prefixes.custom_type.as_str(),
-            )
+            super::pg::determine_column_type(attr, diesel::pg::Pg::default_schema(conn)?)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(_) => super::mysql_like::determine_column_type(attr),
@@ -276,27 +287,21 @@ pub(crate) fn get_primary_keys(
 pub fn load_foreign_key_constraints(
     connection: &mut InferConnection,
     schema_name: Option<&str>,
-    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> Result<Vec<ForeignKeyConstraint>, crate::errors::Error> {
     let constraints = match connection {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(c) => {
-            super::sqlite::load_foreign_key_constraints(c, schema_name, leading_digit_prefixes)
-        }
+        InferConnection::Sqlite(c) => super::sqlite::load_foreign_key_constraints(c, schema_name),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(c) => {
-            super::pg::load_foreign_key_constraints(c, schema_name, leading_digit_prefixes)
-                .map_err(Into::into)
+            super::pg::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(c) => {
-            super::mysql::load_foreign_key_constraints(c, schema_name, leading_digit_prefixes)
-                .map_err(Into::into)
+            super::mysql::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
         #[cfg(feature = "mariadb")]
         InferConnection::Mariadb(c) => {
-            super::mariadb::load_foreign_key_constraints(c, schema_name, leading_digit_prefixes)
-                .map_err(Into::into)
+            super::mariadb::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
     };
 
@@ -324,20 +329,16 @@ fn load_column_structure_data(
         }
     };
 
-    let foreign_keys = load_foreign_key_constraints(
-        connection,
-        name.schema.as_deref(),
-        &config.leading_digit_prefixes,
-    )?
-    .into_iter()
-    .filter_map(|c| {
-        if c.child_table == *name && c.foreign_key_columns.len() == 1 {
-            Some((c.foreign_key_columns_rust[0].clone(), c))
-        } else {
-            None
-        }
-    })
-    .collect();
+    let foreign_keys = load_foreign_key_constraints(connection, name.schema.as_deref())?
+        .into_iter()
+        .filter_map(|c| {
+            if c.child_table == *name && c.foreign_key_columns.len() == 1 {
+                Some((c.foreign_key_columns_rust[0].clone(), c))
+            } else {
+                None
+            }
+        })
+        .collect();
 
     let pg_domains_as_custom_types = config
         .pg_domains_as_custom_types
@@ -362,11 +363,7 @@ fn load_column_structure_data(
             auto_increment,
             ..
         } = c;
-        let rust_name = rust_name_for_sql_name(
-            &column_name,
-            Some(name),
-            config.leading_digit_prefixes.column.as_str(),
-        );
+        let rust_name = rust_name_for_sql_name(&column_name, IdentifierKind::Column, Some(name));
 
         Ok(ColumnDefinition {
             sql_name: column_name,
@@ -395,13 +392,7 @@ pub fn load_table_data(
         load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| {
-            rust_name_for_sql_name(
-                k,
-                Some(&name),
-                config.leading_digit_prefixes.column.as_str(),
-            )
-        })
+        .map(|k| rust_name_for_sql_name(k, IdentifierKind::Column, Some(&name)))
         .collect::<Vec<_>>();
     Ok(TableData {
         name,

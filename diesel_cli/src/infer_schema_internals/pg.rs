@@ -1,7 +1,6 @@
 use super::TableName;
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
-use crate::config::LeadingDigitPrefixes;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
 use diesel::dsl::AsExprOf;
@@ -73,7 +72,6 @@ allow_tables_to_appear_in_same_query!(pg_type, pg_enum);
 pub fn determine_column_type(
     attr: &ColumnInformation,
     default_schema: String,
-    custom_type_leading_digit_prefix: &str,
 ) -> Result<ColumnType, crate::errors::Error> {
     let is_array = attr.type_name.starts_with('_');
     let tpe = if is_array {
@@ -108,7 +106,7 @@ pub fn determine_column_type(
         sql_name: tpe.to_string(),
         rust_name: super::inference::make_valid_identifier(
             tpe.to_upper_camel_case().into(),
-            custom_type_leading_digit_prefix,
+            super::inference::IdentifierKind::Type,
         )
         .into_owned(),
         is_array,
@@ -236,7 +234,6 @@ pub fn get_table_comment(
 pub fn load_foreign_key_constraints(
     connection: &mut PgConnection,
     schema_name: Option<&str>,
-    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
     #[derive(QueryableByName)]
     struct ForeignKeyList {
@@ -262,11 +259,9 @@ pub fn load_foreign_key_constraints(
         .load_iter::<ForeignKeyList, DefaultLoadingMode>(connection)?
         .map(|f| {
             let f = f?;
-            let mut child_table =
-                TableName::new(f.self_table, f.self_schema, leading_digit_prefixes);
+            let mut child_table = TableName::new(f.self_table, f.self_schema);
             child_table.strip_schema_if_matches(&default_schema);
-            let mut parent_table =
-                TableName::new(f.foreign_table, f.foreign_schema, leading_digit_prefixes);
+            let mut parent_table = TableName::new(f.foreign_table, f.foreign_schema);
             parent_table.strip_schema_if_matches(&default_schema);
 
             let foreign_key_columns_rust = f
@@ -275,8 +270,8 @@ pub fn load_foreign_key_constraints(
                 .map(|s| {
                     super::inference::rust_name_for_sql_name(
                         s,
+                        super::inference::IdentifierKind::Column,
                         Some(&child_table),
-                        leading_digit_prefixes.column.as_str(),
                     )
                 })
                 .collect();
@@ -354,8 +349,8 @@ mod test {
             .execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
-        let table_2 = TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
         let pg_catalog = Some(String::from("pg_catalog"));
         let id = ColumnInformation::new(
             "id",
@@ -431,8 +426,8 @@ mod test {
             .execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
-        let table_2 = TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
         assert_eq!(
             Ok(Some("table comment".to_string())),
             get_table_comment(&mut connection, &table_1)
@@ -459,9 +454,9 @@ mod test {
             ).execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
-        let table_2 = TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default());
-        let table_3 = TableName::new("table_3", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
+        let table_3 = TableName::new("table_3", "test_schema");
         let fk_one = ForeignKeyConstraint {
             child_table: table_2.clone(),
             parent_table: table_1,
@@ -478,11 +473,7 @@ mod test {
         };
         assert_eq!(
             Ok(vec![fk_one, fk_two]),
-            load_foreign_key_constraints(
-                &mut connection,
-                Some("test_schema"),
-                &LeadingDigitPrefixes::default()
-            )
+            load_foreign_key_constraints(&mut connection, Some("test_schema"))
         );
     }
 
@@ -513,9 +504,9 @@ mod test {
         .execute(&mut connection)
         .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
-        let table_2 = TableName::new("table_2", "test_schema", &LeadingDigitPrefixes::default());
-        let table_3 = TableName::new("table_3", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
+        let table_3 = TableName::new("table_3", "test_schema");
         let fk_one = ForeignKeyConstraint {
             child_table: table_2,
             parent_table: table_1.clone(),
@@ -532,11 +523,7 @@ mod test {
         };
         assert_eq!(
             Ok(vec![fk_one, fk_two]),
-            load_foreign_key_constraints(
-                &mut connection,
-                Some("test_schema"),
-                &LeadingDigitPrefixes::default()
-            )
+            load_foreign_key_constraints(&mut connection, Some("test_schema"))
         );
     }
 
@@ -556,7 +543,7 @@ mod test {
             .execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema", &LeadingDigitPrefixes::default());
+        let table_1 = TableName::new("table_1", "test_schema");
 
         let id_int = ColumnInformation::new(
             "id",

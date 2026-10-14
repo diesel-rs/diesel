@@ -299,7 +299,6 @@ impl<'a> MigrateEnumData<'a> {
         tpe: &'a super::schema_parsing::SqlTypeInfo,
         enum_sql_types: &'a [(SqlTypeInfo, EnumInfos)],
         infos: &'a EnumInfos,
-        custom_type_leading_digit_prefix: &str,
     ) -> Self {
         let column_defs = affected_tables
             .iter()
@@ -309,8 +308,7 @@ impl<'a> MigrateEnumData<'a> {
                     &c.sql_name,
                     true,
                     enum_sql_types,
-                    &t.table_name().sql_name,
-                    custom_type_leading_digit_prefix,
+                    &t.table_name().rust_name,
                 )
             })
             .collect();

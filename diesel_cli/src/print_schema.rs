@@ -32,7 +32,6 @@ pub struct PrintSchemaArgs {
     pub include_views_indices: Option<Vec<usize>>,
     pub experimental_infer_nullable_for_views_indices: Option<Vec<usize>>,
     pub custom_rust_enum_type_derives_indices: Option<Vec<usize>>,
-    pub leading_digit_prefix_indices: Option<Vec<usize>>,
 }
 
 impl PrintSchemaArgs {
@@ -56,7 +55,6 @@ impl PrintSchemaArgs {
     const EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS: &'static str =
         "EXPERIMENTAL_INFER_NULLABLE_FOR_VIEWS";
     const CUSTOM_RUST_ENUM_TYPE_DERIVES: &'static str = "CUSTOM_RUST_ENUM_TYPE_DERIVES";
-    const LEADING_DIGIT_PREFIX: &'static str = "LEADING_DIGIT_PREFIX";
 
     fn populate_indices(&mut self, matches: &ArgMatches) {
         let Self {
@@ -78,7 +76,6 @@ impl PrintSchemaArgs {
             include_views_indices,
             experimental_infer_nullable_for_views_indices,
             custom_rust_enum_type_derives_indices,
-            leading_digit_prefix_indices,
         } = self;
         let mapping = [
             (schema_indices, Self::SCHEMA),
@@ -113,7 +110,6 @@ impl PrintSchemaArgs {
                 custom_rust_enum_type_derives_indices,
                 Self::CUSTOM_RUST_ENUM_TYPE_DERIVES,
             ),
-            (leading_digit_prefix_indices, Self::LEADING_DIGIT_PREFIX),
         ];
 
         for (indices, key) in mapping {
@@ -144,7 +140,6 @@ impl FromArgMatches for PrintSchemaArgs {
             include_views_indices: None,
             experimental_infer_nullable_for_views_indices: None,
             custom_rust_enum_type_derives_indices: None,
-            leading_digit_prefix_indices: None,
         };
         out.populate_indices(matches);
         Ok(out)
@@ -329,18 +324,6 @@ pub struct InnerPrintSchemaArgs {
     /// Generate Rust enum type definitions for sql side enum types
     #[arg(long = "no-generate-rust-enum-types", action = ArgAction::SetTrue)]
     pub no_generate_rust_enum_types: bool,
-    /// The prefix to put before a generated Rust name that starts with a digit, for a kind of name
-    /// among `table`, `column`, `custom_type` and `enum_variant` (`_` by default). The `migration`
-    /// commands read the prefixes from diesel.toml only.
-    #[arg(
-        id = PrintSchemaArgs::LEADING_DIGIT_PREFIX,
-        long = "leading-digit-prefix",
-        value_name = "KIND=PREFIX",
-        num_args = 1,
-        action = ArgAction::Append,
-        value_parser = config::parse_leading_digit_prefix,
-    )]
-    pub leading_digit_prefix: Vec<(config::LeadingDigitPrefixKind, config::LeadingDigitPrefix)>,
 }
 
 #[tracing::instrument]
@@ -640,7 +623,6 @@ pub(crate) fn load_custom_types(
                                         &cd.table_name().sql_name,
                                         &c.sql_name,
                                         ty,
-                                        config.leading_digit_prefixes.custom_type.as_str(),
                                     ),
                                     max_length: None,
                                     ..ty.clone()
@@ -655,7 +637,6 @@ pub(crate) fn load_custom_types(
                                         &cd.table_name().sql_name,
                                         &c.sql_name,
                                         ty,
-                                        config.leading_digit_prefixes.custom_type.as_str(),
                                     ),
                                     max_length: None,
                                     ..ty.clone()
@@ -695,17 +676,17 @@ pub(crate) fn load_custom_types(
 
 /// The name of the custom type of a MySQL/MariaDB enum or set column
 ///
-/// It is built from the SQL names of the table and column, so that the table and column prefixes
-/// of [`config::LeadingDigitPrefixes`] do not change it: `migration generate --diff-schema`
-/// derives it from the SQL names only.
+/// It is built from the SQL names of the table and column, as `migration generate --diff-schema`
+/// derives it from them too.
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub(crate) fn mysql_enum_name(
     table_sql_name: &str,
     column_sql_name: &str,
     ty: &ColumnType,
-    leading_digit_prefix: &str,
 ) -> String {
-    use crate::infer_schema_internals::{make_valid_identifier, replace_unmappable_chars};
+    use crate::infer_schema_internals::{
+        IdentifierKind, make_valid_identifier, replace_unmappable_chars,
+    };
     use heck::ToUpperCamelCase;
     make_valid_identifier(
         format!(
@@ -716,7 +697,7 @@ pub(crate) fn mysql_enum_name(
         )
         .to_upper_camel_case()
         .into(),
-        leading_digit_prefix,
+        IdentifierKind::Type,
     )
     .into_owned()
 }
@@ -725,11 +706,7 @@ fn safe_tables_for_config(
     connection: &mut InferConnection,
     config: &config::PrintSchema,
 ) -> Result<Vec<TableName>, crate::errors::Error> {
-    let unfiltered_table_names = load_table_names(
-        connection,
-        config.schema_name(),
-        &config.leading_digit_prefixes,
-    )?;
+    let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
     let table_names = filter_table_names(
         &unfiltered_table_names,
         &config.filter,
@@ -815,22 +792,14 @@ pub fn output_schema(
     multi_schema_table_prefixes: Option<&BTreeMap<TableName, String>>,
 ) -> Result<String, crate::errors::Error> {
     let backend = Backend::for_connection(connection);
-    let unfiltered_table_names = load_table_names(
-        connection,
-        config.schema_name(),
-        &config.leading_digit_prefixes,
-    )?;
+    let unfiltered_table_names = load_table_names(connection, config.schema_name())?;
     let table_names = filter_table_names(
         &unfiltered_table_names,
         &config.filter,
         config.include_views,
     );
 
-    let foreign_keys = load_foreign_key_constraints(
-        connection,
-        config.schema_name(),
-        &config.leading_digit_prefixes,
-    )?;
+    let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
     let fk_safe_tables: Cow<'_, [TableName]> = multi_schema_safe_tables
         .map(Cow::Borrowed)
         .unwrap_or_else(|| {
@@ -888,7 +857,6 @@ pub fn output_schema(
             sql_type_derives: config.custom_type_derives(),
             rust_type_derives: config.custom_rust_types_derives(),
             generate_rust_enums: config.generate_rust_enum_definitions(),
-            enum_variant_leading_digit_prefix: config.leading_digit_prefixes.enum_variant.clone(),
         }),
         import_types: config.import_types(),
         local_safe_tables: &local_safe_tables,
@@ -992,7 +960,6 @@ struct RustEnum<'a> {
     tpe: &'a ColumnType,
     variants: Vec<EnumVariant>,
     custom_derives: &'a BTreeSet<String>,
-    variant_leading_digit_prefix: &'a str,
 }
 
 impl Display for RustEnum<'_> {
@@ -1022,7 +989,7 @@ impl Display for RustEnum<'_> {
                 "#[diesel(rename = {})]",
                 escape_rust_string(&v.sql_name)
             )?;
-            writeln!(out, "{},", v.rust_name(self.variant_leading_digit_prefix))?;
+            writeln!(out, "{},", v.rust_name())?;
         }
         writeln!(f, "}}\n")?;
         Ok(())
@@ -1050,7 +1017,6 @@ struct CustomTypesForTables {
     sql_type_derives: BTreeSet<String>,
     rust_type_derives: BTreeSet<String>,
     generate_rust_enums: bool,
-    enum_variant_leading_digit_prefix: config::LeadingDigitPrefix,
 }
 
 pub struct CustomTypesForTablesForDisplay<'a> {
@@ -1089,10 +1055,6 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                             tpe: ct,
                             variants: variants.clone(),
                             custom_derives: &self.custom_types.rust_type_derives,
-                            variant_leading_digit_prefix: self
-                                .custom_types
-                                .enum_variant_leading_digit_prefix
-                                .as_str(),
                         });
                         true
                     } else {
@@ -1163,7 +1125,6 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                     &self.custom_types.rust_type_derives,
                     &self.custom_types.enum_variants,
                     &self.custom_types.sql_type_derives,
-                    &self.custom_types.enum_variant_leading_digit_prefix,
                 );
 
                 let mut types_to_generate: Vec<&ColumnType> = self
@@ -1188,7 +1149,7 @@ impl Display for CustomTypesForTablesForDisplay<'_> {
                         order: 0,
                         sql_name: "".into(),
                     };
-                    let _ = a.rust_name("_");
+                    let _ = a.rust_name();
                     rust_enum_module(f, Vec::new(), false)?;
                 }
                 unreachable!(
@@ -1248,10 +1209,6 @@ impl<'a> CustomTypesForTablesForDisplay<'a> {
                     tpe: custom_type,
                     variants,
                     custom_derives: &self.custom_types.rust_type_derives,
-                    variant_leading_digit_prefix: self
-                        .custom_types
-                        .enum_variant_leading_digit_prefix
-                        .as_str(),
                 });
                 true
             } else {
@@ -1333,8 +1290,8 @@ impl Display for ModuleDefinition<'_> {
                 "pub mod {} {{",
                 crate::infer_schema_internals::rust_name_for_sql_name(
                     self.0,
+                    crate::infer_schema_internals::IdentifierKind::Schema,
                     None,
-                    crate::infer_schema_internals::SCHEMA_LEADING_DIGIT_PREFIX,
                 )
             )?;
             if let Some(ref custom_types_for_tables) = self.1.custom_types_for_tables {

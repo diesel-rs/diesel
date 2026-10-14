@@ -204,10 +204,6 @@ impl Config {
                         .as_deref(),
                     &args.inner.experimental_infer_nullable_for_views,
                 );
-                let leading_digit_prefix_with_indices = get_values_with_indices(
-                    args.leading_digit_prefix_indices.as_deref(),
-                    &args.inner.leading_digit_prefix,
-                );
 
                 for (key, boundary) in selected_schema_keys.values().map(|k| k.as_str()).zip(
                     selected_schema_keys
@@ -347,13 +343,6 @@ impl Config {
                         print_schema.sqlite_integer_primary_key_is_bigint =
                             Some(sqlite_integer_primary_key_is_bigint);
                     }
-                    if let Some(leading_digit_prefixes) = &leading_digit_prefix_with_indices {
-                        for (kind, prefix) in leading_digit_prefixes.range(boundary).map(|v| v.1) {
-                            print_schema
-                                .leading_digit_prefixes
-                                .set(*kind, prefix.clone());
-                        }
-                    }
                 }
             }
         } else {
@@ -436,10 +425,6 @@ impl Config {
                 && last_val
             {
                 config.sqlite_integer_primary_key_is_bigint = Some(true);
-            }
-
-            for (kind, prefix) in args.leading_digit_prefix {
-                config.leading_digit_prefixes.set(kind, prefix);
             }
         }
         Ok(self)
@@ -536,8 +521,6 @@ pub struct PrintSchema {
     pub custom_enum_derives: Option<BTreeSet<String>>,
     #[serde(default)]
     pub generate_rust_enum_definitions: Option<bool>,
-    #[serde(default)]
-    pub leading_digit_prefixes: LeadingDigitPrefixes,
 }
 
 impl PrintSchema {
@@ -608,106 +591,6 @@ impl PrintSchema {
         }
         Ok(())
     }
-}
-
-/// The prefixes put before a Rust name derived from an SQL name when that name starts with a
-/// digit, one per kind of name
-///
-/// Every prefix defaults to `_`. For `custom_type` and `enum_variant`, a custom prefix should be
-/// in PascalCase (`Type`, `Variant`), as the generated SQL types and Rust enums are not exempted
-/// from the `non_camel_case_types` lint.
-///
-/// With several `[print_schema.<key>]` sections, keys whose tables have foreign keys to each other
-/// must use the same `table` prefix: otherwise no `joinable!` is generated for a foreign key to a
-/// table of another key whose name starts with a digit.
-#[derive(Default, Deserialize, Clone, Debug)]
-#[serde(deny_unknown_fields, default)]
-pub struct LeadingDigitPrefixes {
-    /// For table names
-    pub table: LeadingDigitPrefix,
-    /// For column names, foreign key columns included
-    pub column: LeadingDigitPrefix,
-    /// For custom SQL type names, which are also the names of the Rust enums generated for them
-    pub custom_type: LeadingDigitPrefix,
-    /// For the variants of the generated Rust enums
-    pub enum_variant: LeadingDigitPrefix,
-}
-
-impl LeadingDigitPrefixes {
-    fn set(&mut self, kind: LeadingDigitPrefixKind, prefix: LeadingDigitPrefix) {
-        let field = match kind {
-            LeadingDigitPrefixKind::Table => &mut self.table,
-            LeadingDigitPrefixKind::Column => &mut self.column,
-            LeadingDigitPrefixKind::CustomType => &mut self.custom_type,
-            LeadingDigitPrefixKind::EnumVariant => &mut self.enum_variant,
-        };
-        *field = prefix;
-    }
-}
-
-/// A prefix that makes a name starting with a digit a valid Rust identifier
-#[derive(Deserialize, Clone, Debug)]
-#[serde(try_from = "String")]
-pub struct LeadingDigitPrefix(String);
-
-impl LeadingDigitPrefix {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Default for LeadingDigitPrefix {
-    fn default() -> Self {
-        Self("_".to_owned())
-    }
-}
-
-impl TryFrom<String> for LeadingDigitPrefix {
-    type Error = String;
-
-    fn try_from(prefix: String) -> Result<Self, Self::Error> {
-        // The prefix is put before a name that starts with a digit
-        if syn::parse_str::<syn::Ident>(&format!("{prefix}0")).is_err() {
-            Err(format!(
-                "`{prefix}` followed by a digit is not a valid Rust identifier"
-            ))
-        } else if prefix.starts_with("__") {
-            // `table!` reserves the names starting with `__`
-            Err(format!("`{prefix}` starts with `__`, which is reserved"))
-        } else {
-            Ok(Self(prefix))
-        }
-    }
-}
-
-/// The kind of name a `--leading-digit-prefix` value applies to
-#[derive(Clone, Copy, Debug)]
-pub enum LeadingDigitPrefixKind {
-    Table,
-    Column,
-    CustomType,
-    EnumVariant,
-}
-
-/// Parses a `--leading-digit-prefix` value, `<kind>=<prefix>`
-pub fn parse_leading_digit_prefix(
-    value: &str,
-) -> Result<(LeadingDigitPrefixKind, LeadingDigitPrefix), String> {
-    let (kind, prefix) = value
-        .split_once('=')
-        .ok_or_else(|| format!("expected `<kind>=<prefix>`, found `{value}`"))?;
-    let kind = match kind {
-        "table" => LeadingDigitPrefixKind::Table,
-        "column" => LeadingDigitPrefixKind::Column,
-        "custom_type" => LeadingDigitPrefixKind::CustomType,
-        "enum_variant" => LeadingDigitPrefixKind::EnumVariant,
-        _ => {
-            return Err(format!(
-                "unknown kind `{kind}`, expected `table`, `column`, `custom_type` or `enum_variant`"
-            ));
-        }
-    };
-    Ok((kind, prefix.to_owned().try_into()?))
 }
 
 #[derive(Default, Deserialize, Debug)]
@@ -798,53 +681,5 @@ impl<'de> Deserialize<'de> for Filtering {
         }
 
         deserializer.deserialize_map(FilteringVisitor)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn leading_digit_prefix_must_form_an_identifier_before_a_digit() {
-        for prefix in ["_", "table_", "Variant"] {
-            assert_eq!(
-                LeadingDigitPrefix::try_from(prefix.to_owned()).map(|p| p.0),
-                Ok(prefix.to_owned())
-            );
-        }
-        for prefix in ["", "1", "a-b", "r#", "__"] {
-            assert!(
-                LeadingDigitPrefix::try_from(prefix.to_owned()).is_err(),
-                "`{prefix}` was accepted"
-            );
-        }
-        let config = |table_prefix: &str| {
-            toml::from_str::<Config>(&format!(
-                "[print_schema]\nleading_digit_prefixes = {{ table = \"{table_prefix}\" }}"
-            ))
-        };
-        assert_eq!(
-            config("table_").unwrap().print_schema.all_configs["default"]
-                .leading_digit_prefixes
-                .table
-                .as_str(),
-            "table_"
-        );
-        assert!(config("1").is_err());
-    }
-
-    #[test]
-    fn parse_leading_digit_prefix_reads_kind_and_prefix() {
-        assert!(matches!(
-            parse_leading_digit_prefix("enum_variant=Variant"),
-            Ok((LeadingDigitPrefixKind::EnumVariant, prefix)) if prefix.as_str() == "Variant"
-        ));
-        for value in ["Variant", "variant=Variant", "table=1"] {
-            assert!(
-                parse_leading_digit_prefix(value).is_err(),
-                "`{value}` was accepted"
-            );
-        }
     }
 }
