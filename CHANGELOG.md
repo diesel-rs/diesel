@@ -56,10 +56,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
+* Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
 * Added `BatchOperationValueCount`, implemented by the records of a batch insert (`InsertOperation<table>`) or of a batch update (`UpdateOperation`): the number of values each record sends, to split a large batch into statements that stay under the bind parameter limit of the database
 
 ### Fixed
 
+* Fixed `view!` query sources missing the `ToInnerJoin` and `CombineDsl` impls that `table!` ones get, so a `.nullable()` selection through a join that contains a view, and a `UNION`/`INTERSECT`/`EXCEPT` on a view or on an alias of one, now compile.
 * Fixed `IpNetwork` written as a PostgreSQL `Cidr` to clear the host bits, as `IpNet` already does, instead of sending a value the server rejects with `invalid external "cidr" value`.
 * Fixed `SqliteReadOnlyBlob::close` closing the underlying SQLite handle twice.
 * Fixed `SqliteReadOnlyBlob` seeks before byte zero to return `InvalidInput` without changing the cursor, instead of overflowing or clamping to zero.

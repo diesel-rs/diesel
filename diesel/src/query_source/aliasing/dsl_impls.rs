@@ -9,7 +9,7 @@ use crate::expression_methods::EqAll;
 use crate::query_builder::{AsQuery, FromClause, Query, SelectStatement, combination_clause};
 use crate::query_dsl::methods::*;
 use crate::query_dsl::{CombineDsl, QueryDsl, RunQueryDslSupport};
-use crate::query_source::{QuerySource, Table};
+use crate::query_source::{QueryRelation, QuerySource, Table};
 
 impl<S: AliasSource> QueryDsl for Alias<S> {}
 
@@ -93,7 +93,7 @@ where
 impl<S> CombineDsl for Alias<S>
 where
     S: AliasSource,
-    S::Target: Table,
+    S::Target: QueryRelation,
     Self: AsQuery,
 {
     type Query = <Self as AsQuery>::Query;
