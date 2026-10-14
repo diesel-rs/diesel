@@ -1,20 +1,25 @@
 use crate::Table;
+use crate::associations::Identifiable;
 use crate::expression::Expression;
 use crate::insertable::Insertable;
-use crate::query_builder::{AsChangeset, IncompleteInsertStatement, UpdateStatement, ValuesClause};
+use crate::query_builder::{AsChangeset, ValuesClause};
 use crate::util::TupleSize;
+use core::marker::PhantomData;
 
 /// The number of values each record sends in a batch insert or a batch update
 ///
 /// Use it to split a large batch into statements that stay under the bind
 /// parameter limit of the database (65535 on PostgreSQL).
 ///
-/// [`insert_into`](crate::insert_into()) and [`update`](crate::update())
-/// implement it for the records of a batch:
+/// Every record of a batch implements it, for the operation it takes part in:
 ///
-/// * a batch insert sends one value per inserted column
-/// * a batch update sends one value per primary key column, plus one per
-///   updated column
+/// * [`InsertOperation<table>`](InsertOperation): one value per inserted
+///   column, for an [`Insertable`] record
+/// * [`UpdateOperation`]: one value per primary key column, plus one per
+///   updated column, for an [`AsChangeset`] and [`Identifiable`] record
+///
+/// The operation is inferred from the record type, unless the type is both:
+/// then name it, as in `batches::<UpdateOperation, _>(&records, max_binds)`.
 ///
 /// # Example
 ///
@@ -24,12 +29,12 @@ use crate::util::TupleSize;
 /// use diesel::query_builder::BatchOperationValueCount;
 ///
 /// /// Splits `records` into batches that send at most `max_binds` bind
-/// /// parameters through `statement`
-/// fn batches<'a, S, R>(statement: &S, records: &'a [R], max_binds: usize) -> std::slice::Chunks<'a, R>
+/// /// parameters each
+/// fn batches<Op, R>(records: &[R], max_binds: usize) -> std::slice::Chunks<'_, R>
 /// where
-///     S: BatchOperationValueCount<R>,
+///     R: BatchOperationValueCount<Op>,
 /// {
-///     records.chunks(max_binds / statement.values_per_record(records))
+///     records.chunks(max_binds / R::VALUES_PER_RECORD)
 /// }
 ///
 /// #[derive(Insertable)]
@@ -55,13 +60,13 @@ use crate::util::TupleSize;
 ///
 /// // One value per new user, its name: both in one statement
 /// let new_users = [NewUser { name: "Jim" }, NewUser { name: "Tom" }];
-/// for batch in batches(&diesel::insert_into(users::table), &new_users, max_binds) {
+/// for batch in batches(&new_users, max_binds) {
 ///     diesel::insert_into(users::table).values(batch).execute(connection)?;
 /// }
 ///
 /// // Two values per user, its id and its name: one user per statement
 /// let renamed = [User { id: 1, name: "Sam" }, User { id: 2, name: "Tia" }];
-/// for batch in batches(&diesel::update(users::table), &renamed, max_binds) {
+/// for batch in batches(&renamed, max_binds) {
 ///     diesel::update(users::table).set(batch).execute(connection)?;
 /// }
 /// #
@@ -84,9 +89,12 @@ use crate::util::TupleSize;
 ///
 /// # For Maintainers
 ///
-/// * The statements implement this trait rather than the records: a type
-///   deriving both `Insertable` and `AsChangeset` would otherwise get two
-///   overlapping blanket impls, with different counts.
+/// * The operation is a type parameter: two blanket impls over the record
+///   without it (`Insertable` and `AsChangeset`) would overlap for a type
+///   deriving both, with different counts.
+/// * The update impl requires [`Identifiable`]: tuples of `eq` assignments are
+///   [`AsChangeset`] too, and would otherwise make the operation ambiguous for
+///   the tuples of a batch insert.
 /// * Both impls bound the owned record: a bound on `&'a U: AsChangeset` makes
 ///   rustc evaluate `&?U: AsChangeset` before `U` is inferred, which overflows
 ///   on the recursive impls for references.
@@ -94,23 +102,24 @@ use crate::util::TupleSize;
 ///   (`ColumnInsertValue`, `DefaultableColumnInsertValue`) and for `Assign`: a
 ///   new kind of column value or assignment needs it too.
 #[diagnostic::on_unimplemented(
-    message = "`{Self}` cannot count the values a `{Record}` sends in a batch",
-    note = "a batch insert counts an `Insertable` type whose values are a fixed set of columns, \
-            a batch update an `AsChangeset` type whose changeset assigns a fixed set of columns of a table with a primary key"
+    message = "`{Self}` is not a record of a batch insert or a batch update",
+    note = "a batch insert takes `Insertable` records whose values are a fixed set of columns, \
+            a batch update `AsChangeset` and `Identifiable` records whose changeset assigns a fixed set of columns"
 )]
-pub trait BatchOperationValueCount<Record> {
-    /// The number of values each record sends through this statement
+pub trait BatchOperationValueCount<Operation> {
+    /// The number of values each record sends in that operation
     const VALUES_PER_RECORD: usize;
-
-    /// [`VALUES_PER_RECORD`](Self::VALUES_PER_RECORD), for the record type of
-    /// `records`: call it on `insert_into(table)` or `update(table)` without
-    /// writing their types
-    fn values_per_record(&self, _records: &[Record]) -> usize {
-        Self::VALUES_PER_RECORD
-    }
 }
 
-impl<E, V, Tab, Op> BatchOperationValueCount<E> for IncompleteInsertStatement<Tab, Op>
+/// A batch insert into `Tab`, as the operation of a [`BatchOperationValueCount`]
+#[derive(Debug, Clone, Copy)]
+pub struct InsertOperation<Tab>(PhantomData<Tab>);
+
+/// A batch update, as the operation of a [`BatchOperationValueCount`]
+#[derive(Debug, Clone, Copy)]
+pub struct UpdateOperation(());
+
+impl<E, V, Tab> BatchOperationValueCount<InsertOperation<Tab>> for E
 where
     E: Insertable<Tab, Values = ValuesClause<V, Tab>>,
     V: TupleSize,
@@ -118,11 +127,13 @@ where
     const VALUES_PER_RECORD: usize = V::SIZE;
 }
 
-impl<U, Tab, W> BatchOperationValueCount<U> for UpdateStatement<Tab, W>
+impl<U> BatchOperationValueCount<UpdateOperation> for U
 where
-    U: AsChangeset<Target = Tab, Changeset: TupleSize>,
-    Tab: Table<PrimaryKey: Expression<SqlType: TupleSize>>,
+    U: AsChangeset<Changeset: TupleSize>,
+    for<'a> &'a U: Identifiable,
+    U::Target: Table<PrimaryKey: Expression<SqlType: TupleSize>>,
 {
-    const VALUES_PER_RECORD: usize = <<Tab::PrimaryKey as Expression>::SqlType as TupleSize>::SIZE
-        + <U::Changeset as TupleSize>::SIZE;
+    const VALUES_PER_RECORD: usize =
+        <<<U::Target as Table>::PrimaryKey as Expression>::SqlType as TupleSize>::SIZE
+            + <U::Changeset as TupleSize>::SIZE;
 }

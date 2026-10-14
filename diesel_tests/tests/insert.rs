@@ -1,5 +1,5 @@
 use super::schema::*;
-use diesel::query_builder::BatchOperationValueCount;
+use diesel::query_builder::{InsertOperation, UpdateOperation};
 use diesel::*;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 use std::num::NonZeroU64;
@@ -1557,11 +1557,7 @@ fn insertable_struct_batch_values_per_record() {
         NewUser::new("Tess", None),
     ];
 
-    assert_eq!(2, insert_into(users::table).values_per_record(&new_users));
-    assert_eq!(
-        2,
-        insert_or_ignore_into(users::table).values_per_record(&new_users)
-    );
+    assert_eq!(2, values_per_record(&new_users));
     assert_eq!(
         2,
         bind_count(&insert_into(users::table).values(&new_users[0]))
@@ -1577,7 +1573,7 @@ fn insertable_struct_batch_values_per_record() {
 fn insertable_tuple_batch_values_per_record() {
     let new_users = [(users::name.eq("Sean"), users::hair_color.eq("Black"))];
 
-    assert_eq!(2, insert_into(users::table).values_per_record(&new_users));
+    assert_eq!(2, values_per_record(&new_users));
     assert_eq!(
         2,
         bind_count(&insert_into(users::table).values(new_users[0]))
@@ -1607,7 +1603,7 @@ fn insertable_embedded_struct_batch_values_per_record() {
         },
     }];
 
-    assert_eq!(2, insert_into(users::table).values_per_record(&new_users));
+    assert_eq!(2, values_per_record(&new_users));
     assert_eq!(
         2,
         bind_count(&insert_into(users::table).values(&new_users[0]))
@@ -1632,12 +1628,15 @@ fn inserted_and_updated_struct_values_per_record() {
     }];
 
     // Inserted: id, name and hair_color
-    assert_eq!(3, insert_into(users::table).values_per_record(&users_batch));
+    assert_eq!(
+        3,
+        values_per_record::<InsertOperation<users::table>, _>(&users_batch)
+    );
     assert_eq!(
         3,
         bind_count(&insert_into(users::table).values(&users_batch[0]))
     );
     // Updated: the id, then name
-    assert_eq!(2, update(users::table).values_per_record(&users_batch));
+    assert_eq!(2, values_per_record::<UpdateOperation, _>(&users_batch));
     assert_eq!(2, bind_count(&update(users::table).set(&users_batch)));
 }

@@ -336,6 +336,15 @@ where
     sql.matches(placeholder).count()
 }
 
+/// The number of values a record of `records` sends in its batch operation,
+/// inferred from the record type
+pub fn values_per_record<Op, R>(_records: &[R]) -> usize
+where
+    R: query_builder::BatchOperationValueCount<Op>,
+{
+    R::VALUES_PER_RECORD
+}
+
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
 #[cfg(not(feature = "sqlite"))]
 pub struct DropTable<'a> {

@@ -1440,7 +1440,7 @@ fn named_struct_batch_values_per_record() {
         hair_color: String::from("blue"),
     }];
 
-    assert_eq!(3, update(users::table).values_per_record(&users_batch));
+    assert_eq!(3, values_per_record(&users_batch));
     assert_eq!(3, bind_count(&update(users::table).set(&users_batch)));
 }
 
@@ -1470,7 +1470,7 @@ fn named_struct_batch_grouped_pkey_values_per_record() {
         hair_color: String::from("blue"),
     }];
 
-    assert_eq!(3, update(users_alt::table).values_per_record(&users_batch));
+    assert_eq!(3, values_per_record(&users_batch));
     assert_eq!(3, bind_count(&update(users_alt::table).set(&users_batch)));
 }
 
@@ -1483,13 +1483,12 @@ fn borrowed_struct_batch_values_per_record() {
     }
 
     /// Splits `records` into batches that send at most `max_binds` bind
-    /// parameters each through `statement`
-    fn batches<'r, S: BatchOperationValueCount<R>, R>(
-        _statement: &S,
-        records: &'r [R],
+    /// parameters each
+    fn batches<Op, R: BatchOperationValueCount<Op>>(
+        records: &[R],
         max_binds: usize,
-    ) -> impl Iterator<Item = &'r [R]> {
-        records.chunks(max_binds / S::VALUES_PER_RECORD)
+    ) -> impl Iterator<Item = &[R]> {
+        records.chunks(max_binds / R::VALUES_PER_RECORD)
     }
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -1501,11 +1500,11 @@ fn borrowed_struct_batch_values_per_record() {
         .map(|(name, id)| User { id, name })
         .collect::<Vec<_>>();
 
-    assert_eq!(2, update(users::table).values_per_record(&users_batch));
+    assert_eq!(2, values_per_record(&users_batch));
     assert_eq!(2, bind_count(&update(users::table).set(&users_batch[..1])));
 
     // One user per statement
-    for batch in batches(&update(users::table), &users_batch, 3) {
+    for batch in batches(&users_batch, 3) {
         assert_eq!(1, batch.len());
         update(users::table).set(batch).execute(connection).unwrap();
     }
