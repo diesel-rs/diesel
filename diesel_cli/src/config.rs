@@ -616,10 +616,6 @@ impl PrintSchema {
 /// Every prefix defaults to `_`. For `custom_type` and `enum_variant`, a custom prefix should be
 /// in PascalCase (`Type`, `Variant`), as the generated SQL types and Rust enums are not exempted
 /// from the `non_camel_case_types` lint.
-///
-/// With several `[print_schema.<key>]` sections, keys whose tables have foreign keys to each other
-/// must use the same `table` prefix: otherwise no `joinable!` is generated for a foreign key to a
-/// table of another key whose name starts with a digit.
 #[derive(Default, Deserialize, Clone, Debug)]
 #[serde(deny_unknown_fields, default)]
 pub struct LeadingDigitPrefixes {

@@ -1,0 +1,45 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_with_multiple_schema_same_leading_digit_prefix"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    #[sql_name = "1a_users"]
+    _1a_users (id) {
+        id -> Nullable<Integer>,
+    }
+}
+
+diesel::table! {
+    #[sql_name = "2b_users"]
+    _2b_users (id) {
+        id -> Nullable<Integer>,
+        user_id -> Integer,
+    }
+}
+
+diesel::joinable!(_2b_users -> _1a_users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(_1a_users, _2b_users,);
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    #[sql_name = "1a_users"]
+    t_1a_users (id) {
+        id -> Nullable<Integer>,
+    }
+}
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    #[sql_name = "2b_users"]
+    t_2b_users (id) {
+        id -> Nullable<Integer>,
+        user_id -> Integer,
+    }
+}
+
+diesel::joinable!(t_2b_users -> crate::t_1a_users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(crate::t_1a_users, t_2b_users,);

@@ -793,6 +793,42 @@ pub(crate) fn multi_schema_table_prefixes(
     Ok(prefixes)
 }
 
+/// Gives the tables of the other schema keys, in the foreign keys of the current key, the
+/// `TableName` of a key printing them
+///
+/// The foreign keys are loaded with the `table` prefix of the current key, while another key
+/// names its tables with its own prefix. Matching the tables on their schema and SQL name instead
+/// keeps the `joinable!` and the `allow_tables_to_appear_in_same_query!` path of a foreign key to
+/// a table of another key whose name starts with a digit, whatever `table` prefix that key uses.
+/// A table of the current key, or whose loaded name some key prints, keeps that name; any other
+/// takes the first name, in `TableName` order, that a key prints for the same SQL table, if there
+/// is one. `diesel migration run` prints only the keys with a `file`.
+fn rename_foreign_key_tables_for_multi_schema(
+    foreign_keys: &mut [ForeignKeyConstraint],
+    local_safe_tables: &BTreeSet<TableName>,
+    table_prefixes: &BTreeMap<TableName, String>,
+) {
+    let printed_table = |table: &TableName| {
+        if local_safe_tables.contains(table) || table_prefixes.contains_key(table) {
+            return None;
+        }
+        table_prefixes
+            .keys()
+            .find(|printed| printed.schema == table.schema && printed.sql_name == table.sql_name)
+            .cloned()
+    };
+    for foreign_key in foreign_keys.iter_mut() {
+        if let Some(child_table) = printed_table(&foreign_key.child_table) {
+            foreign_key.child_table = child_table;
+        }
+        if let Some(parent_table) = printed_table(&foreign_key.parent_table) {
+            foreign_key.parent_table = parent_table;
+        }
+    }
+    // Loaded sorted on the names the current key gave the tables
+    foreign_keys.sort();
+}
+
 fn table_codegen_path<'a>(
     table: &'a TableName,
     local_safe_tables: &BTreeSet<TableName>,
@@ -826,7 +862,7 @@ pub fn output_schema(
         config.include_views,
     );
 
-    let foreign_keys = load_foreign_key_constraints(
+    let mut foreign_keys = load_foreign_key_constraints(
         connection,
         config.schema_name(),
         &config.leading_digit_prefixes,
@@ -847,6 +883,15 @@ pub fn output_schema(
     } else {
         Cow::Borrowed(fk_safe_tables.as_ref())
     };
+    let local_safe_tables: BTreeSet<TableName> =
+        current_schema_safe_tables.iter().cloned().collect();
+    if let Some(multi_schema_table_prefixes) = multi_schema_table_prefixes {
+        rename_foreign_key_tables_for_multi_schema(
+            &mut foreign_keys,
+            &local_safe_tables,
+            multi_schema_table_prefixes,
+        );
+    }
     let foreign_keys_for_allow_tables =
         filter_foreign_keys_for_grouping(&foreign_keys, &fk_safe_tables);
     let duplicate_foreign_keys = duplicated_foreign_keys(&foreign_keys);
@@ -857,9 +902,6 @@ pub fn output_schema(
             .collect::<Vec<_>>();
     let foreign_keys_for_joinable =
         remove_duplicated_foreign_keys(&foreign_keys_for_joinable, &duplicate_foreign_keys);
-
-    let local_safe_tables: BTreeSet<TableName> =
-        current_schema_safe_tables.iter().cloned().collect();
 
     let resolver = SchemaResolverImpl::new(connection, table_names, config, unfiltered_table_names);
     let data = resolver.resolve_query_relations()?;

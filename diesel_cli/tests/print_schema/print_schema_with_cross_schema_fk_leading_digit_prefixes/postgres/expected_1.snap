@@ -1,0 +1,22 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_with_cross_schema_fk_leading_digit_prefixes"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod game {
+    diesel::table! {
+        #[sql_name = "game.2nd_game_session"]
+        game.game_2nd_game_session (id) {
+            id -> Int4,
+            api_token_id -> Int4,
+        }
+    }
+
+    diesel::joinable!(game_2nd_game_session -> crate::schema2::people::people_1st_api_token (api_token_id));
+
+    diesel::allow_tables_to_appear_in_same_query!(
+        crate::schema2::people::people_1st_api_token,
+        game_2nd_game_session,
+    );
+}

@@ -525,6 +525,28 @@ fn print_schema_with_multiple_schema_leading_digit_prefixes() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_with_multiple_schema_same_leading_digit_prefix() {
+    test_multiple_print_schema(
+        "print_schema_with_multiple_schema_same_leading_digit_prefix",
+        vec![
+            "--schema-key",
+            "user1",
+            "-o",
+            "1a_users",
+            "--leading-digit-prefix",
+            "table=t_",
+            "--schema-key",
+            "user2",
+            "-o",
+            "2b_users",
+            "--leading-digit-prefix",
+            "table=t_",
+        ],
+    )
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
     test_multiple_print_schema(
@@ -540,6 +562,28 @@ fn print_schema_with_multiple_schema_cross_schema_foreign_key() {
             "--schema",
             "people",
             "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_cross_schema_fk_leading_digit_prefixes() {
+    test_multiple_print_schema(
+        "print_schema_with_cross_schema_fk_leading_digit_prefixes",
+        vec![
+            "--schema-key",
+            "user1",
+            "--schema",
+            "game",
+            "--leading-digit-prefix",
+            "table=game_",
+            "--schema-key",
+            "user2",
+            "--schema",
+            "people",
+            "--leading-digit-prefix",
+            "table=people_",
         ],
     )
 }

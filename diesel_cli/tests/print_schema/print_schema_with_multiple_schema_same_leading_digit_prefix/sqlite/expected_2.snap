@@ -1,0 +1,17 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_with_multiple_schema_same_leading_digit_prefix"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    #[sql_name = "2b_users"]
+    t_2b_users (id) {
+        id -> Nullable<Integer>,
+        user_id -> Integer,
+    }
+}
+
+diesel::joinable!(t_2b_users -> crate::schema1::t_1a_users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(crate::schema1::t_1a_users, t_2b_users,);

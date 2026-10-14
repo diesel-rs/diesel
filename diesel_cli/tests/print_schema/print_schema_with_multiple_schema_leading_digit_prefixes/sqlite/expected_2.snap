@@ -8,5 +8,10 @@ diesel::table! {
     #[sql_name = "2b_users"]
     second_2b_users (id) {
         id -> Nullable<Integer>,
+        user_id -> Integer,
     }
 }
+
+diesel::joinable!(second_2b_users -> crate::schema1::first_1a_users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(crate::schema1::first_1a_users, second_2b_users,);
