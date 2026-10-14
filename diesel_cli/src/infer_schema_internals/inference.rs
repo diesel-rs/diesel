@@ -59,23 +59,23 @@ fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
 ///
 /// Names built from SQL names must go through this function after any case conversion as case
 /// conversions strip trailing `_`
-pub fn make_valid_identifier(name: &str) -> String {
+pub fn make_valid_identifier(name: Cow<'_, str>) -> Cow<'_, str> {
     if name.starts_with(|c: char| c.is_ascii_digit()) {
         // Rust identifiers cannot start with a digit
-        format!("_{name}")
-    } else if is_reserved_name(name) {
-        format!("{name}_")
+        Cow::Owned(format!("_{name}"))
+    } else if is_reserved_name(&name) {
+        Cow::Owned(format!("{name}_"))
     } else {
-        name.to_owned()
+        name
     }
 }
 
 pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
-    let name = make_valid_identifier(&replace_unmappable_chars(sql_name));
+    let name = make_valid_identifier(replace_unmappable_chars(sql_name));
     if Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
         format!("{name}_")
     } else {
-        name
+        name.into_owned()
     }
 }
 
@@ -277,7 +277,9 @@ pub fn load_foreign_key_constraints(
         ct.sort();
         ct.iter_mut().for_each(|foreign_key_constraint| {
             for name in &mut foreign_key_constraint.foreign_key_columns_rust {
-                *name = make_valid_identifier(name);
+                if let Cow::Owned(valid_name) = make_valid_identifier(Cow::Borrowed(name)) {
+                    *name = valid_name;
+                }
             }
         });
         tracing::info!(?ct, "Loaded foreign key constraints");

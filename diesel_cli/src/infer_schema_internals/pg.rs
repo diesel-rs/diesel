@@ -104,7 +104,8 @@ pub fn determine_column_type(
             }
         }),
         sql_name: tpe.to_string(),
-        rust_name: super::inference::make_valid_identifier(&tpe.to_upper_camel_case()),
+        rust_name: super::inference::make_valid_identifier(tpe.to_upper_camel_case().into())
+            .into_owned(),
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,

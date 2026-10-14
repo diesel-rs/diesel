@@ -678,12 +678,14 @@ pub(crate) fn load_custom_types(
 pub(crate) fn mysql_enum_name(table_name: &str, column_name: &str, ty: &ColumnType) -> String {
     use heck::ToUpperCamelCase;
     crate::infer_schema_internals::make_valid_identifier(
-        &format!(
+        format!(
             "{table_name} {column_name} {rust_name}",
             rust_name = ty.rust_name
         )
-        .to_upper_camel_case(),
+        .to_upper_camel_case()
+        .into(),
     )
+    .into_owned()
 }
 
 fn safe_tables_for_config(
