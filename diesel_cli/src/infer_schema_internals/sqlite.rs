@@ -10,7 +10,7 @@ use diesel::*;
 
 use super::data_structures::*;
 use super::table_data::TableName;
-use crate::config::PrintSchema;
+use crate::config::{LeadingDigitPrefixes, PrintSchema};
 use crate::print_schema::ColumnSorting;
 
 table! {
@@ -42,6 +42,7 @@ fn escape_identifier(identifier: &str) -> String {
 pub fn load_table_names(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
+    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> Result<Vec<(SupportedQueryRelationStructures, TableName)>, crate::errors::Error> {
     use self::sqlite_master::dsl::*;
 
@@ -59,7 +60,7 @@ pub fn load_table_names(
         .map(|table| {
             (
                 SupportedQueryRelationStructures::Table,
-                TableName::from_name(table),
+                TableName::from_name(table, leading_digit_prefixes),
             )
         });
     let view = sqlite_master
@@ -73,7 +74,7 @@ pub fn load_table_names(
         .map(|table| {
             (
                 SupportedQueryRelationStructures::View,
-                TableName::from_name(table),
+                TableName::from_name(table, leading_digit_prefixes),
             )
         });
 
@@ -83,8 +84,9 @@ pub fn load_table_names(
 pub fn load_foreign_key_constraints(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
+    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> Result<Vec<ForeignKeyConstraint>, crate::errors::Error> {
-    let tables = load_table_names(connection, schema_name)?;
+    let tables = load_table_names(connection, schema_name, leading_digit_prefixes)?;
     let rows = tables
         .into_iter()
         .map(|(_, child_table)| {
@@ -96,7 +98,8 @@ pub fn load_foreign_key_constraints(
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
                 .map(|row| {
-                    let parent_table = TableName::from_name(row.parent_table);
+                    let parent_table =
+                        TableName::from_name(row.parent_table, leading_digit_prefixes);
                     let primary_key = if let Some(primary_key) = row.primary_key {
                         vec![primary_key]
                     } else {
@@ -105,6 +108,7 @@ pub fn load_foreign_key_constraints(
                     let foreign_key_columns_rust = super::inference::rust_name_for_sql_name(
                         &row.foreign_key,
                         Some(&child_table),
+                        leading_digit_prefixes.column.as_str(),
                     );
                     Ok(ForeignKeyConstraint {
                         child_table: child_table.clone(),
@@ -505,7 +509,7 @@ fn load_table_names_returns_nothing_when_no_tables_exist() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     assert_eq!(
         Vec::<TableName>::new(),
-        load_table_names(&mut conn, None)
+        load_table_names(&mut conn, None, &LeadingDigitPrefixes::default())
             .unwrap()
             .into_iter()
             .map(|(_, table)| table)
@@ -519,12 +523,15 @@ fn load_table_names_includes_tables_that_exist() {
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None)
+    let table_names = load_table_names(&mut conn, None, &LeadingDigitPrefixes::default())
         .unwrap()
         .into_iter()
         .map(|(_, table)| table)
         .collect::<Vec<_>>();
-    assert!(table_names.contains(&TableName::from_name("users")));
+    assert!(table_names.contains(&TableName::from_name(
+        "users",
+        &LeadingDigitPrefixes::default()
+    )));
 }
 
 #[test]
@@ -533,12 +540,15 @@ fn load_table_names_excludes_diesel_metadata_tables() {
     diesel::sql_query("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None)
+    let table_names = load_table_names(&mut conn, None, &LeadingDigitPrefixes::default())
         .unwrap()
         .into_iter()
         .map(|(_, table)| table)
         .collect::<Vec<_>>();
-    assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
+    assert!(!table_names.contains(&TableName::from_name(
+        "__diesel_metadata",
+        &LeadingDigitPrefixes::default()
+    )));
 }
 
 #[test]
@@ -550,12 +560,18 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None)
+    let table_names = load_table_names(&mut conn, None, &LeadingDigitPrefixes::default())
         .unwrap()
         .into_iter()
         .map(|(_, table)| table)
         .collect::<Vec<_>>();
-    assert_eq!(vec![TableName::from_name("users")], table_names);
+    assert_eq!(
+        vec![TableName::from_name(
+            "users",
+            &LeadingDigitPrefixes::default()
+        )],
+        table_names
+    );
 }
 
 #[test]
@@ -567,15 +583,15 @@ fn load_table_names_includes_views() {
     diesel::sql_query("CREATE VIEW answer AS SELECT 42")
         .execute(&mut conn)
         .unwrap();
-    let table_names = load_table_names(&mut conn, None)
+    let table_names = load_table_names(&mut conn, None, &LeadingDigitPrefixes::default())
         .unwrap()
         .into_iter()
         .map(|(_, table)| table)
         .collect::<Vec<_>>();
     assert_eq!(
         vec![
-            TableName::from_name("users"),
-            TableName::from_name("answer")
+            TableName::from_name("users", &LeadingDigitPrefixes::default()),
+            TableName::from_name("answer", &LeadingDigitPrefixes::default())
         ],
         table_names
     );
@@ -586,7 +602,7 @@ fn load_table_names_returns_error_when_given_schema_name() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     // We're testing the error message rather than using #[should_panic]
     // to ensure this is returning an error and not actually panicking.
-    let table_names = load_table_names(&mut conn, Some("stuff"));
+    let table_names = load_table_names(&mut conn, Some("stuff"), &LeadingDigitPrefixes::default());
     match table_names {
         Ok(_) => panic!("Expected load_table_names to return an error"),
         Err(e) => assert!(e.to_string().starts_with(
@@ -609,7 +625,7 @@ fn load_table_names_output_is_ordered() {
         .execute(&mut conn)
         .unwrap();
 
-    let table_names = load_table_names(&mut conn, None)
+    let table_names = load_table_names(&mut conn, None, &LeadingDigitPrefixes::default())
         .unwrap()
         .iter()
         .map(|(_, table)| table.to_string())
@@ -631,9 +647,9 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
         .execute(&mut connection)
         .unwrap();
 
-    let table_1 = TableName::from_name("table_1");
-    let table_2 = TableName::from_name("table_2");
-    let table_3 = TableName::from_name("table_3");
+    let table_1 = TableName::from_name("table_1", &LeadingDigitPrefixes::default());
+    let table_2 = TableName::from_name("table_2", &LeadingDigitPrefixes::default());
+    let table_3 = TableName::from_name("table_3", &LeadingDigitPrefixes::default());
     let fk_one = ForeignKeyConstraint {
         child_table: table_2.clone(),
         parent_table: table_1,
@@ -649,7 +665,8 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
         primary_key_columns: vec!["id".into()],
     };
 
-    let fks = load_foreign_key_constraints(&mut connection, None).unwrap();
+    let fks = load_foreign_key_constraints(&mut connection, None, &LeadingDigitPrefixes::default())
+        .unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);
 }
 
@@ -661,7 +678,7 @@ fn all_rowid_aliases_used_empty_result() {
         .execute(&mut connection)
         .unwrap();
 
-    let table_1 = TableName::from_name("table_1");
+    let table_1 = TableName::from_name("table_1", &LeadingDigitPrefixes::default());
 
     let res = get_primary_keys(&mut connection, &table_1);
     assert!(res.is_ok());
@@ -722,7 +739,7 @@ fn integer_primary_key_sqlite_3_37() {
     for (table_name, sql_query, expected_off_types, expected_on_types) in test_data {
         diesel::sql_query(sql_query).execute(&mut conn).unwrap();
 
-        let table = TableName::from_name(table_name);
+        let table = TableName::from_name(table_name, &LeadingDigitPrefixes::default());
         let column_infos = get_table_data(
             &mut conn,
             &table,

@@ -77,7 +77,11 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
             let kind = match kind.or_else(|| self.unfiltered_table_names.get(&t).copied()) {
                 Some(kind) => kind,
                 None => {
-                    let tables = load_table_names(self.connection, t.schema.as_deref())?;
+                    let tables = load_table_names(
+                        self.connection,
+                        t.schema.as_deref(),
+                        &self.config.leading_digit_prefixes,
+                    )?;
                     self.unfiltered_table_names
                         .extend(tables.into_iter().map(|(tpe, rel)| (rel, tpe)));
                     self.unfiltered_table_names
@@ -156,9 +160,10 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
                 .rfind(|r| r.schema.is_some())
                 .and_then(|r| r.schema.as_deref())
         });
+        let leading_digit_prefixes = &self.config.leading_digit_prefixes;
         let table_name = match schema {
-            None => TableName::from_name(query_relation),
-            Some(schema) => TableName::new(query_relation, schema),
+            None => TableName::from_name(query_relation, leading_digit_prefixes),
+            Some(schema) => TableName::new(query_relation, schema, leading_digit_prefixes),
         };
         let relation = self.load_query_relation_data(None, table_name.clone())?;
         Ok((table_name, relation))

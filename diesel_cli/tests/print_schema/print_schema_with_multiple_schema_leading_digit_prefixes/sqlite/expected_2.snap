@@ -1,0 +1,12 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_with_multiple_schema_leading_digit_prefixes"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    #[sql_name = "2b_users"]
+    second_2b_users (id) {
+        id -> Nullable<Integer>,
+    }
+}

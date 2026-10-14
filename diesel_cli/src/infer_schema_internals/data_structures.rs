@@ -304,7 +304,11 @@ pub struct EnumVariant {
 }
 
 impl EnumVariant {
-    pub fn rust_name(&self) -> String {
-        super::inference::make_valid_identifier(self.sql_name.to_pascal_case().into()).into_owned()
+    pub fn rust_name(&self, leading_digit_prefix: &str) -> String {
+        super::inference::make_valid_identifier(
+            self.sql_name.to_pascal_case().into(),
+            leading_digit_prefix,
+        )
+        .into_owned()
     }
 }

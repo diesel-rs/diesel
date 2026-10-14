@@ -5,12 +5,14 @@ use std::collections::HashMap;
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
+use crate::config::LeadingDigitPrefixes;
 
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
 /// in order to do this.
 pub fn load_foreign_key_constraints(
     connection: &mut MysqlConnection,
     schema_name: Option<&str>,
+    leading_digit_prefixes: &LeadingDigitPrefixes,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use super::mysql_like::information_schema::key_column_usage as kcu;
     use super::mysql_like::information_schema::table_constraints as tc;
@@ -37,8 +39,19 @@ pub fn load_foreign_key_constraints(
             kcu::referenced_column_name,
             kcu::constraint_name,
         ))
-        .load::<(TableName, TableName, String, String, String)>(connection)?
+        .load::<((String, String), (String, String), String, String, String)>(connection)?
         .into_iter()
+        .map(
+            |((child_name, child_schema), (parent_name, parent_schema), fk, pk, constraint)| {
+                (
+                    TableName::new(child_name, child_schema, leading_digit_prefixes),
+                    TableName::new(parent_name, parent_schema, leading_digit_prefixes),
+                    fk,
+                    pk,
+                    constraint,
+                )
+            },
+        )
         .fold(
             HashMap::new(),
             |mut acc, (child_table, parent_table, foreign_key, primary_key, fk_constraint_name)| {
@@ -58,7 +71,13 @@ pub fn load_foreign_key_constraints(
 
                 let foreign_key_columns_rust = foreign_key_columns
                     .iter()
-                    .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
+                    .map(|s| {
+                        super::inference::rust_name_for_sql_name(
+                            s,
+                            Some(&child_table),
+                            leading_digit_prefixes.column.as_str(),
+                        )
+                    })
                     .collect();
 
                 ForeignKeyConstraint {
@@ -170,8 +189,8 @@ mod test {
             .get_result::<String>(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", &db);
-        let table_2 = TableName::new("table_2", &db);
+        let table_1 = TableName::new("table_1", &db, &LeadingDigitPrefixes::default());
+        let table_2 = TableName::new("table_2", &db, &LeadingDigitPrefixes::default());
 
         let id_with_comment = ColumnInformation::new(
             "id",
@@ -214,8 +233,8 @@ mod test {
             .get_result::<String>(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", &db);
-        let table_2 = TableName::new("table_2", &db);
+        let table_1 = TableName::new("table_1", &db, &LeadingDigitPrefixes::default());
+        let table_2 = TableName::new("table_2", &db, &LeadingDigitPrefixes::default());
         assert_eq!(
             Ok(Some("table comment".to_string())),
             get_table_comment(&mut connection, &table_1)

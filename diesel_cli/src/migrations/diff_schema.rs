@@ -77,8 +77,11 @@ pub fn generate_sql_based_on_diff_schema(
     rust_side_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_maybe_url(database_url)?;
 
-    let foreign_keys =
-        crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
+    let foreign_keys = crate::infer_schema_internals::load_foreign_key_constraints(
+        &mut conn,
+        None,
+        &config.leading_digit_prefixes,
+    )?;
     let foreign_key_map =
         foreign_keys
             .into_iter()
@@ -134,7 +137,7 @@ pub fn generate_sql_based_on_diff_schema(
     }
 
     let mut schema_diff = Vec::new();
-    let table_names = load_table_names(&mut conn, None)?;
+    let table_names = load_table_names(&mut conn, None, &config.leading_digit_prefixes)?;
     let tables_from_database =
         filter_table_names(&table_names, &config.filter, config.include_views);
     let mut table_data = Vec::new();
@@ -618,6 +621,7 @@ impl SchemaDiff {
         for<'a> AddEnumVariants<'a>: QueryFragment<DB>,
         for<'a> MigrateEnumData<'a>: QueryFragment<DB>,
     {
+        let custom_type_leading_digit_prefix = config.leading_digit_prefixes.custom_type.as_str();
         match self {
             SchemaDiff::DropTable { table, .. } => {
                 generate_drop_table(query_builder, &table.sql_name.to_lowercase())?;
@@ -668,6 +672,7 @@ impl SchemaDiff {
                     enum_sql_types,
                     db,
                     table,
+                    custom_type_leading_digit_prefix,
                 )?;
                 generate_create_table(
                     query_builder,
@@ -678,6 +683,7 @@ impl SchemaDiff {
                     sqlite_integer_primary_key_is_bigint,
                     enum_sql_types,
                     db,
+                    custom_type_leading_digit_prefix,
                 )?;
             }
             SchemaDiff::ChangeTable {
@@ -701,6 +707,7 @@ impl SchemaDiff {
                     enum_sql_types,
                     db,
                     table,
+                    custom_type_leading_digit_prefix,
                 )?;
                 for c in added_columns
                     .iter()
@@ -713,6 +720,7 @@ impl SchemaDiff {
                         &ColumnType::for_column_def(c)?,
                         enum_sql_types,
                         db,
+                        custom_type_leading_digit_prefix,
                     )?;
                     query_builder.push_sql("\n");
                 }
@@ -749,8 +757,14 @@ impl SchemaDiff {
                 type_info,
                 infos,
             } => {
-                MigrateEnumData::new(affected_tables, type_info, enum_sql_types, infos)
-                    .to_sql(query_builder, db)?;
+                MigrateEnumData::new(
+                    affected_tables,
+                    type_info,
+                    enum_sql_types,
+                    infos,
+                    custom_type_leading_digit_prefix,
+                )
+                .to_sql(query_builder, db)?;
             }
         }
         Ok(())
@@ -771,6 +785,7 @@ impl SchemaDiff {
         for<'a> MigrateEnumData<'a>: QueryFragment<DB>,
         for<'a> AddEnumVariants<'a>: QueryFragment<DB>,
     {
+        let custom_type_leading_digit_prefix = config.leading_digit_prefixes.custom_type.as_str();
         match self {
             SchemaDiff::DropTable {
                 table,
@@ -801,6 +816,7 @@ impl SchemaDiff {
                     sqlite_integer_primary_key_is_bigint,
                     enum_sql_types,
                     db,
+                    custom_type_leading_digit_prefix,
                 )?;
             }
             SchemaDiff::CreateTable { to_create, .. } => {
@@ -858,6 +874,7 @@ impl SchemaDiff {
                         &c.ty,
                         enum_sql_types,
                         db,
+                        custom_type_leading_digit_prefix,
                     )?;
                     query_builder.push_sql("\n");
                 }
@@ -899,8 +916,14 @@ impl SchemaDiff {
                 type_info,
                 infos,
             } => {
-                MigrateEnumData::new(affected_tables, type_info, enum_sql_types, infos)
-                    .to_sql(query_builder, db)?;
+                MigrateEnumData::new(
+                    affected_tables,
+                    type_info,
+                    enum_sql_types,
+                    infos,
+                    custom_type_leading_digit_prefix,
+                )
+                .to_sql(query_builder, db)?;
             }
         }
         Ok(())
@@ -963,6 +986,7 @@ fn collect_and_generate_record_types<DB>(
     enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
     db: &DB,
     table_name: &str,
+    custom_type_leading_digit_prefix: &str,
 ) -> Result<(), crate::errors::Error>
 where
     DB: Backend,
@@ -977,6 +1001,7 @@ where
             enum_sql_types,
             db,
             table_name,
+            custom_type_leading_digit_prefix,
         )?;
     }
     Ok(())
@@ -1041,6 +1066,7 @@ fn generate_record_types<DB>(
     enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
     db: &DB,
     table_name: &str,
+    custom_type_leading_digit_prefix: &str,
 ) -> QueryResult<()>
 where
     DB: Backend,
@@ -1072,6 +1098,7 @@ where
             enum_sql_types,
             db,
             table_name,
+            custom_type_leading_digit_prefix,
         )?;
         if idx != record_types.len() - 1 {
             query_builder.push_sql(",");
@@ -1089,6 +1116,7 @@ fn generate_add_column<DB>(
     ty: &ColumnType,
     enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
     db: &DB,
+    custom_type_leading_digit_prefix: &str,
 ) -> QueryResult<()>
 where
     DB: Backend,
@@ -1098,7 +1126,16 @@ where
     query_builder.push_identifier(table)?;
     query_builder.push_sql(" ADD COLUMN ");
     query_builder.push_identifier(column)?;
-    generate_column_type_name(query_builder, ty, column, false, enum_sql_types, db, table)?;
+    generate_column_type_name(
+        query_builder,
+        ty,
+        column,
+        false,
+        enum_sql_types,
+        db,
+        table,
+        custom_type_leading_digit_prefix,
+    )?;
     query_builder.push_sql(";");
     Ok(())
 }
@@ -1130,6 +1167,7 @@ fn generate_create_table<DB>(
     sqlite_integer_primary_key_is_bigint: bool,
     enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
     db: &DB,
+    custom_type_leading_digit_prefix: &str,
 ) -> QueryResult<()>
 where
     DB: Backend + SupportsAutoIncrementDdl,
@@ -1175,6 +1213,7 @@ where
                 enum_sql_types,
                 db,
                 table,
+                custom_type_leading_digit_prefix,
             )?;
         } else {
             generate_column_type_name(
@@ -1185,6 +1224,7 @@ where
                 enum_sql_types,
                 db,
                 table,
+                custom_type_leading_digit_prefix,
             )?;
         }
 
@@ -1250,11 +1290,17 @@ impl<'a> ColumnTypeName<'a> {
         for_record: bool,
         enum_sql_types: &'a [(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
         table_name: &str,
+        custom_type_leading_digit_prefix: &str,
     ) -> Self {
         #[cfg(any(feature = "mysql", feature = "mariadb"))]
         let ty = if crate::infer_schema_internals::mysql_like::get_enum_variants(ty).is_some() {
             let mut ty = ty.clone();
-            ty.rust_name = crate::print_schema::mysql_enum_name(table_name, column_name, &ty);
+            ty.rust_name = crate::print_schema::mysql_enum_name(
+                table_name,
+                column_name,
+                &ty,
+                custom_type_leading_digit_prefix,
+            );
             ty.max_length = None;
             Cow::Owned(ty)
         } else {
@@ -1262,7 +1308,7 @@ impl<'a> ColumnTypeName<'a> {
         };
         #[cfg(not(any(feature = "mysql", feature = "mariadb")))]
         let ty = {
-            let _ = table_name;
+            let _ = (table_name, custom_type_leading_digit_prefix);
             Cow::Borrowed(ty)
         };
         let enum_type = if let Some((enum_type, enum_infos)) = enum_sql_types
@@ -1325,6 +1371,7 @@ where
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_column_type_name<DB>(
     query_builder: &mut DB::QueryBuilder,
     ty: &ColumnType,
@@ -1333,13 +1380,21 @@ fn generate_column_type_name<DB>(
     enum_sql_types: &[(schema_parsing::SqlTypeInfo, schema_parsing::EnumInfos)],
     db: &DB,
     table_name: &str,
+    custom_type_leading_digit_prefix: &str,
 ) -> QueryResult<()>
 where
     DB: Backend,
     for<'a> EnumType<'a>: QueryFragment<DB>,
 {
-    ColumnTypeName::new(ty, column_name, for_record, enum_sql_types, table_name)
-        .to_sql(query_builder, db)
+    ColumnTypeName::new(
+        ty,
+        column_name,
+        for_record,
+        enum_sql_types,
+        table_name,
+        custom_type_leading_digit_prefix,
+    )
+    .to_sql(query_builder, db)
 }
 
 fn generate_drop_table<DB>(

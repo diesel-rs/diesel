@@ -225,6 +225,23 @@ fn print_schema_with_unmappable_enum_names() {
 }
 
 #[test]
+fn print_schema_with_custom_leading_digit_prefixes() {
+    test_print_schema(
+        "print_schema_with_custom_leading_digit_prefixes",
+        vec![
+            "--leading-digit-prefix",
+            "table=table_",
+            "--leading-digit-prefix",
+            "column=column_",
+            "--leading-digit-prefix",
+            "custom_type=Type",
+            "--leading-digit-prefix",
+            "enum_variant=Variant",
+        ],
+    );
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }
@@ -481,6 +498,28 @@ fn print_schema_with_multiple_schema() {
             "-o",
             "users2",
             "--with-docs",
+        ],
+    )
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_with_multiple_schema_leading_digit_prefixes() {
+    test_multiple_print_schema(
+        "print_schema_with_multiple_schema_leading_digit_prefixes",
+        vec![
+            "--schema-key",
+            "user1",
+            "-o",
+            "1a_users",
+            "--leading-digit-prefix",
+            "table=first_",
+            "--schema-key",
+            "user2",
+            "-o",
+            "2b_users",
+            "--leading-digit-prefix",
+            "table=second_",
         ],
     )
 }

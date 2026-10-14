@@ -56,6 +56,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
+* Added the `leading_digit_prefixes` option of `[print_schema]` in `diesel.toml` and the `--leading-digit-prefix <kind>=<prefix>` flag of `diesel print-schema`, which set the prefix put before a generated Rust name that starts with a digit for tables, columns, custom types or enum variants (`_` by default)
 
 ### Fixed
 

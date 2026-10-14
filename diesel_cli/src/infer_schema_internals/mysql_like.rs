@@ -199,8 +199,7 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, cra
     Ok(ColumnType {
         schema: None,
         sql_name: tpe.trim().to_string(),
-        rust_name: super::inference::make_valid_identifier(tpe.trim().to_upper_camel_case().into())
-            .into_owned(),
+        rust_name: tpe.trim().to_upper_camel_case(),
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: unsigned,

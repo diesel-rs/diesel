@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
+leading_digit_prefixes = { table = "table_", column = "column_", custom_type = "Type", enum_variant = "Variant" }
