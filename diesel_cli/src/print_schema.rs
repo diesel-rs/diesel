@@ -1,20 +1,14 @@
-use {
-    crate::{
-        config::{self, Config},
-        database::{Backend, InferConnection},
-        infer_schema_internals::*,
-    },
-    clap::{ArgAction, ArgMatches, Args, FromArgMatches},
-    diesel::QueryResult,
-    serde::{Deserialize, Serialize},
-    std::{
-        borrow::Cow,
-        collections::{BTreeMap, BTreeSet, HashMap, HashSet},
-        fmt::{self, Display, Formatter, Write},
-        io::{Write as IoWrite, stdout},
-        process, str,
-    },
-};
+use crate::config::{self, Config};
+use crate::database::{Backend, InferConnection};
+use crate::infer_schema_internals::*;
+use clap::{ArgAction, ArgMatches, Args, FromArgMatches};
+use diesel::QueryResult;
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::fmt::{self, Display, Formatter, Write};
+use std::io::{Write as IoWrite, stdout};
+use std::{process, str};
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
@@ -281,8 +275,7 @@ pub struct InnerPrintSchemaArgs {
     )]
     pub except_custom_type_definitions: Vec<String>,
 
-    /// A list of derives to implement for every automatically generated SqlType in the schema,
-    /// separated by commas.
+    /// A list of derives to implement for every automatically generated SqlType in the schema, separated by commas.
     #[arg(
         id = PrintSchemaArgs::CUSTOM_TYPE_DERIVES,
         long = "custom-type-derives",
@@ -291,8 +284,7 @@ pub struct InnerPrintSchemaArgs {
     )]
     pub custom_type_derives: Vec<String>,
 
-    /// A regex to distinguish domain names to generate custom types for instead of relying on
-    /// underlying type.
+    /// A regex to distinguish domain names to generate custom types for instead of relying on underlying type.
     #[arg(
         long = "pg-domains-as-custom-types",
         num_args = 1..,
@@ -323,9 +315,9 @@ pub struct InnerPrintSchemaArgs {
     pub sqlite_integer_primary_key_is_bigint: Vec<bool>,
     /// A list of derives to implement for every automatically generated Rust enum in the schema,
     /// separated by commas.
-    ///
+    /// 
     /// Defaults to Clone, Copy, PartialEq, Eq, and Hash if not specified.
-    ///
+    /// 
     /// Debug and diesel::types::Enum are always included.
     #[arg(
         id = PrintSchemaArgs::CUSTOM_RUST_ENUM_TYPE_DERIVES,
