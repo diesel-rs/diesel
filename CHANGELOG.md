@@ -14,7 +14,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
-* Generated Rust enums now derive `Clone`, `Copy`, `PartialEq`, `Eq`, and `Hash` by default, in addition to `Debug` and `diesel::types::Enum`. A nonempty `custom_enum_derives` list replaces the optional defaults.
+* Generated Rust enums now derive `Clone`, `Copy`, `PartialEq`, `Eq`, and `Hash` when `custom_enum_derives` is not specified. `Debug` and `diesel::types::Enum` are always included.
 
 * Add support for sqlite-wasm-rs 0.6
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
