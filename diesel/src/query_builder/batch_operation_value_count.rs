@@ -6,52 +6,31 @@ use crate::util::TupleSize;
 
 /// The number of values each record sends in a batch insert or a batch update
 ///
-/// A batch statement sends values for each of its records: a batch insert one
-/// for each inserted column, a batch update one for each column of the primary
-/// key plus one for each updated column. Splitting a large batch into
-/// statements that stay under the bind parameter limit of the database (65535
-/// on PostgreSQL) needs that number.
+/// Use it to split a large batch into statements that stay under the bind
+/// parameter limit of the database (65535 on PostgreSQL).
 ///
-/// The statement a batch is sent through implements this trait for the type of
-/// its records:
+/// [`insert_into`](crate::insert_into()) and [`update`](crate::update())
+/// implement it for the records of a batch:
 ///
-/// * [`IncompleteInsertStatement`], returned by
-///   [`insert_into`](crate::insert_into()), for every [`Insertable`] type whose
-///   values are a fixed set of columns, which includes the types deriving
-///   [`Insertable`](derive@crate::Insertable) and tuples of
-///   [`eq`](crate::ExpressionMethods::eq) assignments
-/// * [`UpdateStatement`], returned by [`update`](crate::update()), for every
-///   [`AsChangeset`] type whose changeset assigns a fixed set of columns of a
-///   table with a primary key, which includes the records of a
-///   [batch update](crate::update()#batch-update)
-///
-/// The statement rather than the record implements it because a type can be
-/// both inserted and updated, with a different count for each.
-///
-/// # Values and bind parameters
-///
-/// Each value is a bind parameter when the record holds a Rust value for that
-/// column. An SQL expression sends its own bind parameters instead: none for
-/// [`now`](crate::dsl::now), two for `a.concat(b)`, and a `None` field of a
-/// batch insert sends `DEFAULT`, which has none. The count is therefore the
-/// number of bind parameters of a record when all its fields hold Rust values,
-/// an upper bound of it when some fields send no bind parameter, and less than
-/// it when some hold an expression with several.
-///
-/// It counts the values of the records only: the other clauses of the
-/// statement, such as a `WHERE` clause or the `SET` clause of an
-/// `ON CONFLICT DO UPDATE`, add their bind parameters once per statement. On
-/// SQLite, a batch insert of records that hold an `Option` field already runs
-/// one statement per record.
+/// * a batch insert sends one value per inserted column
+/// * a batch update sends one value per primary key column, plus one per
+///   updated column
 ///
 /// # Example
-///
-/// Splitting batches into statements that stay under a bind parameter limit:
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// use diesel::query_builder::BatchOperationValueCount;
+///
+/// /// Splits `records` into batches that send at most `max_binds` bind
+/// /// parameters through `statement`
+/// fn batches<'a, S, R>(statement: &S, records: &'a [R], max_binds: usize) -> std::slice::Chunks<'a, R>
+/// where
+///     S: BatchOperationValueCount<R>,
+/// {
+///     records.chunks(max_binds / statement.values_per_record(records))
+/// }
 ///
 /// #[derive(Insertable)]
 /// #[diesel(table_name = users)]
@@ -71,51 +50,61 @@ use crate::util::TupleSize;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
-/// // The bind parameter limit of the database
+/// // 65535 on PostgreSQL, 3 here to show the split
 /// let max_binds = 3;
 ///
-/// let insert = diesel::insert_into(users::table);
+/// // One value per new user, its name: both in one statement
 /// let new_users = [NewUser { name: "Jim" }, NewUser { name: "Tom" }];
-/// // Each new user sends its name: both in one statement
-/// assert_eq!(1, insert.values_per_record(&new_users));
-/// for batch in new_users.chunks(max_binds / insert.values_per_record(&new_users)) {
-///     insert.values(batch).execute(connection)?;
+/// for batch in batches(&diesel::insert_into(users::table), &new_users, max_binds) {
+///     diesel::insert_into(users::table).values(batch).execute(connection)?;
 /// }
 ///
+/// // Two values per user, its id and its name: one user per statement
 /// let renamed = [User { id: 1, name: "Sam" }, User { id: 2, name: "Tia" }];
-/// // Each user sends its id and its name: one user per statement
-/// let per_record = diesel::update(users::table).values_per_record(&renamed);
-/// assert_eq!(2, per_record);
-/// for batch in renamed.chunks(max_binds / per_record) {
+/// for batch in batches(&diesel::update(users::table), &renamed, max_binds) {
 ///     diesel::update(users::table).set(batch).execute(connection)?;
 /// }
-///
-/// let names = users::table
-///     .select(users::name)
-///     .order(users::id)
-///     .load::<String>(connection)?;
-/// assert_eq!(vec!["Sam", "Tia", "Jim", "Tom"], names);
+/// #
+/// #     let names = users::table
+/// #         .select(users::name)
+/// #         .order(users::id)
+/// #         .load::<String>(connection)?;
+/// #     assert_eq!(vec!["Sam", "Tia", "Jim", "Tom"], names);
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// # Values and bind parameters
+///
+/// A value is one bind parameter when the field holds a Rust value. The count
+/// is an upper bound when a field sends none ([`now`](crate::dsl::now), or a
+/// `None` inserted as `DEFAULT`), and too low when a field holds an expression
+/// with several (`a.concat(b)`). The bind parameters of the other clauses of
+/// the statement, such as `WHERE`, are not counted.
+///
+/// # For Maintainers
+///
+/// * The statements implement this trait rather than the records: a type
+///   deriving both `Insertable` and `AsChangeset` would otherwise get two
+///   overlapping blanket impls, with different counts.
+/// * Both impls bound the owned record: a bound on `&'a U: AsChangeset` makes
+///   rustc evaluate `&?U: AsChangeset` before `U` is inferred, which overflows
+///   on the recursive impls for references.
+/// * The counts come from `TupleSize`, implemented for the insert column values
+///   (`ColumnInsertValue`, `DefaultableColumnInsertValue`) and for `Assign`: a
+///   new kind of column value or assignment needs it too.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` cannot count the values a `{Record}` sends in a batch",
     note = "a batch insert counts an `Insertable` type whose values are a fixed set of columns, \
             a batch update an `AsChangeset` type whose changeset assigns a fixed set of columns of a table with a primary key"
 )]
 pub trait BatchOperationValueCount<Record> {
-    /// The number of values each record sends in a batch sent through this
-    /// statement
-    ///
-    /// See the [trait documentation](BatchOperationValueCount) for how it
-    /// relates to bind parameters.
+    /// The number of values each record sends through this statement
     const VALUES_PER_RECORD: usize;
 
-    /// [`VALUES_PER_RECORD`](Self::VALUES_PER_RECORD) for the type of
-    /// `records`
-    ///
-    /// `records` is read for its type only, so that this statement's count for
-    /// it is found without naming the statement's type.
+    /// [`VALUES_PER_RECORD`](Self::VALUES_PER_RECORD), for the record type of
+    /// `records`: call it on `insert_into(table)` or `update(table)` without
+    /// writing their types
     fn values_per_record(&self, _records: &[Record]) -> usize {
         Self::VALUES_PER_RECORD
     }
