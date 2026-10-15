@@ -10,6 +10,7 @@ mod query_id;
 mod clause_macro;
 
 pub(crate) mod ast_pass;
+mod batch_operation_value_count;
 pub mod bind_collector;
 mod collected_query;
 pub(crate) mod combination_clause;
@@ -36,6 +37,10 @@ pub(crate) mod where_clause;
 
 #[doc(inline)]
 pub use self::ast_pass::AstPass;
+#[doc(inline)]
+pub use self::batch_operation_value_count::{
+    BatchOperationValueCount, InsertOperation, UpdateOperation,
+};
 #[doc(inline)]
 pub use self::bind_collector::{BindCollector, MoveableBindCollector};
 #[doc(inline)]

@@ -57,6 +57,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
 * Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
+* Added `BatchOperationValueCount`, implemented by the records of a batch insert (`InsertOperation<table>`) or of a batch update (`UpdateOperation`): the number of values each record sends, to split a large batch into statements that stay under the bind parameter limit of the database
 
 ### Fixed
 

@@ -7,6 +7,7 @@ use crate::query_builder::{
 };
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
+use crate::util::TupleSize;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
@@ -131,12 +132,23 @@ impl<Col, Expr> ColumnInsertValue<Col, Expr> {
     }
 }
 
+// The values of an `Insertable` type are a (possibly nested) tuple of column
+// values, each of which sends one value per record of a batch insert
+impl<Col, Expr> TupleSize for ColumnInsertValue<Col, Expr> {
+    const SIZE: usize = 1;
+}
+
 #[derive(Debug, Default, Copy, Clone)]
 #[doc(hidden)]
 pub enum DefaultableColumnInsertValue<T> {
     Expression(T),
     #[default]
     Default,
+}
+
+// Sends `DEFAULT` rather than a value for `None`, so one value is the most it sends
+impl<T> TupleSize for DefaultableColumnInsertValue<T> {
+    const SIZE: usize = 1;
 }
 
 impl<T> QueryId for DefaultableColumnInsertValue<T> {
