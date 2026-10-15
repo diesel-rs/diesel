@@ -1,0 +1,11 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_view_infer_nullable_resolution_failure"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::view! {
+    v {
+        a -> Nullable<Binary>,
+    }
+}

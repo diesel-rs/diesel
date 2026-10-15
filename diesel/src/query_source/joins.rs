@@ -443,7 +443,7 @@ where
     type InnerJoin = SelectStatement<FromClause<From::InnerJoin>>;
 }
 
-impl<T: Table> ToInnerJoin for T {
+impl<T: QueryRelation> ToInnerJoin for T {
     type InnerJoin = T;
 }
 
