@@ -372,17 +372,29 @@ fn main() {
             "diesel_derives__tests__has_query_1 (sqlite).snap",
             "SQLite",
         ));
+        mapping[mapping.len() - 1].1.push(Example::with_heading(
+            "diesel_derives__tests__has_query_custom_base_query (sqlite).snap",
+            "SQLite - Custom base query",
+        ));
     }
     if has_postgres {
         mapping[mapping.len() - 1].1.push(Example::with_heading(
             "diesel_derives__tests__has_query_1 (postgres).snap",
             "PostgreSQL",
         ));
+        mapping[mapping.len() - 1].1.push(Example::with_heading(
+            "diesel_derives__tests__has_query_custom_base_query (postgres).snap",
+            "PostgreSQL - Custom base query",
+        ));
     }
     if has_mysql {
         mapping[mapping.len() - 1].1.push(Example::with_heading(
             "diesel_derives__tests__has_query_1 (mysql).snap",
             "MySQL",
+        ));
+        mapping[mapping.len() - 1].1.push(Example::with_heading(
+            "diesel_derives__tests__has_query_custom_base_query (mysql).snap",
+            "MySQL - Custom base query",
         ));
     }
 
