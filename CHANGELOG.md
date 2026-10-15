@@ -85,6 +85,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
 * Fixed a out of bounds memory access while trying to reuse prepared statements with a different number of bind elements on the postgres backend
+* Fixed reusing the wrong prepared statement with batch inserts with static arrays containing BoxableExpression values
 
 ### Changed
 
