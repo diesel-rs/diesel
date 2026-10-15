@@ -3,7 +3,7 @@ use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::Instrumentation;
-use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
+use crate::connection::statement_cache::{MaybeCached, PrepareForCache, PreparedStatement};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -30,6 +30,17 @@ pub(super) struct Statement {
 // would not be thread safe.
 #[allow(unsafe_code)]
 unsafe impl Send for Statement {}
+
+impl PreparedStatement for Statement {
+    fn parameter_count(&self) -> u64 {
+        // SAFETY: inner_statement is a valid sqlite3_stmt pointer to a non-deallocated statement
+        unsafe {
+            ffi::sqlite3_bind_parameter_count(self.inner_statement.as_ptr())
+                .try_into()
+                .unwrap_or(0)
+        }
+    }
+}
 
 impl Statement {
     pub(super) fn prepare(

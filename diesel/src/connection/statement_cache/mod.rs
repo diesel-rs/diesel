@@ -155,11 +155,26 @@ pub enum PrepareForCache {
     No,
 }
 
+/// A trait marking a backend specific prepared statement type
+#[cfg_attr(
+    diesel_docsrs,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+)]
+#[allow(unreachable_pub)]
+pub trait PreparedStatement: Send + 'static {
+    /// Number of parameters for this prepared statement
+    ///
+    /// This is used for consistency checks in the prepared statement cache to not
+    /// accidentally reuse an existing prepared statement with the wrong number of
+    /// bind parameters
+    fn parameter_count(&self) -> u64;
+}
+
 #[allow(clippy::new_without_default, unreachable_pub)]
 impl<DB, Statement> StatementCache<DB, Statement>
 where
     DB: Backend + 'static,
-    Statement: Send + 'static,
+    Statement: PreparedStatement,
     DB::TypeMetadata: Send + Clone,
     DB::QueryBuilder: Default,
     StatementCacheKey<DB>: Hash + Eq,
@@ -344,7 +359,24 @@ where
         match entry {
             // The statement is already cached
             LookupStatementResult::CacheEntry(Entry::Occupied(e)) => {
-                R::map_to_cache(e.into_mut(), conn)
+                let stmt = e.into_mut();
+                let param_count = match source.parameter_count(backend) {
+                    Ok(o) => o,
+                    Err(e) => return R::from_error(e),
+                };
+                // verify that the cached statement uses the same number of bind parameters
+                // than the provided query, otherwise something went wrong with
+                // our statement caching and we rather fail than produce invalid results
+                if stmt.parameter_count()
+                    == u64::try_from(param_count).expect("usize is not larger than 64 bits")
+                {
+                    R::map_to_cache(stmt, conn)
+                } else {
+                    R::from_error(invalid_prepared_statement_parameter_count(
+                        stmt.parameter_count().try_into().unwrap_or(usize::MAX),
+                        param_count,
+                    ))
+                }
             }
             // The statement is not cached but there is capacity to cache it
             LookupStatementResult::CacheEntry(Entry::Vacant(e)) => {
@@ -387,6 +419,9 @@ pub trait QueryFragmentForCachedStatement<DB> {
 
     /// Check whether it's safe to cache the query
     fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool>;
+
+    /// Count the number of bind parameters in a given statement
+    fn parameter_count(&self, backend: &DB) -> QueryResult<usize>;
 }
 
 impl<T, DB> QueryFragmentForCachedStatement<DB> for T
@@ -403,6 +438,10 @@ where
 
     fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool> {
         <T as QueryFragment<DB>>::is_safe_to_cache_prepared(self, backend)
+    }
+
+    fn parameter_count(&self, backend: &DB) -> QueryResult<usize> {
+        <T as QueryFragment<DB>>::count_binds(self, backend)
     }
 }
 
@@ -581,4 +620,17 @@ where
             StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),
         }
     }
+}
+
+pub(crate) fn invalid_prepared_statement_parameter_count(
+    expected: usize,
+    provided: usize,
+) -> crate::result::Error {
+    crate::result::Error::QueryBuilderError(
+        alloc::format!(
+            "cached statement expected a different number of parameters than provided: \
+                     Expected {expected}, provided: {provided}",
+        )
+        .into(),
+    )
 }
