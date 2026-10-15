@@ -23,7 +23,7 @@ error[E0277]: `LimitOffsetClause<NoLimitClause, OffsetClause<_>>` is no valid SQ
      = note: required for `SelectStatement<FromClause<table>, _, _, _, _, _>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, _, _, _, _, _>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, _>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function
@@ -65,7 +65,7 @@ error[E0277]: the trait bound `LimitOffsetClause<_, _>: IntoBoxedClause<'_, Mysq
                `LimitOffsetClause<NoLimitClause, OffsetClause<O>>` implements `IntoBoxedClause<'_, Sqlite>`
      = note: required for `SelectStatement<FromClause<table>, _, _, _, _, _>` to implement `BoxedDsl<'_, Mysql>`
 note: required by a bound in `diesel::QueryDsl::into_boxed`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
      |        ---------- required by a bound in this associated function

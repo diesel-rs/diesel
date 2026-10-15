@@ -7,7 +7,7 @@ error[E0277]: `BatchInsert<Vec<_>, table, (), false>` may insert zero or several
     = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `BatchInsert<Vec<_>, table, (), false>`
     = note: the database client reports one generated id per statement, so this operation supports only single-row inserts
 help: the following other types implement trait `SingleRowInsertValues<Tab>`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |   impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::ValuesClause<V, Tab>`
@@ -21,7 +21,7 @@ LL | | where
 LL | |     V: SingleRowInsertValues<Tab>,
     | |__________________________________^ `OnConflictValues<V, Target, Action, WhereClause>`
 note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
-   --> DIESEL/diesel/diesel/src/mysql_like/query_builder/insert_returning_id.rs
+   --> ROOT/diesel/src/mysql_like/query_builder/insert_returning_id.rs
     |
  LL |     pub fn execute_returning_id<DB>(
     |            -------------------- required by a bound in this associated function
@@ -54,7 +54,7 @@ help: the trait `AutoIncrementTable` is implemented for `users::table`
  LL | | }
    | |_^
 note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
-  --> DIESEL/diesel/diesel/src/mysql_like/query_builder/insert_returning_id.rs
+  --> ROOT/diesel/src/mysql_like/query_builder/insert_returning_id.rs
    |
 LL |     pub fn execute_returning_id<DB>(
    |            -------------------- required by a bound in this associated function
@@ -72,7 +72,7 @@ error[E0277]: `InsertFromSelect<SelectStatement<_, _>, name>` may insert zero or
     = help: the trait `SingleRowInsertValues<users::table>` is not implemented for `InsertFromSelect<SelectStatement<_, _>, name>`
     = note: the database client reports one generated id per statement, so this operation supports only single-row inserts
 help: the following other types implement trait `SingleRowInsertValues<Tab>`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |   impl<V, Tab> SingleRowInsertValues<Tab> for ValuesClause<V, Tab> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::insert_statement::ValuesClause<V, Tab>`
@@ -86,7 +86,7 @@ LL | | where
 LL | |     V: SingleRowInsertValues<Tab>,
     | |__________________________________^ `OnConflictValues<V, Target, Action, WhereClause>`
 note: required by a bound in `mysql_like::query_builder::insert_returning_id::<impl InsertStatement<T, U, Op, Ret>>::execute_returning_id`
-   --> DIESEL/diesel/diesel/src/mysql_like/query_builder/insert_returning_id.rs
+   --> ROOT/diesel/src/mysql_like/query_builder/insert_returning_id.rs
     |
  LL |     pub fn execute_returning_id<DB>(
     |            -------------------- required by a bound in this associated function

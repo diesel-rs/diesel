@@ -7,7 +7,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -21,7 +21,7 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
 note: required by a bound in `diesel::dsl::lower`
-    --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    --> ROOT/diesel/src/pg/expression/functions.rs
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
@@ -79,7 +79,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -107,7 +107,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -121,7 +121,7 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
 note: required by a bound in `diesel::dsl::lower`
-    --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    --> ROOT/diesel/src/pg/expression/functions.rs
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
@@ -179,7 +179,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -207,7 +207,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -221,7 +221,7 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
 note: required by a bound in `diesel::dsl::lower`
-    --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    --> ROOT/diesel/src/pg/expression/functions.rs
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
@@ -256,7 +256,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -282,7 +282,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -296,7 +296,7 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
 note: required by a bound in `diesel::dsl::lower`
-    --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    --> ROOT/diesel/src/pg/expression/functions.rs
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
@@ -354,7 +354,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -382,7 +382,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`
@@ -396,7 +396,7 @@ LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Multirange<ST>
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Nullable<Multirange<ST>> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Nullable<Multirange<ST>>`
 note: required by a bound in `diesel::dsl::lower`
-    --> DIESEL/diesel/diesel/src/pg/expression/functions.rs
+    --> ROOT/diesel/src/pg/expression/functions.rs
      |
  LL |     fn lower<R: MultirangeOrRangeMaybeNullable + SingleValue>(range: R) -> Nullable<R::Inn...
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
@@ -454,7 +454,7 @@ error[E0277]: `diesel::sql_types::Text` is neither `diesel::sql_types::Range<_>`
      = help: the trait `diesel::pg::expression::expression_methods::private::MultirangeOrRangeMaybeNullable` is not implemented for `diesel::sql_types::Text`
      = note: try to provide an expression that produces one of the expected sql types
 help: the following other types implement trait `MultirangeOrRangeMaybeNullable`
-    --> DIESEL/diesel/diesel/src/pg/expression/expression_methods.rs
+    --> ROOT/diesel/src/pg/expression/expression_methods.rs
      |
 LL |     impl<ST: SingleValue> MultirangeOrRangeMaybeNullable for Range<ST> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::sql_types::Range<ST>`

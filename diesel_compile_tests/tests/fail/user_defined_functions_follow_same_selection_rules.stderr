@@ -42,7 +42,7 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
