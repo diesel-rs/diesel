@@ -17,7 +17,7 @@ pub mod sql_types {
 }
 
 pub mod rust_types {
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, diesel::types::Enum)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
     #[diesel(sql_type = super::sql_types::CommentedEnum)]
     pub enum CommentedEnum {
         #[diesel(rename = "first")]
@@ -26,7 +26,7 @@ pub mod rust_types {
         Second,
     }
 
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, diesel::types::Enum)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
     #[diesel(sql_type = super::sql_types::UncommentedEnum)]
     pub enum UncommentedEnum {
         #[diesel(rename = "third")]

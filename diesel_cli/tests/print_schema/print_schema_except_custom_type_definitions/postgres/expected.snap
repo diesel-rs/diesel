@@ -12,7 +12,7 @@ pub mod sql_types {
 }
 
 pub mod rust_types {
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, diesel::types::Enum)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
     #[diesel(sql_type = super::sql_types::MyType)]
     pub enum MyType {
         #[diesel(rename = "foo")]

@@ -315,9 +315,9 @@ pub struct InnerPrintSchemaArgs {
     pub sqlite_integer_primary_key_is_bigint: Vec<bool>,
     /// A list of derives to implement for every automatically generated Rust enum in the schema,
     /// separated by commas.
-    /// 
-    /// Defaults to Clone, Copy, PartialEq, Eq, and Hash if not specified.
-    /// 
+    ///
+    /// Defaults to Clone, Copy, PartialEq and Eq if not specified.
+    ///
     /// Debug and diesel::types::Enum are always included.
     #[arg(
         id = PrintSchemaArgs::CUSTOM_RUST_ENUM_TYPE_DERIVES,
