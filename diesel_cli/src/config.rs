@@ -570,10 +570,7 @@ impl PrintSchema {
     pub fn custom_rust_types_derives(&self) -> BTreeSet<String> {
         let mut derives = match self.custom_enum_derives.clone() {
             Some(derives) => derives,
-            None => ["Clone", "Copy", "PartialEq", "Eq"]
-                .into_iter()
-                .map(str::to_owned)
-                .collect(),
+            None => BTreeSet::from(["Clone", "Copy", "PartialEq", "Eq"].map(str::to_owned)),
         };
         derives.insert("diesel::types::Enum".into());
         derives.insert("Debug".into());
