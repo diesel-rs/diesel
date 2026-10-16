@@ -118,7 +118,6 @@ impl RawConnection {
             .into_owned()
     }
 
-    #[cfg(feature = "mariadb")]
     pub(super) fn server_info(&self) -> Option<&CStr> {
         // SAFETY: `self.0` is the live handle owned by `self`, and the call only reads it.
         let info = unsafe { ffi::mysql_get_server_info(self.0.as_ptr()) };
