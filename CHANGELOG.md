@@ -61,6 +61,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
 * Added `SqliteConnection::version` to read the version of the linked SQLite library
 * Added `PgConnection::version` to read the version of the connected server
+* Added `MariadbConnection::version` to read the version of the connected server
 
 ### Fixed
 
