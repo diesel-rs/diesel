@@ -84,6 +84,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Pin the borrowed SqliteConnection bassed to various hooks to prevent users calling `std::mem::replace` or similar methods
 
 ### Changed
 

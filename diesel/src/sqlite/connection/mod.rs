@@ -21,6 +21,7 @@ mod limits;
 #[allow(unsafe_code)]
 mod oom_test_support;
 mod owned_row;
+pub(super) mod pinned_connection;
 mod pragmas;
 mod raw;
 mod row;
@@ -64,7 +65,10 @@ use crate::sqlite::Sqlite;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ffi as libc;
+#[cfg(feature = "__sqlite-shared")]
+use core::marker::PhantomPinned;
 use core::num::NonZeroI64;
+use core::pin::Pin;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
 /// connection URLs are:
@@ -213,6 +217,7 @@ pub struct SqliteConnection {
     //
     // We are not allowed to modify the inner buffer until the database connection is dropped
     serialized_data: Vec<Vec<u8>>,
+    _pinned: PhantomPinned,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -719,7 +724,7 @@ impl SqliteConnection {
     #[allow(unsafe_code)]
     pub(crate) unsafe fn with_borrowed_connection<R>(
         db: core::ptr::NonNull<ffi::sqlite3>,
-        f: impl FnOnce(&mut SqliteConnection) -> R,
+        f: impl FnOnce(Pin<&mut SqliteConnection>) -> R,
     ) -> R {
         // Tears the borrowed connection down on every exit path, including a
         // panic unwinding out of `f`.
@@ -748,9 +753,14 @@ impl SqliteConnection {
             metadata_lookup: (),
             instrumentation: DynInstrumentation::default_instrumentation(),
             serialized_data: Vec::new(),
+            _pinned: PhantomPinned,
         }));
-
-        let result = f(&mut conn.0);
+        let mut pinned_connection = unsafe {
+            // SAFETY: The only relevant bit here is keeping the sqlite pointer in place
+            // anything else is not relevant
+            Pin::new_unchecked(&mut *conn.0)
+        };
+        let result = f(pinned_connection.as_mut());
 
         // The borrowed connection is discarded without committing or rolling
         // back, so a transaction left open by `f` would leak onto the handle.
@@ -810,6 +820,7 @@ impl SqliteConnection {
             metadata_lookup: (),
             instrumentation: DynInstrumentation::none(),
             serialized_data: Vec::new(),
+            _pinned: PhantomPinned,
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
