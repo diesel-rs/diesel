@@ -18,7 +18,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -55,7 +55,7 @@ error[E0277]: cannot box `SelectStatement<FromClause<table>, _, _, _>` for backe
     = note: this either means `SelectStatement<FromClause<table>, _, _, _>` is no valid SQL for `Pg`
     = note: or this means `SelectStatement<FromClause<table>, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -96,7 +96,7 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -133,7 +133,7 @@ error[E0277]: cannot box `SelectStatement<FromClause<table>, _, _, _>` for backe
     = note: this either means `SelectStatement<FromClause<table>, _, _, _>` is no valid SQL for `Pg`
     = note: or this means `SelectStatement<FromClause<table>, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>

@@ -44,7 +44,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<_>`
     |
     = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<UserMixedUp, __DB>>` is not implemented for `SelectStatement<FromClause<table>>`
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -79,17 +79,17 @@ LL |     name: i32,
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
 help: `i32` implements trait `FromSql<A, DB>`
-  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+  --> ROOT/diesel/src/sqlite/types/mod.rs
    |
 LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
-  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+  ::: ROOT/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
+  ::: ROOT/diesel/src/mysql_like/types/primitives.rs
    |
 LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
@@ -132,17 +132,17 @@ LL |     name: i32,
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
 help: `i32` implements trait `FromSql<A, DB>`
-  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+  --> ROOT/diesel/src/sqlite/types/mod.rs
    |
 LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
-  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+  ::: ROOT/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
+  ::: ROOT/diesel/src/mysql_like/types/primitives.rs
    |
 LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
@@ -186,17 +186,17 @@ LL |     name: i32,
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
 help: `i32` implements trait `FromSql<A, DB>`
-  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+  --> ROOT/diesel/src/sqlite/types/mod.rs
    |
 LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
-  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+  ::: ROOT/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
+  ::: ROOT/diesel/src/mysql_like/types/primitives.rs
    |
 LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
@@ -239,17 +239,17 @@ LL |     name: i32,
    = note: `diesel::sql_query` requires the loading target to column names for loading values.
            You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`
 help: `i32` implements trait `FromSql<A, DB>`
-  --> DIESEL/diesel/diesel/src/sqlite/types/mod.rs
+  --> ROOT/diesel/src/sqlite/types/mod.rs
    |
 LL | impl FromSql<sql_types::Integer, Sqlite> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Sqlite>`
    |
-  ::: DIESEL/diesel/diesel/src/pg/types/integers.rs
+  ::: ROOT/diesel/src/pg/types/integers.rs
    |
 LL | impl FromSql<sql_types::Integer, Pg> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, Pg>`
    |
-  ::: DIESEL/diesel/diesel/src/mysql_like/types/primitives.rs
+  ::: ROOT/diesel/src/mysql_like/types/primitives.rs
    |
 LL | impl<DB: MysqlLikeBackend> FromSql<Integer, DB> for i32 {
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `FromSql<diesel::sql_types::Integer, DB>`
@@ -289,7 +289,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<table>>: SelectDsl<_>`
     |
     = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<RequiresValidSelect, __DB>>` is not implemented for `SelectStatement<FromClause<table>>`
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -326,7 +326,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
     = note: 1 redundant requirement hidden
     = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
 note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+   --> ROOT/diesel/src/query_builder/has_query.rs
     |
  LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
@@ -350,7 +350,7 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
 help: the following other types implement trait `TableNotEqual<T>`
-   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+   --> ROOT/diesel/src/pg/metadata_lookup.rs
     |
 LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -366,7 +366,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
     = note: 1 redundant requirement hidden
     = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
 note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+   --> ROOT/diesel/src/query_builder/has_query.rs
     |
  LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
@@ -383,7 +383,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _>: SelectDsl<_>` is not
     |
     = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<BaseQueryStillRequiresValidSelect, __DB>>` is not implemented for `SelectStatement<FromClause<table>, _, _, _>`
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -420,7 +420,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
     = note: 1 redundant requirement hidden
     = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
 note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+   --> ROOT/diesel/src/query_builder/has_query.rs
     |
  LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
@@ -444,7 +444,7 @@ help: the trait `TableNotEqual<posts::table>` is not implemented for `users::tab
     = note: double check that `posts::table` and `users::table` appear in the same `allow_tables_to_appear_in_same_query!` 
             call if both are tables
 help: the following other types implement trait `TableNotEqual<T>`
-   --> DIESEL/diesel/diesel/src/pg/metadata_lookup.rs
+   --> ROOT/diesel/src/pg/metadata_lookup.rs
     |
 LL | allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -460,7 +460,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
     = note: 1 redundant requirement hidden
     = note: required for `(posts::columns::id,)` to implement `AppearsOnTable<users::table>`
 note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+   --> ROOT/diesel/src/query_builder/has_query.rs
     |
  LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
@@ -477,7 +477,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: SelectDsl<_
     |
     = help: the trait `SelectDsl<diesel::expression::select_by::SelectBy<GroupByIsRespected, __DB>>` is not implemented for `SelectStatement<_, _, _, _, _, _, _>`
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -524,7 +524,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
     = note: 1 redundant requirement hidden
     = note: required for `(users::columns::id,)` to implement `ValidGrouping<users::columns::name>`
 note: required by a bound in `diesel::HasQuery`
-   --> DIESEL/diesel/diesel/src/query_builder/has_query.rs
+   --> ROOT/diesel/src/query_builder/has_query.rs
     |
  LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait

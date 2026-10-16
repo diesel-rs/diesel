@@ -7,7 +7,7 @@ error[E0277]: the trait bound `SelectStatement<_, _>: HavingDsl<_>` is not satis
     = note: a `HAVING` clause requires setting a `GROUP BY` clause first
 help: the trait `HavingDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, _>`
       but it is implemented for `SelectStatement<_, _, _, _, _, _, diesel::query_builder::group_by_clause::GroupByClause<_>, _, _>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, Predicate> HavingDsl<Predicate>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, H>

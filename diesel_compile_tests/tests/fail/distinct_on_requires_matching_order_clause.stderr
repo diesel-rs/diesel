@@ -7,7 +7,7 @@ LL |     let _ = users::table.order_by(users::id).distinct_on(users::name);
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -39,7 +39,7 @@ LL |         .distinct_on(users::name);
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -71,7 +71,7 @@ LL |         .distinct_on(users::name);
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -103,7 +103,7 @@ LL |     let _ = users::table.distinct_on(users::name).order_by(users::id);
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -135,7 +135,7 @@ LL |         .distinct_on(users::name)
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -167,7 +167,7 @@ LL |         .distinct_on(users::name)
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -199,7 +199,7 @@ LL |         .distinct_on((users::name, users::id))
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::name, users::columns::id)>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -231,7 +231,7 @@ LL |         .distinct_on((users::name, users::id))
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::name, users::columns::id)>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -263,7 +263,7 @@ LL |         .distinct_on(users::name)
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<(id, name)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -295,7 +295,7 @@ LL |         .order_by(users::id)
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::name>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -327,7 +327,7 @@ LL |         .then_order_by(users::hair_color);
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::name, users::columns::id)>>` is not implemented for `OrderClause<(name, hair_color)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -359,7 +359,7 @@ LL |         .order_by(posts::id);
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::id>>` is not implemented for `OrderClause<id>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -391,7 +391,7 @@ LL |         .order_by((
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<users::columns::id>>` is not implemented for `OrderClause<(id, id, _, name, title, body)>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`
@@ -423,7 +423,7 @@ LL |         .then_order_by((
     = help: the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(users::columns::id, posts::columns::id)>>` is not implemented for `OrderClause<(id, (id, _, name, title, body, _))>`
     = note: the elements in your `DISTINCT ON` clause needs to match the elements in your `ORDER BY` clause up to which clause contains less elements
 help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`
-   --> DIESEL/diesel/diesel/src/pg/query_builder/distinct_on.rs
+   --> ROOT/diesel/src/pg/query_builder/distinct_on.rs
     |
  LL |   impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `diesel::query_builder::order_clause::OrderClause<(T,)>`

@@ -14,7 +14,7 @@ error[E0277]: `ExcludeGroup` is no valid SQL fragment for the `Mysql` backend
     = note: this usually means that the `Mysql` database system does not support 
             this SQL syntax
 help: `ExcludeGroup` implements trait `QueryFragment<DB, SP>`
-   --> DIESEL/diesel/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
+   --> ROOT/diesel/src/expression/functions/aggregate_expressions/frame_clause.rs
     |
  LL | /         impl<DB> QueryFragment<DB> for $name
  LL | |         where

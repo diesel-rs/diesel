@@ -11,7 +11,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -20,7 +20,7 @@ LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<FromClause<table>, _>` to implement `OrderDsl<users::columns::name>`
 note: required by a bound in `order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+   --> ROOT/diesel/src/query_dsl/mod.rs
     |
 LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
     |        -------- required by a bound in this associated function
@@ -42,7 +42,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -51,7 +51,7 @@ LL |     impl MixedAggregates<Never> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<FromClause<table>, _>` to implement `OrderDsl<max<Integer, id>>`
 note: required by a bound in `order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+   --> ROOT/diesel/src/query_dsl/mod.rs
     |
 LL |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
     |        -------- required by a bound in this associated function
@@ -73,7 +73,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -82,7 +82,7 @@ LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `ThenOrderDsl<users::columns::name>`
 note: required by a bound in `diesel::QueryDsl::then_order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+   --> ROOT/diesel/src/query_dsl/mod.rs
     |
 LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
     |        ------------- required by a bound in this associated function
@@ -104,7 +104,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -113,7 +113,7 @@ LL |     impl MixedAggregates<Never> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `SelectDsl<max<Integer, id>>`
 note: required by a bound in `diesel::QueryDsl::select`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+   --> ROOT/diesel/src/query_dsl/mod.rs
     |
 LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
     |        ------ required by a bound in this associated function
@@ -130,7 +130,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _>: SelectDsl<_>` is 
     |
     = help: the trait `SelectDsl<diesel::dsl::CountStar>` is not implemented for `SelectStatement<FromClause<table>, _, _, _, _>`
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -162,7 +162,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -183,7 +183,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -206,7 +206,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -215,7 +215,7 @@ LL |     impl MixedAggregates<Never> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Never>`
     = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `ThenOrderDsl<max<Integer, id>>`
 note: required by a bound in `diesel::QueryDsl::then_order_by`
-   --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+   --> ROOT/diesel/src/query_dsl/mod.rs
     |
 LL |     fn then_order_by<Order>(self, order: Order) -> ThenOrderBy<Self, Order>
     |        ------------- required by a bound in this associated function
@@ -283,7 +283,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _, _, _>: SelectDsl<_
     |                                               ^^^^^^ the trait `SelectDsl<_>` is not implemented for `SelectStatement<_, _, _, _, _, _, _>`
     |
 help: the following other types implement trait `SelectDsl<Selection>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
@@ -532,7 +532,7 @@ error[E0277]: the trait bound `SkipSelectableExpressionBoundCheckWrapper<_>: Val
      |
 help: the trait `ValidGrouping<parent::columns::id>` is not implemented for `SkipSelectableExpressionBoundCheckWrapper<(_, _)>`
       but trait `ValidGrouping<()>` is implemented for it
-    --> DIESEL/diesel/diesel/src/query_source/joins.rs
+    --> ROOT/diesel/src/query_source/joins.rs
      |
  LL |     impl<T> ValidGrouping<()> for SkipSelectableExpressionBoundCheckWrapper<T> {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -540,7 +540,7 @@ help: the trait `ValidGrouping<parent::columns::id>` is not implemented for `Ski
      = note: required for `SelectStatement<FromClause<_>, _, _, _, _, _, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<_>, _, _, _, _, _, _>` to implement `LoadQuery<'_, _, _>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function
@@ -557,7 +557,7 @@ LL |         .then_order_by(parent::id);
     |
     = help: the trait `ThenOrderDsl<_>` is not implemented for `SelectStatement<FromClause<_>, _, _, _, _, _, _>`
 help: the following other types implement trait `ThenOrderDsl<Expr>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, S, D, W, O, LOf, H, LC, Expr> ThenOrderDsl<Expr>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, NoGroupByClause, H, LC>

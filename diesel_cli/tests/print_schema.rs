@@ -396,6 +396,27 @@ fn print_schema_comments_dont_fallback_on_generated() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_type_comments_fallback() {
+    test_print_schema("print_schema_type_comments_fallback", vec!["--with-docs"])
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_type_comments_only_database() {
+    test_print_schema(
+        "print_schema_type_comments_only_database",
+        vec!["--with-docs-config", "only-database-comments"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_type_comments_no_docs() {
+    test_print_schema("print_schema_type_comments_no_docs", vec![])
+}
+
+#[test]
 fn print_schema_fk_related_tables() {
     test_print_schema(
         "print_schema_fk_related_tables",
@@ -566,6 +587,15 @@ fn print_schema_view_infer_nullable_simple() {
         "print_schema_view_infer_nullable_simple",
         vec!["--include-views", "--experimental-infer-nullable-for-views"],
     )
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_view_infer_nullable_resolution_failure() {
+    test_print_schema(
+        "print_schema_view_infer_nullable_resolution_failure",
+        vec!["--include-views", "--experimental-infer-nullable-for-views"],
+    );
 }
 
 #[test]

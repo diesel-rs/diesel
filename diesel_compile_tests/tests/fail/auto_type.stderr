@@ -89,7 +89,7 @@ LL |     posts::user_id.eq::<_>()
    |                    ^^^^^^^-- argument #1 is missing
    |
 note: method defined here
-  --> DIESEL/diesel/diesel/src/expression_methods/global_expression_methods.rs
+  --> ROOT/diesel/src/expression_methods/global_expression_methods.rs
    |
 LL |     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
    |        ^^

@@ -9,7 +9,7 @@ LL |         .select((
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -33,7 +33,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
      = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
      = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-    --> DIESEL/diesel/diesel/src/expression/mod.rs
+    --> ROOT/diesel/src/expression/mod.rs
      |
  LL |     impl MixedAggregates<Yes> for Yes {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -44,7 +44,7 @@ help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, (i64, Option<i64>)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -118,7 +118,7 @@ LL |         .select((
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -142,7 +142,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
      = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
      = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-    --> DIESEL/diesel/diesel/src/expression/mod.rs
+    --> ROOT/diesel/src/expression/mod.rs
      |
  LL |     impl MixedAggregates<Yes> for Yes {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -153,7 +153,7 @@ help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<
      = note: required for `SelectStatement<FromClause<Alias<p>>, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<Alias<p>>, _>` to implement `LoadQuery<'_, _, (i64, bool)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -171,7 +171,7 @@ LL |                 .into_boxed::<pg::Pg>()
     = note: this either means `SelectStatement<FromClause<table>, _, _, _>` is no valid SQL for `Pg`
     = note: or this means `SelectStatement<FromClause<table>, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -220,7 +220,7 @@ LL |                 .into_boxed_clone::<pg::Pg>()
     = note: this either means `SelectStatement<FromClause<table>, _, _, _>` is no valid SQL for `Pg`
     = note: or this means `SelectStatement<FromClause<table>, _, _, _>` uses clauses not supporting boxing like the `LOCKING` or `GROUP BY` clause
 help: the following other types implement trait `BoxedCloneDsl<'a, DB>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedCloneDsl<'a, DB>
 LL | |     for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
@@ -252,7 +252,7 @@ LL |         .select((count_star(), exists(children::table.filter(correlated))))
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<Yes> for Yes {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -276,7 +276,7 @@ error[E0277]: mixing aggregate and not aggregate expressions is not allowed in S
      = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
      = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<Other>`
-    --> DIESEL/diesel/diesel/src/expression/mod.rs
+    --> ROOT/diesel/src/expression/mod.rs
      |
  LL |     impl MixedAggregates<Yes> for Yes {
      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::Yes>`
@@ -287,7 +287,7 @@ help: `diesel::expression::is_aggregate::Yes` implements trait `MixedAggregates<
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, (i64, bool)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function

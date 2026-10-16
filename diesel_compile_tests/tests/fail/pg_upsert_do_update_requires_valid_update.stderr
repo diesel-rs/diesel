@@ -10,7 +10,7 @@ error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertS
     | |_________|
     |
     |
-   ::: DIESEL/diesel/diesel/src/upsert/on_conflict_extension.rs
+   ::: ROOT/diesel/src/upsert/on_conflict_extension.rs
     |
 LL |   pub struct IncompleteDoUpdate<Stmt, Target> {
     |   ------------------------------------------- doesn't satisfy `_: RunQueryDsl<_>` or `_: RunQueryDslSupport`

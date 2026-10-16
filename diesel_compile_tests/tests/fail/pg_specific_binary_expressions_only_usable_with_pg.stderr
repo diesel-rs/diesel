@@ -12,7 +12,7 @@ error[E0277]: cannot use the `LIKE` operator with expressions of the type `diese
      = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
              allowed for the PostgreSQL backend
 help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
-    --> DIESEL/diesel/diesel/src/pg/backend.rs
+    --> ROOT/diesel/src/pg/backend.rs
      |
  LL | impl LikeIsAllowedForType<crate::sql_types::Binary> for Pg {}
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -21,7 +21,7 @@ help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `QueryFragment<Sqlite>`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function
@@ -44,7 +44,7 @@ error[E0277]: cannot use the `LIKE` operator with expressions of the type `diese
      = note: expressions of the type `diesel::sql_types::Binary` and `diesel::sql_types::Nullable<Binary>` are 
              allowed for the PostgreSQL backend
 help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
-    --> DIESEL/diesel/diesel/src/pg/backend.rs
+    --> ROOT/diesel/src/pg/backend.rs
      |
  LL | impl LikeIsAllowedForType<crate::sql_types::Binary> for Pg {}
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -53,7 +53,7 @@ help: the trait `LikeIsAllowedForType<Binary>` is implemented for `Pg`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `QueryFragment<Mysql>`
      = note: required for `SelectStatement<FromClause<table>, _, _, _>` to implement `LoadQuery<'_, MysqlLikeConnection<Mysql>, Vec<u8>>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function

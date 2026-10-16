@@ -23,7 +23,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
               SelectableExpression<ReturningQuerySource<__StmtKind, table>>
     = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -59,7 +59,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -88,7 +88,7 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<ReturningQue
     = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
     |            --------- required by a bound in this associated function

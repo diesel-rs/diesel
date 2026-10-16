@@ -6,7 +6,7 @@ error[E0277]: `bool` cannot be used as a subselect
     |
     = note: only select statements and their combinations can be used as subselects
 help: the trait `diesel::expression::subselect::ValidSubselectGrouping<GB>` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+   --> ROOT/diesel/src/query_builder/combination_clause.rs
     |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
@@ -27,7 +27,7 @@ LL |     users::table.filter(exists(true));
    |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
    |
 help: the trait `SelectQuery` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-  --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+  --> ROOT/diesel/src/query_builder/combination_clause.rs
    |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
@@ -54,7 +54,7 @@ help: the trait `diesel::expression::subselect::ValidSubselectGrouping<()>` is n
     |         ^^
     = note: only select statements and their combinations can be used as subselects
 help: the trait `diesel::expression::subselect::ValidSubselectGrouping<GB>` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-   --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+   --> ROOT/diesel/src/query_builder/combination_clause.rs
     |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf, GB> ValidSubselectGrouping<GB>
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
@@ -81,7 +81,7 @@ help: the trait `SelectQuery` is not implemented for `users::columns::id`
  LL |         id -> Integer,
    |         ^^
 help: the trait `SelectQuery` is implemented for `CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>`
-  --> DIESEL/diesel/diesel/src/query_builder/combination_clause.rs
+  --> ROOT/diesel/src/query_builder/combination_clause.rs
    |
 LL | / impl<Combinator, Rule, Source, Rhs, O, LOf> SelectQuery
 LL | |     for CombinationClause<Combinator, Rule, Source, Rhs, O, LOf>
