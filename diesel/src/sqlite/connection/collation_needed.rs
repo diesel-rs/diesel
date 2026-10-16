@@ -1,8 +1,7 @@
 //! Types used by [`SqliteConnection::on_collation_needed`](super::SqliteConnection::on_collation_needed).
 
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
-extern crate libsqlite3_sys as ffi;
-
+use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
