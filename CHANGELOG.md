@@ -111,6 +111,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a Segmentationfault when issuing an empty query while using libmariadb
 * Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
 * Fix a potential use-after-free issues for SQLite database deserialized in during register_auto_extension
+* Fix that the iterator returned by `SqliteConnection::load_iter` is correctly fused and doesn't return values after the first `None` or statement related `Some(Err(_))` by reexecuting the statement
 
 ### Changed
 
