@@ -250,16 +250,8 @@ impl<'a, DB: MysqlLikeBackend> Field<'a, DB> for MysqlLikeField<'a, DB> {
     }
 }
 
-#[cfg(all(test, any(feature = "mysql", feature = "mariadb")))]
-#[diesel_test_helper::test]
-#[allow(clippy::drop_non_drop)] // we want to explicitly extend lifetimes here
-fn fun_with_row_iters() {
-    crate::table! {
-        users(id) {
-            id -> Integer,
-            name -> Text,
-        }
-    }
+#[cfg(test)]
+mod tests {
 
     use crate::connection::LoadConnection;
     use crate::deserialize::{FromSql, FromSqlRow};
@@ -267,133 +259,183 @@ fn fun_with_row_iters() {
     use crate::row::{Field, Row};
     use crate::sql_types;
 
-    #[cfg(feature = "mysql")]
-    type DB = crate::mysql::Mysql;
-    #[cfg(feature = "mariadb")]
-    type DB = crate::mariadb::Mariadb;
+    #[diesel_test_helper::test]
+    #[allow(clippy::drop_non_drop)] // we want to explicitly extend lifetimes here
+    fn fun_with_row_iters() {
+        crate::table! {
+            users(id) {
+                id -> Integer,
+                name -> Text,
+            }
+        }
 
-    let conn = &mut crate::test_helpers::connection();
+        #[cfg(feature = "mysql")]
+        type DB = crate::mysql::Mysql;
+        #[cfg(feature = "mariadb")]
+        type DB = crate::mariadb::Mariadb;
 
-    crate::sql_query(
-        "CREATE TEMPORARY TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-    )
-    .execute(conn)
-    .unwrap();
+        let conn = &mut crate::test_helpers::connection();
 
-    crate::insert_into(users::table)
-        .values(vec![
-            (users::id.eq(1), users::name.eq("Sean")),
-            (users::id.eq(2), users::name.eq("Tess")),
-        ])
+        crate::sql_query(
+            "CREATE TEMPORARY TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        )
         .execute(conn)
         .unwrap();
 
-    let query = users::table.select((users::id, users::name));
-
-    let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
-
-    {
-        let row_iter = conn.load(query).unwrap();
-        for (row, expected) in row_iter.zip(&expected) {
-            let row = row.unwrap();
-
-            let deserialized = <(i32, String) as FromSqlRow<
-                (sql_types::Integer, sql_types::Text),
-                _,
-            >>::build_from_row(&row)
+        crate::insert_into(users::table)
+            .values(vec![
+                (users::id.eq(1), users::name.eq("Sean")),
+                (users::id.eq(2), users::name.eq("Tess")),
+            ])
+            .execute(conn)
             .unwrap();
 
-            assert_eq!(&deserialized, expected);
-        }
-    }
+        let query = users::table.select((users::id, users::name));
 
-    {
-        let collected_rows = conn.load(query).unwrap().collect::<Vec<_>>();
-        assert_eq!(collected_rows.len(), 2);
-        for (row, expected) in collected_rows.iter().zip(&expected) {
-            let deserialized = row
-                .as_ref()
-                .map(|row| {
-                    <(i32, String) as FromSqlRow<
+        let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
+
+        {
+            let row_iter = conn.load(query).unwrap();
+            for (row, expected) in row_iter.zip(&expected) {
+                let row = row.unwrap();
+
+                let deserialized = <(i32, String) as FromSqlRow<
+                    (sql_types::Integer, sql_types::Text),
+                    _,
+                >>::build_from_row(&row)
+                .unwrap();
+
+                assert_eq!(&deserialized, expected);
+            }
+        }
+
+        {
+            let collected_rows = conn.load(query).unwrap().collect::<Vec<_>>();
+            assert_eq!(collected_rows.len(), 2);
+            for (row, expected) in collected_rows.iter().zip(&expected) {
+                let deserialized = row
+                    .as_ref()
+                    .map(|row| {
+                        <(i32, String) as FromSqlRow<
                             (sql_types::Integer, sql_types::Text),
                         _,
                         >>::build_from_row(row).unwrap()
-                })
-                .unwrap();
-            assert_eq!(&deserialized, expected);
+                    })
+                    .unwrap();
+                assert_eq!(&deserialized, expected);
+            }
         }
+
+        let mut row_iter = conn.load(query).unwrap();
+
+        let first_row = row_iter.next().unwrap().unwrap();
+        let first_fields = (
+            Row::get(&first_row, 0).unwrap(),
+            Row::get(&first_row, 1).unwrap(),
+        );
+        let first_values = (first_fields.0.value(), first_fields.1.value());
+
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(first_values);
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(first_fields);
+
+        let second_row = row_iter.next().unwrap().unwrap();
+        let second_fields = (
+            Row::get(&second_row, 0).unwrap(),
+            Row::get(&second_row, 1).unwrap(),
+        );
+        let second_values = (second_fields.0.value(), second_fields.1.value());
+
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(second_values);
+        assert!(row_iter.next().unwrap().is_err());
+        std::mem::drop(second_fields);
+
+        assert!(row_iter.next().is_none());
+
+        let first_fields = (
+            Row::get(&first_row, 0).unwrap(),
+            Row::get(&first_row, 1).unwrap(),
+        );
+        let second_fields = (
+            Row::get(&second_row, 0).unwrap(),
+            Row::get(&second_row, 1).unwrap(),
+        );
+
+        let first_values = (first_fields.0.value(), first_fields.1.value());
+        let second_values = (second_fields.0.value(), second_fields.1.value());
+
+        assert_eq!(
+            <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(first_values.0).unwrap(),
+            expected[0].0
+        );
+        assert_eq!(
+            <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(first_values.1).unwrap(),
+            expected[0].1
+        );
+
+        assert_eq!(
+            <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(second_values.0).unwrap(),
+            expected[1].0
+        );
+        assert_eq!(
+            <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(second_values.1).unwrap(),
+            expected[1].1
+        );
+
+        let first_fields = (
+            Row::get(&first_row, 0).unwrap(),
+            Row::get(&first_row, 1).unwrap(),
+        );
+        let first_values = (first_fields.0.value(), first_fields.1.value());
+
+        assert_eq!(
+            <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(first_values.0).unwrap(),
+            expected[0].0
+        );
+        assert_eq!(
+            <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(first_values.1).unwrap(),
+            expected[0].1
+        );
     }
 
-    let mut row_iter = conn.load(query).unwrap();
+    #[diesel_test_helper::test]
+    fn output_binds_are_rebound_after_column_error() {
+        use crate::dsl::sql;
+        use crate::mysql_like::connection::DefaultLoadingMode;
+        use crate::sql_types::{Integer, Text};
 
-    let first_row = row_iter.next().unwrap().unwrap();
-    let first_fields = (
-        Row::get(&first_row, 0).unwrap(),
-        Row::get(&first_row, 1).unwrap(),
-    );
-    let first_values = (first_fields.0.value(), first_fields.1.value());
+        let conn = &mut crate::test_helpers::connection();
 
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_values);
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_fields);
+        diesel::sql_query(
+            "CREATE TEMPORARY TABLE f02 (id INTEGER PRIMARY KEY, txt TEXT NOT NULL, num VARCHAR(32) NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
 
-    let second_row = row_iter.next().unwrap().unwrap();
-    let second_fields = (
-        Row::get(&second_row, 0).unwrap(),
-        Row::get(&second_row, 1).unwrap(),
-    );
-    let second_values = (second_fields.0.value(), second_fields.1.value());
+        diesel::sql_query(
+            "INSERT INTO f02 VALUES \
+             (1, REPEAT('a', 4096), '1'), \
+             (2, REPEAT('b', 8192), '99999999999'), \
+             (3, REPEAT('c', 4096), '3')",
+        )
+        .execute(conn)
+        .unwrap();
 
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(second_values);
-    assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(second_fields);
+        let mut iter = sql::<(Text, Integer)>("SELECT txt, num FROM f02 ORDER BY id")
+            .load_iter::<(String, i32), DefaultLoadingMode>(conn)
+            .unwrap();
 
-    assert!(row_iter.next().is_none());
+        let first = iter.next().unwrap().unwrap();
+        assert_eq!(first, ("a".repeat(4096), 1));
 
-    let first_fields = (
-        Row::get(&first_row, 0).unwrap(),
-        Row::get(&first_row, 1).unwrap(),
-    );
-    let second_fields = (
-        Row::get(&second_row, 0).unwrap(),
-        Row::get(&second_row, 1).unwrap(),
-    );
+        // the overflowing column is reported as an error
+        assert!(iter.next().unwrap().is_err());
 
-    let first_values = (first_fields.0.value(), first_fields.1.value());
-    let second_values = (second_fields.0.value(), second_fields.1.value());
-
-    assert_eq!(
-        <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(first_values.0).unwrap(),
-        expected[0].0
-    );
-    assert_eq!(
-        <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(first_values.1).unwrap(),
-        expected[0].1
-    );
-
-    assert_eq!(
-        <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(second_values.0).unwrap(),
-        expected[1].0
-    );
-    assert_eq!(
-        <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(second_values.1).unwrap(),
-        expected[1].1
-    );
-
-    let first_fields = (
-        Row::get(&first_row, 0).unwrap(),
-        Row::get(&first_row, 1).unwrap(),
-    );
-    let first_values = (first_fields.0.value(), first_fields.1.value());
-
-    assert_eq!(
-        <i32 as FromSql<sql_types::Integer, DB>>::from_nullable_sql(first_values.0).unwrap(),
-        expected[0].0
-    );
-    assert_eq!(
-        <String as FromSql<sql_types::Text, DB>>::from_nullable_sql(first_values.1).unwrap(),
-        expected[0].1
-    );
+        // keep iterating: this must neither touch freed memory nor return stale data
+        let third = iter.next().unwrap().unwrap();
+        assert_eq!(third, ("c".repeat(4096), 3));
+        assert!(iter.next().is_none());
+    }
 }

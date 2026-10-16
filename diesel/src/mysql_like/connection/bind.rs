@@ -87,21 +87,30 @@ impl OutputBinds {
         &mut self,
         stmt: &StatementUse<'_, DB>,
     ) -> QueryResult<()> {
-        for (i, data) in self.binds.data.iter_mut().enumerate() {
-            data.did_numeric_overflow_occur()?;
-            // This is safe because we are re-binding the invalidated buffers
-            // at the end of this function
-            unsafe {
-                if let Some((mut bind, offset)) = data.bind_for_truncated_data() {
-                    stmt.fetch_column(&mut bind, i, offset)?
-                } else {
-                    data.update_buffer_length()
+        fn fetch_binds<DB: MysqlLikeBackend>(
+            binds: &mut Binds,
+            stmt: &StatementUse<'_, DB>,
+        ) -> QueryResult<()> {
+            for (i, data) in binds.data.iter_mut().enumerate() {
+                data.did_numeric_overflow_occur()?;
+                // This is safe because we are re-binding the invalidated buffers
+                // at the end of this function
+                unsafe {
+                    if let Some((mut bind, offset)) = data.bind_for_truncated_data() {
+                        stmt.fetch_column(&mut bind, i, offset)?
+                    } else {
+                        data.update_buffer_length()
+                    }
                 }
             }
+            Ok(())
         }
+        // we need to be carefully here to always set `self.binds_are_invalid` even
+        // if we return an error
+        let res = fetch_binds(&mut self.binds, stmt);
         // binds need to be rebound with `mysql_stmt_bind_result` before calling `mysql_stmt_fetch`
         self.binds_are_invalid = true;
-        Ok(())
+        res
     }
 
     pub(super) fn update_buffer_lengths(&mut self) {
