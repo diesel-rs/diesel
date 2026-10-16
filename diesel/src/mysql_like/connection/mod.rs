@@ -431,17 +431,7 @@ fn parse_server_version(info: &[u8]) -> Option<DatabaseVersion> {
         .iter()
         .position(|&byte| !byte.is_ascii_digit() && byte != b'.')
         .unwrap_or(info.len());
-    let mut components = info[..end].split(|&byte| byte == b'.').map(|digits| {
-        core::str::from_utf8(digits)
-            .ok()
-            .and_then(|digits| digits.parse().ok())
-    });
-    let version = DatabaseVersion::new(
-        components.next()??,
-        components.next()??,
-        components.next()??,
-    );
-    components.next().is_none().then_some(version)
+    core::str::from_utf8(&info[..end]).ok()?.parse().ok()
 }
 
 #[cfg(test)]
@@ -468,6 +458,10 @@ mod tests {
         assert_eq!(parse_server_version(b"8.4"), None);
         assert_eq!(parse_server_version(b"8.4.11.2"), None);
         assert_eq!(parse_server_version(b"8..4"), None);
+        assert_eq!(parse_server_version(b"8..4.11"), None);
+        assert_eq!(parse_server_version(b".8.4.11"), None);
+        assert_eq!(parse_server_version(b"8.4.11."), None);
+        assert_eq!(parse_server_version(b"8.4.4294967296"), None);
         assert_eq!(parse_server_version(b"MariaDB"), None);
     }
 }
