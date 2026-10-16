@@ -60,6 +60,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
 * Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
 * Added `SqliteConnection::version` to read the version of the linked SQLite library
+* Added `PgConnection::version` to read the version of the connected server
 
 ### Fixed
 
