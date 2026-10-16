@@ -21,7 +21,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
-use crate::sqlite::SqliteFunctionBehavior;
+use crate::sqlite::{BorrowedSqliteConnection, SqliteFunctionBehavior};
 use alloc::borrow::{Cow, ToOwned};
 use alloc::boxed::Box;
 use alloc::ffi::{CString, NulError};
@@ -73,7 +73,7 @@ pub(super) struct RawConnection {
     /// Boxed closure kept alive while the progress handler is registered.
     progress_hook: Option<Box<dyn FnMut() -> ProgressDecision + Send>>,
     /// Boxed closure kept alive while the WAL hook is registered.
-    wal_hook: Option<Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send>>,
+    wal_hook: Option<Box<dyn Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send>>,
     /// Boxed closure kept alive while the busy handler is registered.
     busy_handler: Option<Box<dyn FnMut(i32) -> BusyDecision + Send>>,
     /// Boxed closure kept alive while the authorizer is registered.
@@ -82,7 +82,7 @@ pub(super) struct RawConnection {
     trace_hook: Option<Box<dyn FnMut(SqliteTraceEvent<'_>) + Send>>,
     /// Boxed closure kept alive while the collation-needed callback is registered.
     collation_needed_hook:
-        Option<Box<dyn Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send>>,
+        Option<Box<dyn Fn(&'_ mut BorrowedSqliteConnection, CollationNeededContext<'_>) + Send>>,
 }
 
 impl RawConnection {
@@ -657,9 +657,9 @@ impl RawConnection {
     /// the lifetime of this `RawConnection`.
     pub(super) fn set_wal_hook<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send + 'static,
     {
-        let boxed: Box<dyn Fn(&mut SqliteConnection, &str, u32) + Send> = Box::new(hook);
+        let boxed: Box<dyn Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send> = Box::new(hook);
         let ptr = &raw const *boxed as *mut libc::c_void;
 
         unsafe {
@@ -862,10 +862,11 @@ impl RawConnection {
     /// registration.
     pub(super) fn set_collation_needed_hook<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, CollationNeededContext<'_>) + Send + 'static,
     {
-        let boxed: Box<dyn Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send> =
-            Box::new(hook);
+        let boxed: Box<
+            dyn Fn(&'_ mut BorrowedSqliteConnection, CollationNeededContext<'_>) + Send,
+        > = Box::new(hook);
         let ptr = &raw const *boxed as *mut libc::c_void;
 
         unsafe {
@@ -893,6 +894,36 @@ impl RawConnection {
             ffi::sqlite3_collation_needed(self.internal_connection.as_ptr(), ptr::null_mut(), None);
         }
         self.collation_needed_hook = None;
+    }
+
+    pub(crate) fn reset_registered_hooks(&mut self) {
+        if self.update_hook.is_some() {
+            self.remove_update_hook();
+        }
+        if self.commit_hook.is_some() {
+            self.remove_commit_hook();
+        }
+        if self.rollback_hook.is_some() {
+            self.remove_rollback_hook();
+        }
+        if self.progress_hook.is_some() {
+            self.remove_progress_handler();
+        }
+        if self.wal_hook.is_some() {
+            self.remove_wal_hook();
+        }
+        if self.busy_handler.is_some() {
+            self.remove_busy_handler();
+        }
+        if self.authorizer_hook.is_some() {
+            self.remove_authorizer();
+        }
+        if self.trace_hook.is_some() {
+            self.remove_trace();
+        }
+        if self.collation_needed_hook.is_some() {
+            self.remove_collation_needed_hook();
+        }
     }
 }
 
@@ -1414,7 +1445,7 @@ unsafe extern "C" fn wal_hook_trampoline<F>(
     n_pages: libc::c_int,
 ) -> libc::c_int
 where
-    F: Fn(&mut SqliteConnection, &str, u32),
+    F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         // SAFETY: `user_data` points to a live `F` in `RawConnection::wal_hook`.
@@ -1631,7 +1662,7 @@ unsafe extern "C" fn collation_needed_trampoline<F>(
     e_text_rep: libc::c_int,
     name: *const libc::c_char,
 ) where
-    F: Fn(&mut SqliteConnection, CollationNeededContext<'_>),
+    F: Fn(&'_ mut BorrowedSqliteConnection, CollationNeededContext<'_>),
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         // SAFETY: `user_data` points to a live `F` in

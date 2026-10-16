@@ -7,6 +7,7 @@ use sqlite_wasm_rs as ffi;
 mod attach;
 pub mod authorizer;
 mod bind_collector;
+pub(super) mod borrowed_connection;
 mod collation_needed;
 mod db_config;
 mod functions;
@@ -52,7 +53,7 @@ pub use self::trace::{SqliteTraceEvent, SqliteTraceFlags};
 pub use self::update_hook::{
     SqliteChangeEvent, SqliteChangeOp, SqliteChangeOps, SqliteUpdateRouter,
 };
-use super::SqliteAggregateFunction;
+use super::{BorrowedSqliteConnection, SqliteAggregateFunction};
 use crate::connection::instrumentation::{DynInstrumentation, StrQueryHelper};
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
@@ -719,49 +720,27 @@ impl SqliteConnection {
     #[allow(unsafe_code)]
     pub(crate) unsafe fn with_borrowed_connection<R>(
         db: core::ptr::NonNull<ffi::sqlite3>,
-        f: impl FnOnce(&mut SqliteConnection) -> R,
+        f: impl FnOnce(&'_ mut BorrowedSqliteConnection) -> R,
     ) -> R {
-        // Tears the borrowed connection down on every exit path, including a
-        // panic unwinding out of `f`.
-        struct Borrowed(core::mem::ManuallyDrop<SqliteConnection>);
+        let mut conn = BorrowedSqliteConnection::new(RawConnection::from_ptr(db));
 
-        impl Drop for Borrowed {
-            fn drop(&mut self) {
-                // SAFETY: `self.0` is not touched again after this take.
-                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
-                let SqliteConnection {
-                    statement_cache,
-                    raw_connection,
-                    ..
-                } = conn;
-                // Finalize prepared statements, but do not run `RawConnection`'s
-                // `Drop`, which would close a handle we do not own.
-                drop(statement_cache);
-                core::mem::forget(raw_connection);
-            }
+        let result = f(&mut conn);
+
+        unsafe {
+            // SAFETY: We don't move out the connection, we only call a function
+            // that accesses the underlying state
+
+            // The borrowed connection is discarded without committing or rolling
+            // back, so a transaction left open by `f` would leak onto the handle.
+            assert!(
+                matches!(
+                    AnsiTransactionManager::transaction_manager_status_mut(conn.inner_mut())
+                        .transaction_depth(),
+                    Ok(None)
+                ),
+                "callback must not leave an open transaction on the borrowed connection"
+            );
         }
-
-        let mut conn = Borrowed(core::mem::ManuallyDrop::new(SqliteConnection {
-            statement_cache: StatementCache::new(),
-            raw_connection: RawConnection::from_ptr(db),
-            transaction_state: AnsiTransactionManager::default(),
-            metadata_lookup: (),
-            instrumentation: DynInstrumentation::default_instrumentation(),
-            serialized_data: Vec::new(),
-        }));
-
-        let result = f(&mut conn.0);
-
-        // The borrowed connection is discarded without committing or rolling
-        // back, so a transaction left open by `f` would leak onto the handle.
-        debug_assert!(
-            matches!(
-                AnsiTransactionManager::transaction_manager_status_mut(&mut *conn.0)
-                    .transaction_depth(),
-                Ok(None)
-            ),
-            "callback must not leave an open transaction on the borrowed connection"
-        );
 
         result
     }

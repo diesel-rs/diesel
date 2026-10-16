@@ -1,3 +1,5 @@
+use crate::sqlite::BorrowedSqliteConnection;
+
 use super::SqliteConnection;
 use core::num::NonZeroU32;
 
@@ -213,19 +215,25 @@ impl SqliteConnection {
     /// # use diesel::connection::SimpleConnection;
     /// # use diesel::sqlite::SqliteConnection;
     /// # use diesel::sqlite::WalCheckpointMode;
+    ///
     /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
     /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
     /// conn.on_wal(|conn, db_name, n_pages| {
     ///     println!("WAL for {db_name}: {n_pages} pages");
     ///     if n_pages > 1000 {
     ///         // The connection may be used here, e.g. to force a checkpoint.
-    ///         let _ = conn.wal_checkpoint(None, WalCheckpointMode::Truncate);
+    ///         unsafe {
+    ///             // SAFETY: This is safe as long as we don't move or replace out the
+    ///             // inner SqliteConnection. None of the functions defined on SqliteConnection
+    ///             // do that
+    ///             let _ = conn.inner_mut().wal_checkpoint(None, WalCheckpointMode::Truncate);
+    ///         }
     ///     }
     /// });
     /// ```
     pub fn on_wal<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send + 'static,
     {
         self.raw_connection.set_wal_hook(hook);
     }

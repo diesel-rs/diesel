@@ -1,10 +1,11 @@
 //! Types used by [`SqliteConnection::on_collation_needed`](super::SqliteConnection::on_collation_needed).
 
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
-extern crate libsqlite3_sys as ffi;
-
+use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
+
+use crate::sqlite::BorrowedSqliteConnection;
 
 use super::SqliteConnection;
 
@@ -76,11 +77,17 @@ impl SqliteConnection {
     /// # use diesel::prelude::*;
     /// # use diesel::sqlite::SqliteConnection;
     /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// conn.on_collation_needed(|conn, ctx| {
+    ///
+    /// conn.on_collation_needed(|mut conn, ctx| {
     ///     if ctx.name.eq_ignore_ascii_case("RUSTNOCASE") {
-    ///         let _ = conn.register_collation("RUSTNOCASE", |a, b| {
-    ///             a.to_lowercase().cmp(&b.to_lowercase())
-    ///         });
+    ///         unsafe {
+    ///             // SAFETY: This is safe as long as we don't move or replace out the
+    ///             // inner SqliteConnection. None of the functions defined on SqliteConnection
+    ///             // do that
+    ///             let _ = conn.inner_mut().register_collation("RUSTNOCASE", |a, b| {
+    ///                 a.to_lowercase().cmp(&b.to_lowercase())
+    ///             });
+    ///         }
     ///     }
     /// });
     ///
@@ -89,7 +96,7 @@ impl SqliteConnection {
     /// ```
     pub fn on_collation_needed<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, CollationNeededContext<'_>) + Send + 'static,
     {
         self.raw_connection.set_collation_needed_hook(hook);
     }
@@ -163,8 +170,13 @@ mod tests {
 
         let second_fired = Arc::new(AtomicBool::new(false));
         let second_fired2 = second_fired.clone();
+        #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
         conn.on_collation_needed(move |conn, ctx| {
-            conn.register_collation(ctx.name, |a, b| a.cmp(b)).unwrap();
+            unsafe {
+                conn.inner_mut()
+                    .register_collation(ctx.name, |a, b| a.cmp(b))
+                    .unwrap();
+            }
             second_fired2.store(true, Ordering::Relaxed);
         });
 
@@ -203,6 +215,7 @@ mod tests {
         let saw_name2 = saw_name.clone();
         let saw_utf8_2 = saw_utf8.clone();
 
+        #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
         conn.on_collation_needed(move |conn, ctx| {
             fired2.store(true, Ordering::Relaxed);
             if ctx.name == "MYCOLL" {
@@ -211,7 +224,11 @@ mod tests {
             if ctx.text_rep == SqliteTextRep::Utf8 {
                 saw_utf8_2.store(true, Ordering::Relaxed);
             }
-            conn.register_collation(ctx.name, |a, b| a.cmp(b)).unwrap();
+            unsafe {
+                conn.inner_mut()
+                    .register_collation(ctx.name, |a, b| a.cmp(b))
+                    .unwrap();
+            }
         });
 
         // See `replacing_collation_needed_hook_drops_old` for why CREATE INDEX.
@@ -260,11 +277,15 @@ mod tests {
         let saw_outer2 = saw_outer.clone();
         let saw_inner2 = saw_inner.clone();
 
+        #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
         conn.on_collation_needed(move |conn, ctx| {
             if ctx.name.eq_ignore_ascii_case("OUTER_COLL") {
                 saw_outer2.store(true, Ordering::Relaxed);
-                conn.register_collation("OUTER_COLL", |a, b| a.cmp(b))
-                    .unwrap();
+                unsafe {
+                    conn.inner_mut()
+                        .register_collation("OUTER_COLL", |a, b| a.cmp(b))
+                        .unwrap();
+                }
                 // From inside our own frame, drive SQL that needs INNER_COLL,
                 // which is also unregistered. SQLite must be able to call the
                 // trampoline re-entrantly to satisfy this.
@@ -278,8 +299,11 @@ mod tests {
                 .unwrap();
             } else if ctx.name.eq_ignore_ascii_case("INNER_COLL") {
                 saw_inner2.store(true, Ordering::Relaxed);
-                conn.register_collation("INNER_COLL", |a, b| a.cmp(b))
-                    .unwrap();
+                unsafe {
+                    conn.inner_mut()
+                        .register_collation("INNER_COLL", |a, b| a.cmp(b))
+                        .unwrap();
+                }
             } else {
                 panic!("unexpected collation name: {}", ctx.name);
             }
@@ -308,9 +332,14 @@ mod tests {
         let calls: Arc<AtomicU32> = Arc::new(AtomicU32::new(0));
         let calls2 = calls.clone();
 
+        #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
         conn.on_collation_needed(move |conn, ctx| {
             calls2.fetch_add(1, Ordering::Relaxed);
-            conn.register_collation(ctx.name, |a, b| a.cmp(b)).unwrap();
+            unsafe {
+                conn.inner_mut()
+                    .register_collation(ctx.name, |a, b| a.cmp(b))
+                    .unwrap();
+            }
         });
 
         // First trigger: callback fires and installs MYCOLL_STOP.

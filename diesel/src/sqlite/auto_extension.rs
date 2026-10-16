@@ -38,6 +38,8 @@ mod auto_extension_ffi {
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use ffi as auto_extension_ffi;
 
+use super::BorrowedSqliteConnection;
+
 /// Registers an auto-extension that runs for every SQLite connection opened in
 /// this process, including non-Diesel ones.
 ///
@@ -65,11 +67,17 @@ use ffi as auto_extension_ffi;
 /// use diesel::dsl::sql;
 /// use diesel::prelude::*;
 /// use diesel::sql_types::Integer;
-/// use diesel::sqlite::{register_auto_extension, reset_auto_extension, SqliteConnection};
+/// use diesel::sqlite::{register_auto_extension, reset_auto_extension, SqliteConnection, BorrowedSqliteConnection};
+/// use std::pin::Pin;
 ///
 /// // Registers a case-insensitive collation on every new connection.
-/// fn my_ext(conn: &mut SqliteConnection) -> QueryResult<()> {
-///     conn.register_collation("RUSTNOCASE", |a, b| a.to_lowercase().cmp(&b.to_lowercase()))
+/// fn my_ext(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+///     unsafe {
+///         // SAFETY: This is safe as long as we don't move or replace out the
+///         // inner SqliteConnection. None of the functions defined on SqliteConnection
+///         // do that
+///         conn.inner_mut().register_collation("RUSTNOCASE", |a, b| a.to_lowercase().cmp(&b.to_lowercase()))
+///     }
 /// }
 ///
 /// register_auto_extension(my_ext).unwrap();
@@ -85,7 +93,7 @@ use ffi as auto_extension_ffi;
 #[allow(unsafe_code)]
 pub fn register_auto_extension<F>(extension: F) -> QueryResult<()>
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     // SAFETY: `entry_point` returns a stable function pointer with SQLite's callback ABI.
     let result =
@@ -111,7 +119,7 @@ where
 #[allow(unsafe_code)]
 pub fn cancel_auto_extension<F>(extension: F) -> bool
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     // SAFETY: `entry_point` returns the same stable pointer used for registration.
     unsafe { auto_extension_ffi::sqlite3_cancel_auto_extension(Some(entry_point(extension))) != 0 }
@@ -132,7 +140,7 @@ pub fn reset_auto_extension() {
 /// process and its destructor never runs.
 fn entry_point<F>(extension: F) -> RawAutoExtension
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     core::mem::forget(extension);
     trampoline::<F>
@@ -148,7 +156,7 @@ unsafe extern "C" fn trampoline<F>(
     _p_api: RawApiPointer,
 ) -> c_int
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     const {
         assert!(
@@ -247,6 +255,7 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::Integer;
+    use crate::sqlite::BorrowedSqliteConnection;
     use std::sync::Mutex;
 
     // `sqlite3_auto_extension` is process-global, so these tests serialize on
@@ -258,8 +267,12 @@ mod tests {
 
     // A benign auto-extension: registers a `TESTCOLL` collation through the
     // normal connection API.
-    fn test_ext_init(conn: &mut SqliteConnection) -> QueryResult<()> {
-        conn.register_collation("TESTCOLL", |a, b| a.cmp(b))
+    #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
+    fn test_ext_init(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+        unsafe {
+            conn.inner_mut()
+                .register_collation("TESTCOLL", |a, b| a.cmp(b))
+        }
     }
 
     fn open_memory_connection() -> SqliteConnection {
@@ -331,10 +344,10 @@ mod tests {
     #[test]
     #[allow(unsafe_code)]
     fn trampoline_maps_result_to_return_code() {
-        fn ok_ext(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn ok_ext(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             Ok(())
         }
-        fn err_ext(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn err_ext(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             Err(Error::QueryBuilderError("boom".into()))
         }
 
@@ -399,9 +412,13 @@ mod tests {
         let guard = Guard;
         // `move` captures the zero-sized `guard` by value, so the closure is a
         // zero-sized type with a non-trivial destructor.
-        register_auto_extension(move |conn: &mut SqliteConnection| {
+        #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
+        register_auto_extension(move |conn: &mut BorrowedSqliteConnection| {
             let _ = &guard;
-            conn.register_collation("TESTCOLL", |a, b| a.cmp(b))
+            unsafe {
+                conn.inner_mut()
+                    .register_collation("TESTCOLL", |a, b| a.cmp(b))
+            }
         })
         .unwrap();
 
@@ -425,13 +442,13 @@ mod tests {
     #[allow(unsafe_code)]
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn trampoline_reports_panic_message() {
-        fn panic_str(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn panic_str(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             panic!("boom-str");
         }
-        fn panic_string(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn panic_string(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             panic!("boom-{}", 7);
         }
-        fn panic_other(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn panic_other(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             std::panic::panic_any(7_u8);
         }
 
