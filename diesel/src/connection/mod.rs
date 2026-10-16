@@ -24,7 +24,7 @@ use crate::sql_types::TypeMetadata;
 use core::fmt::Debug;
 
 #[doc(inline)]
-pub use self::database_version::DatabaseVersion;
+pub use self::database_version::{DatabaseVersion, ParseDatabaseVersionError};
 #[cfg(feature = "std")]
 #[doc(inline)]
 pub use self::instrumentation::set_default_instrumentation;
