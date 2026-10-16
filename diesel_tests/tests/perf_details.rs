@@ -76,6 +76,6 @@ fn wrong_query_id_impl() {
     assert!(r.is_err(), "{r:?}");
     assert_eq!(
         r.unwrap_err().to_string(),
-        "cached statement expected a different number of parameters than provided: Expected 1, provided: 64"
+        "prepared statement expected a different number of parameters than provided: Expected 1, provided: 64"
     );
 }

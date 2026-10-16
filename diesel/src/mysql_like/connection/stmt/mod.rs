@@ -72,6 +72,15 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
         &mut self,
         mut input_binds: PreparedStatementBinds,
     ) -> QueryResult<()> {
+        if input_binds.len() != self.parameter_count() {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    self.parameter_count().try_into().unwrap_or(usize::MAX),
+                    input_binds.len().try_into().unwrap_or(usize::MAX),
+                ),
+            );
+        }
+
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called

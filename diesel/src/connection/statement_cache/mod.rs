@@ -628,7 +628,7 @@ pub(crate) fn invalid_prepared_statement_parameter_count(
 ) -> crate::result::Error {
     crate::result::Error::QueryBuilderError(
         alloc::format!(
-            "cached statement expected a different number of parameters than provided: \
+            "prepared statement expected a different number of parameters than provided: \
                      Expected {expected}, provided: {provided}",
         )
         .into(),

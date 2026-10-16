@@ -316,7 +316,16 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
 
         let mut bind_collector = SqliteBindCollector::new();
         query.collect_binds(&mut bind_collector, &mut (), &Sqlite)?;
+
         let SqliteBindCollector { binds } = bind_collector;
+        if statement.parameter_count() != binds.len() as u64 {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    statement.parameter_count().try_into().unwrap_or(usize::MAX),
+                    binds.len(),
+                ),
+            );
+        }
 
         let mut ret = BoundStatement {
             statement,
@@ -629,11 +638,9 @@ mod tests {
 
         assert!(e.is_err());
         let e = e.unwrap_err();
-        if let crate::result::Error::DatabaseError(crate::result::DatabaseErrorKind::Unknown, m) = e
-        {
-            assert_eq!(m.message(), "column index out of range");
-        } else {
-            panic!("Wrong error returned");
-        }
+        assert_eq!(
+            e.to_string(),
+            "prepared statement expected a different number of parameters than provided: Expected 0, provided: 1"
+        );
     }
 }
