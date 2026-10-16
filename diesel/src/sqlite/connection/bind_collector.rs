@@ -588,4 +588,71 @@ mod tests {
             OwnedSqliteBindValue::Null
         ));
     }
+
+    #[cfg(not(miri))] // that part is unsound we know that
+    #[diesel_test_helper::test]
+    fn leaked_iterator_leaves_static_binds_in_cached_statement() {
+        use crate::connection::DefaultLoadingMode;
+        use crate::prelude::*;
+        use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
+
+        struct Concat<'a> {
+            a: &'a str,
+            b: Option<&'a str>,
+        }
+
+        impl QueryId for Concat<'_> {
+            type QueryId = Concat<'static>;
+            const HAS_STATIC_QUERY_ID: bool = true;
+        }
+
+        impl Query for Concat<'_> {
+            type SqlType = Nullable<Text>;
+        }
+
+        impl QueryFragment<Sqlite> for Concat<'_> {
+            fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+                out.push_sql("SELECT ");
+                out.push_bind_param::<Text, _>(&self.a)?;
+                out.push_sql(" || coalesce(");
+                match &self.b {
+                    Some(b) => out.push_bind_param::<Text, _>(b)?,
+                    // this is not really sound, but whatever
+                    None => out.push_sql("?"),
+                }
+                out.push_sql(", '')");
+                Ok(())
+            }
+        }
+        impl RunQueryDsl<SqliteConnection> for Concat<'_> {}
+
+        let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+        let drop = {
+            let secret = "S".repeat(4096); // bound as SQLITE_STATIC, borrowed
+            let it = Box::new(
+                Concat {
+                    a: "a",
+                    b: Some(&secret),
+                }
+                .load_iter::<Option<String>, DefaultLoadingMode>(conn)
+                .unwrap(),
+            );
+            Box::into_raw(it).cast::<core::ffi::c_void>()
+        };
+
+        // same type -> same cached sqlite3_stmt; only parameter 1 is rebound
+        let r: Option<String> = Concat { a: "x", b: None }.get_result(conn).unwrap();
+        assert_eq!(r.as_deref(), Some("x"), "read freed memory");
+
+        #[allow(unsafe_code)] // that's test code, but unsound
+        unsafe {
+            let ptr = drop.cast::<crate::query_dsl::load_dsl::LoadIter<
+                Option<String>,
+                crate::sqlite::connection::StatementIterator<'_, '_>,
+                Nullable<Text>,
+                Sqlite,
+            >>();
+            let _ = Box::from_raw(ptr);
+        }
+    }
 }
