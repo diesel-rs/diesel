@@ -740,14 +740,12 @@ impl SqliteConnection {
                     transaction_state,
                     metadata_lookup: (),
                     instrumentation,
-                    serialized_data,
                 } = &mut *self.0;
                 // SAFETY: `self.0` is never used again. Skipping `raw_connection` keeps `db` open.
                 unsafe {
                     core::ptr::drop_in_place(statement_cache);
                     core::ptr::drop_in_place(transaction_state);
                     core::ptr::drop_in_place(instrumentation);
-                    core::ptr::drop_in_place(serialized_data);
                 }
             }
         }

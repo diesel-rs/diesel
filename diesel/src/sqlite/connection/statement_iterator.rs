@@ -239,6 +239,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // returns an error which allocates and uses an ffi string
     fn sqlite_iterator_terminates_after_step_error() {
         let mut conn = SqliteConnection::establish(":memory:").unwrap();
         let q = diesel::dsl::sql::<Integer>(
@@ -251,7 +252,6 @@ mod tests {
             .take(100)
             .map(|r| r.map_err(|e| e.to_string()))
             .collect();
-        println!("{:?}", &items[..items.len().min(8)]);
         assert_eq!(
             items.len(),
             3,
@@ -265,6 +265,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // returns an error which allocates and uses an ffi string
     fn held_rows_iterator_terminates_after_step_error() {
         use crate::connection::LoadConnection;
         use crate::row::Row;
@@ -288,6 +289,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // returns an error which allocates and uses an ffi string
     fn held_rows_iterator_continues_after_reborrow_error() {
         use crate::connection::LoadConnection;
         use crate::row::Row;
