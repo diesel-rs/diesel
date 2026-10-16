@@ -62,7 +62,6 @@ use crate::result::*;
 use crate::sql_types::TypeMetadata;
 use crate::sqlite::Sqlite;
 use alloc::string::String;
-use alloc::vec::Vec;
 use core::ffi as libc;
 use core::num::NonZeroI64;
 
@@ -202,17 +201,6 @@ pub struct SqliteConnection {
     // and avoiding static mut which will be deprecated in 2024 edition
     metadata_lookup: (),
     instrumentation: DynInstrumentation,
-    // We potentially need to store a serialized
-    // database in here to make sure the database bytes
-    // live as long as the connection
-    // This is used by SqliteConnection::deserialize_readonly_database_from_buffer
-    // only
-    // This field needs to come after the RawConnection
-    // as we need to make sure the data are still there until the
-    // connection is dropped
-    //
-    // We are not allowed to modify the inner buffer until the database connection is dropped
-    serialized_data: Vec<Vec<u8>>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -600,18 +588,7 @@ impl SqliteConnection {
     // only instead? (So `Cow<'static, [u8]>`?)
     #[allow(unsafe_code)]
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
-        // we copy the buffer here
-        // to make sure the underlying buffer lives as long as the connection
-        self.serialized_data.push(data.to_vec());
-        let last = self
-            .serialized_data
-            .last()
-            .expect("We literally pushed it above, so it's there");
-        unsafe {
-            // SAFETY: We store the buffer inside of the connection and we never touch it until
-            // we drop the connection
-            self.raw_connection.deserialize(last)
-        }
+        self.raw_connection.deserialize(data)
     }
 
     /// Provides temporary access to the raw SQLite database connection handle.
@@ -747,7 +724,6 @@ impl SqliteConnection {
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::default_instrumentation(),
-            serialized_data: Vec::new(),
         }));
 
         let result = f(&mut conn.0);
@@ -809,7 +785,6 @@ impl SqliteConnection {
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::none(),
-            serialized_data: Vec::new(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -1522,5 +1497,44 @@ mod tests {
                 .unwrap();
             assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
         }
+    }
+
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown")),
+        // runs processes
+        not(miri)
+    ))]
+    #[diesel_test_helper::test]
+    fn deserialize_in_auto_extension_keeps_buffer_alive() {
+        use super::oom_test_support::run_in_child;
+
+        run_in_child(|| {
+            use std::sync::OnceLock;
+            fn load_image(conn: &mut SqliteConnection) -> QueryResult<()> {
+                // `conn` is a borrowed connection; its `serialized_data` is dropped
+                // when this callback returns, but SQLite keeps using the buffer.
+                conn.deserialize_readonly_database_from_buffer(IMAGE.get().unwrap())
+            }
+
+            static IMAGE: OnceLock<Vec<u8>> = OnceLock::new();
+
+            let mut src = SqliteConnection::establish(":memory:").unwrap();
+            src.batch_execute("CREATE TABLE t(x TEXT); INSERT INTO t VALUES ('hello');")
+                .unwrap();
+            let image = src
+                .serialize_database_to_buffer()
+                .try_as_slice()
+                .unwrap()
+                .to_vec();
+            IMAGE.set(image).unwrap();
+
+            crate::sqlite::register_auto_extension(load_image).unwrap();
+            let mut conn = SqliteConnection::establish(":memory:").unwrap();
+            crate::sqlite::reset_auto_extension();
+
+            let rows: QueryResult<Vec<String>> = sql::<Text>("SELECT x FROM t").load(&mut conn);
+            assert_eq!(rows.unwrap(), vec!["hello".to_string()]);
+        })
     }
 }

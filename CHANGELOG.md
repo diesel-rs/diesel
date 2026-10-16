@@ -85,6 +85,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
 * Fix a potential use-after-free memory bug in `MysqlConnection::load_iter`
+* Fix a potential use-after-free issues for SQLite database deserialized in during register_auto_extension
 
 ### Changed
 
