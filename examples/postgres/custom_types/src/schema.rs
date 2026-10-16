@@ -8,7 +8,7 @@ pub mod sql_types {
 }
 
 pub mod rust_types {
-    #[derive(Debug, diesel::types::Enum)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
     #[diesel(sql_type = super::sql_types::Language)]
     pub enum Language {
         #[diesel(rename = "en")]
