@@ -314,27 +314,53 @@ impl RawConnection {
         unsafe { SerializedDatabase::new(data, size) }
     }
 
-    // SAFETY:
-    // Any caller must ensure that the provided data buffer is valid and not modified until the database connection is closed
-    // Sqlite's documentation states:
-    // Applications must not modify the buffer P or invalidate it before the database connection D is closed.
-    pub(super) unsafe fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
+    // we copy the buffer into sqlite's memory, so there is nothing that
+    // the caller of this function needs to uphold
+    pub(super) fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
         let db_size = data
             .len()
             .try_into()
             .map_err(|e| Error::DeserializationError(Box::new(e)))?;
+
+        // Starting from here until we called sqlite3_deserialize
+        // we need to take care not to return early to not leak
+        // this memory
+        let buffer = unsafe {
+            // SAFETY: That's malloc, so it's safe to call
+            ffi::sqlite3_malloc64(data.len() as u64).cast::<u8>()
+        };
+        if buffer.is_null() && !data.is_empty() {
+            return Err(Error::DeserializationError(
+                "Failed to allocate the memory for the database buffer".into(),
+            ));
+        }
+        if !data.is_empty() {
+            unsafe {
+                // SAFETY: we copy bytes, so buffer is always aligned correctly
+                // We allocated the right size above and checked for null pointers
+                // Data and buffer are different pointers, so they cannot overlap as long
+                // as nothing in sqlite/rustc/alloc broke
+                core::ptr::copy_nonoverlapping(data.as_ptr(), buffer, data.len());
+            }
+        }
+
         // the cast for `ffi::SQLITE_DESERIALIZE_READONLY` is required for old libsqlite3-sys versions
         #[allow(clippy::unnecessary_cast)]
         unsafe {
             let result = ffi::sqlite3_deserialize(
                 self.internal_connection.as_ptr(),
                 core::ptr::null(),
-                data.as_ptr() as *mut u8,
+                buffer,
                 db_size,
                 db_size,
-                ffi::SQLITE_DESERIALIZE_READONLY as u32,
+                ffi::SQLITE_DESERIALIZE_READONLY as u32
+                    | ffi::SQLITE_DESERIALIZE_FREEONCLOSE as u32,
             );
 
+            // If sqlite3_deserialize(D,S,P,N,M,F) fails for any reason and if the SQLITE_DESERIALIZE_FREEONCLOSE bit is
+            // set in argument F, then sqlite3_free() is invoked on argument P prior to returning.
+            //
+            // -> There is no need to free the buffer here, sqlite takes care for us
             ensure_sqlite_ok(result, self.internal_connection.as_ptr())
         }
     }

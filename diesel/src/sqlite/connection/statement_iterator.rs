@@ -1,6 +1,7 @@
 use alloc::rc::Rc;
 use alloc::string::String;
 use core::cell::RefCell;
+use core::iter::FusedIterator;
 
 use super::row::{PrivateSqliteRow, SqliteRow};
 use super::stmt::StatementUse;
@@ -78,6 +79,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
 enum PrivateStatementIterator<'stmt, 'query> {
     NotStarted(Option<StatementUse<'stmt, 'query>>),
     Started(Rc<RefCell<PrivateSqliteRow<'stmt, 'query>>>),
+    Finished,
 }
 
 impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
@@ -95,7 +97,7 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
 
     #[allow(unsafe_code)] // call to unsafe function
     fn next(&mut self) -> Option<Self::Item> {
-        use PrivateStatementIterator::{NotStarted, Started};
+        use PrivateStatementIterator::{Finished, NotStarted, Started};
         match &mut self.inner {
             NotStarted(stmt @ Some(_)) => {
                 let mut stmt = stmt
@@ -107,7 +109,12 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                 };
                 match step {
                     Err(e) => Some(Err(e)),
-                    Ok(false) => None,
+                    Ok(false) => {
+                        // we reached the end of the iterator
+                        // so we mark it done on rust side
+                        self.inner = Finished;
+                        None
+                    }
                     Ok(true) => {
                         let field_count = stmt
                             .column_count()
@@ -141,7 +148,12 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                         };
                         match step {
                             Err(e) => Some(Err(e)),
-                            Ok(false) => None,
+                            Ok(false) => {
+                                // we reached the end of the iterator
+                                // so we mark it done on rust side
+                                self.inner = Finished;
+                                None
+                            }
                             Ok(true) => {
                                 let field_count = self.field_count;
                                 Some(Ok(SqliteRow {
@@ -162,11 +174,15 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                         )
                     }
                 } else {
-                    Self::handle_duplicated_row_case(
+                    let result = Self::handle_duplicated_row_case(
                         last_row,
                         &mut self.column_names,
                         self.field_count,
-                    )
+                    );
+                    if result.is_none() {
+                        self.inner = Finished;
+                    }
+                    result
                 }
             }
             NotStarted(_s) => {
@@ -175,6 +191,41 @@ impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
                 // iterating here
                 None
             }
+            Finished => None,
         }
+    }
+}
+
+impl<'stmt, 'query> FusedIterator for StatementIterator<'stmt, 'query> {}
+
+#[cfg(test)]
+mod tests {
+    use crate::connection::{DefaultLoadingMode, SimpleConnection};
+    use crate::dsl::sql;
+    use crate::prelude::*;
+    use crate::sql_types::Integer;
+
+    #[diesel_test_helper::test]
+    fn statement_iterator_is_fused() {
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+        conn.batch_execute("CREATE TABLE t(x INTEGER); INSERT INTO t VALUES (1), (2);")
+            .unwrap();
+        {
+            let mut it = sql::<Integer>("SELECT x FROM t")
+                .load_iter::<i32, DefaultLoadingMode>(&mut conn)
+                .unwrap();
+            assert_eq!(it.next().unwrap().unwrap(), 1);
+            assert_eq!(it.next().unwrap().unwrap(), 2);
+            assert!(it.next().is_none());
+            // Polling past the end must not restart (re-execute) the statement.
+            assert!(it.next().is_none(), "iterator re-executed the statement");
+        }
+        conn.batch_execute("DELETE FROM t").unwrap();
+        let mut it = sql::<Integer>("SELECT x FROM t")
+            .load_iter::<i32, DefaultLoadingMode>(&mut conn)
+            .unwrap();
+        assert!(it.next().is_none());
+        // Polling past the end must not restart (re-execute) the statement.
+        assert!(it.next().is_none(), "iterator re-executed the statement");
     }
 }

@@ -85,6 +85,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Fix a potential use-after-free memory bug in `MysqlConnection::load_iter`
+* Fix a potential use-after-free issues for SQLite database deserialized in during register_auto_extension
+* Fix that the iterator returned by `SqliteConnection::load_iter` is correctly fused and doesn't return values after the first `None` by reexecuting the statement
+* Fix a potential use-after-free memory bug while holding rows in the Mysql backend longer than the connection/result iterator exists
 
 ### Changed
 

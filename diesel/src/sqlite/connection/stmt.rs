@@ -197,6 +197,10 @@ impl Statement {
         unsafe { ffi::sqlite3_reset(self.inner_statement.as_ptr()) };
     }
 
+    fn clear_bindings(&mut self) {
+        unsafe { ffi::sqlite3_clear_bindings(self.inner_statement.as_ptr()) };
+    }
+
     fn raw_connection(&self) -> *mut ffi::sqlite3 {
         unsafe { ffi::sqlite3_db_handle(self.inner_statement.as_ptr()) }
     }
@@ -290,7 +294,7 @@ struct BoundStatement<'stmt, 'query> {
 
 impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     fn bind<T>(
-        statement: MaybeCached<'stmt, Statement>,
+        mut statement: MaybeCached<'stmt, Statement>,
         query: T,
         instrumentation: &'stmt mut dyn Instrumentation,
     ) -> QueryResult<BoundStatement<'stmt, 'query>>
@@ -302,6 +306,9 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         // Query is boxed here to make sure it won't move in memory anymore, so any bind
         // it could output would stay valid.
         let query = Box::new(query);
+        // make sure to reset any previously left bindings
+        statement.reset();
+        statement.clear_bindings();
 
         let mut bind_collector = SqliteBindCollector::new();
         query.collect_binds(&mut bind_collector, &mut (), &Sqlite)?;
