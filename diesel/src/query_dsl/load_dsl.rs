@@ -1,4 +1,4 @@
-use self::private::LoadIter;
+pub(crate) use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
 use crate::connection::{Connection, DefaultLoadingMode, LoadConnection};
