@@ -438,4 +438,32 @@ mod tests {
         assert_eq!(third, ("c".repeat(4096), 3));
         assert!(iter.next().is_none());
     }
+
+    #[test]
+    fn row_field_names_after_statement_close() {
+        let conn = &mut crate::test_helpers::connection();
+        conn.set_prepared_statement_cache_size(crate::connection::CacheSize::Disabled);
+        let rows: Vec<_> = conn
+            .load(diesel::sql_query("SELECT 1 AS some_column_name"))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        // the iterator, and with it the uncached MYSQL_STMT, is gone now
+        let f = Row::get(&rows[0], 0usize).unwrap();
+        assert_eq!(f.field_name(), Some("some_column_name"));
+        assert!(Row::get(&rows[0], "some_column_name").is_some());
+    }
+
+    #[test]
+    fn row_field_names_after_connection_drop() {
+        let rows: Vec<_> = {
+            let conn = &mut crate::test_helpers::connection();
+            conn.load(diesel::sql_query("SELECT 1 AS some_column_name"))
+                .unwrap()
+                .collect::<Result<_, _>>()
+                .unwrap()
+        };
+        let f = Row::get(&rows[0], 0usize).unwrap();
+        assert_eq!(f.field_name(), Some("some_column_name"));
+    }
 }

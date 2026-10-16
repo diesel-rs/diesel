@@ -295,7 +295,7 @@ impl BindData {
 
     fn for_output(
         tpe: Option<MysqlType>,
-        metadata: &MysqlFieldMetadata<'_>,
+        metadata: &MysqlFieldMetadata,
     ) -> Result<Self, Box<dyn core::error::Error + Send + Sync>> {
         let (tpe, flags) = if let Some(tpe) = tpe {
             match (tpe, metadata.field_type()) {
