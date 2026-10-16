@@ -333,6 +333,39 @@ fn prepared_query<'a, DB: MysqlLikeBackend + Default, T: QueryFragment<DB> + Que
 }
 
 impl<DB: MysqlLikeBackend> MysqlLikeConnection<DB> {
+    /// Returns the version of the server this connection is connected to.
+    ///
+    /// # Errors
+    ///
+    /// Fails with [`Error::DeserializationError`] if the server reports a version it cannot parse.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// use diesel::connection::DatabaseVersion;
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// let supports_window_functions = conn.version()? >= DatabaseVersion::new(8, 0, 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn version(&self) -> QueryResult<DatabaseVersion> {
+        let info = self.raw_connection.server_info().ok_or_else(|| {
+            Error::DeserializationError("The server did not report its version".into())
+        })?;
+        parse_server_version(info.to_bytes()).ok_or_else(|| {
+            Error::DeserializationError(
+                format!("Unrecognized server version `{}`", info.to_string_lossy()).into(),
+            )
+        })
+    }
+
     /// Executes `source` and returns its `mysql_stmt_insert_id`, zero mapped
     /// to `None`. Public entry point: [`InsertStatement::execute_returning_id`].
     pub(crate) fn execute_returning_id<T>(&mut self, source: &T) -> QueryResult<Option<NonZeroU64>>
@@ -386,47 +419,9 @@ impl<DB: MysqlLikeBackend> MysqlLikeConnection<DB> {
     }
 }
 
-#[cfg(feature = "mariadb")]
-impl MysqlLikeConnection<crate::mariadb::Mariadb> {
-    /// Returns the version of the server this connection is connected to.
-    ///
-    /// # Errors
-    ///
-    /// Fails with [`Error::DeserializationError`] if the server reports a version it cannot parse.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// use diesel::connection::DatabaseVersion;
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     let conn = &mut establish_connection();
-    /// let supports_window_functions = conn.version()? >= DatabaseVersion::new(8, 0, 0);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub fn version(&self) -> QueryResult<DatabaseVersion> {
-        let info = self.raw_connection.server_info().ok_or_else(|| {
-            Error::DeserializationError("The server did not report its version".into())
-        })?;
-        parse_server_version(info.to_bytes()).ok_or_else(|| {
-            Error::DeserializationError(
-                format!("Unrecognized server version `{}`", info.to_string_lossy()).into(),
-            )
-        })
-    }
-}
-
 /// MariaDB before 11.0 prefixes its version with this, which only MariaDB Connector/C strips.
-#[cfg(feature = "mariadb")]
 const MARIADB_REPLICATION_VERSION_PREFIX: &[u8] = b"5.5.5-";
 
-#[cfg(feature = "mariadb")]
 fn parse_server_version(info: &[u8]) -> Option<DatabaseVersion> {
     let info = match info.strip_prefix(MARIADB_REPLICATION_VERSION_PREFIX) {
         Some(version) if version.first().is_some_and(u8::is_ascii_digit) => version,
@@ -449,7 +444,7 @@ fn parse_server_version(info: &[u8]) -> Option<DatabaseVersion> {
     components.next().is_none().then_some(version)
 }
 
-#[cfg(all(test, feature = "mariadb"))]
+#[cfg(test)]
 mod tests {
     use super::*;
 
