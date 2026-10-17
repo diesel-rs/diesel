@@ -1,5 +1,6 @@
 use super::SqliteConnection;
 use core::num::NonZeroU32;
+use core::pin::Pin;
 
 pub(super) use super::{BusyDecision, CommitDecision, ProgressDecision};
 
@@ -213,9 +214,11 @@ impl SqliteConnection {
     /// # use diesel::connection::SimpleConnection;
     /// # use diesel::sqlite::SqliteConnection;
     /// # use diesel::sqlite::WalCheckpointMode;
+    /// use diesel::sqlite::PinnedSqliteConnectionMethods;
+    ///
     /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
     /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
-    /// conn.on_wal(|conn, db_name, n_pages| {
+    /// conn.on_wal(|mut conn, db_name, n_pages| {
     ///     println!("WAL for {db_name}: {n_pages} pages");
     ///     if n_pages > 1000 {
     ///         // The connection may be used here, e.g. to force a checkpoint.
@@ -225,7 +228,7 @@ impl SqliteConnection {
     /// ```
     pub fn on_wal<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+        F: Fn(Pin<&mut SqliteConnection>, &str, u32) + Send + 'static,
     {
         self.raw_connection.set_wal_hook(hook);
     }
@@ -813,11 +816,11 @@ mod tests {
         let counts: Arc<std::sync::Mutex<Vec<i64>>> = Arc::new(std::sync::Mutex::new(Vec::new()));
         let counts2 = counts.clone();
 
-        conn.on_wal(move |conn, _db_name, _n_pages| {
+        conn.on_wal(move |mut conn, _db_name, _n_pages| {
             // Read through the borrowed connection, a fresh implicit read
             // transaction that finalizes on return.
             let c = crate::sql_query("SELECT COUNT(*) AS c FROM t_wal_use")
-                .get_result::<CountResult>(conn)
+                .get_result::<CountResult>(&mut conn)
                 .unwrap()
                 .c;
             counts2.lock().unwrap().push(c);
@@ -853,14 +856,14 @@ mod tests {
         let calls = Arc::new(AtomicU32::new(0));
         let calls2 = calls.clone();
 
-        conn.on_wal(move |conn, _db_name, _n_pages| {
+        conn.on_wal(move |mut conn, _db_name, _n_pages| {
             let n = calls2.fetch_add(1, Ordering::Relaxed);
             // Write on the first invocation only. The write commits in WAL mode
             // and re-fires the hook re-entrantly. Gating on `n == 0` bounds the
             // recursion to a single nested call instead of overflowing the stack.
             if n == 0 {
                 crate::sql_query("INSERT INTO t_wal_log DEFAULT VALUES")
-                    .execute(conn)
+                    .execute(&mut conn)
                     .unwrap();
             }
         });
