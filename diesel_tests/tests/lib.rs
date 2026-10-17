@@ -66,6 +66,8 @@ mod schema_inference;
 mod select;
 mod select_by;
 mod serialize_as;
+#[cfg(feature = "sqlite")]
+mod sqlite_pragma;
 mod transactions;
 mod types;
 mod types_roundtrip;
