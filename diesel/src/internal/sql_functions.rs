@@ -4,6 +4,11 @@ pub use crate::expression::functions::aggregate_expressions::{
     WindowFunctionFragment,
 };
 
+#[doc(hidden)]
+pub use crate::backend::sql_dialect::sql_function_parameter_notation::{
+    PositionalNotationOnly, PositionalOrNamedNotation,
+};
+
 #[macro_export]
 #[doc(hidden)]
 #[cfg(feature = "__sqlite-shared")]
