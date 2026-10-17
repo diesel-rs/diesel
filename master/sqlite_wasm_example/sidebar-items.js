@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_post","delete_post","establish_connection","get_post","publish_post","show_posts","switch_vfs"],"mod":["models","schema"]};

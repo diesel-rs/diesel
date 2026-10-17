@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Diesel dynamic schema"><title>diesel_dynamic_schema - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="diesel_dynamic_schema" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-e32f0c247825364d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../diesel_dynamic_schema/index.html">diesel_dynamic_schema</a><span class="version">0.2.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../diesel_dynamic_schema/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">diesel_dynamic_schema</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../src/diesel_dynamic_schema/lib.rs.html#1-124">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="diesel-dynamic-schema"><a class="doc-anchor" href="#diesel-dynamic-schema">§</a>Diesel dynamic schema</h2>
+<p>Diesel is an ORM and query builder designed to reduce
+the boilerplate for database interactions.</p>
+<p>If this is your first time reading about Diesel, then
+we recommend you start with the <a href="https://diesel.rs/guides/getting-started/">getting started guide</a>.
+We also have <a href="https://diesel.rs/guides">many other long form guides</a>.</p>
+<p>Diesel is built to provide strong compile time guarantees that your
+queries are valid. To do this, it needs to represent your schema
+at compile time. However, there are some times where you don’t
+actually know the schema you’re interacting with until runtime.</p>
+<p>This crate provides tools to work with those cases, while still being
+able to use Diesel’s query builder. Keep in mind that many compile time
+guarantees are lost. We cannot verify that the tables/columns you ask
+for actually exist, or that the types you state are correct.</p>
+<h2 id="getting-started"><a class="doc-anchor" href="#getting-started">§</a>Getting Started</h2>
+<p>The <code>table</code> function is used to create a new Diesel table.
+Note that you must always provide an explicit select clause
+when using this crate.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Use diesel-dynamic-schema to create a table and columns.
+</span><span class="kw">let </span>users = table(<span class="string">"users"</span>);
+<span class="kw">let </span>id = users.column::&lt;Integer, <span class="kw">_</span>&gt;(<span class="string">"id"</span>);
+<span class="kw">let </span>name = users.column::&lt;Text, <span class="kw">_</span>&gt;(<span class="string">"name"</span>);
+
+<span class="comment">// Now you can use typical Diesel syntax; see the Diesel docs for more.
+</span><span class="kw">let </span>results = users
+    .select((id, name))
+    .filter(name.eq(<span class="string">"Sean"</span>))
+    .load::&lt;(i32, String)&gt;(conn)<span class="question-mark">?</span>;
+
+<span class="kw">for </span>(id, name) <span class="kw">in </span>results {
+    <span class="macro">println!</span>(<span class="string">"id:{} name:{}"</span>, id, name);
+}</code></pre></div>
+<p>See the <code>/examples</code> directory for runnable code examples.</p>
+<h3 id="getting-help"><a class="doc-anchor" href="#getting-help">§</a>Getting help</h3>
+<p>If you run into problems, Diesel has a very active Gitter room.
+You can come ask for help at
+<a href="https://gitter.im/diesel-rs/diesel">gitter.im/diesel-rs/diesel</a></p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="dynamic_value/index.html" title="mod diesel_dynamic_schema::dynamic_value">dynamic_value</a></div><div class="desc docblock-short">This module provides a container that allows to receive a dynamically
+specified number of fields from the database.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Column.html" title="struct diesel_dynamic_schema::Column">Column</a></div><div class="desc docblock-short">A database table column.
+A database table column.
+This type is created by the <a href="struct.Table.html#method.column" title="method diesel_dynamic_schema::Table::column"><code>column</code></a> function.</div></li><li><div class="item-name"><a class="struct" href="struct.DynamicSelectClause.html" title="struct diesel_dynamic_schema::DynamicSelectClause">DynamicSelectClause</a></div><div class="desc docblock-short">Represents a dynamically sized select clause</div></li><li><div class="item-name"><a class="struct" href="struct.Schema.html" title="struct diesel_dynamic_schema::Schema">Schema</a></div><div class="desc docblock-short">A database schema.
+A database schema.
+This type is created by the <a href="fn.schema.html" title="fn diesel_dynamic_schema::schema"><code>schema</code></a> function.</div></li><li><div class="item-name"><a class="struct" href="struct.Table.html" title="struct diesel_dynamic_schema::Table">Table</a></div><div class="desc docblock-short">A database table.
+A database table.
+This type is created by the <a href="fn.table.html" title="fn diesel_dynamic_schema::table"><code>table</code></a> function.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.schema.html" title="fn diesel_dynamic_schema::schema">schema</a></div><div class="desc docblock-short">Create a new <a href="struct.Schema.html" title="struct diesel_dynamic_schema::Schema"><code>Schema</code></a> with the given name.</div></li><li><div class="item-name"><a class="fn" href="fn.table.html" title="fn diesel_dynamic_schema::table">table</a></div><div class="desc docblock-short">Create a new <a href="struct.Table.html" title="struct diesel_dynamic_schema::Table"><code>Table</code></a> with the given name.</div></li></ul></section></div></main></body></html>

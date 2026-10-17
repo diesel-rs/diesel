@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MIGRATIONS"],"fn":["revert_db_migration","run_db_migration"],"mod":["model"],"type":["Connection"]};

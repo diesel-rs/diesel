@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["infer_expression_type"],"struct":["InferrerSettings","InferrerSettingsBuilder"]};

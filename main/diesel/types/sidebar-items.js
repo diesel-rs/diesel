@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["Enum"],"struct":["EnumTypeMapping","EnumVariant","IntMapping","StringMapping"],"trait":["EnumMapping"]};
