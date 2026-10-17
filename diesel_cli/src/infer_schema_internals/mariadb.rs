@@ -59,7 +59,13 @@ pub fn load_foreign_key_constraints(
 
                 let foreign_key_columns_rust = foreign_key_columns
                     .iter()
-                    .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
+                    .map(|s| {
+                        super::inference::rust_name_for_sql_name(
+                            s,
+                            super::inference::IdentifierKind::Column,
+                            Some(&child_table),
+                        )
+                    })
                     .collect();
 
                 ForeignKeyConstraint {
