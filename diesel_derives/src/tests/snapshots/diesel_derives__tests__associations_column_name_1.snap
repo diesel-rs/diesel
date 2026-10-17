@@ -5,7 +5,7 @@ info:
   input: "#[derive(Associations)]\n#[diesel(belongs_to(User))]\nstruct Post {\n    id: i32,\n    title: String,\n    #[diesel(column_name = user_id)]\n    author_id: i32,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<__FK> diesel::associations::BelongsTo<User> for Post
     where
         __FK: std::hash::Hash + std::cmp::Eq,

@@ -7,7 +7,7 @@ info:
 #[allow(non_camel_case_types)]
 pub fn lower<input>(input: input) -> lower<input>
 where
-    input: diesel::expression::AsExpression<Text>,
+    input: ::diesel::expression::AsExpression<Text>,
 {
     lower_utils::lower {
         input: input.as_expression(),
@@ -16,21 +16,21 @@ where
 #[allow(non_camel_case_types, non_snake_case)]
 ///The return type of [`lower()`](fn@lower)
 pub type lower<input> = lower_utils::lower<
-    <input as diesel::expression::AsExpression<Text>>::Expression,
+    <input as ::diesel::expression::AsExpression<Text>>::Expression,
 >;
 #[doc(hidden)]
 #[allow(non_camel_case_types, non_snake_case, unused_imports)]
 pub(crate) mod lower_utils {
-    use diesel::{self, QueryResult};
-    use diesel::expression::{
+    use ::diesel::QueryResult;
+    use ::diesel::expression::{
         AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping,
     };
-    use diesel::query_builder::{QueryFragment, AstPass};
-    use diesel::sql_types::*;
-    use diesel::internal::sql_functions::*;
+    use ::diesel::query_builder::{QueryFragment, AstPass};
+    use ::diesel::sql_types::*;
+    use ::diesel::internal::sql_functions::*;
     use super::*;
-    #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
-    #[derive(diesel::sql_types::DieselNumericOps)]
+    #[derive(Debug, Clone, Copy, ::diesel::query_builder::QueryId)]
+    #[derive(::diesel::sql_types::DieselNumericOps)]
     pub struct lower<input> {
         pub(super) input: input,
     }
@@ -54,7 +54,7 @@ pub(crate) mod lower_utils {
     {}
     impl<input, __DieselInternal> FunctionFragment<__DieselInternal> for lower<input>
     where
-        __DieselInternal: diesel::backend::Backend,
+        __DieselInternal: ::diesel::backend::Backend,
         input: QueryFragment<__DieselInternal>,
     {
         const FUNCTION_NAME: &'static str = "lower";
@@ -76,7 +76,7 @@ pub(crate) mod lower_utils {
     }
     impl<input, __DieselInternal> QueryFragment<__DieselInternal> for lower<input>
     where
-        __DieselInternal: diesel::backend::Backend,
+        __DieselInternal: ::diesel::backend::Backend,
         input: QueryFragment<__DieselInternal>,
     {
         fn walk_ast<'__b>(
@@ -111,20 +111,23 @@ pub(crate) mod lower_utils {
     /// instead, or [`register_impl_with_behavior`](self::register_impl_with_behavior)
     /// for full control over the SQLite behavior flags.
     pub fn register_impl<F, Ret, input>(
-        conn: &mut diesel::sqlite::SqliteConnection,
+        conn: &mut ::diesel::sqlite::SqliteConnection,
         f: F,
-    ) -> diesel::result::QueryResult<()>
+    ) -> ::diesel::result::QueryResult<()>
     where
         F: Fn(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
         (
             input,
-        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
-            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
-        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+        ): ::diesel::deserialize::FromSqlRow<(Text,), ::diesel::sqlite::Sqlite>
+            + ::diesel::deserialize::StaticallySizedRow<
+                (Text,),
+                ::diesel::sqlite::Sqlite,
+            >,
+        Ret: ::diesel::serialize::ToSql<Text, ::diesel::sqlite::Sqlite>,
     {
         register_impl_with_behavior(
             conn,
-            diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
+            ::diesel::sqlite::SqliteFunctionBehavior::DETERMINISTIC,
             f,
         )
     }
@@ -141,20 +144,23 @@ pub(crate) mod lower_utils {
     /// the SQLite behavior flags, use
     /// [`register_impl_with_behavior`](self::register_impl_with_behavior).
     pub fn register_nondeterministic_impl<F, Ret, input>(
-        conn: &mut diesel::sqlite::SqliteConnection,
+        conn: &mut ::diesel::sqlite::SqliteConnection,
         f: F,
-    ) -> diesel::result::QueryResult<()>
+    ) -> ::diesel::result::QueryResult<()>
     where
         F: FnMut(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
         (
             input,
-        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
-            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
-        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+        ): ::diesel::deserialize::FromSqlRow<(Text,), ::diesel::sqlite::Sqlite>
+            + ::diesel::deserialize::StaticallySizedRow<
+                (Text,),
+                ::diesel::sqlite::Sqlite,
+            >,
+        Ret: ::diesel::serialize::ToSql<Text, ::diesel::sqlite::Sqlite>,
     {
         register_impl_with_behavior(
             conn,
-            diesel::sqlite::SqliteFunctionBehavior::empty(),
+            ::diesel::sqlite::SqliteFunctionBehavior::empty(),
             f,
         )
     }
@@ -169,17 +175,20 @@ pub(crate) mod lower_utils {
     /// unless you need to set behavior flags explicitly. See
     /// [`SqliteFunctionBehavior`] for the available flags.
     pub fn register_impl_with_behavior<F, Ret, input>(
-        conn: &mut diesel::sqlite::SqliteConnection,
-        behavior: diesel::sqlite::SqliteFunctionBehavior,
+        conn: &mut ::diesel::sqlite::SqliteConnection,
+        behavior: ::diesel::sqlite::SqliteFunctionBehavior,
         mut f: F,
-    ) -> diesel::result::QueryResult<()>
+    ) -> ::diesel::result::QueryResult<()>
     where
         F: FnMut(input) -> Ret + ::core::panic::UnwindSafe + Send + 'static,
         (
             input,
-        ): diesel::deserialize::FromSqlRow<(Text,), diesel::sqlite::Sqlite>
-            + diesel::deserialize::StaticallySizedRow<(Text,), diesel::sqlite::Sqlite>,
-        Ret: diesel::serialize::ToSql<Text, diesel::sqlite::Sqlite>,
+        ): ::diesel::deserialize::FromSqlRow<(Text,), ::diesel::sqlite::Sqlite>
+            + ::diesel::deserialize::StaticallySizedRow<
+                (Text,),
+                ::diesel::sqlite::Sqlite,
+            >,
+        Ret: ::diesel::serialize::ToSql<Text, ::diesel::sqlite::Sqlite>,
     {
         conn.register_sql_function::<
                 (Text,),

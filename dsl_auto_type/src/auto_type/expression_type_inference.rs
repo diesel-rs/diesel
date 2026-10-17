@@ -235,7 +235,11 @@ impl TypeInferrer<'_> {
                             )?,
                         }])
                         .collect(),
-                    leading_colon: None,
+                    leading_colon: self
+                        .local_variables_map
+                        .inferrer_settings
+                        .dsl_path
+                        .leading_colon,
                 },
                 qself: None,
                 attrs: Vec::new(),
