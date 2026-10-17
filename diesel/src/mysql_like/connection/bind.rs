@@ -853,6 +853,7 @@ mod tests {
     use super::*;
     use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
     use crate::deserialize::FromSql;
+    use crate::mysql_like::NonNegative;
     use crate::mysql_like::connection::MysqlLikeConnection;
     use crate::mysql_like::connection::stmt::Statement;
     use crate::prelude::*;
@@ -925,7 +926,11 @@ mod tests {
                     json_col JSON NOT NULL,
                     unsigned_tiny TINYINT UNSIGNED NOT NULL,
                     unsigned_small SMALLINT UNSIGNED NOT NULL,
-                    unsigned_big BIGINT UNSIGNED NOT NULL
+                    unsigned_big BIGINT UNSIGNED NOT NULL,
+                    unsigned_float FLOAT UNSIGNED NOT NULL,
+                    unsigned_double DOUBLE UNSIGNED NOT NULL,
+                    unsigned_numeric NUMERIC(20,5) UNSIGNED NOT NULL,
+                    unsigned_decimal DECIMAL(20,5) UNSIGNED NOT NULL
             )",
         )
         .execute(conn)
@@ -968,7 +973,11 @@ mod tests {
                     '{\"key1\": \"value1\", \"key2\": \"value2\"}', -- json_col
                     200, -- unsigned_tiny
                     40000, -- unsigned_small
-                    18446744073709551615 -- unsigned_big
+                    18446744073709551615, -- unsigned_big
+                    9.1011, -- unsigned_float
+                    10.1213, -- unsigned_double
+                    999.999, -- unsigned_numeric,
+                    3.14 -- unsigned_decimal,
 )",
             ).execute(conn)
             .unwrap();
@@ -984,7 +993,8 @@ mod tests {
                     text_col, enum_col, set_col, ST_AsText(geom), ST_AsText(point_col), ST_AsText(linestring_col),
                     ST_AsText(polygon_col), ST_AsText(multipoint_col), ST_AsText(multilinestring_col),
                     ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col,
-                    unsigned_tiny, unsigned_small, unsigned_big
+                    unsigned_tiny, unsigned_small, unsigned_big, unsigned_float, unsigned_double,
+                    unsigned_numeric, unsigned_decimal
                  FROM all_mysql_types",
             ),
             &mut conn.statement_cache,
@@ -1388,6 +1398,60 @@ mod tests {
         );
         // Nothing signed can hold it, so refusing beats reporting -1.
         assert!(to_value::<BigInt, i64>(unsigned_big_col).is_err());
+
+        let unsigned_float_col = &results[37].0;
+        assert_eq!(
+            unsigned_float_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_FLOAT
+        );
+        assert!(unsigned_float_col.flags.contains(Flags::NUM_FLAG));
+        assert!(unsigned_float_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Unsigned<Float>, NonNegative<f32>>(unsigned_float_col).unwrap(),
+            NonNegative(9.1011)
+        );
+
+        let unsigned_double_col = &results[38].0;
+        assert_eq!(
+            unsigned_double_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_DOUBLE
+        );
+        assert!(unsigned_double_col.flags.contains(Flags::NUM_FLAG));
+        assert!(unsigned_double_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Unsigned<Double>, NonNegative<f64>>(unsigned_double_col).unwrap(),
+            NonNegative(10.1213)
+        );
+
+        let unsigned_numeric_col = &results[39].0;
+        assert_eq!(
+            unsigned_numeric_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL
+        );
+        assert!(unsigned_numeric_col.flags.contains(Flags::NUM_FLAG));
+        assert!(unsigned_numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Unsigned<Numeric>, NonNegative<bigdecimal::BigDecimal>>(
+                unsigned_numeric_col
+            )
+            .unwrap(),
+            NonNegative(bigdecimal::BigDecimal::from_str("999.99900").unwrap())
+        );
+
+        let unsigned_decimal_col = &results[40].0;
+        assert_eq!(
+            unsigned_decimal_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL
+        );
+        assert!(unsigned_decimal_col.flags.contains(Flags::NUM_FLAG));
+        assert!(unsigned_decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Unsigned<Numeric>, NonNegative<bigdecimal::BigDecimal>>(
+                unsigned_decimal_col
+            )
+            .unwrap(),
+            NonNegative(bigdecimal::BigDecimal::from_str("3.14000").unwrap())
+        );
     }
 
     fn query_single_table(
