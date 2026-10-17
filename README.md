@@ -316,6 +316,15 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
       </a>
     </td>
   </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="https://rustfoundation.org/">
+        <img src="https://diesel.rs/assets/images/rf-logo-white-2.svg" />
+        <br/>
+        <sub><b>Rust Foundation</b></sub>
+      </a>
+    </td>
+  </tr>
 </table>
 
 Additionally we would like to thank all persons sponsoring the project on [GitHub](https://github.com/sponsors/weiznich#sponsors). Without them developing Diesel wouldn't be possible.

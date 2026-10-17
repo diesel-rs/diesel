@@ -51,7 +51,7 @@ error[E0277]: the trait bound `OldValue<id>: AppearsOnTable<_>` is not satisfied
     |
 help: the trait `AppearsOnTable<diesel::internal::table_macro::Join<posts::table, ReturningQuerySource<_, _>, diesel::internal::table_macro::Inner>>` is not implemented for `diesel::mariadb::returning::old_impl::OldValue<users::columns::id>`
       but trait `AppearsOnTable<ReturningQuerySource<_, _>>` is implemented for it
-   --> DIESEL/diesel/diesel/src/mariadb/returning/old_impl.rs
+   --> ROOT/diesel/src/mariadb/returning/old_impl.rs
     |
 LL | / impl<C, QS> AppearsOnTable<ReturningQuerySource<UpdateStmt, QS>> for OldValue<C>
 LL | | where
@@ -72,7 +72,7 @@ LL | |         >,
     = note: required for `(Grouped<Subselect<_, _>>,)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -116,7 +116,7 @@ error[E0277]: the trait bound `OldValueOf<Integer>: SqlType` is not satisfied
     = note: required for `(Grouped<Subselect<_, _>>,)` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `UpdateStatement<table, WhereClause<_>, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     |            --------- required by a bound in this associated function

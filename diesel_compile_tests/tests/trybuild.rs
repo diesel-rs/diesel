@@ -11,12 +11,32 @@ fn main() -> ui_test::color_eyre::Result<()> {
     let diesel_root_path = PathBuf::from(env!("CARGO_MANIFEST_DIR").to_owned() + "/../")
         .canonicalize()
         .unwrap();
-    config.path_filter(&diesel_root_path, "DIESEL");
+
+    // that works better in container setups where diesel might be mounted
+    // to `/src`
+    for dir in std::fs::read_dir(&diesel_root_path).unwrap() {
+        let dir = dir.unwrap();
+        if dir.file_type().unwrap().is_dir() {
+            let mut path = dir.path().canonicalize().unwrap();
+            let last = path
+                .components()
+                .last()
+                .unwrap()
+                .as_os_str()
+                .to_str()
+                .unwrap()
+                .to_owned();
+            path.push("src"); // ui_test calls parent() internally
+            if path.exists() {
+                config.path_filter(&path, String::leak(format!("ROOT/{last}")));
+            }
+        }
+    }
     if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
         // When `CARGO_TARGET_DIR` points outside of the diesel workspace -- e.g.
         // when tests are run from a sandbox that redirects build artifacts to a
-        // temporary location -- `path_filter(&diesel_root_path, "DIESEL")` alone
-        // doesn't normalize paths emitted by rustc that point at the target
+        // temporary location -- the per-crate `path_filter` calls above alone
+        // don't normalize paths emitted by rustc that point at the target
         // directory (such as `<target>/ui/0/.../*.long-type-*.txt`), so they
         // would leak into the blessed `.stderr` files. Map the actual target
         // directory to the canonical in-workspace location so blessing produces
@@ -33,7 +53,7 @@ fn main() -> ui_test::color_eyre::Result<()> {
             if !target_dir.starts_with(&diesel_root_path) {
                 config.filter(
                     &regex::escape(&target_dir.to_string_lossy()),
-                    "DIESEL/diesel/diesel_compile_tests/target",
+                    "ROOT/diesel_compile_tests/target",
                 );
             }
         }
@@ -58,8 +78,8 @@ fn main() -> ui_test::color_eyre::Result<()> {
     );
     // not sure how well that works on windows
     config.filter(
-        "diesel\\/diesel\\/([a-zA-Z_0-9\\/]*)\\.rs:[0-9]*:[0-9]*",
-        "diesel/diesel/$1.rs",
+        "/diesel\\/([a-zA-Z_0-9\\/]*)\\.rs:[0-9]*:[0-9]*",
+        "/diesel/$1.rs",
     );
     // replace rust standard library paths
     config.filter(

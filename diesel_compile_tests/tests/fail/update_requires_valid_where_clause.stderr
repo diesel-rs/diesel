@@ -8,7 +8,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _>: IntoUpdateTarget` is
     |
     = note: only tables or select statements with only the filter clause applied are valid update targets
 help: the trait `IntoUpdateTarget` is conditionally implemented for `SelectStatement<FromClause<F>, _, _, W>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
 LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...
@@ -20,7 +20,7 @@ LL | |     W: ValidWhereClause<F>,
     |          |
     |          unsatisfied requirement introduced here: `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>: diesel::query_builder::where_clause::ValidWhereClause<users::table>`
 note: required by a bound in `diesel::update`
-   --> DIESEL/diesel/diesel/src/query_builder/functions.rs
+   --> ROOT/diesel/src/query_builder/functions.rs
     |
 LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
@@ -75,7 +75,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _>: IntoUpdateTarget` is
     |
     = note: only tables or select statements with only the filter clause applied are valid update targets
 help: the trait `IntoUpdateTarget` is conditionally implemented for `SelectStatement<FromClause<F>, _, _, W>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
 LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...

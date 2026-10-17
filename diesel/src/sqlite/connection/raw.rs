@@ -41,6 +41,14 @@ use core::{mem, ptr, slice, str};
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
 
+/// The numeric version of the linked SQLite library, `X * 1_000_000 + Y * 1_000 + Z`.
+pub(super) fn library_version_number() -> u32 {
+    // SAFETY: `sqlite3_libversion_number` takes no arguments and returns a constant of
+    // the linked library, so it is sound to call at any time from any thread.
+    let version = unsafe { ffi::sqlite3_libversion_number() };
+    version.cast_unsigned()
+}
+
 // Runtime extension loading (`sqlite3_load_extension`) is deliberately unsupported.
 // Platforms that build SQLite with `-DSQLITE_OMIT_LOAD_EXTENSION` (see #2180) drop
 // the symbol from the ABI, and the runtime `dlsym` workaround in #4954 proved too

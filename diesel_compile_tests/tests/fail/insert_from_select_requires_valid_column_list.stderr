@@ -13,7 +13,7 @@ error[E0271]: type mismatch resolving `<SelectStatement<_, _> as Query>::SqlType
      = note: required for `InsertStatement<table, InsertFromSelect<_, _>>` to implement `QueryFragment<_>`
      = note: required for `InsertStatement<table, InsertFromSelect<_, _>>` to implement `ExecuteDsl<_, _>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
      |        ------- required by a bound in this associated function
@@ -44,7 +44,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
  LL | |     posts (user_id) {
     | |_________^
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn into_columns<C2>(
     |            ------------ required by a bound in this associated function
@@ -78,7 +78,7 @@ error[E0277]: the trait bound `(post_id, title): ColumnList` is not satisfied
               (T₁, T₂, …, Tₙ) for tuples of arity 1 up to and including 16
             and N others
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn into_columns<C2>(
     |            ------------ required by a bound in this associated function
@@ -110,7 +110,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
     | |_________^
     = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn into_columns<C2>(
     |            ------------ required by a bound in this associated function
@@ -142,7 +142,7 @@ note: `posts::table` is defined in module `crate::posts` of the current crate
     | |_________^
     = note: required for `(comments::columns::post_id, comments::columns::body)` to implement `diesel::query_builder::insert_statement::column_list::ColumnList`
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn into_columns<C2>(
     |            ------------ required by a bound in this associated function
