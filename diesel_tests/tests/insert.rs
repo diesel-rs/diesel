@@ -1,4 +1,5 @@
 use super::schema::*;
+use diesel::sql_types::Text;
 use diesel::*;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 use std::num::NonZeroU64;
@@ -1547,4 +1548,42 @@ fn execute_returning_id_with_default_values() {
     assert_eq!(stored.len(), 1);
     assert_eq!(generated.get(), u64::try_from(stored[0].0).unwrap());
     assert_eq!(stored[0].1, 7);
+}
+
+#[diesel_test_helper::test]
+fn array_batch_insert_does_reuse_the_right_statement() {
+    let conn = &mut connection();
+
+    #[declare_sql_function]
+    extern "SQL" {
+        fn upper(t: Text) -> Text;
+    }
+
+    diesel::insert_into(users::table)
+        .values([
+            users::name
+                .eq(Box::new("a".into_sql::<Text>())
+                    as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+            users::name
+                .eq(Box::new("b".into_sql::<Text>())
+                    as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    diesel::insert_into(users::table)
+        .values([
+            users::name.eq(Box::new(upper("c")) as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+            users::name.eq(Box::new(upper("d")) as Box<dyn BoxableExpression<_, _, SqlType = _>>),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    let names: Vec<String> = users::table
+        .order(users::id)
+        .select(users::name)
+        .load(conn)
+        .unwrap();
+
+    assert_eq!(names, ["a", "b", "C", "D"]);
 }

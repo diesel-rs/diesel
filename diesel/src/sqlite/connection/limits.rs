@@ -483,22 +483,27 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_variable_number() {
         let mut conn = connection();
+        let limit = 10;
+
         // The published default sits below the bundled ceiling, so it is applied verbatim and
         // acts as the boundary: a parameter index at the limit is accepted, one past it is
         // rejected ("variable number must be between ?1 and ?N").
-        conn.set_limit(
-            SqliteLimit::VariableNumber,
-            SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT,
-        );
-        let at_limit = format!("SELECT ?{}", SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT);
-        let past_limit = format!(
-            "SELECT ?{}",
-            SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT as i64 + 1
-        );
-        assert!(crate::sql_query(&at_limit).execute(&mut conn).is_ok());
+        conn.set_limit(SqliteLimit::VariableNumber, 10);
+        let at_limit = format!("SELECT ?{}", limit);
+        let mut at_limit_query = crate::sql_query(&at_limit).into_boxed();
+        for _ in 0..limit {
+            at_limit_query = at_limit_query.bind::<crate::sql_types::Integer, _>(1);
+        }
+        let past_limit = format!("SELECT ?{}", limit + 1);
+        let mut past_limit_query = crate::sql_query(&past_limit).into_boxed();
+        for _ in 0..(limit + 1) {
+            past_limit_query = past_limit_query.bind::<crate::sql_types::Integer, _>(1);
+        }
+
+        assert!(at_limit_query.execute(&mut conn).is_ok());
         if cfg!(not(miri)) {
             // ffi string access
-            assert!(crate::sql_query(&past_limit).execute(&mut conn).is_err());
+            assert!(past_limit_query.execute(&mut conn).is_err());
         }
     }
 

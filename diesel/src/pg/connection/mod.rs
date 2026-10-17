@@ -828,6 +828,10 @@ mod private {
         fn is_safe_to_cache_prepared(&self, backend: &Pg) -> QueryResult<bool> {
             self.0.borrow().is_safe_to_cache_prepared(backend)
         }
+
+        fn parameter_count(&self, backend: &Pg) -> QueryResult<usize> {
+            self.0.borrow().parameter_count(backend)
+        }
     }
 
     impl<S, T> QueryFragmentHelper<S::Error> for CopyFromWrapper<S, T>

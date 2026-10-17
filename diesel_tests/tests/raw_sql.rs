@@ -1,4 +1,5 @@
 use crate::schema::*;
+use diesel::sql_types::Integer;
 use diesel::*;
 
 #[diesel_test_helper::test]
@@ -85,4 +86,45 @@ fn sql_query_can_take_bind_params_boxed() {
     let expected = vec![tess];
 
     assert_eq!(Ok(expected), users);
+}
+
+#[diesel_test_helper::test]
+fn fewer_binds_than_placeholders() {
+    let conn = &mut connection();
+    let query = if cfg!(feature = "postgres") {
+        diesel::sql_query("SELECT $1, $2, $3, $4")
+    } else {
+        diesel::sql_query("SELECT ?, ?, ?, ?")
+    };
+    let r = query.bind::<Integer, _>(1).execute(conn);
+    assert!(r.is_err(), "expected an error for missing binds, got {r:?}");
+
+    assert_eq!(
+        r.unwrap_err().to_string(),
+        if cfg!(feature = "postgres") {
+            "bind message supplies 1 parameters, but prepared statement \"\" requires 4"
+        } else {
+            "prepared statement expected a different number of parameters than provided: Expected 4, provided: 1"
+        }
+    );
+}
+
+#[diesel_test_helper::test]
+fn no_binds_for_placeholder() {
+    let conn = &mut connection();
+    let query = if cfg!(feature = "postgres") {
+        diesel::sql_query("SELECT $1")
+    } else {
+        diesel::sql_query("SELECT ?")
+    };
+    let r = query.execute(conn);
+    assert!(r.is_err(), "expected an error for missing binds, got {r:?}");
+    assert_eq!(
+        r.unwrap_err().to_string(),
+        if cfg!(feature = "postgres") {
+            "bind message supplies 0 parameters, but prepared statement \"\" requires 1"
+        } else {
+            "prepared statement expected a different number of parameters than provided: Expected 1, provided: 0"
+        }
+    );
 }
