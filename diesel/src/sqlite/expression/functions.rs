@@ -24,6 +24,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -65,6 +70,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -109,6 +119,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -176,6 +191,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -253,6 +273,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -349,6 +374,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -406,6 +436,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -463,6 +498,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -524,6 +564,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -599,6 +644,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -658,6 +708,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -717,6 +772,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -783,6 +843,11 @@ extern "SQL" {
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -854,6 +919,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -984,6 +1054,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1145,6 +1220,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1205,6 +1285,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1267,6 +1352,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1314,6 +1404,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1384,6 +1479,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1443,6 +1543,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1479,6 +1584,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1524,6 +1634,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1562,6 +1677,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1610,6 +1730,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1662,6 +1787,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1719,6 +1849,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1746,6 +1881,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1812,6 +1952,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1838,6 +1983,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1888,6 +2038,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1940,6 +2095,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -1992,6 +2152,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2066,6 +2231,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2140,6 +2310,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2212,6 +2387,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2293,6 +2473,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2359,6 +2544,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2429,6 +2619,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2501,6 +2696,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2567,6 +2767,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();
@@ -2649,6 +2854,11 @@ extern "SQL" {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     #[cfg(feature = "serde_json")]
     /// #     run_test().unwrap();

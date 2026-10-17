@@ -11,6 +11,10 @@ struct CowUser<'a> {
     name: Cow<'a, str>,
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn generated_queryable_allows_lifetimes() {
     use crate::schema::users::dsl::*;
@@ -65,6 +69,10 @@ impl Queryable<my_users::SqlType, TestBackend> for User {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn check_deserialize_composite_ptr_types() {
     let conn = &mut connection();

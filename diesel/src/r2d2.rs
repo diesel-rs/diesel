@@ -52,6 +52,10 @@
 //!         .execute(conn)
 //! }
 //!
+//! # // This test uses synchronization primitives that are unsupported under miri.
+//! #[cfg(miri)]
+//! fn main() {}
+//! #[cfg(not(miri))]
 //! fn main() {
 //!     let pool = get_connection_pool();
 //!     let mut threads = vec![];

@@ -1,6 +1,10 @@
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_column() {
     use crate::schema::users::dsl::*;
@@ -40,6 +44,10 @@ fn order_by_column() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_descending_column() {
     use crate::schema::users::dsl::*;
@@ -80,6 +88,10 @@ fn order_by_descending_column() {
 }
 
 // regression test for #3412
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn dynamic_order() {
     use crate::schema::users;

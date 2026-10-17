@@ -44,6 +44,10 @@ fn view_test_setup() -> TestConnection {
 //     - Update
 //     - Delete
 //     - ? (Test what other methods to disallow)
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn basic_query() {
     let conn = &mut view_test_setup();
@@ -53,6 +57,10 @@ fn basic_query() {
     assert_eq!(res, [(42, "John".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn filter() {
     let conn = &mut view_test_setup();
@@ -64,6 +72,10 @@ fn filter() {
     assert_eq!(res, [(42, "John".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn limit() {
     let conn = &mut view_test_setup();
@@ -72,6 +84,10 @@ fn limit() {
     assert_eq!(res, [(42, "John".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn limit_offset() {
     let conn = &mut view_test_setup();
@@ -84,6 +100,10 @@ fn limit_offset() {
     assert_eq!(res, [(42, "John".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn order() {
     let conn = &mut view_test_setup();
@@ -95,6 +115,10 @@ fn order() {
     assert_eq!(res, [(42, "John".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn group_by() {
     let conn = &mut view_test_setup();
@@ -106,6 +130,10 @@ fn group_by() {
     assert_eq!(res, [(42, "John".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn inner_join() {
     let conn = &mut view_test_setup();
@@ -117,6 +145,10 @@ fn inner_join() {
     assert_eq!(res, [((42, "John".to_string()), (42, "views!!".into()))]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn left_join() {
     let conn = &mut view_test_setup();
@@ -131,6 +163,10 @@ fn left_join() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn distinct() {
     let conn = &mut view_test_setup();
@@ -149,6 +185,10 @@ fn count() {
     assert_eq!(res, 1);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn first() {
     let conn = &mut view_test_setup();
@@ -158,6 +198,10 @@ fn first() {
     assert_eq!(res, (42, "John".into()));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn alias() {
     let conn = &mut view_test_setup();
