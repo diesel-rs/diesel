@@ -24,26 +24,26 @@
 //! }
 //!
 //! impl WritePragma for UserVersion {
-//!     fn value(&self) -> PragmaLiteral {
+//!     fn value(&self) -> PragmaLiteral<'_> {
 //!         self.0.into()
 //!     }
 //! }
 //!
-//! struct ForeignKeys(bool);
+//! struct ForeignKeys<'a>(&'a str);
 //!
-//! impl Pragma for ForeignKeys {
+//! impl Pragma for ForeignKeys<'_> {
 //!     const NAME: &'static str = "foreign_keys";
 //!     type Scope = PerConnection;
 //! }
 //!
-//! impl ReadPragma for ForeignKeys {
+//! impl ReadPragma for ForeignKeys<'_> {
 //!     type SqlType = Bool;
 //!     type Row = bool;
 //! }
 //!
-//! impl WritePragma for ForeignKeys {
-//!     fn value(&self) -> PragmaLiteral {
-//!         self.0.into()
+//! impl WritePragma for ForeignKeys<'_> {
+//!     fn value(&self) -> PragmaLiteral<'_> {
+//!         PragmaLiteral::Text(self.0)
 //!     }
 //! }
 //!
@@ -52,7 +52,7 @@
 //! UserVersion(7).set(conn, None)?;
 //! assert_eq!(7, UserVersion::get(conn, None)?);
 //!
-//! ForeignKeys(true).set(conn)?;
+//! ForeignKeys("ON").set(conn)?;
 //! assert!(ForeignKeys::get(conn)?);
 //! #     Ok(())
 //! # }
@@ -72,7 +72,7 @@ use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 /// A pragma, named by [`NAME`](Self::NAME) and scoped by [`Scope`](Self::Scope).
-pub trait Pragma: Sized + 'static {
+pub trait Pragma: Sized {
     /// A nonempty name of ASCII letters, digits, or underscores.
     const NAME: &'static str;
     /// [`PerSchema`] or [`PerConnection`].
@@ -110,22 +110,24 @@ pub trait ReadPragma: Pragma {
 /// A pragma that can be assigned the value it carries, running to completion and discarding returned rows.
 pub trait WritePragma: Pragma {
     /// The literal assigned to the pragma.
-    fn value(&self) -> PragmaLiteral;
+    fn value(&self) -> PragmaLiteral<'_>;
 }
 
 /// A value as written into a pragma statement, which takes no bind parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum PragmaLiteral {
+pub enum PragmaLiteral<'a> {
     /// Rendered as a decimal integer.
     Integer(i64),
     /// A nonempty ASCII word of letters, digits, or underscores, rendered without quoting.
     Keyword(&'static str),
+    /// Borrowed text rendered as a single-quoted literal with embedded quotes escaped and NUL bytes rejected.
+    Text(&'a str),
 }
 
 macro_rules! integer_pragma_literal {
     ($($ty:ty),*) => {$(
-        impl From<$ty> for PragmaLiteral {
+        impl From<$ty> for PragmaLiteral<'_> {
             fn from(value: $ty) -> Self {
                 PragmaLiteral::Integer(i64::from(value))
             }
@@ -135,7 +137,7 @@ macro_rules! integer_pragma_literal {
 
 integer_pragma_literal!(i8, i16, i32, i64, u8, u16, u32, bool);
 
-impl From<AutoVacuumMode> for PragmaLiteral {
+impl From<AutoVacuumMode> for PragmaLiteral<'_> {
     fn from(mode: AutoVacuumMode) -> Self {
         PragmaLiteral::Integer(i64::from(mode as i32))
     }
@@ -217,7 +219,7 @@ impl ReadPragma for AutoVacuum {
 }
 
 impl WritePragma for AutoVacuum {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -257,7 +259,7 @@ impl Pragma for IncrementalVacuum {
 }
 
 impl WritePragma for IncrementalVacuum {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -267,7 +269,7 @@ fn cursor<'conn, 'query, P>(
     schema: Option<&'query str>,
 ) -> QueryResult<<SqliteConnection as LoadConnection<DefaultLoadingMode>>::Cursor<'conn, 'query>>
 where
-    P: ReadPragma,
+    P: ReadPragma + 'query,
     Sqlite: QueryMetadata<P::SqlType>,
 {
     LoadConnection::<DefaultLoadingMode>::load(conn, PragmaQuery::<P>::new(schema, None))
@@ -315,12 +317,12 @@ fn decode_row<'a, P: ReadPragma>(row: &impl Row<'a, Sqlite>) -> QueryResult<P::R
 
 struct PragmaQuery<'a, P> {
     schema: Option<&'a str>,
-    value: Option<PragmaLiteral>,
+    value: Option<PragmaLiteral<'a>>,
     pragma: PhantomData<P>,
 }
 
 impl<'a, P: Pragma> PragmaQuery<'a, P> {
-    fn new(schema: Option<&'a str>, value: Option<PragmaLiteral>) -> Self {
+    fn new(schema: Option<&'a str>, value: Option<PragmaLiteral<'a>>) -> Self {
         Self {
             schema,
             value,
@@ -346,6 +348,16 @@ impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
             Some(PragmaLiteral::Keyword(keyword)) => {
                 out.push_sql(" = ");
                 push_bare_word(&mut out, "keyword", keyword)?;
+            }
+            Some(PragmaLiteral::Text(text)) => {
+                out.push_sql(" = '");
+                for (index, fragment) in text.split('\'').enumerate() {
+                    if index != 0 {
+                        out.push_sql("''");
+                    }
+                    out.push_sql(fragment);
+                }
+                out.push_sql("'");
             }
         }
         Ok(())

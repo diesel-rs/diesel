@@ -1,12 +1,14 @@
 use diesel::connection::Connection;
+use diesel::connection::InstrumentationEvent;
 use diesel::result::Error;
 use diesel::sql_types::{Bool, Integer, Text};
 use diesel::sqlite::pragma::{
     ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma,
     WritePragma,
 };
-use diesel::sqlite::{ProgressDecision, SqliteConnection};
+use diesel::sqlite::{AuthorizerContext, AuthorizerDecision, ProgressDecision, SqliteConnection};
 use std::num::NonZeroU32;
+use std::sync::{Arc, Mutex};
 
 fn connection() -> SqliteConnection {
     SqliteConnection::establish(":memory:").unwrap()
@@ -27,7 +29,7 @@ impl ReadPragma for Synchronous {
 }
 
 impl WritePragma for Synchronous {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         match self {
             Synchronous::Extra => PragmaLiteral::Keyword("EXTRA"),
         }
@@ -42,8 +44,21 @@ impl Pragma for SynchronousKeyword {
 }
 
 impl WritePragma for SynchronousKeyword {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         PragmaLiteral::Keyword(self.0)
+    }
+}
+
+struct TextValue<'a>(&'a str);
+
+impl Pragma for TextValue<'_> {
+    const NAME: &'static str = "test_text";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for TextValue<'_> {
+    fn value(&self) -> PragmaLiteral<'_> {
+        PragmaLiteral::Text(self.0)
     }
 }
 
@@ -60,7 +75,7 @@ impl ReadPragma for UserVersion {
 }
 
 impl WritePragma for UserVersion {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -78,7 +93,7 @@ impl ReadPragma for ForeignKeys {
 }
 
 impl WritePragma for ForeignKeys {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -151,7 +166,7 @@ impl Pragma for IncrementalVacuum {
 }
 
 impl WritePragma for IncrementalVacuum {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -166,6 +181,63 @@ fn per_schema_keyword_pragma_targets_only_the_named_database() {
 
     assert_eq!(3, Synchronous::get(conn, Some("aux")).unwrap());
     assert_eq!(main_before, Synchronous::get(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn borrowed_text_reaches_sqlite_as_one_uncached_value() {
+    let conn = &mut connection();
+    conn.attach_database(":memory:", "a\"ux").unwrap();
+    let arguments = Arc::new(Mutex::new(Vec::new()));
+    let observed = arguments.clone();
+    conn.on_authorize(move |context| {
+        if let AuthorizerContext::Pragma(pragma) = context
+            && pragma.name == Some("test_text")
+        {
+            observed.lock().unwrap().push((
+                pragma.database.unwrap().to_owned(),
+                pragma.argument.unwrap().to_owned(),
+            ));
+        }
+        AuthorizerDecision::Allow
+    });
+    conn.set_instrumentation(|event: InstrumentationEvent<'_>| {
+        assert!(!matches!(event, InstrumentationEvent::CacheQuery { .. }));
+    });
+
+    let values = [
+        "",
+        "runtime text",
+        "x'0000000000000000000000000000000000000000000000000000000000000000'",
+        "'\"\\\n\ré雪",
+        "first''last",
+        "'; PRAGMA main.user_version = 7; --",
+    ];
+    let mut expected = Vec::new();
+    for schema in ["main", "a\"ux"] {
+        for value in values {
+            let value = value.to_owned();
+            for _ in 0..2 {
+                TextValue(&value).set(conn, Some(schema)).unwrap();
+                expected.push((schema.to_owned(), value.clone()));
+            }
+        }
+    }
+
+    assert_eq!(expected, *arguments.lock().unwrap());
+    conn.set_instrumentation(|_: InstrumentationEvent<'_>| {});
+    assert_eq!(0, UserVersion::get(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn text_with_nul_is_rejected_without_executing_a_prefix() {
+    let conn = &mut connection();
+    let value = String::from("text\0'; PRAGMA main.user_version = 7; --");
+
+    assert!(matches!(
+        TextValue(&value).set(conn, None),
+        Err(Error::InvalidCString(_))
+    ));
+    assert_eq!(0, UserVersion::get(conn, None).unwrap());
 }
 
 #[diesel_test_helper::test]
