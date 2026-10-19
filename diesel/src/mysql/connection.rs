@@ -154,4 +154,22 @@ mod tests {
 
         assert_eq!(output, 1);
     }
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn version() -> crate::sql_types::Text;
+    }
+
+    #[diesel_test_helper::test]
+    fn version_matches_the_server_reported_version() {
+        let connection = &mut connection();
+        let expected = connection.version().unwrap().to_string();
+        let reported = crate::select(version())
+            .get_result::<String>(connection)
+            .unwrap();
+        assert!(
+            reported == expected || reported.starts_with(&format!("{expected}-")),
+            "`{reported}` does not start with `{expected}`"
+        );
+    }
 }
