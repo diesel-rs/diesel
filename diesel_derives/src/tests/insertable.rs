@@ -38,7 +38,7 @@ pub(crate) fn insertable_table_name_1() {
 
 #[test]
 pub(crate) fn insertable_skip_insertion_1() {
-      let input = quote::quote! {
+    let input = quote::quote! {
         struct User {
             id: i32,
             name: String,
