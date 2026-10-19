@@ -515,7 +515,7 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
-    use crate::sql_types::{Integer, Text};
+    use crate::sql_types::Integer;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -1156,11 +1156,7 @@ mod tests {
         let conn = &mut wal_connection(&dir.path().join("noop.db"));
 
         // NOOP exists since SQLite 3.51.0, older versions run PASSIVE instead.
-        let version = crate::select(sql::<Text>("sqlite_version()"))
-            .get_result::<String>(conn)
-            .unwrap();
-        let mut parts = version.split('.').map(|part| part.parse::<u32>().unwrap());
-        if (parts.next().unwrap(), parts.next().unwrap()) < (3, 51) {
+        if conn.version() < crate::connection::DatabaseVersion::new(3, 51, 0) {
             return;
         }
 
