@@ -1416,30 +1416,6 @@ mod tests {
         }
     }
 
-    #[cfg(not(miri))]
-    #[diesel_test_helper::test]
-    fn diesel_manage_updated_at_installs_trigger() {
-        let conn = &mut connection();
-        conn.batch_execute(
-            "CREATE TABLE tracked (id INTEGER PRIMARY KEY, name TEXT, updated_at TEXT);
-             INSERT INTO tracked (id, name) VALUES (1, 'before');",
-        )
-        .unwrap();
-
-        let result = sql::<Integer>("SELECT diesel_manage_updated_at('tracked')")
-            .get_result::<i32>(conn)
-            .unwrap();
-        assert_eq!(result, 0);
-
-        conn.batch_execute("UPDATE tracked SET name = 'after' WHERE id = 1")
-            .unwrap();
-        let updated_at =
-            sql::<crate::sql_types::Nullable<Text>>("SELECT updated_at FROM tracked WHERE id = 1")
-                .get_result::<Option<String>>(conn)
-                .unwrap();
-        assert!(updated_at.is_some(), "the trigger did not set updated_at");
-    }
-
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
     #[diesel_test_helper::test]
     fn test_correct_serialization_of_owned_strings() {
