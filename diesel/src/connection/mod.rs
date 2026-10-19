@@ -1,5 +1,6 @@
 //! Types related to database connections
 
+mod database_version;
 pub(crate) mod instrumentation;
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
@@ -22,6 +23,8 @@ use crate::result::*;
 use crate::sql_types::TypeMetadata;
 use core::fmt::Debug;
 
+#[doc(inline)]
+pub use self::database_version::{DatabaseVersion, ParseDatabaseVersionError};
 #[cfg(feature = "std")]
 #[doc(inline)]
 pub use self::instrumentation::set_default_instrumentation;

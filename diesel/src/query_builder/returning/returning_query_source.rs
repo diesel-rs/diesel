@@ -5,9 +5,11 @@
 //! This module holds the items needed to type-check `RETURNING` clauses that are not specific
 //! to a particular backend.
 
+use crate::expression::nullable::Nullable;
 use crate::expression::{AppearsOnTable, BoxableExpression, Expression, SelectableExpression};
-use crate::query_source::joins::ToInnerJoin;
-use crate::query_source::{AppearsInFromClause, Never, QueryRelation, QuerySource, TableNotEqual};
+use crate::query_source::{
+    AppearsInFromClause, Never, Once, QueryRelation, QuerySource, TableNotEqual,
+};
 use alloc::boxed::Box;
 use core::marker::PhantomData;
 
@@ -60,33 +62,6 @@ where
     T2: QueryRelation,
 {
     type Count = Never;
-}
-// For typechecking of `old(column).nullable()`
-
-impl<T> ToInnerJoin for ReturningQuerySource<UpdateStmt, T> {
-    type InnerJoin = Self;
-}
-
-impl<T> ToInnerJoin for ReturningQuerySource<DeleteStmt, T> {
-    type InnerJoin = Self;
-}
-
-impl<T> ToInnerJoin for ReturningQuerySource<InsertStmtWithoutOnConflictDoUpdate, T> {
-    type InnerJoin = Self;
-}
-
-// `InsertStmtWithOnConflictDoUpdate` maps to `UpdateStmt`. This is what makes
-// `Nullable<Old<C>>: SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, _>>`
-// resolve through the existing
-// `impl<T, QS> SelectableExpression<QS> for Nullable<T>
-//     where QS: ToInnerJoin, T: SelectableExpression<QS::InnerJoin>` impl
-// (see `crate::expression::nullable::Nullable`): that bound reduces to
-// `Old<C>: SelectableExpression<ReturningQuerySource<UpdateStmt, _>>`, which
-// holds, while the bare `Old<C>: SelectableExpression<ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, _>>`
-// is intentionally *not* implemented — forcing users to write
-// `old(col).nullable()` in `ON CONFLICT ... DO UPDATE` for type safety.
-impl<T> ToInnerJoin for ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T> {
-    type InnerJoin = ReturningQuerySource<UpdateStmt, T>;
 }
 
 /// Maps an `InsertStatement` `Values` shape to the statement-kind marker that
@@ -176,4 +151,55 @@ impl<'a, QS, ST, DB, GB, IsAggregate, StmtKind> AppearsOnTable<ReturningQuerySou
 where
     Box<dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a>: Expression,
 {
+}
+
+impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>> for Nullable<E>
+where
+    Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
+    E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
+{
+}
+
+impl<StmtKind, E, T> SelectableExpression<ReturningQuerySource<StmtKind, T>>
+    for crate::expression::assume_not_null::AssumeNotNull<E>
+where
+    Self: AppearsOnTable<ReturningQuerySource<StmtKind, T>>,
+    E: SelectableExpression<ReturningQuerySource<StmtKind, T>>,
+{
+}
+
+/// Represents the identifier `old` or `old_value` in the `RETURNING` clause.
+/// It is independent of the table of the column, and used as QS in marker in AppearsInFromClause.
+///
+/// We use this to typecheck that there is only one `old` or `old_value` identifier when we use `old` or `old_value`, so that
+/// there is no ambiguity, and also as a generic
+/// "any valid OLD statement-kind marker for ReturningQuerySource".
+#[derive(Debug, Clone, Copy)]
+pub struct OldIdent;
+
+/// There is an `old.` or `old_value()` in ReturningQuerySource<UpdateStmt, T>
+///
+/// Useful to check non-ambiguity of `old` or `old_value`
+impl<StmtKind, T> AppearsInFromClause<OldIdent> for ReturningQuerySource<StmtKind, T> {
+    type Count = Once;
+}
+/// There isn't one directly on tables
+/// (this is useful for typechecking `old` or `old_value` in subqueries in returning)
+impl<T> AppearsInFromClause<OldIdent> for T
+where
+    T: QueryRelation,
+{
+    type Count = Never;
+}
+/// There is an `old.` or `old_value` for T in ReturningQuerySource<UpdateStmt, T>
+impl<T> AppearsInFromClause<ReturningQuerySource<OldIdent, T>>
+    for ReturningQuerySource<UpdateStmt, T>
+{
+    type Count = Once;
+}
+/// There is an `old.` or `old_value` for T in ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T>
+impl<T> AppearsInFromClause<ReturningQuerySource<OldIdent, T>>
+    for ReturningQuerySource<InsertStmtWithOnConflictDoUpdate, T>
+{
+    type Count = Once;
 }

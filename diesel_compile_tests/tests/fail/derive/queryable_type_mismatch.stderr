@@ -1,4 +1,4 @@
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:58:54
      |
   LL |     let _ = users::table.load::<UserWithToFewFields>(conn);
@@ -23,7 +23,7 @@ error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is 
              and N others
      = note: required for `users::table` to implement `LoadQuery<'_, _, UserWithToFewFields>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -32,7 +32,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:61:55
      |
   LL |     let _ = users::table.load::<UserWithToManyFields>(conn);
@@ -57,7 +57,7 @@ error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is 
              and N others
      = note: required for `users::table` to implement `LoadQuery<'_, _, UserWithToManyFields>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -66,7 +66,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:64:49
      |
   LL |     let _ = users::table.load::<UserWrongOrder>(conn);
@@ -91,7 +91,7 @@ error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is 
              and N others
      = note: required for `users::table` to implement `LoadQuery<'_, _, UserWrongOrder>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -100,7 +100,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:67:51
      |
   LL |     let _ = users::table.load::<UserTypeMismatch>(conn);
@@ -125,7 +125,7 @@ error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is 
              and N others
      = note: required for `users::table` to implement `LoadQuery<'_, _, UserTypeMismatch>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -134,7 +134,7 @@ LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
   
      
-error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is not satisfied
+error[E0277]: the trait bound `(Integer, Text, _): CompatibleType<_, _>` is not satisfied
     --> tests/fail/derive/queryable_type_mismatch.rs:70:59
      |
   LL |     let _ = users::table.load::<UserNullableTypeMismatch>(conn);
@@ -159,7 +159,7 @@ error[E0277]: the trait bound `(Integer, Text, ...): CompatibleType<..., _>` is 
              and N others
      = note: required for `users::table` to implement `LoadQuery<'_, _, UserNullableTypeMismatch>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function

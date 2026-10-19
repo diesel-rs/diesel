@@ -151,32 +151,18 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
+// A naive datetime carries no offset, so it reads and writes as a plain `Timestamp`.
 #[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
-    fn from_sql(mut value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
-        value.parse_string(|text| {
-            for format in NAIVE_DATETIME_FORMATS {
-                if let Ok(dt) = Self::parse_from_str(text, format) {
-                    return Ok(dt);
-                }
-            }
-
-            if let Ok(julian_days) = text.parse::<f64>()
-                && let Some(timestamp) = parse_julian(julian_days)
-            {
-                return Ok(timestamp);
-            }
-
-            Err(format!("Invalid datetime {text}").into())
-        })
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        FromSql::<Timestamp, Sqlite>::from_sql(value)
     }
 }
 
 #[cfg(all(feature = "__sqlite-shared", feature = "chrono"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
-        Ok(IsNull::No)
+        ToSql::<Timestamp, Sqlite>::to_sql(self, out)
     }
 }
 

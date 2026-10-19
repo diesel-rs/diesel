@@ -26,7 +26,7 @@ fn main() {
     users::table
         .select(users::name)
         .having(users::id.gt(1))
-        //~^ ERROR: the trait bound `SelectStatement<..., ...>: HavingDsl<_>` is not satisfied
+        //~^ ERROR: the trait bound `SelectStatement<_, _>: HavingDsl<_>` is not satisfied
         .load(&mut conn);
 
     users::table

@@ -55,7 +55,7 @@ fn main() {
         .select((name, hair_color))
         .insert_into(posts)
         .execute(&mut conn)
-        //~^ ERROR: type mismatch resolving `<SelectStatement<..., ...> as Query>::SqlType == (..., ..., ...)`
+        //~^ ERROR: type mismatch resolving `<SelectStatement<_, _> as Query>::SqlType == (_, Text, _)`
         .unwrap();
 
     // Single column, wrong table

@@ -3,6 +3,7 @@ use core::marker::PhantomData;
 use crate::expression::array_comparison::InExpression;
 use crate::expression::*;
 use crate::query_builder::*;
+use crate::query_source::{Never, Once};
 use crate::result::QueryResult;
 
 /// This struct tells our type system that the whatever we put in `values`
@@ -61,11 +62,11 @@ where
 {
 }
 
-// FIXME: This probably isn't sound. The subselect can reference columns from
-// the outer query, and is affected by the `GROUP BY` clause of the outer query
-// identically to using it outside of a subselect
-impl<T, ST, GB> ValidGrouping<GB> for Subselect<T, ST> {
-    type IsAggregate = is_aggregate::Never;
+impl<T, ST, GB> ValidGrouping<GB> for Subselect<T, ST>
+where
+    T: ValidSubselectGrouping<GB>,
+{
+    type IsAggregate = T::IsAggregate;
 }
 
 impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST>
@@ -80,3 +81,32 @@ where
 }
 
 pub trait ValidSubselect<QS> {}
+
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` cannot be used as a subselect",
+    note = "only select statements and their combinations can be used as subselects"
+)]
+pub trait ValidSubselectGrouping<GB> {
+    type IsAggregate;
+}
+
+/// Grouping context of a subselect `WHERE` clause, from the outer `GB` and the subselect `From`.
+#[derive(Debug, Clone, Copy)]
+pub struct SubselectGroupBy<GB, From>(PhantomData<(GB, From)>);
+
+/// Grouping of `Field` in a subselect, keyed by how often its relation appears in the subselect `FROM`.
+pub trait SubselectFieldGrouping<Field, GB> {
+    /// See [`ValidGrouping::IsAggregate`]
+    type IsAggregate;
+}
+
+impl<Field, GB> SubselectFieldGrouping<Field, GB> for Once {
+    type IsAggregate = is_aggregate::Never;
+}
+
+impl<Field, GB> SubselectFieldGrouping<Field, GB> for Never
+where
+    Field: ValidGrouping<GB>,
+{
+    type IsAggregate = Field::IsAggregate;
+}

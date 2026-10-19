@@ -1,0 +1,121 @@
+name: Fuzz
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "Per-target time budget in seconds"
+        default: "600"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  # the fuzz crate is its own workspace, so no other job compiles it
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        with:
+          workspaces: fuzz -> fuzz/target
+          key: fuzz-test-${{ hashFiles('fuzz/Cargo.lock') }}
+
+      - name: Test the harness
+        run: cargo test --manifest-path fuzz/Cargo.toml
+
+  targets:
+    name: targets
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.read.outputs.list }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+        with:
+          tool: cargo-fuzz
+
+      # asking cargo-fuzz, so a new target needs no change here
+      - name: Read the targets
+        id: read
+        run: |
+          names=$(cargo fuzz list --fuzz-dir fuzz)
+          if [ -z "$names" ]; then
+            echo "cargo fuzz list named no target" >&2
+            exit 1
+          fi
+          list=$(printf '%s' "$names" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+
+  fuzz:
+    name: fuzz / ${{ matrix.target }}
+    needs: targets
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.targets.outputs.list) }}
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        with:
+          workspaces: fuzz -> fuzz/target
+          key: fuzz-${{ matrix.target }}-${{ hashFiles('fuzz/Cargo.lock') }}
+
+      - name: Install nightly toolchain
+        run: rustup toolchain install nightly --component rust-src
+
+      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+        with:
+          tool: cargo-fuzz
+
+      - name: Run fuzz target
+        env:
+          BUDGET: ${{ inputs.budget }}
+          TARGET: ${{ matrix.target }}
+        # +nightly because rust-toolchain pins stable
+        run: |
+          corpus=""
+          if [ -d "fuzz/corpus/$TARGET" ]; then corpus="fuzz/corpus/$TARGET"; fi
+          cargo +nightly fuzz run --fuzz-dir fuzz "$TARGET" $corpus -- \
+            -max_total_time="$BUDGET" \
+            -max_len=4096 \
+            -rss_limit_mb=4096 \
+            -timeout=30
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.target }}-artifacts
+          path: fuzz/artifacts/${{ matrix.target }}/

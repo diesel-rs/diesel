@@ -14,6 +14,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Generated Rust enums now derive `Clone`, `Copy`, `PartialEq` and `Eq` when `custom_enum_derives` is not specified. `Debug` and `diesel::types::Enum` are always included.
+* Add support for sqlite-wasm-rs 0.6
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
 * Diesel-Migrations now contains a migration source that allows you to combine migrations from several different sources
@@ -52,10 +54,27 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
+* Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
+* Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
+* `diesel print-schema` now uses the `COMMENT ON TYPE` of a PostgreSQL enum as the doc comment of its generated Rust enum. The doc comments of the generated Rust enums and of their `rust_types` module now follow `with_docs` like those of tables and columns, which they did not before: none with `no-doc-comments`, only the type comment with `only-database-comments`, and the type comment or else the generated doc comment with `database-comments-fallback-to-auto-generated-doc-comment`.
+* Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
+* Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
+* Added `FromStr` for `DatabaseVersion`, parsing the `major.minor.patch` form its `Display` writes
+* Added `SqliteConnection::version` to read the version of the linked SQLite library
+* Added `PgConnection::version` to read the version of the connected server
+* Added `MariadbConnection::version` to read the version of the connected server
+* Added `MysqlConnection::version` to read the version of the connected server
 
 ### Fixed
 
+* Fixed `view!` query sources missing the `ToInnerJoin` and `CombineDsl` impls that `table!` ones get, so a `.nullable()` selection through a join that contains a view, and a `UNION`/`INTERSECT`/`EXCEPT` on a view or on an alias of one, now compile.
+* Fixed `IpNetwork` written as a PostgreSQL `Cidr` to clear the host bits, as `IpNet` already does, instead of sending a value the server rejects with `invalid external "cidr" value`.
+* Fixed `SqliteReadOnlyBlob::close` closing the underlying SQLite handle twice.
+* Fixed `SqliteReadOnlyBlob` seeks before byte zero to return `InvalidInput` without changing the cursor, instead of overflowing or clamping to zero.
+* Fixed PostgreSQL array serialization to set the header's null flag when an element is `NULL`. PostgreSQL ignored the missing flag, but Diesel could not deserialize such arrays.
+* Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
+* Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
 * `Bpchar` is now a distinct PostgreSQL SQL type (previously a hidden alias for `Varchar`). Binds on `CHAR(N)` / `BPCHAR` columns are now sent with OID 1042, allowing PostgreSQL to use the column's index instead of casting it to text.
 * Restore SQLite auto-extension support with `libsqlite3-sys` versions before 0.29
 * Fix non-deterministic test failures on PostgreSQL caused by loading rows without `ORDER BY` and assuming insertion order
@@ -64,17 +83,49 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Tighten requirements for `SqliteConnection::deserialize_readonly_database` to closely match the upstream requirements
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
-* MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
-* Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
-* `FromSql` impls for PostgreSQL arrays now use the element OID from the array header instead of the array type's own OID when decoding each element, matching the behavior of the record decoder.
-* Fixed undefined behavior in `SqliteConnection::serialize_database_to_buffer` when SQLite returns a null buffer for an empty deserialized database or an allocation failure. `SerializedDatabase::as_slice` is deprecated in favor of the new `SerializedDatabase::try_as_slice`, which reports the allocation failure as an error instead of panicking.
+* Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* The SQLite JSONB reader now rejects a `null`, `true` or `false` element that declares a payload or uses a multi byte header, instead of decoding a value that SQLite either refuses or reads differently
+* Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
+* Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
+* Fixed decoding a SQLite `jsonb` `INT` payload of `-0`, which failed to deserialize and now reads as the integer `0`
+* Negative MySQL and MariaDB `TIME` values now load into `MysqlTime` instead of being rejected while decoding. `chrono::NaiveTime` and `time::Time` cannot represent them, so those targets report that instead
+* Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
+* Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
+* Reject subselects that reference an ungrouped column of an aggregating outer query
 
 ### Changed
 
 * The minimal supported Rust version is now 1.88.0
 * Add support for no-std environments using the SQLite backend
+* If you use the provided `StatementCache` and compile diesel without default features make sure to opt in a more performant implementation by using the `std` or the `hashbrown` feature
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
+* Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+
+
+## [2.3.14] 2026-10-07
+
+* Add support for sqlite-wasm-rs 0.6
+* Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
+* Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
+* Correctly implement `Error::source` for our error types
+* Workaround a potential future breaking change in rust
+
+## [2.3.13] 2026-09-04
+
+* Fixed interaction between `then_order_by` and `distinct_on` to reject otherwise broken SQL queries
+* Fix a `clippy::redundant_field_names` lint warning generated by `#[derive(QueryableByName)]`
+* MySQL and MariaDB now decode a value according to the signedness the server reports for its column, so a `SMALLINT UNSIGNED` holding 40000 read as `Integer` returns 40000 rather than -25536
+* Potential stackoverflow on deeply nested JSONB values for the SQLite backend
+* Fixed a possible null pointer dereference in the custom SQLite aggregate function support when SQLite fails to allocate the aggregate state
+* Fixed undefined behavior in `SqliteConnection::serialize_database_to_buffer` when SQLite returns a null buffer for an empty deserialized database or an allocation failure. `SerializedDatabase::as_slice` is deprecated in favor of the new `SerializedDatabase::try_as_slice`, which reports the allocation failure as an error instead of panicking.
+* Fixed SQLite value reads to panic instead of creating invalid slices or returning incorrect data when SQLite allocation fails. Row iteration reports a failed value duplication as an error instead.
+* Fixed a use after free where reading a SQLite value in a second representation, for example a blob as text, invalidated slices another `SqliteValue` of the same field had returned. Such a read now works on a copy of the value.
+* Fixed broken prepared statement caching for queries using positional ordering and window functions with frame offset clauses
+* Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
+* Fixed encoding floating point values without a decimal part in a roundtrip safe way in SQLite's jsonb encoding
+* Fixed a potential panic while deserializing a `PgInterval` type from a too short buffer
+* Fixed potential code injections in the generated schema.rs file caused by malicious database identifiers
 
 ## [2.3.12] 2026-08-07
 
@@ -2436,3 +2487,5 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.3.10]: https://github.com/diesel-rs/diesel/compare/v2.3.9...v2.3.10
 [2.3.11]: https://github.com/diesel-rs/diesel/compare/v2.3.10...v2.3.11
 [2.3.12]: https://github.com/diesel-rs/diesel/compare/v2.3.11...v2.3.12
+[2.3.13]: https://github.com/diesel-rs/diesel/compare/v2.3.12...v2.3.13
+[2.3.14]: https://github.com/diesel-rs/diesel/compare/v2.3.13...v2.3.14

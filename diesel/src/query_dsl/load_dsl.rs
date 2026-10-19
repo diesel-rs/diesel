@@ -106,7 +106,7 @@ where
 // * LoadIter as it's an implementation detail
 mod private {
     use crate::backend::Backend;
-    use crate::deserialize::FromSqlRow;
+    use crate::deserialize::{FromSqlRow, SqlTypeLikeMarker};
     use crate::expression::select_by::SelectBy;
     use crate::expression::{Expression, TypedExpressionType};
     use crate::sql_types::{SqlType, Untyped};
@@ -217,11 +217,11 @@ mod private {
     impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
     where
         DB: Backend,
-        ST: SqlType + TypedExpressionType,
+        ST: TypedExpressionType + SqlTypeLikeMarker,
         U: Selectable<DB, SelectExpression = E>,
         E: Expression<SqlType = ST>,
-        U: FromSqlRow<ST, DB>,
+        U: FromSqlRow<<ST as SqlTypeLikeMarker>::SqlType, DB>,
     {
-        type SqlType = ST;
+        type SqlType = <ST as SqlTypeLikeMarker>::SqlType;
     }
 }

@@ -32,7 +32,7 @@ struct UserCorrect {
 struct SelectableWithEmbed {
     #[diesel(embed)]
     embed_user: User,
-    //~^ ERROR: the trait bound `(String, i32): FromStaticSqlRow<(..., ...), ...>` is not satisfied
+    //~^ ERROR: the trait bound `(String, i32): FromStaticSqlRow<(_, Text), Pg>` is not satisfied
 }
 
 fn main() {

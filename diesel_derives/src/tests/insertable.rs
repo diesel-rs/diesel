@@ -38,7 +38,7 @@ pub(crate) fn insertable_table_name_1() {
 
 #[test]
 pub(crate) fn insertable_skip_insertion_1() {
-    let input = quote::quote! {
+      let input = quote::quote! {
         struct User {
             id: i32,
             name: String,
@@ -46,10 +46,49 @@ pub(crate) fn insertable_skip_insertion_1() {
             generated: String,
         }
     };
+
     expand_with(
         &crate::derive_insertable_inner as &dyn Fn(_) -> _,
         input,
         derive(syn::parse_quote!(#[derive(Insertable)])),
         "insertable_skip_insertion_1",
+    );
+}
+
+#[test]
+pub(crate) fn insertable_embed_1() {
+    let input = quote::quote! {
+        struct User {
+            id: i32,
+            name: String,
+            #[diesel(embed)]
+            post: Post,
+        }
+    };
+
+    expand_with(
+        &crate::derive_insertable_inner as &dyn Fn(_) -> _,
+        input,
+        derive(syn::parse_quote!(#[derive(Insertable)])),
+        "insertable_embed_1",
+    );
+}
+
+#[test]
+pub(crate) fn insertable_serialize_as_1() {
+    let input = quote::quote! {
+        struct User {
+            id: i32,
+            name: String,
+            #[diesel(serialize_as = String)]
+            age: i32,
+        }
+    };
+
+    expand_with(
+        &crate::derive_insertable_inner as &dyn Fn(_) -> _,
+        input,
+        derive(syn::parse_quote!(#[derive(Insertable)])),
+        "insertable_serialize_as_1",
     );
 }

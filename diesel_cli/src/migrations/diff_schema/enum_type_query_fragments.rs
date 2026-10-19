@@ -264,7 +264,10 @@ fn mysql_like_add_enum_variants<'b, DB: MysqlLikeBackend>(
             .join(", ");
         pass.push_sql(&variants);
         pass.push_sql(")");
-        if !column_info.is_nullable() {
+        if matches!(
+            column_info.is_nullable(),
+            diesel_infer_query::IsNull::NotNullable
+        ) {
             pass.push_sql(" NOT NULL");
         }
         pass.push_sql(";");

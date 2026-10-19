@@ -110,7 +110,11 @@ macro_rules! impl_Sql {
                         let af = PGSQL_AF_INET;
                         let prefix = net.prefix();
                         let len: u8 = 4;
-                        let addr = net.ip().octets();
+                        let addr = if net_type == 0 {
+                            net.ip().octets()
+                        } else {
+                            network_v4(net).octets()
+                        };
                         data[0] = af;
                         data[1] = prefix;
                         data[2] = net_type;
@@ -123,7 +127,11 @@ macro_rules! impl_Sql {
                         let af = PGSQL_AF_INET6;
                         let prefix = net.prefix();
                         let len: u8 = 16;
-                        let addr = net.ip().octets();
+                        let addr = if net_type == 0 {
+                            net.ip().octets()
+                        } else {
+                            network_v6(net).octets()
+                        };
                         data[0] = af;
                         data[1] = prefix;
                         data[2] = net_type;
@@ -140,9 +148,22 @@ macro_rules! impl_Sql {
 impl_Sql!(Inet, 0);
 impl_Sql!(Cidr, 1);
 
+fn network_v4(net: &Ipv4Network) -> Ipv4Addr {
+    let mask = u32::from(net.mask());
+    let ip = u32::from(net.ip()) & mask;
+    Ipv4Addr::from(ip)
+}
+
+fn network_v6(net: &Ipv6Network) -> Ipv6Addr {
+    let mask = u128::from(net.mask());
+    let network = u128::from(net.ip()) & mask;
+    Ipv6Addr::from(network)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::format_error;
 
     #[diesel_test_helper::test]
     fn v4address_to_sql() {
@@ -187,7 +208,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn v6address_to_sql() {
         macro_rules! test_to_sql {
-            ($ty:ty, $net_type:expr) => {
+            ($ty:ty, $net_type:expr, $last:expr) => {
                 let mut buffer = Vec::new();
                 {
                     let mut bytes = Output::test(ByteWrapper(&mut buffer));
@@ -218,22 +239,23 @@ mod tests {
                         0,
                         0,
                         0,
-                        1,
+                        $last,
                     ]
                 );
             };
         }
 
-        test_to_sql!(Inet, 0);
-        test_to_sql!(Cidr, 1);
+        // `::1/64` keeps its host bit as an `Inet` and loses it as a `Cidr`
+        test_to_sql!(Inet, 0, 1);
+        test_to_sql!(Cidr, 1, 0);
     }
 
     #[diesel_test_helper::test]
     fn some_v6address_from_sql() {
         macro_rules! test_some_address_from_sql {
-            ($ty:tt) => {
+            ($ty:tt, $last:expr) => {
                 let input_address = IpNetwork::V6(
-                    Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
+                    Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, $last), 64).unwrap(),
                 );
                 let mut buffer = Vec::new();
                 {
@@ -246,8 +268,8 @@ mod tests {
             };
         }
 
-        test_some_address_from_sql!(Inet);
-        test_some_address_from_sql!(Cidr);
+        test_some_address_from_sql!(Inet, 1);
+        test_some_address_from_sql!(Cidr, 0);
     }
 
     #[diesel_test_helper::test]
@@ -257,7 +279,7 @@ mod tests {
                 let address: Result<IpNetwork, _> =
                     FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&[7, PGSQL_AF_INET, 0]));
                 assert_eq!(
-                    address.unwrap_err().to_string(),
+                    format_error(&*address.unwrap_err()),
                     "invalid network address format. input is too short."
                 );
             };
@@ -273,7 +295,7 @@ mod tests {
             ($ty:ty) => {
                 let address: Result<IpNetwork, _> = FromSql::<$ty, Pg>::from_nullable_sql(None);
                 assert_eq!(
-                    address.unwrap_err().to_string(),
+                    format_error(&*address.unwrap_err()),
                     "Unexpected null for non-null column"
                 );
             };

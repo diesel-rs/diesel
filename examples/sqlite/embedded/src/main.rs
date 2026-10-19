@@ -26,13 +26,13 @@ table! {
 struct EmbeddedVfs;
 
 impl rsqlite_vfs::OsCallback for EmbeddedVfs {
-    fn sleep(_: core::time::Duration) {
+    fn sleep(&self, _: core::time::Duration) {
         unimplemented!("Not called by the demo")
     }
-    fn random(_: &mut [u8]) {
+    fn random(&self, _: &mut [u8]) -> usize {
         unimplemented!("Not called by the demo")
     }
-    fn epoch_timestamp_in_ms() -> i64 {
+    fn epoch_timestamp_in_ms(&self) -> rsqlite_vfs::VfsResult<i64> {
         unimplemented!("Not called by the demo")
     }
 }
@@ -41,7 +41,7 @@ impl rsqlite_vfs::OsCallback for EmbeddedVfs {
 extern "C" fn sqlite3_os_init() -> core::ffi::c_int {
     println!("Register a basic memory VFS implementation");
     unsafe {
-        rsqlite_vfs::memvfs::install::<EmbeddedVfs>();
+        rsqlite_vfs::memvfs::install(EmbeddedVfs, true).unwrap();
     }
     libsqlite3_sys::SQLITE_OK
 }

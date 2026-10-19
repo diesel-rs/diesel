@@ -18,5 +18,5 @@ fn main() {
         .tablesample_system(10)
         .with_seed(42.0)
         .load::<(i32, String)>(&mut connection);
-    //~^ ERROR: the trait bound `Tablesample<table, ...>: LoadQuery<'_, ..., ...>` is not satisfied
+    //~^ ERROR: the trait bound `Tablesample<table, _>: LoadQuery<'_, _, _>` is not satisfied
 }

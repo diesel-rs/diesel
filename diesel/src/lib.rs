@@ -296,10 +296,6 @@
 #![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
-// the no-std version needs hashbrown
-#[cfg(all(not(feature = "hashbrown"), not(feature = "std")))]
-compile_error!("The hashbrown feature is required for no-std support");
-
 extern crate alloc;
 extern crate core;
 extern crate diesel_derives;

@@ -251,6 +251,31 @@ where
     }
 }
 
+/// The batch update of `values`, each update keyed by the primary key of its record.
+fn batch_update<U, I, C, PK>(
+    values: impl IntoIterator<Item = U>,
+) -> BatchUpdate<I, C, PK, U::Target>
+where
+    U: AsChangeset<Changeset = C> + HasTable<Table = U::Target>,
+    U::Target: Table<PrimaryKey = PK>,
+    for<'a> &'a U: Identifiable<Id: IntoOwned<Owned = I>>,
+{
+    let values = values
+        .into_iter()
+        .map(|v| {
+            // this clone is not that great, but we do not have
+            // many other options. On the other hand the primary key
+            // is often cheap to clone, especially compared
+            // to sending an large set of updates to the DB, so it shouldn't
+            // matter that much
+            let id = v.id().into_owned();
+            let changes = v.as_changeset();
+            (id, changes)
+        })
+        .collect();
+    BatchUpdate::new(values, U::table().primary_key())
+}
+
 impl<U, I, C, PK> AsChangeset for Box<[U]>
 where
     U: AsChangeset<Changeset = C> + HasTable<Table = U::Target>,
@@ -262,20 +287,7 @@ where
     const SET_CLAUSE: SetClause = SetClause::Delegated;
 
     fn as_changeset(self) -> Self::Changeset {
-        let values = self
-            .into_iter()
-            .map(|v| {
-                // this clone is not that great, but we do not have
-                // many other options. On the other hand the primary key
-                // is often cheap to clone, especially compared
-                // to sending an large set of updates to the DB, so it shouldn't
-                // matter that much
-                let id = v.id().into_owned();
-                let changes = v.as_changeset();
-                (id, changes)
-            })
-            .collect();
-        BatchUpdate::new(values, U::table().primary_key())
+        batch_update(self)
     }
 }
 
@@ -290,20 +302,7 @@ where
     const SET_CLAUSE: SetClause = SetClause::Delegated;
 
     fn as_changeset(self) -> Self::Changeset {
-        let values = self
-            .into_iter()
-            .map(|v| {
-                // this clone is not that great, but we do not have
-                // many other options. On the other hand the primary key
-                // is often cheap to clone, especially compared
-                // to sending an large set of updates to the DB, so it shouldn't
-                // matter that much
-                let id = v.id().into_owned();
-                let changes = v.as_changeset();
-                (id, changes)
-            })
-            .collect();
-        BatchUpdate::new(values, U::table().primary_key())
+        batch_update(self)
     }
 }
 

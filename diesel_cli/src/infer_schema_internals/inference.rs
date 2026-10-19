@@ -1,6 +1,8 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use diesel::result::Error::NotFound;
+use diesel_infer_query::IsNull;
 
 use super::table_data::*;
 use super::{SchemaResolverImpl, data_structures::*};
@@ -10,68 +12,11 @@ use crate::config::{Filtering, PrintSchema};
 use crate::database::InferConnection;
 use crate::print_schema::{ColumnSorting, DocConfig};
 
-static RESERVED_NAMES: &[&str] = &[
-    "abstract",
-    "async",
-    "alignof",
-    "as",
-    "become",
-    "box",
-    "break",
-    "const",
-    "continue",
-    "crate",
-    "do",
-    "else",
-    "enum",
-    "extern",
-    "false",
-    "final",
-    "fn",
-    "for",
-    "if",
-    "impl",
-    "in",
-    "let",
-    "loop",
-    "macro",
-    "match",
-    "mod",
-    "move",
-    "mut",
-    "offsetof",
-    "override",
-    "priv",
-    "proc",
-    "pub",
-    "pure",
-    "ref",
-    "return",
-    "Self",
-    "self",
-    "sizeof",
-    "static",
-    "struct",
-    "super",
-    "trait",
-    "true",
-    "type",
-    "typeof",
-    "unsafe",
-    "unsized",
-    "use",
-    "virtual",
-    "where",
-    "while",
-    "yield",
-    "bool",
-    "table",
-    "columns",
-    "is_nullable",
-];
+static RESERVED_NAMES: &[&str] = &["table", "columns", "is_nullable"];
 
 pub(super) fn is_reserved_name(name: &str) -> bool {
-    RESERVED_NAMES.contains(&name)
+    syn::parse_str::<syn::Ident>(name).is_err()
+        || RESERVED_NAMES.contains(&name)
         || (
             // Names ending in an underscore are not considered reserved so that we
             // can always just append an underscore to generate an unreserved name.
@@ -79,35 +24,48 @@ pub(super) fn is_reserved_name(name: &str) -> bool {
         )
 }
 
-fn contains_unmappable_chars(name: &str) -> bool {
+fn unmappable_char(c: char) -> bool {
     // Rust identifier names are restricted to [a-zA-Z0-9_].
-    !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    !(c.is_ascii_alphanumeric() || c == '_')
+}
+
+fn replace_unmappable_chars(name: &str) -> Cow<'_, str> {
+    for (idx, c) in name.char_indices() {
+        if unmappable_char(c) {
+            let mut s = name[..idx].to_string();
+            let tail = &name[idx..];
+            replace_chars(&mut s, tail, false);
+            return Cow::Owned(s);
+            // rust identifier don't start with digits
+        } else if idx == 0 && c.is_ascii_digit() {
+            let mut out = String::from("_");
+            replace_chars(&mut out, &name[idx..], true);
+            return Cow::Owned(out);
+        }
+    }
+    Cow::Borrowed(name)
+}
+
+fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
+    for c in tail.chars() {
+        if unmappable_char(c) {
+            if !last_was_underscore {
+                s.push('_');
+            }
+            last_was_underscore = true;
+        } else {
+            last_was_underscore = false;
+            s.push(c);
+        }
+    }
 }
 
 pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
-    if is_reserved_name(sql_name) || Some(sql_name) == table_name.map(|t| t.rust_name.as_str()) {
-        format!("{sql_name}_")
-    } else if contains_unmappable_chars(sql_name) {
-        // Map each non-alphanumeric character ([^a-zA-Z0-9]) to an underscore.
-        let mut rust_name: String = sql_name
-            .chars()
-            .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
-            .collect();
-
-        // Iteratively remove adjoining underscores ("__").
-        let mut last_len = rust_name.len();
-        'remove_adjoining: loop {
-            rust_name = rust_name.replace("__", "_");
-            if rust_name.len() == last_len {
-                // No more underscore pairs left.
-                break 'remove_adjoining;
-            }
-            last_len = rust_name.len();
-        }
-
-        rust_name
+    let name = replace_unmappable_chars(sql_name);
+    if is_reserved_name(&name) || Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
+        format!("{name}_")
     } else {
-        sql_name.to_string()
+        name.into_owned()
     }
 }
 
@@ -436,13 +394,21 @@ pub fn load_view_data(
                 {
                     tracing::debug!(view = %name, ?data, "Inferred data");
                     if data.field_count() == column_data.len() {
-                        for (column_data, is_nullable) in column_data
-                            .iter_mut()
-                            .zip(data.infer_nullability(resolver)?)
-                        {
-                            tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
-                            if let Some(is_nullable) = is_nullable {
-                                column_data.ty.is_nullable = is_nullable;
+                        match data.infer_nullability(resolver) {
+                            Ok(nullability) => {
+                                for (column_data, is_nullable) in
+                                    column_data.iter_mut().zip(nullability)
+                                {
+                                    tracing::debug!(view = %name, field = %column_data.rust_name, ?is_nullable, "Correct field nullablility");
+                                    match is_nullable {
+                                        IsNull::IsNullable => column_data.ty.is_nullable = true,
+                                        IsNull::NotNullable => column_data.ty.is_nullable = false,
+                                        IsNull::Unknown => {}
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                tracing::warn!(view = %name, error = %e, "Failed to infer nullability for view fields");
                             }
                         }
                     } else {

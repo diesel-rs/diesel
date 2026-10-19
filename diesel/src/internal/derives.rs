@@ -175,3 +175,9 @@ pub mod enum_ {
     #[doc(hidden)]
     pub use crate::types::enum_::{EnumMapping, EnumVariant};
 }
+
+#[doc(hidden)]
+pub mod selectable {
+    #[doc(hidden)]
+    pub use crate::deserialize::SqlTypeLikeMarker;
+}

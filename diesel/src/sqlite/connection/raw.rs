@@ -41,6 +41,14 @@ use core::{mem, ptr, slice, str};
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE: i32 = 1021;
 
+/// The numeric version of the linked SQLite library, `X * 1_000_000 + Y * 1_000 + Z`.
+pub(super) fn library_version_number() -> u32 {
+    // SAFETY: `sqlite3_libversion_number` takes no arguments and returns a constant of
+    // the linked library, so it is sound to call at any time from any thread.
+    let version = unsafe { ffi::sqlite3_libversion_number() };
+    version.cast_unsigned()
+}
+
 // Runtime extension loading (`sqlite3_load_extension`) is deliberately unsupported.
 // Platforms that build SQLite with `-DSQLITE_OMIT_LOAD_EXTENSION` (see #2180) drop
 // the symbol from the ABI, and the runtime `dlsym` workaround in #4954 proved too
@@ -172,6 +180,11 @@ impl RawConnection {
 
     pub(super) fn last_insert_rowid(&self) -> i64 {
         unsafe { ffi::sqlite3_last_insert_rowid(self.internal_connection.as_ptr()) }
+    }
+
+    pub(super) fn is_autocommit(&self) -> bool {
+        // SAFETY: `internal_connection` stays open until `Drop`.
+        unsafe { ffi::sqlite3_get_autocommit(self.internal_connection.as_ptr()) != 0 }
     }
 
     pub(super) fn register_sql_function<F, Ret, RetSqlType>(
@@ -437,7 +450,7 @@ impl RawConnection {
         let blob_size = usize::try_from(blob_size).map_err(Error::IntegerConversion)?;
 
         Ok(super::sqlite_blob::SqliteReadOnlyBlob {
-            blob,
+            blob: Some(blob),
             read_index: 0,
             blob_size,
             _pd: core::marker::PhantomData,
@@ -1098,7 +1111,12 @@ where
         &mut **inner
     };
 
-    let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
+    // SAFETY: SQLite passes a live context for the duration of this callback.
+    let connection = unsafe { NonNull::new(ffi::sqlite3_context_db_handle(ctx)) };
+    let connection = connection.ok_or(SqliteCallbackError::Abort(
+        "sqlite3_context_db_handle returned a null pointer. This should never happen",
+    ))?;
+    let args = build_sql_function_args::<ArgsSqlType, Args>(args, connection)?;
 
     aggregator.step(args);
     Ok(())
@@ -1659,7 +1677,11 @@ unsafe extern "C" fn collation_needed_trampoline<F>(
     }
 }
 
-#[cfg(test)]
+// The update hook tests rely on sqlite calling the registered hook, i.e. on
+// native code calling back into Rust. That is not supported when running under
+// miri with a native libsqlite3 (`-Zmiri-native-lib`), so the whole module is
+// compiled out in that case.
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::super::update_hook::SqliteChangeOp;
     use super::*;

@@ -333,6 +333,12 @@ impl<T: QuerySource, U, V, Ret> RunQueryDslSupport for UpdateStatement<T, U, V, 
 
 impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// Specify what expression is returned after execution of the `update`.
+    ///
+    /// On MariaDB, rows that match the filter but whose values do not change
+    /// are left out of the result, so `get_result` returns `NotFound` where
+    /// `execute` reports one updated row
+    /// ([MDEV-41113](https://jira.mariadb.org/browse/MDEV-41113)).
+    ///
     /// # Examples
     ///
     /// ### Updating a single record:
@@ -369,10 +375,9 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// #     use diesel::pg::returning::old;
     /// #     let connection = &mut establish_connection();
     /// #     // `RETURNING old.col` requires PostgreSQL 18+
-    /// #     let pg_version: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
-    /// #         "SELECT current_setting('server_version_num')::int",
-    /// #     ).get_result(connection).unwrap();
-    /// #     if pg_version < 180000 { return; }
+    /// #     if connection.version().unwrap() < diesel::connection::DatabaseVersion::new(18, 0, 0) {
+    /// #         return;
+    /// #     }
     /// let was_and_now = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))
     ///     .returning((old(name), name))

@@ -20,7 +20,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -36,7 +36,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -52,7 +52,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
  LL |         id -> Integer,
    |         ^^
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
+   = note: required for `SelectStatement<_, _, _, _, _, _, _>` to implement `SelectDsl<users::columns::id>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -70,7 +70,7 @@ LL |         id -> Integer,
    = note: associated types for the current `impl` cannot be restricted in `where` clauses
    = note: 1 redundant requirement hidden
    = note: required for `((id, name, hair_color), id)` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
-   = note: required for `SelectStatement<..., ..., ..., ..., ..., ..., ...>` to implement `SelectDsl<((id, name, hair_color), id)>`
+   = note: required for `SelectStatement<FromClause<_>, _, _, _, _, _, _>` to implement `SelectDsl<((id, name, hair_color), id)>`
 
       = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 For more information about this error, try `rustc --explain E0271`.

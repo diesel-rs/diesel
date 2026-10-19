@@ -4,7 +4,6 @@ use super::information_schema::DefaultSchema;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
 use diesel::dsl::AsExprOf;
-use diesel::expression::AsExpression;
 use diesel::pg::Pg;
 use diesel::prelude::table;
 use diesel::prelude::*;
@@ -26,6 +25,8 @@ extern "SQL" {
         oid: sql_types::Oid,
         catalog: sql_types::Text,
     ) -> sql_types::Nullable<sql_types::Text>;
+
+    fn quote_ident(ident: sql_types::Text) -> sql_types::Text;
 }
 
 mod information_schema {
@@ -115,23 +116,26 @@ pub fn determine_column_type(
 
 diesel::postfix_operator!(Regclass, "::regclass", sql_types::Oid, backend: Pg);
 
-fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
+fn regclass<'a, QS>(
+    table: &'a TableName,
+) -> Regclass<Box<dyn BoxableExpression<QS, Pg, SqlType = sql_types::Text> + 'a>> {
     let table_name = match table.schema {
-        Some(ref schema_name) => format!("\"{}\".\"{}\"", schema_name, table.sql_name),
-        None => format!("\"{}\"", table.sql_name),
+        Some(ref schema_name) => Box::new(
+            quote_ident(schema_name)
+                .concat(".")
+                .concat(quote_ident(&table.sql_name)),
+        )
+            as Box<dyn BoxableExpression<_, _, SqlType = sql_types::Text>>,
+        None => Box::new(quote_ident(&table.sql_name)),
     };
 
-    Regclass::new(<String as AsExpression<sql_types::Text>>::as_expression(
-        table_name,
-    ))
+    Regclass::new(table_name)
 }
 
 diesel::postfix_operator!(RegNamespace, "::regnamespace", sql_types::Oid, backend: Pg);
 
-fn regnamespace(schema: &str) -> RegNamespace<AsExprOf<&str, sql_types::Text>> {
-    RegNamespace::new(<&str as AsExpression<sql_types::Text>>::as_expression(
-        schema,
-    ))
+fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_types::Text>>> {
+    RegNamespace::new(quote_ident(schema))
 }
 
 pub fn get_table_data(
@@ -298,6 +302,20 @@ pub fn load_enum_variants(
     if r.is_empty() { Ok(None) } else { Ok(Some(r)) }
 }
 
+pub fn get_type_comment(
+    conn: &mut PgConnection,
+    type_name: &str,
+    schema_name: Option<&str>,
+) -> QueryResult<Option<String>> {
+    let default_schema = Pg::default_schema(conn)?;
+
+    pg_type::table
+        .select(obj_description(pg_type::oid, "pg_type"))
+        .filter(pg_type::typname.eq(type_name))
+        .filter(pg_type::typnamespace.eq(regnamespace(schema_name.unwrap_or(&default_schema))))
+        .get_result::<Option<String>>(conn)
+}
+
 #[cfg(test)]
 mod test {
     extern crate dotenvy;
@@ -419,6 +437,47 @@ mod test {
             get_table_comment(&mut connection, &table_1)
         );
         assert_eq!(Ok(None), get_table_comment(&mut connection, &table_2));
+    }
+
+    #[test]
+    fn gets_type_comment() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TYPE commented_enum AS ENUM ('a', 'b')")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("COMMENT ON TYPE commented_enum IS 'enum comment'")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TYPE test_schema.commented_enum AS ENUM ('c')")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("COMMENT ON TYPE test_schema.commented_enum IS 'schema enum comment'")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TYPE uncommented_enum AS ENUM ('d')")
+            .execute(&mut connection)
+            .unwrap();
+
+        assert_eq!(
+            Ok(Some("enum comment".to_string())),
+            get_type_comment(&mut connection, "commented_enum", None)
+        );
+        assert_eq!(
+            Ok(Some("schema enum comment".to_string())),
+            get_type_comment(&mut connection, "commented_enum", Some("test_schema"))
+        );
+        assert_eq!(
+            Ok(None),
+            get_type_comment(&mut connection, "uncommented_enum", None)
+        );
+        assert_eq!(
+            Err(diesel::result::Error::NotFound),
+            get_type_comment(&mut connection, "non_existing", None)
+        );
     }
 
     #[test]

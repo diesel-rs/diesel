@@ -46,7 +46,7 @@ use crate::result::*;
 /// `MysqlConnection` only supports a single loading mode, which loads
 /// values row by row from the result set.
 ///
-/// ```rust
+/// ```rust,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -81,7 +81,7 @@ use crate::result::*;
 /// This mode does **not support** creating
 /// multiple iterators using the same connection.
 ///
-/// ```compile_fail
+/// ```compile_fail,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -333,6 +333,39 @@ fn prepared_query<'a, DB: MysqlLikeBackend + Default, T: QueryFragment<DB> + Que
 }
 
 impl<DB: MysqlLikeBackend> MysqlLikeConnection<DB> {
+    /// Returns the version of the server this connection is connected to.
+    ///
+    /// # Errors
+    ///
+    /// Fails with [`Error::DeserializationError`] if the server reports a version it cannot parse.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// use diesel::connection::DatabaseVersion;
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// let supports_window_functions = conn.version()? >= DatabaseVersion::new(8, 0, 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn version(&self) -> QueryResult<DatabaseVersion> {
+        let info = self.raw_connection.server_info().ok_or_else(|| {
+            Error::DeserializationError("The server did not report its version".into())
+        })?;
+        parse_server_version(info.to_bytes()).ok_or_else(|| {
+            Error::DeserializationError(
+                format!("Unrecognized server version `{}`", info.to_string_lossy()).into(),
+            )
+        })
+    }
+
     /// Executes `source` and returns its `mysql_stmt_insert_id`, zero mapped
     /// to `None`. Public entry point: [`InsertStatement::execute_returning_id`].
     pub(crate) fn execute_returning_id<T>(&mut self, source: &T) -> QueryResult<Option<NonZeroU64>>
@@ -383,5 +416,52 @@ impl<DB: MysqlLikeBackend> MysqlLikeConnection<DB> {
         conn.set_config_options()
             .map_err(CouldntSetupConfiguration)?;
         Ok(conn)
+    }
+}
+
+/// MariaDB before 11.0 prefixes its version with this, which only MariaDB Connector/C strips.
+const MARIADB_REPLICATION_VERSION_PREFIX: &[u8] = b"5.5.5-";
+
+fn parse_server_version(info: &[u8]) -> Option<DatabaseVersion> {
+    let info = match info.strip_prefix(MARIADB_REPLICATION_VERSION_PREFIX) {
+        Some(version) if version.first().is_some_and(u8::is_ascii_digit) => version,
+        _ => info,
+    };
+    let end = info
+        .iter()
+        .position(|&byte| !byte.is_ascii_digit() && byte != b'.')
+        .unwrap_or(info.len());
+    core::str::from_utf8(&info[..end]).ok()?.parse().ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[diesel_test_helper::test]
+    fn parse_server_version_reads_mysql_and_mariadb_formats() {
+        let v = DatabaseVersion::new;
+        assert_eq!(parse_server_version(b"8.4.11"), Some(v(8, 4, 11)));
+        assert_eq!(
+            parse_server_version(b"8.0.36-0ubuntu0.22.04.1"),
+            Some(v(8, 0, 36))
+        );
+        assert_eq!(
+            parse_server_version(b"11.4.2-MariaDB-ubu2404"),
+            Some(v(11, 4, 2))
+        );
+        assert_eq!(
+            parse_server_version(b"5.5.5-10.11.6-MariaDB-log"),
+            Some(v(10, 11, 6))
+        );
+        assert_eq!(parse_server_version(b"5.5.5-log"), Some(v(5, 5, 5)));
+        assert_eq!(parse_server_version(b"8.4"), None);
+        assert_eq!(parse_server_version(b"8.4.11.2"), None);
+        assert_eq!(parse_server_version(b"8..4"), None);
+        assert_eq!(parse_server_version(b"8..4.11"), None);
+        assert_eq!(parse_server_version(b".8.4.11"), None);
+        assert_eq!(parse_server_version(b"8.4.11."), None);
+        assert_eq!(parse_server_version(b"8.4.4294967296"), None);
+        assert_eq!(parse_server_version(b"MariaDB"), None);
     }
 }

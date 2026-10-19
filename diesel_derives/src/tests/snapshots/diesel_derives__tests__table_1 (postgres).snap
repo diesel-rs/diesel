@@ -748,6 +748,24 @@ pub mod users {
         impl diesel::expression::ValidGrouping<()> for id {
             type IsAggregate = diesel::expression::is_aggregate::No;
         }
+        impl<
+            __GB,
+            __F,
+        > diesel::expression::ValidGrouping<
+            diesel::internal::table_macro::SubselectGroupBy<__GB, __F>,
+        > for id
+        where
+            __F: diesel::query_source::AppearsInFromClause<super::table>,
+            __F::Count: diesel::internal::table_macro::SubselectFieldGrouping<
+                Self,
+                __GB,
+            >,
+        {
+            type IsAggregate = <__F::Count as diesel::internal::table_macro::SubselectFieldGrouping<
+                Self,
+                __GB,
+            >>::IsAggregate;
+        }
         impl diesel::expression::IsContainedInGroupBy<id> for id {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
         }
@@ -1001,6 +1019,24 @@ pub mod users {
         }
         impl diesel::expression::ValidGrouping<()> for name {
             type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl<
+            __GB,
+            __F,
+        > diesel::expression::ValidGrouping<
+            diesel::internal::table_macro::SubselectGroupBy<__GB, __F>,
+        > for name
+        where
+            __F: diesel::query_source::AppearsInFromClause<super::table>,
+            __F::Count: diesel::internal::table_macro::SubselectFieldGrouping<
+                Self,
+                __GB,
+            >,
+        {
+            type IsAggregate = <__F::Count as diesel::internal::table_macro::SubselectFieldGrouping<
+                Self,
+                __GB,
+            >>::IsAggregate;
         }
         impl diesel::expression::IsContainedInGroupBy<name> for name {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
