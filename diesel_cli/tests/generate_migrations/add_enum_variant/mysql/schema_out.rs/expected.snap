@@ -17,7 +17,7 @@ pub mod sql_types {
 }
 
 pub mod rust_types {
-    #[derive(Debug, diesel::types::Enum)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
     #[diesel(sql_type = super::sql_types::ResourceSomeField2Enum)]
     pub enum ResourceSomeField2Enum {
         #[diesel(rename = "FOOBAR")]
@@ -28,7 +28,7 @@ pub mod rust_types {
         Bazz,
     }
 
-    #[derive(Debug, diesel::types::Enum)]
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
     #[diesel(sql_type = super::sql_types::ResourceSomeFieldEnum)]
     pub enum ResourceSomeFieldEnum {
         #[diesel(rename = "a")]

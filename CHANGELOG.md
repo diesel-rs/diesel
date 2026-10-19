@@ -14,6 +14,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Generated Rust enums now derive `Clone`, `Copy`, `PartialEq` and `Eq` when `custom_enum_derives` is not specified. `Debug` and `diesel::types::Enum` are always included.
 * Add support for sqlite-wasm-rs 0.6
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
@@ -59,6 +60,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
 * `diesel print-schema` now uses the `COMMENT ON TYPE` of a PostgreSQL enum as the doc comment of its generated Rust enum. The doc comments of the generated Rust enums and of their `rust_types` module now follow `with_docs` like those of tables and columns, which they did not before: none with `no-doc-comments`, only the type comment with `only-database-comments`, and the type comment or else the generated doc comment with `database-comments-fallback-to-auto-generated-doc-comment`.
 * Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
+* Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
+* Added `FromStr` for `DatabaseVersion`, parsing the `major.minor.patch` form its `Display` writes
+* Added `SqliteConnection::version` to read the version of the linked SQLite library
+* Added `PgConnection::version` to read the version of the connected server
+* Added `MariadbConnection::version` to read the version of the connected server
+* Added `MysqlConnection::version` to read the version of the connected server
 
 ### Fixed
 

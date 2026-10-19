@@ -394,6 +394,28 @@ pub enum BusyDecision {
 }
 
 impl SqliteConnection {
+    /// Returns the version of the SQLite library this connection runs on.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// use diesel::connection::DatabaseVersion;
+    /// #
+    /// # fn main() {
+    /// #     let conn = &mut establish_connection();
+    /// let supports_jsonb = conn.version() >= DatabaseVersion::new(3, 45, 0);
+    /// # }
+    /// ```
+    pub fn version(&self) -> DatabaseVersion {
+        let version = raw::library_version_number();
+        DatabaseVersion::new(
+            version / 1_000_000,
+            version / 1_000 % 1_000,
+            version % 1_000,
+        )
+    }
+
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///
     /// This method will return an error if a transaction is already open.
@@ -1522,5 +1544,20 @@ mod tests {
                 .unwrap();
             assert_eq!(data, [(Some(1), Some("Jane".to_owned()))]);
         }
+    }
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn sqlite_version() -> Text;
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // string access over ffi
+    fn version_matches_sqlite_version() {
+        let conn = &mut connection();
+        let reported = crate::select(sqlite_version())
+            .get_result::<String>(conn)
+            .unwrap();
+        assert_eq!(conn.version().to_string(), reported);
     }
 }
