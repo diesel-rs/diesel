@@ -554,12 +554,10 @@ pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
 /// On non-postgres backends this always returns `false`.
 #[cfg(feature = "postgres")]
 pub fn pg_server_supports_returning_old(connection: &mut TestConnection) -> bool {
-    diesel::dsl::sql::<diesel::sql_types::Integer>(
-        "SELECT current_setting('server_version_num')::int",
-    )
-    .get_result::<i32>(connection)
-    .expect("Failed to get PostgreSQL server version")
-        >= 180000
+    connection
+        .version()
+        .expect("Failed to get PostgreSQL server version")
+        >= diesel::connection::DatabaseVersion::new(18, 0, 0)
 }
 
 /// `UPDATE ... RETURNING` was introduced in Mariadb 13.0; on older servers
