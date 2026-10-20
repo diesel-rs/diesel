@@ -1,0 +1,68 @@
+warning: unused import: `std::pin::Pin`
+ --> tests/fail/sqlite_connection_is_not_unpin.rs:3:5
+  |
+LL | use std::pin::Pin;
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0277]: `PhantomPinned` cannot be unpinned
+   --> tests/fail/sqlite_connection_is_not_unpin.rs:8:12
+    |
+  LL |     test::<SqliteConnection>();
+    |            ^^^^^^^^^^^^^^^^ within `diesel::SqliteConnection`, the trait `Unpin` is not implemented for `PhantomPinned`
+    |
+    = note: consider using the `pin!` macro
+            consider using `Box::pin` if you need to access the pinned value outside of the current scope
+note: required because it appears within the type `diesel::SqliteConnection`
+   --> ROOT/diesel/src/sqlite/connection/mod.rs
+    |
+LL | pub struct SqliteConnection {
+    |            ^^^^^^^^^^^^^^^^
+note: required by a bound in `test`
+   --> tests/fail/sqlite_connection_is_not_unpin.rs:5:12
+    |
+  LL | fn test<T: Unpin>() {}
+    |            ^^^^^ required by this bound in `test`
+
+error[E0277]: `PhantomPinned` cannot be unpinned
+   --> tests/fail/sqlite_connection_is_not_unpin.rs:16:20
+    |
+ LL |     let p = pinned.get_mut();
+    |                    ^^^^^^^ within `diesel::SqliteConnection`, the trait `Unpin` is not implemented for `PhantomPinned`
+    |
+    = note: consider using the `pin!` macro
+            consider using `Box::pin` if you need to access the pinned value outside of the current scope
+note: required because it appears within the type `diesel::SqliteConnection`
+   --> ROOT/diesel/src/sqlite/connection/mod.rs
+    |
+LL | pub struct SqliteConnection {
+    |            ^^^^^^^^^^^^^^^^
+note: required by a bound in `Pin::<&'a mut T>::get_mut`
+   --> /rustc/0000000000000000000000000000000000000000/library/core/src/pin.rs:1600:4
+
+warning: variable does not need to be mutable
+  --> tests/fail/sqlite_connection_is_not_unpin.rs:21:9
+   |
+LL |     let mut conn = SqliteConnection::establish("…").unwrap();
+   |         ----^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> tests/fail/sqlite_connection_is_not_unpin.rs:22:9
+   |
+LL |     let mut pinned = std::pin::pin!(conn);
+   |         ----^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+error[E0596]: cannot borrow data in dereference of `Pin<&mut diesel::SqliteConnection>` as mutable
+  --> tests/fail/sqlite_connection_is_not_unpin.rs:24:23
+   |
+LL |     std::mem::replace(&mut *pinned, SqliteConnection::establish("…").unwrap());
+   |                       ^^^^^^^^^^^^ cannot borrow as mutable
+   |
+   = help: trait `DerefMut` is required to modify through a dereference, but it is not implemented for `Pin<&mut diesel::SqliteConnection>`

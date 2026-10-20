@@ -1,8 +1,8 @@
 //! Types used by [`SqliteConnection::on_collation_needed`](super::SqliteConnection::on_collation_needed).
 
+use core::pin::Pin;
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
-extern crate libsqlite3_sys as ffi;
-
+use libsqlite3_sys as ffi;
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use sqlite_wasm_rs as ffi;
 
@@ -76,7 +76,9 @@ impl SqliteConnection {
     /// # use diesel::prelude::*;
     /// # use diesel::sqlite::SqliteConnection;
     /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// conn.on_collation_needed(|conn, ctx| {
+    /// use diesel::sqlite::PinnedSqliteConnectionMethods;
+    ///
+    /// conn.on_collation_needed(|mut conn, ctx| {
     ///     if ctx.name.eq_ignore_ascii_case("RUSTNOCASE") {
     ///         let _ = conn.register_collation("RUSTNOCASE", |a, b| {
     ///             a.to_lowercase().cmp(&b.to_lowercase())
@@ -89,7 +91,7 @@ impl SqliteConnection {
     /// ```
     pub fn on_collation_needed<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send + 'static,
+        F: Fn(Pin<&mut SqliteConnection>, CollationNeededContext<'_>) + Send + 'static,
     {
         self.raw_connection.set_collation_needed_hook(hook);
     }
@@ -109,6 +111,7 @@ mod tests {
     use super::*;
     use crate::connection::Connection;
     use crate::query_dsl::RunQueryDsl;
+    use crate::sqlite::PinnedSqliteConnectionMethods;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -163,7 +166,7 @@ mod tests {
 
         let second_fired = Arc::new(AtomicBool::new(false));
         let second_fired2 = second_fired.clone();
-        conn.on_collation_needed(move |conn, ctx| {
+        conn.on_collation_needed(move |mut conn, ctx| {
             conn.register_collation(ctx.name, |a, b| a.cmp(b)).unwrap();
             second_fired2.store(true, Ordering::Relaxed);
         });
@@ -203,7 +206,7 @@ mod tests {
         let saw_name2 = saw_name.clone();
         let saw_utf8_2 = saw_utf8.clone();
 
-        conn.on_collation_needed(move |conn, ctx| {
+        conn.on_collation_needed(move |mut conn, ctx| {
             fired2.store(true, Ordering::Relaxed);
             if ctx.name == "MYCOLL" {
                 saw_name2.store(true, Ordering::Relaxed);
@@ -260,7 +263,7 @@ mod tests {
         let saw_outer2 = saw_outer.clone();
         let saw_inner2 = saw_inner.clone();
 
-        conn.on_collation_needed(move |conn, ctx| {
+        conn.on_collation_needed(move |mut conn, ctx| {
             if ctx.name.eq_ignore_ascii_case("OUTER_COLL") {
                 saw_outer2.store(true, Ordering::Relaxed);
                 conn.register_collation("OUTER_COLL", |a, b| a.cmp(b))
@@ -269,12 +272,12 @@ mod tests {
                 // which is also unregistered. SQLite must be able to call the
                 // trampoline re-entrantly to satisfy this.
                 crate::sql_query("CREATE TABLE t_reent_inner (x TEXT)")
-                    .execute(conn)
+                    .execute(&mut conn)
                     .unwrap();
                 crate::sql_query(
                     "CREATE INDEX i_reent_inner ON t_reent_inner (x COLLATE INNER_COLL)",
                 )
-                .execute(conn)
+                .execute(&mut conn)
                 .unwrap();
             } else if ctx.name.eq_ignore_ascii_case("INNER_COLL") {
                 saw_inner2.store(true, Ordering::Relaxed);
@@ -308,7 +311,7 @@ mod tests {
         let calls: Arc<AtomicU32> = Arc::new(AtomicU32::new(0));
         let calls2 = calls.clone();
 
-        conn.on_collation_needed(move |conn, ctx| {
+        conn.on_collation_needed(move |mut conn, ctx| {
             calls2.fetch_add(1, Ordering::Relaxed);
             conn.register_collation(ctx.name, |a, b| a.cmp(b)).unwrap();
         });
