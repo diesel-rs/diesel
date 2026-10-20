@@ -1759,18 +1759,7 @@ extern "SQL" {
     /// #     use schema::animals::dsl::*;
     /// #
     /// #     let connection = &mut establish_connection();
-    /// #
-    /// #     let version = diesel::select(sql::<Text>("sqlite_version();"))
-    /// #         .get_result::<String>(connection)?;
-    /// #
-    /// #     let version_components: Vec<&str> = version.split('.').collect();
-    /// #     let major: u32 = version_components[0].parse().unwrap();
-    /// #     let minor: u32 = version_components[1].parse().unwrap();
-    /// #
-    /// #     if major < 3 || minor < 38 {
-    /// #         println!("SQLite version is too old, skipping the test.");
-    /// #         return Ok(());
-    /// #     }
+    /// #     assert_version!(connection, 3, 38, 0);
     /// #
     /// let result = animals.select(json_group_object(species, name).aggregate_filter(legs.lt(8))).get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(json!({"dog":"Jack"}), result);

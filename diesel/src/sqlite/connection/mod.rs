@@ -806,19 +806,23 @@ impl SqliteConnection {
             // This function has side effects (creates triggers), so it should not
             // be deterministic. We use DIRECTONLY to prevent it from being called
             // from malicious schema objects in untrusted databases.
-            functions::register::<Text, Integer, _, _, _>(
-                &self.raw_connection,
-                "diesel_manage_updated_at",
-                crate::sqlite::SqliteFunctionBehavior::DIRECTONLY,
-                |conn, table_name: String| {
-                    conn.exec(&alloc::format!(
-                        include_str!("diesel_manage_updated_at.sql"),
-                        table_name = table_name
-                    ))
-                    .expect("Failed to create trigger");
-                    0 // have to return *something*
-                },
-            )
+            self.raw_connection
+                .register_sql_function::<_, i32, Integer>(
+                    "diesel_manage_updated_at",
+                    1,
+                    crate::sqlite::SqliteFunctionBehavior::DIRECTONLY,
+                    |conn, args| {
+                        let table_name: String = functions::build_sql_function_args::<Text, _>(
+                            args,
+                            conn.internal_connection,
+                        )?;
+                        conn.exec(&alloc::format!(
+                            include_str!("diesel_manage_updated_at.sql"),
+                            table_name = table_name
+                        ))?;
+                        Ok(0) // have to return *something*
+                    },
+                )
         }
     }
 
@@ -1348,6 +1352,68 @@ mod tests {
                 );
                 (size, data)
             }
+        }
+    }
+
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown")),
+        not(miri)
+    ))]
+    mod diesel_manage_updated_at_errors {
+        use super::super::oom_test_support::run_in_child;
+        use crate::connection::{Connection, SimpleConnection};
+        use crate::query_dsl::RunQueryDsl;
+        use crate::sqlite::{AuthorizerContext, AuthorizerDecision, SqliteConnection};
+        use crate::test_helpers::format_error;
+
+        #[track_caller]
+        fn assert_no_panic_output(stderr: &str, table_name: &str) {
+            assert!(
+                !stderr.contains("panicked") && !stderr.contains(table_name),
+                "diesel_manage_updated_at reached the panic hook\nstderr:\n{stderr}"
+            );
+        }
+
+        #[test]
+        fn missing_table_returns_error_without_panicking() {
+            let stderr = run_in_child(|| {
+                let mut conn = SqliteConnection::establish(":memory:").unwrap();
+                let error = conn
+                    .batch_execute("SELECT diesel_manage_updated_at('synthetic_key_7c91a2')")
+                    .unwrap_err();
+                assert_eq!(
+                    format_error(&error),
+                    "no such table: main.synthetic_key_7c91a2"
+                );
+            });
+            assert_no_panic_output(&stderr, "synthetic_key_7c91a2");
+        }
+
+        #[test]
+        fn denied_trigger_returns_error_without_panicking() {
+            let stderr = run_in_child(|| {
+                let mut conn = SqliteConnection::establish(":memory:").unwrap();
+                conn.batch_execute("CREATE TABLE guarded_7c91a2 (id INTEGER, updated_at TEXT)")
+                    .unwrap();
+                conn.on_authorize(|ctx| match ctx {
+                    AuthorizerContext::CreateTrigger(_) => AuthorizerDecision::Deny,
+                    _ => AuthorizerDecision::Allow,
+                });
+                let error = conn
+                    .batch_execute("SELECT diesel_manage_updated_at('guarded_7c91a2')")
+                    .unwrap_err();
+                assert_eq!(format_error(&error), "not authorized");
+
+                conn.remove_authorizer();
+                let triggers: i64 = crate::dsl::sql::<crate::sql_types::BigInt>(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger'",
+                )
+                .get_result(&mut conn)
+                .unwrap();
+                assert_eq!(triggers, 0);
+            });
+            assert_no_panic_output(&stderr, "guarded_7c91a2");
         }
     }
 

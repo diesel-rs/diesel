@@ -275,6 +275,10 @@ fn main() {
                     "With `#[diesel(table_name = crate::schema::users)]`",
                 ),
                 Example::with_heading(
+                    "diesel_derives__tests__insertable_skip_insertion_1.snap",
+                    "With `#[diesel(skip_insertion)]`",
+                ),
+                Example::with_heading(
                     "diesel_derives__tests__insertable_embed_1.snap",
                     "With `#[diesel(embed)]`",
                 ),

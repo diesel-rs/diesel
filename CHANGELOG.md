@@ -60,8 +60,11 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now uses the `COMMENT ON TYPE` of a PostgreSQL enum as the doc comment of its generated Rust enum. The doc comments of the generated Rust enums and of their `rust_types` module now follow `with_docs` like those of tables and columns, which they did not before: none with `no-doc-comments`, only the type comment with `only-database-comments`, and the type comment or else the generated doc comment with `database-comments-fallback-to-auto-generated-doc-comment`.
 * Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
 * Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
+* Added `FromStr` for `DatabaseVersion`, parsing the `major.minor.patch` form its `Display` writes
 * Added `SqliteConnection::version` to read the version of the linked SQLite library
 * Added `PgConnection::version` to read the version of the connected server
+* Added `MariadbConnection::version` to read the version of the connected server
+* Added `MysqlConnection::version` to read the version of the connected server
 * Added `CompositeType` marker trait and `composite_type!` macro
 
 ### Fixed
@@ -90,6 +93,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
 
 ### Changed
 

@@ -322,6 +322,7 @@ impl SqliteConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::connection::DatabaseVersion;
     use crate::dsl::sql;
     use crate::prelude::*;
     #[cfg(not(miri))]
@@ -447,13 +448,11 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    #[expect(unsafe_code, reason = "SQLite version lookup requires FFI")]
     fn db_config_attach_create_roundtrip() {
-        // SAFETY: sqlite3_libversion_number has no caller preconditions.
-        if unsafe { ffi::sqlite3_libversion_number() } < 3_049_000 {
+        let conn = &mut connection();
+        if conn.version() < DatabaseVersion::new(3, 49, 0) {
             return;
         }
-        let conn = &mut connection();
         conn.set_attach_create_enabled(false).unwrap();
         assert!(!conn.is_attach_create_enabled().unwrap());
         conn.set_attach_create_enabled(true).unwrap();
@@ -461,13 +460,11 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    #[expect(unsafe_code, reason = "SQLite version lookup requires FFI")]
     fn db_config_attach_write_roundtrip() {
-        // SAFETY: sqlite3_libversion_number has no caller preconditions.
-        if unsafe { ffi::sqlite3_libversion_number() } < 3_049_000 {
+        let conn = &mut connection();
+        if conn.version() < DatabaseVersion::new(3, 49, 0) {
             return;
         }
-        let conn = &mut connection();
         conn.set_attach_write_enabled(false).unwrap();
         assert!(!conn.is_attach_write_enabled().unwrap());
         conn.set_attach_write_enabled(true).unwrap();
