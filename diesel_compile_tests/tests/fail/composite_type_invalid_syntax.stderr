@@ -1,0 +1,31 @@
+error: macro expansion ignores `12` and any tokens following
+ --> tests/fail/composite_type_invalid_syntax.rs:5:5
+  |
+LL | / composite_type! {
+LL | |     12
+  | |     ^^
+LL | |
+LL | | }
+  | |_- caused by the macro expansion here
+  |
+  = note: the usage of `composite_type!` is likely invalid in item context
+
+error: invalid `composite_type!` syntax 
+       help: please see the `composite_type!` macro docs for more info
+       help: docs available at: `https://docs.diesel.rs/0.1.x/diesel/macro.composite_type.html`
+       
+ --> tests/fail/composite_type_invalid_syntax.rs:4:1
+  |
+LL | / composite_type! {
+LL | |     12
+LL | |
+LL | | }
+  | |_^
+  |
+  = note: this error originates in the macro `composite_type` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: expected one of `!` or `::`, found `wrong`
+  --> tests/fail/composite_type_invalid_syntax.rs:11:11
+   |
+LL |      some wrong syntax
+   |           ^^^^^ expected one of `!` or `::`

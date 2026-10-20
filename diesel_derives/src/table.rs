@@ -734,7 +734,7 @@ fn expand(input: TableDecl, kind: SchemaMacroKind) -> TokenStream {
         if c.column_name == *table_name {
             let span = Span::mixed_site().located_at(c.column_name.span());
             let message = format!(
-                "column `{column_name}` cannot be named the same as it's {kind_name}.\n\
+                "column `{column_name}` cannot be named the same as its {kind_name}.\n\
                  you may use `#[sql_name = \"{column_name}\"]` to reference the {kind_name}'s \
                  `{column_name}` column \n\
                  docs available at: `https://docs.diesel.rs/{}.x/diesel/macro.{kind_name}.html`\n",

@@ -1,0 +1,10 @@
+error: column `users` cannot be named the same as its composite_type.
+       you may use `#[sql_name = "users"]` to reference the composite_type's `users` column 
+       docs available at: `https://docs.diesel.rs/2.3.x/diesel/macro.composite_type.html`
+       
+ --> tests/fail/composite_type_field_names.rs:7:9
+  |
+LL |         users -> Integer,
+  |         ^^^^^
+  |
+  = note: this error originates in the macro `composite_type` (in Nightly builds, run with -Z macro-backtrace for more info)
