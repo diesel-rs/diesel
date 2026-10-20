@@ -1367,6 +1367,7 @@ mod tests {
         use crate::sqlite::{AuthorizerContext, AuthorizerDecision, SqliteConnection};
         use crate::test_helpers::format_error;
 
+        #[track_caller]
         fn assert_no_panic_output(stderr: &str, table_name: &str) {
             assert!(
                 !stderr.contains("panicked") && !stderr.contains(table_name),
