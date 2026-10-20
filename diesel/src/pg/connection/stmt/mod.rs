@@ -7,6 +7,7 @@ use core::ptr;
 
 use super::result::PgResult;
 use super::statement_cache::PrepareForCache;
+use crate::connection::statement_cache::PreparedStatement;
 use crate::pg::PgTypeMetadata;
 use crate::result::QueryResult;
 
@@ -22,6 +23,12 @@ pub(crate) struct Statement {
     param_formats: Vec<libc::c_int>,
 }
 
+impl PreparedStatement for Statement {
+    fn parameter_count(&self) -> u64 {
+        self.param_formats.len() as u64
+    }
+}
+
 impl Statement {
     pub(super) fn execute(
         &self,
@@ -29,6 +36,18 @@ impl Statement {
         param_data: &[Option<Vec<u8>>],
         row_by_row: bool,
     ) -> QueryResult<PgResult> {
+        // This check may seem redundant to the general check in the statement cache
+        // but it's mostly here as in depth defence to prevent libpq
+        // performing an out of bounds memory access if for direct calls
+        if self.param_formats.len() != param_data.len() {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    self.param_formats.len(),
+                    param_data.len(),
+                ),
+            );
+        }
+
         let params_pointer = param_data
             .iter()
             .map(|data| {

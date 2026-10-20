@@ -6,7 +6,7 @@ use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
-use crate::connection::statement_cache::MaybeCached;
+use crate::connection::statement_cache::{MaybeCached, PreparedStatement};
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
@@ -21,6 +21,19 @@ pub struct Statement<DB: MysqlLikeBackend> {
     stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<PreparedStatementBinds>,
     _phantom: PhantomData<DB>,
+}
+
+impl<DB> PreparedStatement for Statement<DB>
+where
+    DB: MysqlLikeBackend,
+{
+    fn parameter_count(&self) -> u64 {
+        // SAFETY:
+        // stmt is a valid pointer to MYSQL_STMT that's not deallocated yet
+        //
+        // On windows that returns a u32
+        unsafe { ffi::mysql_stmt_param_count(self.stmt.as_ptr()) as u64 }
+    }
 }
 
 // mysql connection can be shared between threads according to libmysqlclients documentation
@@ -59,6 +72,15 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
         &mut self,
         mut input_binds: PreparedStatementBinds,
     ) -> QueryResult<()> {
+        if input_binds.len() != self.parameter_count() {
+            return Err(
+                crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
+                    self.parameter_count().try_into().unwrap_or(usize::MAX),
+                    input_binds.len().try_into().unwrap_or(usize::MAX),
+                ),
+            );
+        }
+
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
