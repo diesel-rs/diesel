@@ -1,6 +1,7 @@
 #![allow(unsafe_code)] // fii code
 use super::bind_collector::{SqliteBindCollector, SqliteBindValueRef};
 use super::raw::RawConnection;
+use super::sensitive::QuerySensitivity;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::Instrumentation;
 use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
@@ -206,16 +207,32 @@ pub(super) fn ensure_sqlite_ok(
     code: libc::c_int,
     raw_connection: *mut ffi::sqlite3,
 ) -> QueryResult<()> {
+    ensure_sqlite_ok_with_sensitivity(code, raw_connection, QuerySensitivity::Public)
+}
+
+pub(super) fn ensure_sqlite_ok_with_sensitivity(
+    code: libc::c_int,
+    raw_connection: *mut ffi::sqlite3,
+    sensitivity: QuerySensitivity,
+) -> QueryResult<()> {
     if code == ffi::SQLITE_OK {
         Ok(())
     } else {
-        Err(last_error(raw_connection))
+        Err(last_error_with_sensitivity(raw_connection, sensitivity))
     }
 }
 
 fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
-    let error_message = last_error_message(raw_connection);
+    last_error_with_sensitivity(raw_connection, QuerySensitivity::Public)
+}
+
+fn last_error_with_sensitivity(
+    raw_connection: *mut ffi::sqlite3,
+    sensitivity: QuerySensitivity,
+) -> Error {
     let error_code = last_error_code(raw_connection);
+    // SAFETY: SQLite owns this non-null, NUL-terminated message until the next connection operation.
+    let error_message = unsafe { CStr::from_ptr(ffi::sqlite3_errmsg(raw_connection)) };
     let error_kind = match error_code {
         ffi::SQLITE_CONSTRAINT_UNIQUE | ffi::SQLITE_CONSTRAINT_PRIMARYKEY => {
             DatabaseErrorKind::UniqueViolation
@@ -225,7 +242,10 @@ fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
         // which are actually foreign key violations. We check the error message
         // to distinguish from user-defined trigger failures.
         ffi::SQLITE_CONSTRAINT_TRIGGER
-            if error_message.contains("FOREIGN KEY constraint failed") =>
+            if error_message
+                .to_bytes()
+                .windows(b"FOREIGN KEY constraint failed".len())
+                .any(|bytes| bytes == b"FOREIGN KEY constraint failed") =>
         {
             DatabaseErrorKind::ForeignKeyViolation
         }
@@ -233,13 +253,12 @@ fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
         ffi::SQLITE_CONSTRAINT_CHECK => DatabaseErrorKind::CheckViolation,
         _ => DatabaseErrorKind::Unknown,
     };
+    let error_message = match sensitivity {
+        QuerySensitivity::Public => error_message.to_string_lossy().into_owned(),
+        QuerySensitivity::Sensitive => String::from("[REDACTED]"),
+    };
     let error_information = Box::new(error_message);
     DatabaseError(error_kind, error_information)
-}
-
-fn last_error_message(conn: *mut ffi::sqlite3) -> String {
-    let c_str = unsafe { CStr::from_ptr(ffi::sqlite3_errmsg(conn)) };
-    c_str.to_string_lossy().into_owned()
 }
 
 fn last_error_code(conn: *mut ffi::sqlite3) -> libc::c_int {

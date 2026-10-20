@@ -1,6 +1,10 @@
 //! Typed access to SQLite [pragmas](https://www.sqlite.org/pragma.html).
 //!
-//! Never pass secrets as pragma values because [`Instrumentation`](crate::connection::Instrumentation), [`on_trace`](SqliteConnection::on_trace) and [`on_authorize`](SqliteConnection::on_authorize) can observe them.
+//! Use [`PragmaLiteral::SensitiveText`] for secret values to redact ordinary query events and errors and zeroize Diesel's owned SQL buffers.
+//!
+//! Raw tracing, authorizer callbacks, application-owned values, SQLite and codec allocations, and compiler temporaries remain trusted.
+//!
+//! Ordinary literal variants expose values through instrumentation and [`Debug`](core::fmt::Debug).
 //!
 //! A pragma scoped [`PerSchema`] is read and written through [`SchemaPragma`], one scoped [`PerConnection`] through [`ConnectionPragma`].
 //!
@@ -91,9 +95,13 @@ use crate::result::{Error, QueryResult};
 use crate::row::Row;
 use crate::sql_types::{Bool, Integer, Nullable, SqlType, Text};
 use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
+use alloc::ffi::CString;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use core::ffi::CStr;
+use core::fmt;
 use core::marker::PhantomData;
+use zeroize::Zeroizing;
 
 /// A pragma, named by [`NAME`](Self::NAME) and scoped by [`Scope`](Self::Scope).
 pub trait Pragma: Sized {
@@ -138,7 +146,7 @@ pub trait WritePragma: Pragma {
 }
 
 /// A value as written into a pragma statement, which takes no bind parameters.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum PragmaLiteral<'a> {
     /// Rendered as a decimal integer.
@@ -147,6 +155,19 @@ pub enum PragmaLiteral<'a> {
     Keyword(&'static str),
     /// Borrowed text rendered as a single-quoted literal with embedded quotes escaped and NUL bytes rejected.
     Text(&'a str),
+    /// Borrowed secret text with redacted `Debug`, uncached execution, and zeroized owned SQL buffers.
+    SensitiveText(&'a str),
+}
+
+impl fmt::Debug for PragmaLiteral<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Integer(value) => f.debug_tuple("Integer").field(value).finish(),
+            Self::Keyword(value) => f.debug_tuple("Keyword").field(value).finish(),
+            Self::Text(value) => f.debug_tuple("Text").field(value).finish(),
+            Self::SensitiveText(_) => f.debug_tuple("SensitiveText").field(&"[REDACTED]").finish(),
+        }
+    }
 }
 
 macro_rules! integer_pragma_literal {
@@ -373,9 +394,43 @@ fn assign<P: WritePragma>(
 
     // Some pragmas do one unit of work per step, `incremental_vacuum` frees one page per step.
     // `sqlite3_exec` behind `batch_execute` runs to completion, while `StatementUse::run` steps once.
-    let mut query = SqliteQueryBuilder::new();
-    PragmaQuery::<P>::new(schema, Some(pragma.value())).to_sql(&mut query, &Sqlite)?;
-    conn.batch_execute(&query.finish())
+    let value = pragma.value();
+    let pragma = PragmaQuery::<P>::new(schema, Some(value));
+    if let PragmaLiteral::SensitiveText(text) = value {
+        let capacity = [
+            b"PRAGMA ".len(),
+            schema.map_or(0, str::len),
+            schema.map_or(0, |schema| {
+                schema.bytes().filter(|byte| *byte == b'`').count()
+            }),
+            if schema.is_some() { 3 } else { 0 },
+            P::NAME.len(),
+            b" = ''\0".len(),
+            text.len(),
+            text.bytes().filter(|byte| *byte == b'\'').count(),
+        ]
+        .into_iter()
+        .try_fold(0_usize, usize::checked_add)
+        .ok_or_else(|| Error::QueryBuilderError("sensitive pragma SQL is too long".into()))?;
+        // Reserve the full encoding before copying secrets to prevent reallocations.
+        let mut query = Zeroizing::new(SqliteQueryBuilder::with_capacity(capacity));
+        pragma.to_sql(&mut *query, &Sqlite)?;
+        query.push_sql("\0");
+        let sql = CStr::from_bytes_with_nul(query.as_str().as_bytes()).map_err(|_| {
+            let position = query
+                .as_str()
+                .find('\0')
+                .expect("the trailing NUL is present");
+            let mut redacted = alloc::vec![b'?'; position + 1];
+            redacted[position] = 0;
+            Error::InvalidCString(CString::new(redacted).expect_err("the interior NUL is present"))
+        })?;
+        conn.batch_execute_sensitive(sql)
+    } else {
+        let mut query = SqliteQueryBuilder::new();
+        pragma.to_sql(&mut query, &Sqlite)?;
+        conn.batch_execute(&query.finish())
+    }
 }
 
 fn decode_row<'a, P: ReadPragma>(row: &impl Row<'a, Sqlite>) -> QueryResult<P::Row> {
@@ -406,7 +461,8 @@ impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
             out.push_identifier(schema)?;
             out.push_sql(".");
         }
-        push_bare_word(&mut out, "name", P::NAME)?;
+        let sensitive = matches!(self.value, Some(PragmaLiteral::SensitiveText(_)));
+        push_bare_word(&mut out, "name", P::NAME, sensitive)?;
         match self.value {
             None => {}
             Some(PragmaLiteral::Integer(value)) => {
@@ -415,9 +471,9 @@ impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
             }
             Some(PragmaLiteral::Keyword(keyword)) => {
                 out.push_sql(" = ");
-                push_bare_word(&mut out, "keyword", keyword)?;
+                push_bare_word(&mut out, "keyword", keyword, false)?;
             }
-            Some(PragmaLiteral::Text(text)) => {
+            Some(PragmaLiteral::Text(text) | PragmaLiteral::SensitiveText(text)) => {
                 out.push_sql(" = '");
                 for (index, fragment) in text.split('\'').enumerate() {
                     if index != 0 {
@@ -449,15 +505,18 @@ fn push_bare_word(
     out: &mut AstPass<'_, '_, Sqlite>,
     kind: &str,
     word: &'static str,
+    sensitive: bool,
 ) -> QueryResult<()> {
     if word.is_empty()
         || !word
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
     {
-        return Err(Error::QueryBuilderError(
-            alloc::format!("`{word}` is not a valid pragma {kind}").into(),
-        ));
+        return Err(Error::QueryBuilderError(if sensitive {
+            "invalid sensitive pragma name".into()
+        } else {
+            alloc::format!("`{word}` is not a valid pragma {kind}").into()
+        }));
     }
     out.push_sql(word);
     Ok(())

@@ -2,6 +2,7 @@
 
 use super::ffi;
 use alloc::string::String;
+use alloc::vec::Vec;
 
 const CHILD_ENV: &str = "DIESEL_SQLITE_OOM_CHILD";
 
@@ -28,14 +29,14 @@ pub(super) fn with_heap_limit<R>(spare: i64, f: impl FnOnce() -> R) -> R {
 }
 
 /// Reruns the calling test in a child process to isolate global state and returns its stderr.
-pub(super) fn run_in_child(f: impl FnOnce()) -> String {
+pub(super) fn run_in_child(f: impl FnOnce()) -> Vec<u8> {
     let current_thread = std::thread::current();
     let test_name = current_thread
         .name()
         .expect("the test harness names every test thread");
     if std::env::var_os(CHILD_ENV).as_deref() == Some(std::ffi::OsStr::new(test_name)) {
         f();
-        return String::new();
+        return Vec::new();
     }
 
     let output =
@@ -48,7 +49,7 @@ pub(super) fn run_in_child(f: impl FnOnce()) -> String {
             .expect("the child test process starts");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
         output.status.success(),
         "child test failed\nstdout:\n{stdout}\nstderr:\n{stderr}"
@@ -58,7 +59,7 @@ pub(super) fn run_in_child(f: impl FnOnce()) -> String {
         stdout.contains("test result: ok. 1 passed"),
         "child test did not run exactly one test\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
-    stderr
+    output.stderr
 }
 
 pub(super) fn panic_message(payload: &(dyn core::any::Any + Send)) -> &str {

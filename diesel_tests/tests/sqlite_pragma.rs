@@ -419,3 +419,173 @@ fn table_info_preserves_schema_resolution() {
         );
     }
 }
+
+const SECRET_KEY: &str = "synthetic_key_7c91a2";
+
+struct SecretKey<'a>(&'a str);
+
+impl Pragma for SecretKey<'_> {
+    const NAME: &'static str = "key";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for SecretKey<'_> {
+    fn value(&self) -> PragmaLiteral<'_> {
+        PragmaLiteral::SensitiveText(self.0)
+    }
+}
+
+struct SecretConnectionText<'a>(&'a str);
+
+impl Pragma for SecretConnectionText<'_> {
+    const NAME: &'static str = "test_text";
+    type Scope = PerConnection;
+}
+
+impl WritePragma for SecretConnectionText<'_> {
+    fn value(&self) -> PragmaLiteral<'_> {
+        PragmaLiteral::SensitiveText(self.0)
+    }
+}
+
+struct InvalidSensitiveName;
+
+impl Pragma for InvalidSensitiveName {
+    const NAME: &'static str = "synthetic_key_7c91a2;";
+    type Scope = PerConnection;
+}
+
+impl WritePragma for InvalidSensitiveName {
+    fn value(&self) -> PragmaLiteral<'_> {
+        PragmaLiteral::SensitiveText(SECRET_KEY)
+    }
+}
+
+fn observe_secret_queries(conn: &mut SqliteConnection) -> Arc<Mutex<Vec<(bool, bool)>>> {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let records = Arc::clone(&events);
+    conn.set_instrumentation(move |event: InstrumentationEvent<'_>| {
+        assert!(!format!("{event:?}").contains(SECRET_KEY));
+        match event {
+            InstrumentationEvent::StartQuery { query, .. } => {
+                assert!(!format!("{query:?}\n{query}").contains(SECRET_KEY));
+                records.lock().unwrap().push((true, false));
+            }
+            InstrumentationEvent::FinishQuery { query, error, .. } => {
+                assert!(!format!("{query:?}\n{query}").contains(SECRET_KEY));
+                if let Some(error) = error {
+                    assert!(!format!("{error:?}\n{error}").contains(SECRET_KEY));
+                }
+                records.lock().unwrap().push((false, error.is_some()));
+            }
+            InstrumentationEvent::CacheQuery { sql, .. } => assert!(!sql.contains(SECRET_KEY)),
+            _ => {}
+        }
+    });
+    events
+}
+
+#[diesel_test_helper::test]
+fn sensitive_text_quotes_borrowed_keys_and_redacts_diagnostics() {
+    let conn = &mut connection();
+    let text = Arc::new(format!("{SECRET_KEY}'; PRAGMA main.user_version = 91; --"));
+    let expected = Arc::clone(&text);
+    conn.on_authorize(move |context| {
+        if let AuthorizerContext::Pragma(pragma) = context
+            && pragma.name == Some("key")
+        {
+            assert_eq!(pragma.argument, Some(expected.as_str()));
+        }
+        AuthorizerDecision::Allow
+    });
+    assert!(!format!("{:?}", SecretKey(&text).value()).contains(SECRET_KEY));
+    let events = observe_secret_queries(conn);
+    SecretKey(&text).set(conn, None).unwrap();
+    assert_eq!(*events.lock().unwrap(), [(true, false), (false, false)]);
+    assert_eq!(UserVersion::get(conn, None).unwrap(), 0);
+}
+
+#[diesel_test_helper::test]
+fn sensitive_text_preserves_schema_errors_without_exposing_the_key() {
+    let conn = &mut connection();
+    let events = observe_secret_queries(conn);
+    let error = SecretKey(SECRET_KEY)
+        .set(conn, Some(SECRET_KEY))
+        .unwrap_err();
+    assert!(matches!(error, Error::DatabaseError(..)));
+    assert!(!format!("{error:?}\n{error}").contains(SECRET_KEY));
+    assert_eq!(*events.lock().unwrap(), [(true, false), (false, true)]);
+}
+
+#[diesel_test_helper::test]
+fn sensitive_text_preserves_authorizer_denial() {
+    let conn = &mut connection();
+    let calls = Arc::new(Mutex::new(0));
+    let observed = Arc::clone(&calls);
+    conn.on_authorize(move |context| match context {
+        AuthorizerContext::Pragma(pragma) if pragma.name == Some("key") => {
+            assert_eq!(pragma.argument, Some(SECRET_KEY));
+            *observed.lock().unwrap() += 1;
+            AuthorizerDecision::Deny
+        }
+        _ => AuthorizerDecision::Allow,
+    });
+    let events = observe_secret_queries(conn);
+    for _ in 0..2 {
+        let error = SecretKey(SECRET_KEY).set(conn, None).unwrap_err();
+        assert!(matches!(error, Error::DatabaseError(..)));
+        assert!(!format!("{error:?}\n{error}").contains(SECRET_KEY));
+    }
+    assert_eq!(*calls.lock().unwrap(), 2);
+    assert_eq!(
+        *events.lock().unwrap(),
+        [(true, false), (false, true), (true, false), (false, true)]
+    );
+}
+
+#[diesel_test_helper::test]
+fn sensitive_text_rejects_nul_without_retaining_key_bytes() {
+    let conn = &mut connection();
+    for text in [format!("{SECRET_KEY}\0tail"), format!("\0{SECRET_KEY}")] {
+        let error = SecretKey(&text).set(conn, None).unwrap_err();
+        assert!(!format!("{error:?}\n{error}").contains(SECRET_KEY));
+        let Error::InvalidCString(error) = error else {
+            panic!("expected an invalid C string");
+        };
+        assert!(
+            !error
+                .into_vec()
+                .windows(SECRET_KEY.len())
+                .any(|bytes| bytes == SECRET_KEY.as_bytes())
+        );
+    }
+}
+
+#[diesel_test_helper::test]
+fn sensitive_text_redacts_pragma_name_validation_errors() {
+    let error = InvalidSensitiveName.set(&mut connection()).unwrap_err();
+    assert!(matches!(error, Error::QueryBuilderError(_)));
+    assert!(!format!("{error:?}\n{error}").contains(SECRET_KEY));
+}
+
+#[diesel_test_helper::test]
+fn sensitive_text_preserves_connection_scoped_arguments() {
+    let conn = &mut connection();
+    let arguments = Arc::new(Mutex::new(Vec::new()));
+    let observed = Arc::clone(&arguments);
+    conn.on_authorize(move |context| {
+        if let AuthorizerContext::Pragma(pragma) = context
+            && pragma.name == Some("test_text")
+        {
+            observed
+                .lock()
+                .unwrap()
+                .push(pragma.argument.map(str::to_owned));
+        }
+        AuthorizerDecision::Allow
+    });
+    let events = observe_secret_queries(conn);
+    SecretConnectionText(SECRET_KEY).set(conn).unwrap();
+    assert_eq!(*arguments.lock().unwrap(), [Some(SECRET_KEY.to_owned())]);
+    assert_eq!(*events.lock().unwrap(), [(true, false), (false, false)]);
+}

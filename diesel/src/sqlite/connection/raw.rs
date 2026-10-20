@@ -10,8 +10,9 @@ use super::authorizer::{AuthorizerContext, AuthorizerDecision};
 use super::collation_needed::{CollationNeededContext, SqliteTextRep};
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
+use super::sensitive::QuerySensitivity;
 use super::serialized_database::SerializedDatabase;
-use super::stmt::ensure_sqlite_ok;
+use super::stmt::{ensure_sqlite_ok, ensure_sqlite_ok_with_sensitivity};
 use super::trace::{SqliteTraceEvent, SqliteTraceFlags, TRACE_PROFILE, TRACE_ROW, TRACE_STMT};
 use super::update_hook::{SqliteChangeEvent, SqliteChangeOp};
 use super::{BusyDecision, CommitDecision, ProgressDecision};
@@ -155,8 +156,17 @@ impl RawConnection {
 
     pub(super) fn exec(&self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
+        self.exec_cstr(&query, QuerySensitivity::Public)
+    }
+
+    pub(super) fn exec_sensitive(&self, query: &CStr) -> QueryResult<()> {
+        self.exec_cstr(query, QuerySensitivity::Sensitive)
+    }
+
+    fn exec_cstr(&self, query: &CStr, sensitivity: QuerySensitivity) -> QueryResult<()> {
         let callback_fn = None;
         let callback_arg = ptr::null_mut();
+        // SAFETY: The connection is live and SQLite only borrows the NUL-terminated query during this call.
         let result = unsafe {
             ffi::sqlite3_exec(
                 self.internal_connection.as_ptr(),
@@ -167,7 +177,7 @@ impl RawConnection {
             )
         };
 
-        ensure_sqlite_ok(result, self.internal_connection.as_ptr())
+        ensure_sqlite_ok_with_sensitivity(result, self.internal_connection.as_ptr(), sensitivity)
     }
 
     pub(super) fn rows_affected_by_last_query(
