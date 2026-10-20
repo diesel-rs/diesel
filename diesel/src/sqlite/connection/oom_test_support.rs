@@ -27,15 +27,15 @@ pub(super) fn with_heap_limit<R>(spare: i64, f: impl FnOnce() -> R) -> R {
     f()
 }
 
-/// Reruns the calling test in a child process, as the heap limit is process global.
-pub(super) fn run_in_child(f: impl FnOnce()) {
+/// Reruns the calling test in a child process to isolate global state and returns its stderr.
+pub(super) fn run_in_child(f: impl FnOnce()) -> String {
     let current_thread = std::thread::current();
     let test_name = current_thread
         .name()
         .expect("the test harness names every test thread");
     if std::env::var_os(CHILD_ENV).as_deref() == Some(std::ffi::OsStr::new(test_name)) {
         f();
-        return;
+        return String::new();
     }
 
     let output =
@@ -47,19 +47,18 @@ pub(super) fn run_in_child(f: impl FnOnce()) {
             .output()
             .expect("the child test process starts");
 
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
     assert!(
         output.status.success(),
-        "child test failed\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        "child test failed\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
     // libtest exits successfully when an exact filter matches no tests.
     assert!(
-        String::from_utf8_lossy(&output.stdout).contains("test result: ok. 1 passed"),
-        "child test did not run exactly one test\nstdout:\n{}\nstderr:\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        stdout.contains("test result: ok. 1 passed"),
+        "child test did not run exactly one test\nstdout:\n{stdout}\nstderr:\n{stderr}"
     );
+    stderr
 }
 
 pub(super) fn panic_message(payload: &(dyn core::any::Any + Send)) -> &str {
