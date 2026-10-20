@@ -1474,7 +1474,7 @@ fn __diesel_public_if_inner(
 /// -----------
 ///
 /// A constant will be assigned called `all_columns`. This is what will be
-/// selected if you don't otherwise specify a select clause. It's type will be
+/// selected if you don't otherwise specify a select clause. Its type will be
 /// `table::AllColumns`. You can also get this value from the
 /// `Table::all_columns` function.
 ///
@@ -1594,7 +1594,7 @@ pub fn allow_tables_to_appear_in_same_query(input: TokenStream) -> TokenStream {
 }
 
 fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::Table)
+    self::table::schema_macro(input, self::table::SchemaMacroKind::Table)
 }
 
 /// Specifies that a view exists, and what fields it has. This will create a
@@ -1696,7 +1696,7 @@ fn table_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream
 /// -----------
 ///
 /// A constant will be assigned called `all_columns`. This is what will be
-/// selected if you don't otherwise specify a select clause. It's type will be
+/// selected if you don't otherwise specify a select clause. Its type will be
 /// `view::AllColumns`. You can also get this value from the
 /// `QueryRelation::all_columns` function.
 ///
@@ -1731,7 +1731,124 @@ pub fn view_proc(input: TokenStream) -> TokenStream {
 }
 
 fn view_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
-    self::table::query_source_macro(input, self::table::QuerySourceMacroKind::View)
+    self::table::schema_macro(input, self::table::SchemaMacroKind::View)
+}
+
+/// Specifies that a composite type exists, and what fields it has. This will create a
+/// new public module with the same name as the name of the composite type. In this
+/// module, you will find a unit struct named `composite_type`, and a unit struct with the
+/// name of each field.
+///
+/// The macro closely mirrors the [`table!`](table_proc) and [`view!`](view_proc) macros, and the
+/// generated code is (mostly) a subset of the code generated for the other macros.
+///
+/// By default, this allows a maximum of 32 columns per composite type.
+/// You can increase this limit to 64 by enabling the `64-column-tables` feature.
+/// You can increase it to 128 by enabling the `128-column-tables` feature.
+/// You can decrease it to 16 columns,
+/// which improves compilation time,
+/// by disabling the default features of Diesel.
+/// Note that enabling 64 column tables or larger will substantially increase
+/// the compile time of Diesel.
+///
+/// Example usage
+/// -------------
+///
+/// ```rust
+/// # extern crate diesel;
+///
+/// diesel::composite_type! {
+///     users {
+///         name -> VarChar,
+///         favorite_color -> Nullable<VarChar>,
+///     }
+/// }
+/// ```
+///
+/// If you are using types that aren't from Diesel's core types, you can specify
+/// which types to import.
+///
+/// ```
+/// # extern crate diesel;
+/// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
+/// #     pub struct TsVector;
+/// # }
+///
+/// diesel::composite_type! {
+///     use diesel::sql_types::*;
+/// #    use crate::diesel_full_text_search::*;
+/// # /*
+///     use diesel_full_text_search::*;
+/// # */
+///
+///     posts {
+///         title -> Text,
+///         keywords -> TsVector,
+///     }
+/// }
+/// # fn main() {}
+/// ```
+///
+/// If you want to add documentation to the generated code, you can use the
+/// following syntax:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::composite_type! {
+///     /// The structure of a blog post.
+///     post {
+///         /// The post's title
+///         title -> Text,
+///     }
+/// }
+/// ```
+///
+/// If you have a column with the same name as a Rust reserved keyword, you can use
+/// the `sql_name` attribute like this:
+///
+/// ```
+/// # extern crate diesel;
+///
+/// diesel::composite_type! {
+///     posts {
+///         /// This column is named `mytype` but references the table `type` column.
+///         #[sql_name = "type"]
+///         mytype -> Text,
+///     }
+/// }
+/// ```
+///
+/// This module will also contain several helper modules and types:
+///
+/// dsl
+/// ---
+///
+/// This simply re-exports the composite type, renamed to the same name as the module,
+/// and each of the columns.
+///
+/// `all_columns`
+/// -----------
+///
+/// A constant will be assigned called `all_columns`. Its type will be
+/// `composite_type::AllColumns`. You can also get this value from the
+/// `CompositeType::all_fields` function implemented for the composite type.
+///
+/// `SqlType`
+/// -------
+///
+/// A type alias called `SqlType` will be created. It will be the SQL type of
+/// `all_columns`.
+///
+#[cfg_attr(diesel_docsrs, doc = include_str!(concat!(env!("OUT_DIR"), "/composite_type.md")))]
+#[proc_macro]
+pub fn composite_type_proc(input: TokenStream) -> TokenStream {
+    composite_type_proc_inner(input.into()).into()
+}
+
+fn composite_type_proc_inner(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    self::table::schema_macro(input, self::table::SchemaMacroKind::CompositeType)
 }
 
 /// This derives implements `diesel::Connection` and related traits for an enum of

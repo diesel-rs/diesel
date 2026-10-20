@@ -1,4 +1,4 @@
-error: column `users` cannot be named the same as it's table.
+error: column `users` cannot be named the same as its table.
        you may use `#[sql_name = "users"]` to reference the table's `users` column 
        docs available at: `https://docs.diesel.rs/2.3.x/diesel/macro.table.html`
        

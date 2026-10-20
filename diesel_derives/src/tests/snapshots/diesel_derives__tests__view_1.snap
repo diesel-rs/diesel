@@ -48,6 +48,32 @@ pub mod view {
     /// This is the type which provides the base methods of the query
     /// builder, such as `.select` and `.filter`.
     pub struct view;
+    #[allow(non_camel_case_types, dead_code)]
+    #[doc = concat!("The tuple of all column structs on this ", "view")]
+    pub type AllColumns = (id, name);
+    #[doc = concat!("The SQL type of all of the columns on this ", "view")]
+    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
+    impl<DB> diesel::query_builder::QueryFragment<DB> for view
+    where
+        DB: diesel::backend::Backend,
+        <Self as diesel::internal::table_macro::StaticQueryFragment>::Component: diesel::query_builder::QueryFragment<
+            DB,
+        >,
+    {
+        fn walk_ast<'b>(
+            &'b self,
+            __diesel_internal_pass: diesel::query_builder::AstPass<'_, 'b, DB>,
+        ) -> diesel::result::QueryResult<()> {
+            <Self as diesel::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT
+                .walk_ast(__diesel_internal_pass)
+        }
+    }
+    impl diesel::internal::table_macro::StaticQueryFragment for view {
+        type Component = diesel::internal::table_macro::Identifier<'static>;
+        const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::Identifier(
+            "view",
+        );
+    }
     impl view {
         #[allow(dead_code)]
         #[doc = concat!(
@@ -59,11 +85,6 @@ pub mod view {
             star
         }
     }
-    #[allow(non_camel_case_types, dead_code)]
-    #[doc = concat!("The tuple of all column structs on this ", "view")]
-    pub type AllColumns = (id, name);
-    #[doc = concat!("The SQL type of all of the columns on this ", "view")]
-    pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "view")]
     pub type BoxedQuery<'a, DB, ST = SqlType> = diesel::internal::table_macro::BoxedSelectStatement<
         'a,
@@ -93,27 +114,6 @@ pub mod view {
         }
     }
     impl diesel::internal::table_macro::PlainQuerySource for view {}
-    impl<DB> diesel::query_builder::QueryFragment<DB> for view
-    where
-        DB: diesel::backend::Backend,
-        <Self as diesel::internal::table_macro::StaticQueryFragment>::Component: diesel::query_builder::QueryFragment<
-            DB,
-        >,
-    {
-        fn walk_ast<'b>(
-            &'b self,
-            __diesel_internal_pass: diesel::query_builder::AstPass<'_, 'b, DB>,
-        ) -> diesel::result::QueryResult<()> {
-            <Self as diesel::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT
-                .walk_ast(__diesel_internal_pass)
-        }
-    }
-    impl diesel::internal::table_macro::StaticQueryFragment for view {
-        type Component = diesel::internal::table_macro::Identifier<'static>;
-        const STATIC_COMPONENT: &'static Self::Component = &diesel::internal::table_macro::Identifier(
-            "view",
-        );
-    }
     impl diesel::query_builder::AsQuery for view {
         type SqlType = SqlType;
         type Query = diesel::internal::table_macro::SelectStatement<
@@ -123,16 +123,6 @@ pub mod view {
             diesel::internal::table_macro::SelectStatement::simple(self)
         }
     }
-    #[doc(hidden)]
-    pub use self::view as table;
-    impl diesel::query_source::QueryRelation for view {
-        type AllColumns = AllColumns;
-        fn all_columns() -> Self::AllColumns {
-            all_columns
-        }
-    }
-    impl diesel::internal::table_macro::Sealed for view {}
-    impl diesel::query_source::View for view {}
     impl diesel::query_source::AppearsInFromClause<Self> for view {
         type Count = diesel::query_source::Once;
     }
@@ -431,6 +421,16 @@ pub mod view {
             (__diesel_internal_rhs, __diesel_internal_on_clause)
         }
     }
+    #[doc(hidden)]
+    pub use self::view as table;
+    impl diesel::query_source::QueryRelation for view {
+        type AllColumns = AllColumns;
+        fn all_columns() -> Self::AllColumns {
+            all_columns
+        }
+    }
+    impl diesel::internal::table_macro::Sealed for view {}
+    impl diesel::query_source::View for view {}
     #[doc = concat!("Contains all of the columns of this ", "view")]
     pub mod columns {
         use ::diesel;
@@ -532,6 +532,79 @@ pub mod view {
             }
         }
         impl diesel::SelectableExpression<super::view> for id {}
+        impl diesel::expression::ValidGrouping<()> for id {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl<T> diesel::EqAll<T> for id
+        where
+            T: diesel::expression::AsExpression<Integer>,
+            diesel::dsl::Eq<
+                id,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
+        impl<Rhs> ::core::ops::Add<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Add<Self, Rhs::Expression>;
+            fn add(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Add::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::core::ops::Sub<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Sub<Self, Rhs::Expression>;
+            fn sub(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Sub::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::core::ops::Div<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Div>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Div<Self, Rhs::Expression>;
+            fn div(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Div::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
+        impl<Rhs> ::core::ops::Mul<Rhs> for id
+        where
+            Rhs: diesel::expression::AsExpression<
+                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Mul>::Rhs,
+            >,
+        {
+            type Output = diesel::internal::table_macro::ops::Mul<Self, Rhs::Expression>;
+            fn mul(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                diesel::internal::table_macro::ops::Mul::new(
+                    self,
+                    __diesel_internal_rhs.as_expression(),
+                )
+            }
+        }
         impl<
             __StmtKind,
         > diesel::SelectableExpression<
@@ -641,9 +714,6 @@ pub mod view {
         {
             type IsAggregate = diesel::expression::is_aggregate::Yes;
         }
-        impl diesel::expression::ValidGrouping<()> for id {
-            type IsAggregate = diesel::expression::is_aggregate::No;
-        }
         impl<
             __GB,
             __F,
@@ -664,76 +734,6 @@ pub mod view {
         }
         impl diesel::expression::IsContainedInGroupBy<id> for id {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
-        }
-        impl<T> diesel::EqAll<T> for id
-        where
-            T: diesel::expression::AsExpression<Integer>,
-            diesel::dsl::Eq<
-                id,
-                T::Expression,
-            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
-        {
-            type Output = diesel::dsl::Eq<Self, T::Expression>;
-            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
-                use diesel::expression_methods::ExpressionMethods;
-                self.eq(__diesel_internal_rhs)
-            }
-        }
-        impl<Rhs> ::core::ops::Add<Rhs> for id
-        where
-            Rhs: diesel::expression::AsExpression<
-                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Add>::Rhs,
-            >,
-        {
-            type Output = diesel::internal::table_macro::ops::Add<Self, Rhs::Expression>;
-            fn add(self, __diesel_internal_rhs: Rhs) -> Self::Output {
-                diesel::internal::table_macro::ops::Add::new(
-                    self,
-                    __diesel_internal_rhs.as_expression(),
-                )
-            }
-        }
-        impl<Rhs> ::core::ops::Sub<Rhs> for id
-        where
-            Rhs: diesel::expression::AsExpression<
-                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Sub>::Rhs,
-            >,
-        {
-            type Output = diesel::internal::table_macro::ops::Sub<Self, Rhs::Expression>;
-            fn sub(self, __diesel_internal_rhs: Rhs) -> Self::Output {
-                diesel::internal::table_macro::ops::Sub::new(
-                    self,
-                    __diesel_internal_rhs.as_expression(),
-                )
-            }
-        }
-        impl<Rhs> ::core::ops::Div<Rhs> for id
-        where
-            Rhs: diesel::expression::AsExpression<
-                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Div>::Rhs,
-            >,
-        {
-            type Output = diesel::internal::table_macro::ops::Div<Self, Rhs::Expression>;
-            fn div(self, __diesel_internal_rhs: Rhs) -> Self::Output {
-                diesel::internal::table_macro::ops::Div::new(
-                    self,
-                    __diesel_internal_rhs.as_expression(),
-                )
-            }
-        }
-        impl<Rhs> ::core::ops::Mul<Rhs> for id
-        where
-            Rhs: diesel::expression::AsExpression<
-                <<id as diesel::Expression>::SqlType as diesel::sql_types::ops::Mul>::Rhs,
-            >,
-        {
-            type Output = diesel::internal::table_macro::ops::Mul<Self, Rhs::Expression>;
-            fn mul(self, __diesel_internal_rhs: Rhs) -> Self::Output {
-                diesel::internal::table_macro::ops::Mul::new(
-                    self,
-                    __diesel_internal_rhs.as_expression(),
-                )
-            }
         }
         impl diesel::query_source::QueryRelationField for id {
             type QueryRelation = super::view;
@@ -779,6 +779,23 @@ pub mod view {
             }
         }
         impl diesel::SelectableExpression<super::view> for name {}
+        impl diesel::expression::ValidGrouping<()> for name {
+            type IsAggregate = diesel::expression::is_aggregate::No;
+        }
+        impl<T> diesel::EqAll<T> for name
+        where
+            T: diesel::expression::AsExpression<Text>,
+            diesel::dsl::Eq<
+                name,
+                T::Expression,
+            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
+        {
+            type Output = diesel::dsl::Eq<Self, T::Expression>;
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
+                use diesel::expression_methods::ExpressionMethods;
+                self.eq(__diesel_internal_rhs)
+            }
+        }
         impl<
             __StmtKind,
         > diesel::SelectableExpression<
@@ -888,9 +905,6 @@ pub mod view {
         {
             type IsAggregate = diesel::expression::is_aggregate::Yes;
         }
-        impl diesel::expression::ValidGrouping<()> for name {
-            type IsAggregate = diesel::expression::is_aggregate::No;
-        }
         impl<
             __GB,
             __F,
@@ -911,20 +925,6 @@ pub mod view {
         }
         impl diesel::expression::IsContainedInGroupBy<name> for name {
             type Output = diesel::expression::is_contained_in_group_by::Yes;
-        }
-        impl<T> diesel::EqAll<T> for name
-        where
-            T: diesel::expression::AsExpression<Text>,
-            diesel::dsl::Eq<
-                name,
-                T::Expression,
-            >: diesel::Expression<SqlType = diesel::sql_types::Bool>,
-        {
-            type Output = diesel::dsl::Eq<Self, T::Expression>;
-            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
-                use diesel::expression_methods::ExpressionMethods;
-                self.eq(__diesel_internal_rhs)
-            }
         }
         impl diesel::query_source::QueryRelationField for name {
             type QueryRelation = super::view;
