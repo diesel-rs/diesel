@@ -472,7 +472,7 @@ fn composite_type_annotations(
 ) -> Option<TokenStream> {
     if matches!(kind, SchemaMacroKind::CompositeType) {
         let annotations = if let Some(schema) = &input.view.schema {
-            let schema_name = schema.to_string();
+            let schema_name = syn::ext::IdentExt::unraw(schema).to_string();
             quote::quote! {
                 #[derive(diesel::sql_types::SqlType)]
                 #[diesel(postgres_type(name = #sql_name, schema = #schema_name))]
