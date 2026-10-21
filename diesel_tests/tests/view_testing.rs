@@ -214,6 +214,10 @@ fn alias() {
     assert_eq!(name, "John");
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn nullable_selection_through_a_join() {
     let conn = &mut view_test_setup();
@@ -226,6 +230,10 @@ fn nullable_selection_through_a_join() {
     assert_eq!(res, [("John".to_string(), Some("views!!".into()))]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn union() {
     let conn = &mut view_test_setup();
@@ -238,6 +246,10 @@ fn union() {
     assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[test]
 fn union_through_an_alias() {
     let conn = &mut view_test_setup();
