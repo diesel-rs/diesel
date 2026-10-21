@@ -65,6 +65,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `PgConnection::version` to read the version of the connected server
 * Added `MariadbConnection::version` to read the version of the connected server
 * Added `MysqlConnection::version` to read the version of the connected server
+* Parallelized some tests for `mysql` and `mariadb` backends
 
 ### Fixed
 
