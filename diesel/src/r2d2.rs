@@ -473,7 +473,16 @@ impl<C: Connection> CustomizeConnection<C, crate::r2d2::Error> for TestCustomize
     }
 }
 
-#[cfg(all(test, not(all(target_family = "wasm", target_os = "unknown"))))]
+// The r2d2 pool spawns worker threads via `scheduled-thread-pool`, which
+// relies on `parking_lot_core`'s futex usage. Miri flags that futex call as
+// undefined behavior (incorrect c-variadic argument type), which is a known
+// issue in `parking_lot_core` rather than in diesel, so these tests are
+// excluded from miri runs.
+#[cfg(all(
+    test,
+    not(miri),
+    not(all(target_family = "wasm", target_os = "unknown"))
+))]
 mod tests {
     use std::sync::Arc;
     use std::sync::mpsc;
