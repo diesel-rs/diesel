@@ -257,7 +257,7 @@ impl TestArgs {
 
             if matches!(self.backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
-                command.args(["--profile","mysql"]);
+                command.args(["--profile", "mysql"]);
             }
             if self.wasm {
                 command
