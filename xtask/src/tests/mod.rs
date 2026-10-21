@@ -31,10 +31,11 @@ pub(crate) struct TestArgs {
     /// sqlite.
     #[clap(long = "miri")]
     miri: bool,
-    /// additional flags passed to cargo nextest while running
-    /// unit/integration tests.
+    /// additional flags passed to the cargo nextest/test invocations while
+    /// running the unit/integration tests and the doc tests.
     ///
-    /// This is useful for passing custom test filters/arguments
+    /// This is useful for passing additional features or custom test
+    /// filters/arguments
     ///
     /// See <https://nexte.st/docs/running/> for details
     flags: Vec<String>,
@@ -72,8 +73,13 @@ impl TestArgs {
     /// the run.
     ///
     /// This respects `--no-doc-tests` / `--no-integration-tests` like the
-    /// non-miri run: it runs the lib tests and integration tests of
-    /// `diesel_tests`, plus the doc tests of the `diesel` crate.
+    /// non-miri run: the lib tests of the `diesel` crate and the integration
+    /// tests of `diesel_tests` are both classified as integration tests and
+    /// are run via nextest, which starts a separate miri context for every
+    /// test and therefore can run them in parallel (see
+    /// <https://nexte.st/docs/integrations/miri/>), while the doc tests of
+    /// the `diesel` crate are run via `cargo miri test --doc` as nextest does
+    /// not support doc tests.
     fn run_miri_tests(&self, metadata: &Metadata) -> bool {
         let native_lib = match std::env::var("MIRI_NATIVE_LIB") {
             Ok(path) => path,
@@ -104,44 +110,23 @@ impl TestArgs {
 
         // All of these test suites use in-memory sqlite databases,
         // so no migration setup is required here.
-        // Additional flags are documented as custom test filters/arguments,
-        // which are passed to the test harness and therefore have to go
-        // after the `--` separator.
+        // Additional flags are passed to the test commands as is, so they
+        // can be used to enable additional features or to filter the tests
+        // to run.
         let mut success = true;
 
-        // the unit tests of the diesel crate
-        let mut command = Command::new("cargo");
-        command
-            .args(["+nightly", "miri", "test", "-p", "diesel", "--lib"])
-            .args(["--no-default-features", "-F", "sqlite"])
-            .args(["-F", "serde_json"])
-            .current_dir(&metadata.workspace_root)
-            .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"));
-        if !self.flags.is_empty() {
-            command.arg("--").args(&self.flags);
-        }
-        println!("Running miri unit tests via `{command:?}`: ");
-        let status = command
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .status()
-            .unwrap();
-        if !status.success() {
-            eprintln!("Failed to run miri unit tests");
-            success = false;
-        }
-
         if !self.no_integration_tests {
-            // the integration tests
+            // The unit tests of the `diesel` crate and the integration tests
+            // of `diesel_tests` are both classified as integration tests, so
+            // they share the same code path here as in the non-miri test run.
             let mut command = Command::new("cargo");
             command
-                .args(["+nightly", "miri", "test", "-p", "diesel_tests"])
+                .args(["+nightly", "miri", "nextest", "run"])
+                .args(["-p", "diesel", "-p", "diesel_tests"])
                 .args(["--no-default-features", "-F", "sqlite"])
                 .current_dir(&metadata.workspace_root)
-                .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"));
-            if !self.flags.is_empty() {
-                command.arg("--").args(&self.flags);
-            }
+                .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"))
+                .args(&self.flags);
             println!("Running miri integration tests via `{command:?}`: ");
             let status = command
                 .stdout(Stdio::inherit())
@@ -157,22 +142,18 @@ impl TestArgs {
         }
 
         if !self.no_doc_tests {
-            // the doc tests
+            // nextest does not support doc tests, so those are still run via
+            // `cargo miri test --doc`. Features that are only required to run
+            // the same set of doc tests as the non-miri test run are expected
+            // to be passed by the caller via `flags`.
             let mut command = Command::new("cargo");
             command
                 .args(["+nightly", "miri", "test", "--doc"])
                 .args(["--no-default-features", "-p", "diesel"])
                 .args(["-F", "sqlite"])
-                .args(["-F", "serde_json"])
-                .args(["-F", "diesel/extras"])
-                // the non-miri run enables this via feature unification, include
-                // it here to cover the same set of doc tests
-                .args(["-F", "diesel/with-deprecated"])
                 .current_dir(&metadata.workspace_root)
-                .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"));
-            if !self.flags.is_empty() {
-                command.arg("--").args(&self.flags);
-            }
+                .env("MIRIFLAGS", format!("-Zmiri-native-lib={native_lib}"))
+                .args(&self.flags);
             println!("Running miri doc tests via `{command:?}`: ");
             let status = command
                 .stdout(Stdio::inherit())
