@@ -1640,7 +1640,7 @@ impl<'a> Display for QueryRelationDefinition<'a> {
                 writeln!(
                     out,
                     r#"#[sql_name = {}]"#,
-                    escape_rust_string(&full_sql_name)
+                    escape_rust_string(&self.table.table_name().sql_name)
                 )?;
             }
 
