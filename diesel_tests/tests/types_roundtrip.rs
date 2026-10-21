@@ -140,7 +140,6 @@ mod sqlite_types {
 #[cfg(feature = "postgres")]
 mod pg_types {
     extern crate ipnetwork;
-    extern crate uuid;
 
     use super::*;
     use bigdecimal::BigDecimal;
@@ -165,12 +164,6 @@ mod pg_types {
         Timestamptz,
         (i64, u32),
         mk_pg_naive_datetime
-    );
-    test_round_trip!(
-        uuid_roundtrips,
-        Uuid,
-        (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)),
-        mk_uuid
     );
     test_round_trip!(array_of_int_roundtrips, Array<Integer>, Vec<i32>);
     test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
@@ -300,13 +293,6 @@ mod pg_types {
     test_round_trip!(char_roundtrips, CChar, u8);
 
     test_round_trip!(pg_lsn_roundtrips, PgLsn, u64, mk_pg_lsn);
-
-    #[allow(clippy::type_complexity)]
-    fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
-        let a = data.3;
-        let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
-        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
-    }
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
         [data.0, data.1, data.2, data.3, data.4, data.5]
@@ -477,6 +463,27 @@ mod pg_types {
 
     pub fn mk_pg_lsn(data: u64) -> PgLsn {
         PgLsn(data)
+    }
+}
+
+#[cfg(any(feature = "postgres", feature = "mariadb"))]
+mod uuid {
+    extern crate uuid;
+
+    use super::*;
+
+    test_round_trip!(
+        uuid_roundtrips,
+        Uuid,
+        (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)),
+        mk_uuid
+    );
+
+    #[allow(clippy::type_complexity)]
+    fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
+        let a = data.3;
+        let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
+        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
     }
 }
 

@@ -1381,6 +1381,25 @@ fn pg_uuid_from_sql() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn mariadb_uuid_from_sql() {
+    extern crate uuid;
+
+    let query = "CAST('8a645207-42d6-4d17-82e7-f5e42ede0f67' AS UUID)";
+    let expected_value = uuid::Uuid::parse_str("8a645207-42d6-4d17-82e7-f5e42ede0f67").unwrap();
+    assert_eq!(
+        expected_value,
+        query_single_value::<Uuid, uuid::Uuid>(query)
+    );
+    let query = "CAST('f94e0e4d-c7b0-405f-9c0e-57b97f4afb58' AS UUID)";
+    let expected_value = uuid::Uuid::parse_str("f94e0e4d-c7b0-405f-9c0e-57b97f4afb58").unwrap();
+    assert_eq!(
+        expected_value,
+        query_single_value::<Uuid, uuid::Uuid>(query)
+    );
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 fn pg_uuid_to_sql_uuid() {
     extern crate uuid;
@@ -1398,6 +1417,30 @@ fn pg_uuid_to_sql_uuid() {
         value
     ));
     let expected_non_equal_value = "'8e940686-97a5-4e8b-ac44-64cf3cceea9b'::uuid";
+    assert!(!query_to_sql_equality::<Uuid, uuid::Uuid>(
+        expected_non_equal_value,
+        value
+    ));
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mariadb")]
+fn mariadb_uuid_to_sql_uuid() {
+    extern crate uuid;
+
+    let expected_value = "CAST('8a645207-42d6-4d17-82e7-f5e42ede0f67' AS UUID)";
+    let value = uuid::Uuid::parse_str("8a645207-42d6-4d17-82e7-f5e42ede0f67").unwrap();
+    assert!(query_to_sql_equality::<Uuid, uuid::Uuid>(
+        expected_value,
+        value
+    ));
+    let expected_value = "CAST('f94e0e4d-c7b0-405f-9c0e-57b97f4afb58' AS UUID)";
+    let value = uuid::Uuid::parse_str("f94e0e4d-c7b0-405f-9c0e-57b97f4afb58").unwrap();
+    assert!(query_to_sql_equality::<Uuid, uuid::Uuid>(
+        expected_value,
+        value
+    ));
+    let expected_non_equal_value = "CAST('8e940686-97a5-4e8b-ac44-64cf3cceea9b' AS UUID)";
     assert!(!query_to_sql_equality::<Uuid, uuid::Uuid>(
         expected_non_equal_value,
         value
