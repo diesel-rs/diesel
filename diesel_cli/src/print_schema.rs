@@ -526,6 +526,7 @@ fn mysql_diesel_types() -> HashSet<&'static str> {
 fn mariadb_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     mysql_like_diesel_types(&mut types);
+    types.insert("Uuid");
     types
 }
 

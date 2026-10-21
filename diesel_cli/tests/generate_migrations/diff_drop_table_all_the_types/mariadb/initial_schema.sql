@@ -15,5 +15,6 @@ CREATE TABLE test(
        `time` TIME,
        `char` CHAR(50),
        `blob` BLOB,
-       `text` TEXT
+       `text` TEXT,
+       `uuid` UUID
 );
