@@ -9,7 +9,7 @@ LL |     hair_color: Option<i32>,
    |
    = help: the trait `AsExpression<diesel::sql_types::Nullable<diesel::sql_types::Text>>` is not implemented for `i32`
 help: the following other types implement trait `AsExpression<T>`
-  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+  --> ROOT/diesel/src/type_impls/primitives.rs
    |
 LL |     #[derive(AsExpression, FromSqlRow)]
    |              ^^^^^^^^^^^^
@@ -47,7 +47,7 @@ LL | #[derive(AsChangeset)]
    |
    = help: the trait `AsExpression<diesel::sql_types::Nullable<diesel::sql_types::Text>>` is not implemented for `&'update i32`
 help: the following other types implement trait `AsExpression<T>`
-  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+  --> ROOT/diesel/src/type_impls/primitives.rs
    |
 LL |     #[derive(AsExpression, FromSqlRow)]
    |              ^^^^^^^^^^^^
@@ -65,7 +65,7 @@ LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `&'update i32`
    |
 help: the following other types implement trait `AsExpression<T>`
-  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+  --> ROOT/diesel/src/type_impls/primitives.rs
    |
 LL |     #[derive(AsExpression, FromSqlRow)]
    |              ^^^^^^^^^^^^
@@ -84,7 +84,7 @@ LL | #[derive(AsChangeset)]
    |
    = help: the trait `AsExpression<diesel::sql_types::Nullable<diesel::sql_types::Text>>` is not implemented for `&i32`
 help: the following other types implement trait `AsExpression<T>`
-  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+  --> ROOT/diesel/src/type_impls/primitives.rs
    |
 LL |     #[derive(AsExpression, FromSqlRow)]
    |              ^^^^^^^^^^^^
@@ -109,7 +109,7 @@ LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ the trait `AsExpression<diesel::sql_types::Text>` is not implemented for `&i32`
    |
 help: the following other types implement trait `AsExpression<T>`
-  --> DIESEL/diesel/diesel/src/type_impls/primitives.rs
+  --> ROOT/diesel/src/type_impls/primitives.rs
    |
 LL |     #[derive(AsExpression, FromSqlRow)]
    |              ^^^^^^^^^^^^

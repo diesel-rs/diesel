@@ -158,6 +158,13 @@ impl RawConnection {
         unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
     }
 
+    /// The server version in `PQserverVersion` encoding, zero once the connection is bad.
+    pub(super) fn server_version(&self) -> libc::c_int {
+        // SAFETY: `internal_connection` is the live `PGconn` owned by `self`, and
+        // `PQserverVersion` only reads the version cached during connection startup.
+        unsafe { PQserverVersion(self.internal_connection.as_ptr()) }
+    }
+
     pub(super) fn get_status(&self) -> ConnStatusType {
         unsafe { PQstatus(self.internal_connection.as_ptr()) }
     }

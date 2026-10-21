@@ -1,6 +1,7 @@
 use crate::schema::TestConnection;
 use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
+use diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
 
 diesel::view! {
     view {
@@ -211,6 +212,43 @@ fn alias() {
         .first::<String>(conn)
         .unwrap();
     assert_eq!(name, "John");
+}
+
+#[test]
+fn nullable_selection_through_a_join() {
+    let conn = &mut view_test_setup();
+    let res = view::view
+        .left_join(view2::view.on(view::not_id.eq(view2::not_view_id)))
+        .select((view::name, view2::title.nullable()))
+        .load::<(String, Option<String>)>(conn)
+        .unwrap();
+
+    assert_eq!(res, [("John".to_string(), Some("views!!".into()))]);
+}
+
+#[test]
+fn union() {
+    let conn = &mut view_test_setup();
+    let res = view::view
+        .union(view2::view)
+        .positional_order_by(2) // name is the second column
+        .load::<(i32, String)>(conn)
+        .unwrap();
+
+    assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
+}
+
+#[test]
+fn union_through_an_alias() {
+    let conn = &mut view_test_setup();
+    let view_alias = diesel::alias!(view as view1);
+    let res = view_alias
+        .union(view2::view)
+        .positional_order_by(2) // name is the second column
+        .load::<(i32, String)>(conn)
+        .unwrap();
+
+    assert_eq!(res, [(42, "John".into()), (42, "views!!".into())]);
 }
 
 // todo: test larger parts of `QueryDsl`

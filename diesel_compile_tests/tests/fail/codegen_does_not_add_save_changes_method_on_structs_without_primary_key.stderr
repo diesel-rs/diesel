@@ -29,12 +29,12 @@ error[E0599]: the method `save_changes` exists for struct `User`, but its trait 
             `&mut User: IntoUpdateTarget`
             which is required by `&mut User: diesel::SaveChangesDsl<_>`
 note: the traits `HasTable` and `IntoUpdateTarget` must be implemented
-   --> DIESEL/diesel/diesel/src/associations/mod.rs
+   --> ROOT/diesel/src/associations/mod.rs
     |
 LL | pub trait HasTable {
     | ^^^^^^^^^^^^^^^^^^
     |
-   ::: DIESEL/diesel/diesel/src/query_builder/update_statement/target.rs
+   ::: ROOT/diesel/src/query_builder/update_statement/target.rs
     |
  LL | pub trait IntoUpdateTarget: HasTable {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
