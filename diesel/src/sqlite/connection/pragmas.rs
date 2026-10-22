@@ -3,7 +3,7 @@ use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
-use crate::sqlite::pragma::{AutoVacuum, FreelistCount, PageCount, SchemaPragma};
+use crate::sqlite::pragma::{AutoVacuum, FreelistCount, SchemaPragma};
 use alloc::string::ToString;
 
 /// The `auto_vacuum` mode of a database, controlling whether and when SQLite
@@ -128,30 +128,6 @@ impl SqliteConnection {
         }
         .execute(self)
         .map(|_| ())
-    }
-
-    /// Total number of pages in a database, via `PRAGMA page_count`.
-    ///
-    /// `schema` selects an attached database by name, `None` reads `main`.
-    /// Multiply by the page size for the size the database accounts for.
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// # fn run_test() -> QueryResult<()> {
-    /// use diesel::connection::SimpleConnection;
-    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// // An empty database occupies no pages until something is written.
-    /// assert_eq!(conn.page_count(None)?, 0);
-    /// conn.batch_execute("CREATE TABLE items (id INTEGER PRIMARY KEY)")?;
-    /// assert!(conn.page_count(None)? > 0);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub fn page_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
-        PageCount::get(self, schema)
     }
 
     /// Unused pages on a database's freelist, via `PRAGMA freelist_count`.
@@ -461,6 +437,7 @@ mod tests {
     use crate::prelude::*;
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::sql_types::Integer;
+    use crate::sqlite::pragma::PageCount;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -600,13 +577,13 @@ mod tests {
     fn page_count_is_positive_and_grows() {
         let conn = &mut connection();
         conn.batch_execute(PROBE_TABLE).unwrap();
-        let initial = conn.page_count(None).unwrap();
+        let initial = PageCount::get::<i64>(conn, None).unwrap();
         assert!(initial > 0, "an initialized database has at least one page");
 
         insert_overflowing_row(conn);
 
         assert!(
-            conn.page_count(None).unwrap() > initial,
+            PageCount::get::<i64>(conn, None).unwrap() > initial,
             "a row spanning overflow pages grows the page count"
         );
     }
@@ -652,15 +629,15 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        let main_pages = conn.page_count(None).unwrap();
-        let aux_pages = conn.page_count(Some("aux")).unwrap();
+        let main_pages = PageCount::get::<i64>(conn, None).unwrap();
+        let aux_pages = PageCount::get::<i64>(conn, Some("aux")).unwrap();
         assert!(
             aux_pages > main_pages,
             "the attached database holds the data, main stays small"
         );
         assert_eq!(
             main_pages,
-            conn.page_count(Some("main")).unwrap(),
+            PageCount::get::<i64>(conn, Some("main")).unwrap(),
             "an explicit main matches the default"
         );
     }
@@ -675,7 +652,7 @@ mod tests {
         conn.batch_execute("CREATE TABLE `back``tick`.probe (id INTEGER PRIMARY KEY)")
             .unwrap();
 
-        assert!(conn.page_count(Some(schema)).unwrap() > 0);
+        assert!(PageCount::get::<i64>(conn, Some(schema)).unwrap() > 0);
         assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
     }
 
@@ -684,7 +661,7 @@ mod tests {
     fn unknown_schema_is_reported_as_an_error() {
         let conn = &mut connection();
 
-        assert!(conn.page_count(Some("nope")).is_err());
+        assert!(PageCount::get::<i64>(conn, Some("nope")).is_err());
         assert!(conn.freelist_count(Some("nope")).is_err());
     }
 
@@ -865,13 +842,13 @@ mod tests {
     fn vacuum_repacks_the_database() {
         let conn = &mut connection();
         fill_then_delete(conn);
-        let before = conn.page_count(None).unwrap();
+        let before = PageCount::get::<i64>(conn, None).unwrap();
         assert!(before > 1);
 
         conn.vacuum(None).unwrap();
 
         assert!(
-            conn.page_count(None).unwrap() < before,
+            PageCount::get::<i64>(conn, None).unwrap() < before,
             "rebuilding should release the pages the deleted row occupied"
         );
         assert_eq!(
@@ -886,12 +863,12 @@ mod tests {
         let conn = &mut connection();
         conn.attach_database(":memory:", "aux").unwrap();
         fill_then_delete_aux(conn);
-        let before = conn.page_count(Some("aux")).unwrap();
+        let before = PageCount::get::<i64>(conn, Some("aux")).unwrap();
         assert!(before > 1);
 
         conn.vacuum(Some("aux")).unwrap();
 
-        assert!(conn.page_count(Some("aux")).unwrap() < before);
+        assert!(PageCount::get::<i64>(conn, Some("aux")).unwrap() < before);
     }
 
     #[cfg(not(miri))]
@@ -1000,18 +977,18 @@ mod tests {
         conn.attach_database(":memory:", "aux").unwrap();
         fill_then_delete_aux(conn);
 
-        let main_before = conn.page_count(None).unwrap();
-        let aux_before = conn.page_count(Some("aux")).unwrap();
+        let main_before = PageCount::get::<i64>(conn, None).unwrap();
+        let aux_before = PageCount::get::<i64>(conn, Some("aux")).unwrap();
 
         conn.vacuum(None).unwrap();
         conn.vacuum(Some("aux")).unwrap();
 
         assert!(
-            conn.page_count(None).unwrap() < main_before,
+            PageCount::get::<i64>(conn, None).unwrap() < main_before,
             "main was rebuilt"
         );
         assert!(
-            conn.page_count(Some("aux")).unwrap() < aux_before,
+            PageCount::get::<i64>(conn, Some("aux")).unwrap() < aux_before,
             "aux was rebuilt too, not main a second time"
         );
     }
