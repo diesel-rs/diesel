@@ -318,10 +318,10 @@ We would like to thank all of the sponsors supporting the work on Diesel. Notabl
   </tr>
   <tr>
     <td align="center" width="33%">
-      <a href="https://bytebase.com/?utm_source=diesel">
-        <img src="https://diesel.rs/assets/images/logo-bytebase.png" />
+      <a href="https://rustfoundation.org/">
+        <img src="https://diesel.rs/assets/images/rf-logo-white-2.svg" />
         <br/>
-        <sub><b>Bytebase - Open-source Database DevSecOps</b></sub>
+        <sub><b>Rust Foundation</b></sub>
       </a>
     </td>
   </tr>

@@ -22,7 +22,7 @@ use crate::mariadb::Mariadb;
 /// `MariadbConnection` only supports a single loading mode, which loads
 /// values row by row from the result set.
 ///
-/// ```rust
+/// ```rust,dejadoc
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -56,7 +56,7 @@ use crate::mariadb::Mariadb;
 /// This mode does **not support** creating
 /// multiple iterators using the same connection.
 ///
-/// ```compile_fail
+/// ```compile_fail,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -147,5 +147,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(output, 1);
+    }
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn version() -> crate::sql_types::Text;
+    }
+
+    #[diesel_test_helper::test]
+    fn version_matches_the_server_reported_version() {
+        let connection = &mut connection();
+        let expected = connection.version().unwrap().to_string();
+        let reported = crate::select(version())
+            .get_result::<String>(connection)
+            .unwrap();
+        assert!(
+            reported.starts_with(&format!("{expected}-")),
+            "`{reported}` does not start with `{expected}-`"
+        );
     }
 }

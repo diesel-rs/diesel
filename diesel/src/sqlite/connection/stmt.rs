@@ -596,11 +596,18 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
     use crate::prelude::*;
+    #[cfg(not(miri))]
     use crate::sql_types::Text;
 
     // this is a regression test for
     // https://github.com/diesel-rs/diesel/issues/3558
+    //
+    // Reading sqlite's error message requires accessing memory allocated by
+    // the native library, which is not supported when running under miri with
+    // a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
     fn check_out_of_bounds_bind_does_not_panic_on_drop() {
         let mut conn = SqliteConnection::establish(":memory:").unwrap();

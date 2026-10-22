@@ -477,34 +477,13 @@ fn insert_record_with_custom_returning_clause() {
     assert_eq!(expected_user, inserted_user);
 }
 
+// on SQLite also a regression test for https://github.com/diesel-rs/diesel/issues/4989
 #[diesel_test_helper::test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(any(
+    not(any(feature = "sqlite", feature = "mysql")),
+    feature = "returning_clauses_for_sqlite_3_35"
+))]
 fn insert_records_with_custom_returning_clause() {
-    use crate::schema::users::dsl::*;
-
-    let connection = &mut connection();
-    let new_users: &[_] = &[
-        NewUser::new("Sean", Some("Black")),
-        NewUser::new("Tess", None),
-    ];
-
-    let inserted_users = insert_into(users)
-        .values(new_users)
-        .returning((name, hair_color))
-        .get_results::<(String, Option<String>)>(connection)
-        .unwrap();
-    let expected_users = vec![
-        ("Sean".to_string(), Some("Black".to_string())),
-        ("Tess".to_string(), None),
-    ];
-
-    assert_eq!(expected_users, inserted_users);
-}
-
-// regression test for https://github.com/diesel-rs/diesel/issues/4989
-#[diesel_test_helper::test]
-#[cfg(feature = "returning_clauses_for_sqlite_3_35")]
-fn batch_insert_with_custom_returning_clause_sqlite() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();

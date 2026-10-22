@@ -38,7 +38,6 @@ pub fn establish_connection() -> SqliteConnection {
     let url = match vfs {
         0 => "post.db",
         1 => "file:post.db?vfs=opfs-sahpool",
-        2 => "file:post.db?vfs=relaxed-idb",
         _ => unreachable!(),
     };
     let mut conn =
@@ -54,15 +53,6 @@ pub fn establish_connection() -> SqliteConnection {
 pub async fn install_opfs_sahpool() {
     use sqlite_wasm_vfs::sahpool::{OpfsSAHPoolCfg, install};
     install::<sqlite_wasm_rs::WasmOsCallback>(&OpfsSAHPoolCfg::default(), false)
-        .await
-        .unwrap();
-}
-
-#[cfg(all(target_family = "wasm", target_os = "unknown"))]
-#[wasm_bindgen(js_name = installRelaxedIdb)]
-pub async fn install_relaxed_idb() {
-    use sqlite_wasm_vfs::relaxed_idb::{RelaxedIdbCfg, install};
-    install::<sqlite_wasm_rs::WasmOsCallback>(&RelaxedIdbCfg::default(), false)
         .await
         .unwrap();
 }

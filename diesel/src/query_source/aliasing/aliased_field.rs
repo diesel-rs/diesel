@@ -4,6 +4,7 @@ use super::{Alias, AliasSource};
 
 use crate::backend::Backend;
 use crate::dsl;
+use crate::expression::subselect::{SubselectFieldGrouping, SubselectGroupBy};
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping, is_aggregate,
 };
@@ -88,6 +89,16 @@ where
     C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
 {
     type IsAggregate = is_aggregate::Yes;
+}
+
+impl<S, C, GB, From> ValidGrouping<SubselectGroupBy<GB, From>> for AliasedField<S, C>
+where
+    S: AliasSource,
+    C: QueryRelationField<QueryRelation = S::Target>,
+    From: AppearsInFromClause<Alias<S>>,
+    From::Count: SubselectFieldGrouping<Self, GB>,
+{
+    type IsAggregate = <From::Count as SubselectFieldGrouping<Self, GB>>::IsAggregate;
 }
 
 // FIXME: Remove this when overlapping marker traits are stable

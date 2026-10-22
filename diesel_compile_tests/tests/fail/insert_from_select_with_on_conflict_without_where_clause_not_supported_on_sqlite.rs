@@ -18,6 +18,6 @@ fn main() {
         .on_conflict(users::id)
         .do_nothing()
         .execute(&mut connection)
-        //~^ ERROR: `OnConflictSelectWrapper<SelectStatement<..., ...>>` is no valid SQL fragment for the `Sqlite` backend
+        //~^ ERROR: `OnConflictSelectWrapper<SelectStatement<_, _>>` is no valid SQL fragment for the `Sqlite` backend
         .unwrap();
 }

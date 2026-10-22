@@ -17,6 +17,7 @@ concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
 jobs:
   metrics:
+    if: github.repository == 'diesel-rs/diesel'
     name: Collect Benchmark metrics
     runs-on: ubuntu-latest
     environment: Metrics
