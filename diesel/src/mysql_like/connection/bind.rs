@@ -1408,7 +1408,7 @@ mod tests {
         assert!(unsigned_float_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Unsigned<Float>, NonNegative<f32>>(unsigned_float_col).unwrap(),
-            NonNegative(9.1011)
+            NonNegative::new(9.1011).unwrap()
         );
 
         let unsigned_double_col = &results[38].0;
@@ -1420,7 +1420,7 @@ mod tests {
         assert!(unsigned_double_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Unsigned<Double>, NonNegative<f64>>(unsigned_double_col).unwrap(),
-            NonNegative(10.1213)
+            NonNegative::new(10.1213).unwrap()
         );
 
         let unsigned_numeric_col = &results[39].0;
@@ -1435,7 +1435,7 @@ mod tests {
                 unsigned_numeric_col
             )
             .unwrap(),
-            NonNegative(bigdecimal::BigDecimal::from_str("999.99900").unwrap())
+            NonNegative::new(bigdecimal::BigDecimal::from_str("999.99900").unwrap()).unwrap()
         );
 
         let unsigned_decimal_col = &results[40].0;
@@ -1450,7 +1450,7 @@ mod tests {
                 unsigned_decimal_col
             )
             .unwrap(),
-            NonNegative(bigdecimal::BigDecimal::from_str("3.14000").unwrap())
+            NonNegative::new(bigdecimal::BigDecimal::from_str("3.14000").unwrap()).unwrap()
         );
     }
 

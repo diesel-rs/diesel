@@ -17,7 +17,8 @@ use crate::sql_types::TypeMetadata;
 
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub use self::connection::MysqlLikeConnection;
-pub use self::value::{MysqlValue, NonNegative, NumericRepresentation};
+pub use self::value::{MysqlValue, NumericRepresentation};
+pub use types::non_negative::NonNegative;
 
 /// Data structures for MySQL types which have no corresponding Rust type
 ///
@@ -28,6 +29,8 @@ pub mod data_types {
     pub use super::types::date_and_time::MysqlTime;
     #[doc(inline)]
     pub use super::types::date_and_time::MysqlTimestampType;
+    #[doc(inline)]
+    pub use super::types::non_negative::NonNegative;
 }
 
 /// MySQL specific sql types

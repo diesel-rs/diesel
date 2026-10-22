@@ -4,6 +4,7 @@ pub(super) mod date_and_time;
 mod enum_;
 #[cfg(feature = "serde_json")]
 mod json;
+pub(super) mod non_negative;
 mod numeric;
 mod primitives;
 
