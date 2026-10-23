@@ -79,10 +79,11 @@ jobs:
           persist-credentials: false
 
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Set environment variables
         shell: bash
@@ -375,10 +376,11 @@ jobs:
           rustup update stable
           rustup override set stable
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Install dependencies
         run: |
@@ -405,10 +407,11 @@ jobs:
           rustup component add clippy
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
       - name: Fixing up rustup
         shell: bash
         run: |
@@ -451,10 +454,11 @@ jobs:
           rustup component add rustfmt
           rustup target add wasm32-unknown-unknown
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
@@ -486,10 +490,11 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Test diesel-cli
         run: cargo +stable test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
@@ -524,10 +529,11 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Install postgres (Linux)
         run: |
@@ -573,10 +579,11 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
       - name: Install Mysql (Linux)
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
@@ -634,10 +641,11 @@ jobs:
         with:
           tool: cargo-hack,cargo-minimal-versions
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
           cache-all-crates: "true"
+          cache-workspace-crates: "true"
       - name: Install dependencies
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
