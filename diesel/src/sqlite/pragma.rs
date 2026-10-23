@@ -71,7 +71,7 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::result::{Error, QueryResult};
 use crate::sql_types::SqlType;
-use crate::sqlite::{Sqlite, SqliteConnection};
+use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
@@ -344,6 +344,45 @@ impl Pragma for FreelistCount {
 
 impl ReadPragma for FreelistCount {
     type SqlType = crate::sql_types::BigInt;
+}
+
+/// `PRAGMA auto_vacuum`, read as an [`AutoVacuumMode`] and set to the mode it carries.
+///
+/// Changing from or to [`AutoVacuumMode::None`] only takes effect on a database with no tables yet, or after a subsequent `VACUUM`.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::AutoVacuumMode;
+/// use diesel::sqlite::pragma::{AutoVacuum, SchemaPragma};
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// assert_eq!(AutoVacuumMode::None, AutoVacuum::get::<AutoVacuumMode>(conn, None)?);
+/// AutoVacuum(AutoVacuumMode::Incremental).set(conn, None)?;
+/// assert_eq!(
+///     AutoVacuumMode::Incremental,
+///     AutoVacuum::get::<AutoVacuumMode>(conn, None)?
+/// );
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct AutoVacuum(pub AutoVacuumMode);
+
+impl Pragma for AutoVacuum {
+    const NAME: &'static str = "auto_vacuum";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for AutoVacuum {
+    type SqlType = crate::sql_types::Integer;
+}
+
+impl WritePragma for AutoVacuum {
+    fn value(&self) -> PragmaLiteral<'_> {
+        // `#[repr(i32)]` makes the discriminant the mode's SQLite number.
+        PragmaLiteral::Integer(i64::from(self.0 as i32))
+    }
 }
 
 fn cursor<'conn, 'query, P>(
