@@ -36,23 +36,24 @@
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
+//! use diesel::connection::SimpleConnection;
 //! use diesel::sqlite::pragma::{ConnectionPragma, PerConnection, Pragma, ReadPragma};
 //!
-//! struct DatabaseList;
+//! struct ForeignKeys;
 //!
-//! impl Pragma for DatabaseList {
-//!     const NAME: &'static str = "database_list";
+//! impl Pragma for ForeignKeys {
+//!     const NAME: &'static str = "foreign_keys";
 //!     type Scope = PerConnection;
 //! }
 //!
-//! impl ReadPragma for DatabaseList {
-//!     type SqlType = (Integer, Text, Text);
+//! impl ReadPragma for ForeignKeys {
+//!     type SqlType = Bool;
 //! }
 //!
 //! # fn main() -> QueryResult<()> {
 //! let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-//! let databases = DatabaseList::get_all::<(i32, String, String)>(conn)?;
-//! assert_eq!("main", databases[0].1);
+//! conn.batch_execute("PRAGMA foreign_keys = ON")?;
+//! assert!(ForeignKeys::get::<bool>(conn)?);
 //! #     Ok(())
 //! # }
 //! ```
