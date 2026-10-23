@@ -11,7 +11,7 @@ impl Pragma for UserVersion {
 }
 
 impl WritePragma for UserVersion {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
