@@ -132,37 +132,6 @@ impl SqliteConnection {
         .map(|_| ())
     }
 
-    /// Unused pages on a database's freelist, via `PRAGMA freelist_count`.
-    ///
-    /// `schema` selects an attached database by name, `None` reads `main`. A
-    /// growing freelist is reclaimable space, freed by `VACUUM`.
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// # fn run_test() -> QueryResult<()> {
-    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// assert_eq!(conn.freelist_count(None)?, 0);
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub fn freelist_count(&mut self, schema: Option<&str>) -> QueryResult<i64> {
-        self.read_pragma_count("freelist_count", schema)
-    }
-
-    fn read_pragma_count(
-        &mut self,
-        pragma: &'static str,
-        schema: Option<&str>,
-    ) -> QueryResult<i64> {
-        use crate::query_dsl::RunQueryDsl;
-
-        let query: Pragma<'_, crate::sql_types::BigInt> = Pragma::new(pragma, schema);
-        query.get_result(self)
-    }
-
     /// Shrink a database by releasing freelist pages, without the full rewrite
     /// [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
     ///
@@ -502,7 +471,7 @@ mod tests {
     use crate::prelude::*;
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::sql_types::Integer;
-    use crate::sqlite::pragma::{PageCount, SchemaPragma};
+    use crate::sqlite::pragma::{FreelistCount, PageCount, SchemaPragma};
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -658,7 +627,7 @@ mod tests {
         let conn = &mut connection();
         assert_eq!(
             0,
-            conn.freelist_count(None).unwrap(),
+            FreelistCount::get::<i64>(conn, None).unwrap(),
             "a fresh database has an empty freelist"
         );
 
@@ -667,7 +636,7 @@ mod tests {
 
         crate::delete(pragma_probe::table).execute(conn).unwrap();
         assert!(
-            conn.freelist_count(None).unwrap() > 0,
+            FreelistCount::get::<i64>(conn, None).unwrap() > 0,
             "deleting the row leaves reclaimable pages on the freelist"
         );
 
@@ -675,7 +644,7 @@ mod tests {
         crate::sql_query("VACUUM").execute(conn).unwrap();
         assert_eq!(
             0,
-            conn.freelist_count(None).unwrap(),
+            FreelistCount::get::<i64>(conn, None).unwrap(),
             "VACUUM reclaims the freelist"
         );
     }
@@ -718,7 +687,7 @@ mod tests {
             .unwrap();
 
         assert!(PageCount::get::<i64>(conn, Some(schema)).unwrap() > 0);
-        assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(conn, Some(schema)).unwrap());
     }
 
     #[cfg(not(miri))] // ffi string access
@@ -727,7 +696,7 @@ mod tests {
         let conn = &mut connection();
 
         assert!(PageCount::get::<i64>(conn, Some("nope")).is_err());
-        assert!(conn.freelist_count(Some("nope")).is_err());
+        assert!(FreelistCount::get::<i64>(conn, Some("nope")).is_err());
     }
 
     // Leaves many pages on the freelist, so `incremental_vacuum` has something to
@@ -776,7 +745,7 @@ mod tests {
             .unwrap();
         grow_then_empty_freelist(conn);
         assert!(
-            conn.freelist_count(None).unwrap() > 1,
+            FreelistCount::get::<i64>(conn, None).unwrap() > 1,
             "the deleted rows should leave many pages on the freelist"
         );
 
@@ -784,7 +753,7 @@ mod tests {
 
         // Stepping the pragma only once would free a single page and leave the rest, so
         // this also pins that the statement is driven to completion.
-        assert_eq!(0, conn.freelist_count(None).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
     }
 
     #[diesel_test_helper::test]
@@ -793,12 +762,12 @@ mod tests {
         conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
             .unwrap();
         grow_then_empty_freelist(conn);
-        let before = conn.freelist_count(None).unwrap();
+        let before = FreelistCount::get::<i64>(conn, None).unwrap();
         assert!(before > 10, "the bound has to be smaller than the freelist");
 
         conn.incremental_vacuum(None, Some(10)).unwrap();
 
-        let after = conn.freelist_count(None).unwrap();
+        let after = FreelistCount::get::<i64>(conn, None).unwrap();
         assert!(after >= before - 10, "at most ten pages may be reclaimed");
         assert!(after < before, "some pages should have been reclaimed");
     }
@@ -808,14 +777,14 @@ mod tests {
         let conn = &mut connection();
         assert_eq!(AutoVacuumMode::None, conn.auto_vacuum(None).unwrap());
         grow_then_empty_freelist(conn);
-        let before = conn.freelist_count(None).unwrap();
+        let before = FreelistCount::get::<i64>(conn, None).unwrap();
         assert!(before > 0);
 
         conn.incremental_vacuum(None, None).unwrap();
 
         assert_eq!(
             before,
-            conn.freelist_count(None).unwrap(),
+            FreelistCount::get::<i64>(conn, None).unwrap(),
             "a database that is not in incremental mode keeps its freelist"
         );
     }
@@ -828,11 +797,11 @@ mod tests {
             .unwrap();
 
         grow_then_empty_aux_freelist(conn);
-        assert!(conn.freelist_count(Some("aux")).unwrap() > 0);
+        assert!(FreelistCount::get::<i64>(conn, Some("aux")).unwrap() > 0);
 
         conn.incremental_vacuum(Some("aux"), None).unwrap();
 
-        assert_eq!(0, conn.freelist_count(Some("aux")).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(conn, Some("aux")).unwrap());
     }
 
     #[diesel_test_helper::test]
@@ -845,7 +814,7 @@ mod tests {
 
         conn.incremental_vacuum(Some(schema), None).unwrap();
 
-        assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(conn, Some(schema)).unwrap());
     }
 
     #[diesel_test_helper::test]
@@ -855,11 +824,11 @@ mod tests {
         conn.set_auto_vacuum(None, AutoVacuumMode::Incremental)
             .unwrap();
         grow_then_empty_freelist(conn);
-        assert!(conn.freelist_count(None).unwrap() > 0);
+        assert!(FreelistCount::get::<i64>(conn, None).unwrap() > 0);
 
         conn.incremental_vacuum(None, Some(0)).unwrap();
 
-        assert_eq!(0, conn.freelist_count(None).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
     }
 
     #[cfg(not(miri))] // ffi string access
