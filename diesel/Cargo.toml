@@ -66,6 +66,8 @@ getrandom_03 = { version = "0.3", features = ["wasm_js"], package = "getrandom" 
 # Keep in sync with the wasm-bindgen CLI in .github/workflows/ci.yml.
 wasm-bindgen-test = "=0.3.78"
 
+# invalidate cache
+
 [dev-dependencies]
 cfg-if = "1"
 dotenvy = "0.15"
