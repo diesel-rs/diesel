@@ -320,6 +320,32 @@ impl ReadPragma for PageCount {
     type SqlType = crate::sql_types::BigInt;
 }
 
+/// `PRAGMA freelist_count`, the unused pages on a database's freelist, read as an `i64`.
+///
+/// A growing freelist is reclaimable space, freed by `VACUUM`.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::pragma::{FreelistCount, SchemaPragma};
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// assert_eq!(0, FreelistCount::get::<i64>(conn, None)?);
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct FreelistCount;
+
+impl Pragma for FreelistCount {
+    const NAME: &'static str = "freelist_count";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for FreelistCount {
+    type SqlType = crate::sql_types::BigInt;
+}
+
 fn cursor<'conn, 'query, P>(
     conn: &'conn mut SqliteConnection,
     schema: Option<&'query str>,
