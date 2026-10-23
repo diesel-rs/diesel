@@ -125,6 +125,49 @@ pub trait WritePragma: Pragma {
 pub enum PragmaLiteral {
     /// Rendered as a decimal integer.
     Integer(i64),
+    /// Rendered unquoted, such as `WAL` or `NORMAL`.
+    ///
+    /// A keyword that is empty or holds anything but ASCII letters, digits and underscores fails with [`Error::QueryBuilderError`] before reaching SQLite.
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// use diesel::sqlite::pragma::{
+    ///     PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma, WritePragma,
+    /// };
+    ///
+    /// enum Synchronous {
+    ///     Off,
+    ///     Normal,
+    /// }
+    ///
+    /// impl Pragma for Synchronous {
+    ///     const NAME: &'static str = "synchronous";
+    ///     type Scope = PerSchema;
+    /// }
+    ///
+    /// impl ReadPragma for Synchronous {
+    ///     type SqlType = Integer;
+    /// }
+    ///
+    /// impl WritePragma for Synchronous {
+    ///     fn value(&self) -> PragmaLiteral {
+    ///         match self {
+    ///             Synchronous::Off => PragmaLiteral::Keyword("OFF"),
+    ///             Synchronous::Normal => PragmaLiteral::Keyword("NORMAL"),
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// # fn main() -> QueryResult<()> {
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// Synchronous::Normal.set(conn, None)?;
+    /// assert_eq!(1, Synchronous::get::<i32>(conn, None)?);
+    /// Synchronous::Off.set(conn, None)?;
+    /// assert_eq!(0, Synchronous::get::<i32>(conn, None)?);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    Keyword(&'static str),
 }
 
 macro_rules! integer_pragma_literal {
@@ -278,26 +321,38 @@ impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
             out.push_identifier(schema)?;
             out.push_sql(".");
         }
-        let name = P::NAME;
-        if name.is_empty()
-            || !name
-                .bytes()
-                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
-        {
-            return Err(Error::QueryBuilderError(
-                alloc::format!("`{name}` is not a valid pragma name").into(),
-            ));
-        }
-        out.push_sql(name);
+        push_bare_word(&mut out, "name", P::NAME)?;
         match self.value {
             None => {}
             Some(PragmaLiteral::Integer(value)) => {
                 out.push_sql(" = ");
                 out.push_sql(&value.to_string());
             }
+            Some(PragmaLiteral::Keyword(keyword)) => {
+                out.push_sql(" = ");
+                push_bare_word(&mut out, "keyword", keyword)?;
+            }
         }
         Ok(())
     }
+}
+
+fn push_bare_word(
+    out: &mut AstPass<'_, '_, Sqlite>,
+    kind: &str,
+    word: &'static str,
+) -> QueryResult<()> {
+    if word.is_empty()
+        || !word
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+    {
+        return Err(Error::QueryBuilderError(
+            alloc::format!("`{word}` is not a valid pragma {kind}").into(),
+        ));
+    }
+    out.push_sql(word);
+    Ok(())
 }
 
 // The schema name and value are runtime data, so the rendered SQL is not determined by the type.

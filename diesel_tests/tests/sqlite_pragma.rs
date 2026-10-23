@@ -131,6 +131,40 @@ impl ReadPragma for EmptyName {
     type SqlType = Integer;
 }
 
+enum Synchronous {
+    Extra,
+}
+
+impl Pragma for Synchronous {
+    const NAME: &'static str = "synchronous";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for Synchronous {
+    type SqlType = Integer;
+}
+
+impl WritePragma for Synchronous {
+    fn value(&self) -> PragmaLiteral {
+        match self {
+            Synchronous::Extra => PragmaLiteral::Keyword("EXTRA"),
+        }
+    }
+}
+
+struct SynchronousKeyword(&'static str);
+
+impl Pragma for SynchronousKeyword {
+    const NAME: &'static str = "synchronous";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for SynchronousKeyword {
+    fn value(&self) -> PragmaLiteral {
+        PragmaLiteral::Keyword(self.0)
+    }
+}
+
 struct UserVersionAsPair;
 
 impl Pragma for UserVersionAsPair {
@@ -226,6 +260,40 @@ fn empty_name_is_rejected_before_execution() {
 
     assert!(matches!(
         EmptyName::get::<i32>(conn, None),
+        Err(Error::QueryBuilderError(_))
+    ));
+}
+
+#[diesel_test_helper::test]
+fn per_schema_keyword_pragma_targets_only_the_named_database() {
+    let conn = &mut connection();
+    conn.attach_database(":memory:", "aux").unwrap();
+    let main_before = Synchronous::get::<i32>(conn, None).unwrap();
+
+    Synchronous::Extra.set(conn, Some("aux")).unwrap();
+
+    assert_eq!(3, Synchronous::get::<i32>(conn, Some("aux")).unwrap());
+    assert_eq!(main_before, Synchronous::get::<i32>(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn keyword_outside_identifier_characters_is_rejected_before_execution() {
+    let conn = &mut connection();
+    let before = Synchronous::get::<i32>(conn, None).unwrap();
+
+    let result = SynchronousKeyword("FULL; PRAGMA main.user_version = 7").set(conn, None);
+
+    assert!(matches!(result, Err(Error::QueryBuilderError(_))));
+    assert_eq!(before, Synchronous::get::<i32>(conn, None).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn empty_keyword_is_rejected_before_execution() {
+    let conn = &mut connection();
+
+    assert!(matches!(
+        SynchronousKeyword("").set(conn, None),
         Err(Error::QueryBuilderError(_))
     ));
 }
