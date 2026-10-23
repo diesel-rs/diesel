@@ -8,7 +8,10 @@ use diesel::query_builder::{AstPass, QueryFragment, QueryId};
 use diesel::sql_types::Untyped;
 use diesel::{AppearsOnTable, Expression, QueryResult, SelectableExpression};
 
-/// Represents a dynamically sized select clause
+/// Represents a dynamically sized select clause.
+///
+/// `ValidGrouping` holds only for the empty group-by clause, so `.group_by()` compiles but
+/// the query will not load. Select [`Column`](crate::Column) values when grouping.
 #[allow(missing_debug_implementations)]
 pub struct DynamicSelectClause<'a, DB, QS> {
     selects: Vec<Box<dyn QueryFragment<DB> + Send + 'a>>,
