@@ -317,6 +317,7 @@ where
 
         let mut out = ExecuteCopyToConnection::execute(conn, command)?;
         let buffer = out.fill_buf().map_err(io_result_mapper)?;
+        expect_buffer_len(buffer, super::COPY_MAGIC_HEADER.len() + 8)?;
         if buffer[..super::COPY_MAGIC_HEADER.len()] != super::COPY_MAGIC_HEADER {
             return Err(crate::result::Error::DeserializationError(
                 "Unexpected protocol header".into(),
@@ -341,15 +342,24 @@ where
         .map_err(|e| crate::result::Error::DeserializationError(Box::new(e)))?;
         out.consume(super::COPY_MAGIC_HEADER.len() + 8 + header_size);
         let mut len = None;
+        let mut finished = false;
         Ok(core::iter::from_fn(move || {
+            if finished {
+                return None;
+            }
             if let Some(len) = len {
                 out.consume(len);
                 if let Err(e) = out.fill_buf().map_err(io_result_mapper) {
+                    finished = true;
                     return Some(Err(e));
                 }
             }
             let buffer = C::get_buffer(&out);
             len = Some(buffer.len());
+            if let Err(e) = expect_buffer_len(buffer, 2) {
+                finished = true;
+                return Some(Err(e));
+            }
             let tuple_count =
                 i16::from_be_bytes((&buffer[..2]).try_into().expect("Exactly 2 bytes"));
             if tuple_count > 0 {
@@ -362,19 +372,27 @@ where
                 let mut buffers = Vec::with_capacity(tuple_count);
                 let mut offset = 2;
                 for _t in 0..tuple_count {
+                    if let Err(e) = expect_buffer_len(buffer, offset + 4) {
+                        finished = true;
+                        return Some(Err(e));
+                    }
                     let data_size = i32::from_be_bytes(
                         (&buffer[offset..offset + 4])
                             .try_into()
                             .expect("Exactly 4 bytes"),
                     );
-
                     if data_size < 0 {
+                        offset += 4;
                         buffers.push(None);
                     } else {
                         match usize::try_from(data_size) {
                             Ok(data_size) => {
+                                if let Err(e) = expect_buffer_len(buffer, offset + 4 + data_size) {
+                                    finished = true;
+                                    return Some(Err(e));
+                                }
                                 buffers.push(Some(&buffer[offset + 4..offset + 4 + data_size]));
-                                offset = offset + 4 + data_size;
+                                offset += data_size + 4;
                             }
                             Err(e) => {
                                 return Some(Err(crate::result::Error::DeserializationError(
@@ -388,9 +406,28 @@ where
                 let row = C::make_row(&out, buffers);
                 Some(U::build_from_row(&row).map_err(crate::result::Error::DeserializationError))
             } else {
+                out.consume(len.expect("It's always set here"));
+                if let Err(e) = out.fill_buf().map_err(io_result_mapper) {
+                    return Some(Err(e));
+                }
+                finished = true;
                 None
             }
         }))
+    }
+}
+
+fn expect_buffer_len(buffer: &[u8], expected: usize) -> QueryResult<()> {
+    if buffer.len() < expected {
+        Err(crate::result::Error::DeserializationError(
+            format!(
+                "Expected at least {expected} bytes but got {} bytes",
+                buffer.len()
+            )
+            .into(),
+        ))
+    } else {
+        Ok(())
     }
 }
 

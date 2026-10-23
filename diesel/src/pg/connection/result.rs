@@ -179,6 +179,10 @@ impl PgResult {
                 (or libpq is giving out negative column count)",
         )
     }
+
+    pub(super) fn result_status(&self) -> pq_sys::ExecStatusType {
+        self.internal_result.result_status()
+    }
 }
 
 struct PgErrorInformation {
