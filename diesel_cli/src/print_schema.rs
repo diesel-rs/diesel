@@ -533,6 +533,7 @@ fn mariadb_diesel_types() -> HashSet<&'static str> {
 fn sqlite_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     common_diesel_types(&mut types);
+
     types
 }
 
