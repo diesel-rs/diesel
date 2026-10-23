@@ -1,6 +1,10 @@
 use super::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn limit() {
     use crate::schema::users::dsl::*;
@@ -20,6 +24,10 @@ fn limit() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 #[diesel_test_helper::test]
 fn offset() {
@@ -36,6 +44,10 @@ fn offset() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn limit_offset() {
     use crate::schema::users::dsl::*;
@@ -55,6 +67,10 @@ fn limit_offset() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_limit() {
     use crate::schema::users::dsl::*;
@@ -84,6 +100,10 @@ fn boxed_limit() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_offset() {
     use crate::schema::users::dsl::*;
@@ -117,6 +137,10 @@ fn boxed_offset() {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_limit_offset() {
     use crate::schema::users::dsl::*;

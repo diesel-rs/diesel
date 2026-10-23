@@ -68,6 +68,10 @@ fn errors_during_deserialization_do_not_panic() {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn errors_during_deserialization_do_not_panic() {
@@ -100,6 +104,10 @@ fn errors_during_deserialization_do_not_panic() {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn test_chrono_types_sqlite() {
@@ -757,6 +765,10 @@ fn f64_to_sql() {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn string_from_sql() {
     assert_eq!("hello", &query_single_value::<VarChar, String>("'hello'"));
@@ -844,6 +856,10 @@ fn pg_specific_option_from_sql() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn option_from_sql() {
     assert_eq!(
