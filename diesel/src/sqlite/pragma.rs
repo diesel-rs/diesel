@@ -75,6 +75,7 @@ use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use core::num::NonZeroU32;
 
 /// A pragma, named by [`NAME`](Self::NAME) and scoped by [`Scope`](Self::Scope).
 pub trait Pragma: Sized {
@@ -382,6 +383,40 @@ impl WritePragma for AutoVacuum {
     fn value(&self) -> PragmaLiteral<'_> {
         // `#[repr(i32)]` makes the discriminant the mode's SQLite number.
         PragmaLiteral::Integer(i64::from(self.0 as i32))
+    }
+}
+
+/// `PRAGMA incremental_vacuum`, shrinking a database by releasing freelist pages without the full rewrite [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
+///
+/// `Some(pages)` releases at most that many pages, `None` the whole freelist. Only a database in [`AutoVacuumMode::Incremental`] has anything to release, on any other mode the assignment succeeds and does nothing.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::AutoVacuumMode;
+/// use diesel::sqlite::pragma::{AutoVacuum, IncrementalVacuum, SchemaPragma};
+/// use std::num::NonZeroU32;
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// AutoVacuum(AutoVacuumMode::Incremental).set(conn, None)?;
+/// // Release at most 8 pages, then whatever is left.
+/// IncrementalVacuum(NonZeroU32::new(8)).set(conn, None)?;
+/// IncrementalVacuum(None).set(conn, None)?;
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct IncrementalVacuum(pub Option<NonZeroU32>);
+
+impl Pragma for IncrementalVacuum {
+    const NAME: &'static str = "incremental_vacuum";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for IncrementalVacuum {
+    fn value(&self) -> PragmaLiteral<'_> {
+        // SQLite releases the whole freelist for a bound below one.
+        PragmaLiteral::Integer(self.0.map_or(0, |pages| i64::from(pages.get())))
     }
 }
 
