@@ -1,11 +1,14 @@
 use diesel::connection::{Connection, SimpleConnection};
 use diesel::result::Error;
 use diesel::sql_types::{Bool, Integer, Text};
+#[cfg(not(miri))]
+use diesel::sqlite::ProgressDecision;
 use diesel::sqlite::pragma::{
     ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma,
     WritePragma,
 };
-use diesel::sqlite::{AutoVacuumMode, ProgressDecision, SqliteConnection};
+use diesel::sqlite::{AutoVacuumMode, SqliteConnection};
+#[cfg(not(miri))]
 use std::num::NonZeroU32;
 
 fn connection() -> SqliteConnection {
@@ -81,13 +84,17 @@ impl ReadPragma for FreelistCount {
     type SqlType = diesel::sql_types::BigInt;
 }
 
+// Only used by tests that are compiled out under miri.
+#[cfg(not(miri))]
 struct DatabaseList;
 
+#[cfg(not(miri))]
 impl Pragma for DatabaseList {
     const NAME: &'static str = "database_list";
     type Scope = PerConnection;
 }
 
+#[cfg(not(miri))]
 impl ReadPragma for DatabaseList {
     type SqlType = (Integer, Text, Text);
 }
@@ -205,6 +212,9 @@ fn per_connection_get_reads_the_connection_setting() {
     assert!(!ForeignKeys::get::<bool>(conn).unwrap());
 }
 
+// Reads text allocated by the native sqlite library, whose provenance miri
+// cannot track under `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn connection_pragma_get_all_lists_every_attached_database() {
     let conn = &mut connection();
@@ -276,6 +286,7 @@ fn empty_keyword_is_rejected_before_execution() {
     ));
 }
 
+#[cfg(not(miri))] // ffi string access
 #[diesel_test_helper::test]
 fn reading_all_rows_from_an_unknown_schema_is_a_database_error() {
     let conn = &mut connection();
@@ -300,6 +311,9 @@ fn row_not_matching_the_declared_type_is_a_deserialization_error() {
     ));
 }
 
+// Registers a progress callback that the native library invokes, which is not
+// supported under miri with `-Zmiri-native-lib`.
+#[cfg(not(miri))] // ffi call
 #[diesel_test_helper::test]
 fn interrupted_read_returns_the_interruption() {
     let conn = &mut connection();
@@ -365,6 +379,7 @@ fn assignment_runs_to_completion() {
     assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
 }
 
+#[cfg(not(miri))] // ffi string access
 #[diesel_test_helper::test]
 fn setting_on_an_unknown_schema_is_a_database_error() {
     let conn = &mut connection();
