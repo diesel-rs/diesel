@@ -333,6 +333,7 @@ fn assignment_runs_to_completion() {
     assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
 }
 
+#[cfg(not(miri))] // ffi string access
 #[diesel_test_helper::test]
 fn setting_on_an_unknown_schema_is_a_database_error() {
     let conn = &mut connection();
