@@ -1,3 +1,5 @@
+#[cfg(not(miri))]
+use diesel::connection::InstrumentationEvent;
 use diesel::connection::{Connection, SimpleConnection};
 use diesel::result::Error;
 use diesel::sql_types::{Bool, Integer, Text};
@@ -7,9 +9,13 @@ use diesel::sqlite::pragma::{
     ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma,
     WritePragma,
 };
+#[cfg(not(miri))]
+use diesel::sqlite::{AuthorizerContext, AuthorizerDecision};
 use diesel::sqlite::{AutoVacuumMode, SqliteConnection};
 #[cfg(not(miri))]
 use std::num::NonZeroU32;
+#[cfg(not(miri))]
+use std::sync::{Arc, Mutex};
 
 fn connection() -> SqliteConnection {
     SqliteConnection::establish(":memory:").unwrap()
@@ -27,7 +33,7 @@ impl ReadPragma for UserVersion {
 }
 
 impl WritePragma for UserVersion {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -55,7 +61,7 @@ impl ReadPragma for ForeignKeys {
 }
 
 impl WritePragma for ForeignKeys {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -68,7 +74,7 @@ impl Pragma for IncrementalVacuum {
 }
 
 impl WritePragma for IncrementalVacuum {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         self.0.into()
     }
 }
@@ -122,7 +128,7 @@ impl ReadPragma for AssignmentInName {
 }
 
 impl WritePragma for AssignmentInName {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         7.into()
     }
 }
@@ -157,8 +163,21 @@ impl Pragma for SynchronousKeyword {
 }
 
 impl WritePragma for SynchronousKeyword {
-    fn value(&self) -> PragmaLiteral {
+    fn value(&self) -> PragmaLiteral<'_> {
         PragmaLiteral::Keyword(self.0)
+    }
+}
+
+struct TextValue<'a>(&'a str);
+
+impl Pragma for TextValue<'_> {
+    const NAME: &'static str = "test_text";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for TextValue<'_> {
+    fn value(&self) -> PragmaLiteral<'_> {
+        PragmaLiteral::Text(self.0)
     }
 }
 
@@ -388,4 +407,64 @@ fn setting_on_an_unknown_schema_is_a_database_error() {
         UserVersion(1).set(conn, Some("missing")),
         Err(Error::DatabaseError(..))
     ));
+}
+
+// Registers an authorizer callback that the native library invokes, which is
+// not supported under miri with `-Zmiri-native-lib`.
+#[cfg(not(miri))] // ffi call
+#[diesel_test_helper::test]
+fn borrowed_text_reaches_sqlite_as_one_uncached_value() {
+    let conn = &mut connection();
+    conn.attach_database(":memory:", "a\"ux").unwrap();
+    let arguments = Arc::new(Mutex::new(Vec::new()));
+    let observed = arguments.clone();
+    conn.on_authorize(move |context| {
+        if let AuthorizerContext::Pragma(pragma) = context
+            && pragma.name == Some("test_text")
+        {
+            observed.lock().unwrap().push((
+                pragma.database.unwrap().to_owned(),
+                pragma.argument.unwrap().to_owned(),
+            ));
+        }
+        AuthorizerDecision::Allow
+    });
+    conn.set_instrumentation(|event: InstrumentationEvent<'_>| {
+        assert!(!matches!(event, InstrumentationEvent::CacheQuery { .. }));
+    });
+
+    let values = [
+        "",
+        "runtime text",
+        "x'0000000000000000000000000000000000000000000000000000000000000000'",
+        "'\"\\\n\ré雪",
+        "first''last",
+        "'; PRAGMA main.user_version = 7; --",
+    ];
+    let mut expected = Vec::new();
+    for schema in ["main", "a\"ux"] {
+        for value in values {
+            let value = value.to_owned();
+            for _ in 0..2 {
+                TextValue(&value).set(conn, Some(schema)).unwrap();
+                expected.push((schema.to_owned(), value.clone()));
+            }
+        }
+    }
+
+    assert_eq!(expected, *arguments.lock().unwrap());
+    conn.set_instrumentation(|_: InstrumentationEvent<'_>| {});
+    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn text_with_nul_is_rejected_without_executing_a_prefix() {
+    let conn = &mut connection();
+    let value = String::from("text\0'; PRAGMA main.user_version = 7; --");
+
+    assert!(matches!(
+        TextValue(&value).set(conn, None),
+        Err(Error::InvalidCString(_))
+    ));
+    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
 }

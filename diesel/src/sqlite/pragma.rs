@@ -24,7 +24,7 @@
 //! }
 //!
 //! impl WritePragma for UserVersion {
-//!     fn value(&self) -> PragmaLiteral {
+//!     fn value(&self) -> PragmaLiteral<'_> {
 //!         self.0.into()
 //!     }
 //! }
@@ -117,13 +117,13 @@ pub trait ReadPragma: Pragma {
 /// Never assign secrets this way, since [`Instrumentation`](crate::connection::Instrumentation), [`on_trace`](SqliteConnection::on_trace) and [`on_authorize`](SqliteConnection::on_authorize) observe the statement.
 pub trait WritePragma: Pragma {
     /// The literal assigned to the pragma.
-    fn value(&self) -> PragmaLiteral;
+    fn value(&self) -> PragmaLiteral<'_>;
 }
 
 /// A value as written into a pragma statement, which takes no bind parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum PragmaLiteral {
+pub enum PragmaLiteral<'a> {
     /// Rendered as a decimal integer.
     Integer(i64),
     /// Rendered unquoted, such as `WAL` or `NORMAL`.
@@ -151,7 +151,7 @@ pub enum PragmaLiteral {
     /// }
     ///
     /// impl WritePragma for Synchronous {
-    ///     fn value(&self) -> PragmaLiteral {
+    ///     fn value(&self) -> PragmaLiteral<'_> {
     ///         match self {
     ///             Synchronous::Off => PragmaLiteral::Keyword("OFF"),
     ///             Synchronous::Normal => PragmaLiteral::Keyword("NORMAL"),
@@ -169,11 +169,52 @@ pub enum PragmaLiteral {
     /// # }
     /// ```
     Keyword(&'static str),
+    /// Rendered as a single-quoted SQL string with embedded quotes doubled, such as `'UTF-16le'`.
+    ///
+    /// Text holding a NUL byte fails with [`Error::InvalidCString`] before reaching SQLite.
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// use diesel::sqlite::pragma::{
+    ///     ConnectionPragma, PerConnection, Pragma, PragmaLiteral, ReadPragma, WritePragma,
+    /// };
+    ///
+    /// struct Encoding<'a>(&'a str);
+    ///
+    /// impl Pragma for Encoding<'_> {
+    ///     const NAME: &'static str = "encoding";
+    ///     type Scope = PerConnection;
+    /// }
+    ///
+    /// impl ReadPragma for Encoding<'_> {
+    ///     type SqlType = Text;
+    /// }
+    ///
+    /// impl WritePragma for Encoding<'_> {
+    ///     fn value(&self) -> PragmaLiteral<'_> {
+    ///         PragmaLiteral::Text(self.0)
+    ///     }
+    /// }
+    ///
+    /// # // Reading text allocated by the native sqlite library is not supported
+    /// # // by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() -> QueryResult<()> {
+    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+    /// // SQLite only changes the encoding before anything is written.
+    /// Encoding("UTF-16le").set(conn)?;
+    /// assert_eq!("UTF-16le", Encoding::get::<String>(conn)?);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// ```
+    Text(&'a str),
 }
 
 macro_rules! integer_pragma_literal {
     ($($ty:ty),*) => {$(
-        impl From<$ty> for PragmaLiteral {
+        impl From<$ty> for PragmaLiteral<'_> {
             fn from(value: $ty) -> Self {
                 PragmaLiteral::Integer(i64::from(value))
             }
@@ -301,12 +342,12 @@ fn assign<P: WritePragma>(
 #[derive(Debug)]
 struct PragmaQuery<'a, P> {
     schema: Option<&'a str>,
-    value: Option<PragmaLiteral>,
+    value: Option<PragmaLiteral<'a>>,
     pragma: PhantomData<P>,
 }
 
 impl<'a, P: Pragma> PragmaQuery<'a, P> {
-    fn new(schema: Option<&'a str>, value: Option<PragmaLiteral>) -> Self {
+    fn new(schema: Option<&'a str>, value: Option<PragmaLiteral<'a>>) -> Self {
         Self {
             schema,
             value,
@@ -332,6 +373,16 @@ impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
             Some(PragmaLiteral::Keyword(keyword)) => {
                 out.push_sql(" = ");
                 push_bare_word(&mut out, "keyword", keyword)?;
+            }
+            Some(PragmaLiteral::Text(text)) => {
+                out.push_sql(" = '");
+                for (index, fragment) in text.split('\'').enumerate() {
+                    if index != 0 {
+                        out.push_sql("''");
+                    }
+                    out.push_sql(fragment);
+                }
+                out.push_sql("'");
             }
         }
         Ok(())
