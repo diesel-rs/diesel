@@ -1,17 +1,18 @@
 //! Typed access to SQLite [pragmas](https://www.sqlite.org/pragma.html).
 //!
-//! A pragma is declared as a type implementing [`Pragma`], and [`ReadPragma`] when it returns rows. Its [`Scope`](Pragma::Scope) decides whether it is read per database or per connection, and the caller picks the Rust type each row decodes into.
+//! A pragma is declared as a type implementing [`Pragma`], with [`ReadPragma`] when it returns rows and [`WritePragma`] when it can be assigned a value. Its [`Scope`](Pragma::Scope) decides whether it is used per database or per connection, and the caller picks the Rust type each row decodes into.
 //!
 //! # Per-schema pragmas
 //!
-//! A [`PerSchema`] pragma applies to one database and is read through [`SchemaPragma`], where a `None` schema selects `main`.
+//! A [`PerSchema`] pragma applies to one database and is read and written through [`SchemaPragma`], where a `None` schema selects `main`.
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
-//! use diesel::connection::SimpleConnection;
-//! use diesel::sqlite::pragma::{PerSchema, Pragma, ReadPragma, SchemaPragma};
+//! use diesel::sqlite::pragma::{
+//!     PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma, WritePragma,
+//! };
 //!
-//! struct UserVersion;
+//! struct UserVersion(i32);
 //!
 //! impl Pragma for UserVersion {
 //!     const NAME: &'static str = "user_version";
@@ -22,9 +23,15 @@
 //!     type SqlType = Integer;
 //! }
 //!
+//! impl WritePragma for UserVersion {
+//!     fn value(&self) -> PragmaLiteral {
+//!         self.0.into()
+//!     }
+//! }
+//!
 //! # fn main() -> QueryResult<()> {
 //! let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-//! conn.batch_execute("PRAGMA user_version = 7")?;
+//! UserVersion(7).set(conn, None)?;
 //! assert_eq!(7, UserVersion::get::<i32>(conn, None)?);
 //! #     Ok(())
 //! # }
@@ -32,7 +39,7 @@
 //!
 //! # Per-connection pragmas
 //!
-//! A [`PerConnection`] pragma applies to the whole connection and is read through [`ConnectionPragma`], which takes no schema.
+//! A [`PerConnection`] pragma applies to the whole connection and is read and written through [`ConnectionPragma`], which takes no schema.
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
@@ -63,7 +70,8 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::result::{Error, QueryResult};
 use crate::sql_types::SqlType;
-use crate::sqlite::{Sqlite, SqliteConnection};
+use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 
@@ -103,7 +111,35 @@ pub trait ReadPragma: Pragma {
     type SqlType: SqlType;
 }
 
-/// Reads a [`PerSchema`] pragma, where a `None` schema selects `main`.
+/// A pragma that can be assigned the value it carries.
+///
+/// Never assign secrets this way, since [`Instrumentation`](crate::connection::Instrumentation), [`on_trace`](SqliteConnection::on_trace) and [`on_authorize`](SqliteConnection::on_authorize) observe the statement.
+pub trait WritePragma: Pragma {
+    /// The literal assigned to the pragma.
+    fn value(&self) -> PragmaLiteral;
+}
+
+/// A value as written into a pragma statement, which takes no bind parameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum PragmaLiteral {
+    /// Rendered as a decimal integer.
+    Integer(i64),
+}
+
+macro_rules! integer_pragma_literal {
+    ($($ty:ty),*) => {$(
+        impl From<$ty> for PragmaLiteral {
+            fn from(value: $ty) -> Self {
+                PragmaLiteral::Integer(i64::from(value))
+            }
+        }
+    )*};
+}
+
+integer_pragma_literal!(i8, i16, i32, i64, u8, u16, u32, bool);
+
+/// Reads and writes a [`PerSchema`] pragma, where a `None` schema selects `main`.
 pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     /// Read the first row, returning [`Error::NotFound`] if the pragma returns none.
     fn get<Row>(conn: &mut SqliteConnection, schema: Option<&str>) -> QueryResult<Row>
@@ -124,11 +160,19 @@ pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     {
         all_rows::<Self, Row>(conn, Some(schema.unwrap_or("main")))
     }
+
+    /// Assign [`value`](WritePragma::value), running the statement to completion without confirming the value SQLite applied.
+    fn set(&self, conn: &mut SqliteConnection, schema: Option<&str>) -> QueryResult<()>
+    where
+        Self: WritePragma,
+    {
+        assign(conn, Some(schema.unwrap_or("main")), self)
+    }
 }
 
 impl<P: Pragma<Scope = PerSchema>> SchemaPragma for P {}
 
-/// Reads a [`PerConnection`] pragma.
+/// Reads and writes a [`PerConnection`] pragma.
 pub trait ConnectionPragma: Pragma<Scope = PerConnection> {
     /// Read the first row, returning [`Error::NotFound`] if the pragma returns none.
     fn get<Row>(conn: &mut SqliteConnection) -> QueryResult<Row>
@@ -149,12 +193,20 @@ pub trait ConnectionPragma: Pragma<Scope = PerConnection> {
     {
         all_rows::<Self, Row>(conn, None)
     }
+
+    /// Assign [`value`](WritePragma::value), running the statement to completion without confirming the value SQLite applied.
+    fn set(&self, conn: &mut SqliteConnection) -> QueryResult<()>
+    where
+        Self: WritePragma,
+    {
+        assign(conn, None, self)
+    }
 }
 
 impl<P: Pragma<Scope = PerConnection>> ConnectionPragma for P {}
 
-/// `PRAGMA auto_vacuum`, the [`AutoVacuumMode`](crate::sqlite::AutoVacuumMode) of a database.
-pub(crate) struct AutoVacuum;
+/// `PRAGMA auto_vacuum`, read as an [`AutoVacuumMode`] and set to the one it carries.
+pub(crate) struct AutoVacuum(pub(crate) AutoVacuumMode);
 
 impl Pragma for AutoVacuum {
     const NAME: &'static str = "auto_vacuum";
@@ -163,6 +215,13 @@ impl Pragma for AutoVacuum {
 
 impl ReadPragma for AutoVacuum {
     type SqlType = crate::sql_types::Integer;
+}
+
+impl WritePragma for AutoVacuum {
+    fn value(&self) -> PragmaLiteral {
+        // `#[repr(i32)]` makes the discriminant the mode's SQLite number.
+        PragmaLiteral::Integer(i64::from(self.0 as i32))
+    }
 }
 
 /// `PRAGMA page_count`, the total number of pages in a database, read as an `i64`.
@@ -221,6 +280,20 @@ impl ReadPragma for FreelistCount {
     type SqlType = crate::sql_types::BigInt;
 }
 
+/// `PRAGMA incremental_vacuum`, freeing up to the carried number of freelist pages, all of them for 0.
+pub(crate) struct IncrementalVacuum(pub(crate) u32);
+
+impl Pragma for IncrementalVacuum {
+    const NAME: &'static str = "incremental_vacuum";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for IncrementalVacuum {
+    fn value(&self) -> PragmaLiteral {
+        self.0.into()
+    }
+}
+
 fn cursor<'conn, 'query, P>(
     conn: &'conn mut SqliteConnection,
     schema: Option<&'query str>,
@@ -229,7 +302,7 @@ where
     P: ReadPragma + 'query,
     Sqlite: QueryMetadata<P::SqlType>,
 {
-    LoadConnection::<DefaultLoadingMode>::load(conn, PragmaQuery::<P>::new(schema))
+    LoadConnection::<DefaultLoadingMode>::load(conn, PragmaQuery::<P>::new(schema, None))
 }
 
 fn first_row<P, Row>(conn: &mut SqliteConnection, schema: Option<&str>) -> QueryResult<Row>
@@ -254,16 +327,34 @@ where
         .collect()
 }
 
+fn assign<P: WritePragma>(
+    conn: &mut SqliteConnection,
+    schema: Option<&str>,
+    pragma: &P,
+) -> QueryResult<()> {
+    use crate::connection::SimpleConnection;
+    use crate::query_builder::QueryBuilder;
+    use crate::sqlite::SqliteQueryBuilder;
+
+    // Some pragmas do one unit of work per step, `incremental_vacuum` frees one page per step.
+    // `sqlite3_exec` behind `batch_execute` runs to completion, while `StatementUse::run` steps once.
+    let mut query = SqliteQueryBuilder::new();
+    PragmaQuery::<P>::new(schema, Some(pragma.value())).to_sql(&mut query, &Sqlite)?;
+    conn.batch_execute(&query.finish())
+}
+
 #[derive(Debug)]
 struct PragmaQuery<'a, P> {
     schema: Option<&'a str>,
+    value: Option<PragmaLiteral>,
     pragma: PhantomData<P>,
 }
 
 impl<'a, P: Pragma> PragmaQuery<'a, P> {
-    fn new(schema: Option<&'a str>) -> Self {
+    fn new(schema: Option<&'a str>, value: Option<PragmaLiteral>) -> Self {
         Self {
             schema,
+            value,
             pragma: PhantomData,
         }
     }
@@ -287,11 +378,18 @@ impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
             ));
         }
         out.push_sql(name);
+        match self.value {
+            None => {}
+            Some(PragmaLiteral::Integer(value)) => {
+                out.push_sql(" = ");
+                out.push_sql(&value.to_string());
+            }
+        }
         Ok(())
     }
 }
 
-// The schema name is runtime data, so the rendered SQL is not determined by the type.
+// The schema name and value are runtime data, so the rendered SQL is not determined by the type.
 impl<P> QueryId for PragmaQuery<'_, P> {
     type QueryId = ();
 
