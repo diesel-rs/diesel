@@ -5,7 +5,7 @@ info:
   input: "#[derive(QueryId)]\nstruct Query<'a> {\n    f: &'a str,\n}\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     #[allow(non_camel_case_types)]
     impl<'a> diesel::query_builder::QueryId for Query<'a> {
         type QueryId = Query<'static>;

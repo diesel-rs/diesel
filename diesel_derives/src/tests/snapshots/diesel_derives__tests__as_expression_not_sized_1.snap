@@ -5,7 +5,7 @@ info:
   input: "#[derive(AsExpression)]\n#[diesel(sql_type = diesel::sql_type::Text)]\n#[diesel(not_sized)]\nstruct StringSlice(str);\n"
 ---
 const _: () = {
-    use diesel;
+    use ::diesel;
     impl<'__expr> diesel::expression::AsExpression<diesel::sql_type::Text>
     for &'__expr StringSlice {
         type Expression = diesel::internal::derives::as_expression::Bound<
