@@ -2,7 +2,8 @@ use diesel::connection::{Connection, SimpleConnection};
 use diesel::result::Error;
 use diesel::sql_types::{Bool, Integer, Text};
 use diesel::sqlite::pragma::{
-    ConnectionPragma, PerConnection, PerSchema, Pragma, ReadPragma, SchemaPragma,
+    ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma,
+    WritePragma,
 };
 use diesel::sqlite::{AutoVacuumMode, ProgressDecision, SqliteConnection};
 use std::num::NonZeroU32;
@@ -11,7 +12,7 @@ fn connection() -> SqliteConnection {
     SqliteConnection::establish(":memory:").unwrap()
 }
 
-struct UserVersion;
+struct UserVersion(i32);
 
 impl Pragma for UserVersion {
     const NAME: &'static str = "user_version";
@@ -20,6 +21,12 @@ impl Pragma for UserVersion {
 
 impl ReadPragma for UserVersion {
     type SqlType = Integer;
+}
+
+impl WritePragma for UserVersion {
+    fn value(&self) -> PragmaLiteral {
+        self.0.into()
+    }
 }
 
 struct AutoVacuum;
@@ -33,7 +40,7 @@ impl ReadPragma for AutoVacuum {
     type SqlType = Integer;
 }
 
-struct ForeignKeys;
+struct ForeignKeys(bool);
 
 impl Pragma for ForeignKeys {
     const NAME: &'static str = "foreign_keys";
@@ -42,6 +49,36 @@ impl Pragma for ForeignKeys {
 
 impl ReadPragma for ForeignKeys {
     type SqlType = Bool;
+}
+
+impl WritePragma for ForeignKeys {
+    fn value(&self) -> PragmaLiteral {
+        self.0.into()
+    }
+}
+
+struct IncrementalVacuum(u32);
+
+impl Pragma for IncrementalVacuum {
+    const NAME: &'static str = "incremental_vacuum";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for IncrementalVacuum {
+    fn value(&self) -> PragmaLiteral {
+        self.0.into()
+    }
+}
+
+struct FreelistCount;
+
+impl Pragma for FreelistCount {
+    const NAME: &'static str = "freelist_count";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for FreelistCount {
+    type SqlType = diesel::sql_types::BigInt;
 }
 
 struct DatabaseList;
@@ -75,6 +112,12 @@ impl Pragma for AssignmentInName {
 
 impl ReadPragma for AssignmentInName {
     type SqlType = Integer;
+}
+
+impl WritePragma for AssignmentInName {
+    fn value(&self) -> PragmaLiteral {
+        7.into()
+    }
 }
 
 struct EmptyName;
@@ -166,9 +209,14 @@ fn reading_an_unknown_pragma_is_not_found() {
 fn name_outside_identifier_characters_is_rejected_before_execution() {
     let conn = &mut connection();
 
-    let result = AssignmentInName::get::<i32>(conn, None);
-
-    assert!(matches!(result, Err(Error::QueryBuilderError(_))));
+    assert!(matches!(
+        AssignmentInName::get::<i32>(conn, None),
+        Err(Error::QueryBuilderError(_))
+    ));
+    assert!(matches!(
+        AssignmentInName.set(conn, None),
+        Err(Error::QueryBuilderError(_))
+    ));
     assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
 }
 
@@ -217,6 +265,66 @@ fn interrupted_read_returns_the_interruption() {
     ));
     assert!(matches!(
         DatabaseList::get_all::<(i32, String, String)>(conn),
+        Err(Error::DatabaseError(..))
+    ));
+}
+
+#[diesel_test_helper::test]
+fn per_schema_set_targets_only_the_named_database() {
+    let conn = &mut connection();
+    conn.attach_database(":memory:", "aux").unwrap();
+
+    UserVersion(5).set(conn, Some("aux")).unwrap();
+
+    assert_eq!(5, UserVersion::get::<i32>(conn, Some("aux")).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn integer_literal_round_trips_at_the_signed_boundary() {
+    let conn = &mut connection();
+
+    for value in [-1, i32::MIN, i32::MAX] {
+        UserVersion(value).set(conn, None).unwrap();
+        assert_eq!(value, UserVersion::get::<i32>(conn, None).unwrap());
+    }
+}
+
+#[diesel_test_helper::test]
+fn per_connection_bool_pragma_round_trips() {
+    let conn = &mut connection();
+
+    ForeignKeys(true).set(conn).unwrap();
+    assert!(ForeignKeys::get::<bool>(conn).unwrap());
+
+    ForeignKeys(false).set(conn).unwrap();
+    assert!(!ForeignKeys::get::<bool>(conn).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn assignment_runs_to_completion() {
+    let conn = &mut connection();
+    conn.batch_execute(
+        "PRAGMA auto_vacuum = INCREMENTAL;
+         CREATE TABLE items (payload BLOB);
+         INSERT INTO items VALUES (zeroblob(1000000));
+         DELETE FROM items;",
+    )
+    .unwrap();
+    assert!(FreelistCount::get::<i64>(conn, None).unwrap() > 1);
+
+    // `incremental_vacuum` frees one page per step, so a single step would leave the rest.
+    IncrementalVacuum(0).set(conn, None).unwrap();
+
+    assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn setting_on_an_unknown_schema_is_a_database_error() {
+    let conn = &mut connection();
+
+    assert!(matches!(
+        UserVersion(1).set(conn, Some("missing")),
         Err(Error::DatabaseError(..))
     ));
 }

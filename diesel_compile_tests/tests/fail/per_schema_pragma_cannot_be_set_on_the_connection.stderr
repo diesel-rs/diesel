@@ -1,0 +1,16 @@
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> tests/fail/per_schema_pragma_cannot_be_set_on_the_connection.rs:22:28
+    |
+ LL |     let _ = UserVersion(7).set(&mut connection);
+    |                            ^^^----------------- argument #2 of type `Option<&str>` is missing
+    |
+note: method defined here
+   --> ROOT/diesel/src/sqlite/pragma.rs
+    |
+LL |     fn set(&self, conn: &mut SqliteConnection, schema: Option<&str>) -> QueryResult<()>
+    |        ^^^
+help: provide the argument
+    |
+ LL |     let _ = UserVersion(7).set(&mut connection, /* Option<&str> */);
+    |                                               ++++++++++++++++++++
+For more information about this error, try `rustc --explain E0061`.
