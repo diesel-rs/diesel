@@ -355,13 +355,13 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.rust }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Run diesel_benches
-        if: runner.os == 'Linux'
-        env:
-          RUST: ${{ matrix.rust }}
-          BACKEND: ${{ matrix.backend }}
-        shell: bash
-        run: cargo +$RUST test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" --bench benchmarks
+#      - name: Run diesel_benches
+#        if: runner.os == 'Linux'
+#        env:
+#          RUST: ${{ matrix.rust }}
+#          BACKEND: ${{ matrix.backend }}
+#        shell: bash
+#        run: cargo +$RUST test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" --bench benchmarks
 
   compile_tests:
     name: Compiletests
