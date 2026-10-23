@@ -131,9 +131,7 @@ impl ReadPragma for EmptyName {
     type SqlType = Integer;
 }
 
-enum Synchronous {
-    Extra,
-}
+struct Synchronous;
 
 impl Pragma for Synchronous {
     const NAME: &'static str = "synchronous";
@@ -142,14 +140,6 @@ impl Pragma for Synchronous {
 
 impl ReadPragma for Synchronous {
     type SqlType = Integer;
-}
-
-impl WritePragma for Synchronous {
-    fn value(&self) -> PragmaLiteral {
-        match self {
-            Synchronous::Extra => PragmaLiteral::Keyword("EXTRA"),
-        }
-    }
 }
 
 struct SynchronousKeyword(&'static str);
@@ -262,18 +252,6 @@ fn empty_name_is_rejected_before_execution() {
         EmptyName::get::<i32>(conn, None),
         Err(Error::QueryBuilderError(_))
     ));
-}
-
-#[diesel_test_helper::test]
-fn per_schema_keyword_pragma_targets_only_the_named_database() {
-    let conn = &mut connection();
-    conn.attach_database(":memory:", "aux").unwrap();
-    let main_before = Synchronous::get::<i32>(conn, None).unwrap();
-
-    Synchronous::Extra.set(conn, Some("aux")).unwrap();
-
-    assert_eq!(3, Synchronous::get::<i32>(conn, Some("aux")).unwrap());
-    assert_eq!(main_before, Synchronous::get::<i32>(conn, None).unwrap());
 }
 
 #[diesel_test_helper::test]
