@@ -42,6 +42,7 @@ pub struct CopyToBuffer<'conn> {
     offset: usize,
     len: usize,
     result: PgResult,
+    done: bool,
 }
 
 impl<'conn> CopyToBuffer<'conn> {
@@ -52,6 +53,7 @@ impl<'conn> CopyToBuffer<'conn> {
             offset: 0,
             len: 0,
             result,
+            done: false,
         }
     }
 
@@ -68,11 +70,72 @@ impl<'conn> CopyToBuffer<'conn> {
     pub(crate) fn get_result(&self) -> &PgResult {
         &self.result
     }
+
+    #[allow(unsafe_code, reason = "FFI calls")]
+    fn consume_results(&mut self) -> QueryResult<()> {
+        if self.conn.get_status() != pq_sys::ConnStatusType::CONNECTION_OK {
+            return Err(crate::result::Error::DeserializationError(
+                "Database connection lost".into(),
+            ));
+        }
+        // https://www.postgresql.org/docs/current/libpq-copy.html#LIBPQ-COPY-RECEIVE
+        //
+        // After PQgetCopyData returns -1, call PQgetResult to obtain the final result status of the COPY command.
+        // One can wait for this result to be available in the usual way. Then return to normal operation.
+        if let Some(result) = self.conn.get_next_result()? {
+            match result.result_status() {
+                pq_sys::ExecStatusType::PGRES_COPY_OUT => {
+                    let mut buf = [0; 1024];
+                    let mut ret = Ok(());
+                    loop {
+                        if self.conn.get_status() != pq_sys::ConnStatusType::CONNECTION_OK {
+                            return Err(crate::result::Error::DeserializationError(
+                                "Database connection lost".into(),
+                            ));
+                        }
+                        let res = self.read(&mut buf);
+                        match res {
+                            Err(e) if ret.is_ok() => {
+                                ret = Err(crate::result::Error::DeserializationError(e.into()));
+                            }
+                            Ok(0) => break,
+                            Err(_) | Ok(_) => {}
+                        }
+                    }
+                    ret?;
+                    self.consume_results()
+                }
+                pq_sys::ExecStatusType::PGRES_COPY_IN => {
+                    self.conn.finish_copy_from(None)?;
+                    self.consume_results()
+                }
+                _ => {
+                    let mut ret = Ok(());
+                    loop {
+                        if self.conn.get_status() != pq_sys::ConnStatusType::CONNECTION_OK {
+                            return Err(crate::result::Error::DeserializationError(
+                                "Database connection lost".into(),
+                            ));
+                        }
+                        match self.conn.get_next_result() {
+                            Ok(None) => break,
+                            Err(e) if ret.is_ok() => ret = Err(e),
+                            Ok(_) | Err(_) => {}
+                        }
+                    }
+                    ret
+                }
+            }
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl Drop for CopyToBuffer<'_> {
     #[allow(unsafe_code)] // ffi code
     fn drop(&mut self) {
+        let _ = self.consume_results();
         if !self.ptr.is_null() {
             unsafe { pq_sys::PQfreemem(self.ptr as *mut ffi::c_void) };
             self.ptr = core::ptr::null_mut();
@@ -93,26 +156,31 @@ impl Read for CopyToBuffer<'_> {
 impl BufRead for CopyToBuffer<'_> {
     #[allow(unsafe_code)] // ffi code + ptr arithmetic
     fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
-        if self.data_slice().is_empty() {
-            unsafe {
+        if self.data_slice().is_empty() && !self.done {
+            let len = unsafe {
                 if !self.ptr.is_null() {
                     pq_sys::PQfreemem(self.ptr as *mut ffi::c_void);
                     self.ptr = core::ptr::null_mut();
                 }
-                let len =
-                    pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0);
-                match len {
-                    len if len >= 0 => {
-                        self.len = 1 + usize::try_from(len).map_err(std::io::Error::other)?
-                    }
-                    -1 => self.len = 0,
-                    _ => {
-                        let error = self.conn.last_error_message();
-                        return Err(std::io::Error::other(error));
-                    }
+                pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0)
+            };
+            match len {
+                len if len >= 0 => {
+                    self.len = 1 + usize::try_from(len).map_err(std::io::Error::other)?
                 }
-                self.offset = 0;
+                -1 => {
+                    self.consume_results().map_err(std::io::Error::other)?;
+                    self.done = true;
+                    self.len = 0
+                }
+                _ => {
+                    let error = self.conn.last_error_message();
+                    self.done = true;
+                    self.len = 0;
+                    return Err(std::io::Error::other(error));
+                }
             }
+            self.offset = 0;
         }
         Ok(self.data_slice())
     }

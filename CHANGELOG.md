@@ -95,6 +95,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
+* Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
+* Fix parsing consecutive null values in the binary copy_to stream
+* Fix the copy iterator to only return a single error and stop afterwards
+* Fix potential panics while deserializing binary copy_to responses
 
 ### Changed
 
