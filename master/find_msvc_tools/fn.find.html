@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Attempts to find a tool within an MSVC installation using the Windows registry as a point to search from."><title>find in find_msvc_tools - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="find_msvc_tools" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">find</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../find_msvc_tools/index.html">find_<wbr>msvc_<wbr>tools</a><span class="version">0.1.2</span></h2></div><div class="sidebar-elems"><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">find_msvc_tools</a></div><h1>Function <span class="fn">find</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/find_msvc_tools/find_tools.rs.html#133-135">Source</a> </span></div><pre class="rust item-decl"><code>pub fn find(arch_or_target: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>, tool: &amp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="https://doc.rust-lang.org/nightly/std/process/struct.Command.html" title="struct std::process::Command">Command</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Attempts to find a tool within an MSVC installation using the Windows
+registry as a point to search from.</p>
+<p>The <code>arch_or_target</code> argument is the architecture or the Rust target name
+that the tool should work for (e.g. compile or link for). The supported
+architecture names are:</p>
+<ul>
+<li><code>"x64"</code> or <code>"x86_64"</code></li>
+<li><code>"arm64"</code> or <code>"aarch64"</code></li>
+<li><code>"arm64ec"</code></li>
+<li><code>"x86"</code>, <code>"i586"</code> or <code>"i686"</code></li>
+<li><code>"arm"</code> or <code>"thumbv7a"</code></li>
+</ul>
+<p>The <code>tool</code> argument is the tool to find. Supported tools include:</p>
+<ul>
+<li>MSVC tools: <code>cl.exe</code>, <code>link.exe</code>, <code>lib.exe</code>, etc.</li>
+<li><code>MSBuild</code>: <code>msbuild.exe</code></li>
+<li>Visual Studio IDE: <code>devenv.exe</code></li>
+<li>Clang/LLVM tools: <code>clang.exe</code>, <code>clang++.exe</code>, <code>clang-*.exe</code>, <code>llvm-*.exe</code>, <code>lld.exe</code>, etc.</li>
+</ul>
+<p>This function will return <code>None</code> if the tool could not be found, or it will
+return <code>Some(cmd)</code> which represents a command that’s ready to execute the
+tool with the appropriate environment variables set.</p>
+<p>Note that this function always returns <code>None</code> for non-MSVC targets (if a
+full target name was specified).</p>
+</div></details></section></div></main></body></html>
