@@ -46,6 +46,7 @@ itoa = { version = "1.0.0", optional = true }
 time = { version = "0.3.9", optional = true, features = ["macros"] }
 downcast-rs = { version = "2.0.1", default-features = false }
 hashbrown = { version = "0.16", optional = true }
+zeroize = { version = "1.8", optional = true, default-features = false, features = ["alloc"] }
 
 [dependencies.diesel_derives]
 version = "~2.3.0"
@@ -105,7 +106,7 @@ chrono = ["diesel_derives/chrono", "dep:chrono"]
 time = ["diesel_derives/time", "dep:time"]
 uuid = ["dep:uuid"]
 serde_json = ["dep:serde_json"]
-__sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "diesel_derives/sqlite", "time?/formatting", "time?/parsing", "dep:bitflags"]
+__sqlite-shared = ["dep:libsqlite3-sys", "dep:sqlite-wasm-rs", "dep:zeroize", "diesel_derives/sqlite", "time?/formatting", "time?/parsing", "dep:bitflags"]
 __mysql_like_shared = ["dep:mysqlclient-sys", "dep:url", "dep:percent-encoding", "dep:bitflags"]
 __with_asan_tests = [
     "libsqlite3-sys?/bundled",

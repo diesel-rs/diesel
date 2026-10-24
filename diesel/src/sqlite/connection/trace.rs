@@ -95,6 +95,8 @@ impl SqliteConnection {
     /// Only one trace callback can be active at a time per connection.
     /// Registering a new one replaces the previous.
     ///
+    /// This privileged callback can expose secret SQL, including statements executed by [`batch_execute_sensitive`](Self::batch_execute_sensitive).
+    ///
     /// The callback must not use the database connection. It is invoked
     /// synchronously on the thread driving the connection, so it is never
     /// called concurrently. Panics in the callback abort the process.

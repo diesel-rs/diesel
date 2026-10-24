@@ -4,6 +4,7 @@ use super::backend::Sqlite;
 use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
 use alloc::string::String;
+use zeroize::Zeroize;
 
 mod batch_update;
 mod limit_offset;
@@ -22,6 +23,16 @@ impl SqliteQueryBuilder {
     pub fn new() -> Self {
         SqliteQueryBuilder::default()
     }
+
+    pub(crate) fn with_capacity(capacity: usize) -> Self {
+        Self {
+            sql: String::with_capacity(capacity),
+        }
+    }
+
+    pub(crate) fn as_str(&self) -> &str {
+        &self.sql
+    }
 }
 
 impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
@@ -31,7 +42,12 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
 
     fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
         self.push_sql("`");
-        self.push_sql(&identifier.replace('`', "``"));
+        for (index, fragment) in identifier.split('`').enumerate() {
+            if index != 0 {
+                self.push_sql("``");
+            }
+            self.push_sql(fragment);
+        }
         self.push_sql("`");
         Ok(())
     }
@@ -42,5 +58,11 @@ impl QueryBuilder<Sqlite> for SqliteQueryBuilder {
 
     fn finish(self) -> String {
         self.sql
+    }
+}
+
+impl Zeroize for SqliteQueryBuilder {
+    fn zeroize(&mut self) {
+        self.sql.zeroize();
     }
 }
