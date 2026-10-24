@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 
 use diesel::deserialize::FromStaticSqlRow;
 use diesel::query_dsl::methods::LoadQuery;
@@ -275,5 +276,112 @@ where
         Ok(None)
     } else {
         Ok(Some(comment))
+    }
+}
+
+/// Groups the rows of `key_column_usage` into one constraint per foreign key.
+///
+/// The grouping key is the child table together with the constraint name, because MariaDB 12.1
+/// no longer requires a constraint name to be unique within a database. Keying by the name alone
+/// merges two unrelated keys into one constraint whose column lists are the concatenation of both,
+/// which then looks like a compound key and is dropped from code generation.
+pub(super) fn group_foreign_key_constraints(
+    rows: Vec<(TableName, TableName, String, String, String)>,
+    default_schema: &str,
+) -> Vec<ForeignKeyConstraint> {
+    rows.into_iter()
+        .fold(
+            HashMap::new(),
+            |mut acc, (child_table, parent_table, foreign_key, primary_key, constraint_name)| {
+                let entry = acc
+                    .entry((child_table.clone(), constraint_name))
+                    .or_insert_with(|| (child_table, parent_table, Vec::new(), Vec::new()));
+                entry.2.push(foreign_key);
+                entry.3.push(primary_key);
+                acc
+            },
+        )
+        .into_values()
+        .map(
+            |(mut child_table, mut parent_table, foreign_key_columns, primary_key_columns)| {
+                child_table.strip_schema_if_matches(default_schema);
+                parent_table.strip_schema_if_matches(default_schema);
+
+                let foreign_key_columns_rust = foreign_key_columns
+                    .iter()
+                    .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
+                    .collect();
+
+                ForeignKeyConstraint {
+                    child_table,
+                    parent_table,
+                    primary_key_columns,
+                    foreign_key_columns_rust,
+                    foreign_key_columns,
+                }
+            },
+        )
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row(
+        child: &str,
+        constraint: &str,
+        foreign_key: &str,
+        primary_key: &str,
+    ) -> (TableName, TableName, String, String, String) {
+        (
+            TableName::new(child, "diesel_test"),
+            TableName::new("parent", "diesel_test"),
+            foreign_key.into(),
+            primary_key.into(),
+            constraint.into(),
+        )
+    }
+
+    #[test]
+    fn keys_reusing_a_constraint_name_stay_separate() {
+        let mut constraints = group_foreign_key_constraints(
+            vec![
+                row("child_a", "fk_dup", "parent_id", "id"),
+                row("child_b", "fk_dup", "parent_id", "id"),
+            ],
+            "diesel_test",
+        );
+        constraints.sort_by(|a, b| a.child_table.sql_name.cmp(&b.child_table.sql_name));
+
+        let [a, b] = constraints.as_slice() else {
+            panic!("expected two constraints, got {constraints:?}")
+        };
+        assert_eq!(a.child_table.sql_name, "child_a");
+        assert_eq!(b.child_table.sql_name, "child_b");
+        for constraint in [a, b] {
+            assert_eq!(constraint.parent_table.sql_name, "parent");
+            assert_eq!(constraint.foreign_key_columns, ["parent_id"]);
+            assert_eq!(constraint.primary_key_columns, ["id"]);
+            assert_eq!(constraint.child_table.schema, None);
+            assert_eq!(constraint.parent_table.schema, None);
+        }
+    }
+
+    #[test]
+    fn columns_of_one_compound_key_are_collected_together() {
+        let constraints = group_foreign_key_constraints(
+            vec![
+                row("child", "fk_compound", "parent_a", "a"),
+                row("child", "fk_compound", "parent_b", "b"),
+            ],
+            "diesel_test",
+        );
+
+        let [constraint] = constraints.as_slice() else {
+            panic!("expected one constraint, got {constraints:?}")
+        };
+        assert_eq!(constraint.foreign_key_columns, ["parent_a", "parent_b"]);
+        assert_eq!(constraint.primary_key_columns, ["a", "b"]);
     }
 }
