@@ -288,7 +288,7 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        if migration.name().version() != MigrationVersion::from("00000000000000") {
+        if !is_initial_setup(migration.name().version()) {
             let mut output = self.output.try_borrow_mut()?;
             writeln!(output, "Running migration {}", migration.name())?;
         }
@@ -299,7 +299,7 @@ where
         &mut self,
         migration: &dyn Migration<DB>,
     ) -> Result<MigrationVersion<'static>> {
-        if migration.name().version() != MigrationVersion::from("00000000000000") {
+        if !is_initial_setup(migration.name().version()) {
             let mut output = self.output.try_borrow_mut()?;
             writeln!(output, "Rolling back migration {}", migration.name())?;
         }
@@ -309,6 +309,13 @@ where
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
         self.connection.applied_migrations()
     }
+}
+
+/// Whether `version` belongs to Diesel's built-in setup migration, in either the
+/// timestamp-only or the full-name version format. Its output is kept hidden.
+fn is_initial_setup(version: MigrationVersion<'_>) -> bool {
+    version == MigrationVersion::from("00000000000000")
+        || version == MigrationVersion::from("00000000000000dieselinitialsetup")
 }
 
 fn setup_database<Conn: MigrationConnection>(conn: &mut Conn) -> QueryResult<usize> {

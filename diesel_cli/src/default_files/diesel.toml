@@ -7,3 +7,8 @@ custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
 dir = "migrations"
+# Include the full migration name in stored versions (default: false).
+# Full-name versions are truncated to 50 characters; collisions cause an error.
+# Changing this setting requires updating previously recorded migration versions.
+# `embed_migrations!` reads this setting as well.
+# include_name_in_version = false

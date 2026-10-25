@@ -22,6 +22,8 @@ pub enum MigrationError {
     IoError(io::Error),
     /// Provided migration had an incompatible version number
     UnknownMigrationVersion(MigrationVersion<'static>),
+    /// Multiple migrations resolved to the same version
+    DuplicateMigrationVersion(MigrationVersion<'static>),
     /// No migrations had to be/ could be run
     NoMigrationRun,
     /// `down.sql` file is missing, and you're asking for a `revert`
@@ -48,6 +50,11 @@ impl fmt::Display for MigrationError {
             MigrationError::UnknownMigrationVersion(ref version) => write!(
                 f,
                 "Unable to find migration version {version} to revert in the migrations directory."
+            ),
+            MigrationError::DuplicateMigrationVersion(ref version) => write!(
+                f,
+                "Migration version {version} is shared by multiple migrations. \
+                 Rename the migrations so their normalized, truncated versions are unique."
             ),
             MigrationError::NoMigrationRun => write!(
                 f,

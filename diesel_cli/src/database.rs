@@ -7,7 +7,6 @@ use diesel::dsl::sql;
 use diesel::mariadb::MariadbConnection;
 use diesel::sql_types::Bool;
 use diesel::*;
-use diesel_migrations::FileBasedMigrations;
 
 use std::env;
 #[cfg(feature = "postgres")]
@@ -217,9 +216,14 @@ pub fn run_setup_command(
     no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
     let migration_dir = crate::create_migrations_dir(migration_dir, config_file.clone())?;
-    crate::create_config_file(config_file, &migration_dir)?;
+    crate::create_config_file(config_file.clone(), &migration_dir)?;
 
-    setup_database(database_url, &migration_dir, no_default_migration)?;
+    setup_database(
+        database_url,
+        &migration_dir,
+        no_default_migration,
+        config_file,
+    )?;
     Ok(())
 }
 
@@ -237,7 +241,12 @@ pub fn run_database_command(
         } => {
             let migration_dir =
                 crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
-            setup_database(database_url.clone(), &migration_dir, no_default_migration)?;
+            setup_database(
+                database_url.clone(),
+                &migration_dir,
+                no_default_migration,
+                config_file.clone(),
+            )?;
             crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
         }
         DatabaseCommand::Reset {
@@ -245,7 +254,12 @@ pub fn run_database_command(
         } => {
             let migration_dir =
                 crate::migrations::migrations_dir(migration_dir, config_file.clone())?;
-            reset_database(database_url.clone(), &migration_dir, no_default_migration)?;
+            reset_database(
+                database_url.clone(),
+                &migration_dir,
+                no_default_migration,
+                config_file.clone(),
+            )?;
             crate::regenerate_schema_if_file_specified(config_file, database_url, locked_schema)?;
         }
         DatabaseCommand::Drop => crate::database::drop_database_command(database_url)?,
@@ -258,15 +272,17 @@ pub fn reset_database(
     db_url: Option<String>,
     migrations_dir: &Path,
     no_default_migration: bool,
+    config_file: Option<std::path::PathBuf>,
 ) -> Result<(), crate::errors::Error> {
     drop_database(&database_url(db_url.clone())?)?;
-    setup_database(db_url, migrations_dir, no_default_migration)
+    setup_database(db_url, migrations_dir, no_default_migration, config_file)
 }
 
 pub fn setup_database(
     db_url: Option<String>,
     migrations_dir: &Path,
     no_default_migration: bool,
+    config_file: Option<std::path::PathBuf>,
 ) -> Result<(), crate::errors::Error> {
     let database_url = database_url(db_url)?;
 
@@ -278,7 +294,7 @@ pub fn setup_database(
         create_default_migration_if_needed(&database_url, migrations_dir)?;
     }
 
-    create_schema_table_and_run_migrations_if_needed(&database_url, migrations_dir)?;
+    create_schema_table_and_run_migrations_if_needed(&database_url, migrations_dir, config_file)?;
     Ok(())
 }
 
@@ -394,10 +410,10 @@ fn create_default_migration_if_needed(
 fn create_schema_table_and_run_migrations_if_needed(
     database_url: &str,
     migrations_dir: &Path,
+    config_file: Option<std::path::PathBuf>,
 ) -> Result<(), crate::errors::Error> {
     if !schema_table_exists(database_url)? {
-        let migrations = FileBasedMigrations::from_path(migrations_dir)
-            .map_err(|e| crate::errors::Error::from_migration_error(e, Some(migrations_dir)))?;
+        let migrations = crate::migrations::file_based_migrations(migrations_dir, config_file)?;
         let mut conn = InferConnection::from_url(database_url.to_owned())?;
         super::run_migrations_with_output(&mut conn, migrations)
             .map_err(crate::errors::Error::MigrationError)?;

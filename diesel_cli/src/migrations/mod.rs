@@ -346,11 +346,24 @@ fn conn_and_migration_dir(
     config_file: Option<std::path::PathBuf>,
 ) -> Result<(InferConnection, FileBasedMigrations), crate::errors::Error> {
     let conn = InferConnection::from_maybe_url(database_url)?;
-    let dir = migrations_dir(migration_dir, config_file)?;
-    let dir = FileBasedMigrations::from_path(dir.clone())
-        .map_err(|e| crate::errors::Error::from_migration_error(e, Some(dir)))?;
+    let dir = migrations_dir(migration_dir, config_file.clone())?;
+    let dir = file_based_migrations(&dir, config_file)?;
 
     Ok((conn, dir))
+}
+
+/// Loads the migrations in `dir`, using the version format set by
+/// `include_name_in_version` in the config file.
+pub fn file_based_migrations(
+    dir: &Path,
+    config_file: Option<PathBuf>,
+) -> Result<FileBasedMigrations, crate::errors::Error> {
+    let include_name = Config::read(config_file)?
+        .migrations_directory
+        .is_some_and(|config| config.include_name_in_version);
+    FileBasedMigrations::from_path(dir)
+        .map(|migrations| migrations.with_name_in_version(include_name))
+        .map_err(|e| crate::errors::Error::from_migration_error(e, Some(dir)))
 }
 
 /// Opens the .diesel_lock file inside the migrations folder
