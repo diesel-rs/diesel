@@ -3,14 +3,14 @@ use std::io::prelude::Write;
 use crate::deserialize::FromSql;
 use crate::mariadb::Mariadb;
 use crate::serialize::{IsNull, ToSql};
-use crate::sql_types::{Text, Uuid};
+use crate::sql_types::Uuid;
 
 impl FromSql<Uuid, Mariadb> for uuid::Uuid {
     fn from_sql(
         bytes: <Mariadb as crate::backend::Backend>::RawValue<'_>,
     ) -> crate::deserialize::Result<Self> {
-        let uuid_rfc = <String as FromSql<Text, Mariadb>>::from_sql(bytes)?;
-        uuid::Uuid::parse_str(&uuid_rfc).map_err(Into::into)
+        let uuid_rfc = core::str::from_utf8(bytes.as_bytes())?;
+        uuid::Uuid::parse_str(uuid_rfc).map_err(Into::into)
     }
 }
 

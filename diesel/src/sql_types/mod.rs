@@ -577,7 +577,7 @@ where
     type IsNull = is_nullable::IsNullable;
 }
 
-/// The [`UUID`] SQL type. This type can only be used with `feature = "uuid"`
+/// The `UUID` SQL type ([PostgreSQL](https://www.postgresql.org/docs/current/datatype-uuid.html), [MariaDB](https://mariadb.com/docs/server/reference/data-types/string-data-types/uuid-data-type)). This type can only be used with `feature = "uuid"`
 ///
 /// ### [`ToSql`] impls
 ///

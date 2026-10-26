@@ -144,7 +144,6 @@ type_name! {
         Decimal => "decimal",
         Time => "time",
         Uuid => "uuid",
-        Binary => "binary",
     }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
