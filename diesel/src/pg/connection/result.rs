@@ -9,6 +9,7 @@ use core::str;
 
 use super::raw::{RawConnection, RawResult, ResultField};
 use super::row::PgRow;
+use crate::pg::sql_state;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult, SqlState};
 use core::cell::OnceCell;
 
@@ -59,24 +60,24 @@ impl PgResult {
                     .get_result_field(ResultField::SqlState)
                     .and_then(|code| code.parse::<SqlState>().ok());
                 let mut error_kind = match sqlstate {
-                    Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
-                    Some(error_codes::FOREIGN_KEY_VIOLATION) => {
+                    Some(sql_state::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
+                    Some(sql_state::FOREIGN_KEY_VIOLATION) => {
                         DatabaseErrorKind::ForeignKeyViolation
                     }
-                    Some(error_codes::SERIALIZATION_FAILURE) => {
+                    Some(sql_state::T_R_SERIALIZATION_FAILURE) => {
                         DatabaseErrorKind::SerializationFailure
                     }
-                    Some(error_codes::READ_ONLY_TRANSACTION) => {
+                    Some(sql_state::READ_ONLY_SQL_TRANSACTION) => {
                         DatabaseErrorKind::ReadOnlyTransaction
                     }
-                    Some(error_codes::NOT_NULL_VIOLATION) => DatabaseErrorKind::NotNullViolation,
-                    Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
-                    Some(error_codes::RESTRICT_VIOLATION) => DatabaseErrorKind::RestrictViolation,
-                    Some(error_codes::EXCLUSION_VIOLATION) => DatabaseErrorKind::ExclusionViolation,
-                    Some(error_codes::CONNECTION_EXCEPTION)
-                    | Some(error_codes::CONNECTION_FAILURE)
-                    | Some(error_codes::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
-                    | Some(error_codes::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
+                    Some(sql_state::NOT_NULL_VIOLATION) => DatabaseErrorKind::NotNullViolation,
+                    Some(sql_state::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
+                    Some(sql_state::RESTRICT_VIOLATION) => DatabaseErrorKind::RestrictViolation,
+                    Some(sql_state::EXCLUSION_VIOLATION) => DatabaseErrorKind::ExclusionViolation,
+                    Some(sql_state::CONNECTION_EXCEPTION)
+                    | Some(sql_state::CONNECTION_FAILURE)
+                    | Some(sql_state::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
+                    | Some(sql_state::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
                         DatabaseErrorKind::ClosedConnection
                     }
                     _ => DatabaseErrorKind::Unknown,
@@ -227,39 +228,5 @@ impl DatabaseErrorInformation for PgErrorInformation {
             .get_result_field(ResultField::SqlState)?
             .parse()
             .ok()
-    }
-}
-
-mod error_codes {
-    //! These error codes are documented at
-    //! <https://www.postgresql.org/docs/current/errcodes-appendix.html>
-    //!
-    //! They are not exposed programmatically through libpq.
-    use crate::result::SqlState;
-
-    macro_rules! codes {
-        ($($name:ident = $code:literal;)*) => {
-            $(
-                pub(in crate::pg::connection) const $name: SqlState = match SqlState::new(*$code) {
-                    Some(code) => code,
-                    None => panic!("invalid SQLSTATE"),
-                };
-            )*
-        };
-    }
-
-    codes! {
-        CONNECTION_EXCEPTION = b"08000";
-        CONNECTION_FAILURE = b"08006";
-        SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION = b"08001";
-        SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION = b"08004";
-        RESTRICT_VIOLATION = b"23001";
-        NOT_NULL_VIOLATION = b"23502";
-        FOREIGN_KEY_VIOLATION = b"23503";
-        UNIQUE_VIOLATION = b"23505";
-        CHECK_VIOLATION = b"23514";
-        EXCLUSION_VIOLATION = b"23P01";
-        READ_ONLY_TRANSACTION = b"25006";
-        SERIALIZATION_FAILURE = b"40001";
     }
 }

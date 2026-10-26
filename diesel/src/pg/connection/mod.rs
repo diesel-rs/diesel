@@ -39,8 +39,8 @@ pub(super) use self::result::PgResult;
 /// [`DatabaseErrorInformation::sqlstate`], including custom codes raised with
 /// [`RAISE`](https://www.postgresql.org/docs/current/plpgsql-errors-and-messages.html).
 /// Errors that happen before the server answers, such as a failure to send a
-/// query, carry none. The codes are listed at
-/// <https://www.postgresql.org/docs/current/errcodes-appendix.html>.
+/// query, carry none. The codes PostgreSQL defines are constants in
+/// [`sql_state`](crate::pg::sql_state).
 ///
 /// # Supported loading model implementations
 ///
