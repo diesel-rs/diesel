@@ -7,6 +7,10 @@ use alloc::string::ToString;
 use core::error::Error as StdError;
 use core::fmt::{self, Display};
 
+mod sql_state;
+
+pub use self::sql_state::{InvalidSqlState, SqlState, SqlStateClass};
+
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
 /// Represents all the ways that a query can fail.
@@ -203,6 +207,13 @@ pub trait DatabaseErrorInformation {
     /// An optional integer indicating an error cursor position as an index into
     /// the original statement string.
     fn statement_position(&self) -> Option<i32>;
+
+    /// The [`SqlState`] of the error, if the connection reports one.
+    ///
+    /// Which errors carry a code is documented by each connection.
+    fn sqlstate(&self) -> Option<SqlState> {
+        None
+    }
 }
 
 impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {
