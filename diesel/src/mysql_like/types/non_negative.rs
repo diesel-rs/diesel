@@ -198,16 +198,16 @@ mod tests {
     use crate::query_dsl::RunQueryDsl;
     use crate::*;
 
-    diesel::table! {
-        test_table(a){
-            a -> Unsigned<Float>,
-            b -> Unsigned<Float>,
-        }
-    }
-
     #[diesel_test_helper::test]
     fn fun_with_unsigned() {
-        use self::test_table::dsl::*;
+        diesel::table! {
+            test_table(a){
+                a -> Unsigned<Float>,
+                b -> Unsigned<Float>,
+            }
+        }
+
+        use test_table::dsl::{a, b};
 
         let conn = &mut crate::test_helpers::connection();
 
@@ -220,16 +220,49 @@ mod tests {
         .execute(conn)
         .unwrap();
 
-        insert_into(test_table)
-            .values((a.eq(NonNegative(3.0f32)), b.eq(NonNegative(5.0f32))))
+        insert_into(test_table::table)
+            .values((a.eq(NonNegative(3.0f32)), b.eq(&&NonNegative(5.0f32))))
             .execute(conn)
             .unwrap();
 
-        let res = test_table
+        let res = test_table::table
             .select(a - b)
             .get_result::<NonNegative<f32>>(conn)
             .unwrap();
 
         assert_eq!(res, NonNegative(-2.0))
+    }
+
+    #[diesel_test_helper::test]
+    fn insert_and_select_unsigned_double() {
+        diesel::table! {
+            test_table(a){
+                a -> Unsigned<Double>,
+            }
+        }
+
+        use test_table::dsl::a;
+
+        let conn = &mut crate::test_helpers::connection();
+
+        crate::sql_query(
+            "CREATE TEMPORARY TABLE test_table (
+                    a DOUBLE UNSIGNED NOT NULL
+            )",
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(test_table::table)
+            .values(a.eq(&NonNegative(3.0f64)))
+            .execute(conn)
+            .unwrap();
+
+        let res = test_table::table
+            .select(a)
+            .get_result::<NonNegative<f64>>(conn)
+            .unwrap();
+
+        assert_eq!(res, NonNegative(3.0))
     }
 }
