@@ -719,6 +719,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libsqlite3-dev pkg-config
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
+        with:
+          tool: nextest
       - name: Run miri tests for the sqlite backend
         run: |
-          cargo xtask run-tests --miri sqlite
+          # The flags after `--` are passed to the underlying cargo
+          # nextest/test invocations. These features are required to run the
+          # same set of unit and doc tests as the non-miri test run.
+          cargo xtask run-tests --miri sqlite -- -F diesel/serde_json -F diesel/extras -F diesel/with-deprecated

@@ -2,6 +2,10 @@ use super::schema::*;
 use diesel::expression::is_aggregate;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_can_be_executed() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -22,6 +26,10 @@ fn boxed_queries_can_be_executed() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_can_differ_conditionally() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -63,6 +71,10 @@ fn boxed_queries_can_differ_conditionally() {
     assert_eq!(Ok(expected_data), one);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_implement_select_dsl() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -74,6 +86,10 @@ fn boxed_queries_implement_select_dsl() {
     assert_eq!(Ok(vec!["Sean".into(), "Tess".into()]), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_implement_filter_dsl() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -90,6 +106,10 @@ fn boxed_queries_implement_filter_dsl() {
     assert_eq!(Ok(vec![String::from("Shane")]), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_implement_limit_dsl() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -102,6 +122,10 @@ fn boxed_queries_implement_limit_dsl() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_implement_offset_dsl() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -115,6 +139,10 @@ fn boxed_queries_implement_offset_dsl() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_implement_order_dsl() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -129,6 +157,10 @@ fn boxed_queries_implement_order_dsl() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_can_use_borrowed_data() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -141,6 +173,10 @@ fn boxed_queries_can_use_borrowed_data() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn queries_with_borrowed_data_can_be_boxed() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -153,6 +189,10 @@ fn queries_with_borrowed_data_can_be_boxed() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn boxed_queries_implement_or_filter() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -169,6 +209,10 @@ fn boxed_queries_implement_or_filter() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn can_box_query_with_boxable_expression() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();

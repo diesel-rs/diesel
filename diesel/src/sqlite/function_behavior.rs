@@ -59,6 +59,11 @@ bitflags::bitflags! {
     /// use diesel::sqlite::SqliteFunctionBehavior;
     /// use diesel::prelude::*;
     ///
+    /// # // This test registers a Rust callback that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }

@@ -22,6 +22,10 @@ impl TypedMigration<TestConnection> for Typed {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn test_rust_migrations() {
     let mut source = RustMigrationSource::<TestConnection>::new();
