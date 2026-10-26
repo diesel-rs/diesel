@@ -31,10 +31,8 @@ where
     ///
     /// # Errors
     /// If the provided value is less than zero.
-    pub fn new(value: T) -> Result<Self, NumericIsNegative> {
-        (value >= T::zero())
-            .then_some(Self(value))
-            .ok_or(NumericIsNegative)
+    pub fn new(value: T) -> Option<Self> {
+        (value >= T::zero()).then_some(Self(value))
     }
 
     /// Extracts the raw inner type
@@ -49,7 +47,7 @@ macro_rules! impl_tryfrom {
             type Error = NumericIsNegative;
 
             fn try_from(value: $type) -> Result<Self, Self::Error> {
-                Self::new(value)
+                Self::new(value).ok_or(NumericIsNegative)
             }
         }
     };
@@ -194,9 +192,25 @@ where
 #[cfg(test)]
 mod tests {
     use super::NonNegative;
+    use super::NumericIsNegative;
     use crate::query_dsl::QueryDsl;
     use crate::query_dsl::RunQueryDsl;
     use crate::*;
+    use core::assert_matches;
+    use core::ops::Deref;
+
+    #[test]
+    fn invalid_unsigned() {
+        let res = NonNegative::<f64>::try_from(-0.0001);
+        assert_matches!(res, Err(NumericIsNegative))
+    }
+
+    #[test]
+    fn check_into_inner() {
+        let non_neg = NonNegative::new(1.0f32).unwrap();
+        assert_eq!(&1.0f32, non_neg.deref());
+        assert_eq!(1.0f32, non_neg.into_inner())
+    }
 
     #[diesel_test_helper::test]
     fn fun_with_unsigned() {
@@ -237,7 +251,7 @@ mod tests {
     fn insert_and_select_unsigned_double() {
         diesel::table! {
             test_table(a){
-                a -> Unsigned<Double>,
+                a -> Nullable<Unsigned<Double>>,
             }
         }
 
@@ -247,22 +261,22 @@ mod tests {
 
         crate::sql_query(
             "CREATE TEMPORARY TABLE test_table (
-                    a DOUBLE UNSIGNED NOT NULL
+                    a DOUBLE UNSIGNED NULL
             )",
         )
         .execute(conn)
         .unwrap();
 
         insert_into(test_table::table)
-            .values(a.eq(&NonNegative(3.0f64)))
+            .values(a.eq(&Some(NonNegative(3.0f64))))
             .execute(conn)
             .unwrap();
 
         let res = test_table::table
             .select(a)
-            .get_result::<NonNegative<f64>>(conn)
+            .get_result::<Option<NonNegative<f64>>>(conn)
             .unwrap();
 
-        assert_eq!(res, NonNegative(3.0))
+        assert_eq!(res, Some(NonNegative(3.0)))
     }
 }
