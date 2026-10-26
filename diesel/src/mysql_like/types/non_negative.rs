@@ -9,9 +9,8 @@ use crate::backend::Backend;
 use crate::deserialize::FromSql;
 use crate::expression::AsExpression;
 use crate::expression::bound::Bound;
-use crate::expression::nullable::Nullable;
 use crate::serialize::ToSql;
-use crate::sql_types::{SingleValue, Unsigned};
+use crate::sql_types::{Nullable, SingleValue, Unsigned};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, FromSqlRow)]
 /// Wrapper type, for Unsigned<ST> in Mariadb and Mysql
@@ -92,8 +91,7 @@ where
 
 impl<T, ST> AsExpression<Nullable<Unsigned<ST>>> for NonNegative<T>
 where
-    Nullable<ST>: SingleValue,
-    Nullable<Unsigned<ST>>: SingleValue,
+    ST: SingleValue,
     T: AsExpression<Nullable<ST>>,
 {
     type Expression = Bound<Nullable<Unsigned<ST>>, Self>;
@@ -117,8 +115,7 @@ where
 
 impl<T, ST> AsExpression<Nullable<Unsigned<ST>>> for &NonNegative<T>
 where
-    Nullable<ST>: SingleValue,
-    Nullable<Unsigned<ST>>: SingleValue,
+    ST: SingleValue,
     T: AsExpression<Nullable<ST>>,
 {
     type Expression = Bound<Nullable<Unsigned<ST>>, Self>;
@@ -142,8 +139,7 @@ where
 
 impl<T, ST> AsExpression<Nullable<Unsigned<ST>>> for &&NonNegative<T>
 where
-    Nullable<ST>: SingleValue,
-    Nullable<Unsigned<ST>>: SingleValue,
+    ST: SingleValue,
     T: AsExpression<Nullable<ST>>,
 {
     type Expression = Bound<Nullable<Unsigned<ST>>, Self>;
@@ -202,7 +198,11 @@ mod tests {
     #[test]
     fn invalid_unsigned() {
         let res = NonNegative::<f64>::try_from(-0.0001);
-        assert_matches!(res, Err(NumericIsNegative))
+        assert_matches!(res, Err(NumericIsNegative));
+        assert_eq!(
+            "Cannot create NonNegative from negative numeric",
+            format!("{}", NumericIsNegative)
+        )
     }
 
     #[test]
@@ -218,24 +218,30 @@ mod tests {
             test_table(a){
                 a -> Unsigned<Float>,
                 b -> Unsigned<Float>,
+                c -> Unsigned<Float>,
             }
         }
 
-        use test_table::dsl::{a, b};
+        use test_table::dsl::{a, b, c};
 
         let conn = &mut crate::test_helpers::connection();
 
         crate::sql_query(
             "CREATE TEMPORARY TABLE test_table (
                     a FLOAT UNSIGNED NOT NULL,
-                    b FLOAT UNSIGNED NOT NULL
+                    b FLOAT UNSIGNED NOT NULL,
+                    c FLOAT UNSIGNED NOT NULL
             )",
         )
         .execute(conn)
         .unwrap();
 
         insert_into(test_table::table)
-            .values((a.eq(NonNegative(3.0f32)), b.eq(&&NonNegative(5.0f32))))
+            .values((
+                a.eq(NonNegative(3.0f32)),
+                b.eq(&NonNegative(5.0f32)),
+                c.eq(&&NonNegative(5.0f32)),
+            ))
             .execute(conn)
             .unwrap();
 
@@ -252,23 +258,31 @@ mod tests {
         diesel::table! {
             test_table(a){
                 a -> Nullable<Unsigned<Double>>,
+                b -> Nullable<Unsigned<Double>>,
+                c -> Nullable<Unsigned<Double>>,
             }
         }
 
-        use test_table::dsl::a;
+        use test_table::dsl::{a, b, c};
 
         let conn = &mut crate::test_helpers::connection();
 
         crate::sql_query(
             "CREATE TEMPORARY TABLE test_table (
-                    a DOUBLE UNSIGNED NULL
+                    a DOUBLE UNSIGNED NULL,
+                    b DOUBLE UNSIGNED NULL,
+                    c DOUBLE UNSIGNED NULL
             )",
         )
         .execute(conn)
         .unwrap();
 
         insert_into(test_table::table)
-            .values(a.eq(&Some(NonNegative(3.0f64))))
+            .values((
+                a.eq(NonNegative(3.0f64)),
+                b.eq(&NonNegative(5.0f64)),
+                c.eq(&&NonNegative(5.0f64)),
+            ))
             .execute(conn)
             .unwrap();
 
@@ -277,6 +291,15 @@ mod tests {
             .get_result::<Option<NonNegative<f64>>>(conn)
             .unwrap();
 
-        assert_eq!(res, Some(NonNegative(3.0)))
+        assert_eq!(res, Some(NonNegative(3.0)));
+
+        insert_into(test_table::table)
+            .values((
+                a.eq(NonNegative(-3.0f64)),
+                b.eq(&NonNegative(-5.0f64)),
+                c.eq(&&NonNegative(-5.0f64)),
+            ))
+            .execute(conn)
+            .unwrap_err();
     }
 }
