@@ -36,11 +36,6 @@ pub fn time_with_fractional_seconds(name: &str) -> Column<'_, sql_types::VarChar
     Column::new(name, "TIME(6)")
 }
 
-#[cfg(feature = "mariadb")]
-pub fn uuid(name: &str) -> Column<'_, sql_types::Uuid> {
-    Column::new(name, "UUID")
-}
-
 pub fn date(name: &str) -> Column<'_, sql_types::VarChar> {
     Column::new(name, "DATE")
 }
