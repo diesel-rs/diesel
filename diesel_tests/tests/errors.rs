@@ -190,6 +190,80 @@ fn sqlstate_reports_a_custom_code_raised_by_plpgsql() {
 }
 
 #[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn sqlstate_reports_the_code_of_a_mapped_error_on_mysql_like() {
+    use diesel::result::SqlStateClass;
+
+    let connection = &mut connection();
+
+    insert_into(users::table)
+        .values(&User::new(1, "Sean"))
+        .execute(connection)
+        .unwrap();
+    let failure = insert_into(users::table)
+        .values(&User::new(1, "Jim"))
+        .execute(connection);
+
+    match failure {
+        Err(DatabaseError(UniqueViolation, e)) => {
+            assert_eq!(
+                e.sqlstate().map(|code| code.to_string()).as_deref(),
+                Some("23000")
+            );
+            assert_eq!(
+                e.sqlstate().map(|code| code.class()),
+                Some(SqlStateClass::INTEGRITY_CONSTRAINT_VIOLATION)
+            );
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(UniqueViolation, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn sqlstate_reports_the_code_of_an_unmapped_error_on_mysql_like() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    // The DSL cannot emit invalid SQL.
+    let failure = diesel::sql_query("SELECT id FROM users WHERE").execute(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            assert_eq!(
+                e.sqlstate().map(|code| code.to_string()).as_deref(),
+                Some("42000")
+            );
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(any(feature = "mysql", feature = "mariadb"))]
+fn sqlstate_reports_a_custom_code_raised_by_signal() {
+    use diesel::connection::SimpleConnection;
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    // MySQL rejects `SIGNAL` as a prepared statement, so it goes through the text protocol.
+    let failure = connection.batch_execute("SIGNAL SQLSTATE 'P1001' SET MESSAGE_TEXT = 'custom'");
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            let code = e.sqlstate().unwrap();
+            assert_eq!(code.as_str(), "P1001");
+            assert_eq!(code.class().as_str(), "P1");
+            assert!(!code.class().is_standard());
+            assert_eq!(e.message(), "custom");
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
 // This is a false positive as there is a side effect of this collect (spawning threads)
 #[allow(clippy::needless_collect)]
