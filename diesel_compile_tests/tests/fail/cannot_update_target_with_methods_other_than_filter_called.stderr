@@ -8,7 +8,7 @@ error[E0277]: the trait bound `SelectStatement<_, _>: IntoUpdateTarget` is not s
     |
     = note: only tables or select statements with only the filter clause applied are valid update targets
 help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, _, _, W>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
 LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...
@@ -19,7 +19,7 @@ LL | |     W: ValidWhereClause<F>,
     | |___________________________^
     = note: required for `SelectStatement<FromClause<table>, _>` to implement `IntoUpdateTarget`
 note: required by a bound in `diesel::update`
-   --> DIESEL/diesel/diesel/src/query_builder/functions.rs
+   --> ROOT/diesel/src/query_builder/functions.rs
     |
 LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
@@ -35,7 +35,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _>: IntoUpdateTarget`
     |
     = note: only tables or select statements with only the filter clause applied are valid update targets
 help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, _, _, W>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
 LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...
@@ -46,7 +46,7 @@ LL | |     W: ValidWhereClause<F>,
     | |___________________________^
     = note: required for `SelectStatement<FromClause<table>, _, _, _, _>` to implement `IntoUpdateTarget`
 note: required by a bound in `diesel::update`
-   --> DIESEL/diesel/diesel/src/query_builder/functions.rs
+   --> ROOT/diesel/src/query_builder/functions.rs
     |
 LL | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
     |                  ^^^^^^^^^^^^^^^^ required by this bound in `update`
@@ -59,7 +59,7 @@ error[E0277]: the trait bound `SelectStatement<_, _>: Identifiable` is not satis
     |                   ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Identifiable` is not implemented for `SelectStatement<FromClause<table>, _>`
     |
 help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, _, _, W>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
 LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...
@@ -78,7 +78,7 @@ error[E0277]: the trait bound `SelectStatement<_, _, _, _, _>: Identifiable` is 
     |                   ^^^^^^^^^^^^^^^^^^^^^^^ the trait `Identifiable` is not implemented for `SelectStatement<FromClause<table>, _, _, _, _>`
     |
 help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, _, _, W>`
-   --> DIESEL/diesel/diesel/src/query_builder/select_statement/dsl_impls.rs
+   --> ROOT/diesel/src/query_builder/select_statement/dsl_impls.rs
     |
 LL | / impl<F, W> IntoUpdateTarget
 LL | |     for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClau...

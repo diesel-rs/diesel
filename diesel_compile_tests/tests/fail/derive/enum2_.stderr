@@ -8,7 +8,7 @@ error[E0277]: the trait bound `diesel::sql_types::Integer: EnumSqlType<false, _>
      |
 help: the trait `EnumSqlType<false, _>` is not implemented for `diesel::sql_types::Integer`
       but trait `EnumSqlType<true, _>` is implemented for it
-    --> DIESEL/diesel/diesel/src/types/enum_.rs
+    --> ROOT/diesel/src/types/enum_.rs
      |
   LL | / impl<DB> EnumSqlType<true, DB> for crate::sql_types::Integer
   LL | | where
@@ -39,7 +39,7 @@ note: required for `Test2` to implement `Queryable<diesel::sql_types::Integer, _
      = note: required for `diesel::sql_types::Integer` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<Test2, _>`
      = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `LoadQuery<'_, _, Test2>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function
@@ -81,7 +81,7 @@ note: required for `Test2` to implement `Queryable<diesel::sql_types::Binary, _>
      = note: required for `diesel::sql_types::Binary` to implement `diesel::query_dsl::load_dsl::private::CompatibleType<Test2, _>`
      = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `LoadQuery<'_, _, Test2>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function
@@ -100,7 +100,7 @@ error[E0277]: `diesel::internal::derives::sql_type::EnumTypeMapping` is no valid
      = help: the trait `diesel::internal::derives::multiconnection::EnumMapping<Sqlite>` is not implemented for `diesel::internal::derives::sql_type::EnumTypeMapping`
      = note: the `Sqlite` backend only support mapping to `Text` and `Integer` fields
 help: the trait `diesel::internal::derives::multiconnection::EnumMapping<Pg>` is implemented for `diesel::internal::derives::sql_type::EnumTypeMapping`
-    --> DIESEL/diesel/diesel/src/pg/types/enum_.rs
+    --> ROOT/diesel/src/pg/types/enum_.rs
      |
    LL | impl EnumMapping<crate::pg::Pg> for EnumTypeMapping {
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -138,7 +138,7 @@ note: required for `Test4` to implement `Queryable<SqlEnum, Sqlite>`
      = note: required for `SqlEnum` to implement `CompatibleType<Test4, Sqlite>`
      = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `LoadQuery<'_, diesel::SqliteConnection, Test4>`
 note: required by a bound in `get_result`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
      |        ---------- required by a bound in this associated function

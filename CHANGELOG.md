@@ -14,6 +14,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* Generated Rust enums now derive `Clone`, `Copy`, `PartialEq` and `Eq` when `custom_enum_derives` is not specified. `Debug` and `diesel::types::Enum` are always included.
 * Add support for sqlite-wasm-rs 0.6
 * Add support for Batch-Update for PostgreSQL, MySQL and SQLite
 * Diesel-Migrations now contains a migration source that easily allows you to register Rust based migrations
@@ -56,7 +57,15 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
 * Added support for `OLD_VALUE(col)` to Mariadb in `UPDATE ... RETURNING` (requires Mariadb >= 13)
+* `diesel print-schema` now uses the `COMMENT ON TYPE` of a PostgreSQL enum as the doc comment of its generated Rust enum. The doc comments of the generated Rust enums and of their `rust_types` module now follow `with_docs` like those of tables and columns, which they did not before: none with `no-doc-comments`, only the type comment with `only-database-comments`, and the type comment or else the generated doc comment with `database-comments-fallback-to-auto-generated-doc-comment`.
 * Added the `AsExpression` coercions of `now` and `today` (to `Timestamptz`, `Nullable<Timestamp>`, `Nullable<Date>`, …) to `&now`, `&&now`, `&today` and `&&today`, so a `#[derive(AsChangeset)]` struct with a `now`, `&now`, `today` or `&today` field can be used by reference, for instance in a batch update
+* Added `diesel::connection::DatabaseVersion`, a database version that orders by major, minor and patch
+* Added `FromStr` for `DatabaseVersion`, parsing the `major.minor.patch` form its `Display` writes
+* Added `SqliteConnection::version` to read the version of the linked SQLite library
+* Added `PgConnection::version` to read the version of the connected server
+* Added `MariadbConnection::version` to read the version of the connected server
+* Added `MysqlConnection::version` to read the version of the connected server
+* Parallelized some tests for `mysql` and `mariadb` backends
 
 ### Fixed
 
@@ -76,6 +85,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `diesel print-schema` now generates `joinable!` and `allow_tables_to_appear_in_same_query!` for PostgreSQL foreign keys across multiple configured schemas
 * Fixed several Tests using schema modifications for `mysql` and `mariadb`
 * Fixed an overflow while converting a PostgreSQL `Interval` into a `chrono::Duration`, which panicked with debug assertions enabled and silently produced a wrong, sometimes negative, duration without them
+* `diesel print-schema` and `diesel migration generate --diff-schema` no longer drop `joinable!` definitions on MariaDB when two tables reuse one foreign key constraint name, which MariaDB permits from 12.1 onwards
 * The SQLite JSONB reader now rejects a `null`, `true` or `false` element that declares a payload or uses a multi byte header, instead of decoding a value that SQLite either refuses or reads differently
 * Fixed SQLite jsonb encoding writing a string with a quote or backslash as `TEXT`, which sqlite's own JSON functions then reject
 * Fixed decoding SQLite `jsonb` `INT` payloads above `i64::MAX`, which failed to deserialize even when SQLite itself wrote them
@@ -84,6 +94,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
 * `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
 
 ### Changed

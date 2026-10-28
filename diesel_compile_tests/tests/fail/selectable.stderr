@@ -171,7 +171,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<Join<
      = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -215,7 +215,7 @@ note: required for `posts::columns::id` to implement `SelectableExpression<Join<
      = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -259,7 +259,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<Jo
      = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `Query`
      = note: required for `SelectStatement<FromClause<JoinOn<_, _>>, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -348,7 +348,7 @@ LL |         .select(UserWithPostCount::as_select())
     = note: try to either use aggregate functions like `min`/`max`/… for this column or add the column to your `GROUP BY` clause
     = note: also there are clauses like `WHERE` or `RETURNING` that does not accept aggregate expressions at all
 help: `diesel::expression::is_aggregate::No` implements trait `MixedAggregates<Other>`
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL |     impl MixedAggregates<No> for No {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MixedAggregates<diesel::expression::is_aggregate::No>`
@@ -389,7 +389,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -427,7 +427,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -458,7 +458,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/insert_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/insert_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -497,7 +497,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -536,7 +536,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -568,7 +568,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `Query`
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -606,7 +606,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -644,7 +644,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -675,7 +675,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/update_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/update_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -714,7 +714,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
      = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -753,7 +753,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
      = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -785,7 +785,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
      = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `Query`
      = note: required for `UpdateStatement<table, NoWhereClause, _, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -823,7 +823,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -861,7 +861,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -892,7 +892,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<ReturningQuerySource<_, table>>`
     = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `Query`
 note: required by a bound in `DeleteStatement::<T, U>::returning`
-   --> DIESEL/diesel/diesel/src/query_builder/delete_statement/mod.rs
+   --> ROOT/diesel/src/query_builder/delete_statement/mod.rs
     |
 LL |     pub fn returning<E>(self, returns: E) -> DeleteStatement<T, U, ReturningClause<E>>
     |            --------- required by a bound in this associated function
@@ -931,7 +931,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
      = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -970,7 +970,7 @@ help: the trait `SelectableExpression<diesel::internal::table_macro::returning::
      = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1002,7 +1002,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<ReturningQu
      = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `Query`
      = note: required for `DeleteStatement<table, NoWhereClause, _>` to implement `LoadQuery<'_, _, UserWithEmbeddedPost>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1029,7 +1029,7 @@ LL |         .select(UserWithoutSelectable::as_select())
             `&mut UserWithoutSelectable: diesel::Selectable<_>`
             which is required by `&mut UserWithoutSelectable: diesel::SelectableHelper<_>`
 note: the trait `diesel::Selectable` must be implemented
-   --> DIESEL/diesel/diesel/src/expression/mod.rs
+   --> ROOT/diesel/src/expression/mod.rs
     |
 LL | pub trait Selectable<DB: Backend> {
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1058,7 +1058,7 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String), _>`
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1090,7 +1090,7 @@ error[E0277]: the trait bound `(i32, String): Queryable<SelectBy<Post, _>, _>` i
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String), _>`
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1120,7 +1120,7 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String), _>`
      = note: required for `BoxedSelectStatement<'_, SelectBy<Post, _>, _, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1152,7 +1152,7 @@ error[E0277]: the trait bound `(i32, String): Queryable<SelectBy<Post, _>, _>` i
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String), _>`
      = note: required for `BoxedSelectStatement<'_, SelectBy<Post, _>, _, _>` to implement `LoadQuery<'_, _, (i32, std::string::String)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1186,7 +1186,7 @@ error[E0277]: the trait bound `(SelectBy<Post, _>, Text): CompatibleType<_, _>` 
              and N others
      = note: required for `SelectStatement<FromClause<table>, _>` to implement `LoadQuery<'_, _, ((i32, String), String)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1216,7 +1216,7 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String, i32), _>`
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `LoadQuery<'_, _, (i32, std::string::String, i32)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1248,7 +1248,7 @@ error[E0277]: the trait bound `(i32, String, i32): Queryable<_, _>` is not satis
      = note: required for `diesel::expression::select_by::SelectBy<Post, _>` to implement `CompatibleType<(i32, String, i32), _>`
      = note: required for `InsertStatement<table, _, Insert, _>` to implement `LoadQuery<'_, _, (i32, std::string::String, i32)>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function
@@ -1267,7 +1267,7 @@ error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend
      |
      = note: required for `SelectStatement<FromClause<_>, _, _, _, _, _, _>` to implement `LoadQuery<'_, diesel::SqliteConnection, UserWithPostCount>`
 note: required by a bound in `load`
-    --> DIESEL/diesel/diesel/src/query_dsl/mod.rs
+    --> ROOT/diesel/src/query_dsl/mod.rs
      |
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
      |        ---- required by a bound in this associated function

@@ -118,6 +118,15 @@ impl RawConnection {
             .into_owned()
     }
 
+    pub(super) fn server_info(&self) -> Option<&CStr> {
+        // SAFETY: `self.0` is the live handle owned by `self`, and the call only reads it.
+        let info = unsafe { ffi::mysql_get_server_info(self.0.as_ptr()) };
+        // SAFETY: a non-null result is the NUL-terminated version string stored on the
+        // handle, which only a reconnect, never enabled by diesel, or `mysql_close` in
+        // `Drop` replaces, so it stays valid and unchanged while `self` is borrowed.
+        (!info.is_null()).then(|| unsafe { CStr::from_ptr(info) })
+    }
+
     pub(super) fn execute(&self, query: &str) -> QueryResult<()> {
         unsafe {
             // Make sure you don't use the fake one!

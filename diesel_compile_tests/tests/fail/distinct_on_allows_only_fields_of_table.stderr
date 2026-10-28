@@ -13,7 +13,7 @@ help: the trait `DistinctOnDsl<posts::columns::id>` is not implemented for `user
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
 help: the trait `DistinctOnDsl<Selection>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
 LL | | where
@@ -40,7 +40,7 @@ help: the trait `DistinctOnDsl<(posts::columns::name, users::columns::name)>` is
     = note: a `DISTINCT ON` clause is not compatible with various other clauses like `LOCKING` clauses
     = note: a `DISTINCT ON` clause also disallows mixing aggregate and non-aggregate expressions with the `SELECT` clause
 help: the trait `DistinctOnDsl<Selection>` is implemented for `Alias<S>`
-   --> DIESEL/diesel/diesel/src/query_source/aliasing/dsl_impls.rs
+   --> ROOT/diesel/src/query_source/aliasing/dsl_impls.rs
     |
 LL | / impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
 LL | | where

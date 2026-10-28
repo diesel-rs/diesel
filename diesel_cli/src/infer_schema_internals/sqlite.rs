@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::fmt;
 
+use diesel::connection::DatabaseVersion;
 use diesel::deserialize::Queryable;
 use diesel::dsl::sql;
 use diesel::row::NamedRow;
@@ -121,43 +121,6 @@ pub fn load_foreign_key_constraints(
     Ok(rows.into_iter().flatten().collect())
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-struct SqliteVersion {
-    major: u32,
-    minor: u32,
-    patch: u32,
-}
-
-impl SqliteVersion {
-    pub fn new(major: u32, minor: u32, patch: u32) -> SqliteVersion {
-        SqliteVersion {
-            major,
-            minor,
-            patch,
-        }
-    }
-}
-
-impl fmt::Display for SqliteVersion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
-    }
-}
-
-fn get_sqlite_version(conn: &mut SqliteConnection) -> QueryResult<SqliteVersion> {
-    let query = "SELECT sqlite_version()";
-    let result = sql::<sql_types::Text>(query).load::<String>(conn)?;
-    let parts = result[0]
-        .split('.')
-        .map(|part| {
-            part.parse()
-                .expect("sqlite version is guaranteed to consist of numbers")
-        })
-        .collect::<Vec<u32>>();
-    assert_eq!(parts.len(), 3);
-    Ok(SqliteVersion::new(parts[0], parts[1], parts[2]))
-}
-
 // In sqlite the rowid is a signed 64-bit integer.
 // See: https://sqlite.org/rowidtable.html
 // We should use BigInt here but to avoid type problems with foreign keys to
@@ -171,8 +134,7 @@ pub fn get_table_data(
     column_sorting: &ColumnSorting,
     kind: SupportedQueryRelationStructures,
 ) -> QueryResult<Vec<ColumnInformation>> {
-    let sqlite_version = get_sqlite_version(conn)?;
-    let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
+    let query = if conn.version() >= DatabaseVersion::new(3, 26, 0) {
         /*
          * To get generated columns we need to use TABLE_XINFO
          * This would return hidden columns as well, but those would need to be created at runtime
@@ -281,8 +243,8 @@ pub fn column_is_row_id(
     column_name: &str,
     type_name: &str,
 ) -> Result<bool, crate::errors::Error> {
-    let sqlite_version = get_sqlite_version(conn)?;
-    if sqlite_version < SqliteVersion::new(3, 37, 0) {
+    let sqlite_version = conn.version();
+    if sqlite_version < DatabaseVersion::new(3, 37, 0) {
         return Err(crate::errors::Error::UnsupportedFeature(format!(
             "Parameter `sqlite_integer_primary_key_is_bigint` needs SQLite 3.37 or above. \
             Your current SQLite version is {sqlite_version}."
@@ -333,8 +295,7 @@ pub fn get_primary_keys(
     conn: &mut SqliteConnection,
     table: &TableName,
 ) -> QueryResult<Vec<String>> {
-    let sqlite_version = get_sqlite_version(conn)?;
-    let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
+    let query = if conn.version() >= DatabaseVersion::new(3, 26, 0) {
         format!(
             "PRAGMA TABLE_XINFO('{}')",
             escape_identifier(&table.sql_name)
@@ -673,8 +634,7 @@ fn all_rowid_aliases_used_empty_result() {
 fn integer_primary_key_sqlite_3_37() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
 
-    let sqlite_version = get_sqlite_version(&mut conn).unwrap();
-    if sqlite_version < SqliteVersion::new(3, 37, 0) {
+    if conn.version() < DatabaseVersion::new(3, 37, 0) {
         return;
     }
 

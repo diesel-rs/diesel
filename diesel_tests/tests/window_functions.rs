@@ -27,6 +27,10 @@ fn window_count_star() {
     assert_eq!(res, vec![2, 2]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn partition_by() {
     let mut conn = connection_with_sean_and_tess_in_users_table();

@@ -493,6 +493,11 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -560,6 +565,11 @@ pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T> {
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -631,30 +641,43 @@ where
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// #
-/// # #[cfg(not(feature = "postgres"))]
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "postgres"))]
+/// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     use diesel::{insert_into, replace_into};
+/// #     use diesel::replace_into;
 /// #
 /// #     let conn = &mut establish_connection();
-/// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
+/// #     diesel::sql_query("DELETE FROM users").execute(conn)?;
 /// replace_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),
 ///         (id.eq(2), name.eq("Tess")),
 ///     ])
-///     .execute(conn)
-///     .unwrap();
+///     .execute(conn)?;
 ///
 /// replace_into(users)
 ///     .values((id.eq(1), name.eq("Jim")))
-///     .execute(conn)
-///     .unwrap();
+///     .execute(conn)?;
 ///
 /// let names = users.select(name).order(id).load::<String>(conn);
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
+/// #     Ok(())
 /// # }
-/// # #[cfg(feature = "postgres")] fn main() {}
+/// #
+/// # #[cfg(feature = "postgres")]
+/// # fn run_test() -> QueryResult<()> {
+/// #     Ok(())
+/// # }
+/// ```
 pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
     IncompleteInsertStatement::new(target, Replace)
 }
@@ -698,6 +721,11 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 /// #     name: String,
 /// # }
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test_1().unwrap();
 /// #     run_test_2().unwrap();

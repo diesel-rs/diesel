@@ -20,6 +20,11 @@ pub trait CombineDsl {
     /// # use schema::{users, animals};
     /// # use crate::diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use self::users::dsl::{users, name as user_name};
     /// #     use self::animals::dsl::{animals, name as animal_name};

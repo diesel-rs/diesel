@@ -70,10 +70,9 @@ impl<C> Old<C> {
 /// #     use diesel::pg::returning::old;
 /// #     let connection = &mut establish_connection();
 /// #     // `RETURNING old.col` requires PostgreSQL 18+
-/// #     let pg_version: i32 = diesel::dsl::sql::<diesel::sql_types::Integer>(
-/// #         "SELECT current_setting('server_version_num')::int",
-/// #     ).get_result(connection).unwrap();
-/// #     if pg_version < 180000 { return; }
+/// #     if connection.version().unwrap() < diesel::connection::DatabaseVersion::new(18, 0, 0) {
+/// #         return;
+/// #     }
 /// let was_and_now = diesel::update(users.find(1))
 ///     .set(name.eq("Updated"))
 ///     .returning((old(name), name))
