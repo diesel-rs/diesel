@@ -1,9 +1,9 @@
 extern crate diesel;
 
 use diesel::prelude::*;
-use diesel::sqlite::pragma::{PerSchema, Pragma, PragmaLiteral, SchemaPragma, WritePragma};
+use diesel::sqlite::pragma::{PerSchema, Pragma, SchemaPragma, WritePragma};
 
-struct UserVersion(i32);
+struct UserVersion;
 
 impl Pragma for UserVersion {
     const NAME: &'static str = "user_version";
@@ -11,14 +11,12 @@ impl Pragma for UserVersion {
 }
 
 impl WritePragma for UserVersion {
-    fn value(&self) -> PragmaLiteral<'_> {
-        self.0.into()
-    }
+    type Argument<'a> = i32;
 }
 
 fn main() {
     let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
-    let _ = UserVersion(7).set(&mut connection);
-    //~^ ERROR: this method takes 2 arguments but 1 argument was supplied
+    let _ = UserVersion::set(7, &mut connection);
+    //~^ ERROR: this function takes 3 arguments but 2 arguments were supplied
 }
