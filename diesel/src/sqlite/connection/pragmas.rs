@@ -92,7 +92,7 @@ impl SqliteConnection {
     /// use diesel::sqlite::AutoVacuumMode;
     /// use diesel::sqlite::pragma::{AutoVacuum, SchemaPragma};
     /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// AutoVacuum(AutoVacuumMode::Incremental).set(conn, None)?;
+    /// AutoVacuum::set(AutoVacuumMode::Incremental, None, conn)?;
     /// // Reclaim at most 8 pages, then whatever is left.
     /// conn.incremental_vacuum(None, Some(8))?;
     /// conn.incremental_vacuum(None, None)?;
@@ -358,20 +358,18 @@ mod tests {
             AutoVacuumMode::Incremental,
         ] {
             let conn = &mut connection();
-            AutoVacuum(mode).set(conn, None).unwrap();
-            assert_eq!(mode, AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap());
+            AutoVacuum::set(mode, None, conn).unwrap();
+            assert_eq!(mode, AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap());
         }
     }
 
     #[diesel_test_helper::test]
     fn auto_vacuum_incremental_sticks_across_schema_creation() {
         let conn = &mut connection();
-        AutoVacuum(AutoVacuumMode::Incremental)
-            .set(conn, None)
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Incremental, None, conn).unwrap();
         assert_eq!(
             AutoVacuumMode::Incremental,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap()
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap()
         );
 
         crate::sql_query("CREATE TABLE t (id INTEGER PRIMARY KEY)")
@@ -379,7 +377,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             AutoVacuumMode::Incremental,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap(),
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap(),
             "the mode survives once the schema exists"
         );
     }
@@ -395,22 +393,22 @@ mod tests {
             .unwrap();
         assert_eq!(
             AutoVacuumMode::None,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap()
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap()
         );
 
         // On a populated database the switch away from `None` is silently
         // deferred until a full rewrite.
-        AutoVacuum(AutoVacuumMode::Full).set(conn, None).unwrap();
+        AutoVacuum::set(AutoVacuumMode::Full, None, conn).unwrap();
         assert_eq!(
             AutoVacuumMode::None,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap(),
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap(),
             "the change does not take effect without a VACUUM"
         );
 
         crate::sql_query("VACUUM").execute(conn).unwrap();
         assert_eq!(
             AutoVacuumMode::Full,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap(),
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap(),
             "VACUUM rewrites the file and applies the mode"
         );
     }
@@ -422,16 +420,14 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        AutoVacuum(AutoVacuumMode::Full)
-            .set(conn, Some("aux"))
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Full, Some("aux"), conn).unwrap();
         assert_eq!(
             AutoVacuumMode::Full,
-            AutoVacuum::get::<AutoVacuumMode>(conn, Some("aux")).unwrap()
+            AutoVacuum::get::<AutoVacuumMode>(Some("aux"), conn).unwrap()
         );
         assert_eq!(
             AutoVacuumMode::None,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap(),
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap(),
             "main keeps its own default"
         );
     }
@@ -447,12 +443,10 @@ mod tests {
         .execute(conn)
         .unwrap();
 
-        AutoVacuum(AutoVacuumMode::Incremental)
-            .set(conn, Some(schema))
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Incremental, Some(schema), conn).unwrap();
         assert_eq!(
             AutoVacuumMode::Incremental,
-            AutoVacuum::get::<AutoVacuumMode>(conn, Some(schema)).unwrap()
+            AutoVacuum::get::<AutoVacuumMode>(Some(schema), conn).unwrap()
         );
     }
 
@@ -496,13 +490,13 @@ mod tests {
     fn page_count_is_positive_and_grows() {
         let conn = &mut connection();
         conn.batch_execute(PROBE_TABLE).unwrap();
-        let initial = PageCount::get::<i64>(conn, None).unwrap();
+        let initial = PageCount::get::<i64>(None, conn).unwrap();
         assert!(initial > 0, "an initialized database has at least one page");
 
         insert_overflowing_row(conn);
 
         assert!(
-            PageCount::get::<i64>(conn, None).unwrap() > initial,
+            PageCount::get::<i64>(None, conn).unwrap() > initial,
             "a row spanning overflow pages grows the page count"
         );
     }
@@ -512,7 +506,7 @@ mod tests {
         let conn = &mut connection();
         assert_eq!(
             0,
-            FreelistCount::get::<i64>(conn, None).unwrap(),
+            FreelistCount::get::<i64>(None, conn).unwrap(),
             "a fresh database has an empty freelist"
         );
 
@@ -521,7 +515,7 @@ mod tests {
 
         crate::delete(pragma_probe::table).execute(conn).unwrap();
         assert!(
-            FreelistCount::get::<i64>(conn, None).unwrap() > 0,
+            FreelistCount::get::<i64>(None, conn).unwrap() > 0,
             "deleting the row leaves reclaimable pages on the freelist"
         );
 
@@ -529,7 +523,7 @@ mod tests {
         crate::sql_query("VACUUM").execute(conn).unwrap();
         assert_eq!(
             0,
-            FreelistCount::get::<i64>(conn, None).unwrap(),
+            FreelistCount::get::<i64>(None, conn).unwrap(),
             "VACUUM reclaims the freelist"
         );
     }
@@ -548,15 +542,15 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        let main_pages = PageCount::get::<i64>(conn, None).unwrap();
-        let aux_pages = PageCount::get::<i64>(conn, Some("aux")).unwrap();
+        let main_pages = PageCount::get::<i64>(None, conn).unwrap();
+        let aux_pages = PageCount::get::<i64>(Some("aux"), conn).unwrap();
         assert!(
             aux_pages > main_pages,
             "the attached database holds the data, main stays small"
         );
         assert_eq!(
             main_pages,
-            PageCount::get::<i64>(conn, Some("main")).unwrap(),
+            PageCount::get::<i64>(Some("main"), conn).unwrap(),
             "an explicit main matches the default"
         );
     }
@@ -571,8 +565,8 @@ mod tests {
         conn.batch_execute("CREATE TABLE `back``tick`.probe (id INTEGER PRIMARY KEY)")
             .unwrap();
 
-        assert!(PageCount::get::<i64>(conn, Some(schema)).unwrap() > 0);
-        assert_eq!(0, FreelistCount::get::<i64>(conn, Some(schema)).unwrap());
+        assert!(PageCount::get::<i64>(Some(schema), conn).unwrap() > 0);
+        assert_eq!(0, FreelistCount::get::<i64>(Some(schema), conn).unwrap());
     }
 
     #[cfg(not(miri))] // ffi string access
@@ -580,8 +574,8 @@ mod tests {
     fn unknown_schema_is_reported_as_an_error() {
         let conn = &mut connection();
 
-        assert!(PageCount::get::<i64>(conn, Some("nope")).is_err());
-        assert!(FreelistCount::get::<i64>(conn, Some("nope")).is_err());
+        assert!(PageCount::get::<i64>(Some("nope"), conn).is_err());
+        assert!(FreelistCount::get::<i64>(Some("nope"), conn).is_err());
     }
 
     // Leaves many pages on the freelist, so `incremental_vacuum` has something to
@@ -626,12 +620,10 @@ mod tests {
     #[diesel_test_helper::test]
     fn incremental_vacuum_clears_the_whole_freelist() {
         let conn = &mut connection();
-        AutoVacuum(AutoVacuumMode::Incremental)
-            .set(conn, None)
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Incremental, None, conn).unwrap();
         grow_then_empty_freelist(conn);
         assert!(
-            FreelistCount::get::<i64>(conn, None).unwrap() > 1,
+            FreelistCount::get::<i64>(None, conn).unwrap() > 1,
             "the deleted rows should leave many pages on the freelist"
         );
 
@@ -639,22 +631,20 @@ mod tests {
 
         // Stepping the pragma only once would free a single page and leave the rest, so
         // this also pins that the statement is driven to completion.
-        assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(None, conn).unwrap());
     }
 
     #[diesel_test_helper::test]
     fn incremental_vacuum_reclaims_at_most_the_requested_pages() {
         let conn = &mut connection();
-        AutoVacuum(AutoVacuumMode::Incremental)
-            .set(conn, None)
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Incremental, None, conn).unwrap();
         grow_then_empty_freelist(conn);
-        let before = FreelistCount::get::<i64>(conn, None).unwrap();
+        let before = FreelistCount::get::<i64>(None, conn).unwrap();
         assert!(before > 10, "the bound has to be smaller than the freelist");
 
         conn.incremental_vacuum(None, Some(10)).unwrap();
 
-        let after = FreelistCount::get::<i64>(conn, None).unwrap();
+        let after = FreelistCount::get::<i64>(None, conn).unwrap();
         assert!(after >= before - 10, "at most ten pages may be reclaimed");
         assert!(after < before, "some pages should have been reclaimed");
     }
@@ -664,17 +654,17 @@ mod tests {
         let conn = &mut connection();
         assert_eq!(
             AutoVacuumMode::None,
-            AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap()
+            AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap()
         );
         grow_then_empty_freelist(conn);
-        let before = FreelistCount::get::<i64>(conn, None).unwrap();
+        let before = FreelistCount::get::<i64>(None, conn).unwrap();
         assert!(before > 0);
 
         conn.incremental_vacuum(None, None).unwrap();
 
         assert_eq!(
             before,
-            FreelistCount::get::<i64>(conn, None).unwrap(),
+            FreelistCount::get::<i64>(None, conn).unwrap(),
             "a database that is not in incremental mode keeps its freelist"
         );
     }
@@ -683,16 +673,14 @@ mod tests {
     fn incremental_vacuum_targets_the_named_attached_database() {
         let conn = &mut connection();
         conn.attach_database(":memory:", "aux").unwrap();
-        AutoVacuum(AutoVacuumMode::Incremental)
-            .set(conn, Some("aux"))
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Incremental, Some("aux"), conn).unwrap();
 
         grow_then_empty_aux_freelist(conn);
-        assert!(FreelistCount::get::<i64>(conn, Some("aux")).unwrap() > 0);
+        assert!(FreelistCount::get::<i64>(Some("aux"), conn).unwrap() > 0);
 
         conn.incremental_vacuum(Some("aux"), None).unwrap();
 
-        assert_eq!(0, FreelistCount::get::<i64>(conn, Some("aux")).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(Some("aux"), conn).unwrap());
     }
 
     #[diesel_test_helper::test]
@@ -705,22 +693,20 @@ mod tests {
 
         conn.incremental_vacuum(Some(schema), None).unwrap();
 
-        assert_eq!(0, FreelistCount::get::<i64>(conn, Some(schema)).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(Some(schema), conn).unwrap());
     }
 
     #[diesel_test_helper::test]
     fn incremental_vacuum_of_zero_pages_clears_everything() {
         // SQLite specifies that a bound below one clears the whole freelist.
         let conn = &mut connection();
-        AutoVacuum(AutoVacuumMode::Incremental)
-            .set(conn, None)
-            .unwrap();
+        AutoVacuum::set(AutoVacuumMode::Incremental, None, conn).unwrap();
         grow_then_empty_freelist(conn);
-        assert!(FreelistCount::get::<i64>(conn, None).unwrap() > 0);
+        assert!(FreelistCount::get::<i64>(None, conn).unwrap() > 0);
 
         conn.incremental_vacuum(None, Some(0)).unwrap();
 
-        assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
+        assert_eq!(0, FreelistCount::get::<i64>(None, conn).unwrap());
     }
 
     #[cfg(not(miri))] // ffi string access
@@ -768,13 +754,13 @@ mod tests {
     fn vacuum_repacks_the_database() {
         let conn = &mut connection();
         fill_then_delete(conn);
-        let before = PageCount::get::<i64>(conn, None).unwrap();
+        let before = PageCount::get::<i64>(None, conn).unwrap();
         assert!(before > 1);
 
         conn.vacuum(None).unwrap();
 
         assert!(
-            PageCount::get::<i64>(conn, None).unwrap() < before,
+            PageCount::get::<i64>(None, conn).unwrap() < before,
             "rebuilding should release the pages the deleted row occupied"
         );
         assert_eq!(
@@ -789,12 +775,12 @@ mod tests {
         let conn = &mut connection();
         conn.attach_database(":memory:", "aux").unwrap();
         fill_then_delete_aux(conn);
-        let before = PageCount::get::<i64>(conn, Some("aux")).unwrap();
+        let before = PageCount::get::<i64>(Some("aux"), conn).unwrap();
         assert!(before > 1);
 
         conn.vacuum(Some("aux")).unwrap();
 
-        assert!(PageCount::get::<i64>(conn, Some("aux")).unwrap() < before);
+        assert!(PageCount::get::<i64>(Some("aux"), conn).unwrap() < before);
     }
 
     #[cfg(not(miri))]
@@ -903,18 +889,18 @@ mod tests {
         conn.attach_database(":memory:", "aux").unwrap();
         fill_then_delete_aux(conn);
 
-        let main_before = PageCount::get::<i64>(conn, None).unwrap();
-        let aux_before = PageCount::get::<i64>(conn, Some("aux")).unwrap();
+        let main_before = PageCount::get::<i64>(None, conn).unwrap();
+        let aux_before = PageCount::get::<i64>(Some("aux"), conn).unwrap();
 
         conn.vacuum(None).unwrap();
         conn.vacuum(Some("aux")).unwrap();
 
         assert!(
-            PageCount::get::<i64>(conn, None).unwrap() < main_before,
+            PageCount::get::<i64>(None, conn).unwrap() < main_before,
             "main was rebuilt"
         );
         assert!(
-            PageCount::get::<i64>(conn, Some("aux")).unwrap() < aux_before,
+            PageCount::get::<i64>(Some("aux"), conn).unwrap() < aux_before,
             "aux was rebuilt too, not main a second time"
         );
     }
