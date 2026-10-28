@@ -155,13 +155,13 @@ fn per_schema_get_reads_only_the_named_database() {
     conn.attach_database(":memory:", "aux").unwrap();
     conn.batch_execute("PRAGMA aux.user_version = 5").unwrap();
 
-    assert_eq!(5, UserVersion::get::<i32>(conn, Some("aux")).unwrap());
-    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
+    assert_eq!(5, UserVersion::get::<i32>(Some("aux"), conn).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
     assert_eq!(
         vec![5],
-        UserVersion::get_all::<i32>(conn, Some("aux")).unwrap()
+        UserVersion::get_all::<i32>(Some("aux"), conn).unwrap()
     );
-    assert_eq!(vec![0], UserVersion::get_all::<i32>(conn, None).unwrap());
+    assert_eq!(vec![0], UserVersion::get_all::<i32>(None, conn).unwrap());
 }
 
 #[diesel_test_helper::test]
@@ -170,10 +170,10 @@ fn caller_chooses_the_rust_type_of_a_row() {
     conn.batch_execute("PRAGMA auto_vacuum = INCREMENTAL")
         .unwrap();
 
-    assert_eq!(2, AutoVacuum::get::<i32>(conn, None).unwrap());
+    assert_eq!(2, AutoVacuum::get::<i32>(None, conn).unwrap());
     assert_eq!(
         AutoVacuumMode::Incremental,
-        AutoVacuum::get::<AutoVacuumMode>(conn, None).unwrap()
+        AutoVacuum::get::<AutoVacuumMode>(None, conn).unwrap()
     );
 }
 
@@ -210,7 +210,7 @@ fn reading_an_unknown_pragma_is_not_found() {
     let conn = &mut connection();
 
     assert!(matches!(
-        NoSuchPragma::get::<i32>(conn, None),
+        NoSuchPragma::get::<i32>(None, conn),
         Err(Error::NotFound)
     ));
 }
@@ -220,14 +220,14 @@ fn name_outside_identifier_characters_is_rejected_before_execution() {
     let conn = &mut connection();
 
     assert!(matches!(
-        AssignmentInName::get::<i32>(conn, None),
+        AssignmentInName::get::<i32>(None, conn),
         Err(Error::QueryBuilderError(_))
     ));
     assert!(matches!(
         AssignmentInName.set(conn, None),
         Err(Error::QueryBuilderError(_))
     ));
-    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
 }
 
 #[diesel_test_helper::test]
@@ -235,7 +235,7 @@ fn empty_name_is_rejected_before_execution() {
     let conn = &mut connection();
 
     assert!(matches!(
-        EmptyName::get::<i32>(conn, None),
+        EmptyName::get::<i32>(None, conn),
         Err(Error::QueryBuilderError(_))
     ));
 }
@@ -246,7 +246,7 @@ fn reading_all_rows_from_an_unknown_schema_is_a_database_error() {
     let conn = &mut connection();
 
     assert!(matches!(
-        UserVersion::get_all::<i32>(conn, Some("missing")),
+        UserVersion::get_all::<i32>(Some("missing"), conn),
         Err(Error::DatabaseError(..))
     ));
 }
@@ -256,11 +256,11 @@ fn row_not_matching_the_declared_type_is_a_deserialization_error() {
     let conn = &mut connection();
 
     assert!(matches!(
-        UserVersionAsPair::get::<(i32, String)>(conn, None),
+        UserVersionAsPair::get::<(i32, String)>(None, conn),
         Err(Error::DeserializationError(_))
     ));
     assert!(matches!(
-        UserVersionAsPair::get_all::<(i32, String)>(conn, None),
+        UserVersionAsPair::get_all::<(i32, String)>(None, conn),
         Err(Error::DeserializationError(_))
     ));
 }
@@ -274,7 +274,7 @@ fn interrupted_read_returns_the_interruption() {
     conn.on_progress(NonZeroU32::MIN, || ProgressDecision::Interrupt);
 
     assert!(matches!(
-        UserVersion::get::<i32>(conn, None),
+        UserVersion::get::<i32>(None, conn),
         Err(Error::DatabaseError(..))
     ));
     assert!(matches!(
@@ -290,8 +290,8 @@ fn per_schema_set_targets_only_the_named_database() {
 
     UserVersion(5).set(conn, Some("aux")).unwrap();
 
-    assert_eq!(5, UserVersion::get::<i32>(conn, Some("aux")).unwrap());
-    assert_eq!(0, UserVersion::get::<i32>(conn, None).unwrap());
+    assert_eq!(5, UserVersion::get::<i32>(Some("aux"), conn).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
 }
 
 #[diesel_test_helper::test]
@@ -300,7 +300,7 @@ fn integer_literal_round_trips_at_the_signed_boundary() {
 
     for value in [-1, i32::MIN, i32::MAX] {
         UserVersion(value).set(conn, None).unwrap();
-        assert_eq!(value, UserVersion::get::<i32>(conn, None).unwrap());
+        assert_eq!(value, UserVersion::get::<i32>(None, conn).unwrap());
     }
 }
 
@@ -325,12 +325,12 @@ fn assignment_runs_to_completion() {
          DELETE FROM items;",
     )
     .unwrap();
-    assert!(FreelistCount::get::<i64>(conn, None).unwrap() > 1);
+    assert!(FreelistCount::get::<i64>(None, conn).unwrap() > 1);
 
     // `incremental_vacuum` frees one page per step, so a single step would leave the rest.
     IncrementalVacuum(0).set(conn, None).unwrap();
 
-    assert_eq!(0, FreelistCount::get::<i64>(conn, None).unwrap());
+    assert_eq!(0, FreelistCount::get::<i64>(None, conn).unwrap());
 }
 
 #[cfg(not(miri))] // ffi string access
