@@ -25,7 +25,7 @@
 //! # fn main() -> QueryResult<()> {
 //! let conn = &mut SqliteConnection::establish(":memory:").unwrap();
 //! conn.batch_execute("PRAGMA user_version = 7")?;
-//! assert_eq!(7, UserVersion::get::<i32>(conn, None)?);
+//! assert_eq!(7, UserVersion::get::<i32>(None, conn)?);
 //! #     Ok(())
 //! # }
 //! ```
@@ -107,7 +107,7 @@ pub trait ReadPragma: Pragma {
 /// Reads a [`PerSchema`] pragma, where a `None` schema selects `main`.
 pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     /// Read the first row, returning [`Error::NotFound`] if the pragma returns none.
-    fn get<Row>(conn: &mut SqliteConnection, schema: Option<&str>) -> QueryResult<Row>
+    fn get<Row>(schema: Option<&str>, conn: &mut SqliteConnection) -> QueryResult<Row>
     where
         Self: ReadPragma,
         Sqlite: QueryMetadata<Self::SqlType>,
@@ -117,7 +117,7 @@ pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     }
 
     /// Read every row.
-    fn get_all<Row>(conn: &mut SqliteConnection, schema: Option<&str>) -> QueryResult<Vec<Row>>
+    fn get_all<Row>(schema: Option<&str>, conn: &mut SqliteConnection) -> QueryResult<Vec<Row>>
     where
         Self: ReadPragma,
         Sqlite: QueryMetadata<Self::SqlType>,
