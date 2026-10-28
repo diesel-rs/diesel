@@ -104,7 +104,11 @@ pub fn determine_column_type(
             }
         }),
         sql_name: tpe.to_string(),
-        rust_name: tpe.to_upper_camel_case(),
+        rust_name: super::inference::make_valid_identifier(
+            tpe.to_upper_camel_case().into(),
+            super::inference::IdentifierKind::Type,
+        )
+        .into_owned(),
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
@@ -263,7 +267,13 @@ pub fn load_foreign_key_constraints(
             let foreign_key_columns_rust = f
                 .self_columns
                 .iter()
-                .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
+                .map(|s| {
+                    super::inference::rust_name_for_sql_name(
+                        s,
+                        super::inference::IdentifierKind::Column,
+                        Some(&child_table),
+                    )
+                })
                 .collect();
             Ok(ForeignKeyConstraint {
                 child_table,

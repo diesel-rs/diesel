@@ -200,7 +200,11 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, cra
     Ok(ColumnType {
         schema: None,
         sql_name: tpe.trim().to_string(),
-        rust_name: tpe.trim().to_upper_camel_case(),
+        rust_name: super::inference::make_valid_identifier(
+            tpe.trim().to_upper_camel_case().into(),
+            super::inference::IdentifierKind::Type,
+        )
+        .into_owned(),
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: unsigned,
@@ -309,7 +313,13 @@ pub(super) fn group_foreign_key_constraints(
 
                 let foreign_key_columns_rust = foreign_key_columns
                     .iter()
-                    .map(|s| super::inference::rust_name_for_sql_name(s, Some(&child_table)))
+                    .map(|s| {
+                        super::inference::rust_name_for_sql_name(
+                            s,
+                            super::inference::IdentifierKind::Column,
+                            Some(&child_table),
+                        )
+                    })
                     .collect();
 
                 ForeignKeyConstraint {
