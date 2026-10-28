@@ -642,13 +642,13 @@ mod tests {
     fn page_count_is_positive_and_grows() {
         let conn = &mut connection();
         conn.batch_execute(PROBE_TABLE).unwrap();
-        let initial = PageCount::get::<i64>(conn, None).unwrap();
+        let initial = PageCount::get::<i64>(None, conn).unwrap();
         assert!(initial > 0, "an initialized database has at least one page");
 
         insert_overflowing_row(conn);
 
         assert!(
-            PageCount::get::<i64>(conn, None).unwrap() > initial,
+            PageCount::get::<i64>(None, conn).unwrap() > initial,
             "a row spanning overflow pages grows the page count"
         );
     }
@@ -694,15 +694,15 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        let main_pages = PageCount::get::<i64>(conn, None).unwrap();
-        let aux_pages = PageCount::get::<i64>(conn, Some("aux")).unwrap();
+        let main_pages = PageCount::get::<i64>(None, conn).unwrap();
+        let aux_pages = PageCount::get::<i64>(Some("aux"), conn).unwrap();
         assert!(
             aux_pages > main_pages,
             "the attached database holds the data, main stays small"
         );
         assert_eq!(
             main_pages,
-            PageCount::get::<i64>(conn, Some("main")).unwrap(),
+            PageCount::get::<i64>(Some("main"), conn).unwrap(),
             "an explicit main matches the default"
         );
     }
@@ -717,7 +717,7 @@ mod tests {
         conn.batch_execute("CREATE TABLE `back``tick`.probe (id INTEGER PRIMARY KEY)")
             .unwrap();
 
-        assert!(PageCount::get::<i64>(conn, Some(schema)).unwrap() > 0);
+        assert!(PageCount::get::<i64>(Some(schema), conn).unwrap() > 0);
         assert_eq!(0, conn.freelist_count(Some(schema)).unwrap());
     }
 
@@ -726,7 +726,7 @@ mod tests {
     fn unknown_schema_is_reported_as_an_error() {
         let conn = &mut connection();
 
-        assert!(PageCount::get::<i64>(conn, Some("nope")).is_err());
+        assert!(PageCount::get::<i64>(Some("nope"), conn).is_err());
         assert!(conn.freelist_count(Some("nope")).is_err());
     }
 
@@ -907,13 +907,13 @@ mod tests {
     fn vacuum_repacks_the_database() {
         let conn = &mut connection();
         fill_then_delete(conn);
-        let before = PageCount::get::<i64>(conn, None).unwrap();
+        let before = PageCount::get::<i64>(None, conn).unwrap();
         assert!(before > 1);
 
         conn.vacuum(None).unwrap();
 
         assert!(
-            PageCount::get::<i64>(conn, None).unwrap() < before,
+            PageCount::get::<i64>(None, conn).unwrap() < before,
             "rebuilding should release the pages the deleted row occupied"
         );
         assert_eq!(
@@ -928,12 +928,12 @@ mod tests {
         let conn = &mut connection();
         conn.attach_database(":memory:", "aux").unwrap();
         fill_then_delete_aux(conn);
-        let before = PageCount::get::<i64>(conn, Some("aux")).unwrap();
+        let before = PageCount::get::<i64>(Some("aux"), conn).unwrap();
         assert!(before > 1);
 
         conn.vacuum(Some("aux")).unwrap();
 
-        assert!(PageCount::get::<i64>(conn, Some("aux")).unwrap() < before);
+        assert!(PageCount::get::<i64>(Some("aux"), conn).unwrap() < before);
     }
 
     #[cfg(not(miri))]
@@ -1042,18 +1042,18 @@ mod tests {
         conn.attach_database(":memory:", "aux").unwrap();
         fill_then_delete_aux(conn);
 
-        let main_before = PageCount::get::<i64>(conn, None).unwrap();
-        let aux_before = PageCount::get::<i64>(conn, Some("aux")).unwrap();
+        let main_before = PageCount::get::<i64>(None, conn).unwrap();
+        let aux_before = PageCount::get::<i64>(Some("aux"), conn).unwrap();
 
         conn.vacuum(None).unwrap();
         conn.vacuum(Some("aux")).unwrap();
 
         assert!(
-            PageCount::get::<i64>(conn, None).unwrap() < main_before,
+            PageCount::get::<i64>(None, conn).unwrap() < main_before,
             "main was rebuilt"
         );
         assert!(
-            PageCount::get::<i64>(conn, Some("aux")).unwrap() < aux_before,
+            PageCount::get::<i64>(Some("aux"), conn).unwrap() < aux_before,
             "aux was rebuilt too, not main a second time"
         );
     }

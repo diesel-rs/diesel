@@ -18,6 +18,6 @@ impl ReadPragma for ForeignKeys {
 fn main() {
     let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
-    let _ = ForeignKeys::get::<bool>(&mut connection, None);
+    let _ = ForeignKeys::get::<bool>(None, &mut connection);
     //~^ ERROR: this function takes 1 argument but 2 arguments were supplied
 }
