@@ -4,8 +4,7 @@ use diesel::sql_types::{Bool, Integer, Text};
 #[cfg(not(miri))]
 use diesel::sqlite::ProgressDecision;
 use diesel::sqlite::pragma::{
-    ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaLiteral, ReadPragma, SchemaPragma,
-    WritePragma,
+    ConnectionPragma, PerConnection, PerSchema, Pragma, ReadPragma, SchemaPragma, WritePragma,
 };
 use diesel::sqlite::{AutoVacuumMode, SqliteConnection};
 #[cfg(not(miri))]
@@ -15,7 +14,7 @@ fn connection() -> SqliteConnection {
     SqliteConnection::establish(":memory:").unwrap()
 }
 
-struct UserVersion(i32);
+struct UserVersion;
 
 impl Pragma for UserVersion {
     const NAME: &'static str = "user_version";
@@ -27,9 +26,7 @@ impl ReadPragma for UserVersion {
 }
 
 impl WritePragma for UserVersion {
-    fn value(&self) -> PragmaLiteral {
-        self.0.into()
-    }
+    type Argument<'a> = i32;
 }
 
 struct AutoVacuum;
@@ -43,7 +40,7 @@ impl ReadPragma for AutoVacuum {
     type SqlType = Integer;
 }
 
-struct ForeignKeys(bool);
+struct ForeignKeys;
 
 impl Pragma for ForeignKeys {
     const NAME: &'static str = "foreign_keys";
@@ -55,12 +52,10 @@ impl ReadPragma for ForeignKeys {
 }
 
 impl WritePragma for ForeignKeys {
-    fn value(&self) -> PragmaLiteral {
-        self.0.into()
-    }
+    type Argument<'a> = bool;
 }
 
-struct IncrementalVacuum(u32);
+struct IncrementalVacuum;
 
 impl Pragma for IncrementalVacuum {
     const NAME: &'static str = "incremental_vacuum";
@@ -68,9 +63,7 @@ impl Pragma for IncrementalVacuum {
 }
 
 impl WritePragma for IncrementalVacuum {
-    fn value(&self) -> PragmaLiteral {
-        self.0.into()
-    }
+    type Argument<'a> = u32;
 }
 
 struct FreelistCount;
@@ -122,9 +115,7 @@ impl ReadPragma for AssignmentInName {
 }
 
 impl WritePragma for AssignmentInName {
-    fn value(&self) -> PragmaLiteral {
-        7.into()
-    }
+    type Argument<'a> = i32;
 }
 
 struct EmptyName;
@@ -224,7 +215,7 @@ fn name_outside_identifier_characters_is_rejected_before_execution() {
         Err(Error::QueryBuilderError(_))
     ));
     assert!(matches!(
-        AssignmentInName.set(conn, None),
+        AssignmentInName::set(7, None, conn),
         Err(Error::QueryBuilderError(_))
     ));
     assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
@@ -288,7 +279,7 @@ fn per_schema_set_targets_only_the_named_database() {
     let conn = &mut connection();
     conn.attach_database(":memory:", "aux").unwrap();
 
-    UserVersion(5).set(conn, Some("aux")).unwrap();
+    UserVersion::set(5, Some("aux"), conn).unwrap();
 
     assert_eq!(5, UserVersion::get::<i32>(Some("aux"), conn).unwrap());
     assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
@@ -299,7 +290,7 @@ fn integer_literal_round_trips_at_the_signed_boundary() {
     let conn = &mut connection();
 
     for value in [-1, i32::MIN, i32::MAX] {
-        UserVersion(value).set(conn, None).unwrap();
+        UserVersion::set(value, None, conn).unwrap();
         assert_eq!(value, UserVersion::get::<i32>(None, conn).unwrap());
     }
 }
@@ -308,10 +299,10 @@ fn integer_literal_round_trips_at_the_signed_boundary() {
 fn per_connection_bool_pragma_round_trips() {
     let conn = &mut connection();
 
-    ForeignKeys(true).set(conn).unwrap();
+    ForeignKeys::set(true, conn).unwrap();
     assert!(ForeignKeys::get::<bool>(conn).unwrap());
 
-    ForeignKeys(false).set(conn).unwrap();
+    ForeignKeys::set(false, conn).unwrap();
     assert!(!ForeignKeys::get::<bool>(conn).unwrap());
 }
 
@@ -328,7 +319,7 @@ fn assignment_runs_to_completion() {
     assert!(FreelistCount::get::<i64>(None, conn).unwrap() > 1);
 
     // `incremental_vacuum` frees one page per step, so a single step would leave the rest.
-    IncrementalVacuum(0).set(conn, None).unwrap();
+    IncrementalVacuum::set(0_u32, None, conn).unwrap();
 
     assert_eq!(0, FreelistCount::get::<i64>(None, conn).unwrap());
 }
@@ -339,7 +330,7 @@ fn setting_on_an_unknown_schema_is_a_database_error() {
     let conn = &mut connection();
 
     assert!(matches!(
-        UserVersion(1).set(conn, Some("missing")),
+        UserVersion::set(1, Some("missing"), conn),
         Err(Error::DatabaseError(..))
     ));
 }
