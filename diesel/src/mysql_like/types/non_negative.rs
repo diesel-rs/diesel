@@ -13,7 +13,7 @@ use crate::serialize::ToSql;
 use crate::sql_types::{Nullable, SingleValue, Unsigned};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, FromSqlRow)]
-/// Wrapper type, for Unsigned<ST> in Mariadb and Mysql
+/// Wrapper type, for `Unsigned<ST>` in Mariadb and Mysql
 pub struct NonNegative<T>(T);
 
 impl<T> NonNegative<T>
