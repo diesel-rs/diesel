@@ -359,6 +359,7 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi string access
     fn attach_database_rejects_nul_in_schema_name() {
         let conn = &mut connection();
         assert!(matches!(
