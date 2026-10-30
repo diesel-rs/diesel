@@ -97,6 +97,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fix parsing consecutive null values in the binary copy_to stream
 * Fix the copy iterator to only return a single error and stop afterwards
 * Fix potential panics while deserializing binary copy_to responses
+* Fixed a issue with a panic during `copy_from` statements could render the connection unusable
 
 ### Changed
 
