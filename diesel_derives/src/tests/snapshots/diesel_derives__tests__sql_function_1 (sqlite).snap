@@ -50,9 +50,74 @@ pub(crate) mod lower {
     impl<input, __DieselInternal> FunctionFragment<__DieselInternal> for lower<input>
     where
         __DieselInternal: diesel::backend::Backend,
+        Self: FunctionFragment<
+            __DieselInternal,
+            __DieselInternal::SqlFunctionParameterNotation,
+        >,
         input: QueryFragment<__DieselInternal>,
     {
         const FUNCTION_NAME: &'static str = "lower";
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            <Self as FunctionFragment<
+                __DieselInternal,
+                __DieselInternal::SqlFunctionParameterNotation,
+            >>::walk_arguments(self, out)
+        }
+    }
+    impl<
+        input,
+        __DieselInternal,
+    > FunctionFragment<
+        __DieselInternal,
+        diesel::internal::sql_functions::PositionalNotationOnly,
+    > for lower<input>
+    where
+        __DieselInternal: diesel::backend::Backend
+            + diesel::backend::SqlDialect<
+                SqlFunctionParameterNotation = diesel::internal::sql_functions::PositionalNotationOnly,
+            >,
+        input: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = <Self as FunctionFragment<
+            __DieselInternal,
+        >>::FUNCTION_NAME;
+        #[allow(unused_assignments)]
+        fn walk_arguments<'__b>(
+            &'__b self,
+            mut out: AstPass<'_, '__b, __DieselInternal>,
+        ) -> QueryResult<()> {
+            let mut needs_comma = false;
+            if !self.input.is_noop(out.backend())? {
+                if needs_comma {
+                    out.push_sql(", ");
+                }
+                self.input.walk_ast(out.reborrow())?;
+                needs_comma = true;
+            }
+            Ok(())
+        }
+    }
+    impl<
+        input,
+        __DieselInternal,
+    > FunctionFragment<
+        __DieselInternal,
+        diesel::internal::sql_functions::PositionalOrNamedNotation,
+    > for lower<input>
+    where
+        __DieselInternal: diesel::backend::Backend
+            + diesel::backend::SqlDialect<
+                SqlFunctionParameterNotation = diesel::internal::sql_functions::PositionalOrNamedNotation,
+            >,
+        input: QueryFragment<__DieselInternal>,
+    {
+        const FUNCTION_NAME: &'static str = <Self as FunctionFragment<
+            __DieselInternal,
+        >>::FUNCTION_NAME;
         #[allow(unused_assignments)]
         fn walk_arguments<'__b>(
             &'__b self,
@@ -71,6 +136,10 @@ pub(crate) mod lower {
     }
     impl<input, __DieselInternal> QueryFragment<__DieselInternal> for lower<input>
     where
+        Self: FunctionFragment<
+            __DieselInternal,
+            <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+        >,
         __DieselInternal: diesel::backend::Backend,
         input: QueryFragment<__DieselInternal>,
     {
@@ -78,9 +147,17 @@ pub(crate) mod lower {
             &'__b self,
             mut out: AstPass<'_, '__b, __DieselInternal>,
         ) -> QueryResult<()> {
-            out.push_sql(<Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME);
+            out.push_sql(
+                <Self as FunctionFragment<
+                    __DieselInternal,
+                    <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+                >>::FUNCTION_NAME,
+            );
             out.push_sql("(");
-            self.walk_arguments(out.reborrow())?;
+            <Self as FunctionFragment<
+                __DieselInternal,
+                <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation,
+            >>::walk_arguments(self, out.reborrow())?;
             out.push_sql(")");
             Ok(())
         }

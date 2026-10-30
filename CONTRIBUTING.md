@@ -206,3 +206,4 @@ Such snapshot tests are used by the following tests:
 * Expanded code tests in `diesel_derives`
 * Print-schema tests in `diesel_cli`
 * Generate-migration tests in `diesel_cli`
+* Generated SQL tests in `diesel_tests`

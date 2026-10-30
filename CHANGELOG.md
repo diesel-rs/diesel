@@ -69,6 +69,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `PgConnection` reports the SQLSTATE of every server error through `DatabaseErrorInformation::sqlstate`, including custom codes
 * Added `diesel::pg::sql_state` with a `SqlState` constant for every error code PostgreSQL defines
 * `MysqlConnection` and `MariadbConnection` report the SQLSTATE of an error through `DatabaseErrorInformation::sqlstate`
+* Added `named_parameters` attribute to the `declare_sql_function` macro to allow passing function parameters using named notation on backends that support it
 
 ### Fixed
 
