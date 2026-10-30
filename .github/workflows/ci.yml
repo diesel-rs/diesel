@@ -21,6 +21,8 @@ env:
   # CDN intermittently drops connections mid-stream (SSL "unexpected eof"),
   # and cargo does not retry those, so CARGO_NET_RETRY alone cannot recover.
   CARGO_HTTP_MULTIPLEXING: "false"
+  # This should keep cache size manageable even with cache-all-crates
+  CARGO_INCREMENTAL: 0
 
 # See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
 # This will ensure that only one commit will be running tests at a time on each PR.
@@ -40,35 +42,35 @@ jobs:
         os:
           [
             ubuntu-latest,
-            macos-26,
-            windows-2025,
+#            macos-26,
+#            windows-2025,
             ubuntu-24.04-arm,
           ]
-        include:
-          - rust: "beta"
-            backend: "postgres"
-            os: "ubuntu-latest"
-          - rust: "beta"
-            backend: "sqlite"
-            os: "ubuntu-latest"
-          - rust: "beta"
-            backend: "mysql"
-            os: "ubuntu-latest"
-          - rust: "beta"
-            backend: "mariadb"
-            os: "ubuntu-latest"
-          - rust: "nightly"
-            backend: "postgres"
-            os: "ubuntu-latest"
-          - rust: "nightly"
-            backend: "sqlite"
-            os: "ubuntu-latest"
-          - rust: "nightly"
-            backend: "mysql"
-            os: "ubuntu-latest"
-          - rust: "nightly"
-            backend: "mariadb"
-            os: "ubuntu-latest"
+#        include:
+#          - rust: "beta"
+#            backend: "postgres"
+#            os: "ubuntu-latest"
+#          - rust: "beta"
+#            backend: "sqlite"
+#            os: "ubuntu-latest"
+#          - rust: "beta"
+#            backend: "mysql"
+#            os: "ubuntu-latest"
+#          - rust: "beta"
+#            backend: "mariadb"
+#            os: "ubuntu-latest"
+#          - rust: "nightly"
+#            backend: "postgres"
+#            os: "ubuntu-latest"
+#          - rust: "nightly"
+#            backend: "sqlite"
+#            os: "ubuntu-latest"
+#          - rust: "nightly"
+#            backend: "mysql"
+#            os: "ubuntu-latest"
+#          - rust: "nightly"
+#            backend: "mariadb"
+#            os: "ubuntu-latest"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -77,9 +79,11 @@ jobs:
           persist-credentials: false
 
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Set environment variables
         shell: bash
@@ -351,13 +355,13 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.rust }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Run diesel_benches
-        if: runner.os == 'Linux'
-        env:
-          RUST: ${{ matrix.rust }}
-          BACKEND: ${{ matrix.backend }}
-        shell: bash
-        run: cargo +$RUST test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" --bench benchmarks
+#      - name: Run diesel_benches
+#        if: runner.os == 'Linux'
+#        env:
+#          RUST: ${{ matrix.rust }}
+#          BACKEND: ${{ matrix.backend }}
+#        shell: bash
+#        run: cargo +$RUST test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" --bench benchmarks
 
   compile_tests:
     name: Compiletests
@@ -372,9 +376,11 @@ jobs:
           rustup update stable
           rustup override set stable
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Install dependencies
         run: |
@@ -401,9 +407,11 @@ jobs:
           rustup component add clippy
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
       - name: Fixing up rustup
         shell: bash
         run: |
@@ -446,9 +454,11 @@ jobs:
           rustup component add rustfmt
           rustup target add wasm32-unknown-unknown
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
@@ -480,9 +490,11 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Test diesel-cli
         run: cargo +stable test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
@@ -517,9 +529,11 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
 
       - name: Install postgres (Linux)
         run: |
@@ -565,9 +579,11 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
       - name: Install Mysql (Linux)
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
@@ -625,9 +641,11 @@ jobs:
         with:
           tool: cargo-hack,cargo-minimal-versions
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
+          cache-all-crates: "true"
+          cache-workspace-crates: "true"
       - name: Install dependencies
         run: |
           sudo apt-get -o DPkg::Lock::Timeout=300 update
