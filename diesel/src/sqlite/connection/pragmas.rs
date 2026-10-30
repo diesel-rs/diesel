@@ -3,7 +3,6 @@ use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
-use alloc::string::ToString;
 
 /// The `auto_vacuum` mode of a database, controlling whether and when SQLite
 /// reclaims freed pages back to the file.
@@ -74,56 +73,6 @@ pub struct WalCheckpointOutcome {
 }
 
 impl SqliteConnection {
-    /// Shrink a database by releasing freelist pages, without the full rewrite
-    /// [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
-    ///
-    /// `schema` selects an attached database by name, `None` targets `main`. `pages`
-    /// bounds how many pages are reclaimed. As SQLite specifies, `None` or a value
-    /// below one clears the whole freelist, as does a bound larger than it. Only
-    /// databases in [`AutoVacuumMode::Incremental`] have anything to reclaim, on any
-    /// other mode this succeeds and does nothing.
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// # fn run_test() -> QueryResult<()> {
-    /// use diesel::sqlite::AutoVacuumMode;
-    /// use diesel::sqlite::pragma::{AutoVacuum, SchemaPragma};
-    /// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-    /// AutoVacuum::set(AutoVacuumMode::Incremental, None, conn)?;
-    /// // Reclaim at most 8 pages, then whatever is left.
-    /// conn.incremental_vacuum(None, Some(8))?;
-    /// conn.incremental_vacuum(None, None)?;
-    /// #     Ok(())
-    /// # }
-    /// ```
-    pub fn incremental_vacuum(
-        &mut self,
-        schema: Option<&str>,
-        pages: Option<u32>,
-    ) -> QueryResult<()> {
-        use crate::connection::SimpleConnection;
-        use crate::query_builder::QueryBuilder;
-        use crate::sqlite::SqliteQueryBuilder;
-
-        // SQLite frees one page per step of this statement, so it only empties the
-        // freelist when run to completion. `batch_execute` uses `sqlite3_exec`, which
-        // does that. A prepared statement would not: `StatementUse::run` steps once,
-        // which frees a single page and silently leaves the rest.
-        let mut query = SqliteQueryBuilder::new();
-        query.push_sql("PRAGMA ");
-        query.push_identifier(schema.unwrap_or("main"))?;
-        query.push_sql(".incremental_vacuum");
-        if let Some(pages) = pages {
-            query.push_sql("(");
-            query.push_sql(&pages.to_string());
-            query.push_sql(")");
-        }
-        self.batch_execute(&query.finish())
-    }
-
     /// Rebuild a database, repacking it into the smallest space it can occupy.
     ///
     /// `schema` selects an attached database by name, `None` targets `main`.
@@ -344,7 +293,10 @@ mod tests {
     use crate::prelude::*;
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::sql_types::Integer;
-    use crate::sqlite::pragma::{AutoVacuum, FreelistCount, PageCount, SchemaPragma};
+    use crate::sqlite::pragma::{
+        AutoVacuum, FreelistCount, IncrementalVacuum, PageCount, SchemaPragma,
+    };
+    use core::num::NonZeroU32;
 
     fn connection() -> SqliteConnection {
         SqliteConnection::establish(":memory:").unwrap()
@@ -627,7 +579,7 @@ mod tests {
             "the deleted rows should leave many pages on the freelist"
         );
 
-        conn.incremental_vacuum(None, None).unwrap();
+        IncrementalVacuum::set(None, None, conn).unwrap();
 
         // Stepping the pragma only once would free a single page and leave the rest, so
         // this also pins that the statement is driven to completion.
@@ -642,7 +594,7 @@ mod tests {
         let before = FreelistCount::get::<i64>(None, conn).unwrap();
         assert!(before > 10, "the bound has to be smaller than the freelist");
 
-        conn.incremental_vacuum(None, Some(10)).unwrap();
+        IncrementalVacuum::set(NonZeroU32::new(10), None, conn).unwrap();
 
         let after = FreelistCount::get::<i64>(None, conn).unwrap();
         assert!(after >= before - 10, "at most ten pages may be reclaimed");
@@ -660,7 +612,7 @@ mod tests {
         let before = FreelistCount::get::<i64>(None, conn).unwrap();
         assert!(before > 0);
 
-        conn.incremental_vacuum(None, None).unwrap();
+        IncrementalVacuum::set(None, None, conn).unwrap();
 
         assert_eq!(
             before,
@@ -678,7 +630,7 @@ mod tests {
         grow_then_empty_aux_freelist(conn);
         assert!(FreelistCount::get::<i64>(Some("aux"), conn).unwrap() > 0);
 
-        conn.incremental_vacuum(Some("aux"), None).unwrap();
+        IncrementalVacuum::set(None, Some("aux"), conn).unwrap();
 
         assert_eq!(0, FreelistCount::get::<i64>(Some("aux"), conn).unwrap());
     }
@@ -691,22 +643,9 @@ mod tests {
         let schema = "back`tick";
         conn.attach_database(":memory:", schema).unwrap();
 
-        conn.incremental_vacuum(Some(schema), None).unwrap();
+        IncrementalVacuum::set(None, Some(schema), conn).unwrap();
 
         assert_eq!(0, FreelistCount::get::<i64>(Some(schema), conn).unwrap());
-    }
-
-    #[diesel_test_helper::test]
-    fn incremental_vacuum_of_zero_pages_clears_everything() {
-        // SQLite specifies that a bound below one clears the whole freelist.
-        let conn = &mut connection();
-        AutoVacuum::set(AutoVacuumMode::Incremental, None, conn).unwrap();
-        grow_then_empty_freelist(conn);
-        assert!(FreelistCount::get::<i64>(None, conn).unwrap() > 0);
-
-        conn.incremental_vacuum(None, Some(0)).unwrap();
-
-        assert_eq!(0, FreelistCount::get::<i64>(None, conn).unwrap());
     }
 
     #[cfg(not(miri))] // ffi string access
@@ -714,7 +653,7 @@ mod tests {
     fn incremental_vacuum_of_an_unknown_schema_is_an_error() {
         let conn = &mut connection();
 
-        assert!(conn.incremental_vacuum(Some("nope"), None).is_err());
+        assert!(IncrementalVacuum::set(None, Some("nope"), conn).is_err());
     }
 
     // Leaves the database holding one small row but occupying many pages, so a rebuild

@@ -76,6 +76,7 @@ use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use core::num::NonZeroU32;
 
 /// A pragma, named by [`NAME`](Self::NAME) and scoped by [`Scope`](Self::Scope).
 pub trait Pragma: Sized {
@@ -133,7 +134,7 @@ pub trait WritePragma: Pragma {
 ///
 /// Diesel renders every argument itself, so this trait cannot be implemented outside Diesel. A type of your own becomes an argument by converting into one with [`From`].
 ///
-/// Integers and `bool` are written as decimal integers.
+/// Integers and `bool` are written as decimal integers. An `Option<NonZeroU32>` writes `None` as 0, which limit pragmas such as `incremental_vacuum` read as no limit.
 pub trait PragmaArgument: private::RenderArgument {}
 
 /// A keyword written unquoted, such as `WAL` or `NORMAL`.
@@ -454,6 +455,46 @@ impl private::RenderArgument for AutoVacuumMode {
 }
 
 impl PragmaArgument for AutoVacuumMode {}
+
+/// `PRAGMA incremental_vacuum`, shrinking a database by releasing freelist pages without the full rewrite [`VACUUM`](https://www.sqlite.org/lang_vacuum.html) performs.
+///
+/// `Some(pages)` releases at most that many pages, `None` the whole freelist. Only a database in [`AutoVacuumMode::Incremental`] has anything to release, on any other mode the assignment succeeds and does nothing.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::AutoVacuumMode;
+/// use diesel::sqlite::pragma::{AutoVacuum, IncrementalVacuum, SchemaPragma};
+/// use std::num::NonZeroU32;
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// AutoVacuum::set(AutoVacuumMode::Incremental, None, conn)?;
+/// // Release at most 8 pages, then whatever is left.
+/// IncrementalVacuum::set(NonZeroU32::new(8), None, conn)?;
+/// IncrementalVacuum::set(None, None, conn)?;
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct IncrementalVacuum;
+
+impl Pragma for IncrementalVacuum {
+    const NAME: &'static str = "incremental_vacuum";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for IncrementalVacuum {
+    type Argument<'a> = Option<NonZeroU32>;
+}
+
+impl private::RenderArgument for Option<NonZeroU32> {
+    fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
+        out.push_sql(&self.map_or(0, NonZeroU32::get).to_string());
+        Ok(())
+    }
+}
+
+impl PragmaArgument for Option<NonZeroU32> {}
 
 fn cursor<'conn, 'query, P>(
     conn: &'conn mut SqliteConnection,
