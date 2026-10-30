@@ -202,6 +202,69 @@ impl private::RenderArgument for PragmaKeyword {
 
 impl PragmaArgument for PragmaKeyword {}
 
+/// Text written as a single-quoted SQL string with embedded quotes doubled, such as `'UTF-16le'`.
+///
+/// Text holding a NUL byte fails with [`Error::InvalidCString`] before reaching SQLite.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::pragma::{
+///     ConnectionPragma, PerConnection, Pragma, PragmaText, ReadPragma, WritePragma,
+/// };
+///
+/// struct Encoding;
+///
+/// impl Pragma for Encoding {
+///     const NAME: &'static str = "encoding";
+///     type Scope = PerConnection;
+/// }
+///
+/// impl ReadPragma for Encoding {
+///     type SqlType = Text;
+/// }
+///
+/// impl WritePragma for Encoding {
+///     type Argument<'a> = PragmaText<'a>;
+/// }
+///
+/// # // Reading text allocated by the native sqlite library is not supported
+/// # // by miri `-Zmiri-native-lib`.
+/// # #[cfg(not(miri))]
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// // SQLite only changes the encoding before anything is written.
+/// Encoding::set("UTF-16le", conn)?;
+/// assert_eq!("UTF-16le", Encoding::get::<String>(conn)?);
+/// #     Ok(())
+/// # }
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PragmaText<'a>(&'a str);
+
+impl<'a> From<&'a str> for PragmaText<'a> {
+    fn from(text: &'a str) -> Self {
+        Self(text)
+    }
+}
+
+impl private::RenderArgument for PragmaText<'_> {
+    fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
+        out.push_sql("'");
+        for piece in self.0.split_inclusive('\'') {
+            out.push_sql(piece);
+            if piece.ends_with('\'') {
+                out.push_sql("'");
+            }
+        }
+        out.push_sql("'");
+        Ok(())
+    }
+}
+
+impl PragmaArgument for PragmaText<'_> {}
+
 macro_rules! integer_pragma_argument {
     ($($ty:ty),*) => {$(
         impl private::RenderArgument for $ty {
@@ -347,6 +410,7 @@ fn assign<P: WritePragma>(
 #[derive(Debug)]
 struct PragmaQuery<'a, P> {
     schema: Option<&'a str>,
+
     pragma: PhantomData<P>,
 }
 
