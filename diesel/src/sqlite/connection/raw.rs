@@ -834,7 +834,8 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_trace_v2(
                 self.internal_connection.as_ptr(),
-                mask.bits(),
+                // An undeclared bit such as 0x40 switches SQLite to the legacy callback ABI.
+                SqliteTraceFlags::from_bits_truncate(mask.bits()).bits(),
                 Some(trace_trampoline::<F>),
                 ptr,
             );
