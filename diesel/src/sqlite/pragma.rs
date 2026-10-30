@@ -72,7 +72,7 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::result::{Error, QueryResult};
 use crate::sql_types::SqlType;
-use crate::sqlite::{Sqlite, SqliteConnection};
+use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
@@ -408,6 +408,52 @@ impl Pragma for FreelistCount {
 impl ReadPragma for FreelistCount {
     type SqlType = crate::sql_types::BigInt;
 }
+
+/// `PRAGMA auto_vacuum`, read and set as an [`AutoVacuumMode`].
+///
+/// Changing from or to [`AutoVacuumMode::None`] only takes effect on a database with no tables yet, or after a subsequent `VACUUM`.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::AutoVacuumMode;
+/// use diesel::sqlite::pragma::{AutoVacuum, SchemaPragma};
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// assert_eq!(AutoVacuumMode::None, AutoVacuum::get::<AutoVacuumMode>(None, conn)?);
+/// AutoVacuum::set(AutoVacuumMode::Incremental, None, conn)?;
+/// assert_eq!(
+///     AutoVacuumMode::Incremental,
+///     AutoVacuum::get::<AutoVacuumMode>(None, conn)?
+/// );
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct AutoVacuum;
+
+impl Pragma for AutoVacuum {
+    const NAME: &'static str = "auto_vacuum";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for AutoVacuum {
+    type SqlType = crate::sql_types::Integer;
+}
+
+impl WritePragma for AutoVacuum {
+    type Argument<'a> = AutoVacuumMode;
+}
+
+impl private::RenderArgument for AutoVacuumMode {
+    fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
+        // Discriminant extraction, `#[repr(i32)]` makes it the mode's SQLite number.
+        out.push_sql(&(*self as i32).to_string());
+        Ok(())
+    }
+}
+
+impl PragmaArgument for AutoVacuumMode {}
 
 fn cursor<'conn, 'query, P>(
     conn: &'conn mut SqliteConnection,
