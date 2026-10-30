@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ConnectionError","DatabaseErrorKind","Error"],"struct":["DeserializeFieldError","EmptyChangeset","EmptyQuery","InvalidSqlState","SqlState","SqlStateClass","UnexpectedEndOfRow","UnexpectedNullError"],"trait":["DatabaseErrorInformation","OptionalEmptyChangesetExtension","OptionalExtension"],"type":["ConnectionResult","QueryResult"]};

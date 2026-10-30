@@ -1,0 +1,343 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/utf8_iter-1.1.0/src/str.rs`."><title>str.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-009149e2.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="utf8_iter" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (92b5b8c87 2026-10-29)" data-channel="nightly" data-search-js="search-835b9732.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">utf8_iter/</div>str.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Copyright Mozilla Foundation
+<a href=#2 id=2 data-nosnippet>2</a>//
+<a href=#3 id=3 data-nosnippet>3</a>// Licensed under the Apache License (Version 2.0), or the MIT license,
+<a href=#4 id=4 data-nosnippet>4</a>// (the "Licenses") at your option. You may not use this file except in
+<a href=#5 id=5 data-nosnippet>5</a>// compliance with one of the Licenses. You may obtain copies of the
+<a href=#6 id=6 data-nosnippet>6</a>// Licenses at:
+<a href=#7 id=7 data-nosnippet>7</a>//
+<a href=#8 id=8 data-nosnippet>8</a>//    https://www.apache.org/licenses/LICENSE-2.0
+<a href=#9 id=9 data-nosnippet>9</a>//    https://opensource.org/licenses/MIT
+<a href=#10 id=10 data-nosnippet>10</a>//
+<a href=#11 id=11 data-nosnippet>11</a>// Unless required by applicable law or agreed to in writing, software
+<a href=#12 id=12 data-nosnippet>12</a>// distributed under the Licenses is distributed on an "AS IS" BASIS,
+<a href=#13 id=13 data-nosnippet>13</a>// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<a href=#14 id=14 data-nosnippet>14</a>// See the Licenses for the specific language governing permissions and
+<a href=#15 id=15 data-nosnippet>15</a>// limitations under the Licenses.
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a></span><span class="attr">#![allow(unsafe_code)] </span><span class="comment">// Needed to make efficient use of the invariant of `str`
+<a href=#18 id=18 data-nosnippet>18</a>
+<a href=#19 id=19 data-nosnippet>19</a></span><span class="kw">use </span><a href="handler.rs.html#44-103"><span class="kw">crate</span>::Utf8Handler</a>;
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">use </span><a href="../../utf_types/utf8/enum.Ascii.html">utf_types::utf8::Ascii</a>;
+<a href=#22 id=22 data-nosnippet>22</a><span class="kw">use </span><a href="../../utf_types/utf8/struct.FourByteSequence.html">utf_types::utf8::FourByteSequence</a>;
+<a href=#23 id=23 data-nosnippet>23</a><span class="kw">use </span><a href="../../utf_types/utf8/enum.LeadForFourByte.html">utf_types::utf8::LeadForFourByte</a>;
+<a href=#24 id=24 data-nosnippet>24</a><span class="kw">use </span><a href="../../utf_types/utf8/enum.LeadForMultiByte.html">utf_types::utf8::LeadForMultiByte</a>;
+<a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span><a href="../../utf_types/utf8/enum.LeadForThreeByte.html">utf_types::utf8::LeadForThreeByte</a>;
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span><a href="../../utf_types/utf8/struct.ThreeByteSequence.html">utf_types::utf8::ThreeByteSequence</a>;
+<a href=#27 id=27 data-nosnippet>27</a><span class="kw">use </span><a href="../../utf_types/utf8/struct.TwoByteSequence.html">utf_types::utf8::TwoByteSequence</a>;
+<a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span><a href="../../utf_types/utf8/enum.UnconstrainedContinuation.html">utf_types::utf8::UnconstrainedContinuation</a>;
+<a href=#29 id=29 data-nosnippet>29</a>
+<a href=#30 id=30 data-nosnippet>30</a><span class="doccomment">/// Iterator over guaranteed-well-formed UTF-8 with `Utf8Handler`.
+<a href=#31 id=31 data-nosnippet>31</a>/// The `Utf8Handler::error()` is, of course, never called.
+<a href=#32 id=32 data-nosnippet>32</a></span><span class="expansion"><input id=expand-32 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, H: ::core::fmt::Debug&gt; ::core::fmt::Debug <span class="kw">for
+    </span>CharsWithHandler&lt;<span class="lifetime">'a</span>, H&gt; <span class="kw">where </span>H: Utf8Handler {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"CharsWithHandler inner handler"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.inner, &amp;&amp;<span class="self">self</span>.handler)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#33 id=33 data-nosnippet>33</a></span><span class="kw">pub struct </span><a href="../../utf8_iter/struct.CharsWithHandler.html">CharsWithHandler</a>&lt;<span class="lifetime">'a</span>, H&gt;
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">where
+<a href=#35 id=35 data-nosnippet>35</a>    </span>H: <a href="handler.rs.html#44-103">Utf8Handler</a>,
+<a href=#36 id=36 data-nosnippet>36</a>{
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="doccomment">/// # Safety invariant
+<a href=#38 id=38 data-nosnippet>38</a>    ///
+<a href=#39 id=39 data-nosnippet>39</a>    /// `self.inner.as_slice()` is well-formed UTF-8, except when a method that
+<a href=#40 id=40 data-nosnippet>40</a>    /// advances the `CharsWithHandler` as an iterator ()`next`, `next_back`,
+<a href=#41 id=41 data-nosnippet>41</a>    /// `next_with_minimum_lead`) is in the process of reading a UTF-8 sequence
+<a href=#42 id=42 data-nosnippet>42</a>    /// from `self.inner`.
+<a href=#43 id=43 data-nosnippet>43</a>    ///
+<a href=#44 id=44 data-nosnippet>44</a>    /// Note: For panic-safety, methods that change the state of `self.inner`
+<a href=#45 id=45 data-nosnippet>45</a>    /// must first consume a full UTF-8 sequence (such that the above-stated
+<a href=#46 id=46 data-nosnippet>46</a>    /// invariant holds again) before calling into `self.handler`, so that
+<a href=#47 id=47 data-nosnippet>47</a>    /// the invariant of `self.inner` is upheld even if `self.handler`
+<a href=#48 id=48 data-nosnippet>48</a>    /// panics.
+<a href=#49 id=49 data-nosnippet>49</a>    </span>inner: core::slice::<a href="https://doc.rust-lang.org/nightly/core/slice/iter/struct.Iter.html">Iter</a>&lt;<span class="lifetime">'a</span>, <a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>&gt;,
+<a href=#50 id=50 data-nosnippet>50</a>    handler: H,
+<a href=#51 id=51 data-nosnippet>51</a>}
+<a href=#52 id=52 data-nosnippet>52</a>
+<a href=#53 id=53 data-nosnippet>53</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, H&gt; <a href="#33-51">CharsWithHandler</a>&lt;<span class="lifetime">'a</span>, H&gt;
+<a href=#54 id=54 data-nosnippet>54</a><span class="kw">where
+<a href=#55 id=55 data-nosnippet>55</a>    </span>H: <a href="handler.rs.html#44-103">Utf8Handler</a>,
+<a href=#56 id=56 data-nosnippet>56</a>{
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="attr">#[inline(always)]
+<a href=#58 id=58 data-nosnippet>58</a>    </span><span class="doccomment">/// Creates the iterator from a `&amp;str` and handler.
+<a href=#59 id=59 data-nosnippet>59</a>    </span><span class="kw">pub fn </span>new(s: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/core/primitive.str.html">str</a>, handler: H) -&gt; <span class="self">Self </span>{
+<a href=#60 id=60 data-nosnippet>60</a>        <a href="#33-51">CharsWithHandler</a>::&lt;<span class="lifetime">'a</span>, H&gt; {
+<a href=#61 id=61 data-nosnippet>61</a>            inner: <a href="#59">s</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.str.html#method.as_bytes">as_bytes</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.iter">iter</a>(),
+<a href=#62 id=62 data-nosnippet>62</a>            <a href="#59">handler</a>,
+<a href=#63 id=63 data-nosnippet>63</a>        }
+<a href=#64 id=64 data-nosnippet>64</a>    }
+<a href=#65 id=65 data-nosnippet>65</a>
+<a href=#66 id=66 data-nosnippet>66</a>    <span class="doccomment">/// Views the current remaining data in the iterator as a subslice
+<a href=#67 id=67 data-nosnippet>67</a>    /// of the original slice.
+<a href=#68 id=68 data-nosnippet>68</a>    </span><span class="attr">#[inline(always)]
+<a href=#69 id=69 data-nosnippet>69</a>    </span><span class="kw">pub fn </span>as_str(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/core/primitive.str.html">str</a> {
+<a href=#70 id=70 data-nosnippet>70</a>        <span class="comment">// SAFETY: OK per the safety invariant of `self.inner`.
+<a href=#71 id=71 data-nosnippet>71</a>        </span><span class="kw">unsafe </span>{ core::str::<a href="https://doc.rust-lang.org/nightly/core/str/converts/fn.from_utf8_unchecked.html">from_utf8_unchecked</a>(<a class="self" href="#69">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/slice/iter/struct.Iter.html#method.as_slice">as_slice</a>()) }
+<a href=#72 id=72 data-nosnippet>72</a>    }
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="doccomment">/// Obtains a reference to the handler.
+<a href=#75 id=75 data-nosnippet>75</a>    </span><span class="attr">#[inline(always)]
+<a href=#76 id=76 data-nosnippet>76</a>    </span><span class="kw">pub fn </span>handler(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>H {
+<a href=#77 id=77 data-nosnippet>77</a>        <span class="kw-2">&amp;</span><a class="self" href="#76">self</a>.handler
+<a href=#78 id=78 data-nosnippet>78</a>    }
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a>    <span class="doccomment">/// Obtains the output for the next UTF-8 sequence whose lead byte
+<a href=#81 id=81 data-nosnippet>81</a>    /// is greater than or equal to `multi_byte_lead` ignoring UTF-8
+<a href=#82 id=82 data-nosnippet>82</a>    /// sequences before such a UTF-8 sequence. (Or `None` if the iterator
+<a href=#83 id=83 data-nosnippet>83</a>    /// is consumed without finding such a UTF-8 sequence.)
+<a href=#84 id=84 data-nosnippet>84</a>    </span><span class="attr">#[inline(always)]
+<a href=#85 id=85 data-nosnippet>85</a>    </span><span class="kw">pub fn </span>next_with_minimum_lead(
+<a href=#86 id=86 data-nosnippet>86</a>        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#87 id=87 data-nosnippet>87</a>        multi_byte_lead: <a href="../../utf_types/utf8/enum.LeadForMultiByte.html">LeadForMultiByte</a>,
+<a href=#88 id=88 data-nosnippet>88</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;H::Output&gt; {
+<a href=#89 id=89 data-nosnippet>89</a>        <span class="kw">let </span>bound = <a href="#87">multi_byte_lead</a>.<a href="../../utf_types/utf8/enum.LeadForMultiByte.html#method.to_u8">to_u8</a>();
+<a href=#90 id=90 data-nosnippet>90</a>        <span class="kw">loop </span>{
+<a href=#91 id=91 data-nosnippet>91</a>            <span class="kw">let </span>byte = <span class="kw-2">*</span><span class="self">self</span>.inner.next()<span class="question-mark">?</span>;
+<a href=#92 id=92 data-nosnippet>92</a>            <span class="kw">if </span><a href="#91">byte</a> &lt; <a href="#89">bound</a> {
+<a href=#93 id=93 data-nosnippet>93</a>                <span class="kw">continue</span>;
+<a href=#94 id=94 data-nosnippet>94</a>            }
+<a href=#95 id=95 data-nosnippet>95</a>            <span class="comment">// SAFETY: From the safety invariant of `self.inner`
+<a href=#96 id=96 data-nosnippet>96</a>            // we know that upon entry into this method `self.inner`
+<a href=#97 id=97 data-nosnippet>97</a>            // represented well-formed UTF-8.
+<a href=#98 id=98 data-nosnippet>98</a>            //
+<a href=#99 id=99 data-nosnippet>99</a>            // We know that well-formed UTF-8 consists of three kinds
+<a href=#100 id=100 data-nosnippet>100</a>            // of bytes:
+<a href=#101 id=101 data-nosnippet>101</a>            // 1. ASCII bytes
+<a href=#102 id=102 data-nosnippet>102</a>            // 2. Continuation bytes
+<a href=#103 id=103 data-nosnippet>103</a>            // 3. Lead bytes for multi-byte sequences.
+<a href=#104 id=104 data-nosnippet>104</a>            //
+<a href=#105 id=105 data-nosnippet>105</a>            // We know that ASCII bytes and continuation bytes are
+<a href=#106 id=106 data-nosnippet>106</a>            // below lead bytes for multi-byte sequences in unsigned
+<a href=#107 id=107 data-nosnippet>107</a>            // integer order.
+<a href=#108 id=108 data-nosnippet>108</a>            //
+<a href=#109 id=109 data-nosnippet>109</a>            // Since `bound` is a lead byte for a multi-byte sequence,
+<a href=#110 id=110 data-nosnippet>110</a>            // we know that ASCII bytes and continuation bytes take
+<a href=#111 id=111 data-nosnippet>111</a>            // the `continue` path above.
+<a href=#112 id=112 data-nosnippet>112</a>            //
+<a href=#113 id=113 data-nosnippet>113</a>            // Therefore, we know that `byte` must now be a lead byte
+<a href=#114 id=114 data-nosnippet>114</a>            // for a multibyte sequence. Since we know that `self.inner`
+<a href=#115 id=115 data-nosnippet>115</a>            // represented well-formed UTF-8 upon entry into this method,
+<a href=#116 id=116 data-nosnippet>116</a>            // we know that `self.inner` will yield the continuation bytes
+<a href=#117 id=117 data-nosnippet>117</a>            // that are appropriate given `byte` as the lead byte for
+<a href=#118 id=118 data-nosnippet>118</a>            // a multibyte sequence.
+<a href=#119 id=119 data-nosnippet>119</a>            //
+<a href=#120 id=120 data-nosnippet>120</a>            // INVARIANT UPHELD for `self.inner`:
+<a href=#121 id=121 data-nosnippet>121</a>            // `consume_continuations` consumes the rest of the
+<a href=#122 id=122 data-nosnippet>122</a>            // multi-byte UTF-8 sequence causing a complete sequence
+<a href=#123 id=123 data-nosnippet>123</a>            // to be consumed.
+<a href=#124 id=124 data-nosnippet>124</a>            </span><span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw">unsafe </span>{ <a class="self" href="#86">self</a>.<a href="#141-209">consume_continuations</a>(<a href="#91">byte</a>) });
+<a href=#125 id=125 data-nosnippet>125</a>        }
+<a href=#126 id=126 data-nosnippet>126</a>    }
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a>    <span class="doccomment">/// Consumes continuations given multi-byte lead byte `first`.
+<a href=#129 id=129 data-nosnippet>129</a>    ///
+<a href=#130 id=130 data-nosnippet>130</a>    /// # Safety
+<a href=#131 id=131 data-nosnippet>131</a>    ///
+<a href=#132 id=132 data-nosnippet>132</a>    /// `first` must be a lead byte for a multi-byte UTF-8 sequence and
+<a href=#133 id=133 data-nosnippet>133</a>    /// the concatenation of `first` and `self.inner` must be well-formed
+<a href=#134 id=134 data-nosnippet>134</a>    /// UTF-8.
+<a href=#135 id=135 data-nosnippet>135</a>    ///
+<a href=#136 id=136 data-nosnippet>136</a>    /// # Safety-usable invariant
+<a href=#137 id=137 data-nosnippet>137</a>    ///
+<a href=#138 id=138 data-nosnippet>138</a>    /// This method consumes from `self.inner` the continuation bytes that
+<a href=#139 id=139 data-nosnippet>139</a>    /// belong to the multi-byte sequence started by `first`.
+<a href=#140 id=140 data-nosnippet>140</a>    </span><span class="attr">#[inline(always)]
+<a href=#141 id=141 data-nosnippet>141</a>    </span><span class="kw">unsafe fn </span>consume_continuations(<span class="kw-2">&amp;mut </span><span class="self">self</span>, first: <a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>) -&gt; H::Output {
+<a href=#142 id=142 data-nosnippet>142</a><span class="expansion"><input id=expand-142 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!LeadForMultiByte::is(first) {
+        ::core::panicking::panic(<span class="string">"assertion failed: LeadForMultiByte::is(first)"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(LeadForMultiByte::is(first))</span></span>;
+<a href=#143 id=143 data-nosnippet>143</a>        <span class="comment">// SAFETY: Since we don't have a single-byte sequence (per the
+<a href=#144 id=144 data-nosnippet>144</a>        // safety invariant of this method) and we know the concatenation
+<a href=#145 id=145 data-nosnippet>145</a>        // of `first` and `self.inner` is well-formed UTF-8, a second
+<a href=#146 id=146 data-nosnippet>146</a>        // byte must exist.
+<a href=#147 id=147 data-nosnippet>147</a>        </span><span class="kw">let </span>second = <span class="kw-2">*</span><span class="kw">unsafe </span>{ <a class="self" href="#141">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_unchecked">unwrap_unchecked</a>() };
+<a href=#148 id=148 data-nosnippet>148</a>        <span class="kw">if </span><a href="#141">first</a> &lt; <a href="../../utf_types/utf8/enum.LeadForThreeByte.html">LeadForThreeByte</a>::<a href="../../utf_types/utf8/enum.LeadForThreeByte.html#associatedconstant.MIN">MIN</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a> {
+<a href=#149 id=149 data-nosnippet>149</a>            <span class="comment">// INVARIANT UPHELD for `self.inner`:
+<a href=#150 id=150 data-nosnippet>150</a>            // We consumed a complete UTF-8 sequence; see "SAFETY"
+<a href=#151 id=151 data-nosnippet>151</a>            // below.
+<a href=#152 id=152 data-nosnippet>152</a>            </span><span class="kw">return </span><a class="self" href="#141">self</a>.handler.<a href="handler.rs.html#65">two_byte</a>(
+<a href=#153 id=153 data-nosnippet>153</a>                <span class="comment">// SAFETY: From the invariant of this method we know that
+<a href=#154 id=154 data-nosnippet>154</a>                // `first` is a multibyte lead and `second` must be a
+<a href=#155 id=155 data-nosnippet>155</a>                // continuation since the concatenation of `first` and
+<a href=#156 id=156 data-nosnippet>156</a>                // `self.inner` was well-formed UTF-8 upon entry into
+<a href=#157 id=157 data-nosnippet>157</a>                // the method. Since `first` is also less than the
+<a href=#158 id=158 data-nosnippet>158</a>                // smallest lead for a three-byte sequence, it must be
+<a href=#159 id=159 data-nosnippet>159</a>                // a lead for a two-byte sequence. Therefore, we have
+<a href=#160 id=160 data-nosnippet>160</a>                // a two-byte UTF-8 sequence, which satisfies the invariant
+<a href=#161 id=161 data-nosnippet>161</a>                // of `TwoByteSequence::new_unchecked()`.
+<a href=#162 id=162 data-nosnippet>162</a>                </span><span class="kw">unsafe </span>{ <a href="../../utf_types/utf8/struct.TwoByteSequence.html">TwoByteSequence</a>::<a href="../../utf_types/utf8/struct.TwoByteSequence.html#method.new_unchecked">new_unchecked</a>(<a href="#141">first</a>, <a href="#147">second</a>) },
+<a href=#163 id=163 data-nosnippet>163</a>            );
+<a href=#164 id=164 data-nosnippet>164</a>        }
+<a href=#165 id=165 data-nosnippet>165</a>        <span class="comment">// SAFETY: Per the above two "SAFETY" comments, we don't have
+<a href=#166 id=166 data-nosnippet>166</a>        // a single-byte or a two-byte sequence if we get this far, so
+<a href=#167 id=167 data-nosnippet>167</a>        // a third byte must exist given that the concanation of `first`
+<a href=#168 id=168 data-nosnippet>168</a>        // and `self.inner` was well-formed UTF-8 at the start of this
+<a href=#169 id=169 data-nosnippet>169</a>        // method.
+<a href=#170 id=170 data-nosnippet>170</a>        </span><span class="kw">let </span>third = <span class="kw-2">*</span><span class="kw">unsafe </span>{ <a class="self" href="#141">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_unchecked">unwrap_unchecked</a>() };
+<a href=#171 id=171 data-nosnippet>171</a>        <span class="kw">if </span><a href="#141">first</a> &lt; <a href="../../utf_types/utf8/enum.LeadForFourByte.html">LeadForFourByte</a>::<a href="../../utf_types/utf8/enum.LeadForFourByte.html#associatedconstant.MIN">MIN</a> <span class="kw">as </span><a href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a> {
+<a href=#172 id=172 data-nosnippet>172</a>            <span class="comment">// INVARIANT UPHELD for `self.inner`:
+<a href=#173 id=173 data-nosnippet>173</a>            // We consumed a complete UTF-8 sequence; see "SAFETY"
+<a href=#174 id=174 data-nosnippet>174</a>            // below.
+<a href=#175 id=175 data-nosnippet>175</a>            </span><span class="kw">return </span><a class="self" href="#141">self</a>.handler.<a href="handler.rs.html#74">three_byte</a>(<span class="kw">unsafe </span>{
+<a href=#176 id=176 data-nosnippet>176</a>                <span class="comment">// SAFETY: From the safety invariant of this method
+<a href=#177 id=177 data-nosnippet>177</a>                // we know that the concatenation of `first` and
+<a href=#178 id=178 data-nosnippet>178</a>                // `self.inner` was well-formed UTF-8 at the start of
+<a href=#179 id=179 data-nosnippet>179</a>                // this method. The safety invariant of this method
+<a href=#180 id=180 data-nosnippet>180</a>                // rules out a single-byte sequence and we have already
+<a href=#181 id=181 data-nosnippet>181</a>                // checked for and ruled out a two-byte sequence. Most
+<a href=#182 id=182 data-nosnippet>182</a>                // recently, we ruled out a four-byte sequence. Therefore,
+<a href=#183 id=183 data-nosnippet>183</a>                // we must have a three-byte sequence, which satisfies
+<a href=#184 id=184 data-nosnippet>184</a>                // the safety invariant of `ThreeByteSequence::new_unchecked()`.
+<a href=#185 id=185 data-nosnippet>185</a>                </span><a href="../../utf_types/utf8/struct.ThreeByteSequence.html">ThreeByteSequence</a>::<a href="../../utf_types/utf8/struct.ThreeByteSequence.html#method.new_unchecked">new_unchecked</a>(<a href="#141">first</a>, <a href="#147">second</a>, <a href="#170">third</a>)
+<a href=#186 id=186 data-nosnippet>186</a>            });
+<a href=#187 id=187 data-nosnippet>187</a>        }
+<a href=#188 id=188 data-nosnippet>188</a>        <span class="comment">// SAFETY: Since we don't have a single-byte sequence, a two-byte
+<a href=#189 id=189 data-nosnippet>189</a>        // sequence, or a three-byte sequence (per above) and we know
+<a href=#190 id=190 data-nosnippet>190</a>        // from the safety invariant of this method that the concatenation
+<a href=#191 id=191 data-nosnippet>191</a>        // of `first` and `self.inner` was well-formed UTF-8 upon entry
+<a href=#192 id=192 data-nosnippet>192</a>        // into this method. Therefore, a fourth byte must exist.
+<a href=#193 id=193 data-nosnippet>193</a>        </span><span class="kw">let </span>fourth = <span class="kw-2">*</span><span class="kw">unsafe </span>{ <a class="self" href="#141">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#tymethod.next">next</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_unchecked">unwrap_unchecked</a>() };
+<a href=#194 id=194 data-nosnippet>194</a>        <span class="comment">// INVARIANT UPHELD for `self.inner`:
+<a href=#195 id=195 data-nosnippet>195</a>        // We consumed a complete UTF-8 sequence; see "SAFETY"
+<a href=#196 id=196 data-nosnippet>196</a>        // below.
+<a href=#197 id=197 data-nosnippet>197</a>        </span><a class="self" href="#141">self</a>.handler.<a href="handler.rs.html#83">four_byte</a>(
+<a href=#198 id=198 data-nosnippet>198</a>            <span class="comment">// SAFETY: From the safety invariant of this method
+<a href=#199 id=199 data-nosnippet>199</a>            // we know that the concatenation of `first` and
+<a href=#200 id=200 data-nosnippet>200</a>            // `self.inner` was well-formed UTF-8 at the start of
+<a href=#201 id=201 data-nosnippet>201</a>            // this method. The safety invariant of this method
+<a href=#202 id=202 data-nosnippet>202</a>            // rules out a single-byte sequence and we have already
+<a href=#203 id=203 data-nosnippet>203</a>            // checked for and ruled out a two-byte and three-byte
+<a href=#204 id=204 data-nosnippet>204</a>            // sequences. Therefore, we must have a four-byte
+<a href=#205 id=205 data-nosnippet>205</a>            // sequence, which satisfies the safety invariant of
+<a href=#206 id=206 data-nosnippet>206</a>            // `FourByteSequence::new_unchecked()`.
+<a href=#207 id=207 data-nosnippet>207</a>            </span><span class="kw">unsafe </span>{ <a href="../../utf_types/utf8/struct.FourByteSequence.html">FourByteSequence</a>::<a href="../../utf_types/utf8/struct.FourByteSequence.html#method.new_unchecked">new_unchecked</a>(<a href="#141">first</a>, <a href="#147">second</a>, <a href="#170">third</a>, <a href="#193">fourth</a>) },
+<a href=#208 id=208 data-nosnippet>208</a>        )
+<a href=#209 id=209 data-nosnippet>209</a>    }
+<a href=#210 id=210 data-nosnippet>210</a>}
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, H&gt; <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a> <span class="kw">for </span><a href="#33-51">CharsWithHandler</a>&lt;<span class="lifetime">'a</span>, H&gt;
+<a href=#213 id=213 data-nosnippet>213</a><span class="kw">where
+<a href=#214 id=214 data-nosnippet>214</a>    </span>H: <a href="handler.rs.html#44-103">Utf8Handler</a> + <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html">Clone</a>,
+<a href=#215 id=215 data-nosnippet>215</a>{
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+<a href=#217 id=217 data-nosnippet>217</a>        <span class="self">Self </span>{
+<a href=#218 id=218 data-nosnippet>218</a>            inner: <a class="self" href="#216">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>(),
+<a href=#219 id=219 data-nosnippet>219</a>            handler: <a class="self" href="#216">self</a>.handler.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>(),
+<a href=#220 id=220 data-nosnippet>220</a>        }
+<a href=#221 id=221 data-nosnippet>221</a>    }
+<a href=#222 id=222 data-nosnippet>222</a>}
+<a href=#223 id=223 data-nosnippet>223</a>
+<a href=#224 id=224 data-nosnippet>224</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, H&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html">Iterator</a> <span class="kw">for </span><a href="#33-51">CharsWithHandler</a>&lt;<span class="lifetime">'a</span>, H&gt;
+<a href=#225 id=225 data-nosnippet>225</a><span class="kw">where
+<a href=#226 id=226 data-nosnippet>226</a>    </span>H: <a href="handler.rs.html#44-103">Utf8Handler</a>,
+<a href=#227 id=227 data-nosnippet>227</a>{
+<a href=#228 id=228 data-nosnippet>228</a>    <span class="kw">type </span>Item = H::Output;
+<a href=#229 id=229 data-nosnippet>229</a>
+<a href=#230 id=230 data-nosnippet>230</a>    <span class="attr">#[inline(always)]
+<a href=#231 id=231 data-nosnippet>231</a>    </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;H::Output&gt; {
+<a href=#232 id=232 data-nosnippet>232</a>        <span class="kw">let </span>first = <span class="kw-2">*</span><span class="self">self</span>.inner.next()<span class="question-mark">?</span>;
+<a href=#233 id=233 data-nosnippet>233</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(ascii) = <a href="../../utf_types/utf8/enum.Ascii.html">Ascii</a>::<a href="../../utf_types/utf8/enum.Ascii.html#method.try_new">try_new</a>(<a href="#232">first</a>) {
+<a href=#234 id=234 data-nosnippet>234</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="self" href="#231">self</a>.handler.<a href="handler.rs.html#56">single_byte</a>(<a href="#233">ascii</a>));
+<a href=#235 id=235 data-nosnippet>235</a>        }
+<a href=#236 id=236 data-nosnippet>236</a>        <span class="comment">// SAFETY: Since `self.inner` represented well-formed UTF-8
+<a href=#237 id=237 data-nosnippet>237</a>        // upon entry into this method and `first` is not ASCII,
+<a href=#238 id=238 data-nosnippet>238</a>        // first must be a valid lead byte for a multi-byte UTF-8
+<a href=#239 id=239 data-nosnippet>239</a>        // sequence.
+<a href=#240 id=240 data-nosnippet>240</a>        //
+<a href=#241 id=241 data-nosnippet>241</a>        // INVARIANT UPHELD for `self.inner`:
+<a href=#242 id=242 data-nosnippet>242</a>        // `consume_continuations` consumes the rest of the
+<a href=#243 id=243 data-nosnippet>243</a>        // multi-byte UTF-8 sequence causing a complete sequence
+<a href=#244 id=244 data-nosnippet>244</a>        // to be consumed.
+<a href=#245 id=245 data-nosnippet>245</a>        </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw">unsafe </span>{ <a class="self" href="#231">self</a>.<a href="#141-209">consume_continuations</a>(<a href="#232">first</a>) })
+<a href=#246 id=246 data-nosnippet>246</a>    }
+<a href=#247 id=247 data-nosnippet>247</a>
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="attr">#[inline(always)]
+<a href=#249 id=249 data-nosnippet>249</a>    </span><span class="kw">fn </span>count(<span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> {
+<a href=#250 id=250 data-nosnippet>250</a>        <a class="self" href="#249">self</a>.<a href="#69-72">as_str</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.str.html#method.chars">chars</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.count">count</a>()
+<a href=#251 id=251 data-nosnippet>251</a>    }
+<a href=#252 id=252 data-nosnippet>252</a>
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="attr">#[inline(always)]
+<a href=#254 id=254 data-nosnippet>254</a>    </span><span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>, <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>&gt;) {
+<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">let </span>len = <a class="self" href="#254">self</a>.<a href="#69-72">as_str</a>().<a href="https://doc.rust-lang.org/nightly/core/primitive.str.html#method.len">len</a>();
+<a href=#256 id=256 data-nosnippet>256</a>        (<a href="#255">len</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html#method.div_ceil">div_ceil</a>(<span class="number">4</span>), <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#255">len</a>))
+<a href=#257 id=257 data-nosnippet>257</a>    }
+<a href=#258 id=258 data-nosnippet>258</a>
+<a href=#259 id=259 data-nosnippet>259</a>    <span class="attr">#[inline(always)]
+<a href=#260 id=260 data-nosnippet>260</a>    </span><span class="kw">fn </span>last(<span class="kw-2">mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="self">Self</span>::Item&gt; {
+<a href=#261 id=261 data-nosnippet>261</a>        <span class="comment">// No need to go through the entire string.
+<a href=#262 id=262 data-nosnippet>262</a>        </span><a class="self" href="#260">self</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html#tymethod.next_back">next_back</a>()
+<a href=#263 id=263 data-nosnippet>263</a>    }
+<a href=#264 id=264 data-nosnippet>264</a>}
+<a href=#265 id=265 data-nosnippet>265</a>
+<a href=#266 id=266 data-nosnippet>266</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, H&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html">DoubleEndedIterator</a> <span class="kw">for </span><a href="#33-51">CharsWithHandler</a>&lt;<span class="lifetime">'a</span>, H&gt;
+<a href=#267 id=267 data-nosnippet>267</a><span class="kw">where
+<a href=#268 id=268 data-nosnippet>268</a>    </span>H: <a href="handler.rs.html#44-103">Utf8Handler</a>,
+<a href=#269 id=269 data-nosnippet>269</a>{
+<a href=#270 id=270 data-nosnippet>270</a>    <span class="attr">#[inline(always)]
+<a href=#271 id=271 data-nosnippet>271</a>    </span><span class="kw">fn </span>next_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;H::Output&gt; {
+<a href=#272 id=272 data-nosnippet>272</a>        <span class="kw">let </span>last = <span class="kw-2">*</span><span class="self">self</span>.inner.next_back()<span class="question-mark">?</span>;
+<a href=#273 id=273 data-nosnippet>273</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(ascii) = <a href="../../utf_types/utf8/enum.Ascii.html">Ascii</a>::<a href="../../utf_types/utf8/enum.Ascii.html#method.try_new">try_new</a>(<a href="#272">last</a>) {
+<a href=#274 id=274 data-nosnippet>274</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="self" href="#271">self</a>.handler.<a href="handler.rs.html#56">single_byte</a>(<a href="#273">ascii</a>));
+<a href=#275 id=275 data-nosnippet>275</a>        }
+<a href=#276 id=276 data-nosnippet>276</a><span class="expansion"><input id=expand-276 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded><span class="kw">if </span><span class="bool-val">true </span>{
+    <span class="kw">if </span>!UnconstrainedContinuation::is(last) {
+        ::core::panicking::panic(<span class="string">"assertion failed: UnconstrainedContinuation::is(last)"</span>)
+    };
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.debug_assert.html">debug_assert!</a>(UnconstrainedContinuation::is(last))</span></span>;
+<a href=#277 id=277 data-nosnippet>277</a>        <span class="comment">// SAFETY: Since the last byte was not a single-byte sequence
+<a href=#278 id=278 data-nosnippet>278</a>        // given that `self.inner` represented well-formed UTF-8 upon
+<a href=#279 id=279 data-nosnippet>279</a>        // entry into this method, an earlier byte must exist.
+<a href=#280 id=280 data-nosnippet>280</a>        </span><span class="kw">let </span>second_last = <span class="kw-2">*</span><span class="kw">unsafe </span>{ <a class="self" href="#271">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html#tymethod.next_back">next_back</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_unchecked">unwrap_unchecked</a>() };
+<a href=#281 id=281 data-nosnippet>281</a>        <span class="kw">if </span>!<a href="../../utf_types/utf8/enum.UnconstrainedContinuation.html">UnconstrainedContinuation</a>::<a href="../../utf_types/utf8/enum.UnconstrainedContinuation.html#method.is">is</a>(<a href="#280">second_last</a>) {
+<a href=#282 id=282 data-nosnippet>282</a>            <span class="comment">// INVARIANT UPHELD for `self.inner`:
+<a href=#283 id=283 data-nosnippet>283</a>            // We consumed a complete UTF-8 sequence; see "SAFETY" below.
+<a href=#284 id=284 data-nosnippet>284</a>            </span><span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="self" href="#271">self</a>.handler.<a href="handler.rs.html#65">two_byte</a>(
+<a href=#285 id=285 data-nosnippet>285</a>                <span class="comment">// SAFETY: Given that `self.inner` represented well-formed
+<a href=#286 id=286 data-nosnippet>286</a>                // UTF-8 upon entry into this method and that `last` is a continuation
+<a href=#287 id=287 data-nosnippet>287</a>                // but `second_last` is not, they must form a two-byte UTF-8
+<a href=#288 id=288 data-nosnippet>288</a>                // sequence, which satisfies the safety invariant of
+<a href=#289 id=289 data-nosnippet>289</a>                // `TwoByteSequence::new_unchecked()`.
+<a href=#290 id=290 data-nosnippet>290</a>                </span><span class="kw">unsafe </span>{ <a href="../../utf_types/utf8/struct.TwoByteSequence.html">TwoByteSequence</a>::<a href="../../utf_types/utf8/struct.TwoByteSequence.html#method.new_unchecked">new_unchecked</a>(<a href="#280">second_last</a>, <a href="#272">last</a>) },
+<a href=#291 id=291 data-nosnippet>291</a>            ));
+<a href=#292 id=292 data-nosnippet>292</a>        }
+<a href=#293 id=293 data-nosnippet>293</a>        <span class="comment">// SAFETY: Given that `self.inner` represented well-formed
+<a href=#294 id=294 data-nosnippet>294</a>        // UTF-8 upon entry into this method and we've ruled out a
+<a href=#295 id=295 data-nosnippet>295</a>        // single-byte sequence and a two-byte sequence, an earlier
+<a href=#296 id=296 data-nosnippet>296</a>        // byte must exist.
+<a href=#297 id=297 data-nosnippet>297</a>        </span><span class="kw">let </span>third_last = <span class="kw-2">*</span><span class="kw">unsafe </span>{ <a class="self" href="#271">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html#tymethod.next_back">next_back</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_unchecked">unwrap_unchecked</a>() };
+<a href=#298 id=298 data-nosnippet>298</a>        <span class="kw">if </span>!<a href="../../utf_types/utf8/enum.UnconstrainedContinuation.html">UnconstrainedContinuation</a>::<a href="../../utf_types/utf8/enum.UnconstrainedContinuation.html#method.is">is</a>(<a href="#297">third_last</a>) {
+<a href=#299 id=299 data-nosnippet>299</a>            <span class="comment">// INVARIANT UPHELD for `self.inner`:
+<a href=#300 id=300 data-nosnippet>300</a>            // We consumed a complete UTF-8 sequence; see "SAFETY" below.
+<a href=#301 id=301 data-nosnippet>301</a>            </span><span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="self" href="#271">self</a>.handler.<a href="handler.rs.html#74">three_byte</a>(
+<a href=#302 id=302 data-nosnippet>302</a>                <span class="comment">// SAFETY: Given that `self.inner` represented well-formed
+<a href=#303 id=303 data-nosnippet>303</a>                // UTF-8 upon entry into this method and that `last` and `second_last`
+<a href=#304 id=304 data-nosnippet>304</a>                // are continuations but `third_last` is not, they must form a three-byte UTF-8
+<a href=#305 id=305 data-nosnippet>305</a>                // sequence, which satisfies the safety invariant of `ThreeByteSequence::new_unchecked()`.
+<a href=#306 id=306 data-nosnippet>306</a>                </span><span class="kw">unsafe </span>{ <a href="../../utf_types/utf8/struct.ThreeByteSequence.html">ThreeByteSequence</a>::<a href="../../utf_types/utf8/struct.ThreeByteSequence.html#method.new_unchecked">new_unchecked</a>(<a href="#297">third_last</a>, <a href="#280">second_last</a>, <a href="#272">last</a>) },
+<a href=#307 id=307 data-nosnippet>307</a>            ));
+<a href=#308 id=308 data-nosnippet>308</a>        }
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="comment">// SAFETY: Given that `self.inner` represented well-formed
+<a href=#310 id=310 data-nosnippet>310</a>        // UTF-8 upon entry into this method and we've ruled out a
+<a href=#311 id=311 data-nosnippet>311</a>        // single-byte sequence, a two-byte sequence, and a three-byte
+<a href=#312 id=312 data-nosnippet>312</a>        // sequences, an earlier byte must exist.
+<a href=#313 id=313 data-nosnippet>313</a>        </span><span class="kw">let </span>fourth_last = <span class="kw-2">*</span><span class="kw">unsafe </span>{ <a class="self" href="#271">self</a>.inner.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/double_ended/trait.DoubleEndedIterator.html#tymethod.next_back">next_back</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap_unchecked">unwrap_unchecked</a>() };
+<a href=#314 id=314 data-nosnippet>314</a>        <span class="comment">// INVARIANT UPHELD for `self.inner`:
+<a href=#315 id=315 data-nosnippet>315</a>        // We consumed a complete UTF-8 sequence; see "SAFETY" below.
+<a href=#316 id=316 data-nosnippet>316</a>        </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a class="self" href="#271">self</a>.handler.<a href="handler.rs.html#83">four_byte</a>(
+<a href=#317 id=317 data-nosnippet>317</a>            <span class="comment">// SAFETY: Given that `self.inner` represented well-formed
+<a href=#318 id=318 data-nosnippet>318</a>            // UTF-8 upon entry into this method and we've ruled out a
+<a href=#319 id=319 data-nosnippet>319</a>            // single-byte sequence, a two-byte sequence, and a three-byte
+<a href=#320 id=320 data-nosnippet>320</a>            // sequences, this must be a four-byte sequence, which satisfies
+<a href=#321 id=321 data-nosnippet>321</a>            // the safety invariant of `FourByteSequence::new_unchecked()`.
+<a href=#322 id=322 data-nosnippet>322</a>            </span><span class="kw">unsafe </span>{ <a href="../../utf_types/utf8/struct.FourByteSequence.html">FourByteSequence</a>::<a href="../../utf_types/utf8/struct.FourByteSequence.html#method.new_unchecked">new_unchecked</a>(<a href="#313">fourth_last</a>, <a href="#297">third_last</a>, <a href="#280">second_last</a>, <a href="#272">last</a>) },
+<a href=#323 id=323 data-nosnippet>323</a>        ))
+<a href=#324 id=324 data-nosnippet>324</a>    }
+<a href=#325 id=325 data-nosnippet>325</a>}
+<a href=#326 id=326 data-nosnippet>326</a>
+<a href=#327 id=327 data-nosnippet>327</a><span class="kw">impl</span>&lt;H&gt; <a href="https://doc.rust-lang.org/nightly/core/iter/traits/marker/trait.FusedIterator.html">core::iter::FusedIterator</a> <span class="kw">for </span><a href="#33-51">CharsWithHandler</a>&lt;<span class="lifetime">'_</span>, H&gt; <span class="kw">where </span>H: <a href="handler.rs.html#44-103">Utf8Handler</a> {}
+</code></pre></div></section></main></body></html>

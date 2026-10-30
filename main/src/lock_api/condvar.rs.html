@@ -1,0 +1,503 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/lock_api-0.5.0/src/condvar.rs`."><title>condvar.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-009149e2.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="lock_api" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (92b5b8c87 2026-10-29)" data-channel="nightly" data-search-js="search-835b9732.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">lock_api/</div>condvar.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::mutex::{<a href="mutex.rs.html#578-583">MutexGuard</a>, <a href="mutex.rs.html#44-83">RawMutex</a>, <a href="mutex.rs.html#139-159">RawMutexTimed</a>};
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>core::{<a href="https://doc.rust-lang.org/nightly/core/fmt/index.html">fmt</a>, <a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html">ops::DerefMut</a>};
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a><span class="doccomment">/// Basic operations for a condition variable associated with a particular
+<a href=#5 id=5 data-nosnippet>5</a>/// [`RawMutex`] implementation.
+<a href=#6 id=6 data-nosnippet>6</a>///
+<a href=#7 id=7 data-nosnippet>7</a>/// Types implementing this trait can be used by [`Condvar`] to form a safe
+<a href=#8 id=8 data-nosnippet>8</a>/// condition variable type.
+<a href=#9 id=9 data-nosnippet>9</a>///
+<a href=#10 id=10 data-nosnippet>10</a>/// Implementations must document whether they guarantee no spurious wakeups. If
+<a href=#11 id=11 data-nosnippet>11</a>/// they do, notification methods report exactly how many threads were notified.
+<a href=#12 id=12 data-nosnippet>12</a>/// Otherwise, notification methods must return `false` or `0`, and all
+<a href=#13 id=13 data-nosnippet>13</a>/// non-timeout wakeups are treated as potentially spurious. In either case,
+<a href=#14 id=14 data-nosnippet>14</a>/// notification methods must still wake waiting threads as specified.
+<a href=#15 id=15 data-nosnippet>15</a>///
+<a href=#16 id=16 data-nosnippet>16</a>/// # Safety
+<a href=#17 id=17 data-nosnippet>17</a>///
+<a href=#18 id=18 data-nosnippet>18</a>/// [`wait`](RawCondvar::wait) must atomically unlock the mutex and begin
+<a href=#19 id=19 data-nosnippet>19</a>/// waiting with respect to calls to [`notify_one`](RawCondvar::notify_one) and
+<a href=#20 id=20 data-nosnippet>20</a>/// [`notify_all`](RawCondvar::notify_all), then re-lock the mutex before it
+<a href=#21 id=21 data-nosnippet>21</a>/// returns.
+<a href=#22 id=22 data-nosnippet>22</a>///
+<a href=#23 id=23 data-nosnippet>23</a>/// If a wait panics after unlocking the mutex, it must re-lock the mutex before
+<a href=#24 id=24 data-nosnippet>24</a>/// unwinding, and replace `guard` with the state of the new acquisition.
+<a href=#25 id=25 data-nosnippet>25</a>/// `guard` must remain valid on both normal return and unwind. If restoring
+<a href=#26 id=26 data-nosnippet>26</a>/// ownership or valid guard state fails, the implementation must abort.
+<a href=#27 id=27 data-nosnippet>27</a>/// Implementations which cannot wait on distinct mutexes simultaneously may
+<a href=#28 id=28 data-nosnippet>28</a>/// panic when asked to do so, but must not cause undefined behavior.
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">pub unsafe trait </span><a href="../../lock_api/trait.RawCondvar.html">RawCondvar</a> {
+<a href=#30 id=30 data-nosnippet>30</a>    <span class="doccomment">/// Initial value for a new condvar.
+<a href=#31 id=31 data-nosnippet>31</a>    </span><span class="comment">// A “non-constant” const item is a legacy way to supply an initialized value to downstream
+<a href=#32 id=32 data-nosnippet>32</a>    // static items. Can hopefully be replaced with `const fn new() -&gt; Self` at some point.
+<a href=#33 id=33 data-nosnippet>33</a>    </span><span class="attr">#[allow(clippy::declare_interior_mutable_const)]
+<a href=#34 id=34 data-nosnippet>34</a>    </span><span class="kw">const </span>INIT: <span class="self">Self</span>;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a>    <span class="doccomment">/// The type of [`RawMutex`] this condvar can work with.
+<a href=#37 id=37 data-nosnippet>37</a>    </span><span class="kw">type </span>RawMutex: <a href="mutex.rs.html#44-83">RawMutex</a>;
+<a href=#38 id=38 data-nosnippet>38</a>
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="doccomment">/// Atomically unlocks the mutex and waits, then re-locks the mutex before
+<a href=#40 id=40 data-nosnippet>40</a>    /// returning.
+<a href=#41 id=41 data-nosnippet>41</a>    ///
+<a href=#42 id=42 data-nosnippet>42</a>    /// This method may return spuriously. See the implementation's
+<a href=#43 id=43 data-nosnippet>43</a>    /// documentation for any stronger guarantees.
+<a href=#44 id=44 data-nosnippet>44</a>    ///
+<a href=#45 id=45 data-nosnippet>45</a>    /// # Safety
+<a href=#46 id=46 data-nosnippet>46</a>    ///
+<a href=#47 id=47 data-nosnippet>47</a>    /// The caller must logically hold `mutex`, with `guard` containing the
+<a href=#48 id=48 data-nosnippet>48</a>    /// state of that acquisition. The protected data must not be accessed from
+<a href=#49 id=49 data-nosnippet>49</a>    /// the time this method unlocks the mutex until it re-locks it.
+<a href=#50 id=50 data-nosnippet>50</a>    </span><span class="kw">unsafe fn </span>wait(<span class="kw-2">&amp;</span><span class="self">self</span>, mutex: <span class="kw-2">&amp;</span><span class="self">Self</span>::RawMutex, guard: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutex&gt;::<a href="mutex.rs.html#56">Guard</a>);
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="doccomment">/// Notifies one waiting thread.
+<a href=#53 id=53 data-nosnippet>53</a>    ///
+<a href=#54 id=54 data-nosnippet>54</a>    /// If the implementation guarantees no spurious wakeups, returns whether
+<a href=#55 id=55 data-nosnippet>55</a>    /// this call notified a waiting thread. Otherwise, must return `false`.
+<a href=#56 id=56 data-nosnippet>56</a>    /// Threads whose waits end because of a timeout are not counted.
+<a href=#57 id=57 data-nosnippet>57</a>    </span><span class="kw">fn </span>notify_one(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>;
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="doccomment">/// Notifies all waiting threads.
+<a href=#60 id=60 data-nosnippet>60</a>    ///
+<a href=#61 id=61 data-nosnippet>61</a>    /// If the implementation guarantees no spurious wakeups, returns the exact
+<a href=#62 id=62 data-nosnippet>62</a>    /// number of waiting threads this call notified. Otherwise, must return `0`.
+<a href=#63 id=63 data-nosnippet>63</a>    /// Threads whose waits end because of a timeout are not counted.
+<a href=#64 id=64 data-nosnippet>64</a>    </span><span class="kw">fn </span>notify_all(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a>;
+<a href=#65 id=65 data-nosnippet>65</a>}
+<a href=#66 id=66 data-nosnippet>66</a>
+<a href=#67 id=67 data-nosnippet>67</a><span class="doccomment">/// Additional methods for condition variables which support timeouts.
+<a href=#68 id=68 data-nosnippet>68</a>///
+<a href=#69 id=69 data-nosnippet>69</a>/// # Safety
+<a href=#70 id=70 data-nosnippet>70</a>///
+<a href=#71 id=71 data-nosnippet>71</a>/// Implementations must uphold the safety requirements of [`RawCondvar`] for
+<a href=#72 id=72 data-nosnippet>72</a>/// the additional methods provided by this trait.
+<a href=#73 id=73 data-nosnippet>73</a></span><span class="kw">pub unsafe trait </span><a href="../../lock_api/trait.RawCondvarTimed.html">RawCondvarTimed</a>: <a href="#29-65">RawCondvar</a>
+<a href=#74 id=74 data-nosnippet>74</a><span class="kw">where
+<a href=#75 id=75 data-nosnippet>75</a>    </span><span class="self">Self</span>::RawMutex: <a href="mutex.rs.html#139-159">RawMutexTimed</a>,
+<a href=#76 id=76 data-nosnippet>76</a>{
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="doccomment">/// Converts a relative timeout into an absolute timeout.
+<a href=#78 id=78 data-nosnippet>78</a>    ///
+<a href=#79 id=79 data-nosnippet>79</a>    /// Returns `None` if the resulting instant cannot be represented.
+<a href=#80 id=80 data-nosnippet>80</a>    </span><span class="kw">fn </span>checked_duration_to_instant(
+<a href=#81 id=81 data-nosnippet>81</a>        timeout: <span class="kw-2">&amp;</span>&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#141">Duration</a>,
+<a href=#82 id=82 data-nosnippet>82</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#144">Instant</a>&gt;;
+<a href=#83 id=83 data-nosnippet>83</a>
+<a href=#84 id=84 data-nosnippet>84</a>    <span class="doccomment">/// Atomically unlocks the mutex and waits for a notification, a spurious
+<a href=#85 id=85 data-nosnippet>85</a>    /// wakeup, or the timeout to be reached, then re-locks the mutex before
+<a href=#86 id=86 data-nosnippet>86</a>    /// returning.
+<a href=#87 id=87 data-nosnippet>87</a>    ///
+<a href=#88 id=88 data-nosnippet>88</a>    /// Returns `true` if the wait is known to have timed out and `false`
+<a href=#89 id=89 data-nosnippet>89</a>    /// otherwise. See the [`RawCondvar`] implementation's documentation for
+<a href=#90 id=90 data-nosnippet>90</a>    /// whether a `false` result guarantees that a notification was received.
+<a href=#91 id=91 data-nosnippet>91</a>    ///
+<a href=#92 id=92 data-nosnippet>92</a>    /// A timed-out wait must not return before `timeout`, but may return later
+<a href=#93 id=93 data-nosnippet>93</a>    /// due to scheduling or platform-specific behavior.
+<a href=#94 id=94 data-nosnippet>94</a>    ///
+<a href=#95 id=95 data-nosnippet>95</a>    /// # Safety
+<a href=#96 id=96 data-nosnippet>96</a>    ///
+<a href=#97 id=97 data-nosnippet>97</a>    /// The caller must uphold the safety requirements of
+<a href=#98 id=98 data-nosnippet>98</a>    /// [`RawCondvar::wait`].
+<a href=#99 id=99 data-nosnippet>99</a>    </span><span class="kw">unsafe fn </span>wait_until(
+<a href=#100 id=100 data-nosnippet>100</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#101 id=101 data-nosnippet>101</a>        mutex: <span class="kw-2">&amp;</span><span class="self">Self</span>::RawMutex,
+<a href=#102 id=102 data-nosnippet>102</a>        guard: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutex&gt;::<a href="mutex.rs.html#56">Guard</a>,
+<a href=#103 id=103 data-nosnippet>103</a>        timeout: <span class="kw-2">&amp;</span>&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#144">Instant</a>,
+<a href=#104 id=104 data-nosnippet>104</a>    ) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>;
+<a href=#105 id=105 data-nosnippet>105</a>
+<a href=#106 id=106 data-nosnippet>106</a>    <span class="doccomment">/// Atomically unlocks the mutex and waits for a notification, a spurious
+<a href=#107 id=107 data-nosnippet>107</a>    /// wakeup, or the timeout to be reached, then re-locks the mutex before
+<a href=#108 id=108 data-nosnippet>108</a>    /// returning.
+<a href=#109 id=109 data-nosnippet>109</a>    ///
+<a href=#110 id=110 data-nosnippet>110</a>    /// Returns `true` if the wait is known to have timed out and `false`
+<a href=#111 id=111 data-nosnippet>111</a>    /// otherwise. See the [`RawCondvar`] implementation's documentation for
+<a href=#112 id=112 data-nosnippet>112</a>    /// whether a `false` result guarantees that a notification was received.
+<a href=#113 id=113 data-nosnippet>113</a>    ///
+<a href=#114 id=114 data-nosnippet>114</a>    /// A timed-out wait must not return before `timeout` has elapsed, but may
+<a href=#115 id=115 data-nosnippet>115</a>    /// return later due to scheduling or platform-specific behavior.
+<a href=#116 id=116 data-nosnippet>116</a>    ///
+<a href=#117 id=117 data-nosnippet>117</a>    /// # Safety
+<a href=#118 id=118 data-nosnippet>118</a>    ///
+<a href=#119 id=119 data-nosnippet>119</a>    /// The caller must uphold the safety requirements of
+<a href=#120 id=120 data-nosnippet>120</a>    /// [`RawCondvar::wait`].
+<a href=#121 id=121 data-nosnippet>121</a>    </span><span class="kw">unsafe fn </span>wait_for(
+<a href=#122 id=122 data-nosnippet>122</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#123 id=123 data-nosnippet>123</a>        mutex: <span class="kw-2">&amp;</span><span class="self">Self</span>::RawMutex,
+<a href=#124 id=124 data-nosnippet>124</a>        guard: <span class="kw-2">&amp;mut </span>&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutex&gt;::<a href="mutex.rs.html#56">Guard</a>,
+<a href=#125 id=125 data-nosnippet>125</a>        timeout: <span class="kw-2">&amp;</span>&lt;<span class="self">Self</span>::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#141">Duration</a>,
+<a href=#126 id=126 data-nosnippet>126</a>    ) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#127 id=127 data-nosnippet>127</a>        <span class="comment">// SAFETY: `RawCondvar::wait` and `RawCondvarTimed::wait_until` have the
+<a href=#128 id=128 data-nosnippet>128</a>        // same safety condition as this function, which is assured by the caller.
+<a href=#129 id=129 data-nosnippet>129</a>        </span><span class="kw">unsafe </span>{
+<a href=#130 id=130 data-nosnippet>130</a>            <span class="kw">match </span><span class="self">Self</span>::<a href="#80-82">checked_duration_to_instant</a>(<a href="#125">timeout</a>) {
+<a href=#131 id=131 data-nosnippet>131</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(timeout) =&gt; <a class="self" href="#122">self</a>.<a href="#99-104">wait_until</a>(<a href="#123">mutex</a>, <a href="#124">guard</a>, <span class="kw-2">&amp;</span><a href="#131">timeout</a>),
+<a href=#132 id=132 data-nosnippet>132</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; {
+<a href=#133 id=133 data-nosnippet>133</a>                    <span class="comment">// No absolute deadline can be constructed, so fall back to
+<a href=#134 id=134 data-nosnippet>134</a>                    // an untimed wait.
+<a href=#135 id=135 data-nosnippet>135</a>                    </span>&lt;<span class="self">Self </span><span class="kw">as </span>RawCondvar&gt;::<a href="#50">wait</a>(<a class="self" href="#122">self</a>, <a href="#123">mutex</a>, <a href="#124">guard</a>);
+<a href=#136 id=136 data-nosnippet>136</a>                    <span class="bool-val">false
+<a href=#137 id=137 data-nosnippet>137</a>                </span>}
+<a href=#138 id=138 data-nosnippet>138</a>            }
+<a href=#139 id=139 data-nosnippet>139</a>        }
+<a href=#140 id=140 data-nosnippet>140</a>    }
+<a href=#141 id=141 data-nosnippet>141</a>}
+<a href=#142 id=142 data-nosnippet>142</a>
+<a href=#143 id=143 data-nosnippet>143</a><span class="doccomment">/// A type indicating whether a timed wait on a condition variable timed out.
+<a href=#144 id=144 data-nosnippet>144</a></span><span class="expansion"><input id=expand-144 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>WaitTimeoutResult {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_tuple_field1_finish(f,
+            <span class="string">"WaitTimeoutResult"</span>, &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for
+    </span>WaitTimeoutResult {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>WaitTimeoutResult {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>WaitTimeoutResult {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;bool&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>WaitTimeoutResult { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>WaitTimeoutResult {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>WaitTimeoutResult {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;bool&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span></span></span><span class="attr">)]
+<a href=#145 id=145 data-nosnippet>145</a></span><span class="kw">pub struct </span><a href="../../lock_api/struct.WaitTimeoutResult.html">WaitTimeoutResult</a>(<a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>);
+<a href=#146 id=146 data-nosnippet>146</a>
+<a href=#147 id=147 data-nosnippet>147</a><span class="kw">impl </span><a href="#145">WaitTimeoutResult</a> {
+<a href=#148 id=148 data-nosnippet>148</a>    <span class="doccomment">/// Returns `true` if the wait was known to have timed out.
+<a href=#149 id=149 data-nosnippet>149</a>    </span><span class="attr">#[inline]
+<a href=#150 id=150 data-nosnippet>150</a>    </span><span class="kw">pub const fn </span>timed_out(<span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#151 id=151 data-nosnippet>151</a>        <a class="self" href="#150">self</a>.<span class="number">0
+<a href=#152 id=152 data-nosnippet>152</a>    </span>}
+<a href=#153 id=153 data-nosnippet>153</a>}
+<a href=#154 id=154 data-nosnippet>154</a>
+<a href=#155 id=155 data-nosnippet>155</a><span class="doccomment">/// A condition variable.
+<a href=#156 id=156 data-nosnippet>156</a>///
+<a href=#157 id=157 data-nosnippet>157</a>/// Condition variables represent the ability to block a thread such that it
+<a href=#158 id=158 data-nosnippet>158</a>/// consumes no CPU time while waiting for an event to occur. Condition
+<a href=#159 id=159 data-nosnippet>159</a>/// variables are typically associated with a boolean predicate (a condition)
+<a href=#160 id=160 data-nosnippet>160</a>/// and a mutex. The predicate is always verified inside of the mutex before
+<a href=#161 id=161 data-nosnippet>161</a>/// determining that thread must block.
+<a href=#162 id=162 data-nosnippet>162</a>///
+<a href=#163 id=163 data-nosnippet>163</a>/// If the underlying [`RawCondvar`] guarantees no spurious wakeups, notification
+<a href=#164 id=164 data-nosnippet>164</a>/// return values are exact. Otherwise, they are always `false` or `0`. Consult
+<a href=#165 id=165 data-nosnippet>165</a>/// the documentation of `C` for whether it provides this guarantee.
+<a href=#166 id=166 data-nosnippet>166</a></span><span class="kw">pub struct </span><a href="../../lock_api/struct.Condvar.html">Condvar</a>&lt;C&gt; {
+<a href=#167 id=167 data-nosnippet>167</a>    inner: C,
+<a href=#168 id=168 data-nosnippet>168</a>}
+<a href=#169 id=169 data-nosnippet>169</a>
+<a href=#170 id=170 data-nosnippet>170</a><span class="kw">impl</span>&lt;C: <a href="#29-65">RawCondvar</a>&gt; <a href="#166-168">Condvar</a>&lt;C&gt; {
+<a href=#171 id=171 data-nosnippet>171</a>    <span class="doccomment">/// Creates a new condition variable which is ready to be waited on and
+<a href=#172 id=172 data-nosnippet>172</a>    /// notified.
+<a href=#173 id=173 data-nosnippet>173</a>    </span><span class="attr">#[inline]
+<a href=#174 id=174 data-nosnippet>174</a>    </span><span class="kw">pub const fn </span>new() -&gt; <a href="#166-168">Condvar</a>&lt;C&gt; {
+<a href=#175 id=175 data-nosnippet>175</a>        <a href="#166-168">Condvar</a> { inner: C::<a href="#34">INIT</a> }
+<a href=#176 id=176 data-nosnippet>176</a>    }
+<a href=#177 id=177 data-nosnippet>177</a>
+<a href=#178 id=178 data-nosnippet>178</a>    <span class="doccomment">/// Returns the underlying raw condvar object.
+<a href=#179 id=179 data-nosnippet>179</a>    ///
+<a href=#180 id=180 data-nosnippet>180</a>    /// Note that you will most likely need to import the `RawCondvar` trait from
+<a href=#181 id=181 data-nosnippet>181</a>    /// `lock_api` to be able to call functions on the raw condvar.
+<a href=#182 id=182 data-nosnippet>182</a>    </span><span class="attr">#[inline]
+<a href=#183 id=183 data-nosnippet>183</a>    </span><span class="kw">pub fn </span>raw(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>C {
+<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw-2">&amp;</span><a class="self" href="#183">self</a>.inner
+<a href=#185 id=185 data-nosnippet>185</a>    }
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a>    <span class="doccomment">/// Wakes up one blocked thread on this condvar.
+<a href=#188 id=188 data-nosnippet>188</a>    ///
+<a href=#189 id=189 data-nosnippet>189</a>    /// If `C` guarantees no spurious wakeups, returns whether this call notified
+<a href=#190 id=190 data-nosnippet>190</a>    /// a waiting thread. Otherwise, always returns `false`. Threads whose waits
+<a href=#191 id=191 data-nosnippet>191</a>    /// end because of a timeout are not counted. Consult the documentation of
+<a href=#192 id=192 data-nosnippet>192</a>    /// `C` for whether it provides this guarantee.
+<a href=#193 id=193 data-nosnippet>193</a>    ///
+<a href=#194 id=194 data-nosnippet>194</a>    /// If there is a blocked thread on this condition variable, then it will
+<a href=#195 id=195 data-nosnippet>195</a>    /// be woken up from its call to [`wait`](Self::wait),
+<a href=#196 id=196 data-nosnippet>196</a>    /// [`wait_for`](Self::wait_for), or [`wait_until`](Self::wait_until).
+<a href=#197 id=197 data-nosnippet>197</a>    /// Calls to `notify_one` are not buffered in any way.
+<a href=#198 id=198 data-nosnippet>198</a>    ///
+<a href=#199 id=199 data-nosnippet>199</a>    /// To wake up all threads, see [`notify_all`](Self::notify_all).
+<a href=#200 id=200 data-nosnippet>200</a>    </span><span class="attr">#[inline]
+<a href=#201 id=201 data-nosnippet>201</a>    </span><span class="kw">pub fn </span>notify_one(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> {
+<a href=#202 id=202 data-nosnippet>202</a>        <a class="self" href="#201">self</a>.inner.<a href="#57">notify_one</a>()
+<a href=#203 id=203 data-nosnippet>203</a>    }
+<a href=#204 id=204 data-nosnippet>204</a>
+<a href=#205 id=205 data-nosnippet>205</a>    <span class="doccomment">/// Wakes up all blocked threads on this condvar.
+<a href=#206 id=206 data-nosnippet>206</a>    ///
+<a href=#207 id=207 data-nosnippet>207</a>    /// If `C` guarantees no spurious wakeups, returns the exact number of
+<a href=#208 id=208 data-nosnippet>208</a>    /// waiting threads this call notified. Otherwise, always returns `0`.
+<a href=#209 id=209 data-nosnippet>209</a>    /// Threads whose waits end because of a timeout are not counted. Consult
+<a href=#210 id=210 data-nosnippet>210</a>    /// the documentation of `C` for whether it provides this guarantee.
+<a href=#211 id=211 data-nosnippet>211</a>    ///
+<a href=#212 id=212 data-nosnippet>212</a>    /// This method will ensure that any current waiters on the condition
+<a href=#213 id=213 data-nosnippet>213</a>    /// variable are awoken. Calls to `notify_all` are not buffered in any way.
+<a href=#214 id=214 data-nosnippet>214</a>    ///
+<a href=#215 id=215 data-nosnippet>215</a>    /// To wake up only one thread, see [`notify_one`](Self::notify_one).
+<a href=#216 id=216 data-nosnippet>216</a>    </span><span class="attr">#[inline]
+<a href=#217 id=217 data-nosnippet>217</a>    </span><span class="kw">pub fn </span>notify_all(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.usize.html">usize</a> {
+<a href=#218 id=218 data-nosnippet>218</a>        <a class="self" href="#217">self</a>.inner.<a href="#64">notify_all</a>()
+<a href=#219 id=219 data-nosnippet>219</a>    }
+<a href=#220 id=220 data-nosnippet>220</a>
+<a href=#221 id=221 data-nosnippet>221</a>    <span class="doccomment">/// Blocks the current thread until this condition variable receives a
+<a href=#222 id=222 data-nosnippet>222</a>    /// notification.
+<a href=#223 id=223 data-nosnippet>223</a>    ///
+<a href=#224 id=224 data-nosnippet>224</a>    /// This function will atomically unlock the mutex specified (represented by
+<a href=#225 id=225 data-nosnippet>225</a>    /// `mutex_guard`) and block the current thread. This means that calls to
+<a href=#226 id=226 data-nosnippet>226</a>    /// [`notify_one`](Self::notify_one) or [`notify_all`](Self::notify_all)
+<a href=#227 id=227 data-nosnippet>227</a>    /// which happen logically after the mutex is unlocked are candidates to
+<a href=#228 id=228 data-nosnippet>228</a>    /// wake this thread. When this function returns, the lock will have been
+<a href=#229 id=229 data-nosnippet>229</a>    /// re-acquired.
+<a href=#230 id=230 data-nosnippet>230</a>    ///
+<a href=#231 id=231 data-nosnippet>231</a>    /// This function may return spuriously depending on the underlying
+<a href=#232 id=232 data-nosnippet>232</a>    /// [`RawCondvar`]. Consult the documentation of `C` for its guarantees.
+<a href=#233 id=233 data-nosnippet>233</a>    ///
+<a href=#234 id=234 data-nosnippet>234</a>    /// # Panics
+<a href=#235 id=235 data-nosnippet>235</a>    ///
+<a href=#236 id=236 data-nosnippet>236</a>    /// The underlying [`RawCondvar`] implementation may panic if another thread
+<a href=#237 id=237 data-nosnippet>237</a>    /// is waiting on this condition variable with a different mutex.
+<a href=#238 id=238 data-nosnippet>238</a>    </span><span class="attr">#[inline]
+<a href=#239 id=239 data-nosnippet>239</a>    </span><span class="kw">pub fn </span>wait&lt;T: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, mutex_guard: <span class="kw-2">&amp;mut </span><a href="mutex.rs.html#578-583">MutexGuard</a>&lt;<span class="lifetime">'_</span>, C::RawMutex, T&gt;) {
+<a href=#240 id=240 data-nosnippet>240</a>        <span class="comment">// SAFETY: The exclusively borrowed guard holds the mutex; wait restores it.
+<a href=#241 id=241 data-nosnippet>241</a>        </span><span class="kw">unsafe </span>{
+<a href=#242 id=242 data-nosnippet>242</a>            <a class="self" href="#239">self</a>.inner
+<a href=#243 id=243 data-nosnippet>243</a>                .<a href="#50">wait</a>(<a href="mutex.rs.html#578-583">MutexGuard</a>::<a href="mutex.rs.html#587-589">mutex</a>(<a href="#239">mutex_guard</a>).<a href="mutex.rs.html#331-333">raw</a>(), <span class="kw-2">&amp;mut </span><a href="#239">mutex_guard</a>.guard);
+<a href=#244 id=244 data-nosnippet>244</a>        }
+<a href=#245 id=245 data-nosnippet>245</a>    }
+<a href=#246 id=246 data-nosnippet>246</a>
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="doccomment">/// Blocks the current thread until the provided condition becomes false.
+<a href=#248 id=248 data-nosnippet>248</a>    ///
+<a href=#249 id=249 data-nosnippet>249</a>    /// `condition` is checked immediately. If it returns `true`, this function
+<a href=#250 id=250 data-nosnippet>250</a>    /// waits and checks the condition again whenever the wait returns. This
+<a href=#251 id=251 data-nosnippet>251</a>    /// repeats until `condition` returns `false`.
+<a href=#252 id=252 data-nosnippet>252</a>    ///
+<a href=#253 id=253 data-nosnippet>253</a>    /// This function will atomically unlock the mutex specified (represented by
+<a href=#254 id=254 data-nosnippet>254</a>    /// `mutex_guard`) and block the current thread. This means that any calls
+<a href=#255 id=255 data-nosnippet>255</a>    /// to `notify_*()` which happen logically after the mutex is unlocked are
+<a href=#256 id=256 data-nosnippet>256</a>    /// candidates to wake this thread up. When this function call returns, the
+<a href=#257 id=257 data-nosnippet>257</a>    /// lock specified will have been re-acquired.
+<a href=#258 id=258 data-nosnippet>258</a>    ///
+<a href=#259 id=259 data-nosnippet>259</a>    /// # Panics
+<a href=#260 id=260 data-nosnippet>260</a>    ///
+<a href=#261 id=261 data-nosnippet>261</a>    /// The underlying [`RawCondvar`] implementation may panic if another thread
+<a href=#262 id=262 data-nosnippet>262</a>    /// is waiting on this condition variable with a different mutex.
+<a href=#263 id=263 data-nosnippet>263</a>    </span><span class="attr">#[inline]
+<a href=#264 id=264 data-nosnippet>264</a>    </span><span class="kw">pub fn </span>wait_while&lt;T, F&gt;(
+<a href=#265 id=265 data-nosnippet>265</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#266 id=266 data-nosnippet>266</a>        mutex_guard: <span class="kw-2">&amp;mut </span><a href="mutex.rs.html#578-583">MutexGuard</a>&lt;<span class="lifetime">'_</span>, C::RawMutex, T&gt;,
+<a href=#267 id=267 data-nosnippet>267</a>        <span class="kw-2">mut </span>condition: F,
+<a href=#268 id=268 data-nosnippet>268</a>    ) <span class="kw">where
+<a href=#269 id=269 data-nosnippet>269</a>        </span>T: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>,
+<a href=#270 id=270 data-nosnippet>270</a>        F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;mut </span>T) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>,
+<a href=#271 id=271 data-nosnippet>271</a>    {
+<a href=#272 id=272 data-nosnippet>272</a>        <span class="kw">while </span>condition(mutex_guard.deref_mut()) {
+<a href=#273 id=273 data-nosnippet>273</a>            <span class="comment">// SAFETY: The exclusively borrowed guard holds the mutex; wait restores it.
+<a href=#274 id=274 data-nosnippet>274</a>            </span><span class="kw">unsafe </span>{
+<a href=#275 id=275 data-nosnippet>275</a>                <span class="self">self</span>.inner
+<a href=#276 id=276 data-nosnippet>276</a>                    .wait(MutexGuard::mutex(mutex_guard).raw(), <span class="kw-2">&amp;mut </span>mutex_guard.guard);
+<a href=#277 id=277 data-nosnippet>277</a>            }
+<a href=#278 id=278 data-nosnippet>278</a>        }
+<a href=#279 id=279 data-nosnippet>279</a>    }
+<a href=#280 id=280 data-nosnippet>280</a>}
+<a href=#281 id=281 data-nosnippet>281</a>
+<a href=#282 id=282 data-nosnippet>282</a><span class="kw">impl</span>&lt;R: <a href="mutex.rs.html#139-159">RawMutexTimed</a>, C: <a href="#73-141">RawCondvarTimed</a>&lt;RawMutex = R&gt;&gt; <a href="#166-168">Condvar</a>&lt;C&gt; {
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="doccomment">/// Waits on this condition variable for a notification, timing out after
+<a href=#284 id=284 data-nosnippet>284</a>    /// the specified time instant.
+<a href=#285 id=285 data-nosnippet>285</a>    ///
+<a href=#286 id=286 data-nosnippet>286</a>    /// The semantics of this function are equivalent to [`wait`](Self::wait),
+<a href=#287 id=287 data-nosnippet>287</a>    /// except that it stops waiting after `timeout` is reached. A notification
+<a href=#288 id=288 data-nosnippet>288</a>    /// or spurious wakeup may make the function return earlier. If the
+<a href=#289 id=289 data-nosnippet>289</a>    /// operation times out, it will not return before `timeout`, but it may
+<a href=#290 id=290 data-nosnippet>290</a>    /// return later because of scheduling or platform-specific behavior.
+<a href=#291 id=291 data-nosnippet>291</a>    ///
+<a href=#292 id=292 data-nosnippet>292</a>    /// Note that the best effort is made to ensure that the time waited is
+<a href=#293 id=293 data-nosnippet>293</a>    /// measured with a monotonic clock, and not affected by the changes made to
+<a href=#294 id=294 data-nosnippet>294</a>    /// the system time.
+<a href=#295 id=295 data-nosnippet>295</a>    ///
+<a href=#296 id=296 data-nosnippet>296</a>    /// The returned [`WaitTimeoutResult`] indicates whether the wait is known
+<a href=#297 id=297 data-nosnippet>297</a>    /// to have timed out. Consult the documentation of `C` for whether a result
+<a href=#298 id=298 data-nosnippet>298</a>    /// which is not timed out guarantees that a notification was received.
+<a href=#299 id=299 data-nosnippet>299</a>    ///
+<a href=#300 id=300 data-nosnippet>300</a>    /// Like [`wait`](Self::wait), the lock will be re-acquired before this
+<a href=#301 id=301 data-nosnippet>301</a>    /// function returns, regardless of whether the timeout elapsed.
+<a href=#302 id=302 data-nosnippet>302</a>    ///
+<a href=#303 id=303 data-nosnippet>303</a>    /// # Panics
+<a href=#304 id=304 data-nosnippet>304</a>    ///
+<a href=#305 id=305 data-nosnippet>305</a>    /// The underlying [`RawCondvar`] implementation may panic if another thread
+<a href=#306 id=306 data-nosnippet>306</a>    /// is waiting on this condition variable with a different mutex.
+<a href=#307 id=307 data-nosnippet>307</a>    </span><span class="attr">#[inline]
+<a href=#308 id=308 data-nosnippet>308</a>    </span><span class="kw">pub fn </span>wait_until&lt;T: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>&gt;(
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#310 id=310 data-nosnippet>310</a>        mutex_guard: <span class="kw-2">&amp;mut </span><a href="mutex.rs.html#578-583">MutexGuard</a>&lt;<span class="lifetime">'_</span>, C::RawMutex, T&gt;,
+<a href=#311 id=311 data-nosnippet>311</a>        timeout: &lt;C::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#144">Instant</a>,
+<a href=#312 id=312 data-nosnippet>312</a>    ) -&gt; <a href="#145">WaitTimeoutResult</a> {
+<a href=#313 id=313 data-nosnippet>313</a>        <span class="comment">// SAFETY: The exclusively borrowed guard holds the mutex; wait restores it.
+<a href=#314 id=314 data-nosnippet>314</a>        </span><a href="#145">WaitTimeoutResult</a>(<span class="kw">unsafe </span>{
+<a href=#315 id=315 data-nosnippet>315</a>            <a class="self" href="#309">self</a>.inner.<a href="#99-104">wait_until</a>(
+<a href=#316 id=316 data-nosnippet>316</a>                <a href="mutex.rs.html#578-583">MutexGuard</a>::<a href="mutex.rs.html#587-589">mutex</a>(<a href="#310">mutex_guard</a>).<a href="mutex.rs.html#331-333">raw</a>(),
+<a href=#317 id=317 data-nosnippet>317</a>                <span class="kw-2">&amp;mut </span><a href="#310">mutex_guard</a>.guard,
+<a href=#318 id=318 data-nosnippet>318</a>                <span class="kw-2">&amp;</span><a href="#311">timeout</a>,
+<a href=#319 id=319 data-nosnippet>319</a>            )
+<a href=#320 id=320 data-nosnippet>320</a>        })
+<a href=#321 id=321 data-nosnippet>321</a>    }
+<a href=#322 id=322 data-nosnippet>322</a>
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="doccomment">/// Waits on this condition variable for a notification, timing out after a
+<a href=#324 id=324 data-nosnippet>324</a>    /// specified duration.
+<a href=#325 id=325 data-nosnippet>325</a>    ///
+<a href=#326 id=326 data-nosnippet>326</a>    /// The semantics of this function are equivalent to [`wait`](Self::wait),
+<a href=#327 id=327 data-nosnippet>327</a>    /// except that it stops waiting after the specified duration. A
+<a href=#328 id=328 data-nosnippet>328</a>    /// notification or spurious wakeup may make the function return earlier.
+<a href=#329 id=329 data-nosnippet>329</a>    /// If the operation times out, it will not return before `timeout` has
+<a href=#330 id=330 data-nosnippet>330</a>    /// elapsed, but it may return later because of scheduling or
+<a href=#331 id=331 data-nosnippet>331</a>    /// platform-specific behavior.
+<a href=#332 id=332 data-nosnippet>332</a>    ///
+<a href=#333 id=333 data-nosnippet>333</a>    /// Note that the best effort is made to ensure that the time waited is
+<a href=#334 id=334 data-nosnippet>334</a>    /// measured with a monotonic clock, and not affected by the changes made to
+<a href=#335 id=335 data-nosnippet>335</a>    /// the system time.
+<a href=#336 id=336 data-nosnippet>336</a>    ///
+<a href=#337 id=337 data-nosnippet>337</a>    /// The returned [`WaitTimeoutResult`] indicates whether the wait is known
+<a href=#338 id=338 data-nosnippet>338</a>    /// to have timed out. Consult the documentation of `C` for whether a result
+<a href=#339 id=339 data-nosnippet>339</a>    /// which is not timed out guarantees that a notification was received.
+<a href=#340 id=340 data-nosnippet>340</a>    ///
+<a href=#341 id=341 data-nosnippet>341</a>    /// Like [`wait`](Self::wait), the lock will be re-acquired before this
+<a href=#342 id=342 data-nosnippet>342</a>    /// function returns, regardless of whether the timeout elapsed.
+<a href=#343 id=343 data-nosnippet>343</a>    ///
+<a href=#344 id=344 data-nosnippet>344</a>    /// # Panics
+<a href=#345 id=345 data-nosnippet>345</a>    ///
+<a href=#346 id=346 data-nosnippet>346</a>    /// The underlying [`RawCondvar`] implementation may panic if another thread
+<a href=#347 id=347 data-nosnippet>347</a>    /// is waiting on this condition variable with a different mutex.
+<a href=#348 id=348 data-nosnippet>348</a>    </span><span class="attr">#[inline]
+<a href=#349 id=349 data-nosnippet>349</a>    </span><span class="kw">pub fn </span>wait_for&lt;T: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>&gt;(
+<a href=#350 id=350 data-nosnippet>350</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#351 id=351 data-nosnippet>351</a>        mutex_guard: <span class="kw-2">&amp;mut </span><a href="mutex.rs.html#578-583">MutexGuard</a>&lt;<span class="lifetime">'_</span>, C::RawMutex, T&gt;,
+<a href=#352 id=352 data-nosnippet>352</a>        timeout: &lt;C::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#141">Duration</a>,
+<a href=#353 id=353 data-nosnippet>353</a>    ) -&gt; <a href="#145">WaitTimeoutResult</a> {
+<a href=#354 id=354 data-nosnippet>354</a>        <span class="comment">// SAFETY: The exclusively borrowed guard holds the mutex; wait restores it.
+<a href=#355 id=355 data-nosnippet>355</a>        </span><a href="#145">WaitTimeoutResult</a>(<span class="kw">unsafe </span>{
+<a href=#356 id=356 data-nosnippet>356</a>            <a class="self" href="#350">self</a>.inner.<a href="#121-140">wait_for</a>(
+<a href=#357 id=357 data-nosnippet>357</a>                <a href="mutex.rs.html#578-583">MutexGuard</a>::<a href="mutex.rs.html#587-589">mutex</a>(<a href="#351">mutex_guard</a>).<a href="mutex.rs.html#331-333">raw</a>(),
+<a href=#358 id=358 data-nosnippet>358</a>                <span class="kw-2">&amp;mut </span><a href="#351">mutex_guard</a>.guard,
+<a href=#359 id=359 data-nosnippet>359</a>                <span class="kw-2">&amp;</span><a href="#352">timeout</a>,
+<a href=#360 id=360 data-nosnippet>360</a>            )
+<a href=#361 id=361 data-nosnippet>361</a>        })
+<a href=#362 id=362 data-nosnippet>362</a>    }
+<a href=#363 id=363 data-nosnippet>363</a>
+<a href=#364 id=364 data-nosnippet>364</a>    <span class="doccomment">/// Waits on this condition variable for the provided condition to become
+<a href=#365 id=365 data-nosnippet>365</a>    /// false, timing out after the specified time instant.
+<a href=#366 id=366 data-nosnippet>366</a>    ///
+<a href=#367 id=367 data-nosnippet>367</a>    /// The semantics of this function are equivalent to
+<a href=#368 id=368 data-nosnippet>368</a>    /// [`wait_while`](Self::wait_while), except that it stops waiting after
+<a href=#369 id=369 data-nosnippet>369</a>    /// `timeout` is reached. If the operation times out, it will not return
+<a href=#370 id=370 data-nosnippet>370</a>    /// before `timeout`, but it may return later because of scheduling or
+<a href=#371 id=371 data-nosnippet>371</a>    /// platform-specific behavior.
+<a href=#372 id=372 data-nosnippet>372</a>    ///
+<a href=#373 id=373 data-nosnippet>373</a>    /// Note that the best effort is made to ensure that the time waited is
+<a href=#374 id=374 data-nosnippet>374</a>    /// measured with a monotonic clock, and not affected by the changes made to
+<a href=#375 id=375 data-nosnippet>375</a>    /// the system time.
+<a href=#376 id=376 data-nosnippet>376</a>    ///
+<a href=#377 id=377 data-nosnippet>377</a>    /// The returned [`WaitTimeoutResult`] indicates whether the wait timed out
+<a href=#378 id=378 data-nosnippet>378</a>    /// while the condition remained `true`.
+<a href=#379 id=379 data-nosnippet>379</a>    ///
+<a href=#380 id=380 data-nosnippet>380</a>    /// Like [`wait_while`](Self::wait_while), the lock will be re-acquired
+<a href=#381 id=381 data-nosnippet>381</a>    /// before this function returns, regardless of whether the timeout elapsed.
+<a href=#382 id=382 data-nosnippet>382</a>    ///
+<a href=#383 id=383 data-nosnippet>383</a>    /// # Panics
+<a href=#384 id=384 data-nosnippet>384</a>    ///
+<a href=#385 id=385 data-nosnippet>385</a>    /// The underlying [`RawCondvar`] implementation may panic if another thread
+<a href=#386 id=386 data-nosnippet>386</a>    /// is waiting on this condition variable with a different mutex.
+<a href=#387 id=387 data-nosnippet>387</a>    </span><span class="attr">#[inline]
+<a href=#388 id=388 data-nosnippet>388</a>    </span><span class="kw">pub fn </span>wait_while_until&lt;T, F&gt;(
+<a href=#389 id=389 data-nosnippet>389</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#390 id=390 data-nosnippet>390</a>        mutex_guard: <span class="kw-2">&amp;mut </span><a href="mutex.rs.html#578-583">MutexGuard</a>&lt;<span class="lifetime">'_</span>, C::RawMutex, T&gt;,
+<a href=#391 id=391 data-nosnippet>391</a>        <span class="kw-2">mut </span>condition: F,
+<a href=#392 id=392 data-nosnippet>392</a>        timeout: &lt;C::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#144">Instant</a>,
+<a href=#393 id=393 data-nosnippet>393</a>    ) -&gt; <a href="#145">WaitTimeoutResult</a>
+<a href=#394 id=394 data-nosnippet>394</a>    <span class="kw">where
+<a href=#395 id=395 data-nosnippet>395</a>        </span>T: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>,
+<a href=#396 id=396 data-nosnippet>396</a>        F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;mut </span>T) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>,
+<a href=#397 id=397 data-nosnippet>397</a>    {
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = <a href="#145">WaitTimeoutResult</a>(<span class="bool-val">false</span>);
+<a href=#399 id=399 data-nosnippet>399</a>
+<a href=#400 id=400 data-nosnippet>400</a>        <span class="kw">loop </span>{
+<a href=#401 id=401 data-nosnippet>401</a>            <span class="kw">if </span>!<a href="#391">condition</a>(<a href="#390">mutex_guard</a>.<a href="https://doc.rust-lang.org/nightly/core/ops/deref/trait.DerefMut.html#tymethod.deref_mut">deref_mut</a>()) {
+<a href=#402 id=402 data-nosnippet>402</a>                <span class="kw">return </span><a href="#145">WaitTimeoutResult</a>(<span class="bool-val">false</span>);
+<a href=#403 id=403 data-nosnippet>403</a>            }
+<a href=#404 id=404 data-nosnippet>404</a>            <span class="kw">if </span><a href="#398">result</a>.<a href="#150-152">timed_out</a>() {
+<a href=#405 id=405 data-nosnippet>405</a>                <span class="kw">return </span><a href="#398">result</a>;
+<a href=#406 id=406 data-nosnippet>406</a>            }
+<a href=#407 id=407 data-nosnippet>407</a>            <span class="comment">// SAFETY: The exclusively borrowed guard holds the mutex; wait restores it.
+<a href=#408 id=408 data-nosnippet>408</a>            </span><a href="#398">result</a> = <a href="#145">WaitTimeoutResult</a>(<span class="kw">unsafe </span>{
+<a href=#409 id=409 data-nosnippet>409</a>                <a class="self" href="#389">self</a>.inner.<a href="#99-104">wait_until</a>(
+<a href=#410 id=410 data-nosnippet>410</a>                    <a href="mutex.rs.html#578-583">MutexGuard</a>::<a href="mutex.rs.html#587-589">mutex</a>(<a href="#390">mutex_guard</a>).<a href="mutex.rs.html#331-333">raw</a>(),
+<a href=#411 id=411 data-nosnippet>411</a>                    <span class="kw-2">&amp;mut </span><a href="#390">mutex_guard</a>.guard,
+<a href=#412 id=412 data-nosnippet>412</a>                    <span class="kw-2">&amp;</span><a href="#392">timeout</a>,
+<a href=#413 id=413 data-nosnippet>413</a>                )
+<a href=#414 id=414 data-nosnippet>414</a>            });
+<a href=#415 id=415 data-nosnippet>415</a>        }
+<a href=#416 id=416 data-nosnippet>416</a>    }
+<a href=#417 id=417 data-nosnippet>417</a>
+<a href=#418 id=418 data-nosnippet>418</a>    <span class="doccomment">/// Waits on this condition variable for the provided condition to become
+<a href=#419 id=419 data-nosnippet>419</a>    /// false, timing out after a specified duration.
+<a href=#420 id=420 data-nosnippet>420</a>    ///
+<a href=#421 id=421 data-nosnippet>421</a>    /// The semantics of this function are equivalent to
+<a href=#422 id=422 data-nosnippet>422</a>    /// [`wait_while`](Self::wait_while), except that it stops waiting after the
+<a href=#423 id=423 data-nosnippet>423</a>    /// specified duration. If the operation times out, it will not return
+<a href=#424 id=424 data-nosnippet>424</a>    /// before `timeout` has elapsed, but it may return later because of
+<a href=#425 id=425 data-nosnippet>425</a>    /// scheduling or platform-specific behavior.
+<a href=#426 id=426 data-nosnippet>426</a>    ///
+<a href=#427 id=427 data-nosnippet>427</a>    /// Note that the best effort is made to ensure that the time waited is
+<a href=#428 id=428 data-nosnippet>428</a>    /// measured with a monotonic clock, and not affected by the changes made to
+<a href=#429 id=429 data-nosnippet>429</a>    /// the system time.
+<a href=#430 id=430 data-nosnippet>430</a>    ///
+<a href=#431 id=431 data-nosnippet>431</a>    /// The returned [`WaitTimeoutResult`] indicates whether the wait timed out
+<a href=#432 id=432 data-nosnippet>432</a>    /// while the condition remained `true`.
+<a href=#433 id=433 data-nosnippet>433</a>    ///
+<a href=#434 id=434 data-nosnippet>434</a>    /// Like [`wait_while`](Self::wait_while), the lock will be re-acquired
+<a href=#435 id=435 data-nosnippet>435</a>    /// before this function returns, regardless of whether the timeout elapsed.
+<a href=#436 id=436 data-nosnippet>436</a>    ///
+<a href=#437 id=437 data-nosnippet>437</a>    /// # Panics
+<a href=#438 id=438 data-nosnippet>438</a>    ///
+<a href=#439 id=439 data-nosnippet>439</a>    /// The underlying [`RawCondvar`] implementation may panic if another thread
+<a href=#440 id=440 data-nosnippet>440</a>    /// is waiting on this condition variable with a different mutex.
+<a href=#441 id=441 data-nosnippet>441</a>    </span><span class="attr">#[inline]
+<a href=#442 id=442 data-nosnippet>442</a>    </span><span class="kw">pub fn </span>wait_while_for&lt;T: <span class="question-mark">?</span><a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html">Sized</a>, F&gt;(
+<a href=#443 id=443 data-nosnippet>443</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#444 id=444 data-nosnippet>444</a>        mutex_guard: <span class="kw-2">&amp;mut </span><a href="mutex.rs.html#578-583">MutexGuard</a>&lt;<span class="lifetime">'_</span>, C::RawMutex, T&gt;,
+<a href=#445 id=445 data-nosnippet>445</a>        condition: F,
+<a href=#446 id=446 data-nosnippet>446</a>        timeout: &lt;C::RawMutex <span class="kw">as </span>RawMutexTimed&gt;::<a href="mutex.rs.html#141">Duration</a>,
+<a href=#447 id=447 data-nosnippet>447</a>    ) -&gt; <a href="#145">WaitTimeoutResult</a>
+<a href=#448 id=448 data-nosnippet>448</a>    <span class="kw">where
+<a href=#449 id=449 data-nosnippet>449</a>        </span>F: <a href="https://doc.rust-lang.org/nightly/core/ops/function/trait.FnMut.html">FnMut</a>(<span class="kw-2">&amp;mut </span>T) -&gt; <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a>,
+<a href=#450 id=450 data-nosnippet>450</a>    {
+<a href=#451 id=451 data-nosnippet>451</a>        <span class="kw">match </span>C::<a href="#80-82">checked_duration_to_instant</a>(<span class="kw-2">&amp;</span><a href="#446">timeout</a>) {
+<a href=#452 id=452 data-nosnippet>452</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(timeout) =&gt; <a class="self" href="#443">self</a>.<a href="#388-416">wait_while_until</a>(<a href="#444">mutex_guard</a>, <a href="#445">condition</a>, <a href="#452">timeout</a>),
+<a href=#453 id=453 data-nosnippet>453</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; {
+<a href=#454 id=454 data-nosnippet>454</a>                <span class="comment">// No absolute deadline can be constructed, so fall back to an
+<a href=#455 id=455 data-nosnippet>455</a>                // untimed wait.
+<a href=#456 id=456 data-nosnippet>456</a>                </span><a class="self" href="#443">self</a>.<a href="#264-279">wait_while</a>(<a href="#444">mutex_guard</a>, <a href="#445">condition</a>);
+<a href=#457 id=457 data-nosnippet>457</a>                <a href="#145">WaitTimeoutResult</a>(<span class="bool-val">false</span>)
+<a href=#458 id=458 data-nosnippet>458</a>            }
+<a href=#459 id=459 data-nosnippet>459</a>        }
+<a href=#460 id=460 data-nosnippet>460</a>    }
+<a href=#461 id=461 data-nosnippet>461</a>}
+<a href=#462 id=462 data-nosnippet>462</a>
+<a href=#463 id=463 data-nosnippet>463</a><span class="kw">impl</span>&lt;C: <a href="#29-65">RawCondvar</a>&gt; <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html">Default</a> <span class="kw">for </span><a href="#166-168">Condvar</a>&lt;C&gt; {
+<a href=#464 id=464 data-nosnippet>464</a>    <span class="attr">#[inline]
+<a href=#465 id=465 data-nosnippet>465</a>    </span><span class="kw">fn </span>default() -&gt; <a href="#166-168">Condvar</a>&lt;C&gt; {
+<a href=#466 id=466 data-nosnippet>466</a>        <a href="#166-168">Condvar</a>::<a href="#174-176">new</a>()
+<a href=#467 id=467 data-nosnippet>467</a>    }
+<a href=#468 id=468 data-nosnippet>468</a>}
+<a href=#469 id=469 data-nosnippet>469</a>
+<a href=#470 id=470 data-nosnippet>470</a><span class="kw">impl</span>&lt;C&gt; <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">fmt::Debug</a> <span class="kw">for </span><a href="#166-168">Condvar</a>&lt;C&gt; {
+<a href=#471 id=471 data-nosnippet>471</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#472 id=472 data-nosnippet>472</a>        <a href="#471">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.pad">pad</a>(<span class="string">"Condvar { .. }"</span>)
+<a href=#473 id=473 data-nosnippet>473</a>    }
+<a href=#474 id=474 data-nosnippet>474</a>}
+</code></pre></div></section></main></body></html>

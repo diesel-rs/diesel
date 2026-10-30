@@ -1,0 +1,1389 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `diesel/src/pg/sql_state.rs`."><title>sql_state.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-009149e2.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (92b5b8c87 2026-10-29)" data-channel="nightly" data-search-js="search-835b9732.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">diesel/pg/</div>sql_state.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! The SQLSTATE codes PostgreSQL defines, as listed in
+<a href=#2 id=2 data-nosnippet>2</a>//! [its documentation](https://www.postgresql.org/docs/current/errcodes-appendix.html)
+<a href=#3 id=3 data-nosnippet>3</a>//! and taken from
+<a href=#4 id=4 data-nosnippet>4</a>//! [`errcodes.txt`](https://github.com/postgres/postgres/blob/REL_18_0/src/backend/utils/errcodes.txt).
+<a href=#5 id=5 data-nosnippet>5</a>//!
+<a href=#6 id=6 data-nosnippet>6</a>//! Each constant is named after PostgreSQL's `ERRCODE_` macro and documented
+<a href=#7 id=7 data-nosnippet>7</a>//! with its PL/pgSQL condition name.
+<a href=#8 id=8 data-nosnippet>8</a>//!
+<a href=#9 id=9 data-nosnippet>9</a>//! ```rust
+<a href=#10 id=10 data-nosnippet>10</a>//! use diesel::pg::sql_state;
+<a href=#11 id=11 data-nosnippet>11</a>//! use diesel::result::SqlState;
+<a href=#12 id=12 data-nosnippet>12</a>//!
+<a href=#13 id=13 data-nosnippet>13</a>//! fn retryable(code: SqlState) -&gt; bool {
+<a href=#14 id=14 data-nosnippet>14</a>//!     matches!(
+<a href=#15 id=15 data-nosnippet>15</a>//!         code,
+<a href=#16 id=16 data-nosnippet>16</a>//!         sql_state::T_R_SERIALIZATION_FAILURE | sql_state::T_R_DEADLOCK_DETECTED
+<a href=#17 id=17 data-nosnippet>17</a>//!     )
+<a href=#18 id=18 data-nosnippet>18</a>//! }
+<a href=#19 id=19 data-nosnippet>19</a>//!
+<a href=#20 id=20 data-nosnippet>20</a>//! assert!(retryable("40001".parse().unwrap()));
+<a href=#21 id=21 data-nosnippet>21</a>//! assert!(!retryable("23505".parse().unwrap()));
+<a href=#22 id=22 data-nosnippet>22</a>//! ```
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">use </span><a href="../result/sql_state.rs.html#24"><span class="kw">crate</span>::result::SqlState</a>;
+<a href=#25 id=25 data-nosnippet>25</a>
+<a href=#26 id=26 data-nosnippet>26</a><span class="macro">macro_rules!</span> codes {
+<a href=#27 id=27 data-nosnippet>27</a>    ($($(<span class="attr">#[<span class="macro-nonterminal">$doc</span>:meta]</span>)* <span class="macro-nonterminal">$name</span>:ident = <span class="macro-nonterminal">$code</span>:literal;)<span class="kw-2">*</span>) =&gt; {
+<a href=#28 id=28 data-nosnippet>28</a>        $(
+<a href=#29 id=29 data-nosnippet>29</a>            $(<span class="attr">#[<span class="macro-nonterminal">$doc</span>]</span>)*
+<a href=#30 id=30 data-nosnippet>30</a>            <span class="kw">pub const </span><span class="macro-nonterminal">$name</span>: SqlState = SqlState::new(<span class="kw-2">*</span><span class="macro-nonterminal">$code</span>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.expect">expect</a>(<span class="string">"invalid SQLSTATE"</span>);
+<a href=#31 id=31 data-nosnippet>31</a>        )*
+<a href=#32 id=32 data-nosnippet>32</a>    };
+<a href=#33 id=33 data-nosnippet>33</a>}
+<a href=#34 id=34 data-nosnippet>34</a>
+<a href=#35 id=35 data-nosnippet>35</a><span class="expansion"><input id=expand-35 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc = <span class="string">r" `00000`, `successful_completion`."</span>]
+</span><span class="kw">pub const </span>SUCCESSFUL_COMPLETION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"00000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01000`, `warning`."</span>]
+</span><span class="kw">pub const </span>WARNING: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0100C`, `dynamic_result_sets_returned`."</span>]
+</span><span class="kw">pub const </span>WARNING_DYNAMIC_RESULT_SETS_RETURNED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0100C"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01008`, `implicit_zero_bit_padding`."</span>]
+</span><span class="kw">pub const </span>WARNING_IMPLICIT_ZERO_BIT_PADDING: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01008"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01003`, `null_value_eliminated_in_set_function`."</span>]
+</span><span class="kw">pub const </span>WARNING_NULL_VALUE_ELIMINATED_IN_SET_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01007`, `privilege_not_granted`."</span>]
+</span><span class="kw">pub const </span>WARNING_PRIVILEGE_NOT_GRANTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01007"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01006`, `privilege_not_revoked`."</span>]
+</span><span class="kw">pub const </span>WARNING_PRIVILEGE_NOT_REVOKED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01004`, `string_data_right_truncation`."</span>]
+</span><span class="kw">pub const </span>WARNING_STRING_DATA_RIGHT_TRUNCATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01P01`, `deprecated_feature`."</span>]
+</span><span class="kw">pub const </span>WARNING_DEPRECATED_FEATURE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"01P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `02000`, `no_data`."</span>]
+</span><span class="kw">pub const </span>NO_DATA: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"02000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `02001`, `no_additional_dynamic_result_sets_returned`."</span>]
+</span><span class="kw">pub const </span>NO_ADDITIONAL_DYNAMIC_RESULT_SETS_RETURNED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"02001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `03000`, `sql_statement_not_yet_complete`."</span>]
+</span><span class="kw">pub const </span>SQL_STATEMENT_NOT_YET_COMPLETE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"03000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08000`, `connection_exception`."</span>]
+</span><span class="kw">pub const </span>CONNECTION_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08003`, `connection_does_not_exist`."</span>]
+</span><span class="kw">pub const </span>CONNECTION_DOES_NOT_EXIST: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08006`, `connection_failure`."</span>]
+</span><span class="kw">pub const </span>CONNECTION_FAILURE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08001`, `sqlclient_unable_to_establish_sqlconnection`."</span>]
+</span><span class="kw">pub const </span>SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08004`, `sqlserver_rejected_establishment_of_sqlconnection`."</span>]
+</span><span class="kw">pub const </span>SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08007`, `transaction_resolution_unknown`."</span>]
+</span><span class="kw">pub const </span>TRANSACTION_RESOLUTION_UNKNOWN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08007"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08P01`, `protocol_violation`."</span>]
+</span><span class="kw">pub const </span>PROTOCOL_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"08P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `09000`, `triggered_action_exception`."</span>]
+</span><span class="kw">pub const </span>TRIGGERED_ACTION_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"09000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0A000`, `feature_not_supported`."</span>]
+</span><span class="kw">pub const </span>FEATURE_NOT_SUPPORTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0A000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0B000`, `invalid_transaction_initiation`."</span>]
+</span><span class="kw">pub const </span>INVALID_TRANSACTION_INITIATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0B000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0F000`, `locator_exception`."</span>]
+</span><span class="kw">pub const </span>LOCATOR_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0F000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0F001`, `invalid_locator_specification`."</span>]
+</span><span class="kw">pub const </span>L_E_INVALID_SPECIFICATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0F001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0L000`, `invalid_grantor`."</span>]
+</span><span class="kw">pub const </span>INVALID_GRANTOR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0L000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0LP01`, `invalid_grant_operation`."</span>]
+</span><span class="kw">pub const </span>INVALID_GRANT_OPERATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0LP01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0P000`, `invalid_role_specification`."</span>]
+</span><span class="kw">pub const </span>INVALID_ROLE_SPECIFICATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0P000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0Z000`, `diagnostics_exception`."</span>]
+</span><span class="kw">pub const </span>DIAGNOSTICS_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0Z000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0Z002`, `stacked_diagnostics_accessed_without_active_handler`."</span>]
+</span><span class="kw">pub const </span>STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"0Z002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `10608`, `invalid_argument_for_xquery`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_XQUERY: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"10608"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `20000`, `case_not_found`."</span>]
+</span><span class="kw">pub const </span>CASE_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"20000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `21000`, `cardinality_violation`."</span>]
+</span><span class="kw">pub const </span>CARDINALITY_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"21000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22000`, `data_exception`."</span>]
+</span><span class="kw">pub const </span>DATA_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2202E`, `array_subscript_error`."</span>]
+</span><span class="kw">pub const </span>ARRAY_SUBSCRIPT_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2202E"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22021`, `character_not_in_repertoire`."</span>]
+</span><span class="kw">pub const </span>CHARACTER_NOT_IN_REPERTOIRE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22021"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22008`, `datetime_field_overflow`."</span>]
+</span><span class="kw">pub const </span>DATETIME_FIELD_OVERFLOW: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22008"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22012`, `division_by_zero`."</span>]
+</span><span class="kw">pub const </span>DIVISION_BY_ZERO: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22012"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22005`, `error_in_assignment`."</span>]
+</span><span class="kw">pub const </span>ERROR_IN_ASSIGNMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22005"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200B`, `escape_character_conflict`."</span>]
+</span><span class="kw">pub const </span>ESCAPE_CHARACTER_CONFLICT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200B"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22022`, `indicator_overflow`."</span>]
+</span><span class="kw">pub const </span>INDICATOR_OVERFLOW: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22022"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22015`, `interval_field_overflow`."</span>]
+</span><span class="kw">pub const </span>INTERVAL_FIELD_OVERFLOW: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22015"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201E`, `invalid_argument_for_logarithm`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_LOG: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2201E"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22014`, `invalid_argument_for_ntile_function`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_NTILE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22014"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22016`, `invalid_argument_for_nth_value_function`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_NTH_VALUE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22016"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201F`, `invalid_argument_for_power_function`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_POWER_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2201F"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201G`, `invalid_argument_for_width_bucket_function`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_WIDTH_BUCKET_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2201G"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22018`, `invalid_character_value_for_cast`."</span>]
+</span><span class="kw">pub const </span>INVALID_CHARACTER_VALUE_FOR_CAST: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22018"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22007`, `invalid_datetime_format`."</span>]
+</span><span class="kw">pub const </span>INVALID_DATETIME_FORMAT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22007"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22019`, `invalid_escape_character`."</span>]
+</span><span class="kw">pub const </span>INVALID_ESCAPE_CHARACTER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22019"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200D`, `invalid_escape_octet`."</span>]
+</span><span class="kw">pub const </span>INVALID_ESCAPE_OCTET: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200D"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22025`, `invalid_escape_sequence`."</span>]
+</span><span class="kw">pub const </span>INVALID_ESCAPE_SEQUENCE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22025"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22P06`, `nonstandard_use_of_escape_character`."</span>]
+</span><span class="kw">pub const </span>NONSTANDARD_USE_OF_ESCAPE_CHARACTER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22P06"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22010`, `invalid_indicator_parameter_value`."</span>]
+</span><span class="kw">pub const </span>INVALID_INDICATOR_PARAMETER_VALUE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22010"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22023`, `invalid_parameter_value`."</span>]
+</span><span class="kw">pub const </span>INVALID_PARAMETER_VALUE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22023"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22013`, `invalid_preceding_or_following_size`."</span>]
+</span><span class="kw">pub const </span>INVALID_PRECEDING_OR_FOLLOWING_SIZE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22013"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201B`, `invalid_regular_expression`."</span>]
+</span><span class="kw">pub const </span>INVALID_REGULAR_EXPRESSION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2201B"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201W`, `invalid_row_count_in_limit_clause`."</span>]
+</span><span class="kw">pub const </span>INVALID_ROW_COUNT_IN_LIMIT_CLAUSE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2201W"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201X`, `invalid_row_count_in_result_offset_clause`."</span>]
+</span><span class="kw">pub const </span>INVALID_ROW_COUNT_IN_RESULT_OFFSET_CLAUSE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2201X"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2202H`, `invalid_tablesample_argument`."</span>]
+</span><span class="kw">pub const </span>INVALID_TABLESAMPLE_ARGUMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2202H"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2202G`, `invalid_tablesample_repeat`."</span>]
+</span><span class="kw">pub const </span>INVALID_TABLESAMPLE_REPEAT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2202G"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22009`, `invalid_time_zone_displacement_value`."</span>]
+</span><span class="kw">pub const </span>INVALID_TIME_ZONE_DISPLACEMENT_VALUE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22009"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200C`, `invalid_use_of_escape_character`."</span>]
+</span><span class="kw">pub const </span>INVALID_USE_OF_ESCAPE_CHARACTER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200C"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200G`, `most_specific_type_mismatch`."</span>]
+</span><span class="kw">pub const </span>MOST_SPECIFIC_TYPE_MISMATCH: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200G"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22004`, `null_value_not_allowed`."</span>]
+</span><span class="kw">pub const </span>NULL_VALUE_NOT_ALLOWED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22002`, `null_value_no_indicator_parameter`."</span>]
+</span><span class="kw">pub const </span>NULL_VALUE_NO_INDICATOR_PARAMETER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22003`, `numeric_value_out_of_range`."</span>]
+</span><span class="kw">pub const </span>NUMERIC_VALUE_OUT_OF_RANGE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200H`, `sequence_generator_limit_exceeded`."</span>]
+</span><span class="kw">pub const </span>SEQUENCE_GENERATOR_LIMIT_EXCEEDED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200H"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22026`, `string_data_length_mismatch`."</span>]
+</span><span class="kw">pub const </span>STRING_DATA_LENGTH_MISMATCH: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22026"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22001`, `string_data_right_truncation`."</span>]
+</span><span class="kw">pub const </span>STRING_DATA_RIGHT_TRUNCATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22011`, `substring_error`."</span>]
+</span><span class="kw">pub const </span>SUBSTRING_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22011"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22027`, `trim_error`."</span>]
+</span><span class="kw">pub const </span>TRIM_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22027"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22024`, `unterminated_c_string`."</span>]
+</span><span class="kw">pub const </span>UNTERMINATED_C_STRING: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22024"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200F`, `zero_length_character_string`."</span>]
+</span><span class="kw">pub const </span>ZERO_LENGTH_CHARACTER_STRING: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200F"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22P01`, `floating_point_exception`."</span>]
+</span><span class="kw">pub const </span>FLOATING_POINT_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22P02`, `invalid_text_representation`."</span>]
+</span><span class="kw">pub const </span>INVALID_TEXT_REPRESENTATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22P03`, `invalid_binary_representation`."</span>]
+</span><span class="kw">pub const </span>INVALID_BINARY_REPRESENTATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22P04`, `bad_copy_file_format`."</span>]
+</span><span class="kw">pub const </span>BAD_COPY_FILE_FORMAT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22P04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22P05`, `untranslatable_character`."</span>]
+</span><span class="kw">pub const </span>UNTRANSLATABLE_CHARACTER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22P05"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200L`, `not_an_xml_document`."</span>]
+</span><span class="kw">pub const </span>NOT_AN_XML_DOCUMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200L"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200M`, `invalid_xml_document`."</span>]
+</span><span class="kw">pub const </span>INVALID_XML_DOCUMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200M"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200N`, `invalid_xml_content`."</span>]
+</span><span class="kw">pub const </span>INVALID_XML_CONTENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200N"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200S`, `invalid_xml_comment`."</span>]
+</span><span class="kw">pub const </span>INVALID_XML_COMMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200S"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2200T`, `invalid_xml_processing_instruction`."</span>]
+</span><span class="kw">pub const </span>INVALID_XML_PROCESSING_INSTRUCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2200T"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22030`, `duplicate_json_object_key_value`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_JSON_OBJECT_KEY_VALUE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22030"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22031`, `invalid_argument_for_sql_json_datetime_function`."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_SQL_JSON_DATETIME_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22031"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22032`, `invalid_json_text`."</span>]
+</span><span class="kw">pub const </span>INVALID_JSON_TEXT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22032"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22033`, `invalid_sql_json_subscript`."</span>]
+</span><span class="kw">pub const </span>INVALID_SQL_JSON_SUBSCRIPT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22033"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22034`, `more_than_one_sql_json_item`."</span>]
+</span><span class="kw">pub const </span>MORE_THAN_ONE_SQL_JSON_ITEM: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22034"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22035`, `no_sql_json_item`."</span>]
+</span><span class="kw">pub const </span>NO_SQL_JSON_ITEM: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22035"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22036`, `non_numeric_sql_json_item`."</span>]
+</span><span class="kw">pub const </span>NON_NUMERIC_SQL_JSON_ITEM: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22036"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22037`, `non_unique_keys_in_a_json_object`."</span>]
+</span><span class="kw">pub const </span>NON_UNIQUE_KEYS_IN_A_JSON_OBJECT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22037"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22038`, `singleton_sql_json_item_required`."</span>]
+</span><span class="kw">pub const </span>SINGLETON_SQL_JSON_ITEM_REQUIRED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22038"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22039`, `sql_json_array_not_found`."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_ARRAY_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"22039"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203A`, `sql_json_member_not_found`."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_MEMBER_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203A"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203B`, `sql_json_number_not_found`."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_NUMBER_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203B"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203C`, `sql_json_object_not_found`."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_OBJECT_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203C"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203D`, `too_many_json_array_elements`."</span>]
+</span><span class="kw">pub const </span>TOO_MANY_JSON_ARRAY_ELEMENTS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203D"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203E`, `too_many_json_object_members`."</span>]
+</span><span class="kw">pub const </span>TOO_MANY_JSON_OBJECT_MEMBERS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203E"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203F`, `sql_json_scalar_required`."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_SCALAR_REQUIRED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203F"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203G`, `sql_json_item_cannot_be_cast_to_target_type`."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_ITEM_CANNOT_BE_CAST_TO_TARGET_TYPE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2203G"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23000`, `integrity_constraint_violation`."</span>]
+</span><span class="kw">pub const </span>INTEGRITY_CONSTRAINT_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23001`, `restrict_violation`."</span>]
+</span><span class="kw">pub const </span>RESTRICT_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23502`, `not_null_violation`."</span>]
+</span><span class="kw">pub const </span>NOT_NULL_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23502"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23503`, `foreign_key_violation`."</span>]
+</span><span class="kw">pub const </span>FOREIGN_KEY_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23503"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23505`, `unique_violation`."</span>]
+</span><span class="kw">pub const </span>UNIQUE_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23505"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23514`, `check_violation`."</span>]
+</span><span class="kw">pub const </span>CHECK_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23514"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23P01`, `exclusion_violation`."</span>]
+</span><span class="kw">pub const </span>EXCLUSION_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"23P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `24000`, `invalid_cursor_state`."</span>]
+</span><span class="kw">pub const </span>INVALID_CURSOR_STATE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"24000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25000`, `invalid_transaction_state`."</span>]
+</span><span class="kw">pub const </span>INVALID_TRANSACTION_STATE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25001`, `active_sql_transaction`."</span>]
+</span><span class="kw">pub const </span>ACTIVE_SQL_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25002`, `branch_transaction_already_active`."</span>]
+</span><span class="kw">pub const </span>BRANCH_TRANSACTION_ALREADY_ACTIVE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25008`, `held_cursor_requires_same_isolation_level`."</span>]
+</span><span class="kw">pub const </span>HELD_CURSOR_REQUIRES_SAME_ISOLATION_LEVEL: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25008"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25003`, `inappropriate_access_mode_for_branch_transaction`."</span>]
+</span><span class="kw">pub const </span>INAPPROPRIATE_ACCESS_MODE_FOR_BRANCH_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25004`, `inappropriate_isolation_level_for_branch_transaction`."</span>]
+</span><span class="kw">pub const </span>INAPPROPRIATE_ISOLATION_LEVEL_FOR_BRANCH_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25005`, `no_active_sql_transaction_for_branch_transaction`."</span>]
+</span><span class="kw">pub const </span>NO_ACTIVE_SQL_TRANSACTION_FOR_BRANCH_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25005"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25006`, `read_only_sql_transaction`."</span>]
+</span><span class="kw">pub const </span>READ_ONLY_SQL_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25007`, `schema_and_data_statement_mixing_not_supported`."</span>]
+</span><span class="kw">pub const </span>SCHEMA_AND_DATA_STATEMENT_MIXING_NOT_SUPPORTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25007"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25P01`, `no_active_sql_transaction`."</span>]
+</span><span class="kw">pub const </span>NO_ACTIVE_SQL_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25P02`, `in_failed_sql_transaction`."</span>]
+</span><span class="kw">pub const </span>IN_FAILED_SQL_TRANSACTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25P03`, `idle_in_transaction_session_timeout`."</span>]
+</span><span class="kw">pub const </span>IDLE_IN_TRANSACTION_SESSION_TIMEOUT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25P04`, `transaction_timeout`."</span>]
+</span><span class="kw">pub const </span>TRANSACTION_TIMEOUT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"25P04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `26000`, `invalid_sql_statement_name`."</span>]
+</span><span class="kw">pub const </span>INVALID_SQL_STATEMENT_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"26000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `27000`, `triggered_data_change_violation`."</span>]
+</span><span class="kw">pub const </span>TRIGGERED_DATA_CHANGE_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"27000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `28000`, `invalid_authorization_specification`."</span>]
+</span><span class="kw">pub const </span>INVALID_AUTHORIZATION_SPECIFICATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"28000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `28P01`, `invalid_password`."</span>]
+</span><span class="kw">pub const </span>INVALID_PASSWORD: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"28P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2B000`, `dependent_privilege_descriptors_still_exist`."</span>]
+</span><span class="kw">pub const </span>DEPENDENT_PRIVILEGE_DESCRIPTORS_STILL_EXIST: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2B000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2BP01`, `dependent_objects_still_exist`."</span>]
+</span><span class="kw">pub const </span>DEPENDENT_OBJECTS_STILL_EXIST: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2BP01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2D000`, `invalid_transaction_termination`."</span>]
+</span><span class="kw">pub const </span>INVALID_TRANSACTION_TERMINATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2D000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F000`, `sql_routine_exception`."</span>]
+</span><span class="kw">pub const </span>SQL_ROUTINE_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2F000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F005`, `function_executed_no_return_statement`."</span>]
+</span><span class="kw">pub const </span>S_R_E_FUNCTION_EXECUTED_NO_RETURN_STATEMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2F005"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F002`, `modifying_sql_data_not_permitted`."</span>]
+</span><span class="kw">pub const </span>S_R_E_MODIFYING_SQL_DATA_NOT_PERMITTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2F002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F003`, `prohibited_sql_statement_attempted`."</span>]
+</span><span class="kw">pub const </span>S_R_E_PROHIBITED_SQL_STATEMENT_ATTEMPTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2F003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F004`, `reading_sql_data_not_permitted`."</span>]
+</span><span class="kw">pub const </span>S_R_E_READING_SQL_DATA_NOT_PERMITTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"2F004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `34000`, `invalid_cursor_name`."</span>]
+</span><span class="kw">pub const </span>INVALID_CURSOR_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"34000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `38000`, `external_routine_exception`."</span>]
+</span><span class="kw">pub const </span>EXTERNAL_ROUTINE_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"38000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `38001`, `containing_sql_not_permitted`."</span>]
+</span><span class="kw">pub const </span>E_R_E_CONTAINING_SQL_NOT_PERMITTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"38001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `38002`, `modifying_sql_data_not_permitted`."</span>]
+</span><span class="kw">pub const </span>E_R_E_MODIFYING_SQL_DATA_NOT_PERMITTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"38002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `38003`, `prohibited_sql_statement_attempted`."</span>]
+</span><span class="kw">pub const </span>E_R_E_PROHIBITED_SQL_STATEMENT_ATTEMPTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"38003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `38004`, `reading_sql_data_not_permitted`."</span>]
+</span><span class="kw">pub const </span>E_R_E_READING_SQL_DATA_NOT_PERMITTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"38004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `39000`, `external_routine_invocation_exception`."</span>]
+</span><span class="kw">pub const </span>EXTERNAL_ROUTINE_INVOCATION_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"39000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `39001`, `invalid_sqlstate_returned`."</span>]
+</span><span class="kw">pub const </span>E_R_I_E_INVALID_SQLSTATE_RETURNED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"39001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `39004`, `null_value_not_allowed`."</span>]
+</span><span class="kw">pub const </span>E_R_I_E_NULL_VALUE_NOT_ALLOWED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"39004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `39P01`, `trigger_protocol_violated`."</span>]
+</span><span class="kw">pub const </span>E_R_I_E_TRIGGER_PROTOCOL_VIOLATED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"39P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `39P02`, `srf_protocol_violated`."</span>]
+</span><span class="kw">pub const </span>E_R_I_E_SRF_PROTOCOL_VIOLATED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"39P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `39P03`, `event_trigger_protocol_violated`."</span>]
+</span><span class="kw">pub const </span>E_R_I_E_EVENT_TRIGGER_PROTOCOL_VIOLATED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"39P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `3B000`, `savepoint_exception`."</span>]
+</span><span class="kw">pub const </span>SAVEPOINT_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"3B000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `3B001`, `invalid_savepoint_specification`."</span>]
+</span><span class="kw">pub const </span>S_E_INVALID_SPECIFICATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"3B001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `3D000`, `invalid_catalog_name`."</span>]
+</span><span class="kw">pub const </span>INVALID_CATALOG_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"3D000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `3F000`, `invalid_schema_name`."</span>]
+</span><span class="kw">pub const </span>INVALID_SCHEMA_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"3F000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40000`, `transaction_rollback`."</span>]
+</span><span class="kw">pub const </span>TRANSACTION_ROLLBACK: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"40000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40002`, `transaction_integrity_constraint_violation`."</span>]
+</span><span class="kw">pub const </span>T_R_INTEGRITY_CONSTRAINT_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"40002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40001`, `serialization_failure`."</span>]
+</span><span class="kw">pub const </span>T_R_SERIALIZATION_FAILURE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"40001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40003`, `statement_completion_unknown`."</span>]
+</span><span class="kw">pub const </span>T_R_STATEMENT_COMPLETION_UNKNOWN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"40003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40P01`, `deadlock_detected`."</span>]
+</span><span class="kw">pub const </span>T_R_DEADLOCK_DETECTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"40P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42000`, `syntax_error_or_access_rule_violation`."</span>]
+</span><span class="kw">pub const </span>SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42601`, `syntax_error`."</span>]
+</span><span class="kw">pub const </span>SYNTAX_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42601"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42501`, `insufficient_privilege`."</span>]
+</span><span class="kw">pub const </span>INSUFFICIENT_PRIVILEGE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42501"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42846`, `cannot_coerce`."</span>]
+</span><span class="kw">pub const </span>CANNOT_COERCE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42846"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42803`, `grouping_error`."</span>]
+</span><span class="kw">pub const </span>GROUPING_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42803"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P20`, `windowing_error`."</span>]
+</span><span class="kw">pub const </span>WINDOWING_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P20"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P19`, `invalid_recursion`."</span>]
+</span><span class="kw">pub const </span>INVALID_RECURSION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P19"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42830`, `invalid_foreign_key`."</span>]
+</span><span class="kw">pub const </span>INVALID_FOREIGN_KEY: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42830"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42602`, `invalid_name`."</span>]
+</span><span class="kw">pub const </span>INVALID_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42602"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42622`, `name_too_long`."</span>]
+</span><span class="kw">pub const </span>NAME_TOO_LONG: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42622"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42939`, `reserved_name`."</span>]
+</span><span class="kw">pub const </span>RESERVED_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42939"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42804`, `datatype_mismatch`."</span>]
+</span><span class="kw">pub const </span>DATATYPE_MISMATCH: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42804"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P18`, `indeterminate_datatype`."</span>]
+</span><span class="kw">pub const </span>INDETERMINATE_DATATYPE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P18"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P21`, `collation_mismatch`."</span>]
+</span><span class="kw">pub const </span>COLLATION_MISMATCH: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P21"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P22`, `indeterminate_collation`."</span>]
+</span><span class="kw">pub const </span>INDETERMINATE_COLLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P22"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42809`, `wrong_object_type`."</span>]
+</span><span class="kw">pub const </span>WRONG_OBJECT_TYPE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42809"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `428C9`, `generated_always`."</span>]
+</span><span class="kw">pub const </span>GENERATED_ALWAYS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"428C9"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42703`, `undefined_column`."</span>]
+</span><span class="kw">pub const </span>UNDEFINED_COLUMN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42703"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42883`, `undefined_function`."</span>]
+</span><span class="kw">pub const </span>UNDEFINED_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42883"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P01`, `undefined_table`."</span>]
+</span><span class="kw">pub const </span>UNDEFINED_TABLE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P02`, `undefined_parameter`."</span>]
+</span><span class="kw">pub const </span>UNDEFINED_PARAMETER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42704`, `undefined_object`."</span>]
+</span><span class="kw">pub const </span>UNDEFINED_OBJECT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42704"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42701`, `duplicate_column`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_COLUMN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42701"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P03`, `duplicate_cursor`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_CURSOR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P04`, `duplicate_database`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_DATABASE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42723`, `duplicate_function`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42723"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P05`, `duplicate_prepared_statement`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_PSTATEMENT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P05"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P06`, `duplicate_schema`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_SCHEMA: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P06"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P07`, `duplicate_table`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_TABLE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P07"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42712`, `duplicate_alias`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_ALIAS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42712"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42710`, `duplicate_object`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_OBJECT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42710"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42702`, `ambiguous_column`."</span>]
+</span><span class="kw">pub const </span>AMBIGUOUS_COLUMN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42702"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42725`, `ambiguous_function`."</span>]
+</span><span class="kw">pub const </span>AMBIGUOUS_FUNCTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42725"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P08`, `ambiguous_parameter`."</span>]
+</span><span class="kw">pub const </span>AMBIGUOUS_PARAMETER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P08"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P09`, `ambiguous_alias`."</span>]
+</span><span class="kw">pub const </span>AMBIGUOUS_ALIAS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P09"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P10`, `invalid_column_reference`."</span>]
+</span><span class="kw">pub const </span>INVALID_COLUMN_REFERENCE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P10"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42611`, `invalid_column_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_COLUMN_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42611"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P11`, `invalid_cursor_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_CURSOR_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P11"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P12`, `invalid_database_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_DATABASE_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P12"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P13`, `invalid_function_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_FUNCTION_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P13"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P14`, `invalid_prepared_statement_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_PSTATEMENT_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P14"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P15`, `invalid_schema_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_SCHEMA_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P15"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P16`, `invalid_table_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_TABLE_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P16"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42P17`, `invalid_object_definition`."</span>]
+</span><span class="kw">pub const </span>INVALID_OBJECT_DEFINITION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"42P17"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `44000`, `with_check_option_violation`."</span>]
+</span><span class="kw">pub const </span>WITH_CHECK_OPTION_VIOLATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"44000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `53000`, `insufficient_resources`."</span>]
+</span><span class="kw">pub const </span>INSUFFICIENT_RESOURCES: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"53000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `53100`, `disk_full`."</span>]
+</span><span class="kw">pub const </span>DISK_FULL: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"53100"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `53200`, `out_of_memory`."</span>]
+</span><span class="kw">pub const </span>OUT_OF_MEMORY: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"53200"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `53300`, `too_many_connections`."</span>]
+</span><span class="kw">pub const </span>TOO_MANY_CONNECTIONS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"53300"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `53400`, `configuration_limit_exceeded`."</span>]
+</span><span class="kw">pub const </span>CONFIGURATION_LIMIT_EXCEEDED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"53400"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `54000`, `program_limit_exceeded`."</span>]
+</span><span class="kw">pub const </span>PROGRAM_LIMIT_EXCEEDED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"54000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `54001`, `statement_too_complex`."</span>]
+</span><span class="kw">pub const </span>STATEMENT_TOO_COMPLEX: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"54001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `54011`, `too_many_columns`."</span>]
+</span><span class="kw">pub const </span>TOO_MANY_COLUMNS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"54011"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `54023`, `too_many_arguments`."</span>]
+</span><span class="kw">pub const </span>TOO_MANY_ARGUMENTS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"54023"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `55000`, `object_not_in_prerequisite_state`."</span>]
+</span><span class="kw">pub const </span>OBJECT_NOT_IN_PREREQUISITE_STATE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"55000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `55006`, `object_in_use`."</span>]
+</span><span class="kw">pub const </span>OBJECT_IN_USE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"55006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `55P02`, `cant_change_runtime_param`."</span>]
+</span><span class="kw">pub const </span>CANT_CHANGE_RUNTIME_PARAM: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"55P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `55P03`, `lock_not_available`."</span>]
+</span><span class="kw">pub const </span>LOCK_NOT_AVAILABLE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"55P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `55P04`, `unsafe_new_enum_value_usage`."</span>]
+</span><span class="kw">pub const </span>UNSAFE_NEW_ENUM_VALUE_USAGE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"55P04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57000`, `operator_intervention`."</span>]
+</span><span class="kw">pub const </span>OPERATOR_INTERVENTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57014`, `query_canceled`."</span>]
+</span><span class="kw">pub const </span>QUERY_CANCELED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57014"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57P01`, `admin_shutdown`."</span>]
+</span><span class="kw">pub const </span>ADMIN_SHUTDOWN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57P02`, `crash_shutdown`."</span>]
+</span><span class="kw">pub const </span>CRASH_SHUTDOWN: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57P03`, `cannot_connect_now`."</span>]
+</span><span class="kw">pub const </span>CANNOT_CONNECT_NOW: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57P04`, `database_dropped`."</span>]
+</span><span class="kw">pub const </span>DATABASE_DROPPED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57P04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `57P05`, `idle_session_timeout`."</span>]
+</span><span class="kw">pub const </span>IDLE_SESSION_TIMEOUT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"57P05"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `58000`, `system_error`."</span>]
+</span><span class="kw">pub const </span>SYSTEM_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"58000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `58030`, `io_error`."</span>]
+</span><span class="kw">pub const </span>IO_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"58030"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `58P01`, `undefined_file`."</span>]
+</span><span class="kw">pub const </span>UNDEFINED_FILE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"58P01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `58P02`, `duplicate_file`."</span>]
+</span><span class="kw">pub const </span>DUPLICATE_FILE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"58P02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `58P03`, `file_name_too_long`."</span>]
+</span><span class="kw">pub const </span>FILE_NAME_TOO_LONG: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"58P03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `F0000`, `config_file_error`."</span>]
+</span><span class="kw">pub const </span>CONFIG_FILE_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"F0000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `F0001`, `lock_file_exists`."</span>]
+</span><span class="kw">pub const </span>LOCK_FILE_EXISTS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"F0001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV000`, `fdw_error`."</span>]
+</span><span class="kw">pub const </span>FDW_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV005`, `fdw_column_name_not_found`."</span>]
+</span><span class="kw">pub const </span>FDW_COLUMN_NAME_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV005"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV002`, `fdw_dynamic_parameter_value_needed`."</span>]
+</span><span class="kw">pub const </span>FDW_DYNAMIC_PARAMETER_VALUE_NEEDED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV010`, `fdw_function_sequence_error`."</span>]
+</span><span class="kw">pub const </span>FDW_FUNCTION_SEQUENCE_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV010"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV021`, `fdw_inconsistent_descriptor_information`."</span>]
+</span><span class="kw">pub const </span>FDW_INCONSISTENT_DESCRIPTOR_INFORMATION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV021"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV024`, `fdw_invalid_attribute_value`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_ATTRIBUTE_VALUE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV024"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV007`, `fdw_invalid_column_name`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_COLUMN_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV007"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV008`, `fdw_invalid_column_number`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_COLUMN_NUMBER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV008"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV004`, `fdw_invalid_data_type`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_DATA_TYPE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV006`, `fdw_invalid_data_type_descriptors`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_DATA_TYPE_DESCRIPTORS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV091`, `fdw_invalid_descriptor_field_identifier`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_DESCRIPTOR_FIELD_IDENTIFIER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV091"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00B`, `fdw_invalid_handle`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_HANDLE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00B"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00C`, `fdw_invalid_option_index`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_OPTION_INDEX: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00C"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00D`, `fdw_invalid_option_name`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_OPTION_NAME: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00D"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV090`, `fdw_invalid_string_length_or_buffer_length`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_STRING_LENGTH_OR_BUFFER_LENGTH: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV090"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00A`, `fdw_invalid_string_format`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_STRING_FORMAT: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00A"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV009`, `fdw_invalid_use_of_null_pointer`."</span>]
+</span><span class="kw">pub const </span>FDW_INVALID_USE_OF_NULL_POINTER: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV009"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV014`, `fdw_too_many_handles`."</span>]
+</span><span class="kw">pub const </span>FDW_TOO_MANY_HANDLES: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV014"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV001`, `fdw_out_of_memory`."</span>]
+</span><span class="kw">pub const </span>FDW_OUT_OF_MEMORY: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00P`, `fdw_no_schemas`."</span>]
+</span><span class="kw">pub const </span>FDW_NO_SCHEMAS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00P"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00J`, `fdw_option_name_not_found`."</span>]
+</span><span class="kw">pub const </span>FDW_OPTION_NAME_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00J"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00K`, `fdw_reply_handle`."</span>]
+</span><span class="kw">pub const </span>FDW_REPLY_HANDLE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00K"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00Q`, `fdw_schema_not_found`."</span>]
+</span><span class="kw">pub const </span>FDW_SCHEMA_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00Q"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00R`, `fdw_table_not_found`."</span>]
+</span><span class="kw">pub const </span>FDW_TABLE_NOT_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00R"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00L`, `fdw_unable_to_create_execution`."</span>]
+</span><span class="kw">pub const </span>FDW_UNABLE_TO_CREATE_EXECUTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00L"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00M`, `fdw_unable_to_create_reply`."</span>]
+</span><span class="kw">pub const </span>FDW_UNABLE_TO_CREATE_REPLY: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00M"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HV00N`, `fdw_unable_to_establish_connection`."</span>]
+</span><span class="kw">pub const </span>FDW_UNABLE_TO_ESTABLISH_CONNECTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"HV00N"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `P0000`, `plpgsql_error`."</span>]
+</span><span class="kw">pub const </span>PLPGSQL_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"P0000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `P0001`, `raise_exception`."</span>]
+</span><span class="kw">pub const </span>RAISE_EXCEPTION: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"P0001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `P0002`, `no_data_found`."</span>]
+</span><span class="kw">pub const </span>NO_DATA_FOUND: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"P0002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `P0003`, `too_many_rows`."</span>]
+</span><span class="kw">pub const </span>TOO_MANY_ROWS: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"P0003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `P0004`, `assert_failure`."</span>]
+</span><span class="kw">pub const </span>ASSERT_FAILURE: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"P0004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XX000`, `internal_error`."</span>]
+</span><span class="kw">pub const </span>INTERNAL_ERROR: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"XX000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XX001`, `data_corrupted`."</span>]
+</span><span class="kw">pub const </span>DATA_CORRUPTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"XX001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XX002`, `index_corrupted`."</span>]
+</span><span class="kw">pub const </span>INDEX_CORRUPTED: SqlState =
+    SqlState::new(<span class="kw-2">*</span><span class="string">b"XX002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);</span><span class="original"><a href="#26-33">codes!</a> {
+<a href=#36 id=36 data-nosnippet>36</a>    <span class="comment">// Class 00 - Successful Completion
+<a href=#37 id=37 data-nosnippet>37</a>    </span><span class="doccomment">/// `00000`, `successful_completion`.
+<a href=#38 id=38 data-nosnippet>38</a>    </span><a href="../../../diesel/pg/sql_state/constant.SUCCESSFUL_COMPLETION.html">SUCCESSFUL_COMPLETION</a> = <span class="string">b"00000"</span>;
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="comment">// Class 01 - Warning
+<a href=#40 id=40 data-nosnippet>40</a>    </span><span class="doccomment">/// `01000`, `warning`.
+<a href=#41 id=41 data-nosnippet>41</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING.html">WARNING</a> = <span class="string">b"01000"</span>;
+<a href=#42 id=42 data-nosnippet>42</a>    <span class="doccomment">/// `0100C`, `dynamic_result_sets_returned`.
+<a href=#43 id=43 data-nosnippet>43</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_DYNAMIC_RESULT_SETS_RETURNED.html">WARNING_DYNAMIC_RESULT_SETS_RETURNED</a> = <span class="string">b"0100C"</span>;
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="doccomment">/// `01008`, `implicit_zero_bit_padding`.
+<a href=#45 id=45 data-nosnippet>45</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_IMPLICIT_ZERO_BIT_PADDING.html">WARNING_IMPLICIT_ZERO_BIT_PADDING</a> = <span class="string">b"01008"</span>;
+<a href=#46 id=46 data-nosnippet>46</a>    <span class="doccomment">/// `01003`, `null_value_eliminated_in_set_function`.
+<a href=#47 id=47 data-nosnippet>47</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_NULL_VALUE_ELIMINATED_IN_SET_FUNCTION.html">WARNING_NULL_VALUE_ELIMINATED_IN_SET_FUNCTION</a> = <span class="string">b"01003"</span>;
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="doccomment">/// `01007`, `privilege_not_granted`.
+<a href=#49 id=49 data-nosnippet>49</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_PRIVILEGE_NOT_GRANTED.html">WARNING_PRIVILEGE_NOT_GRANTED</a> = <span class="string">b"01007"</span>;
+<a href=#50 id=50 data-nosnippet>50</a>    <span class="doccomment">/// `01006`, `privilege_not_revoked`.
+<a href=#51 id=51 data-nosnippet>51</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_PRIVILEGE_NOT_REVOKED.html">WARNING_PRIVILEGE_NOT_REVOKED</a> = <span class="string">b"01006"</span>;
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="doccomment">/// `01004`, `string_data_right_truncation`.
+<a href=#53 id=53 data-nosnippet>53</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_STRING_DATA_RIGHT_TRUNCATION.html">WARNING_STRING_DATA_RIGHT_TRUNCATION</a> = <span class="string">b"01004"</span>;
+<a href=#54 id=54 data-nosnippet>54</a>    <span class="doccomment">/// `01P01`, `deprecated_feature`.
+<a href=#55 id=55 data-nosnippet>55</a>    </span><a href="../../../diesel/pg/sql_state/constant.WARNING_DEPRECATED_FEATURE.html">WARNING_DEPRECATED_FEATURE</a> = <span class="string">b"01P01"</span>;
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="comment">// Class 02 - No Data (this is also a warning class per the SQL standard)
+<a href=#57 id=57 data-nosnippet>57</a>    </span><span class="doccomment">/// `02000`, `no_data`.
+<a href=#58 id=58 data-nosnippet>58</a>    </span><a href="../../../diesel/pg/sql_state/constant.NO_DATA.html">NO_DATA</a> = <span class="string">b"02000"</span>;
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="doccomment">/// `02001`, `no_additional_dynamic_result_sets_returned`.
+<a href=#60 id=60 data-nosnippet>60</a>    </span><a href="../../../diesel/pg/sql_state/constant.NO_ADDITIONAL_DYNAMIC_RESULT_SETS_RETURNED.html">NO_ADDITIONAL_DYNAMIC_RESULT_SETS_RETURNED</a> = <span class="string">b"02001"</span>;
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="comment">// Class 03 - SQL Statement Not Yet Complete
+<a href=#62 id=62 data-nosnippet>62</a>    </span><span class="doccomment">/// `03000`, `sql_statement_not_yet_complete`.
+<a href=#63 id=63 data-nosnippet>63</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_STATEMENT_NOT_YET_COMPLETE.html">SQL_STATEMENT_NOT_YET_COMPLETE</a> = <span class="string">b"03000"</span>;
+<a href=#64 id=64 data-nosnippet>64</a>    <span class="comment">// Class 08 - Connection Exception
+<a href=#65 id=65 data-nosnippet>65</a>    </span><span class="doccomment">/// `08000`, `connection_exception`.
+<a href=#66 id=66 data-nosnippet>66</a>    </span><a href="../../../diesel/pg/sql_state/constant.CONNECTION_EXCEPTION.html">CONNECTION_EXCEPTION</a> = <span class="string">b"08000"</span>;
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="doccomment">/// `08003`, `connection_does_not_exist`.
+<a href=#68 id=68 data-nosnippet>68</a>    </span><a href="../../../diesel/pg/sql_state/constant.CONNECTION_DOES_NOT_EXIST.html">CONNECTION_DOES_NOT_EXIST</a> = <span class="string">b"08003"</span>;
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="doccomment">/// `08006`, `connection_failure`.
+<a href=#70 id=70 data-nosnippet>70</a>    </span><a href="../../../diesel/pg/sql_state/constant.CONNECTION_FAILURE.html">CONNECTION_FAILURE</a> = <span class="string">b"08006"</span>;
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="doccomment">/// `08001`, `sqlclient_unable_to_establish_sqlconnection`.
+<a href=#72 id=72 data-nosnippet>72</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION.html">SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION</a> = <span class="string">b"08001"</span>;
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="doccomment">/// `08004`, `sqlserver_rejected_establishment_of_sqlconnection`.
+<a href=#74 id=74 data-nosnippet>74</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION.html">SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION</a> = <span class="string">b"08004"</span>;
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="doccomment">/// `08007`, `transaction_resolution_unknown`.
+<a href=#76 id=76 data-nosnippet>76</a>    </span><a href="../../../diesel/pg/sql_state/constant.TRANSACTION_RESOLUTION_UNKNOWN.html">TRANSACTION_RESOLUTION_UNKNOWN</a> = <span class="string">b"08007"</span>;
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="doccomment">/// `08P01`, `protocol_violation`.
+<a href=#78 id=78 data-nosnippet>78</a>    </span><a href="../../../diesel/pg/sql_state/constant.PROTOCOL_VIOLATION.html">PROTOCOL_VIOLATION</a> = <span class="string">b"08P01"</span>;
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="comment">// Class 09 - Triggered Action Exception
+<a href=#80 id=80 data-nosnippet>80</a>    </span><span class="doccomment">/// `09000`, `triggered_action_exception`.
+<a href=#81 id=81 data-nosnippet>81</a>    </span><a href="../../../diesel/pg/sql_state/constant.TRIGGERED_ACTION_EXCEPTION.html">TRIGGERED_ACTION_EXCEPTION</a> = <span class="string">b"09000"</span>;
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="comment">// Class 0A - Feature Not Supported
+<a href=#83 id=83 data-nosnippet>83</a>    </span><span class="doccomment">/// `0A000`, `feature_not_supported`.
+<a href=#84 id=84 data-nosnippet>84</a>    </span><a href="../../../diesel/pg/sql_state/constant.FEATURE_NOT_SUPPORTED.html">FEATURE_NOT_SUPPORTED</a> = <span class="string">b"0A000"</span>;
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="comment">// Class 0B - Invalid Transaction Initiation
+<a href=#86 id=86 data-nosnippet>86</a>    </span><span class="doccomment">/// `0B000`, `invalid_transaction_initiation`.
+<a href=#87 id=87 data-nosnippet>87</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TRANSACTION_INITIATION.html">INVALID_TRANSACTION_INITIATION</a> = <span class="string">b"0B000"</span>;
+<a href=#88 id=88 data-nosnippet>88</a>    <span class="comment">// Class 0F - Locator Exception
+<a href=#89 id=89 data-nosnippet>89</a>    </span><span class="doccomment">/// `0F000`, `locator_exception`.
+<a href=#90 id=90 data-nosnippet>90</a>    </span><a href="../../../diesel/pg/sql_state/constant.LOCATOR_EXCEPTION.html">LOCATOR_EXCEPTION</a> = <span class="string">b"0F000"</span>;
+<a href=#91 id=91 data-nosnippet>91</a>    <span class="doccomment">/// `0F001`, `invalid_locator_specification`.
+<a href=#92 id=92 data-nosnippet>92</a>    </span><a href="../../../diesel/pg/sql_state/constant.L_E_INVALID_SPECIFICATION.html">L_E_INVALID_SPECIFICATION</a> = <span class="string">b"0F001"</span>;
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="comment">// Class 0L - Invalid Grantor
+<a href=#94 id=94 data-nosnippet>94</a>    </span><span class="doccomment">/// `0L000`, `invalid_grantor`.
+<a href=#95 id=95 data-nosnippet>95</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_GRANTOR.html">INVALID_GRANTOR</a> = <span class="string">b"0L000"</span>;
+<a href=#96 id=96 data-nosnippet>96</a>    <span class="doccomment">/// `0LP01`, `invalid_grant_operation`.
+<a href=#97 id=97 data-nosnippet>97</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_GRANT_OPERATION.html">INVALID_GRANT_OPERATION</a> = <span class="string">b"0LP01"</span>;
+<a href=#98 id=98 data-nosnippet>98</a>    <span class="comment">// Class 0P - Invalid Role Specification
+<a href=#99 id=99 data-nosnippet>99</a>    </span><span class="doccomment">/// `0P000`, `invalid_role_specification`.
+<a href=#100 id=100 data-nosnippet>100</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ROLE_SPECIFICATION.html">INVALID_ROLE_SPECIFICATION</a> = <span class="string">b"0P000"</span>;
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="comment">// Class 0Z - Diagnostics Exception
+<a href=#102 id=102 data-nosnippet>102</a>    </span><span class="doccomment">/// `0Z000`, `diagnostics_exception`.
+<a href=#103 id=103 data-nosnippet>103</a>    </span><a href="../../../diesel/pg/sql_state/constant.DIAGNOSTICS_EXCEPTION.html">DIAGNOSTICS_EXCEPTION</a> = <span class="string">b"0Z000"</span>;
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="doccomment">/// `0Z002`, `stacked_diagnostics_accessed_without_active_handler`.
+<a href=#105 id=105 data-nosnippet>105</a>    </span><a href="../../../diesel/pg/sql_state/constant.STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER.html">STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER</a> = <span class="string">b"0Z002"</span>;
+<a href=#106 id=106 data-nosnippet>106</a>    <span class="comment">// Class 10 - XQuery Error
+<a href=#107 id=107 data-nosnippet>107</a>    </span><span class="doccomment">/// `10608`, `invalid_argument_for_xquery`.
+<a href=#108 id=108 data-nosnippet>108</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_XQUERY.html">INVALID_ARGUMENT_FOR_XQUERY</a> = <span class="string">b"10608"</span>;
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="comment">// Class 20 - Case Not Found
+<a href=#110 id=110 data-nosnippet>110</a>    </span><span class="doccomment">/// `20000`, `case_not_found`.
+<a href=#111 id=111 data-nosnippet>111</a>    </span><a href="../../../diesel/pg/sql_state/constant.CASE_NOT_FOUND.html">CASE_NOT_FOUND</a> = <span class="string">b"20000"</span>;
+<a href=#112 id=112 data-nosnippet>112</a>    <span class="comment">// Class 21 - Cardinality Violation
+<a href=#113 id=113 data-nosnippet>113</a>    </span><span class="doccomment">/// `21000`, `cardinality_violation`.
+<a href=#114 id=114 data-nosnippet>114</a>    </span><a href="../../../diesel/pg/sql_state/constant.CARDINALITY_VIOLATION.html">CARDINALITY_VIOLATION</a> = <span class="string">b"21000"</span>;
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="comment">// Class 22 - Data Exception
+<a href=#116 id=116 data-nosnippet>116</a>    </span><span class="doccomment">/// `22000`, `data_exception`.
+<a href=#117 id=117 data-nosnippet>117</a>    </span><a href="../../../diesel/pg/sql_state/constant.DATA_EXCEPTION.html">DATA_EXCEPTION</a> = <span class="string">b"22000"</span>;
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="doccomment">/// `2202E`, `array_subscript_error`.
+<a href=#119 id=119 data-nosnippet>119</a>    </span><a href="../../../diesel/pg/sql_state/constant.ARRAY_SUBSCRIPT_ERROR.html">ARRAY_SUBSCRIPT_ERROR</a> = <span class="string">b"2202E"</span>;
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="doccomment">/// `22021`, `character_not_in_repertoire`.
+<a href=#121 id=121 data-nosnippet>121</a>    </span><a href="../../../diesel/pg/sql_state/constant.CHARACTER_NOT_IN_REPERTOIRE.html">CHARACTER_NOT_IN_REPERTOIRE</a> = <span class="string">b"22021"</span>;
+<a href=#122 id=122 data-nosnippet>122</a>    <span class="doccomment">/// `22008`, `datetime_field_overflow`.
+<a href=#123 id=123 data-nosnippet>123</a>    </span><a href="../../../diesel/pg/sql_state/constant.DATETIME_FIELD_OVERFLOW.html">DATETIME_FIELD_OVERFLOW</a> = <span class="string">b"22008"</span>;
+<a href=#124 id=124 data-nosnippet>124</a>    <span class="doccomment">/// `22012`, `division_by_zero`.
+<a href=#125 id=125 data-nosnippet>125</a>    </span><a href="../../../diesel/pg/sql_state/constant.DIVISION_BY_ZERO.html">DIVISION_BY_ZERO</a> = <span class="string">b"22012"</span>;
+<a href=#126 id=126 data-nosnippet>126</a>    <span class="doccomment">/// `22005`, `error_in_assignment`.
+<a href=#127 id=127 data-nosnippet>127</a>    </span><a href="../../../diesel/pg/sql_state/constant.ERROR_IN_ASSIGNMENT.html">ERROR_IN_ASSIGNMENT</a> = <span class="string">b"22005"</span>;
+<a href=#128 id=128 data-nosnippet>128</a>    <span class="doccomment">/// `2200B`, `escape_character_conflict`.
+<a href=#129 id=129 data-nosnippet>129</a>    </span><a href="../../../diesel/pg/sql_state/constant.ESCAPE_CHARACTER_CONFLICT.html">ESCAPE_CHARACTER_CONFLICT</a> = <span class="string">b"2200B"</span>;
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="doccomment">/// `22022`, `indicator_overflow`.
+<a href=#131 id=131 data-nosnippet>131</a>    </span><a href="../../../diesel/pg/sql_state/constant.INDICATOR_OVERFLOW.html">INDICATOR_OVERFLOW</a> = <span class="string">b"22022"</span>;
+<a href=#132 id=132 data-nosnippet>132</a>    <span class="doccomment">/// `22015`, `interval_field_overflow`.
+<a href=#133 id=133 data-nosnippet>133</a>    </span><a href="../../../diesel/pg/sql_state/constant.INTERVAL_FIELD_OVERFLOW.html">INTERVAL_FIELD_OVERFLOW</a> = <span class="string">b"22015"</span>;
+<a href=#134 id=134 data-nosnippet>134</a>    <span class="doccomment">/// `2201E`, `invalid_argument_for_logarithm`.
+<a href=#135 id=135 data-nosnippet>135</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_LOG.html">INVALID_ARGUMENT_FOR_LOG</a> = <span class="string">b"2201E"</span>;
+<a href=#136 id=136 data-nosnippet>136</a>    <span class="doccomment">/// `22014`, `invalid_argument_for_ntile_function`.
+<a href=#137 id=137 data-nosnippet>137</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_NTILE.html">INVALID_ARGUMENT_FOR_NTILE</a> = <span class="string">b"22014"</span>;
+<a href=#138 id=138 data-nosnippet>138</a>    <span class="doccomment">/// `22016`, `invalid_argument_for_nth_value_function`.
+<a href=#139 id=139 data-nosnippet>139</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_NTH_VALUE.html">INVALID_ARGUMENT_FOR_NTH_VALUE</a> = <span class="string">b"22016"</span>;
+<a href=#140 id=140 data-nosnippet>140</a>    <span class="doccomment">/// `2201F`, `invalid_argument_for_power_function`.
+<a href=#141 id=141 data-nosnippet>141</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_POWER_FUNCTION.html">INVALID_ARGUMENT_FOR_POWER_FUNCTION</a> = <span class="string">b"2201F"</span>;
+<a href=#142 id=142 data-nosnippet>142</a>    <span class="doccomment">/// `2201G`, `invalid_argument_for_width_bucket_function`.
+<a href=#143 id=143 data-nosnippet>143</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_WIDTH_BUCKET_FUNCTION.html">INVALID_ARGUMENT_FOR_WIDTH_BUCKET_FUNCTION</a> = <span class="string">b"2201G"</span>;
+<a href=#144 id=144 data-nosnippet>144</a>    <span class="doccomment">/// `22018`, `invalid_character_value_for_cast`.
+<a href=#145 id=145 data-nosnippet>145</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_CHARACTER_VALUE_FOR_CAST.html">INVALID_CHARACTER_VALUE_FOR_CAST</a> = <span class="string">b"22018"</span>;
+<a href=#146 id=146 data-nosnippet>146</a>    <span class="doccomment">/// `22007`, `invalid_datetime_format`.
+<a href=#147 id=147 data-nosnippet>147</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_DATETIME_FORMAT.html">INVALID_DATETIME_FORMAT</a> = <span class="string">b"22007"</span>;
+<a href=#148 id=148 data-nosnippet>148</a>    <span class="doccomment">/// `22019`, `invalid_escape_character`.
+<a href=#149 id=149 data-nosnippet>149</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ESCAPE_CHARACTER.html">INVALID_ESCAPE_CHARACTER</a> = <span class="string">b"22019"</span>;
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="doccomment">/// `2200D`, `invalid_escape_octet`.
+<a href=#151 id=151 data-nosnippet>151</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ESCAPE_OCTET.html">INVALID_ESCAPE_OCTET</a> = <span class="string">b"2200D"</span>;
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="doccomment">/// `22025`, `invalid_escape_sequence`.
+<a href=#153 id=153 data-nosnippet>153</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ESCAPE_SEQUENCE.html">INVALID_ESCAPE_SEQUENCE</a> = <span class="string">b"22025"</span>;
+<a href=#154 id=154 data-nosnippet>154</a>    <span class="doccomment">/// `22P06`, `nonstandard_use_of_escape_character`.
+<a href=#155 id=155 data-nosnippet>155</a>    </span><a href="../../../diesel/pg/sql_state/constant.NONSTANDARD_USE_OF_ESCAPE_CHARACTER.html">NONSTANDARD_USE_OF_ESCAPE_CHARACTER</a> = <span class="string">b"22P06"</span>;
+<a href=#156 id=156 data-nosnippet>156</a>    <span class="doccomment">/// `22010`, `invalid_indicator_parameter_value`.
+<a href=#157 id=157 data-nosnippet>157</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_INDICATOR_PARAMETER_VALUE.html">INVALID_INDICATOR_PARAMETER_VALUE</a> = <span class="string">b"22010"</span>;
+<a href=#158 id=158 data-nosnippet>158</a>    <span class="doccomment">/// `22023`, `invalid_parameter_value`.
+<a href=#159 id=159 data-nosnippet>159</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_PARAMETER_VALUE.html">INVALID_PARAMETER_VALUE</a> = <span class="string">b"22023"</span>;
+<a href=#160 id=160 data-nosnippet>160</a>    <span class="doccomment">/// `22013`, `invalid_preceding_or_following_size`.
+<a href=#161 id=161 data-nosnippet>161</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_PRECEDING_OR_FOLLOWING_SIZE.html">INVALID_PRECEDING_OR_FOLLOWING_SIZE</a> = <span class="string">b"22013"</span>;
+<a href=#162 id=162 data-nosnippet>162</a>    <span class="doccomment">/// `2201B`, `invalid_regular_expression`.
+<a href=#163 id=163 data-nosnippet>163</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_REGULAR_EXPRESSION.html">INVALID_REGULAR_EXPRESSION</a> = <span class="string">b"2201B"</span>;
+<a href=#164 id=164 data-nosnippet>164</a>    <span class="doccomment">/// `2201W`, `invalid_row_count_in_limit_clause`.
+<a href=#165 id=165 data-nosnippet>165</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ROW_COUNT_IN_LIMIT_CLAUSE.html">INVALID_ROW_COUNT_IN_LIMIT_CLAUSE</a> = <span class="string">b"2201W"</span>;
+<a href=#166 id=166 data-nosnippet>166</a>    <span class="doccomment">/// `2201X`, `invalid_row_count_in_result_offset_clause`.
+<a href=#167 id=167 data-nosnippet>167</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ROW_COUNT_IN_RESULT_OFFSET_CLAUSE.html">INVALID_ROW_COUNT_IN_RESULT_OFFSET_CLAUSE</a> = <span class="string">b"2201X"</span>;
+<a href=#168 id=168 data-nosnippet>168</a>    <span class="doccomment">/// `2202H`, `invalid_tablesample_argument`.
+<a href=#169 id=169 data-nosnippet>169</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TABLESAMPLE_ARGUMENT.html">INVALID_TABLESAMPLE_ARGUMENT</a> = <span class="string">b"2202H"</span>;
+<a href=#170 id=170 data-nosnippet>170</a>    <span class="doccomment">/// `2202G`, `invalid_tablesample_repeat`.
+<a href=#171 id=171 data-nosnippet>171</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TABLESAMPLE_REPEAT.html">INVALID_TABLESAMPLE_REPEAT</a> = <span class="string">b"2202G"</span>;
+<a href=#172 id=172 data-nosnippet>172</a>    <span class="doccomment">/// `22009`, `invalid_time_zone_displacement_value`.
+<a href=#173 id=173 data-nosnippet>173</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TIME_ZONE_DISPLACEMENT_VALUE.html">INVALID_TIME_ZONE_DISPLACEMENT_VALUE</a> = <span class="string">b"22009"</span>;
+<a href=#174 id=174 data-nosnippet>174</a>    <span class="doccomment">/// `2200C`, `invalid_use_of_escape_character`.
+<a href=#175 id=175 data-nosnippet>175</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_USE_OF_ESCAPE_CHARACTER.html">INVALID_USE_OF_ESCAPE_CHARACTER</a> = <span class="string">b"2200C"</span>;
+<a href=#176 id=176 data-nosnippet>176</a>    <span class="doccomment">/// `2200G`, `most_specific_type_mismatch`.
+<a href=#177 id=177 data-nosnippet>177</a>    </span><a href="../../../diesel/pg/sql_state/constant.MOST_SPECIFIC_TYPE_MISMATCH.html">MOST_SPECIFIC_TYPE_MISMATCH</a> = <span class="string">b"2200G"</span>;
+<a href=#178 id=178 data-nosnippet>178</a>    <span class="doccomment">/// `22004`, `null_value_not_allowed`.
+<a href=#179 id=179 data-nosnippet>179</a>    </span><a href="../../../diesel/pg/sql_state/constant.NULL_VALUE_NOT_ALLOWED.html">NULL_VALUE_NOT_ALLOWED</a> = <span class="string">b"22004"</span>;
+<a href=#180 id=180 data-nosnippet>180</a>    <span class="doccomment">/// `22002`, `null_value_no_indicator_parameter`.
+<a href=#181 id=181 data-nosnippet>181</a>    </span><a href="../../../diesel/pg/sql_state/constant.NULL_VALUE_NO_INDICATOR_PARAMETER.html">NULL_VALUE_NO_INDICATOR_PARAMETER</a> = <span class="string">b"22002"</span>;
+<a href=#182 id=182 data-nosnippet>182</a>    <span class="doccomment">/// `22003`, `numeric_value_out_of_range`.
+<a href=#183 id=183 data-nosnippet>183</a>    </span><a href="../../../diesel/pg/sql_state/constant.NUMERIC_VALUE_OUT_OF_RANGE.html">NUMERIC_VALUE_OUT_OF_RANGE</a> = <span class="string">b"22003"</span>;
+<a href=#184 id=184 data-nosnippet>184</a>    <span class="doccomment">/// `2200H`, `sequence_generator_limit_exceeded`.
+<a href=#185 id=185 data-nosnippet>185</a>    </span><a href="../../../diesel/pg/sql_state/constant.SEQUENCE_GENERATOR_LIMIT_EXCEEDED.html">SEQUENCE_GENERATOR_LIMIT_EXCEEDED</a> = <span class="string">b"2200H"</span>;
+<a href=#186 id=186 data-nosnippet>186</a>    <span class="doccomment">/// `22026`, `string_data_length_mismatch`.
+<a href=#187 id=187 data-nosnippet>187</a>    </span><a href="../../../diesel/pg/sql_state/constant.STRING_DATA_LENGTH_MISMATCH.html">STRING_DATA_LENGTH_MISMATCH</a> = <span class="string">b"22026"</span>;
+<a href=#188 id=188 data-nosnippet>188</a>    <span class="doccomment">/// `22001`, `string_data_right_truncation`.
+<a href=#189 id=189 data-nosnippet>189</a>    </span><a href="../../../diesel/pg/sql_state/constant.STRING_DATA_RIGHT_TRUNCATION.html">STRING_DATA_RIGHT_TRUNCATION</a> = <span class="string">b"22001"</span>;
+<a href=#190 id=190 data-nosnippet>190</a>    <span class="doccomment">/// `22011`, `substring_error`.
+<a href=#191 id=191 data-nosnippet>191</a>    </span><a href="../../../diesel/pg/sql_state/constant.SUBSTRING_ERROR.html">SUBSTRING_ERROR</a> = <span class="string">b"22011"</span>;
+<a href=#192 id=192 data-nosnippet>192</a>    <span class="doccomment">/// `22027`, `trim_error`.
+<a href=#193 id=193 data-nosnippet>193</a>    </span><a href="../../../diesel/pg/sql_state/constant.TRIM_ERROR.html">TRIM_ERROR</a> = <span class="string">b"22027"</span>;
+<a href=#194 id=194 data-nosnippet>194</a>    <span class="doccomment">/// `22024`, `unterminated_c_string`.
+<a href=#195 id=195 data-nosnippet>195</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNTERMINATED_C_STRING.html">UNTERMINATED_C_STRING</a> = <span class="string">b"22024"</span>;
+<a href=#196 id=196 data-nosnippet>196</a>    <span class="doccomment">/// `2200F`, `zero_length_character_string`.
+<a href=#197 id=197 data-nosnippet>197</a>    </span><a href="../../../diesel/pg/sql_state/constant.ZERO_LENGTH_CHARACTER_STRING.html">ZERO_LENGTH_CHARACTER_STRING</a> = <span class="string">b"2200F"</span>;
+<a href=#198 id=198 data-nosnippet>198</a>    <span class="doccomment">/// `22P01`, `floating_point_exception`.
+<a href=#199 id=199 data-nosnippet>199</a>    </span><a href="../../../diesel/pg/sql_state/constant.FLOATING_POINT_EXCEPTION.html">FLOATING_POINT_EXCEPTION</a> = <span class="string">b"22P01"</span>;
+<a href=#200 id=200 data-nosnippet>200</a>    <span class="doccomment">/// `22P02`, `invalid_text_representation`.
+<a href=#201 id=201 data-nosnippet>201</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TEXT_REPRESENTATION.html">INVALID_TEXT_REPRESENTATION</a> = <span class="string">b"22P02"</span>;
+<a href=#202 id=202 data-nosnippet>202</a>    <span class="doccomment">/// `22P03`, `invalid_binary_representation`.
+<a href=#203 id=203 data-nosnippet>203</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_BINARY_REPRESENTATION.html">INVALID_BINARY_REPRESENTATION</a> = <span class="string">b"22P03"</span>;
+<a href=#204 id=204 data-nosnippet>204</a>    <span class="doccomment">/// `22P04`, `bad_copy_file_format`.
+<a href=#205 id=205 data-nosnippet>205</a>    </span><a href="../../../diesel/pg/sql_state/constant.BAD_COPY_FILE_FORMAT.html">BAD_COPY_FILE_FORMAT</a> = <span class="string">b"22P04"</span>;
+<a href=#206 id=206 data-nosnippet>206</a>    <span class="doccomment">/// `22P05`, `untranslatable_character`.
+<a href=#207 id=207 data-nosnippet>207</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNTRANSLATABLE_CHARACTER.html">UNTRANSLATABLE_CHARACTER</a> = <span class="string">b"22P05"</span>;
+<a href=#208 id=208 data-nosnippet>208</a>    <span class="doccomment">/// `2200L`, `not_an_xml_document`.
+<a href=#209 id=209 data-nosnippet>209</a>    </span><a href="../../../diesel/pg/sql_state/constant.NOT_AN_XML_DOCUMENT.html">NOT_AN_XML_DOCUMENT</a> = <span class="string">b"2200L"</span>;
+<a href=#210 id=210 data-nosnippet>210</a>    <span class="doccomment">/// `2200M`, `invalid_xml_document`.
+<a href=#211 id=211 data-nosnippet>211</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_XML_DOCUMENT.html">INVALID_XML_DOCUMENT</a> = <span class="string">b"2200M"</span>;
+<a href=#212 id=212 data-nosnippet>212</a>    <span class="doccomment">/// `2200N`, `invalid_xml_content`.
+<a href=#213 id=213 data-nosnippet>213</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_XML_CONTENT.html">INVALID_XML_CONTENT</a> = <span class="string">b"2200N"</span>;
+<a href=#214 id=214 data-nosnippet>214</a>    <span class="doccomment">/// `2200S`, `invalid_xml_comment`.
+<a href=#215 id=215 data-nosnippet>215</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_XML_COMMENT.html">INVALID_XML_COMMENT</a> = <span class="string">b"2200S"</span>;
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="doccomment">/// `2200T`, `invalid_xml_processing_instruction`.
+<a href=#217 id=217 data-nosnippet>217</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_XML_PROCESSING_INSTRUCTION.html">INVALID_XML_PROCESSING_INSTRUCTION</a> = <span class="string">b"2200T"</span>;
+<a href=#218 id=218 data-nosnippet>218</a>    <span class="doccomment">/// `22030`, `duplicate_json_object_key_value`.
+<a href=#219 id=219 data-nosnippet>219</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_JSON_OBJECT_KEY_VALUE.html">DUPLICATE_JSON_OBJECT_KEY_VALUE</a> = <span class="string">b"22030"</span>;
+<a href=#220 id=220 data-nosnippet>220</a>    <span class="doccomment">/// `22031`, `invalid_argument_for_sql_json_datetime_function`.
+<a href=#221 id=221 data-nosnippet>221</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_ARGUMENT_FOR_SQL_JSON_DATETIME_FUNCTION.html">INVALID_ARGUMENT_FOR_SQL_JSON_DATETIME_FUNCTION</a> = <span class="string">b"22031"</span>;
+<a href=#222 id=222 data-nosnippet>222</a>    <span class="doccomment">/// `22032`, `invalid_json_text`.
+<a href=#223 id=223 data-nosnippet>223</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_JSON_TEXT.html">INVALID_JSON_TEXT</a> = <span class="string">b"22032"</span>;
+<a href=#224 id=224 data-nosnippet>224</a>    <span class="doccomment">/// `22033`, `invalid_sql_json_subscript`.
+<a href=#225 id=225 data-nosnippet>225</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_SQL_JSON_SUBSCRIPT.html">INVALID_SQL_JSON_SUBSCRIPT</a> = <span class="string">b"22033"</span>;
+<a href=#226 id=226 data-nosnippet>226</a>    <span class="doccomment">/// `22034`, `more_than_one_sql_json_item`.
+<a href=#227 id=227 data-nosnippet>227</a>    </span><a href="../../../diesel/pg/sql_state/constant.MORE_THAN_ONE_SQL_JSON_ITEM.html">MORE_THAN_ONE_SQL_JSON_ITEM</a> = <span class="string">b"22034"</span>;
+<a href=#228 id=228 data-nosnippet>228</a>    <span class="doccomment">/// `22035`, `no_sql_json_item`.
+<a href=#229 id=229 data-nosnippet>229</a>    </span><a href="../../../diesel/pg/sql_state/constant.NO_SQL_JSON_ITEM.html">NO_SQL_JSON_ITEM</a> = <span class="string">b"22035"</span>;
+<a href=#230 id=230 data-nosnippet>230</a>    <span class="doccomment">/// `22036`, `non_numeric_sql_json_item`.
+<a href=#231 id=231 data-nosnippet>231</a>    </span><a href="../../../diesel/pg/sql_state/constant.NON_NUMERIC_SQL_JSON_ITEM.html">NON_NUMERIC_SQL_JSON_ITEM</a> = <span class="string">b"22036"</span>;
+<a href=#232 id=232 data-nosnippet>232</a>    <span class="doccomment">/// `22037`, `non_unique_keys_in_a_json_object`.
+<a href=#233 id=233 data-nosnippet>233</a>    </span><a href="../../../diesel/pg/sql_state/constant.NON_UNIQUE_KEYS_IN_A_JSON_OBJECT.html">NON_UNIQUE_KEYS_IN_A_JSON_OBJECT</a> = <span class="string">b"22037"</span>;
+<a href=#234 id=234 data-nosnippet>234</a>    <span class="doccomment">/// `22038`, `singleton_sql_json_item_required`.
+<a href=#235 id=235 data-nosnippet>235</a>    </span><a href="../../../diesel/pg/sql_state/constant.SINGLETON_SQL_JSON_ITEM_REQUIRED.html">SINGLETON_SQL_JSON_ITEM_REQUIRED</a> = <span class="string">b"22038"</span>;
+<a href=#236 id=236 data-nosnippet>236</a>    <span class="doccomment">/// `22039`, `sql_json_array_not_found`.
+<a href=#237 id=237 data-nosnippet>237</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_JSON_ARRAY_NOT_FOUND.html">SQL_JSON_ARRAY_NOT_FOUND</a> = <span class="string">b"22039"</span>;
+<a href=#238 id=238 data-nosnippet>238</a>    <span class="doccomment">/// `2203A`, `sql_json_member_not_found`.
+<a href=#239 id=239 data-nosnippet>239</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_JSON_MEMBER_NOT_FOUND.html">SQL_JSON_MEMBER_NOT_FOUND</a> = <span class="string">b"2203A"</span>;
+<a href=#240 id=240 data-nosnippet>240</a>    <span class="doccomment">/// `2203B`, `sql_json_number_not_found`.
+<a href=#241 id=241 data-nosnippet>241</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_JSON_NUMBER_NOT_FOUND.html">SQL_JSON_NUMBER_NOT_FOUND</a> = <span class="string">b"2203B"</span>;
+<a href=#242 id=242 data-nosnippet>242</a>    <span class="doccomment">/// `2203C`, `sql_json_object_not_found`.
+<a href=#243 id=243 data-nosnippet>243</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_JSON_OBJECT_NOT_FOUND.html">SQL_JSON_OBJECT_NOT_FOUND</a> = <span class="string">b"2203C"</span>;
+<a href=#244 id=244 data-nosnippet>244</a>    <span class="doccomment">/// `2203D`, `too_many_json_array_elements`.
+<a href=#245 id=245 data-nosnippet>245</a>    </span><a href="../../../diesel/pg/sql_state/constant.TOO_MANY_JSON_ARRAY_ELEMENTS.html">TOO_MANY_JSON_ARRAY_ELEMENTS</a> = <span class="string">b"2203D"</span>;
+<a href=#246 id=246 data-nosnippet>246</a>    <span class="doccomment">/// `2203E`, `too_many_json_object_members`.
+<a href=#247 id=247 data-nosnippet>247</a>    </span><a href="../../../diesel/pg/sql_state/constant.TOO_MANY_JSON_OBJECT_MEMBERS.html">TOO_MANY_JSON_OBJECT_MEMBERS</a> = <span class="string">b"2203E"</span>;
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="doccomment">/// `2203F`, `sql_json_scalar_required`.
+<a href=#249 id=249 data-nosnippet>249</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_JSON_SCALAR_REQUIRED.html">SQL_JSON_SCALAR_REQUIRED</a> = <span class="string">b"2203F"</span>;
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="doccomment">/// `2203G`, `sql_json_item_cannot_be_cast_to_target_type`.
+<a href=#251 id=251 data-nosnippet>251</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_JSON_ITEM_CANNOT_BE_CAST_TO_TARGET_TYPE.html">SQL_JSON_ITEM_CANNOT_BE_CAST_TO_TARGET_TYPE</a> = <span class="string">b"2203G"</span>;
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="comment">// Class 23 - Integrity Constraint Violation
+<a href=#253 id=253 data-nosnippet>253</a>    </span><span class="doccomment">/// `23000`, `integrity_constraint_violation`.
+<a href=#254 id=254 data-nosnippet>254</a>    </span><a href="../../../diesel/pg/sql_state/constant.INTEGRITY_CONSTRAINT_VIOLATION.html">INTEGRITY_CONSTRAINT_VIOLATION</a> = <span class="string">b"23000"</span>;
+<a href=#255 id=255 data-nosnippet>255</a>    <span class="doccomment">/// `23001`, `restrict_violation`.
+<a href=#256 id=256 data-nosnippet>256</a>    </span><a href="../../../diesel/pg/sql_state/constant.RESTRICT_VIOLATION.html">RESTRICT_VIOLATION</a> = <span class="string">b"23001"</span>;
+<a href=#257 id=257 data-nosnippet>257</a>    <span class="doccomment">/// `23502`, `not_null_violation`.
+<a href=#258 id=258 data-nosnippet>258</a>    </span><a href="../../../diesel/pg/sql_state/constant.NOT_NULL_VIOLATION.html">NOT_NULL_VIOLATION</a> = <span class="string">b"23502"</span>;
+<a href=#259 id=259 data-nosnippet>259</a>    <span class="doccomment">/// `23503`, `foreign_key_violation`.
+<a href=#260 id=260 data-nosnippet>260</a>    </span><a href="../../../diesel/pg/sql_state/constant.FOREIGN_KEY_VIOLATION.html">FOREIGN_KEY_VIOLATION</a> = <span class="string">b"23503"</span>;
+<a href=#261 id=261 data-nosnippet>261</a>    <span class="doccomment">/// `23505`, `unique_violation`.
+<a href=#262 id=262 data-nosnippet>262</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNIQUE_VIOLATION.html">UNIQUE_VIOLATION</a> = <span class="string">b"23505"</span>;
+<a href=#263 id=263 data-nosnippet>263</a>    <span class="doccomment">/// `23514`, `check_violation`.
+<a href=#264 id=264 data-nosnippet>264</a>    </span><a href="../../../diesel/pg/sql_state/constant.CHECK_VIOLATION.html">CHECK_VIOLATION</a> = <span class="string">b"23514"</span>;
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="doccomment">/// `23P01`, `exclusion_violation`.
+<a href=#266 id=266 data-nosnippet>266</a>    </span><a href="../../../diesel/pg/sql_state/constant.EXCLUSION_VIOLATION.html">EXCLUSION_VIOLATION</a> = <span class="string">b"23P01"</span>;
+<a href=#267 id=267 data-nosnippet>267</a>    <span class="comment">// Class 24 - Invalid Cursor State
+<a href=#268 id=268 data-nosnippet>268</a>    </span><span class="doccomment">/// `24000`, `invalid_cursor_state`.
+<a href=#269 id=269 data-nosnippet>269</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_CURSOR_STATE.html">INVALID_CURSOR_STATE</a> = <span class="string">b"24000"</span>;
+<a href=#270 id=270 data-nosnippet>270</a>    <span class="comment">// Class 25 - Invalid Transaction State
+<a href=#271 id=271 data-nosnippet>271</a>    </span><span class="doccomment">/// `25000`, `invalid_transaction_state`.
+<a href=#272 id=272 data-nosnippet>272</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TRANSACTION_STATE.html">INVALID_TRANSACTION_STATE</a> = <span class="string">b"25000"</span>;
+<a href=#273 id=273 data-nosnippet>273</a>    <span class="doccomment">/// `25001`, `active_sql_transaction`.
+<a href=#274 id=274 data-nosnippet>274</a>    </span><a href="../../../diesel/pg/sql_state/constant.ACTIVE_SQL_TRANSACTION.html">ACTIVE_SQL_TRANSACTION</a> = <span class="string">b"25001"</span>;
+<a href=#275 id=275 data-nosnippet>275</a>    <span class="doccomment">/// `25002`, `branch_transaction_already_active`.
+<a href=#276 id=276 data-nosnippet>276</a>    </span><a href="../../../diesel/pg/sql_state/constant.BRANCH_TRANSACTION_ALREADY_ACTIVE.html">BRANCH_TRANSACTION_ALREADY_ACTIVE</a> = <span class="string">b"25002"</span>;
+<a href=#277 id=277 data-nosnippet>277</a>    <span class="doccomment">/// `25008`, `held_cursor_requires_same_isolation_level`.
+<a href=#278 id=278 data-nosnippet>278</a>    </span><a href="../../../diesel/pg/sql_state/constant.HELD_CURSOR_REQUIRES_SAME_ISOLATION_LEVEL.html">HELD_CURSOR_REQUIRES_SAME_ISOLATION_LEVEL</a> = <span class="string">b"25008"</span>;
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="doccomment">/// `25003`, `inappropriate_access_mode_for_branch_transaction`.
+<a href=#280 id=280 data-nosnippet>280</a>    </span><a href="../../../diesel/pg/sql_state/constant.INAPPROPRIATE_ACCESS_MODE_FOR_BRANCH_TRANSACTION.html">INAPPROPRIATE_ACCESS_MODE_FOR_BRANCH_TRANSACTION</a> = <span class="string">b"25003"</span>;
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="doccomment">/// `25004`, `inappropriate_isolation_level_for_branch_transaction`.
+<a href=#282 id=282 data-nosnippet>282</a>    </span><a href="../../../diesel/pg/sql_state/constant.INAPPROPRIATE_ISOLATION_LEVEL_FOR_BRANCH_TRANSACTION.html">INAPPROPRIATE_ISOLATION_LEVEL_FOR_BRANCH_TRANSACTION</a> = <span class="string">b"25004"</span>;
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="doccomment">/// `25005`, `no_active_sql_transaction_for_branch_transaction`.
+<a href=#284 id=284 data-nosnippet>284</a>    </span><a href="../../../diesel/pg/sql_state/constant.NO_ACTIVE_SQL_TRANSACTION_FOR_BRANCH_TRANSACTION.html">NO_ACTIVE_SQL_TRANSACTION_FOR_BRANCH_TRANSACTION</a> = <span class="string">b"25005"</span>;
+<a href=#285 id=285 data-nosnippet>285</a>    <span class="doccomment">/// `25006`, `read_only_sql_transaction`.
+<a href=#286 id=286 data-nosnippet>286</a>    </span><a href="../../../diesel/pg/sql_state/constant.READ_ONLY_SQL_TRANSACTION.html">READ_ONLY_SQL_TRANSACTION</a> = <span class="string">b"25006"</span>;
+<a href=#287 id=287 data-nosnippet>287</a>    <span class="doccomment">/// `25007`, `schema_and_data_statement_mixing_not_supported`.
+<a href=#288 id=288 data-nosnippet>288</a>    </span><a href="../../../diesel/pg/sql_state/constant.SCHEMA_AND_DATA_STATEMENT_MIXING_NOT_SUPPORTED.html">SCHEMA_AND_DATA_STATEMENT_MIXING_NOT_SUPPORTED</a> = <span class="string">b"25007"</span>;
+<a href=#289 id=289 data-nosnippet>289</a>    <span class="doccomment">/// `25P01`, `no_active_sql_transaction`.
+<a href=#290 id=290 data-nosnippet>290</a>    </span><a href="../../../diesel/pg/sql_state/constant.NO_ACTIVE_SQL_TRANSACTION.html">NO_ACTIVE_SQL_TRANSACTION</a> = <span class="string">b"25P01"</span>;
+<a href=#291 id=291 data-nosnippet>291</a>    <span class="doccomment">/// `25P02`, `in_failed_sql_transaction`.
+<a href=#292 id=292 data-nosnippet>292</a>    </span><a href="../../../diesel/pg/sql_state/constant.IN_FAILED_SQL_TRANSACTION.html">IN_FAILED_SQL_TRANSACTION</a> = <span class="string">b"25P02"</span>;
+<a href=#293 id=293 data-nosnippet>293</a>    <span class="doccomment">/// `25P03`, `idle_in_transaction_session_timeout`.
+<a href=#294 id=294 data-nosnippet>294</a>    </span><a href="../../../diesel/pg/sql_state/constant.IDLE_IN_TRANSACTION_SESSION_TIMEOUT.html">IDLE_IN_TRANSACTION_SESSION_TIMEOUT</a> = <span class="string">b"25P03"</span>;
+<a href=#295 id=295 data-nosnippet>295</a>    <span class="doccomment">/// `25P04`, `transaction_timeout`.
+<a href=#296 id=296 data-nosnippet>296</a>    </span><a href="../../../diesel/pg/sql_state/constant.TRANSACTION_TIMEOUT.html">TRANSACTION_TIMEOUT</a> = <span class="string">b"25P04"</span>;
+<a href=#297 id=297 data-nosnippet>297</a>    <span class="comment">// Class 26 - Invalid SQL Statement Name
+<a href=#298 id=298 data-nosnippet>298</a>    </span><span class="doccomment">/// `26000`, `invalid_sql_statement_name`.
+<a href=#299 id=299 data-nosnippet>299</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_SQL_STATEMENT_NAME.html">INVALID_SQL_STATEMENT_NAME</a> = <span class="string">b"26000"</span>;
+<a href=#300 id=300 data-nosnippet>300</a>    <span class="comment">// Class 27 - Triggered Data Change Violation
+<a href=#301 id=301 data-nosnippet>301</a>    </span><span class="doccomment">/// `27000`, `triggered_data_change_violation`.
+<a href=#302 id=302 data-nosnippet>302</a>    </span><a href="../../../diesel/pg/sql_state/constant.TRIGGERED_DATA_CHANGE_VIOLATION.html">TRIGGERED_DATA_CHANGE_VIOLATION</a> = <span class="string">b"27000"</span>;
+<a href=#303 id=303 data-nosnippet>303</a>    <span class="comment">// Class 28 - Invalid Authorization Specification
+<a href=#304 id=304 data-nosnippet>304</a>    </span><span class="doccomment">/// `28000`, `invalid_authorization_specification`.
+<a href=#305 id=305 data-nosnippet>305</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_AUTHORIZATION_SPECIFICATION.html">INVALID_AUTHORIZATION_SPECIFICATION</a> = <span class="string">b"28000"</span>;
+<a href=#306 id=306 data-nosnippet>306</a>    <span class="doccomment">/// `28P01`, `invalid_password`.
+<a href=#307 id=307 data-nosnippet>307</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_PASSWORD.html">INVALID_PASSWORD</a> = <span class="string">b"28P01"</span>;
+<a href=#308 id=308 data-nosnippet>308</a>    <span class="comment">// Class 2B - Dependent Privilege Descriptors Still Exist
+<a href=#309 id=309 data-nosnippet>309</a>    </span><span class="doccomment">/// `2B000`, `dependent_privilege_descriptors_still_exist`.
+<a href=#310 id=310 data-nosnippet>310</a>    </span><a href="../../../diesel/pg/sql_state/constant.DEPENDENT_PRIVILEGE_DESCRIPTORS_STILL_EXIST.html">DEPENDENT_PRIVILEGE_DESCRIPTORS_STILL_EXIST</a> = <span class="string">b"2B000"</span>;
+<a href=#311 id=311 data-nosnippet>311</a>    <span class="doccomment">/// `2BP01`, `dependent_objects_still_exist`.
+<a href=#312 id=312 data-nosnippet>312</a>    </span><a href="../../../diesel/pg/sql_state/constant.DEPENDENT_OBJECTS_STILL_EXIST.html">DEPENDENT_OBJECTS_STILL_EXIST</a> = <span class="string">b"2BP01"</span>;
+<a href=#313 id=313 data-nosnippet>313</a>    <span class="comment">// Class 2D - Invalid Transaction Termination
+<a href=#314 id=314 data-nosnippet>314</a>    </span><span class="doccomment">/// `2D000`, `invalid_transaction_termination`.
+<a href=#315 id=315 data-nosnippet>315</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TRANSACTION_TERMINATION.html">INVALID_TRANSACTION_TERMINATION</a> = <span class="string">b"2D000"</span>;
+<a href=#316 id=316 data-nosnippet>316</a>    <span class="comment">// Class 2F - SQL Routine Exception
+<a href=#317 id=317 data-nosnippet>317</a>    </span><span class="doccomment">/// `2F000`, `sql_routine_exception`.
+<a href=#318 id=318 data-nosnippet>318</a>    </span><a href="../../../diesel/pg/sql_state/constant.SQL_ROUTINE_EXCEPTION.html">SQL_ROUTINE_EXCEPTION</a> = <span class="string">b"2F000"</span>;
+<a href=#319 id=319 data-nosnippet>319</a>    <span class="doccomment">/// `2F005`, `function_executed_no_return_statement`.
+<a href=#320 id=320 data-nosnippet>320</a>    </span><a href="../../../diesel/pg/sql_state/constant.S_R_E_FUNCTION_EXECUTED_NO_RETURN_STATEMENT.html">S_R_E_FUNCTION_EXECUTED_NO_RETURN_STATEMENT</a> = <span class="string">b"2F005"</span>;
+<a href=#321 id=321 data-nosnippet>321</a>    <span class="doccomment">/// `2F002`, `modifying_sql_data_not_permitted`.
+<a href=#322 id=322 data-nosnippet>322</a>    </span><a href="../../../diesel/pg/sql_state/constant.S_R_E_MODIFYING_SQL_DATA_NOT_PERMITTED.html">S_R_E_MODIFYING_SQL_DATA_NOT_PERMITTED</a> = <span class="string">b"2F002"</span>;
+<a href=#323 id=323 data-nosnippet>323</a>    <span class="doccomment">/// `2F003`, `prohibited_sql_statement_attempted`.
+<a href=#324 id=324 data-nosnippet>324</a>    </span><a href="../../../diesel/pg/sql_state/constant.S_R_E_PROHIBITED_SQL_STATEMENT_ATTEMPTED.html">S_R_E_PROHIBITED_SQL_STATEMENT_ATTEMPTED</a> = <span class="string">b"2F003"</span>;
+<a href=#325 id=325 data-nosnippet>325</a>    <span class="doccomment">/// `2F004`, `reading_sql_data_not_permitted`.
+<a href=#326 id=326 data-nosnippet>326</a>    </span><a href="../../../diesel/pg/sql_state/constant.S_R_E_READING_SQL_DATA_NOT_PERMITTED.html">S_R_E_READING_SQL_DATA_NOT_PERMITTED</a> = <span class="string">b"2F004"</span>;
+<a href=#327 id=327 data-nosnippet>327</a>    <span class="comment">// Class 34 - Invalid Cursor Name
+<a href=#328 id=328 data-nosnippet>328</a>    </span><span class="doccomment">/// `34000`, `invalid_cursor_name`.
+<a href=#329 id=329 data-nosnippet>329</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_CURSOR_NAME.html">INVALID_CURSOR_NAME</a> = <span class="string">b"34000"</span>;
+<a href=#330 id=330 data-nosnippet>330</a>    <span class="comment">// Class 38 - External Routine Exception
+<a href=#331 id=331 data-nosnippet>331</a>    </span><span class="doccomment">/// `38000`, `external_routine_exception`.
+<a href=#332 id=332 data-nosnippet>332</a>    </span><a href="../../../diesel/pg/sql_state/constant.EXTERNAL_ROUTINE_EXCEPTION.html">EXTERNAL_ROUTINE_EXCEPTION</a> = <span class="string">b"38000"</span>;
+<a href=#333 id=333 data-nosnippet>333</a>    <span class="doccomment">/// `38001`, `containing_sql_not_permitted`.
+<a href=#334 id=334 data-nosnippet>334</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_E_CONTAINING_SQL_NOT_PERMITTED.html">E_R_E_CONTAINING_SQL_NOT_PERMITTED</a> = <span class="string">b"38001"</span>;
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="doccomment">/// `38002`, `modifying_sql_data_not_permitted`.
+<a href=#336 id=336 data-nosnippet>336</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_E_MODIFYING_SQL_DATA_NOT_PERMITTED.html">E_R_E_MODIFYING_SQL_DATA_NOT_PERMITTED</a> = <span class="string">b"38002"</span>;
+<a href=#337 id=337 data-nosnippet>337</a>    <span class="doccomment">/// `38003`, `prohibited_sql_statement_attempted`.
+<a href=#338 id=338 data-nosnippet>338</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_E_PROHIBITED_SQL_STATEMENT_ATTEMPTED.html">E_R_E_PROHIBITED_SQL_STATEMENT_ATTEMPTED</a> = <span class="string">b"38003"</span>;
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="doccomment">/// `38004`, `reading_sql_data_not_permitted`.
+<a href=#340 id=340 data-nosnippet>340</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_E_READING_SQL_DATA_NOT_PERMITTED.html">E_R_E_READING_SQL_DATA_NOT_PERMITTED</a> = <span class="string">b"38004"</span>;
+<a href=#341 id=341 data-nosnippet>341</a>    <span class="comment">// Class 39 - External Routine Invocation Exception
+<a href=#342 id=342 data-nosnippet>342</a>    </span><span class="doccomment">/// `39000`, `external_routine_invocation_exception`.
+<a href=#343 id=343 data-nosnippet>343</a>    </span><a href="../../../diesel/pg/sql_state/constant.EXTERNAL_ROUTINE_INVOCATION_EXCEPTION.html">EXTERNAL_ROUTINE_INVOCATION_EXCEPTION</a> = <span class="string">b"39000"</span>;
+<a href=#344 id=344 data-nosnippet>344</a>    <span class="doccomment">/// `39001`, `invalid_sqlstate_returned`.
+<a href=#345 id=345 data-nosnippet>345</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_I_E_INVALID_SQLSTATE_RETURNED.html">E_R_I_E_INVALID_SQLSTATE_RETURNED</a> = <span class="string">b"39001"</span>;
+<a href=#346 id=346 data-nosnippet>346</a>    <span class="doccomment">/// `39004`, `null_value_not_allowed`.
+<a href=#347 id=347 data-nosnippet>347</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_I_E_NULL_VALUE_NOT_ALLOWED.html">E_R_I_E_NULL_VALUE_NOT_ALLOWED</a> = <span class="string">b"39004"</span>;
+<a href=#348 id=348 data-nosnippet>348</a>    <span class="doccomment">/// `39P01`, `trigger_protocol_violated`.
+<a href=#349 id=349 data-nosnippet>349</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_I_E_TRIGGER_PROTOCOL_VIOLATED.html">E_R_I_E_TRIGGER_PROTOCOL_VIOLATED</a> = <span class="string">b"39P01"</span>;
+<a href=#350 id=350 data-nosnippet>350</a>    <span class="doccomment">/// `39P02`, `srf_protocol_violated`.
+<a href=#351 id=351 data-nosnippet>351</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_I_E_SRF_PROTOCOL_VIOLATED.html">E_R_I_E_SRF_PROTOCOL_VIOLATED</a> = <span class="string">b"39P02"</span>;
+<a href=#352 id=352 data-nosnippet>352</a>    <span class="doccomment">/// `39P03`, `event_trigger_protocol_violated`.
+<a href=#353 id=353 data-nosnippet>353</a>    </span><a href="../../../diesel/pg/sql_state/constant.E_R_I_E_EVENT_TRIGGER_PROTOCOL_VIOLATED.html">E_R_I_E_EVENT_TRIGGER_PROTOCOL_VIOLATED</a> = <span class="string">b"39P03"</span>;
+<a href=#354 id=354 data-nosnippet>354</a>    <span class="comment">// Class 3B - Savepoint Exception
+<a href=#355 id=355 data-nosnippet>355</a>    </span><span class="doccomment">/// `3B000`, `savepoint_exception`.
+<a href=#356 id=356 data-nosnippet>356</a>    </span><a href="../../../diesel/pg/sql_state/constant.SAVEPOINT_EXCEPTION.html">SAVEPOINT_EXCEPTION</a> = <span class="string">b"3B000"</span>;
+<a href=#357 id=357 data-nosnippet>357</a>    <span class="doccomment">/// `3B001`, `invalid_savepoint_specification`.
+<a href=#358 id=358 data-nosnippet>358</a>    </span><a href="../../../diesel/pg/sql_state/constant.S_E_INVALID_SPECIFICATION.html">S_E_INVALID_SPECIFICATION</a> = <span class="string">b"3B001"</span>;
+<a href=#359 id=359 data-nosnippet>359</a>    <span class="comment">// Class 3D - Invalid Catalog Name
+<a href=#360 id=360 data-nosnippet>360</a>    </span><span class="doccomment">/// `3D000`, `invalid_catalog_name`.
+<a href=#361 id=361 data-nosnippet>361</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_CATALOG_NAME.html">INVALID_CATALOG_NAME</a> = <span class="string">b"3D000"</span>;
+<a href=#362 id=362 data-nosnippet>362</a>    <span class="comment">// Class 3F - Invalid Schema Name
+<a href=#363 id=363 data-nosnippet>363</a>    </span><span class="doccomment">/// `3F000`, `invalid_schema_name`.
+<a href=#364 id=364 data-nosnippet>364</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_SCHEMA_NAME.html">INVALID_SCHEMA_NAME</a> = <span class="string">b"3F000"</span>;
+<a href=#365 id=365 data-nosnippet>365</a>    <span class="comment">// Class 40 - Transaction Rollback
+<a href=#366 id=366 data-nosnippet>366</a>    </span><span class="doccomment">/// `40000`, `transaction_rollback`.
+<a href=#367 id=367 data-nosnippet>367</a>    </span><a href="../../../diesel/pg/sql_state/constant.TRANSACTION_ROLLBACK.html">TRANSACTION_ROLLBACK</a> = <span class="string">b"40000"</span>;
+<a href=#368 id=368 data-nosnippet>368</a>    <span class="doccomment">/// `40002`, `transaction_integrity_constraint_violation`.
+<a href=#369 id=369 data-nosnippet>369</a>    </span><a href="../../../diesel/pg/sql_state/constant.T_R_INTEGRITY_CONSTRAINT_VIOLATION.html">T_R_INTEGRITY_CONSTRAINT_VIOLATION</a> = <span class="string">b"40002"</span>;
+<a href=#370 id=370 data-nosnippet>370</a>    <span class="doccomment">/// `40001`, `serialization_failure`.
+<a href=#371 id=371 data-nosnippet>371</a>    </span><a href="../../../diesel/pg/sql_state/constant.T_R_SERIALIZATION_FAILURE.html">T_R_SERIALIZATION_FAILURE</a> = <span class="string">b"40001"</span>;
+<a href=#372 id=372 data-nosnippet>372</a>    <span class="doccomment">/// `40003`, `statement_completion_unknown`.
+<a href=#373 id=373 data-nosnippet>373</a>    </span><a href="../../../diesel/pg/sql_state/constant.T_R_STATEMENT_COMPLETION_UNKNOWN.html">T_R_STATEMENT_COMPLETION_UNKNOWN</a> = <span class="string">b"40003"</span>;
+<a href=#374 id=374 data-nosnippet>374</a>    <span class="doccomment">/// `40P01`, `deadlock_detected`.
+<a href=#375 id=375 data-nosnippet>375</a>    </span><a href="../../../diesel/pg/sql_state/constant.T_R_DEADLOCK_DETECTED.html">T_R_DEADLOCK_DETECTED</a> = <span class="string">b"40P01"</span>;
+<a href=#376 id=376 data-nosnippet>376</a>    <span class="comment">// Class 42 - Syntax Error or Access Rule Violation
+<a href=#377 id=377 data-nosnippet>377</a>    </span><span class="doccomment">/// `42000`, `syntax_error_or_access_rule_violation`.
+<a href=#378 id=378 data-nosnippet>378</a>    </span><a href="../../../diesel/pg/sql_state/constant.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.html">SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION</a> = <span class="string">b"42000"</span>;
+<a href=#379 id=379 data-nosnippet>379</a>    <span class="doccomment">/// `42601`, `syntax_error`.
+<a href=#380 id=380 data-nosnippet>380</a>    </span><a href="../../../diesel/pg/sql_state/constant.SYNTAX_ERROR.html">SYNTAX_ERROR</a> = <span class="string">b"42601"</span>;
+<a href=#381 id=381 data-nosnippet>381</a>    <span class="doccomment">/// `42501`, `insufficient_privilege`.
+<a href=#382 id=382 data-nosnippet>382</a>    </span><a href="../../../diesel/pg/sql_state/constant.INSUFFICIENT_PRIVILEGE.html">INSUFFICIENT_PRIVILEGE</a> = <span class="string">b"42501"</span>;
+<a href=#383 id=383 data-nosnippet>383</a>    <span class="doccomment">/// `42846`, `cannot_coerce`.
+<a href=#384 id=384 data-nosnippet>384</a>    </span><a href="../../../diesel/pg/sql_state/constant.CANNOT_COERCE.html">CANNOT_COERCE</a> = <span class="string">b"42846"</span>;
+<a href=#385 id=385 data-nosnippet>385</a>    <span class="doccomment">/// `42803`, `grouping_error`.
+<a href=#386 id=386 data-nosnippet>386</a>    </span><a href="../../../diesel/pg/sql_state/constant.GROUPING_ERROR.html">GROUPING_ERROR</a> = <span class="string">b"42803"</span>;
+<a href=#387 id=387 data-nosnippet>387</a>    <span class="doccomment">/// `42P20`, `windowing_error`.
+<a href=#388 id=388 data-nosnippet>388</a>    </span><a href="../../../diesel/pg/sql_state/constant.WINDOWING_ERROR.html">WINDOWING_ERROR</a> = <span class="string">b"42P20"</span>;
+<a href=#389 id=389 data-nosnippet>389</a>    <span class="doccomment">/// `42P19`, `invalid_recursion`.
+<a href=#390 id=390 data-nosnippet>390</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_RECURSION.html">INVALID_RECURSION</a> = <span class="string">b"42P19"</span>;
+<a href=#391 id=391 data-nosnippet>391</a>    <span class="doccomment">/// `42830`, `invalid_foreign_key`.
+<a href=#392 id=392 data-nosnippet>392</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_FOREIGN_KEY.html">INVALID_FOREIGN_KEY</a> = <span class="string">b"42830"</span>;
+<a href=#393 id=393 data-nosnippet>393</a>    <span class="doccomment">/// `42602`, `invalid_name`.
+<a href=#394 id=394 data-nosnippet>394</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_NAME.html">INVALID_NAME</a> = <span class="string">b"42602"</span>;
+<a href=#395 id=395 data-nosnippet>395</a>    <span class="doccomment">/// `42622`, `name_too_long`.
+<a href=#396 id=396 data-nosnippet>396</a>    </span><a href="../../../diesel/pg/sql_state/constant.NAME_TOO_LONG.html">NAME_TOO_LONG</a> = <span class="string">b"42622"</span>;
+<a href=#397 id=397 data-nosnippet>397</a>    <span class="doccomment">/// `42939`, `reserved_name`.
+<a href=#398 id=398 data-nosnippet>398</a>    </span><a href="../../../diesel/pg/sql_state/constant.RESERVED_NAME.html">RESERVED_NAME</a> = <span class="string">b"42939"</span>;
+<a href=#399 id=399 data-nosnippet>399</a>    <span class="doccomment">/// `42804`, `datatype_mismatch`.
+<a href=#400 id=400 data-nosnippet>400</a>    </span><a href="../../../diesel/pg/sql_state/constant.DATATYPE_MISMATCH.html">DATATYPE_MISMATCH</a> = <span class="string">b"42804"</span>;
+<a href=#401 id=401 data-nosnippet>401</a>    <span class="doccomment">/// `42P18`, `indeterminate_datatype`.
+<a href=#402 id=402 data-nosnippet>402</a>    </span><a href="../../../diesel/pg/sql_state/constant.INDETERMINATE_DATATYPE.html">INDETERMINATE_DATATYPE</a> = <span class="string">b"42P18"</span>;
+<a href=#403 id=403 data-nosnippet>403</a>    <span class="doccomment">/// `42P21`, `collation_mismatch`.
+<a href=#404 id=404 data-nosnippet>404</a>    </span><a href="../../../diesel/pg/sql_state/constant.COLLATION_MISMATCH.html">COLLATION_MISMATCH</a> = <span class="string">b"42P21"</span>;
+<a href=#405 id=405 data-nosnippet>405</a>    <span class="doccomment">/// `42P22`, `indeterminate_collation`.
+<a href=#406 id=406 data-nosnippet>406</a>    </span><a href="../../../diesel/pg/sql_state/constant.INDETERMINATE_COLLATION.html">INDETERMINATE_COLLATION</a> = <span class="string">b"42P22"</span>;
+<a href=#407 id=407 data-nosnippet>407</a>    <span class="doccomment">/// `42809`, `wrong_object_type`.
+<a href=#408 id=408 data-nosnippet>408</a>    </span><a href="../../../diesel/pg/sql_state/constant.WRONG_OBJECT_TYPE.html">WRONG_OBJECT_TYPE</a> = <span class="string">b"42809"</span>;
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="doccomment">/// `428C9`, `generated_always`.
+<a href=#410 id=410 data-nosnippet>410</a>    </span><a href="../../../diesel/pg/sql_state/constant.GENERATED_ALWAYS.html">GENERATED_ALWAYS</a> = <span class="string">b"428C9"</span>;
+<a href=#411 id=411 data-nosnippet>411</a>    <span class="doccomment">/// `42703`, `undefined_column`.
+<a href=#412 id=412 data-nosnippet>412</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNDEFINED_COLUMN.html">UNDEFINED_COLUMN</a> = <span class="string">b"42703"</span>;
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="doccomment">/// `42883`, `undefined_function`.
+<a href=#414 id=414 data-nosnippet>414</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNDEFINED_FUNCTION.html">UNDEFINED_FUNCTION</a> = <span class="string">b"42883"</span>;
+<a href=#415 id=415 data-nosnippet>415</a>    <span class="doccomment">/// `42P01`, `undefined_table`.
+<a href=#416 id=416 data-nosnippet>416</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNDEFINED_TABLE.html">UNDEFINED_TABLE</a> = <span class="string">b"42P01"</span>;
+<a href=#417 id=417 data-nosnippet>417</a>    <span class="doccomment">/// `42P02`, `undefined_parameter`.
+<a href=#418 id=418 data-nosnippet>418</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNDEFINED_PARAMETER.html">UNDEFINED_PARAMETER</a> = <span class="string">b"42P02"</span>;
+<a href=#419 id=419 data-nosnippet>419</a>    <span class="doccomment">/// `42704`, `undefined_object`.
+<a href=#420 id=420 data-nosnippet>420</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNDEFINED_OBJECT.html">UNDEFINED_OBJECT</a> = <span class="string">b"42704"</span>;
+<a href=#421 id=421 data-nosnippet>421</a>    <span class="doccomment">/// `42701`, `duplicate_column`.
+<a href=#422 id=422 data-nosnippet>422</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_COLUMN.html">DUPLICATE_COLUMN</a> = <span class="string">b"42701"</span>;
+<a href=#423 id=423 data-nosnippet>423</a>    <span class="doccomment">/// `42P03`, `duplicate_cursor`.
+<a href=#424 id=424 data-nosnippet>424</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_CURSOR.html">DUPLICATE_CURSOR</a> = <span class="string">b"42P03"</span>;
+<a href=#425 id=425 data-nosnippet>425</a>    <span class="doccomment">/// `42P04`, `duplicate_database`.
+<a href=#426 id=426 data-nosnippet>426</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_DATABASE.html">DUPLICATE_DATABASE</a> = <span class="string">b"42P04"</span>;
+<a href=#427 id=427 data-nosnippet>427</a>    <span class="doccomment">/// `42723`, `duplicate_function`.
+<a href=#428 id=428 data-nosnippet>428</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_FUNCTION.html">DUPLICATE_FUNCTION</a> = <span class="string">b"42723"</span>;
+<a href=#429 id=429 data-nosnippet>429</a>    <span class="doccomment">/// `42P05`, `duplicate_prepared_statement`.
+<a href=#430 id=430 data-nosnippet>430</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_PSTATEMENT.html">DUPLICATE_PSTATEMENT</a> = <span class="string">b"42P05"</span>;
+<a href=#431 id=431 data-nosnippet>431</a>    <span class="doccomment">/// `42P06`, `duplicate_schema`.
+<a href=#432 id=432 data-nosnippet>432</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_SCHEMA.html">DUPLICATE_SCHEMA</a> = <span class="string">b"42P06"</span>;
+<a href=#433 id=433 data-nosnippet>433</a>    <span class="doccomment">/// `42P07`, `duplicate_table`.
+<a href=#434 id=434 data-nosnippet>434</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_TABLE.html">DUPLICATE_TABLE</a> = <span class="string">b"42P07"</span>;
+<a href=#435 id=435 data-nosnippet>435</a>    <span class="doccomment">/// `42712`, `duplicate_alias`.
+<a href=#436 id=436 data-nosnippet>436</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_ALIAS.html">DUPLICATE_ALIAS</a> = <span class="string">b"42712"</span>;
+<a href=#437 id=437 data-nosnippet>437</a>    <span class="doccomment">/// `42710`, `duplicate_object`.
+<a href=#438 id=438 data-nosnippet>438</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_OBJECT.html">DUPLICATE_OBJECT</a> = <span class="string">b"42710"</span>;
+<a href=#439 id=439 data-nosnippet>439</a>    <span class="doccomment">/// `42702`, `ambiguous_column`.
+<a href=#440 id=440 data-nosnippet>440</a>    </span><a href="../../../diesel/pg/sql_state/constant.AMBIGUOUS_COLUMN.html">AMBIGUOUS_COLUMN</a> = <span class="string">b"42702"</span>;
+<a href=#441 id=441 data-nosnippet>441</a>    <span class="doccomment">/// `42725`, `ambiguous_function`.
+<a href=#442 id=442 data-nosnippet>442</a>    </span><a href="../../../diesel/pg/sql_state/constant.AMBIGUOUS_FUNCTION.html">AMBIGUOUS_FUNCTION</a> = <span class="string">b"42725"</span>;
+<a href=#443 id=443 data-nosnippet>443</a>    <span class="doccomment">/// `42P08`, `ambiguous_parameter`.
+<a href=#444 id=444 data-nosnippet>444</a>    </span><a href="../../../diesel/pg/sql_state/constant.AMBIGUOUS_PARAMETER.html">AMBIGUOUS_PARAMETER</a> = <span class="string">b"42P08"</span>;
+<a href=#445 id=445 data-nosnippet>445</a>    <span class="doccomment">/// `42P09`, `ambiguous_alias`.
+<a href=#446 id=446 data-nosnippet>446</a>    </span><a href="../../../diesel/pg/sql_state/constant.AMBIGUOUS_ALIAS.html">AMBIGUOUS_ALIAS</a> = <span class="string">b"42P09"</span>;
+<a href=#447 id=447 data-nosnippet>447</a>    <span class="doccomment">/// `42P10`, `invalid_column_reference`.
+<a href=#448 id=448 data-nosnippet>448</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_COLUMN_REFERENCE.html">INVALID_COLUMN_REFERENCE</a> = <span class="string">b"42P10"</span>;
+<a href=#449 id=449 data-nosnippet>449</a>    <span class="doccomment">/// `42611`, `invalid_column_definition`.
+<a href=#450 id=450 data-nosnippet>450</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_COLUMN_DEFINITION.html">INVALID_COLUMN_DEFINITION</a> = <span class="string">b"42611"</span>;
+<a href=#451 id=451 data-nosnippet>451</a>    <span class="doccomment">/// `42P11`, `invalid_cursor_definition`.
+<a href=#452 id=452 data-nosnippet>452</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_CURSOR_DEFINITION.html">INVALID_CURSOR_DEFINITION</a> = <span class="string">b"42P11"</span>;
+<a href=#453 id=453 data-nosnippet>453</a>    <span class="doccomment">/// `42P12`, `invalid_database_definition`.
+<a href=#454 id=454 data-nosnippet>454</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_DATABASE_DEFINITION.html">INVALID_DATABASE_DEFINITION</a> = <span class="string">b"42P12"</span>;
+<a href=#455 id=455 data-nosnippet>455</a>    <span class="doccomment">/// `42P13`, `invalid_function_definition`.
+<a href=#456 id=456 data-nosnippet>456</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_FUNCTION_DEFINITION.html">INVALID_FUNCTION_DEFINITION</a> = <span class="string">b"42P13"</span>;
+<a href=#457 id=457 data-nosnippet>457</a>    <span class="doccomment">/// `42P14`, `invalid_prepared_statement_definition`.
+<a href=#458 id=458 data-nosnippet>458</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_PSTATEMENT_DEFINITION.html">INVALID_PSTATEMENT_DEFINITION</a> = <span class="string">b"42P14"</span>;
+<a href=#459 id=459 data-nosnippet>459</a>    <span class="doccomment">/// `42P15`, `invalid_schema_definition`.
+<a href=#460 id=460 data-nosnippet>460</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_SCHEMA_DEFINITION.html">INVALID_SCHEMA_DEFINITION</a> = <span class="string">b"42P15"</span>;
+<a href=#461 id=461 data-nosnippet>461</a>    <span class="doccomment">/// `42P16`, `invalid_table_definition`.
+<a href=#462 id=462 data-nosnippet>462</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_TABLE_DEFINITION.html">INVALID_TABLE_DEFINITION</a> = <span class="string">b"42P16"</span>;
+<a href=#463 id=463 data-nosnippet>463</a>    <span class="doccomment">/// `42P17`, `invalid_object_definition`.
+<a href=#464 id=464 data-nosnippet>464</a>    </span><a href="../../../diesel/pg/sql_state/constant.INVALID_OBJECT_DEFINITION.html">INVALID_OBJECT_DEFINITION</a> = <span class="string">b"42P17"</span>;
+<a href=#465 id=465 data-nosnippet>465</a>    <span class="comment">// Class 44 - WITH CHECK OPTION Violation
+<a href=#466 id=466 data-nosnippet>466</a>    </span><span class="doccomment">/// `44000`, `with_check_option_violation`.
+<a href=#467 id=467 data-nosnippet>467</a>    </span><a href="../../../diesel/pg/sql_state/constant.WITH_CHECK_OPTION_VIOLATION.html">WITH_CHECK_OPTION_VIOLATION</a> = <span class="string">b"44000"</span>;
+<a href=#468 id=468 data-nosnippet>468</a>    <span class="comment">// Class 53 - Insufficient Resources
+<a href=#469 id=469 data-nosnippet>469</a>    </span><span class="doccomment">/// `53000`, `insufficient_resources`.
+<a href=#470 id=470 data-nosnippet>470</a>    </span><a href="../../../diesel/pg/sql_state/constant.INSUFFICIENT_RESOURCES.html">INSUFFICIENT_RESOURCES</a> = <span class="string">b"53000"</span>;
+<a href=#471 id=471 data-nosnippet>471</a>    <span class="doccomment">/// `53100`, `disk_full`.
+<a href=#472 id=472 data-nosnippet>472</a>    </span><a href="../../../diesel/pg/sql_state/constant.DISK_FULL.html">DISK_FULL</a> = <span class="string">b"53100"</span>;
+<a href=#473 id=473 data-nosnippet>473</a>    <span class="doccomment">/// `53200`, `out_of_memory`.
+<a href=#474 id=474 data-nosnippet>474</a>    </span><a href="../../../diesel/pg/sql_state/constant.OUT_OF_MEMORY.html">OUT_OF_MEMORY</a> = <span class="string">b"53200"</span>;
+<a href=#475 id=475 data-nosnippet>475</a>    <span class="doccomment">/// `53300`, `too_many_connections`.
+<a href=#476 id=476 data-nosnippet>476</a>    </span><a href="../../../diesel/pg/sql_state/constant.TOO_MANY_CONNECTIONS.html">TOO_MANY_CONNECTIONS</a> = <span class="string">b"53300"</span>;
+<a href=#477 id=477 data-nosnippet>477</a>    <span class="doccomment">/// `53400`, `configuration_limit_exceeded`.
+<a href=#478 id=478 data-nosnippet>478</a>    </span><a href="../../../diesel/pg/sql_state/constant.CONFIGURATION_LIMIT_EXCEEDED.html">CONFIGURATION_LIMIT_EXCEEDED</a> = <span class="string">b"53400"</span>;
+<a href=#479 id=479 data-nosnippet>479</a>    <span class="comment">// Class 54 - Program Limit Exceeded
+<a href=#480 id=480 data-nosnippet>480</a>    </span><span class="doccomment">/// `54000`, `program_limit_exceeded`.
+<a href=#481 id=481 data-nosnippet>481</a>    </span><a href="../../../diesel/pg/sql_state/constant.PROGRAM_LIMIT_EXCEEDED.html">PROGRAM_LIMIT_EXCEEDED</a> = <span class="string">b"54000"</span>;
+<a href=#482 id=482 data-nosnippet>482</a>    <span class="doccomment">/// `54001`, `statement_too_complex`.
+<a href=#483 id=483 data-nosnippet>483</a>    </span><a href="../../../diesel/pg/sql_state/constant.STATEMENT_TOO_COMPLEX.html">STATEMENT_TOO_COMPLEX</a> = <span class="string">b"54001"</span>;
+<a href=#484 id=484 data-nosnippet>484</a>    <span class="doccomment">/// `54011`, `too_many_columns`.
+<a href=#485 id=485 data-nosnippet>485</a>    </span><a href="../../../diesel/pg/sql_state/constant.TOO_MANY_COLUMNS.html">TOO_MANY_COLUMNS</a> = <span class="string">b"54011"</span>;
+<a href=#486 id=486 data-nosnippet>486</a>    <span class="doccomment">/// `54023`, `too_many_arguments`.
+<a href=#487 id=487 data-nosnippet>487</a>    </span><a href="../../../diesel/pg/sql_state/constant.TOO_MANY_ARGUMENTS.html">TOO_MANY_ARGUMENTS</a> = <span class="string">b"54023"</span>;
+<a href=#488 id=488 data-nosnippet>488</a>    <span class="comment">// Class 55 - Object Not In Prerequisite State
+<a href=#489 id=489 data-nosnippet>489</a>    </span><span class="doccomment">/// `55000`, `object_not_in_prerequisite_state`.
+<a href=#490 id=490 data-nosnippet>490</a>    </span><a href="../../../diesel/pg/sql_state/constant.OBJECT_NOT_IN_PREREQUISITE_STATE.html">OBJECT_NOT_IN_PREREQUISITE_STATE</a> = <span class="string">b"55000"</span>;
+<a href=#491 id=491 data-nosnippet>491</a>    <span class="doccomment">/// `55006`, `object_in_use`.
+<a href=#492 id=492 data-nosnippet>492</a>    </span><a href="../../../diesel/pg/sql_state/constant.OBJECT_IN_USE.html">OBJECT_IN_USE</a> = <span class="string">b"55006"</span>;
+<a href=#493 id=493 data-nosnippet>493</a>    <span class="doccomment">/// `55P02`, `cant_change_runtime_param`.
+<a href=#494 id=494 data-nosnippet>494</a>    </span><a href="../../../diesel/pg/sql_state/constant.CANT_CHANGE_RUNTIME_PARAM.html">CANT_CHANGE_RUNTIME_PARAM</a> = <span class="string">b"55P02"</span>;
+<a href=#495 id=495 data-nosnippet>495</a>    <span class="doccomment">/// `55P03`, `lock_not_available`.
+<a href=#496 id=496 data-nosnippet>496</a>    </span><a href="../../../diesel/pg/sql_state/constant.LOCK_NOT_AVAILABLE.html">LOCK_NOT_AVAILABLE</a> = <span class="string">b"55P03"</span>;
+<a href=#497 id=497 data-nosnippet>497</a>    <span class="doccomment">/// `55P04`, `unsafe_new_enum_value_usage`.
+<a href=#498 id=498 data-nosnippet>498</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNSAFE_NEW_ENUM_VALUE_USAGE.html">UNSAFE_NEW_ENUM_VALUE_USAGE</a> = <span class="string">b"55P04"</span>;
+<a href=#499 id=499 data-nosnippet>499</a>    <span class="comment">// Class 57 - Operator Intervention
+<a href=#500 id=500 data-nosnippet>500</a>    </span><span class="doccomment">/// `57000`, `operator_intervention`.
+<a href=#501 id=501 data-nosnippet>501</a>    </span><a href="../../../diesel/pg/sql_state/constant.OPERATOR_INTERVENTION.html">OPERATOR_INTERVENTION</a> = <span class="string">b"57000"</span>;
+<a href=#502 id=502 data-nosnippet>502</a>    <span class="doccomment">/// `57014`, `query_canceled`.
+<a href=#503 id=503 data-nosnippet>503</a>    </span><a href="../../../diesel/pg/sql_state/constant.QUERY_CANCELED.html">QUERY_CANCELED</a> = <span class="string">b"57014"</span>;
+<a href=#504 id=504 data-nosnippet>504</a>    <span class="doccomment">/// `57P01`, `admin_shutdown`.
+<a href=#505 id=505 data-nosnippet>505</a>    </span><a href="../../../diesel/pg/sql_state/constant.ADMIN_SHUTDOWN.html">ADMIN_SHUTDOWN</a> = <span class="string">b"57P01"</span>;
+<a href=#506 id=506 data-nosnippet>506</a>    <span class="doccomment">/// `57P02`, `crash_shutdown`.
+<a href=#507 id=507 data-nosnippet>507</a>    </span><a href="../../../diesel/pg/sql_state/constant.CRASH_SHUTDOWN.html">CRASH_SHUTDOWN</a> = <span class="string">b"57P02"</span>;
+<a href=#508 id=508 data-nosnippet>508</a>    <span class="doccomment">/// `57P03`, `cannot_connect_now`.
+<a href=#509 id=509 data-nosnippet>509</a>    </span><a href="../../../diesel/pg/sql_state/constant.CANNOT_CONNECT_NOW.html">CANNOT_CONNECT_NOW</a> = <span class="string">b"57P03"</span>;
+<a href=#510 id=510 data-nosnippet>510</a>    <span class="doccomment">/// `57P04`, `database_dropped`.
+<a href=#511 id=511 data-nosnippet>511</a>    </span><a href="../../../diesel/pg/sql_state/constant.DATABASE_DROPPED.html">DATABASE_DROPPED</a> = <span class="string">b"57P04"</span>;
+<a href=#512 id=512 data-nosnippet>512</a>    <span class="doccomment">/// `57P05`, `idle_session_timeout`.
+<a href=#513 id=513 data-nosnippet>513</a>    </span><a href="../../../diesel/pg/sql_state/constant.IDLE_SESSION_TIMEOUT.html">IDLE_SESSION_TIMEOUT</a> = <span class="string">b"57P05"</span>;
+<a href=#514 id=514 data-nosnippet>514</a>    <span class="comment">// Class 58 - System Error (errors external to PostgreSQL itself)
+<a href=#515 id=515 data-nosnippet>515</a>    </span><span class="doccomment">/// `58000`, `system_error`.
+<a href=#516 id=516 data-nosnippet>516</a>    </span><a href="../../../diesel/pg/sql_state/constant.SYSTEM_ERROR.html">SYSTEM_ERROR</a> = <span class="string">b"58000"</span>;
+<a href=#517 id=517 data-nosnippet>517</a>    <span class="doccomment">/// `58030`, `io_error`.
+<a href=#518 id=518 data-nosnippet>518</a>    </span><a href="../../../diesel/pg/sql_state/constant.IO_ERROR.html">IO_ERROR</a> = <span class="string">b"58030"</span>;
+<a href=#519 id=519 data-nosnippet>519</a>    <span class="doccomment">/// `58P01`, `undefined_file`.
+<a href=#520 id=520 data-nosnippet>520</a>    </span><a href="../../../diesel/pg/sql_state/constant.UNDEFINED_FILE.html">UNDEFINED_FILE</a> = <span class="string">b"58P01"</span>;
+<a href=#521 id=521 data-nosnippet>521</a>    <span class="doccomment">/// `58P02`, `duplicate_file`.
+<a href=#522 id=522 data-nosnippet>522</a>    </span><a href="../../../diesel/pg/sql_state/constant.DUPLICATE_FILE.html">DUPLICATE_FILE</a> = <span class="string">b"58P02"</span>;
+<a href=#523 id=523 data-nosnippet>523</a>    <span class="doccomment">/// `58P03`, `file_name_too_long`.
+<a href=#524 id=524 data-nosnippet>524</a>    </span><a href="../../../diesel/pg/sql_state/constant.FILE_NAME_TOO_LONG.html">FILE_NAME_TOO_LONG</a> = <span class="string">b"58P03"</span>;
+<a href=#525 id=525 data-nosnippet>525</a>    <span class="comment">// Class F0 - Configuration File Error
+<a href=#526 id=526 data-nosnippet>526</a>    </span><span class="doccomment">/// `F0000`, `config_file_error`.
+<a href=#527 id=527 data-nosnippet>527</a>    </span><a href="../../../diesel/pg/sql_state/constant.CONFIG_FILE_ERROR.html">CONFIG_FILE_ERROR</a> = <span class="string">b"F0000"</span>;
+<a href=#528 id=528 data-nosnippet>528</a>    <span class="doccomment">/// `F0001`, `lock_file_exists`.
+<a href=#529 id=529 data-nosnippet>529</a>    </span><a href="../../../diesel/pg/sql_state/constant.LOCK_FILE_EXISTS.html">LOCK_FILE_EXISTS</a> = <span class="string">b"F0001"</span>;
+<a href=#530 id=530 data-nosnippet>530</a>    <span class="comment">// Class HV - Foreign Data Wrapper Error (SQL/MED)
+<a href=#531 id=531 data-nosnippet>531</a>    </span><span class="doccomment">/// `HV000`, `fdw_error`.
+<a href=#532 id=532 data-nosnippet>532</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_ERROR.html">FDW_ERROR</a> = <span class="string">b"HV000"</span>;
+<a href=#533 id=533 data-nosnippet>533</a>    <span class="doccomment">/// `HV005`, `fdw_column_name_not_found`.
+<a href=#534 id=534 data-nosnippet>534</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_COLUMN_NAME_NOT_FOUND.html">FDW_COLUMN_NAME_NOT_FOUND</a> = <span class="string">b"HV005"</span>;
+<a href=#535 id=535 data-nosnippet>535</a>    <span class="doccomment">/// `HV002`, `fdw_dynamic_parameter_value_needed`.
+<a href=#536 id=536 data-nosnippet>536</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_DYNAMIC_PARAMETER_VALUE_NEEDED.html">FDW_DYNAMIC_PARAMETER_VALUE_NEEDED</a> = <span class="string">b"HV002"</span>;
+<a href=#537 id=537 data-nosnippet>537</a>    <span class="doccomment">/// `HV010`, `fdw_function_sequence_error`.
+<a href=#538 id=538 data-nosnippet>538</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_FUNCTION_SEQUENCE_ERROR.html">FDW_FUNCTION_SEQUENCE_ERROR</a> = <span class="string">b"HV010"</span>;
+<a href=#539 id=539 data-nosnippet>539</a>    <span class="doccomment">/// `HV021`, `fdw_inconsistent_descriptor_information`.
+<a href=#540 id=540 data-nosnippet>540</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INCONSISTENT_DESCRIPTOR_INFORMATION.html">FDW_INCONSISTENT_DESCRIPTOR_INFORMATION</a> = <span class="string">b"HV021"</span>;
+<a href=#541 id=541 data-nosnippet>541</a>    <span class="doccomment">/// `HV024`, `fdw_invalid_attribute_value`.
+<a href=#542 id=542 data-nosnippet>542</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_ATTRIBUTE_VALUE.html">FDW_INVALID_ATTRIBUTE_VALUE</a> = <span class="string">b"HV024"</span>;
+<a href=#543 id=543 data-nosnippet>543</a>    <span class="doccomment">/// `HV007`, `fdw_invalid_column_name`.
+<a href=#544 id=544 data-nosnippet>544</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_COLUMN_NAME.html">FDW_INVALID_COLUMN_NAME</a> = <span class="string">b"HV007"</span>;
+<a href=#545 id=545 data-nosnippet>545</a>    <span class="doccomment">/// `HV008`, `fdw_invalid_column_number`.
+<a href=#546 id=546 data-nosnippet>546</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_COLUMN_NUMBER.html">FDW_INVALID_COLUMN_NUMBER</a> = <span class="string">b"HV008"</span>;
+<a href=#547 id=547 data-nosnippet>547</a>    <span class="doccomment">/// `HV004`, `fdw_invalid_data_type`.
+<a href=#548 id=548 data-nosnippet>548</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_DATA_TYPE.html">FDW_INVALID_DATA_TYPE</a> = <span class="string">b"HV004"</span>;
+<a href=#549 id=549 data-nosnippet>549</a>    <span class="doccomment">/// `HV006`, `fdw_invalid_data_type_descriptors`.
+<a href=#550 id=550 data-nosnippet>550</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_DATA_TYPE_DESCRIPTORS.html">FDW_INVALID_DATA_TYPE_DESCRIPTORS</a> = <span class="string">b"HV006"</span>;
+<a href=#551 id=551 data-nosnippet>551</a>    <span class="doccomment">/// `HV091`, `fdw_invalid_descriptor_field_identifier`.
+<a href=#552 id=552 data-nosnippet>552</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_DESCRIPTOR_FIELD_IDENTIFIER.html">FDW_INVALID_DESCRIPTOR_FIELD_IDENTIFIER</a> = <span class="string">b"HV091"</span>;
+<a href=#553 id=553 data-nosnippet>553</a>    <span class="doccomment">/// `HV00B`, `fdw_invalid_handle`.
+<a href=#554 id=554 data-nosnippet>554</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_HANDLE.html">FDW_INVALID_HANDLE</a> = <span class="string">b"HV00B"</span>;
+<a href=#555 id=555 data-nosnippet>555</a>    <span class="doccomment">/// `HV00C`, `fdw_invalid_option_index`.
+<a href=#556 id=556 data-nosnippet>556</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_OPTION_INDEX.html">FDW_INVALID_OPTION_INDEX</a> = <span class="string">b"HV00C"</span>;
+<a href=#557 id=557 data-nosnippet>557</a>    <span class="doccomment">/// `HV00D`, `fdw_invalid_option_name`.
+<a href=#558 id=558 data-nosnippet>558</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_OPTION_NAME.html">FDW_INVALID_OPTION_NAME</a> = <span class="string">b"HV00D"</span>;
+<a href=#559 id=559 data-nosnippet>559</a>    <span class="doccomment">/// `HV090`, `fdw_invalid_string_length_or_buffer_length`.
+<a href=#560 id=560 data-nosnippet>560</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_STRING_LENGTH_OR_BUFFER_LENGTH.html">FDW_INVALID_STRING_LENGTH_OR_BUFFER_LENGTH</a> = <span class="string">b"HV090"</span>;
+<a href=#561 id=561 data-nosnippet>561</a>    <span class="doccomment">/// `HV00A`, `fdw_invalid_string_format`.
+<a href=#562 id=562 data-nosnippet>562</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_STRING_FORMAT.html">FDW_INVALID_STRING_FORMAT</a> = <span class="string">b"HV00A"</span>;
+<a href=#563 id=563 data-nosnippet>563</a>    <span class="doccomment">/// `HV009`, `fdw_invalid_use_of_null_pointer`.
+<a href=#564 id=564 data-nosnippet>564</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_INVALID_USE_OF_NULL_POINTER.html">FDW_INVALID_USE_OF_NULL_POINTER</a> = <span class="string">b"HV009"</span>;
+<a href=#565 id=565 data-nosnippet>565</a>    <span class="doccomment">/// `HV014`, `fdw_too_many_handles`.
+<a href=#566 id=566 data-nosnippet>566</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_TOO_MANY_HANDLES.html">FDW_TOO_MANY_HANDLES</a> = <span class="string">b"HV014"</span>;
+<a href=#567 id=567 data-nosnippet>567</a>    <span class="doccomment">/// `HV001`, `fdw_out_of_memory`.
+<a href=#568 id=568 data-nosnippet>568</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_OUT_OF_MEMORY.html">FDW_OUT_OF_MEMORY</a> = <span class="string">b"HV001"</span>;
+<a href=#569 id=569 data-nosnippet>569</a>    <span class="doccomment">/// `HV00P`, `fdw_no_schemas`.
+<a href=#570 id=570 data-nosnippet>570</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_NO_SCHEMAS.html">FDW_NO_SCHEMAS</a> = <span class="string">b"HV00P"</span>;
+<a href=#571 id=571 data-nosnippet>571</a>    <span class="doccomment">/// `HV00J`, `fdw_option_name_not_found`.
+<a href=#572 id=572 data-nosnippet>572</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_OPTION_NAME_NOT_FOUND.html">FDW_OPTION_NAME_NOT_FOUND</a> = <span class="string">b"HV00J"</span>;
+<a href=#573 id=573 data-nosnippet>573</a>    <span class="doccomment">/// `HV00K`, `fdw_reply_handle`.
+<a href=#574 id=574 data-nosnippet>574</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_REPLY_HANDLE.html">FDW_REPLY_HANDLE</a> = <span class="string">b"HV00K"</span>;
+<a href=#575 id=575 data-nosnippet>575</a>    <span class="doccomment">/// `HV00Q`, `fdw_schema_not_found`.
+<a href=#576 id=576 data-nosnippet>576</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_SCHEMA_NOT_FOUND.html">FDW_SCHEMA_NOT_FOUND</a> = <span class="string">b"HV00Q"</span>;
+<a href=#577 id=577 data-nosnippet>577</a>    <span class="doccomment">/// `HV00R`, `fdw_table_not_found`.
+<a href=#578 id=578 data-nosnippet>578</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_TABLE_NOT_FOUND.html">FDW_TABLE_NOT_FOUND</a> = <span class="string">b"HV00R"</span>;
+<a href=#579 id=579 data-nosnippet>579</a>    <span class="doccomment">/// `HV00L`, `fdw_unable_to_create_execution`.
+<a href=#580 id=580 data-nosnippet>580</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_UNABLE_TO_CREATE_EXECUTION.html">FDW_UNABLE_TO_CREATE_EXECUTION</a> = <span class="string">b"HV00L"</span>;
+<a href=#581 id=581 data-nosnippet>581</a>    <span class="doccomment">/// `HV00M`, `fdw_unable_to_create_reply`.
+<a href=#582 id=582 data-nosnippet>582</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_UNABLE_TO_CREATE_REPLY.html">FDW_UNABLE_TO_CREATE_REPLY</a> = <span class="string">b"HV00M"</span>;
+<a href=#583 id=583 data-nosnippet>583</a>    <span class="doccomment">/// `HV00N`, `fdw_unable_to_establish_connection`.
+<a href=#584 id=584 data-nosnippet>584</a>    </span><a href="../../../diesel/pg/sql_state/constant.FDW_UNABLE_TO_ESTABLISH_CONNECTION.html">FDW_UNABLE_TO_ESTABLISH_CONNECTION</a> = <span class="string">b"HV00N"</span>;
+<a href=#585 id=585 data-nosnippet>585</a>    <span class="comment">// Class P0 - PL/pgSQL Error
+<a href=#586 id=586 data-nosnippet>586</a>    </span><span class="doccomment">/// `P0000`, `plpgsql_error`.
+<a href=#587 id=587 data-nosnippet>587</a>    </span><a href="../../../diesel/pg/sql_state/constant.PLPGSQL_ERROR.html">PLPGSQL_ERROR</a> = <span class="string">b"P0000"</span>;
+<a href=#588 id=588 data-nosnippet>588</a>    <span class="doccomment">/// `P0001`, `raise_exception`.
+<a href=#589 id=589 data-nosnippet>589</a>    </span><a href="../../../diesel/pg/sql_state/constant.RAISE_EXCEPTION.html">RAISE_EXCEPTION</a> = <span class="string">b"P0001"</span>;
+<a href=#590 id=590 data-nosnippet>590</a>    <span class="doccomment">/// `P0002`, `no_data_found`.
+<a href=#591 id=591 data-nosnippet>591</a>    </span><a href="../../../diesel/pg/sql_state/constant.NO_DATA_FOUND.html">NO_DATA_FOUND</a> = <span class="string">b"P0002"</span>;
+<a href=#592 id=592 data-nosnippet>592</a>    <span class="doccomment">/// `P0003`, `too_many_rows`.
+<a href=#593 id=593 data-nosnippet>593</a>    </span><a href="../../../diesel/pg/sql_state/constant.TOO_MANY_ROWS.html">TOO_MANY_ROWS</a> = <span class="string">b"P0003"</span>;
+<a href=#594 id=594 data-nosnippet>594</a>    <span class="doccomment">/// `P0004`, `assert_failure`.
+<a href=#595 id=595 data-nosnippet>595</a>    </span><a href="../../../diesel/pg/sql_state/constant.ASSERT_FAILURE.html">ASSERT_FAILURE</a> = <span class="string">b"P0004"</span>;
+<a href=#596 id=596 data-nosnippet>596</a>    <span class="comment">// Class XX - Internal Error
+<a href=#597 id=597 data-nosnippet>597</a>    </span><span class="doccomment">/// `XX000`, `internal_error`.
+<a href=#598 id=598 data-nosnippet>598</a>    </span><a href="../../../diesel/pg/sql_state/constant.INTERNAL_ERROR.html">INTERNAL_ERROR</a> = <span class="string">b"XX000"</span>;
+<a href=#599 id=599 data-nosnippet>599</a>    <span class="doccomment">/// `XX001`, `data_corrupted`.
+<a href=#600 id=600 data-nosnippet>600</a>    </span><a href="../../../diesel/pg/sql_state/constant.DATA_CORRUPTED.html">DATA_CORRUPTED</a> = <span class="string">b"XX001"</span>;
+<a href=#601 id=601 data-nosnippet>601</a>    <span class="doccomment">/// `XX002`, `index_corrupted`.
+<a href=#602 id=602 data-nosnippet>602</a>    </span><a href="../../../diesel/pg/sql_state/constant.INDEX_CORRUPTED.html">INDEX_CORRUPTED</a> = <span class="string">b"XX002"</span>;
+<a href=#603 id=603 data-nosnippet>603</a>}</span></span>
+</code></pre></div></section></main></body></html>

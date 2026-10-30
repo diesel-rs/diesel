@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Applies an RFC 7396 MergePatch `patch` to the input JSON `target` and returns the patched JSON value."><title>json_patch in diesel::sqlite::expression::functions - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">json_patch</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../diesel/index.html">diesel</a><span class="version">2.3.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">json_<wbr>patch</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel::<wbr>sqlite::<wbr>expression::<wbr>functions</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../../index.html">diesel</a>::<wbr><a href="../../index.html">sqlite</a>::<wbr><a href="../index.html">expression</a>::<wbr><a href="index.html">functions</a></div><h1>Function <span class="fn">json_<wbr>patch</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/diesel/sqlite/expression/functions.rs.html#16">Source</a> </span></div><pre class="rust item-decl"><code>pub fn json_patch&lt;T: JsonOrNullableJsonOrJsonbOrNullableJsonb + <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a>, P: JsonOrNullableJsonOrJsonbOrNullableJsonb + <a class="trait" href="../../../sql_types/trait.SingleValue.html" title="trait diesel::sql_types::SingleValue">SingleValue</a> + CombinedNullableValue&lt;T, <a class="struct" href="../../../sql_types/struct.Json.html" title="struct diesel::sql_types::Json">Json</a>&gt;, target, patch&gt;(
+    target: target,
+    patch: patch,
+) -&gt; <a class="type" href="type.json_patch.html" title="type diesel::sqlite::expression::functions::json_patch">json_patch</a>&lt;T, P, target, patch&gt;<div class="where">where
+    target: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;T&gt;,
+    patch: <a class="trait" href="../../../expression/trait.AsExpression.html" title="trait diesel::expression::AsExpression">AsExpression</a>&lt;P&gt;,</div></code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>sqlite</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Applies an RFC 7396 MergePatch <code>patch</code> to the input JSON <code>target</code> and
+returns the patched JSON value.</p>
+<p>MergePatch can add, modify, or delete elements of a JSON object. Arrays are
+treated as atomic values: they can only be inserted, replaced, or deleted as a
+whole, not modified element-wise.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>
+<span class="kw">let </span>result = diesel::select(json_patch::&lt;Json, Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:<span class="number">1</span>,<span class="string">"b"</span>:<span class="number">2</span>} ),
+    <span class="macro">json!</span>( {<span class="string">"c"</span>:<span class="number">3</span>,<span class="string">"d"</span>:<span class="number">4</span>} ),
+))
+.get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>({<span class="string">"a"</span>:<span class="number">1</span>,<span class="string">"b"</span>:<span class="number">2</span>,<span class="string">"c"</span>:<span class="number">3</span>,<span class="string">"d"</span>:<span class="number">4</span>}), result);
+
+<span class="kw">let </span>result = diesel::select(json_patch::&lt;Json, Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:[<span class="number">1</span>,<span class="number">2</span>],<span class="string">"b"</span>:<span class="number">2</span>} ),
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:<span class="number">9</span>} ),
+))
+.get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>({<span class="string">"a"</span>:<span class="number">9</span>,<span class="string">"b"</span>:<span class="number">2</span>}), result);
+
+<span class="kw">let </span>result = diesel::select(json_patch::&lt;Json, Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:[<span class="number">1</span>,<span class="number">2</span>],<span class="string">"b"</span>:<span class="number">2</span>} ),
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:null} ),
+))
+.get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>({<span class="string">"b"</span>:<span class="number">2</span>}), result);
+
+<span class="kw">let </span>result = diesel::select(json_patch::&lt;Json, Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:<span class="number">1</span>,<span class="string">"b"</span>:<span class="number">2</span>} ),
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:<span class="number">9</span>,<span class="string">"b"</span>:null,<span class="string">"c"</span>:<span class="number">8</span>} ),
+))
+.get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="macro">json!</span>({<span class="string">"a"</span>:<span class="number">9</span>,<span class="string">"c"</span>:<span class="number">8</span>}), result);
+
+<span class="kw">let </span>result = diesel::select(json_patch::&lt;Json, Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:{<span class="string">"x"</span>:<span class="number">1</span>,<span class="string">"y"</span>:<span class="number">2</span>},<span class="string">"b"</span>:<span class="number">3</span>} ),
+    <span class="macro">json!</span>( {<span class="string">"a"</span>:{<span class="string">"y"</span>:<span class="number">9</span>},<span class="string">"c"</span>:<span class="number">8</span>} ),
+))
+.get_result::&lt;Value&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(
+    <span class="macro">json!</span>({<span class="string">"a"</span>:{<span class="string">"x"</span>:<span class="number">1</span>,<span class="string">"y"</span>:<span class="number">9</span>},<span class="string">"b"</span>:<span class="number">3</span>,<span class="string">"c"</span>:<span class="number">8</span>}),
+    result
+);
+
+<span class="comment">// Nullable input yields nullable output
+</span><span class="kw">let </span>result = diesel::select(json_patch::&lt;Nullable&lt;Json&gt;, Json, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+    <span class="prelude-val">None</span>::&lt;Value&gt;,
+    <span class="macro">json!</span>({}),
+))
+.get_result::&lt;<span class="prelude-ty">Option</span>&lt;Value&gt;&gt;(connection)<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(result.is_none());
+</code></pre></div></div></details></section></div></main></body></html>

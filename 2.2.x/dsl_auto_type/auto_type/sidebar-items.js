@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Case"],"mod":["expression_type_inference"],"struct":["DeriveSettings","DeriveSettingsBuilder"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["VsVers"],"fn":["find","find_tool","find_vs_version"]};

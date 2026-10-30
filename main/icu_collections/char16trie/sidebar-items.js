@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TrieResult"],"struct":["Char16Trie","Char16TrieCursor","Char16TrieIterator"]};

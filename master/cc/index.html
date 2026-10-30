@@ -1,0 +1,186 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A library for Cargo build scripts to compile a set of C/C++/assembly/CUDA files into a static archive for Cargo to link into the crate being built. This crate does not compile code itself; it calls out to the default compiler for the platform. This crate will automatically detect situations such as cross compilation and various environment variables and will build code appropriately."><title>cc - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="cc" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (975e6c8fe 2025-09-23)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate cc</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../cc/index.html">cc</a><span class="version">1.2.38</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#external-configuration-via-environment-variables" title="External configuration via environment variables">External configuration via environment variables</a></li><li><a href="#optional-features" title="Optional features">Optional features</a><ul><li><a href="#parallel" title="Parallel">Parallel</a></li></ul></li><li><a href="#compile-time-requirements" title="Compile-time Requirements">Compile-time Requirements</a></li><li><a href="#c-support" title="C++ support">C++ support</a></li><li><a href="#cuda-c-support" title="CUDA C++ support">CUDA C++ support</a></li><li><a href="#speed-up-compilation-with-sccache" title="Speed up compilation with sccache">Speed up compilation with sccache</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>cc</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/cc/lib.rs.html#1-4374">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A library for <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html">Cargo build scripts</a>
+to compile a set of C/C++/assembly/CUDA files into a static archive for Cargo
+to link into the crate being built. This crate does not compile code itself;
+it calls out to the default compiler for the platform. This crate will
+automatically detect situations such as cross compilation and
+<a href="#external-configuration-via-environment-variables">various environment variables</a> and will build code appropriately.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<p>First, you’ll want to both add a build script for your crate (<code>build.rs</code>) and
+also add this crate to your <code>Cargo.toml</code> via:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[build-dependencies]
+cc = &quot;1.0&quot;</code></pre></div>
+<p>Next up, you’ll want to write a build script like so:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// build.rs
+</span>cc::Build::new()
+    .file(<span class="string">"foo.c"</span>)
+    .file(<span class="string">"bar.c"</span>)
+    .compile(<span class="string">"foo"</span>);</code></pre></div>
+<p>And that’s it! Running <code>cargo build</code> should take care of the rest and your Rust
+application will now have the C files <code>foo.c</code> and <code>bar.c</code> compiled into a file
+named <code>libfoo.a</code>. If the C files contain</p>
+<div class="example-wrap"><pre class="language-c"><code>void foo_function(void) { ... }</code></pre></div>
+<p>and</p>
+<div class="example-wrap"><pre class="language-c"><code>int32_t bar_function(int32_t x) { ... }</code></pre></div>
+<p>you can call them from Rust by declaring them in
+your Rust code like so:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">extern </span><span class="string">"C" </span>{
+    <span class="kw">fn </span>foo_function();
+    <span class="kw">fn </span>bar_function(x: i32) -&gt; i32;
+}
+
+<span class="kw">pub fn </span>call() {
+    <span class="kw">unsafe </span>{
+        foo_function();
+        bar_function(<span class="number">42</span>);
+    }
+}
+
+<span class="kw">fn </span>main() {
+    call();
+}</code></pre></div>
+<p>See <a href="https://doc.rust-lang.org/nomicon/ffi.html">the Rustonomicon</a> for more details.</p>
+<h2 id="external-configuration-via-environment-variables"><a class="doc-anchor" href="#external-configuration-via-environment-variables">§</a>External configuration via environment variables</h2>
+<p>To control the programs and flags used for building, the builder can set a
+number of different environment variables.</p>
+<ul>
+<li><code>CFLAGS</code> - a series of space separated flags passed to compilers. Note that
+individual flags cannot currently contain spaces, so doing
+something like: <code>-L=foo\ bar</code> is not possible.</li>
+<li><code>CC</code> - the actual C compiler used. Note that this is used as an exact
+executable name, so (for example) no extra flags can be passed inside
+this variable, and the builder must ensure that there aren’t any
+trailing spaces. This compiler must understand the <code>-c</code> flag. For
+certain <code>TARGET</code>s, it also is assumed to know about other flags (most
+common is <code>-fPIC</code>).
+ccache, distcc, sccache, icecc, cachepot and buildcache are supported,
+for sccache, simply set <code>CC</code> to <code>sccache cc</code>.
+For other custom <code>CC</code> wrapper, just set <code>CC_KNOWN_WRAPPER_CUSTOM</code>
+to the custom wrapper used in <code>CC</code>.</li>
+<li><code>AR</code> - the <code>ar</code> (archiver) executable to use to build the static library.</li>
+<li><code>CRATE_CC_NO_DEFAULTS</code> - the default compiler flags may cause conflicts in
+some cross compiling scenarios. Setting this variable
+will disable the generation of default compiler
+flags.</li>
+<li><code>CC_ENABLE_DEBUG_OUTPUT</code> - if set, compiler command invocations and exit codes will
+be logged to stdout. This is useful for debugging build script issues, but can be
+overly verbose for normal use.</li>
+<li><code>CC_SHELL_ESCAPED_FLAGS</code> - if set, <code>*FLAGS</code> will be parsed as if they were shell
+arguments (similar to <code>make</code> and <code>cmake</code>) rather than splitting them on each space.
+For example, with <code>CFLAGS='a "b c"'</code>, the compiler will be invoked with 2 arguments -
+<code>a</code> and <code>b c</code> - rather than 3: <code>a</code>, <code>"b</code> and <code>c"</code>.</li>
+<li><code>CXX...</code> - see <a href="#c-support">C++ Support</a>.</li>
+<li><code>CC_FORCE_DISABLE</code> - If set, <code>cc</code> will never run any <a href="https://doc.rust-lang.org/nightly/std/process/struct.Command.html" title="struct std::process::Command"><code>Command</code></a>s, and methods that
+would return an <a href="struct.Error.html" title="struct cc::Error"><code>Error</code></a>. This is intended for use by third-party build systems
+which want to be absolutely sure that they are in control of building all
+dependencies. Note that operations that return <a href="struct.Tool.html" title="struct cc::Tool"><code>Tool</code></a>s such as
+<a href="struct.Build.html#method.get_compiler" title="method cc::Build::get_compiler"><code>Build::get_compiler</code></a> may produce less accurate results as in some cases <code>cc</code> runs
+commands in order to locate compilers. Additionally, this does nothing to prevent
+users from running <a href="struct.Tool.html#method.to_command" title="method cc::Tool::to_command"><code>Tool::to_command</code></a> and executing the <a href="https://doc.rust-lang.org/nightly/std/process/struct.Command.html" title="struct std::process::Command"><code>Command</code></a> themselves.</li>
+<li><code>RUSTC_WRAPPER</code> - If set, the specified command will be prefixed to the compiler
+command. This is useful for projects that want to use
+<a href="https://github.com/mozilla/sccache">sccache</a>,
+<a href="https://gitlab.com/bits-n-bites/buildcache">buildcache</a>, or
+<a href="https://github.com/paritytech/cachepot">cachepot</a>.</li>
+</ul>
+<p>Furthermore, projects using this crate may specify custom environment variables
+to be inspected, for example via the <code>Build::try_flags_from_environment</code>
+function. Consult the project’s own documentation or its use of the <code>cc</code> crate
+for any additional variables it may use.</p>
+<p>Each of these variables can also be supplied with certain prefixes and suffixes,
+in the following prioritized order:</p>
+<ol>
+<li><code>&lt;var&gt;_&lt;target&gt;</code> - for example, <code>CC_x86_64-unknown-linux-gnu</code> or <code>CC_thumbv8m.main-none-eabi</code></li>
+<li><code>&lt;var&gt;_&lt;target_with_underscores&gt;</code> - for example, <code>CC_x86_64_unknown_linux_gnu</code> or <code>CC_thumbv8m_main_none_eabi</code> (both periods and underscores are replaced)</li>
+<li><code>&lt;build-kind&gt;_&lt;var&gt;</code> - for example, <code>HOST_CC</code> or <code>TARGET_CFLAGS</code></li>
+<li><code>&lt;var&gt;</code> - a plain <code>CC</code>, <code>AR</code> as above.</li>
+</ol>
+<p>If none of these variables exist, cc-rs uses built-in defaults.</p>
+<p>In addition to the above optional environment variables, <code>cc-rs</code> has some
+functions with hard requirements on some variables supplied by <a href="https://doc.rust-lang.org/cargo/reference/build-scripts.html#inputs-to-the-build-script">cargo’s
+build-script driver</a> that it has the <code>TARGET</code>, <code>OUT_DIR</code>, <code>OPT_LEVEL</code>,
+and <code>HOST</code> variables.</p>
+<h2 id="optional-features"><a class="doc-anchor" href="#optional-features">§</a>Optional features</h2><h3 id="parallel"><a class="doc-anchor" href="#parallel">§</a>Parallel</h3>
+<p>Currently cc-rs supports parallel compilation (think <code>make -jN</code>) but this
+feature is turned off by default. To enable cc-rs to compile C/C++ in parallel,
+you can change your dependency to:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[build-dependencies]
+cc = { version = &quot;1.0&quot;, features = [&quot;parallel&quot;] }</code></pre></div>
+<p>By default cc-rs will limit parallelism to <code>$NUM_JOBS</code>, or if not present it
+will limit it to the number of cpus on the machine. If you are using cargo,
+use <code>-jN</code> option of <code>build</code>, <code>test</code> and <code>run</code> commands as <code>$NUM_JOBS</code>
+is supplied by cargo.</p>
+<h2 id="compile-time-requirements"><a class="doc-anchor" href="#compile-time-requirements">§</a>Compile-time Requirements</h2>
+<p>To work properly this crate needs access to a C compiler when the build script
+is being run. This crate does not ship a C compiler with it. The compiler
+required varies per platform, but there are three broad categories:</p>
+<ul>
+<li>Unix platforms require <code>cc</code> to be the C compiler. This can be found by
+installing cc/clang on Linux distributions and Xcode on macOS, for example.</li>
+<li>Windows platforms targeting MSVC (e.g. your target name ends in <code>-msvc</code>)
+require Visual Studio to be installed. <code>cc-rs</code> attempts to locate it, and
+if it fails, <code>cl.exe</code> is expected to be available in <code>PATH</code>. This can be
+set up by running the appropriate developer tools shell.</li>
+<li>Windows platforms targeting MinGW (e.g. your target name ends in <code>-gnu</code>)
+require <code>cc</code> to be available in <code>PATH</code>. We recommend the
+<a href="https://www.mingw-w64.org/">MinGW-w64</a> distribution.
+You may also acquire it via
+<a href="https://www.msys2.org/">MSYS2</a>, as explained <a href="https://github.com/rust-lang/rust/blob/master/INSTALL.md#building-on-windows">here</a>.  Make sure
+to install the appropriate architecture corresponding to your installation of
+rustc. GCC from older <a href="http://www.mingw.org/">MinGW</a> project is compatible
+only with 32-bit rust compiler.</li>
+</ul>
+<h2 id="c-support"><a class="doc-anchor" href="#c-support">§</a>C++ support</h2>
+<p><code>cc-rs</code> supports C++ libraries compilation by using the <code>cpp</code> method on
+<code>Build</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cc::Build::new()
+    .cpp(<span class="bool-val">true</span>) <span class="comment">// Switch to C++ library compilation.
+    </span>.file(<span class="string">"foo.cpp"</span>)
+    .compile(<span class="string">"foo"</span>);</code></pre></div>
+<p>For C++ libraries, the <code>CXX</code> and <code>CXXFLAGS</code> environment variables are used instead of <code>CC</code> and <code>CFLAGS</code>.</p>
+<p>The C++ standard library may be linked to the crate target. By default it’s <code>libc++</code> for macOS, FreeBSD, and OpenBSD, <code>libc++_shared</code> for Android, nothing for MSVC, and <code>libstdc++</code> for anything else. It can be changed in one of two ways:</p>
+<ol>
+<li>by using the <code>cpp_link_stdlib</code> method on <code>Build</code>:</li>
+</ol>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cc::Build::new()
+    .cpp(<span class="bool-val">true</span>)
+    .file(<span class="string">"foo.cpp"</span>)
+    .cpp_link_stdlib(<span class="string">"stdc++"</span>) <span class="comment">// use libstdc++
+    </span>.compile(<span class="string">"foo"</span>);</code></pre></div>
+<ol start="2">
+<li>by setting the <code>CXXSTDLIB</code> environment variable.</li>
+</ol>
+<p>In particular, for Android you may want to <a href="https://developer.android.com/ndk/guides/cpp-support">use <code>c++_static</code> if you have at most one shared library</a>.</p>
+<p>Remember that C++ does name mangling so <code>extern "C"</code> might be required to enable Rust linker to find your functions.</p>
+<h2 id="cuda-c-support"><a class="doc-anchor" href="#cuda-c-support">§</a>CUDA C++ support</h2>
+<p><code>cc-rs</code> also supports compiling CUDA C++ libraries by using the <code>cuda</code> method
+on <code>Build</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code>cc::Build::new()
+    <span class="comment">// Switch to CUDA C++ library compilation using NVCC.
+    </span>.cuda(<span class="bool-val">true</span>)
+    .cudart(<span class="string">"static"</span>)
+    <span class="comment">// Generate code for Maxwell (GTX 970, 980, 980 Ti, Titan X).
+    </span>.flag(<span class="string">"-gencode"</span>).flag(<span class="string">"arch=compute_52,code=sm_52"</span>)
+    <span class="comment">// Generate code for Maxwell (Jetson TX1).
+    </span>.flag(<span class="string">"-gencode"</span>).flag(<span class="string">"arch=compute_53,code=sm_53"</span>)
+    <span class="comment">// Generate code for Pascal (GTX 1070, 1080, 1080 Ti, Titan Xp).
+    </span>.flag(<span class="string">"-gencode"</span>).flag(<span class="string">"arch=compute_61,code=sm_61"</span>)
+    <span class="comment">// Generate code for Pascal (Tesla P100).
+    </span>.flag(<span class="string">"-gencode"</span>).flag(<span class="string">"arch=compute_60,code=sm_60"</span>)
+    <span class="comment">// Generate code for Pascal (Jetson TX2).
+    </span>.flag(<span class="string">"-gencode"</span>).flag(<span class="string">"arch=compute_62,code=sm_62"</span>)
+    <span class="comment">// Generate code in parallel
+    </span>.flag(<span class="string">"-t0"</span>)
+    .file(<span class="string">"bar.cu"</span>)
+    .compile(<span class="string">"bar"</span>);</code></pre></div><h2 id="speed-up-compilation-with-sccache"><a class="doc-anchor" href="#speed-up-compilation-with-sccache">§</a>Speed up compilation with sccache</h2>
+<p><code>cc-rs</code> does not handle incremental compilation like <code>make</code> or <code>ninja</code>. It
+always compiles the all sources, no matter if they have changed or not.
+This would be time-consuming in large projects. To save compilation time,
+you can use <a href="https://github.com/mozilla/sccache">sccache</a> by setting
+environment variable <code>RUSTC_WRAPPER=sccache</code>, which will use cached <code>.o</code>
+files if the sources are unchanged.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="windows_registry/index.html" title="mod cc::windows_registry">windows_<wbr>registry</a></dt><dd>A helper module to looking for windows-specific tools:</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Build.html" title="struct cc::Build">Build</a></dt><dd>A builder for compilation of a native library.</dd><dt><a class="struct" href="struct.Error.html" title="struct cc::Error">Error</a></dt><dd>Represents an internal error that occurred, with an explanation.</dd><dt><a class="struct" href="struct.Tool.html" title="struct cc::Tool">Tool</a></dt><dd>Configuration used to represent an invocation of a C compiler.</dd></dl></section></div></main></body></html>

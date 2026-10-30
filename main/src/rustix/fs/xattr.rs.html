@@ -1,0 +1,1275 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustix-1.1.6/src/fs/xattr.rs`."><title>xattr.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-009149e2.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="rustix" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (92b5b8c87 2026-10-29)" data-channel="nightly" data-search-js="search-835b9732.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">rustix/fs/</div>xattr.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Extended attribute functions.
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="attr">#![allow(unsafe_code)]
+<a href=#4 id=4 data-nosnippet>4</a>
+<a href=#5 id=5 data-nosnippet>5</a></span><span class="kw">use </span><a href="../buffer.rs.html#106"><span class="kw">crate</span>::buffer::Buffer</a>;
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use crate</span>::{<a href="../lib.rs.html#198">backend</a>, <a href="../lib.rs.html#221">ffi</a>, <a href="../lib.rs.html#226">io</a>, <a href="../lib.rs.html#260">path</a>};
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span><a href="../backend/linux_raw/mod.rs.html#86">backend::c</a>;
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span><a href="../../../rustix/fd/trait.AsFd.html">backend::fd::AsFd</a>;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span><a href="../../../bitflags/macro.bitflags.html">bitflags::bitflags</a>;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">core::ptr::null_mut</a>;
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="expansion"><input id=expand-12 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc =
+<span class="string">r" `XATTR_*` constants for use with [`setxattr`], and other `*setxattr`"</span>]
+#[doc = <span class="string">r" functions."</span>]
+#[repr(transparent)]
+</span><span class="kw">pub struct </span>XattrFlags(&lt;XattrFlags <span class="kw">as
+    </span>::bitflags::__private::PublicFlags&gt;::Internal);
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>XattrFlags { }
+<span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>XattrFlags {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>XattrFlags {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>:
+                ::core::clone::AssertParamIsClone&lt;&lt;XattrFlags <span class="kw">as
+                </span>::bitflags::__private::PublicFlags&gt;::Internal&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>XattrFlags {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>:
+                ::core::cmp::AssertParamIsEq&lt;&lt;XattrFlags <span class="kw">as
+                </span>::bitflags::__private::PublicFlags&gt;::Internal&gt;;
+    }
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for
+    </span>XattrFlags {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>XattrFlags {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>XattrFlags {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+        ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, state)
+    }
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>XattrFlags {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_tuple_field1_finish(f, <span class="string">"XattrFlags"</span>,
+            &amp;&amp;<span class="self">self</span>.<span class="number">0</span>)
+    }
+}
+<span class="attr">#[allow(dead_code, deprecated, unused_doc_comments, unused_attributes,
+unused_mut, unused_imports, non_upper_case_globals, clippy :: min_ident_chars,
+clippy :: assign_op_pattern, clippy :: indexing_slicing, clippy ::
+same_name_method, clippy :: iter_without_into_iter,)]
+</span><span class="kw">impl </span>XattrFlags {
+    <span class="attr">#[doc = <span class="string">r" `XATTR_CREATE`"</span>]
+    </span><span class="kw">pub const </span>CREATE: <span class="self">Self </span>=
+        <span class="self">Self</span>::from_bits_retain(c::XATTR_CREATE <span class="kw">as </span>c::c_uint);
+    <span class="attr">#[doc = <span class="string">r" `XATTR_REPLACE`"</span>]
+    </span><span class="kw">pub const </span>REPLACE: <span class="self">Self </span>=
+        <span class="self">Self</span>::from_bits_retain(c::XATTR_REPLACE <span class="kw">as </span>c::c_uint);
+}
+<span class="attr">#[allow(dead_code, deprecated, unused_doc_comments, unused_attributes,
+unused_mut, unused_imports, non_upper_case_globals, clippy :: min_ident_chars,
+clippy :: assign_op_pattern, clippy :: indexing_slicing, clippy ::
+same_name_method, clippy :: iter_without_into_iter,)]
+</span><span class="kw">impl </span>::bitflags::Flags <span class="kw">for </span>XattrFlags {
+    <span class="kw">const </span>FLAGS: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[::bitflags::Flag&lt;XattrFlags&gt;] =
+        {
+            <span class="kw">mod </span>__bitflags_flag_names {
+                <span class="attr">#[allow(unused_imports)]
+                </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
+                <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CREATE: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"CREATE"</span>;
+                <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>REPLACE: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"REPLACE"</span>;
+            }
+            <span class="kw-2">&amp;</span>[{
+                            ::bitflags::Flag::new(__bitflags_flag_names::CREATE,
+                                XattrFlags::CREATE)
+                        },
+                        {
+                            ::bitflags::Flag::new(__bitflags_flag_names::REPLACE,
+                                XattrFlags::REPLACE)
+                        },
+                        {
+                            ::bitflags::Flag::new(<span class="string">""</span>, XattrFlags::from_bits_retain(!<span class="number">0</span>))
+                        }]
+        };
+    <span class="kw">type </span>Bits = ffi::c_uint;
+    <span class="kw">fn </span>bits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ffi::c_uint { XattrFlags::bits(<span class="self">self</span>) }
+    <span class="kw">fn </span>from_bits_retain(bits: ffi::c_uint) -&gt; XattrFlags {
+        XattrFlags::from_bits_retain(bits)
+    }
+    <span class="kw">fn </span>all_named() -&gt; XattrFlags {
+        <span class="kw">const </span>ALL_NAMED: ffi::c_uint =
+            {
+                <span class="kw">let </span><span class="kw-2">mut </span>truncated = &lt;ffi::c_uint <span class="kw">as </span>::bitflags::Bits&gt;::EMPTY;
+                <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
+                {
+                    {
+                        <span class="kw">let </span>flag = <span class="kw-2">&amp;</span>&lt;XattrFlags <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS[i];
+                        <span class="kw">if </span>flag.is_named() {
+                            truncated = truncated | flag.value().bits();
+                        }
+                        i += <span class="number">1</span>;
+                    }
+                };
+                {
+                    {
+                        <span class="kw">let </span>flag = <span class="kw-2">&amp;</span>&lt;XattrFlags <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS[i];
+                        <span class="kw">if </span>flag.is_named() {
+                            truncated = truncated | flag.value().bits();
+                        }
+                        i += <span class="number">1</span>;
+                    }
+                };
+                {
+                    {
+                        <span class="kw">let </span>flag = <span class="kw-2">&amp;</span>&lt;XattrFlags <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS[i];
+                        <span class="kw">if </span>flag.is_named() {
+                            truncated = truncated | flag.value().bits();
+                        }
+                        i += <span class="number">1</span>;
+                    }
+                };
+                <span class="kw">let _ </span>= i;
+                truncated
+            };
+        XattrFlags::from_bits_retain(ALL_NAMED)
+    }
+}
+<span class="attr">#[allow(dead_code, deprecated, unused_doc_comments, unused_attributes,
+unused_mut, unused_imports, non_upper_case_globals, clippy :: min_ident_chars,
+clippy :: assign_op_pattern, clippy :: indexing_slicing, clippy ::
+same_name_method, clippy :: iter_without_into_iter,)]
+</span><span class="kw">const _</span>: () =
+    {
+        <span class="attr">#[repr(transparent)]
+        </span><span class="kw">pub struct </span>InternalBitFlags(ffi::c_uint);
+        <span class="attr">#[automatically_derived]
+        #[doc(hidden)]
+        </span><span class="kw">unsafe impl </span>::core::clone::TrivialClone <span class="kw">for </span>InternalBitFlags { }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+                <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;ffi::c_uint&gt;;
+                <span class="kw-2">*</span><span class="self">self
+            </span>}
+        }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>InternalBitFlags { }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>InternalBitFlags { }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>}
+        }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            #[doc(hidden)]
+            #[coverage(off)]
+            </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+                <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;ffi::c_uint&gt;;
+            }
+        }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::cmp::PartialOrd <span class="kw">for </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            </span><span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+                -&gt; ::core::option::Option&lt;::core::cmp::Ordering&gt; {
+                ::core::option::Option::Some(::core::cmp::Ord::cmp(<span class="self">self</span>,
+                        other))
+            }
+        }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::cmp::Ord <span class="kw">for </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            </span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; ::core::cmp::Ordering {
+                ::core::cmp::Ord::cmp(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span>other.<span class="number">0</span>)
+            }
+        }
+        <span class="attr">#[automatically_derived]
+        </span><span class="kw">impl </span>::core::hash::Hash <span class="kw">for </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            </span><span class="kw">fn </span>hash&lt;__H: ::core::hash::Hasher&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, state: <span class="kw-2">&amp;mut </span>__H) {
+                ::core::hash::Hash::hash(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, state)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::PublicFlags <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Primitive = ffi::c_uint;
+            <span class="kw">type </span>Internal = InternalBitFlags;
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::default::Default <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="attr">#[inline]
+            </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{ InternalBitFlags::empty() }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::Debug <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>,
+                f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">if </span><span class="self">self</span>.is_empty() {
+                    f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0:#x}"</span>,
+                            &lt;ffi::c_uint <span class="kw">as </span>::bitflags::Bits&gt;::EMPTY))
+                } <span class="kw">else </span>{
+                    ::bitflags::__private::core::fmt::Display::fmt(<span class="self">self</span>, f)
+                }
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::Display <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>,
+                f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                ::bitflags::parser::to_writer(<span class="kw-2">&amp;</span>XattrFlags(<span class="kw-2">*</span><span class="self">self</span>), f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::str::FromStr <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">type </span><span class="prelude-val">Err </span>= ::bitflags::parser::ParseError;
+            <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str)
+                -&gt;
+                    ::bitflags::__private::core::result::Result&lt;<span class="self">Self</span>,
+                    <span class="self">Self</span>::Err&gt; {
+                ::bitflags::parser::from_str::&lt;XattrFlags&gt;(s).map(|flags|
+                        flags.<span class="number">0</span>)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::convert::AsRef&lt;ffi::c_uint&gt; <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>ffi::c_uint { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>}
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::convert::From&lt;ffi::c_uint&gt; <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="kw">fn </span>from(bits: ffi::c_uint) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>::from_bits_retain(bits)
+            }
+        }
+        <span class="kw">impl </span>InternalBitFlags {
+            <span class="doccomment">/// Get a flags value with all bits unset.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>empty() -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(&lt;ffi::c_uint <span class="kw">as </span>::bitflags::Bits&gt;::EMPTY)
+            }
+            <span class="doccomment">/// Get a flags value with all known bits set.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>all() -&gt; <span class="self">Self </span>{
+                <span class="kw">const </span>ALL: InternalBitFlags =
+                    {
+                        <span class="kw">let </span><span class="kw-2">mut </span>truncated =
+                            &lt;ffi::c_uint <span class="kw">as </span>::bitflags::Bits&gt;::EMPTY;
+                        <span class="kw">let </span><span class="kw-2">mut </span>_i = <span class="number">0</span>;
+                        {
+                            {
+                                truncated |=
+                                    &lt;XattrFlags <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS[_i].value().bits();
+                                _i += <span class="number">1</span>;
+                            }
+                        };
+                        {
+                            {
+                                truncated |=
+                                    &lt;XattrFlags <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS[_i].value().bits();
+                                _i += <span class="number">1</span>;
+                            }
+                        };
+                        {
+                            {
+                                truncated |=
+                                    &lt;XattrFlags <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS[_i].value().bits();
+                                _i += <span class="number">1</span>;
+                            }
+                        };
+                        InternalBitFlags(truncated)
+                    };
+                ALL
+            }
+            <span class="doccomment">/// Get the underlying bits value.
+            ///
+            /// The returned value is exactly the bits set in this flags value.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>bits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ffi::c_uint { <span class="self">self</span>.<span class="number">0 </span>}
+            <span class="doccomment">/// Convert from a bits value.
+            ///
+            /// This method will return `None` if any unknown bits are set.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>from_bits(bits: ffi::c_uint)
+                -&gt; ::bitflags::__private::core::option::Option&lt;<span class="self">Self</span>&gt; {
+                <span class="kw">let </span>truncated = <span class="self">Self</span>::from_bits_truncate(bits).<span class="number">0</span>;
+                <span class="kw">if </span>truncated == bits {
+                    ::bitflags::__private::core::option::Option::Some(<span class="self">Self</span>(bits))
+                } <span class="kw">else </span>{ ::bitflags::__private::core::option::Option::None }
+            }
+            <span class="doccomment">/// Convert from a bits value, unsetting any unknown bits.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>from_bits_truncate(bits: ffi::c_uint) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(bits &amp; <span class="self">Self</span>::all().<span class="number">0</span>)
+            }
+            <span class="doccomment">/// Convert from a bits value exactly.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>from_bits_retain(bits: ffi::c_uint) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(bits)
+            }
+            <span class="doccomment">/// Get a flags value with the bits of a flag with the given name set.
+            ///
+            /// This method will return `None` if `name` is empty or doesn't
+            /// correspond to any named flag.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>from_name(name: <span class="kw-2">&amp;</span>str)
+                -&gt; ::bitflags::__private::core::option::Option&lt;<span class="self">Self</span>&gt; {
+                <span class="kw">mod </span>__bitflags_flag_names {
+                    <span class="attr">#[allow(unused_imports)]
+                    </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
+                    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CREATE: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"CREATE"</span>;
+                    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>REPLACE: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"REPLACE"</span>;
+                }
+                {
+                    {
+                        <span class="kw">if </span>name == __bitflags_flag_names::CREATE {
+                            <span class="kw">return </span>::bitflags::__private::core::option::Option::Some(<span class="self">Self</span>(XattrFlags::CREATE.bits()));
+                        }
+                    };
+                };
+                {
+                    {
+                        <span class="kw">if </span>name == __bitflags_flag_names::REPLACE {
+                            <span class="kw">return </span>::bitflags::__private::core::option::Option::Some(<span class="self">Self</span>(XattrFlags::REPLACE.bits()));
+                        }
+                    };
+                };
+                ;
+                <span class="kw">let _ </span>= name;
+                ::bitflags::__private::core::option::Option::None
+            }
+            <span class="doccomment">/// Whether all bits in `self` are unset.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+                <span class="self">self</span>.<span class="number">0 </span>== &lt;ffi::c_uint <span class="kw">as </span>::bitflags::Bits&gt;::EMPTY
+            }
+            <span class="doccomment">/// Whether all known bits in this flags value are set.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>is_all(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+                <span class="self">Self</span>::all().<span class="number">0 </span>| <span class="self">self</span>.<span class="number">0 </span>== <span class="self">self</span>.<span class="number">0
+            </span>}
+            <span class="doccomment">/// Whether any set bits in `other` are also set in `self`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>intersects(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="self">Self</span>) -&gt; bool {
+                <span class="self">self</span>.<span class="number">0 </span>&amp; other.<span class="number">0 </span>!= &lt;ffi::c_uint <span class="kw">as </span>::bitflags::Bits&gt;::EMPTY
+            }
+            <span class="doccomment">/// Whether all set bits in `other` are also set in `self`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>contains(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="self">Self</span>) -&gt; bool {
+                <span class="self">self</span>.<span class="number">0 </span>&amp; other.<span class="number">0 </span>== other.<span class="number">0
+            </span>}
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) {
+                <span class="kw-2">*</span><span class="self">self </span>= <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>).union(other);
+            }
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `remove` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) {
+                <span class="kw-2">*</span><span class="self">self </span>= <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>).difference(other);
+            }
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) {
+                <span class="kw-2">*</span><span class="self">self </span>= <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>).symmetric_difference(other);
+            }
+            <span class="doccomment">/// Call `insert` when `value` is `true` or `remove` when `value` is `false`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>set(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>, value: bool) {
+                <span class="kw">if </span>value { <span class="self">self</span>.insert(other); } <span class="kw">else </span>{ <span class="self">self</span>.remove(other); }
+            }
+            <span class="doccomment">/// The bitwise and (`&amp;`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>intersection(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0 </span>&amp; other.<span class="number">0</span>)
+            }
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>union(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0 </span>| other.<span class="number">0</span>)
+            }
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `difference` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>difference(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0 </span>&amp; !other.<span class="number">0</span>)
+            }
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>symmetric_difference(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0 </span>^ other.<span class="number">0</span>)
+            }
+            <span class="doccomment">/// The bitwise negation (`!`) of the bits in `self`, truncating the result.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>complement(<span class="self">self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>::from_bits_truncate(!<span class="self">self</span>.<span class="number">0</span>)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::Binary <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::Binary::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::Octal <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::Octal::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::LowerHex <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::LowerHex::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::UpperHex <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::UpperHex::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitOr <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitor(<span class="self">self</span>, other: InternalBitFlags) -&gt; <span class="self">Self </span>{
+                <span class="self">self</span>.union(other)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitOrAssign <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitor_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.insert(other); }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitXor <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitxor(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">self</span>.symmetric_difference(other)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitXorAssign <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitxor_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.toggle(other); }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitAnd <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise and (`&amp;`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitand(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.intersection(other) }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitAndAssign <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="doccomment">/// The bitwise and (`&amp;`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitand_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) {
+                <span class="kw-2">*</span><span class="self">self </span>=
+                    <span class="self">Self</span>::from_bits_retain(<span class="self">self</span>.bits()).intersection(other);
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::Sub <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `difference` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>sub(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.difference(other) }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::SubAssign <span class="kw">for </span>InternalBitFlags
+            {
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `difference` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>sub_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.remove(other); }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::Not <span class="kw">for </span>InternalBitFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise negation (`!`) of the bits in `self`, truncating the result.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>not(<span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.complement() }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::iter::Extend&lt;InternalBitFlags&gt; <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in each flags value.
+            </span><span class="kw">fn </span>extend&lt;T: ::bitflags::__private::core::iter::IntoIterator&lt;Item
+                = <span class="self">Self</span>&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iterator: T) {
+                <span class="kw">for </span>item <span class="kw">in </span>iterator { <span class="self">self</span>.insert(item) }
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::iter::FromIterator&lt;InternalBitFlags&gt;
+            <span class="kw">for </span>InternalBitFlags {
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in each flags value.
+            </span><span class="kw">fn </span>from_iter&lt;T: ::bitflags::__private::core::iter::IntoIterator&lt;Item
+                = <span class="self">Self</span>&gt;&gt;(iterator: T) -&gt; <span class="self">Self </span>{
+                <span class="kw">use </span>::bitflags::__private::core::iter::Extend;
+                <span class="kw">let </span><span class="kw-2">mut </span>result = <span class="self">Self</span>::empty();
+                result.extend(iterator);
+                result
+            }
+        }
+        <span class="kw">impl </span>InternalBitFlags {
+            <span class="doccomment">/// Yield a set of contained flags values.
+            ///
+            /// Each yielded flags value will correspond to a defined named flag. Any unknown bits
+            /// will be yielded together as a final flags value.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::bitflags::iter::Iter&lt;XattrFlags&gt; {
+                ::bitflags::iter::Iter::__private_const_new(&lt;XattrFlags <span class="kw">as
+                        </span>::bitflags::Flags&gt;::FLAGS,
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()),
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()))
+            }
+            <span class="doccomment">/// Yield a set of contained named flags values.
+            ///
+            /// This method is like [`iter`](#method.iter), except only yields bits in contained named flags.
+            /// Any unknown bits, or bits not corresponding to a contained flag will not be yielded.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>iter_names(<span class="kw-2">&amp;</span><span class="self">self</span>)
+                -&gt; ::bitflags::iter::IterNames&lt;XattrFlags&gt; {
+                ::bitflags::iter::IterNames::__private_const_new(&lt;XattrFlags
+                        <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS,
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()),
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()))
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::iter::IntoIterator <span class="kw">for
+            </span>InternalBitFlags {
+            <span class="kw">type </span>Item = XattrFlags;
+            <span class="kw">type </span>IntoIter = ::bitflags::iter::Iter&lt;XattrFlags&gt;;
+            <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIter { <span class="self">self</span>.iter() }
+        }
+        <span class="kw">impl </span>InternalBitFlags {
+            <span class="doccomment">/// Returns a mutable reference to the raw value of the flags currently stored.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>bits_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>ffi::c_uint { <span class="kw-2">&amp;mut </span><span class="self">self</span>.<span class="number">0 </span>}
+        }
+        <span class="kw">impl </span>XattrFlags {
+            <span class="doccomment">/// Get a flags value with all bits unset.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>empty() -&gt; <span class="self">Self </span>{ <span class="self">Self</span>(InternalBitFlags::empty()) }
+            <span class="doccomment">/// Get a flags value with all known bits set.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>all() -&gt; <span class="self">Self </span>{ <span class="self">Self</span>(InternalBitFlags::all()) }
+            <span class="doccomment">/// Get the underlying bits value.
+            ///
+            /// The returned value is exactly the bits set in this flags value.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>bits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ffi::c_uint { <span class="self">self</span>.<span class="number">0</span>.bits() }
+            <span class="doccomment">/// Convert from a bits value.
+            ///
+            /// This method will return `None` if any unknown bits are set.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>from_bits(bits: ffi::c_uint)
+                -&gt; ::bitflags::__private::core::option::Option&lt;<span class="self">Self</span>&gt; {
+                <span class="kw">match </span>InternalBitFlags::from_bits(bits) {
+                    ::bitflags::__private::core::option::Option::Some(bits) =&gt;
+                        ::bitflags::__private::core::option::Option::Some(<span class="self">Self</span>(bits)),
+                    ::bitflags::__private::core::option::Option::None =&gt;
+                        ::bitflags::__private::core::option::Option::None,
+                }
+            }
+            <span class="doccomment">/// Convert from a bits value, unsetting any unknown bits.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>from_bits_truncate(bits: ffi::c_uint) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(InternalBitFlags::from_bits_truncate(bits))
+            }
+            <span class="doccomment">/// Convert from a bits value exactly.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>from_bits_retain(bits: ffi::c_uint) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(InternalBitFlags::from_bits_retain(bits))
+            }
+            <span class="doccomment">/// Get a flags value with the bits of a flag with the given name set.
+            ///
+            /// This method will return `None` if `name` is empty or doesn't
+            /// correspond to any named flag.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>from_name(name: <span class="kw-2">&amp;</span>str)
+                -&gt; ::bitflags::__private::core::option::Option&lt;<span class="self">Self</span>&gt; {
+                <span class="kw">match </span>InternalBitFlags::from_name(name) {
+                    ::bitflags::__private::core::option::Option::Some(bits) =&gt;
+                        ::bitflags::__private::core::option::Option::Some(<span class="self">Self</span>(bits)),
+                    ::bitflags::__private::core::option::Option::None =&gt;
+                        ::bitflags::__private::core::option::Option::None,
+                }
+            }
+            <span class="doccomment">/// Whether all bits in `self` are unset.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0</span>.is_empty() }
+            <span class="doccomment">/// Whether all known bits in this flags value are set.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>is_all(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool { <span class="self">self</span>.<span class="number">0</span>.is_all() }
+            <span class="doccomment">/// Whether any set bits in `other` are also set in `self`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>intersects(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="self">Self</span>) -&gt; bool {
+                <span class="self">self</span>.<span class="number">0</span>.intersects(other.<span class="number">0</span>)
+            }
+            <span class="doccomment">/// Whether all set bits in `other` are also set in `self`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>contains(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="self">Self</span>) -&gt; bool {
+                <span class="self">self</span>.<span class="number">0</span>.contains(other.<span class="number">0</span>)
+            }
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.<span class="number">0</span>.insert(other.<span class="number">0</span>) }
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `remove` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.<span class="number">0</span>.remove(other.<span class="number">0</span>) }
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.<span class="number">0</span>.toggle(other.<span class="number">0</span>) }
+            <span class="doccomment">/// Call `insert` when `value` is `true` or `remove` when `value` is `false`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub fn </span>set(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>, value: bool) {
+                <span class="self">self</span>.<span class="number">0</span>.set(other.<span class="number">0</span>, value)
+            }
+            <span class="doccomment">/// The bitwise and (`&amp;`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>intersection(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>.intersection(other.<span class="number">0</span>))
+            }
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>union(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>.union(other.<span class="number">0</span>))
+            }
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `difference` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>difference(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>.difference(other.<span class="number">0</span>))
+            }
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>symmetric_difference(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>.symmetric_difference(other.<span class="number">0</span>))
+            }
+            <span class="doccomment">/// The bitwise negation (`!`) of the bits in `self`, truncating the result.
+            </span><span class="attr">#[inline]
+            #[must_use]
+            </span><span class="kw">pub const fn </span>complement(<span class="self">self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">Self</span>(<span class="self">self</span>.<span class="number">0</span>.complement())
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::Binary <span class="kw">for </span>XattrFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::Binary::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::Octal <span class="kw">for </span>XattrFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::Octal::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::LowerHex <span class="kw">for </span>XattrFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::LowerHex::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::fmt::UpperHex <span class="kw">for </span>XattrFlags {
+            <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::bitflags::__private::core::fmt::Formatter)
+                -&gt; ::bitflags::__private::core::fmt::Result {
+                <span class="kw">let </span>inner = <span class="self">self</span>.<span class="number">0</span>;
+                ::bitflags::__private::core::fmt::UpperHex::fmt(<span class="kw-2">&amp;</span>inner, f)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitOr <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitor(<span class="self">self</span>, other: XattrFlags) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.union(other) }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitOrAssign <span class="kw">for </span>XattrFlags {
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitor_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.insert(other); }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitXor <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitxor(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                <span class="self">self</span>.symmetric_difference(other)
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitXorAssign <span class="kw">for </span>XattrFlags {
+            <span class="doccomment">/// The bitwise exclusive-or (`^`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitxor_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.toggle(other); }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitAnd <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise and (`&amp;`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitand(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.intersection(other) }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::BitAndAssign <span class="kw">for </span>XattrFlags {
+            <span class="doccomment">/// The bitwise and (`&amp;`) of the bits in `self` and `other`.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>bitand_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) {
+                <span class="kw-2">*</span><span class="self">self </span>=
+                    <span class="self">Self</span>::from_bits_retain(<span class="self">self</span>.bits()).intersection(other);
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::Sub <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `difference` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>sub(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.difference(other) }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::SubAssign <span class="kw">for </span>XattrFlags {
+            <span class="doccomment">/// The intersection of `self` with the complement of `other` (`&amp;!`).
+            ///
+            /// This method is not equivalent to `self &amp; !other` when `other` has unknown bits set.
+            /// `difference` won't truncate `other`, but the `!` operator will.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>sub_assign(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="self">Self</span>) { <span class="self">self</span>.remove(other); }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::ops::Not <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Output = <span class="self">Self</span>;
+            <span class="doccomment">/// The bitwise negation (`!`) of the bits in `self`, truncating the result.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">fn </span>not(<span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="self">self</span>.complement() }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::iter::Extend&lt;XattrFlags&gt; <span class="kw">for
+            </span>XattrFlags {
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in each flags value.
+            </span><span class="kw">fn </span>extend&lt;T: ::bitflags::__private::core::iter::IntoIterator&lt;Item
+                = <span class="self">Self</span>&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iterator: T) {
+                <span class="kw">for </span>item <span class="kw">in </span>iterator { <span class="self">self</span>.insert(item) }
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::iter::FromIterator&lt;XattrFlags&gt; <span class="kw">for
+            </span>XattrFlags {
+            <span class="doccomment">/// The bitwise or (`|`) of the bits in each flags value.
+            </span><span class="kw">fn </span>from_iter&lt;T: ::bitflags::__private::core::iter::IntoIterator&lt;Item
+                = <span class="self">Self</span>&gt;&gt;(iterator: T) -&gt; <span class="self">Self </span>{
+                <span class="kw">use </span>::bitflags::__private::core::iter::Extend;
+                <span class="kw">let </span><span class="kw-2">mut </span>result = <span class="self">Self</span>::empty();
+                result.extend(iterator);
+                result
+            }
+        }
+        <span class="kw">impl </span>XattrFlags {
+            <span class="doccomment">/// Yield a set of contained flags values.
+            ///
+            /// Each yielded flags value will correspond to a defined named flag. Any unknown bits
+            /// will be yielded together as a final flags value.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::bitflags::iter::Iter&lt;XattrFlags&gt; {
+                ::bitflags::iter::Iter::__private_const_new(&lt;XattrFlags <span class="kw">as
+                        </span>::bitflags::Flags&gt;::FLAGS,
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()),
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()))
+            }
+            <span class="doccomment">/// Yield a set of contained named flags values.
+            ///
+            /// This method is like [`iter`](#method.iter), except only yields bits in contained named flags.
+            /// Any unknown bits, or bits not corresponding to a contained flag will not be yielded.
+            </span><span class="attr">#[inline]
+            </span><span class="kw">pub const fn </span>iter_names(<span class="kw-2">&amp;</span><span class="self">self</span>)
+                -&gt; ::bitflags::iter::IterNames&lt;XattrFlags&gt; {
+                ::bitflags::iter::IterNames::__private_const_new(&lt;XattrFlags
+                        <span class="kw">as </span>::bitflags::Flags&gt;::FLAGS,
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()),
+                    XattrFlags::from_bits_retain(<span class="self">self</span>.bits()))
+            }
+        }
+        <span class="kw">impl </span>::bitflags::__private::core::iter::IntoIterator <span class="kw">for </span>XattrFlags {
+            <span class="kw">type </span>Item = XattrFlags;
+            <span class="kw">type </span>IntoIter = ::bitflags::iter::Iter&lt;XattrFlags&gt;;
+            <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIter { <span class="self">self</span>.iter() }
+        }
+    };</span><span class="original"><a href="../../../bitflags/macro.bitflags.html">bitflags!</a> {
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="doccomment">/// `XATTR_*` constants for use with [`setxattr`], and other `*setxattr`
+<a href=#14 id=14 data-nosnippet>14</a>    /// functions.
+<a href=#15 id=15 data-nosnippet>15</a>    </span><span class="attr">#[repr(transparent)]
+<a href=#16 id=16 data-nosnippet>16</a>    #[derive(<a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a>, <a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a>, <a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a>, <a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a>, <a href="https://doc.rust-lang.org/nightly/core/hash/macros/derive.Hash.html">Hash</a>, <a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a>)]
+<a href=#17 id=17 data-nosnippet>17</a>    </span><span class="kw">pub struct </span><a href="../../../rustix/fs/struct.XattrFlags.html">XattrFlags</a>: ffi::<a href="../../../rustix/ffi/type.c_uint.html">c_uint</a> {
+<a href=#18 id=18 data-nosnippet>18</a>        <span class="doccomment">/// `XATTR_CREATE`
+<a href=#19 id=19 data-nosnippet>19</a>        </span><span class="kw">const </span>CREATE = c::XATTR_CREATE <span class="kw">as </span>c::c_uint;
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a>        <span class="doccomment">/// `XATTR_REPLACE`
+<a href=#22 id=22 data-nosnippet>22</a>        </span><span class="kw">const </span>REPLACE = c::XATTR_REPLACE <span class="kw">as </span>c::c_uint;
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a>        <span class="doccomment">/// &lt;https://docs.rs/bitflags/*/bitflags/#externally-defined-flags&gt;
+<a href=#25 id=25 data-nosnippet>25</a>        </span><span class="kw">const _ </span>= !<span class="number">0</span>;
+<a href=#26 id=26 data-nosnippet>26</a>    }
+<a href=#27 id=27 data-nosnippet>27</a>}</span></span>
+<a href=#28 id=28 data-nosnippet>28</a>
+<a href=#29 id=29 data-nosnippet>29</a><span class="doccomment">/// `getxattr(path, name, value)`—Get extended filesystem attributes.
+<a href=#30 id=30 data-nosnippet>30</a>///
+<a href=#31 id=31 data-nosnippet>31</a>/// Unlike the libc `getxattr` function, this function does not treat an
+<a href=#32 id=32 data-nosnippet>32</a>/// buffer with zero length as a way to return the size of the attribute.
+<a href=#33 id=33 data-nosnippet>33</a>/// To obtain the size, use [`getxattr_query`].
+<a href=#34 id=34 data-nosnippet>34</a>///
+<a href=#35 id=35 data-nosnippet>35</a>/// For a higher-level API to xattr functionality, see the [xattr] crate.
+<a href=#36 id=36 data-nosnippet>36</a>///
+<a href=#37 id=37 data-nosnippet>37</a>/// [xattr]: https://crates.io/crates/xattr
+<a href=#38 id=38 data-nosnippet>38</a>///
+<a href=#39 id=39 data-nosnippet>39</a>/// # References
+<a href=#40 id=40 data-nosnippet>40</a>///  - [Linux]
+<a href=#41 id=41 data-nosnippet>41</a>///  - [Apple]
+<a href=#42 id=42 data-nosnippet>42</a>///
+<a href=#43 id=43 data-nosnippet>43</a>/// [Linux]: https://man7.org/linux/man-pages/man2/getxattr.2.html
+<a href=#44 id=44 data-nosnippet>44</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getxattr.2.html
+<a href=#45 id=45 data-nosnippet>45</a></span><span class="attr">#[inline]
+<a href=#46 id=46 data-nosnippet>46</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.getxattr.html">getxattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Buf: <a href="../buffer.rs.html#106">Buffer</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;(
+<a href=#47 id=47 data-nosnippet>47</a>    path: P,
+<a href=#48 id=48 data-nosnippet>48</a>    name: Name,
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="kw-2">mut </span>value: Buf,
+<a href=#50 id=50 data-nosnippet>50</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;Buf::Output&gt; {
+<a href=#51 id=51 data-nosnippet>51</a>    <a href="#47">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#52 id=52 data-nosnippet>52</a>        <a href="#48">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| {
+<a href=#53 id=53 data-nosnippet>53</a>            <span class="kw">let </span>parts = <a href="#49">value</a>.<a href="../buffer.rs.html#313">parts_mut</a>();
+<a href=#54 id=54 data-nosnippet>54</a>            <span class="comment">// SAFETY: `getxattr` behaves.
+<a href=#55 id=55 data-nosnippet>55</a>            </span><span class="kw">let </span>len = <span class="kw">unsafe </span>{ backend::fs::syscalls::getxattr(path, name, parts)<span class="question-mark">? </span>};
+<a href=#56 id=56 data-nosnippet>56</a>            <span class="kw">if </span><a href="#53">parts</a>.<span class="number">1 </span>== <span class="number">0 </span>{
+<a href=#57 id=57 data-nosnippet>57</a>                <span class="comment">// `getxattr` special-cases an input size of 0 as a size
+<a href=#58 id=58 data-nosnippet>58</a>                // query, which we handle through a different API function.
+<a href=#59 id=59 data-nosnippet>59</a>                </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#49">value</a>.<a href="../buffer.rs.html#321">assume_init</a>(<span class="number">0</span>)) }
+<a href=#60 id=60 data-nosnippet>60</a>            } <span class="kw">else </span>{
+<a href=#61 id=61 data-nosnippet>61</a>                <span class="comment">// SAFETY: `getxattr` behaves, and we've handled the special
+<a href=#62 id=62 data-nosnippet>62</a>                // case of an empty buffer above.
+<a href=#63 id=63 data-nosnippet>63</a>                </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#49">value</a>.<a href="../buffer.rs.html#321">assume_init</a>(<a href="#55">len</a>)) }
+<a href=#64 id=64 data-nosnippet>64</a>            }
+<a href=#65 id=65 data-nosnippet>65</a>        })
+<a href=#66 id=66 data-nosnippet>66</a>    })
+<a href=#67 id=67 data-nosnippet>67</a>}
+<a href=#68 id=68 data-nosnippet>68</a>
+<a href=#69 id=69 data-nosnippet>69</a><span class="doccomment">/// `getxattr(path, name, NULL, 0)`—Query the length of an extended filesystem
+<a href=#70 id=70 data-nosnippet>70</a>/// attribute.
+<a href=#71 id=71 data-nosnippet>71</a>///
+<a href=#72 id=72 data-nosnippet>72</a>/// This function uses `getxattr` with no buffer to just return the size of
+<a href=#73 id=73 data-nosnippet>73</a>/// the attribute. This can be used to determine the size of a buffer to
+<a href=#74 id=74 data-nosnippet>74</a>/// allocate for a subsequent call to [`getxattr`], however keep in mind
+<a href=#75 id=75 data-nosnippet>75</a>/// that other processes may modify attributes at any time.
+<a href=#76 id=76 data-nosnippet>76</a>///
+<a href=#77 id=77 data-nosnippet>77</a>/// # References
+<a href=#78 id=78 data-nosnippet>78</a>///  - [Linux]
+<a href=#79 id=79 data-nosnippet>79</a>///  - [Apple]
+<a href=#80 id=80 data-nosnippet>80</a>///
+<a href=#81 id=81 data-nosnippet>81</a>/// [Linux]: https://man7.org/linux/man-pages/man2/getxattr.2.html
+<a href=#82 id=82 data-nosnippet>82</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/getxattr.2.html
+<a href=#83 id=83 data-nosnippet>83</a></span><span class="attr">#[inline]
+<a href=#84 id=84 data-nosnippet>84</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.getxattr_query.html">getxattr_query</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(path: P, name: Name) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#85 id=85 data-nosnippet>85</a>    <a href="#84">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#86 id=86 data-nosnippet>86</a>        <a href="#84">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| {
+<a href=#87 id=87 data-nosnippet>87</a>            <span class="comment">// SAFETY: `getxattr` behaves.
+<a href=#88 id=88 data-nosnippet>88</a>            </span><span class="kw">unsafe </span>{ backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1557-1569">getxattr</a>(<a href="#85">path</a>, <a href="#86">name</a>, (<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">null_mut</a>(), <span class="number">0</span>)) }
+<a href=#89 id=89 data-nosnippet>89</a>        })
+<a href=#90 id=90 data-nosnippet>90</a>    })
+<a href=#91 id=91 data-nosnippet>91</a>}
+<a href=#92 id=92 data-nosnippet>92</a>
+<a href=#93 id=93 data-nosnippet>93</a><span class="doccomment">/// `lgetxattr(path, name, value.as_ptr(), value.len())`—Get extended
+<a href=#94 id=94 data-nosnippet>94</a>/// filesystem attributes, without following symlinks in the last path
+<a href=#95 id=95 data-nosnippet>95</a>/// component.
+<a href=#96 id=96 data-nosnippet>96</a>///
+<a href=#97 id=97 data-nosnippet>97</a>/// Unlike the libc `lgetxattr` function, this function does not treat an
+<a href=#98 id=98 data-nosnippet>98</a>/// buffer with zero length as a way to return the size of the attribute.
+<a href=#99 id=99 data-nosnippet>99</a>/// To obtain the size, use [`lgetxattr_query`].
+<a href=#100 id=100 data-nosnippet>100</a>///
+<a href=#101 id=101 data-nosnippet>101</a>/// # References
+<a href=#102 id=102 data-nosnippet>102</a>///  - [Linux]
+<a href=#103 id=103 data-nosnippet>103</a>///
+<a href=#104 id=104 data-nosnippet>104</a>/// [Linux]: https://man7.org/linux/man-pages/man2/lgetxattr.2.html
+<a href=#105 id=105 data-nosnippet>105</a></span><span class="attr">#[inline]
+<a href=#106 id=106 data-nosnippet>106</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.lgetxattr.html">lgetxattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Buf: <a href="../buffer.rs.html#106">Buffer</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;(
+<a href=#107 id=107 data-nosnippet>107</a>    path: P,
+<a href=#108 id=108 data-nosnippet>108</a>    name: Name,
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="kw-2">mut </span>value: Buf,
+<a href=#110 id=110 data-nosnippet>110</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;Buf::Output&gt; {
+<a href=#111 id=111 data-nosnippet>111</a>    <a href="#107">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#112 id=112 data-nosnippet>112</a>        <a href="#108">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| {
+<a href=#113 id=113 data-nosnippet>113</a>            <span class="kw">let </span>parts = <a href="#109">value</a>.<a href="../buffer.rs.html#313">parts_mut</a>();
+<a href=#114 id=114 data-nosnippet>114</a>            <span class="comment">// SAFETY: `lgetxattr` behaves.
+<a href=#115 id=115 data-nosnippet>115</a>            </span><span class="kw">let </span>len = <span class="kw">unsafe </span>{ backend::fs::syscalls::lgetxattr(path, name, parts)<span class="question-mark">? </span>};
+<a href=#116 id=116 data-nosnippet>116</a>            <span class="kw">if </span><a href="#113">parts</a>.<span class="number">1 </span>== <span class="number">0 </span>{
+<a href=#117 id=117 data-nosnippet>117</a>                <span class="comment">// `lgetxattr` special-cases an input size of 0 as a size
+<a href=#118 id=118 data-nosnippet>118</a>                // query, which we handle through a different API function.
+<a href=#119 id=119 data-nosnippet>119</a>                </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#109">value</a>.<a href="../buffer.rs.html#321">assume_init</a>(<span class="number">0</span>)) }
+<a href=#120 id=120 data-nosnippet>120</a>            } <span class="kw">else </span>{
+<a href=#121 id=121 data-nosnippet>121</a>                <span class="comment">// SAFETY: `lgetxattr` behaves, and we've handled the special
+<a href=#122 id=122 data-nosnippet>122</a>                // case of an empty buffer above.
+<a href=#123 id=123 data-nosnippet>123</a>                </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#109">value</a>.<a href="../buffer.rs.html#321">assume_init</a>(<a href="#115">len</a>)) }
+<a href=#124 id=124 data-nosnippet>124</a>            }
+<a href=#125 id=125 data-nosnippet>125</a>        })
+<a href=#126 id=126 data-nosnippet>126</a>    })
+<a href=#127 id=127 data-nosnippet>127</a>}
+<a href=#128 id=128 data-nosnippet>128</a>
+<a href=#129 id=129 data-nosnippet>129</a><span class="doccomment">/// `lgetxattr(path, name, NULL, 0)`—Query the length of an extended
+<a href=#130 id=130 data-nosnippet>130</a>/// filesystem attribute, without following symlinks in the last path
+<a href=#131 id=131 data-nosnippet>131</a>/// component.
+<a href=#132 id=132 data-nosnippet>132</a>///
+<a href=#133 id=133 data-nosnippet>133</a>/// This function uses `lgetxattr` with no buffer to just return the size of
+<a href=#134 id=134 data-nosnippet>134</a>/// the attribute. This can be used to determine the size of a buffer to
+<a href=#135 id=135 data-nosnippet>135</a>/// allocate for a subsequent call to [`lgetxattr`], however keep in mind
+<a href=#136 id=136 data-nosnippet>136</a>/// that other processes may modify attributes at any time.
+<a href=#137 id=137 data-nosnippet>137</a>///
+<a href=#138 id=138 data-nosnippet>138</a>/// # References
+<a href=#139 id=139 data-nosnippet>139</a>///  - [Linux]
+<a href=#140 id=140 data-nosnippet>140</a>///
+<a href=#141 id=141 data-nosnippet>141</a>/// [Linux]: https://man7.org/linux/man-pages/man2/lgetxattr.2.html
+<a href=#142 id=142 data-nosnippet>142</a></span><span class="attr">#[inline]
+<a href=#143 id=143 data-nosnippet>143</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.lgetxattr_query.html">lgetxattr_query</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(path: P, name: Name) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#144 id=144 data-nosnippet>144</a>    <a href="#143">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#145 id=145 data-nosnippet>145</a>        <a href="#143">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| {
+<a href=#146 id=146 data-nosnippet>146</a>            <span class="comment">// SAFETY: `lgetxattr` behaves.
+<a href=#147 id=147 data-nosnippet>147</a>            </span><span class="kw">unsafe </span>{ backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1572-1584">lgetxattr</a>(<a href="#144">path</a>, <a href="#145">name</a>, (<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">null_mut</a>(), <span class="number">0</span>)) }
+<a href=#148 id=148 data-nosnippet>148</a>        })
+<a href=#149 id=149 data-nosnippet>149</a>    })
+<a href=#150 id=150 data-nosnippet>150</a>}
+<a href=#151 id=151 data-nosnippet>151</a>
+<a href=#152 id=152 data-nosnippet>152</a><span class="doccomment">/// `fgetxattr(fd, name, value.as_ptr(), value.len())`—Get extended
+<a href=#153 id=153 data-nosnippet>153</a>/// filesystem attributes on an open file descriptor.
+<a href=#154 id=154 data-nosnippet>154</a>///
+<a href=#155 id=155 data-nosnippet>155</a>/// Unlike the libc `fgetxattr` function, this function does not treat an
+<a href=#156 id=156 data-nosnippet>156</a>/// buffer with zero length as a way to return the size of the attribute.
+<a href=#157 id=157 data-nosnippet>157</a>/// To obtain the size, use [`fgetxattr_query`].
+<a href=#158 id=158 data-nosnippet>158</a>///
+<a href=#159 id=159 data-nosnippet>159</a>/// # References
+<a href=#160 id=160 data-nosnippet>160</a>///  - [Linux]
+<a href=#161 id=161 data-nosnippet>161</a>///  - [Apple]
+<a href=#162 id=162 data-nosnippet>162</a>///
+<a href=#163 id=163 data-nosnippet>163</a>/// [Linux]: https://man7.org/linux/man-pages/man2/fgetxattr.2.html
+<a href=#164 id=164 data-nosnippet>164</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fgetxattr.2.html
+<a href=#165 id=165 data-nosnippet>165</a></span><span class="attr">#[inline]
+<a href=#166 id=166 data-nosnippet>166</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.fgetxattr.html">fgetxattr</a>&lt;Fd: <a href="../../../rustix/fd/trait.AsFd.html">AsFd</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Buf: <a href="../buffer.rs.html#106">Buffer</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;(
+<a href=#167 id=167 data-nosnippet>167</a>    fd: Fd,
+<a href=#168 id=168 data-nosnippet>168</a>    name: Name,
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="kw-2">mut </span>value: Buf,
+<a href=#170 id=170 data-nosnippet>170</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;Buf::Output&gt; {
+<a href=#171 id=171 data-nosnippet>171</a>    <a href="#168">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| {
+<a href=#172 id=172 data-nosnippet>172</a>        <span class="kw">let </span>parts = <a href="#169">value</a>.<a href="../buffer.rs.html#313">parts_mut</a>();
+<a href=#173 id=173 data-nosnippet>173</a>        <span class="comment">// SAFETY: `fgetxattr` behaves.
+<a href=#174 id=174 data-nosnippet>174</a>        </span><span class="kw">let </span>len = <span class="kw">unsafe </span>{ backend::fs::syscalls::fgetxattr(fd.as_fd(), name, parts)<span class="question-mark">? </span>};
+<a href=#175 id=175 data-nosnippet>175</a>        <span class="kw">if </span><a href="#172">parts</a>.<span class="number">1 </span>== <span class="number">0 </span>{
+<a href=#176 id=176 data-nosnippet>176</a>            <span class="comment">// `fgetxattr` special-cases an input size of 0 as a size
+<a href=#177 id=177 data-nosnippet>177</a>            // query, which we handle through a different API function.
+<a href=#178 id=178 data-nosnippet>178</a>            </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#169">value</a>.<a href="../buffer.rs.html#321">assume_init</a>(<span class="number">0</span>)) }
+<a href=#179 id=179 data-nosnippet>179</a>        } <span class="kw">else </span>{
+<a href=#180 id=180 data-nosnippet>180</a>            <span class="comment">// SAFETY: `fgetxattr` behaves, and we've handled the special
+<a href=#181 id=181 data-nosnippet>181</a>            // case of an empty buffer above.
+<a href=#182 id=182 data-nosnippet>182</a>            </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#169">value</a>.<a href="../buffer.rs.html#321">assume_init</a>(<a href="#174">len</a>)) }
+<a href=#183 id=183 data-nosnippet>183</a>        }
+<a href=#184 id=184 data-nosnippet>184</a>    })
+<a href=#185 id=185 data-nosnippet>185</a>}
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a><span class="doccomment">/// `fgetxattr(fd, name, NULL, 0)`—Query the length of an extended
+<a href=#188 id=188 data-nosnippet>188</a>/// filesystem attribute on an open file descriptor.
+<a href=#189 id=189 data-nosnippet>189</a>///
+<a href=#190 id=190 data-nosnippet>190</a>/// This function uses `fgetxattr` with no buffer to just return the size of
+<a href=#191 id=191 data-nosnippet>191</a>/// the attribute. This can be used to determine the size of a buffer to
+<a href=#192 id=192 data-nosnippet>192</a>/// allocate for a subsequent call to [`fgetxattr`], however keep in mind
+<a href=#193 id=193 data-nosnippet>193</a>/// that other processes may modify attributes at any time.
+<a href=#194 id=194 data-nosnippet>194</a>///
+<a href=#195 id=195 data-nosnippet>195</a>/// # References
+<a href=#196 id=196 data-nosnippet>196</a>///  - [Linux]
+<a href=#197 id=197 data-nosnippet>197</a>///  - [Apple]
+<a href=#198 id=198 data-nosnippet>198</a>///
+<a href=#199 id=199 data-nosnippet>199</a>/// [Linux]: https://man7.org/linux/man-pages/man2/fgetxattr.2.html
+<a href=#200 id=200 data-nosnippet>200</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fgetxattr.2.html
+<a href=#201 id=201 data-nosnippet>201</a></span><span class="attr">#[inline]
+<a href=#202 id=202 data-nosnippet>202</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.fgetxattr_query.html">fgetxattr_query</a>&lt;Fd: <a href="../../../rustix/fd/trait.AsFd.html">AsFd</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(fd: Fd, name: Name) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#203 id=203 data-nosnippet>203</a>    <a href="#202">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| {
+<a href=#204 id=204 data-nosnippet>204</a>        <span class="comment">// SAFETY: `fgetxattr` behaves.
+<a href=#205 id=205 data-nosnippet>205</a>        </span><span class="kw">unsafe </span>{ backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1587-1599">fgetxattr</a>(<a href="#202">fd</a>.<a href="../../../rustix/fd/trait.AsFd.html">as_fd</a>(), <a href="#203">name</a>, (<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">null_mut</a>(), <span class="number">0</span>)) }
+<a href=#206 id=206 data-nosnippet>206</a>    })
+<a href=#207 id=207 data-nosnippet>207</a>}
+<a href=#208 id=208 data-nosnippet>208</a>
+<a href=#209 id=209 data-nosnippet>209</a><span class="doccomment">/// `setxattr(path, name, value.as_ptr(), value.len(), flags)`—Set extended
+<a href=#210 id=210 data-nosnippet>210</a>/// filesystem attributes.
+<a href=#211 id=211 data-nosnippet>211</a>///
+<a href=#212 id=212 data-nosnippet>212</a>/// # References
+<a href=#213 id=213 data-nosnippet>213</a>///  - [Linux]
+<a href=#214 id=214 data-nosnippet>214</a>///  - [Apple]
+<a href=#215 id=215 data-nosnippet>215</a>///
+<a href=#216 id=216 data-nosnippet>216</a>/// [Linux]: https://man7.org/linux/man-pages/man2/setxattr.2.html
+<a href=#217 id=217 data-nosnippet>217</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/setxattr.2.html
+<a href=#218 id=218 data-nosnippet>218</a></span><span class="attr">#[inline]
+<a href=#219 id=219 data-nosnippet>219</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.setxattr.html">setxattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(
+<a href=#220 id=220 data-nosnippet>220</a>    path: P,
+<a href=#221 id=221 data-nosnippet>221</a>    name: Name,
+<a href=#222 id=222 data-nosnippet>222</a>    value: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#223 id=223 data-nosnippet>223</a>    flags: <a href="#12-27">XattrFlags</a>,
+<a href=#224 id=224 data-nosnippet>224</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;()&gt; {
+<a href=#225 id=225 data-nosnippet>225</a>    <a href="#220">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#226 id=226 data-nosnippet>226</a>        <a href="#221">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1602-1619">setxattr</a>(<a href="#225">path</a>, <a href="#226">name</a>, <a href="#222">value</a>, <a href="#223">flags</a>))
+<a href=#227 id=227 data-nosnippet>227</a>    })
+<a href=#228 id=228 data-nosnippet>228</a>}
+<a href=#229 id=229 data-nosnippet>229</a>
+<a href=#230 id=230 data-nosnippet>230</a><span class="doccomment">/// `setxattr(path, name, value.as_ptr(), value.len(), flags)`—Set extended
+<a href=#231 id=231 data-nosnippet>231</a>/// filesystem attributes, without following symlinks in the last path
+<a href=#232 id=232 data-nosnippet>232</a>/// component.
+<a href=#233 id=233 data-nosnippet>233</a>///
+<a href=#234 id=234 data-nosnippet>234</a>/// # References
+<a href=#235 id=235 data-nosnippet>235</a>///  - [Linux]
+<a href=#236 id=236 data-nosnippet>236</a>///
+<a href=#237 id=237 data-nosnippet>237</a>/// [Linux]: https://man7.org/linux/man-pages/man2/lsetxattr.2.html
+<a href=#238 id=238 data-nosnippet>238</a></span><span class="attr">#[inline]
+<a href=#239 id=239 data-nosnippet>239</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.lsetxattr.html">lsetxattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(
+<a href=#240 id=240 data-nosnippet>240</a>    path: P,
+<a href=#241 id=241 data-nosnippet>241</a>    name: Name,
+<a href=#242 id=242 data-nosnippet>242</a>    value: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#243 id=243 data-nosnippet>243</a>    flags: <a href="#12-27">XattrFlags</a>,
+<a href=#244 id=244 data-nosnippet>244</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;()&gt; {
+<a href=#245 id=245 data-nosnippet>245</a>    <a href="#240">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#246 id=246 data-nosnippet>246</a>        <a href="#241">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1622-1639">lsetxattr</a>(<a href="#245">path</a>, <a href="#246">name</a>, <a href="#242">value</a>, <a href="#243">flags</a>))
+<a href=#247 id=247 data-nosnippet>247</a>    })
+<a href=#248 id=248 data-nosnippet>248</a>}
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a><span class="doccomment">/// `fsetxattr(fd, name, value.as_ptr(), value.len(), flags)`—Set extended
+<a href=#251 id=251 data-nosnippet>251</a>/// filesystem attributes on an open file descriptor.
+<a href=#252 id=252 data-nosnippet>252</a>///
+<a href=#253 id=253 data-nosnippet>253</a>/// # References
+<a href=#254 id=254 data-nosnippet>254</a>///  - [Linux]
+<a href=#255 id=255 data-nosnippet>255</a>///  - [Apple]
+<a href=#256 id=256 data-nosnippet>256</a>///
+<a href=#257 id=257 data-nosnippet>257</a>/// [Linux]: https://man7.org/linux/man-pages/man2/fsetxattr.2.html
+<a href=#258 id=258 data-nosnippet>258</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsetxattr.2.html
+<a href=#259 id=259 data-nosnippet>259</a></span><span class="attr">#[inline]
+<a href=#260 id=260 data-nosnippet>260</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.fsetxattr.html">fsetxattr</a>&lt;Fd: <a href="../../../rustix/fd/trait.AsFd.html">AsFd</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(
+<a href=#261 id=261 data-nosnippet>261</a>    fd: Fd,
+<a href=#262 id=262 data-nosnippet>262</a>    name: Name,
+<a href=#263 id=263 data-nosnippet>263</a>    value: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#264 id=264 data-nosnippet>264</a>    flags: <a href="#12-27">XattrFlags</a>,
+<a href=#265 id=265 data-nosnippet>265</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;()&gt; {
+<a href=#266 id=266 data-nosnippet>266</a>    <a href="#262">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1642-1659">fsetxattr</a>(<a href="#261">fd</a>.<a href="../../../rustix/fd/trait.AsFd.html">as_fd</a>(), <a href="#266">name</a>, <a href="#263">value</a>, <a href="#264">flags</a>))
+<a href=#267 id=267 data-nosnippet>267</a>}
+<a href=#268 id=268 data-nosnippet>268</a>
+<a href=#269 id=269 data-nosnippet>269</a><span class="doccomment">/// `listxattr(path, list.as_ptr(), list.len())`—List extended filesystem
+<a href=#270 id=270 data-nosnippet>270</a>/// attributes.
+<a href=#271 id=271 data-nosnippet>271</a>///
+<a href=#272 id=272 data-nosnippet>272</a>/// Unlike the libc `listxattr` function, this function does not treat an
+<a href=#273 id=273 data-nosnippet>273</a>/// buffer with zero length as a way to return the size of the attribute.
+<a href=#274 id=274 data-nosnippet>274</a>/// To obtain the size, use [`listxattr_query`].
+<a href=#275 id=275 data-nosnippet>275</a>///
+<a href=#276 id=276 data-nosnippet>276</a>/// # References
+<a href=#277 id=277 data-nosnippet>277</a>///  - [Linux]
+<a href=#278 id=278 data-nosnippet>278</a>///  - [Apple]
+<a href=#279 id=279 data-nosnippet>279</a>///
+<a href=#280 id=280 data-nosnippet>280</a>/// [Linux]: https://man7.org/linux/man-pages/man2/listxattr.2.html
+<a href=#281 id=281 data-nosnippet>281</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/listxattr.2.html
+<a href=#282 id=282 data-nosnippet>282</a></span><span class="attr">#[inline]
+<a href=#283 id=283 data-nosnippet>283</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.listxattr.html">listxattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Buf: <a href="../buffer.rs.html#106">Buffer</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;(path: P, <span class="kw-2">mut </span>list: Buf) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;Buf::Output&gt; {
+<a href=#284 id=284 data-nosnippet>284</a>    <a href="#283">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#285 id=285 data-nosnippet>285</a>        <span class="kw">let </span>parts = <a href="#283">list</a>.<a href="../buffer.rs.html#313">parts_mut</a>();
+<a href=#286 id=286 data-nosnippet>286</a>        <span class="comment">// SAFETY: `listxattr` behaves.
+<a href=#287 id=287 data-nosnippet>287</a>        </span><span class="kw">let </span>len = <span class="kw">unsafe </span>{ backend::fs::syscalls::listxattr(path, parts)<span class="question-mark">? </span>};
+<a href=#288 id=288 data-nosnippet>288</a>        <span class="kw">if </span><a href="#285">parts</a>.<span class="number">1 </span>== <span class="number">0 </span>{
+<a href=#289 id=289 data-nosnippet>289</a>            <span class="comment">// `listxattr` special-cases an input size of 0 as a size
+<a href=#290 id=290 data-nosnippet>290</a>            // query, which we handle through a different API function.
+<a href=#291 id=291 data-nosnippet>291</a>            </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#283">list</a>.<a href="../buffer.rs.html#321">assume_init</a>(<span class="number">0</span>)) }
+<a href=#292 id=292 data-nosnippet>292</a>        } <span class="kw">else </span>{
+<a href=#293 id=293 data-nosnippet>293</a>            <span class="comment">// SAFETY: `listxattr` behaves, and we've handled the special
+<a href=#294 id=294 data-nosnippet>294</a>            // case of an empty buffer above.
+<a href=#295 id=295 data-nosnippet>295</a>            </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#283">list</a>.<a href="../buffer.rs.html#321">assume_init</a>(<a href="#287">len</a>)) }
+<a href=#296 id=296 data-nosnippet>296</a>        }
+<a href=#297 id=297 data-nosnippet>297</a>    })
+<a href=#298 id=298 data-nosnippet>298</a>}
+<a href=#299 id=299 data-nosnippet>299</a>
+<a href=#300 id=300 data-nosnippet>300</a><span class="doccomment">/// `listxattr(path, NULL, 0)`—Query the length of the list of extended
+<a href=#301 id=301 data-nosnippet>301</a>/// filesystem attributes.
+<a href=#302 id=302 data-nosnippet>302</a>///
+<a href=#303 id=303 data-nosnippet>303</a>/// This function uses `listxattr` with no buffer to just return the size of
+<a href=#304 id=304 data-nosnippet>304</a>/// the list. This can be used to determine the size of a buffer to
+<a href=#305 id=305 data-nosnippet>305</a>/// allocate for a subsequent call to [`listxattr`], however keep in mind
+<a href=#306 id=306 data-nosnippet>306</a>/// that other processes may modify attributes at any time.
+<a href=#307 id=307 data-nosnippet>307</a>///
+<a href=#308 id=308 data-nosnippet>308</a>/// # References
+<a href=#309 id=309 data-nosnippet>309</a>///  - [Linux]
+<a href=#310 id=310 data-nosnippet>310</a>///  - [Apple]
+<a href=#311 id=311 data-nosnippet>311</a>///
+<a href=#312 id=312 data-nosnippet>312</a>/// [Linux]: https://man7.org/linux/man-pages/man2/listxattr.2.html
+<a href=#313 id=313 data-nosnippet>313</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/listxattr.2.html
+<a href=#314 id=314 data-nosnippet>314</a></span><span class="attr">#[inline]
+<a href=#315 id=315 data-nosnippet>315</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.listxattr_query.html">listxattr_query</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(path: P) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#316 id=316 data-nosnippet>316</a>    <a href="#315">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#317 id=317 data-nosnippet>317</a>        <span class="comment">// SAFETY: `listxattr` behaves.
+<a href=#318 id=318 data-nosnippet>318</a>        </span><span class="kw">unsafe </span>{ backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1662-1664">listxattr</a>(<a href="#316">path</a>, (<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">null_mut</a>(), <span class="number">0</span>)) }
+<a href=#319 id=319 data-nosnippet>319</a>    })
+<a href=#320 id=320 data-nosnippet>320</a>}
+<a href=#321 id=321 data-nosnippet>321</a>
+<a href=#322 id=322 data-nosnippet>322</a><span class="doccomment">/// `llistxattr(path, list.as_ptr(), list.len())`—List extended filesystem
+<a href=#323 id=323 data-nosnippet>323</a>/// attributes, without following symlinks in the last path component.
+<a href=#324 id=324 data-nosnippet>324</a>///
+<a href=#325 id=325 data-nosnippet>325</a>/// Unlike the libc `llistxattr` function, this function does not treat an
+<a href=#326 id=326 data-nosnippet>326</a>/// buffer with zero length as a way to return the size of the attribute.
+<a href=#327 id=327 data-nosnippet>327</a>/// To obtain the size, use [`llistxattr_query`].
+<a href=#328 id=328 data-nosnippet>328</a>///
+<a href=#329 id=329 data-nosnippet>329</a>/// # References
+<a href=#330 id=330 data-nosnippet>330</a>///  - [Linux]
+<a href=#331 id=331 data-nosnippet>331</a>///
+<a href=#332 id=332 data-nosnippet>332</a>/// [Linux]: https://man7.org/linux/man-pages/man2/llistxattr.2.html
+<a href=#333 id=333 data-nosnippet>333</a></span><span class="attr">#[inline]
+<a href=#334 id=334 data-nosnippet>334</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.llistxattr.html">llistxattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Buf: <a href="../buffer.rs.html#106">Buffer</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;(
+<a href=#335 id=335 data-nosnippet>335</a>    path: P,
+<a href=#336 id=336 data-nosnippet>336</a>    <span class="kw-2">mut </span>list: Buf,
+<a href=#337 id=337 data-nosnippet>337</a>) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;Buf::Output&gt; {
+<a href=#338 id=338 data-nosnippet>338</a>    <a href="#335">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#339 id=339 data-nosnippet>339</a>        <span class="kw">let </span>parts = <a href="#336">list</a>.<a href="../buffer.rs.html#313">parts_mut</a>();
+<a href=#340 id=340 data-nosnippet>340</a>        <span class="comment">// SAFETY: `llistxattr` behaves.
+<a href=#341 id=341 data-nosnippet>341</a>        </span><span class="kw">let </span>len = <span class="kw">unsafe </span>{ backend::fs::syscalls::llistxattr(path, parts)<span class="question-mark">? </span>};
+<a href=#342 id=342 data-nosnippet>342</a>        <span class="kw">if </span><a href="#339">parts</a>.<span class="number">1 </span>== <span class="number">0 </span>{
+<a href=#343 id=343 data-nosnippet>343</a>            <span class="comment">// `llistxattr` special-cases an input size of 0 as a size
+<a href=#344 id=344 data-nosnippet>344</a>            // query, which we handle through a different API function.
+<a href=#345 id=345 data-nosnippet>345</a>            </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#336">list</a>.<a href="../buffer.rs.html#321">assume_init</a>(<span class="number">0</span>)) }
+<a href=#346 id=346 data-nosnippet>346</a>        } <span class="kw">else </span>{
+<a href=#347 id=347 data-nosnippet>347</a>            <span class="comment">// SAFETY: `llistxattr` behaves, and we've handled the special
+<a href=#348 id=348 data-nosnippet>348</a>            // case of an empty buffer above.
+<a href=#349 id=349 data-nosnippet>349</a>            </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#336">list</a>.<a href="../buffer.rs.html#321">assume_init</a>(<a href="#341">len</a>)) }
+<a href=#350 id=350 data-nosnippet>350</a>        }
+<a href=#351 id=351 data-nosnippet>351</a>    })
+<a href=#352 id=352 data-nosnippet>352</a>}
+<a href=#353 id=353 data-nosnippet>353</a>
+<a href=#354 id=354 data-nosnippet>354</a><span class="doccomment">/// `llistxattr(path, NULL, 0)`—Query the length of the list of extended
+<a href=#355 id=355 data-nosnippet>355</a>/// filesystem attributes, without following symlinks in the last path
+<a href=#356 id=356 data-nosnippet>356</a>/// component.
+<a href=#357 id=357 data-nosnippet>357</a>///
+<a href=#358 id=358 data-nosnippet>358</a>/// This function uses `llistxattr` with no buffer to just return the size of
+<a href=#359 id=359 data-nosnippet>359</a>/// the list. This can be used to determine the size of a buffer to
+<a href=#360 id=360 data-nosnippet>360</a>/// allocate for a subsequent call to [`llistxattr`], however keep in mind
+<a href=#361 id=361 data-nosnippet>361</a>/// that other processes may modify attributes at any time.
+<a href=#362 id=362 data-nosnippet>362</a>///
+<a href=#363 id=363 data-nosnippet>363</a>/// # References
+<a href=#364 id=364 data-nosnippet>364</a>///  - [Linux]
+<a href=#365 id=365 data-nosnippet>365</a>///
+<a href=#366 id=366 data-nosnippet>366</a>/// [Linux]: https://man7.org/linux/man-pages/man2/llistxattr.2.html
+<a href=#367 id=367 data-nosnippet>367</a></span><span class="attr">#[inline]
+<a href=#368 id=368 data-nosnippet>368</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.llistxattr_query.html">llistxattr_query</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(path: P) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#369 id=369 data-nosnippet>369</a>    <a href="#368">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#370 id=370 data-nosnippet>370</a>        <span class="comment">// SAFETY: `llistxattr` behaves.
+<a href=#371 id=371 data-nosnippet>371</a>        </span><span class="kw">unsafe </span>{ backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1667-1669">llistxattr</a>(<a href="#369">path</a>, (<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">null_mut</a>(), <span class="number">0</span>)) }
+<a href=#372 id=372 data-nosnippet>372</a>    })
+<a href=#373 id=373 data-nosnippet>373</a>}
+<a href=#374 id=374 data-nosnippet>374</a>
+<a href=#375 id=375 data-nosnippet>375</a><span class="doccomment">/// `flistxattr(fd, list.as_ptr(), list.len())`—List extended filesystem
+<a href=#376 id=376 data-nosnippet>376</a>/// attributes on an open file descriptor.
+<a href=#377 id=377 data-nosnippet>377</a>///
+<a href=#378 id=378 data-nosnippet>378</a>/// Unlike the libc `flistxattr` function, this function does not treat an
+<a href=#379 id=379 data-nosnippet>379</a>/// buffer with zero length as a way to return the size of the attribute.
+<a href=#380 id=380 data-nosnippet>380</a>/// To obtain the size, use [`flistxattr_query`].
+<a href=#381 id=381 data-nosnippet>381</a>///
+<a href=#382 id=382 data-nosnippet>382</a>/// # References
+<a href=#383 id=383 data-nosnippet>383</a>///  - [Linux]
+<a href=#384 id=384 data-nosnippet>384</a>///  - [Apple]
+<a href=#385 id=385 data-nosnippet>385</a>///
+<a href=#386 id=386 data-nosnippet>386</a>/// [Linux]: https://man7.org/linux/man-pages/man2/flistxattr.2.html
+<a href=#387 id=387 data-nosnippet>387</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/flistxattr.2.html
+<a href=#388 id=388 data-nosnippet>388</a></span><span class="attr">#[inline]
+<a href=#389 id=389 data-nosnippet>389</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.flistxattr.html">flistxattr</a>&lt;Fd: <a href="../../../rustix/fd/trait.AsFd.html">AsFd</a>, Buf: <a href="../buffer.rs.html#106">Buffer</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;&gt;(fd: Fd, <span class="kw-2">mut </span>list: Buf) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;Buf::Output&gt; {
+<a href=#390 id=390 data-nosnippet>390</a>    <span class="kw">let </span>parts = <a href="#389">list</a>.<a href="../buffer.rs.html#313">parts_mut</a>();
+<a href=#391 id=391 data-nosnippet>391</a>    <span class="comment">// SAFETY: `flistxattr` behaves.
+<a href=#392 id=392 data-nosnippet>392</a>    </span><span class="kw">let </span>len = <span class="kw">unsafe </span>{ backend::fs::syscalls::flistxattr(fd.as_fd(), parts)<span class="question-mark">? </span>};
+<a href=#393 id=393 data-nosnippet>393</a>    <span class="kw">if </span><a href="#390">parts</a>.<span class="number">1 </span>== <span class="number">0 </span>{
+<a href=#394 id=394 data-nosnippet>394</a>        <span class="comment">// `flistxattr` special-cases an input size of 0 as a size
+<a href=#395 id=395 data-nosnippet>395</a>        // query, which we handle through a different API function.
+<a href=#396 id=396 data-nosnippet>396</a>        </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#389">list</a>.<a href="../buffer.rs.html#321">assume_init</a>(<span class="number">0</span>)) }
+<a href=#397 id=397 data-nosnippet>397</a>    } <span class="kw">else </span>{
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="comment">// SAFETY: `flistxattr` behaves, and we've handled the special
+<a href=#399 id=399 data-nosnippet>399</a>        // case of an empty buffer above.
+<a href=#400 id=400 data-nosnippet>400</a>        </span><span class="kw">unsafe </span>{ <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="#389">list</a>.<a href="../buffer.rs.html#321">assume_init</a>(<a href="#392">len</a>)) }
+<a href=#401 id=401 data-nosnippet>401</a>    }
+<a href=#402 id=402 data-nosnippet>402</a>}
+<a href=#403 id=403 data-nosnippet>403</a>
+<a href=#404 id=404 data-nosnippet>404</a><span class="doccomment">/// `flistxattr(fd, list.as_ptr(), list.len())`—Query the length of the
+<a href=#405 id=405 data-nosnippet>405</a>/// list of extended filesystem attributes on an open file descriptor.
+<a href=#406 id=406 data-nosnippet>406</a>///
+<a href=#407 id=407 data-nosnippet>407</a>/// This function uses `flistxattr` with no buffer to just return the size of
+<a href=#408 id=408 data-nosnippet>408</a>/// the list. This can be used to determine the size of a buffer to
+<a href=#409 id=409 data-nosnippet>409</a>/// allocate for a subsequent call to [`flistxattr`], however keep in mind
+<a href=#410 id=410 data-nosnippet>410</a>/// that other processes may modify attributes at any time.
+<a href=#411 id=411 data-nosnippet>411</a>///
+<a href=#412 id=412 data-nosnippet>412</a>/// # References
+<a href=#413 id=413 data-nosnippet>413</a>///  - [Linux]
+<a href=#414 id=414 data-nosnippet>414</a>///
+<a href=#415 id=415 data-nosnippet>415</a>/// [Linux]: https://man7.org/linux/man-pages/man2/flistxattr.2.html
+<a href=#416 id=416 data-nosnippet>416</a></span><span class="attr">#[inline]
+<a href=#417 id=417 data-nosnippet>417</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.flistxattr_query.html">flistxattr_query</a>&lt;Fd: <a href="../../../rustix/fd/trait.AsFd.html">AsFd</a>&gt;(fd: Fd) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#418 id=418 data-nosnippet>418</a>    <span class="comment">// SAFETY: `flistxattr` behaves.
+<a href=#419 id=419 data-nosnippet>419</a>    </span><span class="kw">unsafe </span>{ backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1672-1674">flistxattr</a>(<a href="#417">fd</a>.<a href="../../../rustix/fd/trait.AsFd.html">as_fd</a>(), (<a href="https://doc.rust-lang.org/nightly/core/ptr/fn.null_mut.html">null_mut</a>(), <span class="number">0</span>)) }
+<a href=#420 id=420 data-nosnippet>420</a>}
+<a href=#421 id=421 data-nosnippet>421</a>
+<a href=#422 id=422 data-nosnippet>422</a><span class="doccomment">/// `removexattr(path, name)`—Remove an extended filesystem attribute.
+<a href=#423 id=423 data-nosnippet>423</a>///
+<a href=#424 id=424 data-nosnippet>424</a>/// # References
+<a href=#425 id=425 data-nosnippet>425</a>///  - [Linux]
+<a href=#426 id=426 data-nosnippet>426</a>///  - [Apple]
+<a href=#427 id=427 data-nosnippet>427</a>///
+<a href=#428 id=428 data-nosnippet>428</a>/// [Linux]: https://man7.org/linux/man-pages/man2/removexattr.2.html
+<a href=#429 id=429 data-nosnippet>429</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/removexattr.2.html
+<a href=#430 id=430 data-nosnippet>430</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.removexattr.html">removexattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(path: P, name: Name) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;()&gt; {
+<a href=#431 id=431 data-nosnippet>431</a>    <a href="#430">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#432 id=432 data-nosnippet>432</a>        <a href="#430">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1677-1679">removexattr</a>(<a href="#431">path</a>, <a href="#432">name</a>))
+<a href=#433 id=433 data-nosnippet>433</a>    })
+<a href=#434 id=434 data-nosnippet>434</a>}
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a><span class="doccomment">/// `lremovexattr(path, name)`—Remove an extended filesystem attribute,
+<a href=#437 id=437 data-nosnippet>437</a>/// without following symlinks in the last path component.
+<a href=#438 id=438 data-nosnippet>438</a>///
+<a href=#439 id=439 data-nosnippet>439</a>/// # References
+<a href=#440 id=440 data-nosnippet>440</a>///  - [Linux]
+<a href=#441 id=441 data-nosnippet>441</a>///
+<a href=#442 id=442 data-nosnippet>442</a>/// [Linux]: https://man7.org/linux/man-pages/man2/lremovexattr.2.html
+<a href=#443 id=443 data-nosnippet>443</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.lremovexattr.html">lremovexattr</a>&lt;P: <a href="../path/arg.rs.html#68-93">path::Arg</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(path: P, name: Name) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;()&gt; {
+<a href=#444 id=444 data-nosnippet>444</a>    <a href="#443">path</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|path| {
+<a href=#445 id=445 data-nosnippet>445</a>        <a href="#443">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1682-1684">lremovexattr</a>(<a href="#444">path</a>, <a href="#445">name</a>))
+<a href=#446 id=446 data-nosnippet>446</a>    })
+<a href=#447 id=447 data-nosnippet>447</a>}
+<a href=#448 id=448 data-nosnippet>448</a>
+<a href=#449 id=449 data-nosnippet>449</a><span class="doccomment">/// `fremovexattr(fd, name)`—Remove an extended filesystem attribute on an
+<a href=#450 id=450 data-nosnippet>450</a>/// open file descriptor.
+<a href=#451 id=451 data-nosnippet>451</a>///
+<a href=#452 id=452 data-nosnippet>452</a>/// # References
+<a href=#453 id=453 data-nosnippet>453</a>///  - [Linux]
+<a href=#454 id=454 data-nosnippet>454</a>///  - [Apple]
+<a href=#455 id=455 data-nosnippet>455</a>///
+<a href=#456 id=456 data-nosnippet>456</a>/// [Linux]: https://man7.org/linux/man-pages/man2/fremovexattr.2.html
+<a href=#457 id=457 data-nosnippet>457</a>/// [Apple]: https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fremovexattr.2.html
+<a href=#458 id=458 data-nosnippet>458</a></span><span class="kw">pub fn </span><a href="../../../rustix/fs/fn.fremovexattr.html">fremovexattr</a>&lt;Fd: <a href="../../../rustix/fd/trait.AsFd.html">AsFd</a>, Name: <a href="../path/arg.rs.html#68-93">path::Arg</a>&gt;(fd: Fd, name: Name) -&gt; io::<a href="../io/errno.rs.html#15">Result</a>&lt;()&gt; {
+<a href=#459 id=459 data-nosnippet>459</a>    <a href="#458">name</a>.<a href="../path/arg.rs.html#89-92">into_with_c_str</a>(|name| backend::fs::syscalls::<a href="../backend/linux_raw/fs/syscalls.rs.html#1687-1689">fremovexattr</a>(<a href="#458">fd</a>.<a href="../../../rustix/fd/trait.AsFd.html">as_fd</a>(), <a href="#459">name</a>))
+<a href=#460 id=460 data-nosnippet>460</a>}
+</code></pre></div></section></main></body></html>

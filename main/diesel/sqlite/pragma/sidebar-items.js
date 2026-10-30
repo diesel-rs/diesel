@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PerConnection","PerSchema"],"struct":["AutoVacuum","FreelistCount","IncrementalVacuum","PageCount","PragmaKeyword","PragmaText"],"trait":["ConnectionPragma","Pragma","PragmaArgument","PragmaScope","ReadPragma","SchemaPragma","WritePragma"]};
