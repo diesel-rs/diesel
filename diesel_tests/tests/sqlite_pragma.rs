@@ -4,7 +4,7 @@ use diesel::sql_types::{Bool, Integer, Text};
 #[cfg(not(miri))]
 use diesel::sqlite::ProgressDecision;
 use diesel::sqlite::pragma::{
-    ConnectionPragma, PerConnection, PerSchema, Pragma, ReadPragma, SchemaPragma,
+    ConnectionPragma, PerConnection, PerSchema, Pragma, ReadPragma, SchemaPragma, WritePragma,
 };
 use diesel::sqlite::{AutoVacuumMode, SqliteConnection};
 #[cfg(not(miri))]
@@ -23,6 +23,10 @@ impl Pragma for UserVersion {
 
 impl ReadPragma for UserVersion {
     type SqlType = Integer;
+}
+
+impl WritePragma for UserVersion {
+    type Argument<'a> = i32;
 }
 
 struct AutoVacuum;
@@ -45,6 +49,32 @@ impl Pragma for ForeignKeys {
 
 impl ReadPragma for ForeignKeys {
     type SqlType = Bool;
+}
+
+impl WritePragma for ForeignKeys {
+    type Argument<'a> = bool;
+}
+
+struct IncrementalVacuum;
+
+impl Pragma for IncrementalVacuum {
+    const NAME: &'static str = "incremental_vacuum";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for IncrementalVacuum {
+    type Argument<'a> = u32;
+}
+
+struct FreelistCount;
+
+impl Pragma for FreelistCount {
+    const NAME: &'static str = "freelist_count";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for FreelistCount {
+    type SqlType = diesel::sql_types::BigInt;
 }
 
 // Only used by tests that are compiled out under miri.
@@ -82,6 +112,10 @@ impl Pragma for AssignmentInName {
 
 impl ReadPragma for AssignmentInName {
     type SqlType = Integer;
+}
+
+impl WritePragma for AssignmentInName {
+    type Argument<'a> = i32;
 }
 
 struct EmptyName;
@@ -176,9 +210,14 @@ fn reading_an_unknown_pragma_is_not_found() {
 fn name_outside_identifier_characters_is_rejected_before_execution() {
     let conn = &mut connection();
 
-    let result = AssignmentInName::get::<i32>(None, conn);
-
-    assert!(matches!(result, Err(Error::QueryBuilderError(_))));
+    assert!(matches!(
+        AssignmentInName::get::<i32>(None, conn),
+        Err(Error::QueryBuilderError(_))
+    ));
+    assert!(matches!(
+        AssignmentInName::set(7, None, conn),
+        Err(Error::QueryBuilderError(_))
+    ));
     assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
 }
 
@@ -231,6 +270,67 @@ fn interrupted_read_returns_the_interruption() {
     ));
     assert!(matches!(
         DatabaseList::get_all::<(i32, String, String)>(conn),
+        Err(Error::DatabaseError(..))
+    ));
+}
+
+#[diesel_test_helper::test]
+fn per_schema_set_targets_only_the_named_database() {
+    let conn = &mut connection();
+    conn.attach_database(":memory:", "aux").unwrap();
+
+    UserVersion::set(5, Some("aux"), conn).unwrap();
+
+    assert_eq!(5, UserVersion::get::<i32>(Some("aux"), conn).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn integer_literal_round_trips_at_the_signed_boundary() {
+    let conn = &mut connection();
+
+    for value in [-1, i32::MIN, i32::MAX] {
+        UserVersion::set(value, None, conn).unwrap();
+        assert_eq!(value, UserVersion::get::<i32>(None, conn).unwrap());
+    }
+}
+
+#[diesel_test_helper::test]
+fn per_connection_bool_pragma_round_trips() {
+    let conn = &mut connection();
+
+    ForeignKeys::set(true, conn).unwrap();
+    assert!(ForeignKeys::get::<bool>(conn).unwrap());
+
+    ForeignKeys::set(false, conn).unwrap();
+    assert!(!ForeignKeys::get::<bool>(conn).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn assignment_runs_to_completion() {
+    let conn = &mut connection();
+    conn.batch_execute(
+        "PRAGMA auto_vacuum = INCREMENTAL;
+         CREATE TABLE items (payload BLOB);
+         INSERT INTO items VALUES (zeroblob(1000000));
+         DELETE FROM items;",
+    )
+    .unwrap();
+    assert!(FreelistCount::get::<i64>(None, conn).unwrap() > 1);
+
+    // `incremental_vacuum` frees one page per step, so a single step would leave the rest.
+    IncrementalVacuum::set(0_u32, None, conn).unwrap();
+
+    assert_eq!(0, FreelistCount::get::<i64>(None, conn).unwrap());
+}
+
+#[cfg(not(miri))] // ffi string access
+#[diesel_test_helper::test]
+fn setting_on_an_unknown_schema_is_a_database_error() {
+    let conn = &mut connection();
+
+    assert!(matches!(
+        UserVersion::set(1, Some("missing"), conn),
         Err(Error::DatabaseError(..))
     ));
 }

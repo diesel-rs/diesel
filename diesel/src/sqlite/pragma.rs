@@ -1,15 +1,14 @@
 //! Typed access to SQLite [pragmas](https://www.sqlite.org/pragma.html).
 //!
-//! A pragma is declared as a type implementing [`Pragma`], and [`ReadPragma`] when it returns rows. Its [`Scope`](Pragma::Scope) decides whether it is read per database or per connection, and the caller picks the Rust type each row decodes into.
+//! A pragma is declared as a type implementing [`Pragma`], with [`ReadPragma`] when it returns rows and [`WritePragma`] when it can be assigned an argument. Its [`Scope`](Pragma::Scope) decides whether it is used per database or per connection, and the caller picks the Rust type each row decodes into.
 //!
 //! # Per-schema pragmas
 //!
-//! A [`PerSchema`] pragma applies to one database and is read through [`SchemaPragma`], where a `None` schema selects `main`.
+//! A [`PerSchema`] pragma applies to one database and is read and written through [`SchemaPragma`], where a `None` schema selects `main`.
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
-//! use diesel::connection::SimpleConnection;
-//! use diesel::sqlite::pragma::{PerSchema, Pragma, ReadPragma, SchemaPragma};
+//! use diesel::sqlite::pragma::{PerSchema, Pragma, ReadPragma, SchemaPragma, WritePragma};
 //!
 //! struct UserVersion;
 //!
@@ -22,9 +21,13 @@
 //!     type SqlType = Integer;
 //! }
 //!
+//! impl WritePragma for UserVersion {
+//!     type Argument<'a> = i32;
+//! }
+//!
 //! # fn main() -> QueryResult<()> {
 //! let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-//! conn.batch_execute("PRAGMA user_version = 7")?;
+//! UserVersion::set(7, None, conn)?;
 //! assert_eq!(7, UserVersion::get::<i32>(None, conn)?);
 //! #     Ok(())
 //! # }
@@ -32,12 +35,13 @@
 //!
 //! # Per-connection pragmas
 //!
-//! A [`PerConnection`] pragma applies to the whole connection and is read through [`ConnectionPragma`], which takes no schema.
+//! A [`PerConnection`] pragma applies to the whole connection and is read and written through [`ConnectionPragma`], which takes no schema.
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
-//! use diesel::connection::SimpleConnection;
-//! use diesel::sqlite::pragma::{ConnectionPragma, PerConnection, Pragma, ReadPragma};
+//! use diesel::sqlite::pragma::{
+//!     ConnectionPragma, PerConnection, Pragma, ReadPragma, WritePragma,
+//! };
 //!
 //! struct ForeignKeys;
 //!
@@ -50,9 +54,13 @@
 //!     type SqlType = Bool;
 //! }
 //!
+//! impl WritePragma for ForeignKeys {
+//!     type Argument<'a> = bool;
+//! }
+//!
 //! # fn main() -> QueryResult<()> {
 //! let conn = &mut SqliteConnection::establish(":memory:").unwrap();
-//! conn.batch_execute("PRAGMA foreign_keys = ON")?;
+//! ForeignKeys::set(true, conn)?;
 //! assert!(ForeignKeys::get::<bool>(conn)?);
 //! #     Ok(())
 //! # }
@@ -65,6 +73,7 @@ use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::result::{Error, QueryResult};
 use crate::sql_types::SqlType;
 use crate::sqlite::{Sqlite, SqliteConnection};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 
@@ -93,9 +102,17 @@ impl PragmaScope for PerSchema {}
 impl PragmaScope for PerConnection {}
 
 mod private {
+    use crate::query_builder::AstPass;
+    use crate::result::QueryResult;
+    use crate::sqlite::Sqlite;
+
     pub trait Sealed {}
     impl Sealed for super::PerSchema {}
     impl Sealed for super::PerConnection {}
+
+    pub trait RenderArgument {
+        fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()>;
+    }
 }
 
 /// A pragma that returns rows when queried.
@@ -104,7 +121,37 @@ pub trait ReadPragma: Pragma {
     type SqlType: SqlType;
 }
 
-/// Reads a [`PerSchema`] pragma, where a `None` schema selects `main`.
+/// A pragma that can be assigned an [`Argument`](Self::Argument).
+///
+/// Never assign secrets this way, since [`Instrumentation`](crate::connection::Instrumentation), [`on_trace`](SqliteConnection::on_trace) and [`on_authorize`](SqliteConnection::on_authorize) observe the statement.
+pub trait WritePragma: Pragma {
+    /// The argument assigned to the pragma, accepted as any type converting into it.
+    type Argument<'a>: PragmaArgument;
+}
+
+/// A value written into a pragma statement, which takes no bind parameters.
+///
+/// Diesel renders every argument itself, so this trait cannot be implemented outside Diesel. A type of your own becomes an argument by converting into one with [`From`].
+///
+/// Integers and `bool` are written as decimal integers.
+pub trait PragmaArgument: private::RenderArgument {}
+
+macro_rules! integer_pragma_argument {
+    ($($ty:ty),*) => {$(
+        impl private::RenderArgument for $ty {
+            fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
+                out.push_sql(&i64::from(*self).to_string());
+                Ok(())
+            }
+        }
+
+        impl PragmaArgument for $ty {}
+    )*};
+}
+
+integer_pragma_argument!(i8, i16, i32, i64, u8, u16, u32, bool);
+
+/// Reads and writes a [`PerSchema`] pragma, where a `None` schema selects `main`.
 pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     /// Read the first row, returning [`Error::NotFound`] if the pragma returns none.
     fn get<Row>(schema: Option<&str>, conn: &mut SqliteConnection) -> QueryResult<Row>
@@ -125,11 +172,23 @@ pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     {
         all_rows::<Self, Row>(conn, Some(schema.unwrap_or("main")))
     }
+
+    /// Assign `argument`, running the statement to completion without confirming the value SQLite applied.
+    fn set<'a>(
+        argument: impl Into<Self::Argument<'a>>,
+        schema: Option<&str>,
+        conn: &mut SqliteConnection,
+    ) -> QueryResult<()>
+    where
+        Self: WritePragma,
+    {
+        assign::<Self>(conn, Some(schema.unwrap_or("main")), argument.into())
+    }
 }
 
 impl<P: Pragma<Scope = PerSchema>> SchemaPragma for P {}
 
-/// Reads a [`PerConnection`] pragma.
+/// Reads and writes a [`PerConnection`] pragma.
 pub trait ConnectionPragma: Pragma<Scope = PerConnection> {
     /// Read the first row, returning [`Error::NotFound`] if the pragma returns none.
     fn get<Row>(conn: &mut SqliteConnection) -> QueryResult<Row>
@@ -149,6 +208,17 @@ pub trait ConnectionPragma: Pragma<Scope = PerConnection> {
         Row: FromSqlRow<Self::SqlType, Sqlite>,
     {
         all_rows::<Self, Row>(conn, None)
+    }
+
+    /// Assign `argument`, running the statement to completion without confirming the value SQLite applied.
+    fn set<'a>(
+        argument: impl Into<Self::Argument<'a>>,
+        conn: &mut SqliteConnection,
+    ) -> QueryResult<()>
+    where
+        Self: WritePragma,
+    {
+        assign::<Self>(conn, None, argument.into())
     }
 }
 
@@ -187,6 +257,27 @@ where
         .collect()
 }
 
+fn assign<P: WritePragma>(
+    conn: &mut SqliteConnection,
+    schema: Option<&str>,
+    argument: P::Argument<'_>,
+) -> QueryResult<()> {
+    use crate::connection::SimpleConnection;
+    use crate::query_builder::QueryBuilder;
+    use crate::sqlite::SqliteQueryBuilder;
+
+    // Some pragmas do one unit of work per step, `incremental_vacuum` frees one page per step.
+    // `sqlite3_exec` behind `batch_execute` runs to completion, while `StatementUse::run` steps once.
+    let mut query = SqliteQueryBuilder::new();
+    PragmaAssignment::<P, _> {
+        schema,
+        argument,
+        pragma: PhantomData,
+    }
+    .to_sql(&mut query, &Sqlite)?;
+    conn.batch_execute(&query.finish())
+}
+
 #[derive(Debug)]
 struct PragmaQuery<'a, P> {
     schema: Option<&'a str>,
@@ -204,23 +295,7 @@ impl<'a, P: Pragma> PragmaQuery<'a, P> {
 
 impl<P: Pragma> QueryFragment<Sqlite> for PragmaQuery<'_, P> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        out.push_sql("PRAGMA ");
-        if let Some(schema) = self.schema {
-            out.push_identifier(schema)?;
-            out.push_sql(".");
-        }
-        let name = P::NAME;
-        if name.is_empty()
-            || !name
-                .bytes()
-                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
-        {
-            return Err(Error::QueryBuilderError(
-                alloc::format!("`{name}` is not a valid pragma name").into(),
-            ));
-        }
-        out.push_sql(name);
-        Ok(())
+        push_pragma::<P>(&mut out, self.schema)
     }
 }
 
@@ -233,4 +308,41 @@ impl<P> QueryId for PragmaQuery<'_, P> {
 
 impl<P: ReadPragma> Query for PragmaQuery<'_, P> {
     type SqlType = P::SqlType;
+}
+
+struct PragmaAssignment<'a, P, A> {
+    schema: Option<&'a str>,
+    argument: A,
+    pragma: PhantomData<P>,
+}
+
+impl<P: Pragma, A: PragmaArgument> QueryFragment<Sqlite> for PragmaAssignment<'_, P, A> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+        push_pragma::<P>(&mut out, self.schema)?;
+        out.push_sql(" = ");
+        self.argument.render(&mut out)
+    }
+}
+
+fn push_pragma<P: Pragma>(
+    out: &mut AstPass<'_, '_, Sqlite>,
+    schema: Option<&str>,
+) -> QueryResult<()> {
+    out.push_sql("PRAGMA ");
+    if let Some(schema) = schema {
+        out.push_identifier(schema)?;
+        out.push_sql(".");
+    }
+    let name = P::NAME;
+    if name.is_empty()
+        || !name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+    {
+        return Err(Error::QueryBuilderError(
+            alloc::format!("`{name}` is not a valid pragma name").into(),
+        ));
+    }
+    out.push_sql(name);
+    Ok(())
 }
