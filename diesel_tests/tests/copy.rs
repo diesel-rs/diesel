@@ -888,3 +888,51 @@ fn execute_after_panicking_copy_from_does_not_hang() {
         .execute(conn);
     assert_eq!(Ok(2), r);
 }
+
+#[diesel_test_helper::test]
+fn copy_through_sql_query_terminates() {
+    let conn = &mut connection_without_transaction();
+    conn.batch_execute(
+        "CREATE TEMPORARY TABLE users(id SERIAL PRIMARY KEY, name TEXT NOT NULL, hair_color TEXT); \
+         INSERT INTO users(name) VALUES ('John'), ('Jane');",
+    )
+    .unwrap();
+
+    let r = diesel::sql_query("COPY users TO STDOUT").execute(conn);
+    assert_eq!(r, Ok(0));
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(2));
+
+    let r = diesel::sql_query("COPY users FROM STDIN").execute(conn);
+    assert!(r.is_err());
+    assert_eq!(
+        r.unwrap_err().to_string(),
+        "COPY from stdin failed: Unexpected error"
+    );
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(2));
+
+    let r = conn.batch_execute("COPY users TO STDOUT");
+    assert_eq!(r, Ok(()));
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(2));
+
+    let r = conn.batch_execute("COPY users TO STDOUT; INSERT INTO users(name) VALUES ('Mal')");
+    assert_eq!(r, Ok(()));
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(3));
+
+    let r = conn.batch_execute("COPY users FROM STDIN");
+    assert!(r.is_err());
+    assert_eq!(
+        r.unwrap_err().to_string(),
+        "COPY from stdin failed: Unexpected error"
+    );
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(3));
+}
