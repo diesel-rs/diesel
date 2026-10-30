@@ -65,6 +65,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `MysqlConnection::version` to read the version of the connected server
 * Added support for `Uuid` to Mariadb
 * Parallelized some tests for `mysql` and `mariadb` backends
+* Added `DatabaseErrorInformation::sqlstate`, returning the SQLSTATE of a database error as a `SqlState`, whose class is a `SqlStateClass`
 
 ### Fixed
 
