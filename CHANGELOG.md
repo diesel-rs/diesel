@@ -93,6 +93,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Fixed a out of bounds memory access while trying to reuse prepared statements with a different number of bind elements on the postgres backend
+* Fixed reusing the wrong prepared statement with batch inserts with static arrays containing BoxableExpression values
+* Fix a potential out of bounds memory access while executing `sql_query` statements with less binds supplied than expected on the mysql backend
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
 * Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
 * Fix parsing consecutive null values in the binary copy_to stream

@@ -595,6 +595,9 @@ fn generate_connection_impl(
                     let pass = diesel::query_builder::AstPass::<MultiBackend>::collect_debug_binds_pass(formatter, &self.backend);
                     self.inner.walk_ast(pass)?;
                 }
+                if let Some((count, _backend)) = pass.count_binds() {
+                    *count = self.inner.count_binds(&self.backend)?;
+                }
                 Ok(())
             }
         }
