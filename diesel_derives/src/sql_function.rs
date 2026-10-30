@@ -2232,14 +2232,14 @@ impl Parse for DeclareSqlFunctionArgs {
                     } else {
                         return Err(syn::Error::new(
                             path.span(),
-                            format!("Unrecognized parameter, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
+                            format!("unrecognized parameter, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
                         ));
                     }
                 }
                 _ => {
                     return Err(syn::Error::new(
                         parsed.span(),
-                        format!("Invalid config, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
+                        format!("invalid config, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
                     ));
                 }
             }

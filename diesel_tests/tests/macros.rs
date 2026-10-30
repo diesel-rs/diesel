@@ -58,6 +58,7 @@ fn sql_function_without_return_type() {
 
 #[cfg(feature = "postgres")]
 mod named_params_block_pg {
+    use diesel::pg::Pg;
     use diesel::sql_types::{BigInt, VarChar};
     use diesel::*;
 
@@ -70,22 +71,24 @@ mod named_params_block_pg {
 
     #[diesel_test_helper::test]
     fn has_named_parameters_sql() {
-        insta::assert_snapshot!(
-            diesel::debug_query::<diesel::pg::Pg, _>(&has_named_parameters(10, "text")).to_string()
+        assert_eq!(
+            r#"has_named_parameters(a=>$1, b=>$2) -- binds: [10, "text"]"#,
+            debug_query::<Pg, _>(&has_named_parameters(10, "text")).to_string()
         );
     }
 
     #[diesel_test_helper::test]
     fn has_positional_parameters_sql() {
-        insta::assert_snapshot!(
-            diesel::debug_query::<diesel::pg::Pg, _>(&has_positional_parameters(10, "text"))
-                .to_string()
+        assert_eq!(
+            r#"has_positional_parameters($1, $2) -- binds: [10, "text"]"#,
+            debug_query::<Pg, _>(&has_positional_parameters(10, "text")).to_string()
         );
     }
 }
 
 #[cfg(feature = "postgres")]
 mod positional_params_block_pg {
+    use diesel::pg::Pg;
     use diesel::sql_types::{BigInt, VarChar};
     use diesel::*;
 
@@ -98,16 +101,17 @@ mod positional_params_block_pg {
 
     #[diesel_test_helper::test]
     fn has_named_parameters_sql() {
-        insta::assert_snapshot!(
-            diesel::debug_query::<diesel::pg::Pg, _>(&has_named_parameters(10, "text")).to_string()
+        assert_eq!(
+            r#"has_named_parameters(a=>$1, b=>$2) -- binds: [10, "text"]"#,
+            debug_query::<Pg, _>(&has_named_parameters(10, "text")).to_string()
         );
     }
 
     #[diesel_test_helper::test]
     fn has_positional_parameters_sql() {
-        insta::assert_snapshot!(
-            diesel::debug_query::<diesel::pg::Pg, _>(&has_positional_parameters(10, "text"))
-                .to_string()
+        assert_eq!(
+            r#"has_positional_parameters($1, $2) -- binds: [10, "text"]"#,
+            debug_query::<Pg, _>(&has_positional_parameters(10, "text")).to_string()
         );
     }
 }
@@ -115,14 +119,8 @@ mod positional_params_block_pg {
 #[cfg(not(feature = "postgres"))]
 mod named_params_block_other {
     use diesel::sql_types::{BigInt, VarChar};
+    use diesel::test_helpers::TestConnection;
     use diesel::*;
-
-    #[cfg(feature = "sqlite")]
-    pub type TestConnection = SqliteConnection;
-    #[cfg(feature = "mysql")]
-    pub type TestConnection = MysqlConnection;
-    #[cfg(feature = "mariadb")]
-    pub type TestConnection = MariadbConnection;
 
     pub type TestBackend = <TestConnection as Connection>::Backend;
 
@@ -135,9 +133,9 @@ mod named_params_block_other {
 
     #[diesel_test_helper::test]
     fn has_positional_parameters_sql() {
-        insta::assert_snapshot!(
-            diesel::debug_query::<TestBackend, _>(&has_positional_parameters(10, "text"))
-                .to_string()
+        assert_eq!(
+            r#"has_positional_parameters($1, $2) -- binds: [10, "text"]"#,
+            debug_query::<TestBackend, _>(&has_positional_parameters(10, "text")).to_string()
         );
     }
 }
@@ -145,14 +143,8 @@ mod named_params_block_other {
 #[cfg(not(feature = "postgres"))]
 mod positional_params_block_other {
     use diesel::sql_types::{BigInt, VarChar};
+    use diesel::test_helpers::TestConnection;
     use diesel::*;
-
-    #[cfg(feature = "sqlite")]
-    pub type TestConnection = SqliteConnection;
-    #[cfg(feature = "mysql")]
-    pub type TestConnection = MysqlConnection;
-    #[cfg(feature = "mariadb")]
-    pub type TestConnection = MariadbConnection;
 
     pub type TestBackend = <TestConnection as Connection>::Backend;
 
@@ -166,9 +158,9 @@ mod positional_params_block_other {
 
     #[diesel_test_helper::test]
     fn has_positional_parameters_sql() {
-        insta::assert_snapshot!(
-            diesel::debug_query::<TestBackend, _>(&has_positional_parameters(10, "text"))
-                .to_string()
+        assert_eq!(
+            r#"has_positional_parameters($1, $2) -- binds: [10, "text"]"#,
+            debug_query::<TestBackend, _>(&has_positional_parameters(10, "text")).to_string()
         );
     }
 }
