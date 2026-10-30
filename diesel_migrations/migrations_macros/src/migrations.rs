@@ -35,14 +35,51 @@ fn resolve_migrations_directory(
     result.canonicalize().map_err(Into::into)
 }
 
+/// Finds the `diesel.toml` for the crate being compiled.
+///
+/// Like Diesel CLI, this uses the closest `diesel.toml` in the crate's directory
+/// or one of its parents.
+pub fn diesel_config_file() -> Result<Option<PathBuf>, Box<dyn Error + Send + Sync>> {
+    let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR")?;
+    Ok(search_for_config_file(Path::new(&cargo_toml_directory)))
+}
+
+fn search_for_config_file(path: &Path) -> Option<PathBuf> {
+    let config_path = path.join("diesel.toml");
+    if config_path.is_file() {
+        Some(config_path)
+    } else {
+        path.parent().and_then(search_for_config_file)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use tempfile;
 
     use self::tempfile::Builder;
-    use super::resolve_migrations_directory;
+    use super::{resolve_migrations_directory, search_for_config_file};
     use std::fs;
     use std::path::Path;
+
+    #[test]
+    fn config_file_is_found_in_the_closest_parent() {
+        let tempdir = Builder::new().prefix("diesel").tempdir().unwrap();
+        fs::create_dir_all(tempdir.path().join("workspace/member/src")).unwrap();
+        fs::write(tempdir.path().join("workspace/diesel.toml"), "").unwrap();
+        let workspace_config = tempdir.path().join("workspace/diesel.toml");
+
+        assert_eq!(
+            Some(workspace_config),
+            search_for_config_file(&tempdir.path().join("workspace/member"))
+        );
+
+        fs::write(tempdir.path().join("workspace/member/diesel.toml"), "").unwrap();
+        assert_eq!(
+            Some(tempdir.path().join("workspace/member/diesel.toml")),
+            search_for_config_file(&tempdir.path().join("workspace/member"))
+        );
+    }
 
     #[test]
     fn migrations_directory_resolved_relative_to_cargo_manifest_dir() {

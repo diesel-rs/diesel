@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Display;
 use std::fs::{DirEntry, File};
 use std::io::Read;
@@ -94,6 +95,7 @@ use crate::errors::{MigrationError, RunMigrationsError};
 #[derive(Clone)]
 pub struct FileBasedMigrations {
     base_path: PathBuf,
+    include_name_in_version: bool,
 }
 
 impl FileBasedMigrations {
@@ -109,7 +111,40 @@ impl FileBasedMigrations {
         }
         Ok(Self {
             base_path: path.as_ref().to_path_buf(),
+            include_name_in_version: false,
         })
+    }
+
+    /// Include the full migration name in the version, removing dashes and underscores.
+    ///
+    /// By default, only the part before the first underscore is used.
+    /// Full-name versions are truncated to 50 Unicode characters to fit the migration
+    /// history table. If multiple names produce the same version, loading the
+    /// migrations fails before any migration SQL is executed.
+    ///
+    /// Choose this setting before applying migrations and keep it consistent for
+    /// a database. Changing it does not update `__diesel_schema_migrations`.
+    /// Update recorded versions to match the new format before changing the setting,
+    /// or previously applied migrations may be treated as pending.
+    ///
+    /// Diesel CLI and [`embed_migrations!`](crate::embed_migrations!) enable this through
+    /// `include_name_in_version` in the `[migrations_directory]` section of `diesel.toml`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// use diesel_migrations::FileBasedMigrations;
+    ///
+    /// let migrations = FileBasedMigrations::from_path("migrations")?
+    ///     .with_name_in_version(true);
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub fn with_name_in_version(mut self, include_name: bool) -> Self {
+        self.include_name_in_version = include_name;
+        self
     }
 
     /// Create a new file based migration source by searching the migration directory
@@ -161,8 +196,21 @@ fn migrations_in_directory(
 
 impl<DB: Backend> MigrationSource<DB> for FileBasedMigrations {
     fn migrations(&self) -> migration::Result<Vec<Box<dyn Migration<DB>>>> {
+        let mut seen_versions = HashSet::new();
         migrations_in_directory(&self.base_path)?
-            .map(|r| Ok(Box::new(r?) as Box<dyn Migration<DB>>))
+            .map(|migration| {
+                let mut migration = migration?;
+                if self.include_name_in_version {
+                    migration.name.use_full_name_as_version();
+                    if !seen_versions.insert(migration.name.version.as_owned()) {
+                        return Err(MigrationError::DuplicateMigrationVersion(
+                            migration.name.version,
+                        )
+                        .into());
+                    }
+                }
+                Ok(Box::new(migration) as Box<dyn Migration<DB>>)
+            })
             .collect()
     }
 }
@@ -248,6 +296,11 @@ impl DieselMigrationName {
             name: name.to_owned(),
             version: MigrationVersion::from(version),
         })
+    }
+
+    /// Replaces the timestamp-only version with one built from the full name.
+    fn use_full_name_as_version(&mut self) {
+        self.version = migrations_internals::full_name_version(&self.name).into();
     }
 }
 

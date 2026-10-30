@@ -1,6 +1,6 @@
 use crate::support::{database, project};
 use diesel::dsl::sql;
-use diesel::sql_types::Bool;
+use diesel::sql_types::{Bool, Text};
 use diesel::{RunQueryDsl, select};
 use std::path::Path;
 
@@ -30,6 +30,197 @@ fn migration_run_runs_pending_migrations() {
         result.stdout()
     );
     assert!(db.table_exists("users"));
+}
+
+fn stored_version(db: &database::Database) -> String {
+    select(sql::<Text>(
+        "(SELECT version FROM __diesel_schema_migrations)",
+    ))
+    .get_result(&mut db.conn())
+    .unwrap()
+}
+
+#[test]
+fn migration_commands_respect_include_name_in_version() {
+    for (setting, underscore_version) in [
+        ("", "202610251934420000"),
+        ("include_name_in_version = false", "202610251934420000"),
+        (
+            "include_name_in_version = true",
+            "202610251934420000helloworld",
+        ),
+    ] {
+        for (name, expected_version) in [
+            (
+                "2026-10-25-193442-0000-hello-world",
+                "202610251934420000helloworld",
+            ),
+            ("2026-10-25-193442-0000_hello-world", underscore_version),
+            ("2026-10-25-193442-0000_hello_world", underscore_version),
+        ] {
+            let p = project("migration_version_config")
+                .folder("migrations")
+                .file(
+                    "diesel.toml",
+                    &format!("[migrations_directory]\ndir = \"migrations\"\n{setting}\n"),
+                )
+                .build();
+            let db = database(&p.database_url());
+            p.create_migration(
+                name,
+                "CREATE TABLE hello (id INTEGER PRIMARY KEY)",
+                Some("DROP TABLE hello"),
+                None,
+            );
+
+            for (command, args) in [
+                ("setup", &["--no-default-migration"][..]),
+                ("migration", &["run"]),
+                ("migration", &["redo"]),
+                ("database", &["reset", "--no-default-migration"]),
+            ] {
+                let result = p.command(command).args(args.iter().copied()).run();
+                assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+                assert_eq!(stored_version(&db), expected_version);
+            }
+
+            let result = p.command("migration").arg("pending").run();
+            assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+            assert_eq!(result.stdout(), "false\n");
+
+            let result = p.command("migration").arg("list").run();
+            assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+            assert!(result.stdout().contains(&format!("[X] {name}")));
+
+            let result = p.command("migration").arg("revert").run();
+            assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+            assert!(!db.table_exists("hello"));
+
+            let result = p.command("migration").arg("run").run();
+            assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+            assert!(db.table_exists("hello"));
+            assert_eq!(stored_version(&db), expected_version);
+        }
+    }
+}
+
+#[test]
+fn migration_version_is_truncated_to_50_characters() {
+    for character in ["a", "\u{e9}"] {
+        for suffix_length in [32, 33, 60] {
+            let p = project("migration_version_length")
+                .folder("migrations")
+                .file(
+                    "diesel.toml",
+                    "[migrations_directory]\ndir = \"migrations\"\ninclude_name_in_version = true\n",
+                )
+                .build();
+            let db = database(&p.database_url());
+            let result = p.command("setup").arg("--no-default-migration").run();
+            assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+            let suffix = character.repeat(suffix_length);
+            p.create_migration(
+                &format!("2026-10-25-193442-0000_{suffix}"),
+                "CREATE TABLE hello (id INTEGER PRIMARY KEY)",
+                Some("DROP TABLE hello"),
+                Some("run_in_transaction = false"),
+            );
+            let result = p.command("migration").arg("run").run();
+            assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+            assert!(db.table_exists("hello"));
+            assert_eq!(
+                stored_version(&db),
+                format!("202610251934420000{}", character.repeat(32))
+            );
+        }
+    }
+}
+
+#[test]
+fn migration_version_collisions_fail_before_running_sql() {
+    let p = project("migration_version_collision")
+        .folder("migrations")
+        .file(
+            "diesel.toml",
+            "[migrations_directory]\ndir = \"migrations\"\ninclude_name_in_version = true\n",
+        )
+        .build();
+    let db = database(&p.database_url());
+    let result = p.command("setup").arg("--no-default-migration").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    p.create_migration(
+        "2026-10-25-193441-0000_earlier",
+        "CREATE TABLE earlier (id INTEGER PRIMARY KEY)",
+        Some("DROP TABLE earlier"),
+        Some("run_in_transaction = false"),
+    );
+    // The 18 timestamp digits plus this prefix fill all 50 version characters,
+    // so the table names are truncated away and both versions are identical.
+    let shared_prefix = "a".repeat(32);
+    for table in ["first_table", "second_table"] {
+        p.create_migration(
+            &format!("2026-10-25-193442-0000_{shared_prefix}_{table}"),
+            &format!("CREATE TABLE {table} (id INTEGER PRIMARY KEY)"),
+            Some(&format!("DROP TABLE {table}")),
+            Some("run_in_transaction = false"),
+        );
+    }
+
+    let result = p.command("migration").arg("run").run();
+    assert!(!result.is_success(), "Result was successful {:?}", result);
+    assert!(result.stderr().contains("shared by multiple migrations"));
+    for table in ["earlier", "first_table", "second_table"] {
+        assert!(!db.table_exists(table));
+    }
+    let has_versions = select(sql::<Bool>(
+        "EXISTS (SELECT 1 FROM __diesel_schema_migrations)",
+    ))
+    .get_result::<bool>(&mut db.conn())
+    .unwrap();
+    assert!(!has_versions);
+}
+
+#[test]
+fn migration_version_format_preserves_initial_setup_output() {
+    for include_name in [false, true] {
+        let p = project("migration_initial_setup_output")
+            .folder("migrations")
+            .file(
+                "diesel.toml",
+                &format!(
+                    "[migrations_directory]\ndir = \"migrations\"\ninclude_name_in_version = {include_name}\n"
+                ),
+            )
+            .build();
+        let db = database(&p.database_url());
+        let result = p.command("setup").arg("--no-default-migration").run();
+        assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+        p.create_migration(
+            "00000000000000_diesel_initial_setup",
+            "CREATE TABLE initial_setup (id INTEGER PRIMARY KEY)",
+            Some("DROP TABLE initial_setup"),
+            None,
+        );
+
+        let result = p.command("migration").arg("run").run();
+        assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+        assert!(
+            result.stdout().is_empty(),
+            "Unexpected stdout {}",
+            result.stdout()
+        );
+        assert!(db.table_exists("initial_setup"));
+
+        let result = p.command("migration").arg("revert").run();
+        assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+        assert!(
+            result.stdout().is_empty(),
+            "Unexpected stdout {}",
+            result.stdout()
+        );
+        assert!(!db.table_exists("initial_setup"));
+    }
 }
 
 #[test]

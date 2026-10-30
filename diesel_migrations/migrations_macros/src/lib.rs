@@ -102,6 +102,15 @@ use proc_macro::TokenStream;
 /// }
 /// ```
 ///
+/// # Migration versions
+///
+/// The macro reads the closest `diesel.toml` in the directory of your `Cargo.toml` or one of
+/// its parents, the same way Diesel CLI finds it. If its `[migrations_directory]` section sets
+/// `include_name_in_version = true`, the embedded migrations use the full migration name as
+/// their version, matching the versions Diesel CLI records. A config file passed to Diesel CLI
+/// with `--config-file` or `DIESEL_CONFIG_FILE` is not used by the macro. Changes to the
+/// `diesel.toml` the macro found trigger a rebuild.
+///
 /// # Automatic rebuilds
 ///
 /// Due to limitations in rusts proc-macro API there is currently no

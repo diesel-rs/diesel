@@ -61,22 +61,38 @@ impl EmbeddedMigration {
 #[doc(hidden)]
 pub struct EmbeddedName {
     name: &'static str,
+    /// Set by `embed_migrations!` when `diesel.toml` enables `include_name_in_version`
+    version: Option<&'static str>,
 }
 
 impl EmbeddedName {
     #[doc(hidden)]
     pub const fn new(name: &'static str) -> Self {
-        Self { name }
+        Self {
+            name,
+            version: None,
+        }
+    }
+
+    #[doc(hidden)]
+    pub const fn with_version(name: &'static str, version: &'static str) -> Self {
+        Self {
+            name,
+            version: Some(version),
+        }
     }
 }
 
 impl MigrationName for EmbeddedName {
     fn version(&self) -> MigrationVersion<'_> {
-        migrations_internals::version_from_string(self.name)
-            .expect(
-                "This name contains a valid version. We checked this at compile time by our macro",
-            )
-            .into()
+        match self.version {
+            Some(version) => version.into(),
+            None => migrations_internals::version_from_string(self.name)
+                .expect(
+                    "This name contains a valid version. We checked this at compile time by our macro",
+                )
+                .into(),
+        }
     }
 }
 
@@ -112,5 +128,23 @@ impl<DB: Backend> Migration<DB> for &EmbeddedMigration {
 
     fn name(&self) -> &dyn MigrationName {
         &self.name
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embedded_name_prefers_the_version_set_by_the_macro() {
+        let name = "2026-10-25-193442-0000_hello_world";
+        assert_eq!(
+            EmbeddedName::new(name).version(),
+            MigrationVersion::from("202610251934420000")
+        );
+        assert_eq!(
+            EmbeddedName::with_version(name, "202610251934420000helloworld").version(),
+            MigrationVersion::from("202610251934420000helloworld")
+        );
     }
 }

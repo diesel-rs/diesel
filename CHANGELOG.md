@@ -65,6 +65,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `MysqlConnection::version` to read the version of the connected server
 * Added support for `Uuid` to Mariadb
 * Parallelized some tests for `mysql` and `mariadb` backends
+* Added an `include_name_in_version` option to the `[migrations_directory]` section of `diesel.toml` and `FileBasedMigrations::with_name_in_version` to record the full migration name (without dashes and underscores, truncated to 50 characters) as the migration version instead of only the leading timestamp. `embed_migrations!` reads the same setting from the closest `diesel.toml`. When enabled, migrations whose versions collide fail with `MigrationError::DuplicateMigrationVersion` before any SQL runs, or fail to compile when embedded
 
 ### Fixed
 

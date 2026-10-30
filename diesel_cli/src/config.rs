@@ -604,6 +604,8 @@ impl PrintSchema {
 #[serde(deny_unknown_fields)]
 pub struct MigrationsDirectory {
     pub dir: PathBuf,
+    #[serde(default)]
+    pub include_name_in_version: bool,
 }
 
 impl MigrationsDirectory {
