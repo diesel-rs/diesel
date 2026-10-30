@@ -425,6 +425,9 @@ fn borrowed_text_reaches_sqlite_as_one_uncached_value() {
         "'\"\\\n\ré雪",
         "first''last",
         "'; PRAGMA main.user_version = 7; --",
+        "'abc'",
+        "'",
+        "'''",
     ];
     let mut expected = Vec::new();
     for schema in ["main", "a\"ux"] {
