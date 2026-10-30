@@ -353,6 +353,36 @@ pub trait ConnectionPragma: Pragma<Scope = PerConnection> {
 
 impl<P: Pragma<Scope = PerConnection>> ConnectionPragma for P {}
 
+/// `PRAGMA page_count`, the total number of pages in a database, read as an `i64`.
+///
+/// Multiply by the page size for the size the database accounts for.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::connection::SimpleConnection;
+/// use diesel::sqlite::pragma::{PageCount, SchemaPragma};
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// // An empty database occupies no pages until something is written.
+/// assert_eq!(0, PageCount::get::<i64>(None, conn)?);
+/// conn.batch_execute("CREATE TABLE items (id INTEGER PRIMARY KEY)")?;
+/// assert!(PageCount::get::<i64>(None, conn)? > 0);
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy)]
+pub struct PageCount;
+
+impl Pragma for PageCount {
+    const NAME: &'static str = "page_count";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for PageCount {
+    type SqlType = crate::sql_types::BigInt;
+}
+
 fn cursor<'conn, 'query, P>(
     conn: &'conn mut SqliteConnection,
     schema: Option<&'query str>,
