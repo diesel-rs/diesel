@@ -4,7 +4,8 @@ use diesel::sql_types::{Bool, Integer, Text};
 #[cfg(not(miri))]
 use diesel::sqlite::ProgressDecision;
 use diesel::sqlite::pragma::{
-    ConnectionPragma, PerConnection, PerSchema, Pragma, ReadPragma, SchemaPragma, WritePragma,
+    ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaKeyword, ReadPragma, SchemaPragma,
+    WritePragma,
 };
 use diesel::sqlite::{AutoVacuumMode, SqliteConnection};
 #[cfg(not(miri))]
@@ -129,6 +130,21 @@ impl ReadPragma for EmptyName {
     type SqlType = Integer;
 }
 
+struct Synchronous;
+
+impl Pragma for Synchronous {
+    const NAME: &'static str = "synchronous";
+    type Scope = PerSchema;
+}
+
+impl ReadPragma for Synchronous {
+    type SqlType = Integer;
+}
+
+impl WritePragma for Synchronous {
+    type Argument<'a> = PragmaKeyword;
+}
+
 struct UserVersionAsPair;
 
 impl Pragma for UserVersionAsPair {
@@ -227,6 +243,32 @@ fn empty_name_is_rejected_before_execution() {
 
     assert!(matches!(
         EmptyName::get::<i32>(None, conn),
+        Err(Error::QueryBuilderError(_))
+    ));
+}
+
+#[diesel_test_helper::test]
+fn keyword_outside_identifier_characters_is_rejected_before_execution() {
+    let conn = &mut connection();
+    let before = Synchronous::get::<i32>(None, conn).unwrap();
+
+    let result = Synchronous::set(
+        PragmaKeyword::new("FULL; PRAGMA main.user_version = 7"),
+        None,
+        conn,
+    );
+
+    assert!(matches!(result, Err(Error::QueryBuilderError(_))));
+    assert_eq!(before, Synchronous::get::<i32>(None, conn).unwrap());
+    assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
+}
+
+#[diesel_test_helper::test]
+fn empty_keyword_is_rejected_before_execution() {
+    let conn = &mut connection();
+
+    assert!(matches!(
+        Synchronous::set(PragmaKeyword::new(""), None, conn),
         Err(Error::QueryBuilderError(_))
     ));
 }

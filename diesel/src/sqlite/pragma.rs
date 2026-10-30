@@ -136,6 +136,72 @@ pub trait WritePragma: Pragma {
 /// Integers and `bool` are written as decimal integers.
 pub trait PragmaArgument: private::RenderArgument {}
 
+/// A keyword written unquoted, such as `WAL` or `NORMAL`.
+///
+/// A keyword that is empty or holds anything but ASCII letters, digits and underscores fails with [`Error::QueryBuilderError`] before reaching SQLite.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::pragma::{
+///     PerSchema, Pragma, PragmaKeyword, ReadPragma, SchemaPragma, WritePragma,
+/// };
+///
+/// struct Synchronous;
+///
+/// impl Pragma for Synchronous {
+///     const NAME: &'static str = "synchronous";
+///     type Scope = PerSchema;
+/// }
+///
+/// impl ReadPragma for Synchronous {
+///     type SqlType = Integer;
+/// }
+///
+/// impl WritePragma for Synchronous {
+///     type Argument<'a> = PragmaKeyword;
+/// }
+///
+/// enum SynchronousMode {
+///     Off,
+///     Normal,
+/// }
+///
+/// impl From<SynchronousMode> for PragmaKeyword {
+///     fn from(mode: SynchronousMode) -> Self {
+///         match mode {
+///             SynchronousMode::Off => PragmaKeyword::new("OFF"),
+///             SynchronousMode::Normal => PragmaKeyword::new("NORMAL"),
+///         }
+///     }
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// Synchronous::set(SynchronousMode::Normal, None, conn)?;
+/// assert_eq!(1, Synchronous::get::<i32>(None, conn)?);
+/// Synchronous::set(SynchronousMode::Off, None, conn)?;
+/// assert_eq!(0, Synchronous::get::<i32>(None, conn)?);
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PragmaKeyword(&'static str);
+
+impl PragmaKeyword {
+    /// Wrap `keyword`, which is checked when the statement is built.
+    pub const fn new(keyword: &'static str) -> Self {
+        Self(keyword)
+    }
+}
+
+impl private::RenderArgument for PragmaKeyword {
+    fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
+        push_bare_word(out, "keyword", self.0)
+    }
+}
+
+impl PragmaArgument for PragmaKeyword {}
+
 macro_rules! integer_pragma_argument {
     ($($ty:ty),*) => {$(
         impl private::RenderArgument for $ty {
@@ -333,16 +399,23 @@ fn push_pragma<P: Pragma>(
         out.push_identifier(schema)?;
         out.push_sql(".");
     }
-    let name = P::NAME;
-    if name.is_empty()
-        || !name
+    push_bare_word(out, "name", P::NAME)
+}
+
+fn push_bare_word(
+    out: &mut AstPass<'_, '_, Sqlite>,
+    kind: &str,
+    word: &'static str,
+) -> QueryResult<()> {
+    if word.is_empty()
+        || !word
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
     {
         return Err(Error::QueryBuilderError(
-            alloc::format!("`{name}` is not a valid pragma name").into(),
+            alloc::format!("`{word}` is not a valid pragma {kind}").into(),
         ));
     }
-    out.push_sql(name);
+    out.push_sql(word);
     Ok(())
 }
