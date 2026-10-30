@@ -240,10 +240,8 @@ mod error_codes {
     macro_rules! codes {
         ($($name:ident = $code:literal;)*) => {
             $(
-                pub(in crate::pg::connection) const $name: SqlState = match SqlState::new(*$code) {
-                    Some(code) => code,
-                    None => panic!("invalid SQLSTATE"),
-                };
+                pub(in crate::pg::connection) const $name: SqlState =
+                    SqlState::new(*$code).expect("invalid SQLSTATE");
             )*
         };
     }
