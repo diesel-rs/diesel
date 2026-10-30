@@ -27,6 +27,9 @@ bitflags::bitflags! {
     /// Added in SQLite 3.14.0 (2016-08-08). Combine flags with `|`, and
     /// `SqliteTraceFlags::all()` selects every event.
     ///
+    /// Bits that are not one of the declared flags, for example set through
+    /// `from_bits_retain`, are discarded before the callback is registered.
+    ///
     /// SQLite's `SQLITE_TRACE_CLOSE` event is intentionally not exposed. Diesel
     /// removes the trace callback before closing the connection, so a close
     /// event can never reach the callback.
@@ -227,5 +230,36 @@ mod tests {
             after_first,
             "no trace events should fire after remove_trace"
         );
+    }
+
+    #[diesel_test_helper::test]
+    fn on_trace_ignores_unknown_mask_bits() {
+        use std::sync::Mutex;
+
+        let conn = &mut connection();
+        let seen: Arc<Mutex<Vec<String>>> = Default::default();
+        let seen2 = seen.clone();
+
+        // 0x41 keeps the STMT bit plus a bit that is not a declared event code.
+        conn.on_trace(SqliteTraceFlags::from_bits_retain(0x41), move |event| {
+            if let SqliteTraceEvent::Statement { sql, .. } = event {
+                seen2.lock().unwrap().push(sql.to_string());
+            }
+        });
+        crate::sql_query("SELECT 1").execute(conn).unwrap();
+
+        assert!(
+            seen.lock().unwrap().iter().any(|sql| sql == "SELECT 1"),
+            "the SELECT should be traced despite the unknown mask bit"
+        );
+    }
+
+    #[diesel_test_helper::test]
+    fn on_trace_with_unknown_mask_bits_keeps_v2_callback() {
+        let conn = &mut connection();
+
+        // A non-capturing closure, like the one in the `on_trace` documentation.
+        conn.on_trace(SqliteTraceFlags::from_bits_retain(0x41), |_event| {});
+        crate::sql_query("SELECT 1").execute(conn).unwrap();
     }
 }
