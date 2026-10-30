@@ -24,6 +24,7 @@ mod owned_row;
 mod pragmas;
 mod raw;
 mod row;
+mod sensitive;
 mod serialized_database;
 pub(in crate::sqlite) mod sqlite_blob;
 mod sqlite_value;
@@ -228,21 +229,7 @@ unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        self.instrumentation
-            .on_connection_event(InstrumentationEvent::StartQuery {
-                query: &StrQueryHelper::new(query),
-            });
-        let resp = self.raw_connection.exec(query);
-        self.instrumentation
-            .on_connection_event(InstrumentationEvent::FinishQuery {
-                query: &StrQueryHelper::new(query),
-                error: resp.as_ref().err(),
-            });
-        if resp.is_err() && self.raw_connection.is_autocommit() {
-            // SQLite ends the transaction on some failures, e.g. an aborting commit hook.
-            self.transaction_state.status = TransactionManagerStatus::Valid(Default::default());
-        }
-        resp
+        self.batch_execute_with_diagnostics(query, |connection| connection.exec(query))
     }
 }
 
