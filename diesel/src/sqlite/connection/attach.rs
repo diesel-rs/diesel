@@ -3,6 +3,7 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
+use alloc::ffi::CString;
 
 impl SqliteConnection {
     /// Attach the database file at `path` under `schema_name`.
@@ -37,6 +38,8 @@ impl SqliteConnection {
     /// ```
     pub fn attach_database(&mut self, path: &str, schema_name: &str) -> QueryResult<()> {
         use crate::query_dsl::RunQueryDsl;
+        CString::new(path)?;
+        CString::new(schema_name)?;
         AttachDatabase { path, schema_name }
             .execute(self)
             .map(|_| ())
@@ -49,6 +52,7 @@ impl SqliteConnection {
     /// ordinary error.
     pub fn detach_database(&mut self, schema_name: &str) -> QueryResult<()> {
         use crate::query_dsl::RunQueryDsl;
+        CString::new(schema_name)?;
         DetachDatabase { schema_name }.execute(self).map(|_| ())
     }
 }
@@ -91,6 +95,7 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::result::Error;
     use crate::sql_types::Integer;
 
     fn connection() -> SqliteConnection {
@@ -337,5 +342,40 @@ mod tests {
                 .is_err()
         );
         conn.detach_database("ro").unwrap();
+    }
+
+    // no miri as that requires a fs call
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
+    #[diesel_test_helper::test]
+    fn attach_database_rejects_nul_in_path() {
+        let (_dir, path) = temp_db_path("nul-truncated.db");
+
+        let conn = &mut connection();
+        assert!(matches!(
+            conn.attach_database(&format!("{}\0ignored.db", path.display()), "nul"),
+            Err(Error::InvalidCString(_))
+        ));
+        assert!(!path.exists());
+    }
+
+    #[diesel_test_helper::test]
+    #[cfg(not(miri))] // ffi string access
+    fn attach_database_rejects_nul_in_schema_name() {
+        let conn = &mut connection();
+        assert!(matches!(
+            conn.attach_database(":memory:", "ab\0cd"),
+            Err(Error::InvalidCString(_))
+        ));
+        // Nothing was attached, so the truncated name must not be detachable.
+        assert!(conn.detach_database("ab").is_err());
+    }
+
+    #[diesel_test_helper::test]
+    fn detach_database_rejects_nul_in_schema_name() {
+        let conn = &mut connection();
+        assert!(matches!(
+            conn.detach_database("ab\0cd"),
+            Err(Error::InvalidCString(_))
+        ));
     }
 }
