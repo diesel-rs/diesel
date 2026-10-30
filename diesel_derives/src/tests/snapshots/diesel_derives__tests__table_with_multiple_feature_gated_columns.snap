@@ -40,10 +40,10 @@ pub mod users {
         name,
         #[cfg(feature = "chrono")]
         created_at,
-        #[cfg(feature = "chrono")]
-        updated_at,
         #[cfg(feature = "uuid")]
         user_uuid,
+        #[cfg(feature = "chrono")]
+        updated_at,
     );
     #[allow(non_camel_case_types)]
     #[derive(
@@ -89,7 +89,7 @@ pub mod users {
     #[cfg(all(feature = "chrono", feature = "uuid"))]
     #[allow(non_camel_case_types, dead_code)]
     #[doc = concat!("The tuple of all column structs on this ", "table")]
-    pub type AllColumns = (id, name, created_at, updated_at, user_uuid);
+    pub type AllColumns = (id, name, created_at, user_uuid, updated_at);
     #[doc = concat!("The SQL type of all of the columns on this ", "table")]
     pub type SqlType = <AllColumns as diesel::Expression>::SqlType;
     #[doc = concat!("Helper type for representing a boxed query from this ", "table")]

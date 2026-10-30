@@ -68,6 +68,8 @@ mod select_by;
 mod serialize_as;
 #[cfg(feature = "sqlite")]
 mod sqlite_pragma;
+#[cfg(feature = "sqlite")]
+mod table_cfg_columns;
 mod transactions;
 mod types;
 mod types_roundtrip;

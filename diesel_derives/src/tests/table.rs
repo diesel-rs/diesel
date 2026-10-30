@@ -170,10 +170,10 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
         generated_str.contains(
             "pub const all_columns : AllColumns = (id , name , \
              # [cfg (feature = \"test_chrono\")] created_at , \
-             # [cfg (feature = \"test_chrono\")] updated_at , \
-             # [cfg (feature = \"test_uuid\")] user_uuid ,)"
+             # [cfg (feature = \"test_uuid\")] user_uuid , \
+             # [cfg (feature = \"test_chrono\")] updated_at ,)"
         ),
-        "all_columns should be a single const referencing AllColumns with cfg on each gated tuple field"
+        "all_columns should place each gated column at its declared position"
     );
 
     assert!(
@@ -196,9 +196,9 @@ pub(crate) fn table_with_multiple_feature_gated_columns_type_check() {
     );
     assert!(
         generated_str.contains(
-            "pub type AllColumns = (id , name , created_at , updated_at , user_uuid ,) ;"
+            "pub type AllColumns = (id , name , created_at , user_uuid , updated_at ,) ;"
         ),
-        "Both features: AllColumns alias should include all columns"
+        "Both features: AllColumns alias should keep the declared column order"
     );
 
     assert!(
