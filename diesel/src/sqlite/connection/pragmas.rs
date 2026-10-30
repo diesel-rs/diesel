@@ -3,6 +3,7 @@ use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDslSupport;
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
+use alloc::ffi::CString;
 
 /// The `auto_vacuum` mode of a database, controlling whether and when SQLite
 /// reclaims freed pages back to the file.
@@ -132,6 +133,8 @@ impl SqliteConnection {
     /// ```
     pub fn vacuum_into(&mut self, schema: Option<&str>, path: &str) -> QueryResult<()> {
         use crate::query_dsl::RunQueryDsl;
+
+        CString::new(path)?;
 
         Vacuum {
             schema,
@@ -291,6 +294,7 @@ mod tests {
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::result::Error;
     #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
     use crate::sql_types::Integer;
     use crate::sqlite::pragma::{
@@ -807,6 +811,21 @@ mod tests {
             .get_result::<i32>(copy)
             .unwrap();
         assert_eq!(7, id);
+    }
+
+    // no miri as that requires a fs call
+    #[cfg(not(any(all(target_family = "wasm", target_os = "unknown"), miri)))]
+    #[diesel_test_helper::test]
+    fn vacuum_into_rejects_nul_in_destination() {
+        let dir = tempfile::tempdir().unwrap();
+        let destination = dir.path().join("nul-truncated.db");
+
+        let conn = &mut connection();
+        assert!(matches!(
+            conn.vacuum_into(None, &format!("{}\0extra.db", destination.display())),
+            Err(Error::InvalidCString(_))
+        ));
+        assert!(!destination.exists());
     }
 
     #[diesel_test_helper::test]
