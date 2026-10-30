@@ -330,9 +330,7 @@ pub mod sql_types {
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     /// [`UUID`]: https://www.postgresql.org/docs/current/datatype-uuid.html
     #[cfg(feature = "postgres_backend")]
-    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
-    pub struct Uuid;
+    pub use crate::sql_types::Uuid;
 
     /// Alias for `Binary`, to ensure `diesel print-schema` works
     pub type Bytea = crate::sql_types::Binary;

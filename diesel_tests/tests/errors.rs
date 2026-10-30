@@ -7,6 +7,10 @@ use diesel::result::Error::DatabaseError;
 use diesel::sql_query;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn unique_constraints_are_detected() {
     let connection = &mut connection();
@@ -55,6 +59,10 @@ macro_rules! try_no_coerce {
     }};
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn cached_prepared_statements_can_be_reused_after_error() {
     let connection = &mut connection_without_transaction();
@@ -72,6 +80,10 @@ fn cached_prepared_statements_can_be_reused_after_error() {
     connection.test_transaction(|connection| query.execute(connection));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn foreign_key_violation_detected() {
     let connection = &mut connection();
@@ -195,6 +207,10 @@ fn read_only_errors_are_detected() {
     assert_matches!(result, Err(DatabaseError(ReadOnlyTransaction, _)));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn not_null_constraints_are_detected() {
     let connection = &mut connection();
@@ -227,6 +243,10 @@ fn not_null_constraints_correct_column_name() {
 #[diesel_test_helper::test]
 #[cfg(not(feature = "mysql"))]
 /// MySQL < 8.0.16 doesn't enforce check constraints
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 fn check_constraints_are_detected() {
     let connection = &mut connection();
 
@@ -272,6 +292,10 @@ fn check_constraints_correct_constraint_name() {
     };
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[cfg(feature = "sqlite")]
 fn foreign_key_restrict_violation_detected() {

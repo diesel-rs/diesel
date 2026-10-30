@@ -440,6 +440,38 @@ impl PgConnection {
         TransactionBuilder::new(self)
     }
 
+    /// Returns the version of the server this connection is connected to, with a patch of zero since PostgreSQL 10 numbers releases `major.minor`.
+    ///
+    /// # Errors
+    ///
+    /// Fails with [`DatabaseErrorKind::ClosedConnection`] once the connection is lost.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// use diesel::connection::DatabaseVersion;
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// let supports_returning_old = conn.version()? >= DatabaseVersion::new(18, 0, 0);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    pub fn version(&self) -> QueryResult<DatabaseVersion> {
+        let raw_connection = &self.connection_and_transaction_manager.raw_connection;
+        decode_server_version(raw_connection.server_version()).ok_or_else(|| {
+            Error::DatabaseError(
+                DatabaseErrorKind::ClosedConnection,
+                Box::new(raw_connection.last_error_message()),
+            )
+        })
+    }
+
     pub(crate) fn copy_from<S, T>(&mut self, target: S) -> Result<usize, S::Error>
     where
         S: CopyFromExpression<T>,
@@ -653,6 +685,18 @@ impl PgConnection {
         let conn = &self.connection_and_transaction_manager.raw_connection;
         core::iter::from_fn(move || conn.pq_notifies().transpose())
     }
+}
+
+/// Decodes `PQserverVersion`, which packs two digits per part before PostgreSQL 10 and is zero for a bad connection.
+fn decode_server_version(version: libc::c_int) -> Option<DatabaseVersion> {
+    let version = u32::try_from(version)
+        .ok()
+        .filter(|&version| version != 0)?;
+    Some(if version >= 100_000 {
+        DatabaseVersion::new(version / 10_000, version % 10_000, 0)
+    } else {
+        DatabaseVersion::new(version / 10_000, version / 100 % 100, version % 100)
+    })
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
@@ -1529,5 +1573,70 @@ mod tests {
                 .transaction_status()
         );
         assert!(result.is_ok());
+    }
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn current_setting(setting_name: crate::sql_types::Text) -> crate::sql_types::Text;
+        fn pg_backend_pid() -> crate::sql_types::Integer;
+        fn pg_terminate_backend(
+            pid: crate::sql_types::Integer,
+            timeout: crate::sql_types::BigInt,
+        ) -> crate::sql_types::Bool;
+    }
+
+    #[diesel_test_helper::test]
+    fn decode_server_version_reads_both_numbering_schemes() {
+        assert_eq!(
+            decode_server_version(180004),
+            Some(DatabaseVersion::new(18, 4, 0))
+        );
+        assert_eq!(
+            decode_server_version(100001),
+            Some(DatabaseVersion::new(10, 1, 0))
+        );
+        assert_eq!(
+            decode_server_version(90620),
+            Some(DatabaseVersion::new(9, 6, 20))
+        );
+        assert_eq!(decode_server_version(0), None);
+    }
+
+    #[diesel_test_helper::test]
+    fn version_matches_the_server_reported_version() {
+        let conn = &mut connection();
+        let version = conn.version().unwrap();
+        let reported = crate::select(current_setting("server_version"))
+            .get_result::<String>(conn)
+            .unwrap();
+        let numeric = reported
+            .split(|c: char| !c.is_ascii_digit() && c != '.')
+            .next()
+            .unwrap();
+        assert_eq!(numeric, format!("{}.{}", version.major(), version.minor()));
+        assert_eq!(version.patch(), 0);
+    }
+
+    #[diesel_test_helper::test]
+    fn version_fails_once_the_connection_is_closed() {
+        let conn = &mut connection();
+        let pid = crate::select(pg_backend_pid())
+            .get_result::<i32>(conn)
+            .unwrap();
+        assert!(
+            crate::select(pg_terminate_backend(pid, 5000_i64))
+                .get_result::<bool>(&mut connection())
+                .unwrap()
+        );
+        assert!(
+            crate::select(1.into_sql::<crate::sql_types::Integer>())
+                .get_result::<i32>(conn)
+                .is_err()
+        );
+
+        assert!(matches!(
+            conn.version(),
+            Err(DatabaseError(DatabaseErrorKind::ClosedConnection, _))
+        ));
     }
 }

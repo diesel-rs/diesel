@@ -2,6 +2,10 @@ use crate::format_error;
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn test_updating_single_column() {
     use crate::schema::users::dsl::*;
@@ -17,6 +21,10 @@ fn test_updating_single_column() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn test_updating_single_column_of_single_row() {
     use crate::schema::users::dsl::*;
@@ -34,6 +42,10 @@ fn test_updating_single_column_of_single_row() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn test_updating_nullable_column() {
     use crate::schema::users::dsl::*;
@@ -65,6 +77,10 @@ fn test_updating_nullable_column() {
     assert_eq!(Ok(None::<String>), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn test_updating_multiple_columns() {
     use crate::schema::users::dsl::*;
@@ -131,6 +147,10 @@ fn update_with_custom_returning_clause() {
     assert_eq!(Ok(expected_result), user);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn update_with_struct_as_changes() {
     use crate::schema::users::dsl::*;
@@ -149,6 +169,10 @@ fn update_with_struct_as_changes() {
     assert_eq!(Ok(expected_user), user);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use crate::schema::users::dsl::*;
@@ -162,6 +186,10 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
     assert_eq!(user, user_in_db);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     #[derive(AsChangeset)]
@@ -187,6 +215,10 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     assert_eq!(Ok(expected_user), user);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     #[derive(AsChangeset)]
@@ -1234,6 +1266,10 @@ fn returning_subselect_and_old_in_update() {
     assert_eq!("Renamed", now_boxed);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn named_struct_batch() {
     #[derive(Debug, Clone, AsChangeset, Identifiable)]
@@ -1300,6 +1336,10 @@ fn named_struct_batch() {
     assert_eq!(Ok(expected), actual);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn named_struct_batch_grouped_pkey() {
     table! {
