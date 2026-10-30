@@ -182,7 +182,7 @@ impl std::io::Seek for SqliteReadOnlyBlob<'_> {
 }
 
 impl SqliteConnection {
-    /// Returns an object that can be used to stream a BLOB from the database
+    /// Returns an object that can be used to stream a BLOB from the database, keeping the connection exclusively borrowed while it is open
     ///
     /// # Example
     ///
@@ -211,7 +211,7 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn get_read_only_blob<'conn, 'query, U>(
-        &'conn self,
+        &'conn mut self,
         blob_column: U,
         row_id: i64,
     ) -> Result<SqliteReadOnlyBlob<'conn>, Error>
@@ -268,6 +268,7 @@ mod tests {
         data.read_to_end(&mut buf).unwrap();
 
         assert_eq!(buf, b"abc");
+        drop(data);
 
         let mut data2 = conn.get_read_only_blob(blobs::data2, 1).unwrap();
         let mut buf = vec![];
