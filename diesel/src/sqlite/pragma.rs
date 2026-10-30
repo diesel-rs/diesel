@@ -253,11 +253,11 @@ impl<'a> From<&'a str> for PragmaText<'a> {
 impl private::RenderArgument for PragmaText<'_> {
     fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
         out.push_sql("'");
-        for (index, fragment) in self.0.split('\'').enumerate() {
-            if index != 0 {
-                out.push_sql("''");
+        for piece in self.0.split_inclusive('\'') {
+            out.push_sql(piece);
+            if piece.ends_with('\'') {
+                out.push_sql("'");
             }
-            out.push_sql(fragment);
         }
         out.push_sql("'");
         Ok(())
