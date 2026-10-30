@@ -4,6 +4,7 @@ pub(super) mod date_and_time;
 mod enum_;
 #[cfg(feature = "serde_json")]
 mod json;
+pub(super) mod non_negative;
 mod numeric;
 mod primitives;
 
@@ -254,6 +255,18 @@ impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<Integer>> for DB {
 impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<BigInt>> for DB {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLongLong
+    }
+}
+
+impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<sql_types::Float>> for DB {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
+        MysqlType::Float
+    }
+}
+
+impl<DB: MysqlLikeBackend> HasSqlType<Unsigned<sql_types::Double>> for DB {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
+        MysqlType::Double
     }
 }
 
