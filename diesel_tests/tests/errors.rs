@@ -114,6 +114,75 @@ fn foreign_key_violation_correct_constraint_name() {
 
 #[diesel_test_helper::test]
 #[cfg(feature = "postgres")]
+fn sqlstate_reports_the_code_of_a_mapped_error() {
+    use diesel::result::SqlStateClass;
+
+    let connection = &mut connection();
+
+    insert_into(users::table)
+        .values(&User::new(1, "Sean"))
+        .execute(connection)
+        .unwrap();
+    let failure = insert_into(users::table)
+        .values(&User::new(1, "Jim"))
+        .execute(connection);
+
+    match failure {
+        Err(DatabaseError(UniqueViolation, e)) => {
+            let code = e.sqlstate().unwrap();
+            assert_eq!(code.as_str(), "23505");
+            assert_eq!(code.class(), SqlStateClass::INTEGRITY_CONSTRAINT_VIOLATION);
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(UniqueViolation, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn sqlstate_reports_the_code_of_an_unmapped_error() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    let failure =
+        diesel::select(1.into_sql::<sql_types::Integer>() / 0.into_sql::<sql_types::Integer>())
+            .get_result::<i32>(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            assert_eq!(e.sqlstate().unwrap().as_str(), "22012");
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
+fn sqlstate_reports_a_custom_code_raised_by_plpgsql() {
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    // Raising an error with a custom code needs PL/pgSQL, which the DSL cannot express.
+    let failure = diesel::sql_query(
+        "DO $$ BEGIN RAISE EXCEPTION USING ERRCODE = 'P1001', MESSAGE = 'custom', DETAIL = 'kept'; END $$",
+    )
+    .execute(connection);
+
+    match failure {
+        Err(DatabaseError(Unknown, e)) => {
+            let code = e.sqlstate().unwrap();
+            assert_eq!(code.as_str(), "P1001");
+            assert_eq!(code.class().as_str(), "P1");
+            assert!(!code.class().is_standard());
+            assert_eq!(e.details(), Some("kept"));
+        }
+        other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
+    }
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "postgres")]
 // This is a false positive as there is a side effect of this collect (spawning threads)
 #[allow(clippy::needless_collect)]
 fn isolation_errors_are_detected() {

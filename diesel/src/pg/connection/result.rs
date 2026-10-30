@@ -9,7 +9,7 @@ use core::str;
 
 use super::raw::{RawConnection, RawResult, ResultField};
 use super::row::PgRow;
-use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
+use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult, SqlState};
 use core::cell::OnceCell;
 
 #[allow(missing_debug_implementations)]
@@ -55,7 +55,10 @@ impl PgResult {
                 // https://www.postgresql.org/docs/current/libpq-async.html
                 while conn.get_next_result().map_or(true, |r| r.is_some()) {}
 
-                let mut error_kind = match internal_result.get_result_field(ResultField::SqlState) {
+                let sqlstate = internal_result
+                    .get_result_field(ResultField::SqlState)
+                    .and_then(|code| code.parse::<SqlState>().ok());
+                let mut error_kind = match sqlstate {
                     Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
                     Some(error_codes::FOREIGN_KEY_VIOLATION) => {
                         DatabaseErrorKind::ForeignKeyViolation
@@ -222,6 +225,13 @@ impl DatabaseErrorInformation for PgErrorInformation {
             .get_result_field(ResultField::StatementPosition)?;
         str_pos.parse::<i32>().ok()
     }
+
+    fn sqlstate(&self) -> Option<SqlState> {
+        self.result
+            .get_result_field(ResultField::SqlState)?
+            .parse()
+            .ok()
+    }
 }
 
 mod error_codes {
@@ -229,17 +239,29 @@ mod error_codes {
     //! <https://www.postgresql.org/docs/current/errcodes-appendix.html>
     //!
     //! They are not exposed programmatically through libpq.
-    pub(in crate::pg::connection) const CONNECTION_EXCEPTION: &str = "08000";
-    pub(in crate::pg::connection) const CONNECTION_FAILURE: &str = "08006";
-    pub(in crate::pg::connection) const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
-    pub(in crate::pg::connection) const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str =
-        "08004";
-    pub(in crate::pg::connection) const RESTRICT_VIOLATION: &str = "23001";
-    pub(in crate::pg::connection) const NOT_NULL_VIOLATION: &str = "23502";
-    pub(in crate::pg::connection) const FOREIGN_KEY_VIOLATION: &str = "23503";
-    pub(in crate::pg::connection) const UNIQUE_VIOLATION: &str = "23505";
-    pub(in crate::pg::connection) const CHECK_VIOLATION: &str = "23514";
-    pub(in crate::pg::connection) const EXCLUSION_VIOLATION: &str = "23P01";
-    pub(in crate::pg::connection) const READ_ONLY_TRANSACTION: &str = "25006";
-    pub(in crate::pg::connection) const SERIALIZATION_FAILURE: &str = "40001";
+    use crate::result::SqlState;
+
+    macro_rules! codes {
+        ($($name:ident = $code:literal;)*) => {
+            $(
+                pub(in crate::pg::connection) const $name: SqlState =
+                    SqlState::new(*$code).expect("invalid SQLSTATE");
+            )*
+        };
+    }
+
+    codes! {
+        CONNECTION_EXCEPTION = b"08000";
+        CONNECTION_FAILURE = b"08006";
+        SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION = b"08001";
+        SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION = b"08004";
+        RESTRICT_VIOLATION = b"23001";
+        NOT_NULL_VIOLATION = b"23502";
+        FOREIGN_KEY_VIOLATION = b"23503";
+        UNIQUE_VIOLATION = b"23505";
+        CHECK_VIOLATION = b"23514";
+        EXCLUSION_VIOLATION = b"23P01";
+        READ_ONLY_TRANSACTION = b"25006";
+        SERIALIZATION_FAILURE = b"40001";
+    }
 }
