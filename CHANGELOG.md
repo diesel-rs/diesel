@@ -107,6 +107,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+* Extended libsqlite3-sys support to include 0.39
 
 
 ## [2.3.14] 2026-10-07
