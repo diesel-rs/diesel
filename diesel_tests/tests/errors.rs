@@ -198,14 +198,9 @@ fn sqlstate_reports_the_code_of_a_mapped_error_on_mysql_like() {
 
     match failure {
         Err(DatabaseError(UniqueViolation, e)) => {
-            assert_eq!(
-                e.sqlstate().map(|code| code.to_string()).as_deref(),
-                Some("23000")
-            );
-            assert_eq!(
-                e.sqlstate().map(|code| code.class()),
-                Some(SqlStateClass::INTEGRITY_CONSTRAINT_VIOLATION)
-            );
+            let code = e.sqlstate().unwrap();
+            assert_eq!(code.as_str(), "23000");
+            assert_eq!(code.class(), SqlStateClass::INTEGRITY_CONSTRAINT_VIOLATION);
         }
         other => panic!("{other:?} did not match Err(DatabaseError(UniqueViolation, e))"),
     }
@@ -223,10 +218,7 @@ fn sqlstate_reports_the_code_of_an_unmapped_error_on_mysql_like() {
 
     match failure {
         Err(DatabaseError(Unknown, e)) => {
-            assert_eq!(
-                e.sqlstate().map(|code| code.to_string()).as_deref(),
-                Some("42000")
-            );
+            assert_eq!(e.sqlstate().unwrap().as_str(), "42000");
         }
         other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
     }
