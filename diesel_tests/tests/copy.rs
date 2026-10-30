@@ -1,4 +1,5 @@
 use crate::schema::*;
+use diesel::connection::SimpleConnection;
 use diesel::pg::{CopyFormat, CopyHeader};
 use diesel::prelude::*;
 use diesel::sql_types::Integer;
@@ -861,4 +862,77 @@ fn copy_to_load_raw_reports_a_failed_copy_once() {
     // A failed `COPY` is at its end: reading on reports the end, not another error
     assert_eq!(raw.fill_buf().map_err(|e| e.to_string()), Ok(&[][..]));
     assert_eq!(raw.fill_buf().map_err(|e| e.to_string()), Ok(&[][..]));
+}
+
+#[diesel_test_helper::test]
+fn execute_after_panicking_copy_from_does_not_hang() {
+    // cannot use a transaction as otherwise the transaction is in an error state
+    // after the copy is cancelled
+    let conn = &mut connection_without_transaction();
+    conn.batch_execute(
+        "CREATE TEMPORARY TABLE users(id SERIAL PRIMARY KEY, name TEXT NOT NULL, hair_color TEXT); \
+         INSERT INTO users(name) VALUES ('John'), ('Jane');",
+    )
+    .unwrap();
+
+    let p = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        diesel::copy_from(users::table)
+            .from_raw_data(users::table, |_w| -> QueryResult<()> {
+                panic!("callback panic")
+            })
+            .execute(&mut *conn)
+    }));
+    assert!(p.is_err());
+    let r = diesel::update(users::table)
+        .set(users::name.eq("x"))
+        .execute(conn);
+    assert_eq!(Ok(2), r);
+}
+
+#[diesel_test_helper::test]
+fn copy_through_sql_query_terminates() {
+    let conn = &mut connection_without_transaction();
+    conn.batch_execute(
+        "CREATE TEMPORARY TABLE users(id SERIAL PRIMARY KEY, name TEXT NOT NULL, hair_color TEXT); \
+         INSERT INTO users(name) VALUES ('John'), ('Jane');",
+    )
+    .unwrap();
+
+    let r = diesel::sql_query("COPY users TO STDOUT").execute(conn);
+    assert_eq!(r, Ok(0));
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(2));
+
+    let r = diesel::sql_query("COPY users FROM STDIN").execute(conn);
+    assert!(r.is_err());
+    assert_eq!(
+        r.unwrap_err().to_string(),
+        "COPY from stdin failed: Unexpected error"
+    );
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(2));
+
+    let r = conn.batch_execute("COPY users TO STDOUT");
+    assert_eq!(r, Ok(()));
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(2));
+
+    let r = conn.batch_execute("COPY users TO STDOUT; INSERT INTO users(name) VALUES ('Mal')");
+    assert_eq!(r, Ok(()));
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(3));
+
+    let r = conn.batch_execute("COPY users FROM STDIN");
+    assert!(r.is_err());
+    assert_eq!(
+        r.unwrap_err().to_string(),
+        "COPY from stdin failed: Unexpected error"
+    );
+
+    let r = users::table.count().get_result::<i64>(conn);
+    assert_eq!(r, Ok(3));
 }
