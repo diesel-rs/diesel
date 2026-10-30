@@ -27,10 +27,7 @@ macro_rules! codes {
     ($($(#[$doc:meta])* $name:ident = $code:literal;)*) => {
         $(
             $(#[$doc])*
-            pub const $name: SqlState = match SqlState::new(*$code) {
-                Some(code) => code,
-                None => panic!("invalid SQLSTATE"),
-            };
+            pub const $name: SqlState = SqlState::new(*$code).expect("invalid SQLSTATE");
         )*
     };
 }
