@@ -1,0 +1,11 @@
+error[E0596]: cannot borrow `*shared` as mutable, as it is behind a `&` reference
+  --> tests/fail/sqlite_read_only_blob_requires_exclusive_connection.rs:15:13
+   |
+LL |     let _ = shared.get_read_only_blob(files::data, 1);
+   |             ^^^^^^ `shared` is a `&` reference, so it cannot be borrowed as mutable
+   |
+help: consider changing this to be a mutable reference
+   |
+LL |     let shared: &SqliteConnection = &mut connection;
+   |                                      +++
+For more information about this error, try `rustc --explain E0596`.
