@@ -151,6 +151,10 @@ fn non_pk_bpchar_column_uses_index() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn find() {
     use crate::schema::users::table as users;
@@ -172,6 +176,10 @@ table! {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn find_with_non_serial_pk() {
     use self::users_with_name_pk::table as users;
@@ -240,6 +248,10 @@ fn find_with_composite_pk() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_then_find() {
     use crate::schema::users::dsl::*;
@@ -252,6 +264,10 @@ fn select_then_find() {
     assert_eq!(Ok(String::from("Tess")), tess);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_by_then_find() {
     use crate::schema::users::dsl::*;

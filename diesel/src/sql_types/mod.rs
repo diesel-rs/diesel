@@ -577,6 +577,24 @@ where
     type IsNull = is_nullable::IsNullable;
 }
 
+/// The `UUID` SQL type ([PostgreSQL](https://www.postgresql.org/docs/current/datatype-uuid.html), [MariaDB](https://mariadb.com/docs/server/reference/data-types/string-data-types/uuid-data-type)). This type can only be used with `feature = "uuid"`
+///
+/// ### [`ToSql`] impls
+///
+/// - [`uuid::Uuid`][Uuid]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`uuid::Uuid`][Uuid]
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+/// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(postgres_type(oid = 2950, array_oid = 2951))]
+#[diesel(mariadb_type(name = "String"))]
+pub struct Uuid;
+
 #[doc(inline)]
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::sql_types::*;

@@ -14,6 +14,13 @@ use crate::mysql_like::MysqlLikeConnection;
 /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
 ///   See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
 ///
+/// Errors carry the SQLSTATE the server or client library reports in
+/// [`DatabaseErrorInformation::sqlstate`](crate::result::DatabaseErrorInformation::sqlstate),
+/// including custom codes raised with
+/// [`SIGNAL`](https://dev.mysql.com/doc/refman/8.4/en/signal.html). The server
+/// reports `HY000` for errors without a specific SQLSTATE, as described at
+/// <https://dev.mysql.com/doc/refman/8.4/en/error-message-elements.html>.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)
@@ -153,5 +160,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(output, 1);
+    }
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn version() -> crate::sql_types::Text;
+    }
+
+    #[diesel_test_helper::test]
+    fn version_matches_the_server_reported_version() {
+        let connection = &mut connection();
+        let expected = connection.version().unwrap().to_string();
+        let reported = crate::select(version())
+            .get_result::<String>(connection)
+            .unwrap();
+        assert!(
+            reported == expected || reported.starts_with(&format!("{expected}-")),
+            "`{reported}` does not start with `{expected}`"
+        );
     }
 }

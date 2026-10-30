@@ -58,6 +58,11 @@ impl<Inner> SqlQuery<Inner> {
     /// #     name: String,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer, Text};
@@ -102,6 +107,11 @@ impl<Inner> SqlQuery<Inner> {
     /// #     name: String,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer};
@@ -164,6 +174,11 @@ impl<Inner> SqlQuery<Inner> {
     /// #     name: String,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer};
@@ -318,6 +333,11 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// #     name: String,
     /// # }
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::Integer;

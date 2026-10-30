@@ -159,26 +159,9 @@ cfg_if::cfg_if! {
             connection
         }
 
-        #[allow(dead_code)]
-        fn sqlite_version(conn: &mut SqliteConnection) -> (u32, u32, u32) {
-            let version = diesel::select(diesel::dsl::sql::<diesel::sql_types::Text>("sqlite_version();"))
-                .get_result::<String>(conn)
-                .unwrap();
-
-            let mut version_components = version.split('.');
-            let major: u32 = version_components.next().unwrap().parse().unwrap();
-            let minor: u32 = version_components.next().unwrap().parse().unwrap();
-            let patch: u32 = version_components.next().unwrap().parse().unwrap();
-            (major, minor, patch)
-        }
-
         macro_rules! assert_version {
             ($conn: ident, $major: literal, $minor: literal, $patch: literal) => {
-                let version = sqlite_version($conn);
-                if version.0 < $major ||
-                    (version.0 == $major && version.1 < $minor) ||
-                    (version.0 == $major && version.1 == $minor && version.2 < $patch)
-                {
+                if $conn.version() < diesel::connection::DatabaseVersion::new($major, $minor, $patch) {
                     println!("SQLite version is too old, skipping the test.");
                     return Ok(());
                 }
@@ -263,15 +246,8 @@ cfg_if::cfg_if! {
 
         #[allow(dead_code)]
         fn mariadb_server_supports_update_returning(connection: &mut MariadbConnection) -> bool {
-            diesel::dsl::sql::<diesel::sql_types::VarChar>("SELECT VERSION();")
-                .get_result::<String>(connection)
-                .expect("Failed to get Mariadb server version")
-                .split('.')
-                .next()
-                .map(|str| str.parse::<u32>())
-                .expect("Failed to split Mariadb server version")
-                .expect("Failed to parse Mariadb server version")
-                >= 13
+            connection.version().expect("Failed to get Mariadb server version")
+                >= diesel::connection::DatabaseVersion::new(13, 0, 0)
         }
     } else if #[cfg(feature = "mysql")] {
         #[allow(dead_code)]

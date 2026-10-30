@@ -18,7 +18,7 @@ pub mod v2 {
     }
 
     pub mod rust_types {
-        #[derive(Debug, diesel::types::Enum)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
         #[diesel(sql_type = super::sql_types::AutoTestFrequency)]
         pub enum AutoTestFrequency {
             #[diesel(rename = "weekly")]
@@ -27,7 +27,7 @@ pub mod v2 {
             Monthly,
         }
 
-        #[derive(Debug, diesel::types::Enum)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
         #[diesel(sql_type = super::sql_types::AutoTestStatus)]
         pub enum AutoTestStatus {
             #[diesel(rename = "pending")]

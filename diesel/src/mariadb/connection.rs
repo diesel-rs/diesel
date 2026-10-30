@@ -8,6 +8,13 @@ use crate::mariadb::Mariadb;
 ///  a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
 /// * `unix_socket` expects the path to the unix socket
 ///
+/// Errors carry the SQLSTATE the server or client library reports in
+/// [`DatabaseErrorInformation::sqlstate`](crate::result::DatabaseErrorInformation::sqlstate),
+/// including custom codes raised with
+/// [`SIGNAL`](https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/signal).
+/// The server reports `HY000` for errors without a specific SQLSTATE, as
+/// described at <https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/programmatic-compound-statements-diagnostics/sqlstate>.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)
@@ -147,5 +154,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(output, 1);
+    }
+
+    #[crate::declare_sql_function]
+    extern "SQL" {
+        fn version() -> crate::sql_types::Text;
+    }
+
+    #[diesel_test_helper::test]
+    fn version_matches_the_server_reported_version() {
+        let connection = &mut connection();
+        let expected = connection.version().unwrap().to_string();
+        let reported = crate::select(version())
+            .get_result::<String>(connection)
+            .unwrap();
+        assert!(
+            reported.starts_with(&format!("{expected}-")),
+            "`{reported}` does not start with `{expected}-`"
+        );
     }
 }

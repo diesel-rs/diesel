@@ -15,6 +15,10 @@ fn order_by_non_aggregate() {
     assert_eq!(res, vec![1, 2]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_non_aggregate_before_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -26,6 +30,10 @@ fn order_by_non_aggregate_before_select() {
     assert_eq!(res, vec!["Sean", "Tess"]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_grouped_col_before_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -41,6 +49,10 @@ fn order_by_grouped_col_before_select() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_aggregate_before_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -56,6 +68,10 @@ fn order_by_aggregate_before_select() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_aggregate_before_grouped_col_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -69,6 +85,10 @@ fn order_by_aggregate_before_grouped_col_select() {
     assert_eq!(res, vec!["Sean", "Tess"]);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn then_order_by_aggregate_before_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -85,6 +105,10 @@ fn then_order_by_aggregate_before_select() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn then_order_by_grouped_col_after_aggregate_before_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -101,6 +125,10 @@ fn then_order_by_grouped_col_after_aggregate_before_select() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn then_order_by_grouped_col_after_aggregate_select_first() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -117,6 +145,10 @@ fn then_order_by_grouped_col_after_aggregate_select_first() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_aggregate_after_select_with_group_by() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -132,6 +164,10 @@ fn order_by_aggregate_after_select_with_group_by() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn then_order_by_aggregate_after_select_with_group_by() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -148,6 +184,10 @@ fn then_order_by_aggregate_after_select_with_group_by() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_aggregate_multi_col_group_by_before_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();
@@ -330,6 +370,10 @@ fn order_by_aggregate_with_aggregate_select() {
     assert_eq!(res, Some(2));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn order_by_group_by_column_with_aggregate_select() {
     let mut conn = connection_with_sean_and_tess_in_users_table();

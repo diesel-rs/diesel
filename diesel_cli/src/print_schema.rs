@@ -313,7 +313,12 @@ pub struct InnerPrintSchemaArgs {
         value_parser = clap::value_parser!(bool),
     )]
     pub sqlite_integer_primary_key_is_bigint: Vec<bool>,
-    /// A list of derives to implement for every automatically generated Rust enum in the schema, separated by commas.
+    /// A list of derives to implement for every automatically generated Rust enum in the schema,
+    /// separated by commas.
+    ///
+    /// Defaults to Clone, Copy, PartialEq and Eq if not specified.
+    ///
+    /// Debug and diesel::types::Enum are always included.
     #[arg(
         id = PrintSchemaArgs::CUSTOM_RUST_ENUM_TYPE_DERIVES,
         long = "custom-enum-derives",
@@ -521,6 +526,7 @@ fn mysql_diesel_types() -> HashSet<&'static str> {
 fn mariadb_diesel_types() -> HashSet<&'static str> {
     let mut types = HashSet::new();
     mysql_like_diesel_types(&mut types);
+    types.insert("Uuid");
     types
 }
 
@@ -1635,7 +1641,7 @@ impl<'a> Display for QueryRelationDefinition<'a> {
                 writeln!(
                     out,
                     r#"#[sql_name = {}]"#,
-                    escape_rust_string(&full_sql_name)
+                    escape_rust_string(&self.table.table_name().sql_name)
                 )?;
             }
 

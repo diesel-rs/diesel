@@ -9,6 +9,7 @@ pub(crate) mod backend;
 pub(crate) mod connection;
 pub mod expression;
 mod function_behavior;
+pub mod pragma;
 
 pub mod query_builder;
 

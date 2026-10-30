@@ -5,11 +5,12 @@ use core::ptr::{self, NonNull};
 use mysqlclient_sys as ffi;
 use std::sync::Once;
 
+use super::error_information::{MysqlLikeErrorInformation, sqlstate_from_ptr};
 use super::statement_cache::PrepareForCache;
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
-use crate::result::{ConnectionError, ConnectionResult, QueryResult};
+use crate::result::{ConnectionError, ConnectionResult, QueryResult, SqlState};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
@@ -118,6 +119,23 @@ impl RawConnection {
             .into_owned()
     }
 
+    fn last_error_sqlstate(&self) -> Option<SqlState> {
+        // SAFETY: `self.0` is the live handle owned by `self`.
+        let sqlstate = unsafe { ffi::mysql_sqlstate(self.0.as_ptr()) };
+        // SAFETY: the result is null or the NUL terminated SQLSTATE stored on the
+        // handle, which no call changes while `self` is borrowed here.
+        unsafe { sqlstate_from_ptr(sqlstate) }
+    }
+
+    pub(super) fn server_info(&self) -> Option<&CStr> {
+        // SAFETY: `self.0` is the live handle owned by `self`, and the call only reads it.
+        let info = unsafe { ffi::mysql_get_server_info(self.0.as_ptr()) };
+        // SAFETY: a non-null result is the NUL-terminated version string stored on the
+        // handle, which only a reconnect, never enabled by diesel, or `mysql_close` in
+        // `Drop` replaces, so it stays valid and unchanged while `self` is borrowed.
+        (!info.is_null()).then(|| unsafe { CStr::from_ptr(info) })
+    }
+
     pub(super) fn execute(&self, query: &str) -> QueryResult<()> {
         unsafe {
             // Make sure you don't use the fake one!
@@ -183,7 +201,10 @@ impl RawConnection {
         } else {
             Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
-                Box::new(error_message),
+                Box::new(MysqlLikeErrorInformation {
+                    message: error_message,
+                    sqlstate: self.last_error_sqlstate(),
+                }),
             ))
         }
     }

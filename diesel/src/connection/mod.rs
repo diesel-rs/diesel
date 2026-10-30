@@ -24,7 +24,7 @@ use crate::sql_types::TypeMetadata;
 use core::fmt::Debug;
 
 #[doc(inline)]
-pub use self::database_version::DatabaseVersion;
+pub use self::database_version::{DatabaseVersion, ParseDatabaseVersionError};
 #[cfg(feature = "std")]
 #[doc(inline)]
 pub use self::instrumentation::set_default_instrumentation;
@@ -289,6 +289,11 @@ where
     /// # include!("../doctest_setup.rs");
     /// use diesel::result::Error;
     ///
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
@@ -361,6 +366,11 @@ where
     /// # include!("../doctest_setup.rs");
     /// use diesel::result::Error;
     ///
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }

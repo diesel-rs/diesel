@@ -1,6 +1,10 @@
 use super::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn simple_distinct() {
     use crate::schema::users::dsl::*;

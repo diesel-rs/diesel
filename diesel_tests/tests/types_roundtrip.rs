@@ -68,6 +68,11 @@ macro_rules! test_round_trip {
         test_round_trip!($test_name, $sql_type, $tpe, $map_fn, ne);
     };
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
+        // These are randomized quickcheck property tests: every case performs
+        // a full round trip through the database, which takes minutes per
+        // test when interpreted by miri. That would blow the miri job's time
+        // budget, so only run them outside of miri.
+        #[cfg(not(miri))]
         #[diesel_test_helper::test]
         #[allow(clippy::type_complexity)]
         fn $test_name() {
@@ -115,7 +120,15 @@ test_round_trip!(i32_roundtrips, Integer, i32);
 test_round_trip!(i64_roundtrips, BigInt, i64);
 test_round_trip!(f32_roundtrips, Float, FloatWrapper, mk_f32, f32_ne);
 test_round_trip!(f64_roundtrips, Double, DoubleWrapper, mk_f64, f64_ne);
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 test_round_trip!(string_roundtrips, VarChar, String);
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 test_round_trip!(text_roundtrips, Text, String);
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
 test_round_trip!(bool_roundtrips, Bool, bool);
@@ -124,11 +137,35 @@ test_round_trip!(bool_roundtrips, Bool, bool);
 mod sqlite_types {
     use super::*;
 
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(date_roundtrips, Date, String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(time_roundtrips, Time, String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(timestamp_roundtrips, Timestamp, String);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
+    // This test reads query results, which requires reading memory
+    // allocated by the native sqlite library. Miri cannot track the
+    // provenance of that memory when using `-Zmiri-native-lib`.
+    #[cfg(not(miri))]
     test_round_trip!(
         naive_datetime_roundtrips,
         Timestamp,
@@ -140,7 +177,6 @@ mod sqlite_types {
 #[cfg(feature = "postgres")]
 mod pg_types {
     extern crate ipnetwork;
-    extern crate uuid;
 
     use super::*;
     use bigdecimal::BigDecimal;
@@ -165,12 +201,6 @@ mod pg_types {
         Timestamptz,
         (i64, u32),
         mk_pg_naive_datetime
-    );
-    test_round_trip!(
-        uuid_roundtrips,
-        Uuid,
-        (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)),
-        mk_uuid
     );
     test_round_trip!(array_of_int_roundtrips, Array<Integer>, Vec<i32>);
     test_round_trip!(array_of_bigint_roundtrips, Array<BigInt>, Vec<i64>);
@@ -300,13 +330,6 @@ mod pg_types {
     test_round_trip!(char_roundtrips, CChar, u8);
 
     test_round_trip!(pg_lsn_roundtrips, PgLsn, u64, mk_pg_lsn);
-
-    #[allow(clippy::type_complexity)]
-    fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
-        let a = data.3;
-        let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
-        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
-    }
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
         [data.0, data.1, data.2, data.3, data.4, data.5]
@@ -477,6 +500,27 @@ mod pg_types {
 
     pub fn mk_pg_lsn(data: u64) -> PgLsn {
         PgLsn(data)
+    }
+}
+
+#[cfg(any(feature = "postgres", feature = "mariadb"))]
+mod uuid {
+    extern crate uuid;
+
+    use super::*;
+
+    test_round_trip!(
+        uuid_roundtrips,
+        Uuid,
+        (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8)),
+        mk_uuid
+    );
+
+    #[allow(clippy::type_complexity)]
+    fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
+        let a = data.3;
+        let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
+        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
     }
 }
 
