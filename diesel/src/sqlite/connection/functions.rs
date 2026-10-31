@@ -639,6 +639,33 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    fn collation_receives_its_arguments_in_sqlite_order() {
+        use self::my_collation_example::dsl::*;
+        use crate::collation::Custom;
+
+        let connection = &mut connection();
+        connection
+            .register_collation("FORWARD", |a, b| a.cmp(b))
+            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE my_collation_example (id INTEGER PRIMARY KEY, value TEXT NOT NULL)",
+        )
+        .execute(connection)
+        .unwrap();
+        crate::insert_into(my_collation_example)
+            .values([value.eq("b"), value.eq("a"), value.eq("c")])
+            .execute(connection)
+            .unwrap();
+
+        let sorted = my_collation_example
+            .select(value)
+            .order(value.collate(Custom("FORWARD")))
+            .load::<String>(connection)
+            .unwrap();
+        assert_eq!(sorted, ["a", "b", "c"]);
+    }
+
+    #[diesel_test_helper::test]
     fn aggregate_function_works_with_aligned_data() {
         #[derive(Debug, Default)]
         #[repr(align(64))]
