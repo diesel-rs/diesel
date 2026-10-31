@@ -1503,33 +1503,38 @@ unsafe extern "C" fn authorizer_trampoline<F>(
 where
     F: FnMut(AuthorizerContext<'_>) -> AuthorizerDecision,
 {
-    // Convert a nullable C string argument to `Option<&str>`. A null pointer or
-    // a non-UTF-8 string both map to `None`. The borrow is tied to this call via
-    // the generic lifetime, and the resulting `&str` only lives inside the
-    // `AuthorizerContext` passed to the callback, which cannot escape the call.
-    fn to_str<'a>(ptr: *const libc::c_char) -> Option<&'a str> {
+    // A null pointer is `None`, and the borrow only lives inside the `AuthorizerContext` passed to the callback.
+    fn to_str<'a>(ptr: *const libc::c_char) -> Result<Option<&'a str>, core::str::Utf8Error> {
         if ptr.is_null() {
-            None
+            Ok(None)
         } else {
             // SAFETY: per the `sqlite3_set_authorizer` contract a non-null
             // pointer is a valid C string for the duration of the call.
-            unsafe { CStr::from_ptr(ptr) }.to_str().ok()
+            unsafe { CStr::from_ptr(ptr) }.to_str().map(Some)
         }
     }
 
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
-        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
-        let f = unsafe { &mut *(user_data as *mut F) };
-
-        let ctx = AuthorizerContext::from_ffi(
-            action_code,
+        // A name that is not UTF-8 is denied, since mapping it to `None` would read as top-level SQL.
+        let (Ok(arg1), Ok(arg2), Ok(db_name), Ok(accessor)) = (
             to_str(arg1),
             to_str(arg2),
             to_str(db_name),
             to_str(accessor),
-        );
+        ) else {
+            return AuthorizerDecision::Deny;
+        };
 
-        f(ctx)
+        // SAFETY: `user_data` points to a live `F` in `RawConnection::authorizer_hook`.
+        let f = unsafe { &mut *(user_data as *mut F) };
+
+        f(AuthorizerContext::from_ffi(
+            action_code,
+            arg1,
+            arg2,
+            db_name,
+            accessor,
+        ))
     }));
 
     match result {
