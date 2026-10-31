@@ -7,6 +7,7 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use super::SqliteConnection;
+use alloc::boxed::Box;
 
 /// Text encoding SQLite requested for a missing collation.
 ///
