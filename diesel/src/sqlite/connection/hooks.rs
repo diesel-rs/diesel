@@ -311,9 +311,10 @@ impl SqliteConnection {
 
     /// Sets a simple timeout-based busy handler.
     ///
-    /// When a table is locked, SQLite will sleep and retry until `ms`
-    /// milliseconds have elapsed. Pass 0 to disable (return `SQLITE_BUSY`
-    /// immediately).
+    /// When a table is locked, SQLite will sleep and retry until `timeout`
+    /// has elapsed, rounded up to whole milliseconds and capped at `i32::MAX`
+    /// milliseconds. Pass [`Duration::ZERO`](core::time::Duration::ZERO) to
+    /// disable (return `SQLITE_BUSY` immediately).
     ///
     /// Setting this clears any custom [`on_busy`](Self::on_busy) handler.
     /// Conversely, calling `on_busy` clears this timeout. For most use cases,
@@ -329,10 +330,10 @@ impl SqliteConnection {
     ///
     /// # let conn = &mut SqliteConnection::establish(":memory:").unwrap();
     /// // Wait up to 5 seconds for locked tables
-    /// conn.set_busy_timeout(5000);
+    /// conn.set_busy_timeout(std::time::Duration::from_secs(5));
     /// ```
-    pub fn set_busy_timeout(&mut self, ms: i32) {
-        self.raw_connection.set_busy_timeout(ms);
+    pub fn set_busy_timeout(&mut self, timeout: core::time::Duration) {
+        self.raw_connection.set_busy_timeout(timeout);
     }
 }
 

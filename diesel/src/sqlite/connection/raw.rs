@@ -347,15 +347,20 @@ impl RawConnection {
         }
     }
 
-    pub(super) fn set_limit(&self, limit: SqliteLimit, value: i32) -> i32 {
-        unsafe { ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), value) }
+    pub(super) fn set_limit(&self, limit: SqliteLimit, value: u32) -> u32 {
+        let value = i32::try_from(value).unwrap_or(i32::MAX);
+        let previous =
+            unsafe { ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), value) };
+        // SQLite returns a negative value only for an unknown limit id, which `SqliteLimit` rules out.
+        u32::try_from(previous).unwrap_or(0)
     }
 
-    pub(super) fn get_limit(&self, limit: SqliteLimit) -> i32 {
-        unsafe {
+    pub(super) fn get_limit(&self, limit: SqliteLimit) -> u32 {
+        let current = unsafe {
             // Passing -1 queries the current value without changing it
             ffi::sqlite3_limit(self.internal_connection.as_ptr(), limit.to_ffi(), -1)
-        }
+        };
+        u32::try_from(current).unwrap_or(0)
     }
 
     /// Set a boolean db_config option.
@@ -758,7 +763,9 @@ impl RawConnection {
     /// connection. `sqlite3_busy_timeout` installs its own internal busy
     /// handler, so the stored `busy_handler` is dropped afterwards to release
     /// the now-unused closure.
-    pub(super) fn set_busy_timeout(&mut self, ms: i32) {
+    pub(super) fn set_busy_timeout(&mut self, timeout: core::time::Duration) {
+        // Round up so a positive sub-millisecond timeout does not become 0, which disables the handler.
+        let ms = i32::try_from(timeout.as_nanos().div_ceil(1_000_000)).unwrap_or(i32::MAX);
         unsafe {
             ffi::sqlite3_busy_timeout(self.internal_connection.as_ptr(), ms);
         }
