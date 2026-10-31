@@ -847,6 +847,10 @@ impl SqliteConnection {
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
+        // Builds with `SQLITE_ENABLE_FTS3_TOKENIZER` let SQL text pass `fts3_tokenizer()` a pointer to call, and SQLite before 3.12 has no switch.
+        let _ = conn
+            .raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, false);
         Ok(conn)
     }
 }
