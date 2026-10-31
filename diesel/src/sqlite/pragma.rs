@@ -69,14 +69,18 @@
 use crate::connection::{DefaultLoadingMode, LoadConnection};
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
-use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
+use crate::query_builder::{AstPass, Query, QueryBuilder, QueryFragment, QueryId};
 use crate::result::{Error, QueryResult};
 use crate::sql_types::SqlType;
-use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection};
+use crate::sqlite::{AutoVacuumMode, Sqlite, SqliteConnection, SqliteQueryBuilder};
+use alloc::ffi::CString;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use core::ffi::CStr;
+use core::fmt;
 use core::marker::PhantomData;
 use core::num::NonZeroU32;
+use zeroize::Zeroizing;
 
 /// A pragma, named by [`NAME`](Self::NAME) and scoped by [`Scope`](Self::Scope).
 pub trait Pragma: Sized {
@@ -103,16 +107,37 @@ impl PragmaScope for PerSchema {}
 impl PragmaScope for PerConnection {}
 
 mod private {
-    use crate::query_builder::AstPass;
+    use crate::query_builder::{AstPass, QueryBuilder, QueryFragment};
     use crate::result::QueryResult;
-    use crate::sqlite::Sqlite;
+    use crate::sqlite::{Sqlite, SqliteConnection, SqliteQueryBuilder};
+    use core::marker::PhantomData;
 
     pub trait Sealed {}
     impl Sealed for super::PerSchema {}
     impl Sealed for super::PerConnection {}
 
-    pub trait RenderArgument {
+    pub trait RenderArgument: Sized {
         fn render(&self, out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()>;
+
+        /// Runs `PRAGMA schema.name = argument` to completion.
+        fn assign<P: super::Pragma>(
+            self,
+            schema: Option<&str>,
+            conn: &mut SqliteConnection,
+        ) -> QueryResult<()> {
+            use crate::connection::SimpleConnection;
+
+            // Some pragmas do one unit of work per step, `incremental_vacuum` frees one page per step.
+            // `sqlite3_exec` behind `batch_execute` runs to completion, while `StatementUse::run` steps once.
+            let mut query = SqliteQueryBuilder::new();
+            super::PragmaAssignment::<P, _> {
+                schema,
+                argument: self,
+                pragma: PhantomData,
+            }
+            .to_sql(&mut query, &Sqlite)?;
+            conn.batch_execute(&query.finish())
+        }
     }
 }
 
@@ -124,7 +149,7 @@ pub trait ReadPragma: Pragma {
 
 /// A pragma that can be assigned an [`Argument`](Self::Argument).
 ///
-/// Never assign secrets this way, since [`Instrumentation`](crate::connection::Instrumentation), [`on_trace`](SqliteConnection::on_trace) and [`on_authorize`](SqliteConnection::on_authorize) observe the statement.
+/// Assign secrets only as [`PragmaSecret`], since [`Instrumentation`](crate::connection::Instrumentation) and error messages show every other argument.
 pub trait WritePragma: Pragma {
     /// The argument assigned to the pragma, accepted as any type converting into it.
     type Argument<'a>: PragmaArgument;
@@ -266,6 +291,105 @@ impl private::RenderArgument for PragmaText<'_> {
 
 impl PragmaArgument for PragmaText<'_> {}
 
+/// Secret text such as an SQLCipher key, written as a quoted SQL string from a buffer that is zeroed once SQLite has run it.
+///
+/// [`Instrumentation`](crate::connection::Instrumentation) sees only `PRAGMA name = [REDACTED]`, error messages are redacted and `Debug` hides the text, while [`on_trace`](SqliteConnection::on_trace) and [`on_authorize`](SqliteConnection::on_authorize) still see it. Text holding a NUL byte fails with [`Error::InvalidCString`] before reaching SQLite.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::sqlite::pragma::{PerSchema, Pragma, PragmaSecret, SchemaPragma, WritePragma};
+///
+/// struct Key;
+///
+/// impl Pragma for Key {
+///     const NAME: &'static str = "key";
+///     type Scope = PerSchema;
+/// }
+///
+/// impl WritePragma for Key {
+///     type Argument<'a> = PragmaSecret<'a>;
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// let conn = &mut SqliteConnection::establish(":memory:").unwrap();
+/// // SQLite without SQLCipher ignores the unknown `key` pragma.
+/// Key::set("correct horse battery staple", None, conn)?;
+/// #     Ok(())
+/// # }
+/// ```
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub struct PragmaSecret<'a>(&'a str);
+
+impl<'a> From<&'a str> for PragmaSecret<'a> {
+    fn from(text: &'a str) -> Self {
+        Self(text)
+    }
+}
+
+impl fmt::Debug for PragmaSecret<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("PragmaSecret").field(&"[REDACTED]").finish()
+    }
+}
+
+impl private::RenderArgument for PragmaSecret<'_> {
+    // `assign` writes the secret itself so it never enters the query builder.
+    fn render(&self, _out: &mut AstPass<'_, '_, Sqlite>) -> QueryResult<()> {
+        Err(Error::QueryBuilderError(
+            "a secret pragma argument is never rendered into a query".into(),
+        ))
+    }
+
+    fn assign<P: Pragma>(
+        self,
+        schema: Option<&str>,
+        conn: &mut SqliteConnection,
+    ) -> QueryResult<()> {
+        if let Some(position) = self.0.find('\0') {
+            // The error carries the bytes before the NUL, so they are replaced.
+            let mut redacted = alloc::vec![b'?'; position + 1];
+            redacted[position] = 0;
+            if let Err(error) = CString::new(redacted) {
+                return Err(error.into());
+            }
+        }
+
+        let mut prefix = SqliteQueryBuilder::new();
+        PragmaQuery::<P>::new(schema).to_sql(&mut prefix, &Sqlite)?;
+        prefix.push_sql(" = ");
+        let mut prefix = prefix.finish();
+        if prefix.contains('\0')
+            && let Err(error) = CString::new(prefix.as_str())
+        {
+            return Err(error.into());
+        }
+
+        let quotes = self.0.bytes().filter(|&byte| byte == b'\'').count();
+        let length = prefix.len() + self.0.len() + quotes + 3;
+        let mut sql = Zeroizing::new(Vec::with_capacity(length));
+        let capacity = sql.capacity();
+        sql.extend_from_slice(prefix.as_bytes());
+        sql.push(b'\'');
+        for piece in self.0.split_inclusive('\'') {
+            sql.extend_from_slice(piece.as_bytes());
+            if piece.ends_with('\'') {
+                sql.push(b'\'');
+            }
+        }
+        sql.extend_from_slice(b"'\0");
+        // A reallocation would leave an unzeroed copy of the secret behind.
+        debug_assert_eq!((sql.len(), sql.capacity()), (length, capacity));
+        let query = CStr::from_bytes_with_nul(&sql).map_err(|_| {
+            Error::QueryBuilderError("a secret pragma statement must end in one NUL".into())
+        })?;
+
+        prefix.push_str("[REDACTED]");
+        conn.batch_execute_sensitive_reported_as(&prefix, query)
+    }
+}
+
+impl PragmaArgument for PragmaSecret<'_> {}
+
 macro_rules! integer_pragma_argument {
     ($($ty:ty),*) => {$(
         impl private::RenderArgument for $ty {
@@ -312,7 +436,11 @@ pub trait SchemaPragma: Pragma<Scope = PerSchema> {
     where
         Self: WritePragma,
     {
-        assign::<Self>(conn, Some(schema.unwrap_or("main")), argument.into())
+        private::RenderArgument::assign::<Self>(
+            argument.into(),
+            Some(schema.unwrap_or("main")),
+            conn,
+        )
     }
 }
 
@@ -348,7 +476,7 @@ pub trait ConnectionPragma: Pragma<Scope = PerConnection> {
     where
         Self: WritePragma,
     {
-        assign::<Self>(conn, None, argument.into())
+        private::RenderArgument::assign::<Self>(argument.into(), None, conn)
     }
 }
 
@@ -529,27 +657,6 @@ where
         .collect()
 }
 
-fn assign<P: WritePragma>(
-    conn: &mut SqliteConnection,
-    schema: Option<&str>,
-    argument: P::Argument<'_>,
-) -> QueryResult<()> {
-    use crate::connection::SimpleConnection;
-    use crate::query_builder::QueryBuilder;
-    use crate::sqlite::SqliteQueryBuilder;
-
-    // Some pragmas do one unit of work per step, `incremental_vacuum` frees one page per step.
-    // `sqlite3_exec` behind `batch_execute` runs to completion, while `StatementUse::run` steps once.
-    let mut query = SqliteQueryBuilder::new();
-    PragmaAssignment::<P, _> {
-        schema,
-        argument,
-        pragma: PhantomData,
-    }
-    .to_sql(&mut query, &Sqlite)?;
-    conn.batch_execute(&query.finish())
-}
-
 #[derive(Debug)]
 struct PragmaQuery<'a, P> {
     schema: Option<&'a str>,
@@ -589,7 +696,7 @@ struct PragmaAssignment<'a, P, A> {
     pragma: PhantomData<P>,
 }
 
-impl<P: Pragma, A: PragmaArgument> QueryFragment<Sqlite> for PragmaAssignment<'_, P, A> {
+impl<P: Pragma, A: private::RenderArgument> QueryFragment<Sqlite> for PragmaAssignment<'_, P, A> {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         push_pragma::<P>(&mut out, self.schema)?;
         out.push_sql(" = ");

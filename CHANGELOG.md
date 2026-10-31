@@ -52,6 +52,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
 * Added the `diesel::sqlite::pragma` module to declare SQLite pragmas as types, read them per schema or per connection into a Rust type the caller chooses, and assign them integer, keyword or quoted text values, with the built-in `PageCount` and `FreelistCount` pragmas for a database's total and reclaimable page counts, the `AutoVacuum` pragma for its `auto_vacuum` mode as an `AutoVacuumMode`, and the `IncrementalVacuum` pragma to release freelist pages in incremental mode.
 * Added `SqliteConnection::batch_execute_sensitive` to run uncached SQL whose instrumentation events and error messages are redacted, while authorization and error kinds are kept.
+* Added `diesel::sqlite::pragma::PragmaSecret` for pragma arguments such as SQLCipher keys, which reach SQLite through redacted execution from a buffer that is zeroed afterwards.
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
