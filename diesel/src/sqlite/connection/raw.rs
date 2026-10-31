@@ -90,8 +90,10 @@ pub(super) struct RawConnection {
     trace_hook: Option<Box<dyn FnMut(SqliteTraceEvent<'_>) + Send>>,
     /// Boxed closure kept alive while the collation-needed callback is registered.
     collation_needed_hook:
-        Option<Box<dyn Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send>>,
+        Option<Box<dyn Fn(CollationNeededContext<'_>) -> Option<Collation> + Send>>,
 }
+
+type Collation = Box<dyn Fn(&str, &str) -> core::cmp::Ordering + Send + core::panic::UnwindSafe>;
 
 impl RawConnection {
     /// Wraps a borrowed `sqlite3` pointer this `RawConnection` does not own
@@ -871,9 +873,9 @@ impl RawConnection {
     /// registration.
     pub(super) fn set_collation_needed_hook<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send + 'static,
+        F: Fn(CollationNeededContext<'_>) -> Option<Collation> + Send + 'static,
     {
-        let boxed: Box<dyn Fn(&mut SqliteConnection, CollationNeededContext<'_>) + Send> =
+        let boxed: Box<dyn Fn(CollationNeededContext<'_>) -> Option<Collation> + Send> =
             Box::new(hook);
         let ptr = &raw const *boxed as *mut libc::c_void;
 
@@ -1631,16 +1633,14 @@ where
 ///
 /// `user_data` must point to a live `F` in
 /// `RawConnection::collation_needed_hook`. `db` is the connection that fired
-/// the callback and is open for the duration of the call. SQLite may
-/// re-enter this trampoline if the callback registers a collation that is
-/// itself missing, so the closure is stored as `Fn` and borrowed shared.
+/// the callback and is open for the duration of the call.
 unsafe extern "C" fn collation_needed_trampoline<F>(
     user_data: *mut libc::c_void,
     db: *mut ffi::sqlite3,
     e_text_rep: libc::c_int,
     name: *const libc::c_char,
 ) where
-    F: Fn(&mut SqliteConnection, CollationNeededContext<'_>),
+    F: Fn(CollationNeededContext<'_>) -> Option<Collation>,
 {
     let result = crate::util::std_compat::catch_unwind(core::panic::AssertUnwindSafe(|| {
         // SAFETY: `user_data` points to a live `F` in
@@ -1666,10 +1666,14 @@ unsafe extern "C" fn collation_needed_trampoline<F>(
         };
 
         // SAFETY: `db` is the connection that fired the callback (per
-        // `sqlite3_collation_needed` contract). The closure is `Fn`, so
-        // SQLite re-entering via a nested unresolved lookup is sound.
+        // `sqlite3_collation_needed` contract), and only Diesel uses the borrowed connection.
         unsafe {
-            SqliteConnection::with_borrowed_connection(db, |conn| f(conn, ctx));
+            SqliteConnection::with_borrowed_connection(db, |conn| {
+                if let Some(collation) = f(ctx) {
+                    // A failed registration leaves the collation missing, so the statement fails to prepare.
+                    let _ = conn.register_collation(ctx.name, collation);
+                }
+            });
         }
     }));
 
