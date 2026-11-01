@@ -104,6 +104,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fix potential panics while deserializing binary copy_to responses
 * Fixed an issue with a panic during `copy_from` statements could render the connection unusable
 * Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
+* Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
 
 ### Changed
 

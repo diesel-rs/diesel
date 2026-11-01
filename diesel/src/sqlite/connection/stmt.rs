@@ -197,6 +197,20 @@ impl Statement {
         unsafe { ffi::sqlite3_reset(self.inner_statement.as_ptr()) };
     }
 
+    /// Steps the statement once for its side effects.
+    pub(super) fn run(&mut self) -> QueryResult<()> {
+        // SAFETY: `inner_statement` stays a live prepared statement until `Drop`.
+        match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
+            ffi::SQLITE_DONE | ffi::SQLITE_ROW => Ok(()),
+            _ => {
+                let error = last_error(self.raw_connection());
+                // Clears the step error so that `Drop` finalizes successfully.
+                self.reset();
+                Err(error)
+            }
+        }
+    }
+
     fn raw_connection(&self) -> *mut ffi::sqlite3 {
         unsafe { ffi::sqlite3_db_handle(self.inner_statement.as_ptr()) }
     }
