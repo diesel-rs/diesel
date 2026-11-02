@@ -35,7 +35,7 @@ use core::{mem, ptr, slice, str};
 // `sqlite3_db_config()` option codes controlling whether ATTACH may create new
 // database files (ATTACH_CREATE) or open them in write mode (ATTACH_WRITE).
 // Introduced in SQLite 3.49.0 / `libsqlite3-sys` 0.35.0, but Diesel supports
-// `libsqlite3-sys` >= 0.17.2, so we define them here to build against any
+// `libsqlite3-sys` >= 0.24.0, so we define them here to build against any
 // supported version. On an older linked SQLite the `sqlite3_db_config()` call
 // fails at runtime, which callers already handle.
 pub(super) const SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE: i32 = 1020;
