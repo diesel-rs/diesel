@@ -1,16 +1,9 @@
 use std::io::prelude::*;
 
-use crate::deserialize::{self, FromSql, FromSqlRow};
-use crate::expression::AsExpression;
+use crate::deserialize::{self, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::Uuid;
-
-#[derive(AsExpression, FromSqlRow)]
-#[diesel(foreign_derive)]
-#[diesel(sql_type = Uuid)]
-#[allow(dead_code)]
-struct UuidProxy(uuid::Uuid);
 
 #[cfg(all(feature = "postgres_backend", feature = "uuid"))]
 impl FromSql<Uuid, Pg> for uuid::Uuid {

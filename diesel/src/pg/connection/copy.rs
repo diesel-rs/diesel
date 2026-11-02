@@ -10,15 +10,21 @@ use crate::QueryResult;
 #[allow(missing_debug_implementations)] // `PgConnection` is not debug
 pub struct CopyFromSink<'conn> {
     conn: &'conn mut RawConnection,
+    finished: bool,
 }
 
 impl<'conn> CopyFromSink<'conn> {
     pub(super) fn new(conn: &'conn mut RawConnection) -> Self {
-        Self { conn }
+        Self {
+            conn,
+            finished: false,
+        }
     }
 
-    pub(super) fn finish(self, err: Option<String>) -> QueryResult<()> {
-        self.conn.finish_copy_from(err)
+    pub(super) fn finish(mut self, err: Option<String>) -> QueryResult<()> {
+        self.conn
+            .finish_copy_from(err)
+            .inspect(|_| self.finished = true)
     }
 }
 
@@ -35,6 +41,14 @@ impl Write for CopyFromSink<'_> {
     }
 }
 
+impl Drop for CopyFromSink<'_> {
+    fn drop(&mut self) {
+        if !self.finished {
+            let _ = self.conn.consume_results();
+        }
+    }
+}
+
 #[allow(missing_debug_implementations)] // `PgConnection` is not debug
 pub struct CopyToBuffer<'conn> {
     conn: &'conn mut RawConnection,
@@ -42,6 +56,7 @@ pub struct CopyToBuffer<'conn> {
     offset: usize,
     len: usize,
     result: PgResult,
+    done: bool,
 }
 
 impl<'conn> CopyToBuffer<'conn> {
@@ -52,6 +67,7 @@ impl<'conn> CopyToBuffer<'conn> {
             offset: 0,
             len: 0,
             result,
+            done: false,
         }
     }
 
@@ -73,6 +89,7 @@ impl<'conn> CopyToBuffer<'conn> {
 impl Drop for CopyToBuffer<'_> {
     #[allow(unsafe_code)] // ffi code
     fn drop(&mut self) {
+        let _ = self.conn.consume_results();
         if !self.ptr.is_null() {
             unsafe { pq_sys::PQfreemem(self.ptr as *mut ffi::c_void) };
             self.ptr = core::ptr::null_mut();
@@ -93,26 +110,31 @@ impl Read for CopyToBuffer<'_> {
 impl BufRead for CopyToBuffer<'_> {
     #[allow(unsafe_code)] // ffi code + ptr arithmetic
     fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
-        if self.data_slice().is_empty() {
-            unsafe {
+        if self.data_slice().is_empty() && !self.done {
+            let len = unsafe {
                 if !self.ptr.is_null() {
                     pq_sys::PQfreemem(self.ptr as *mut ffi::c_void);
                     self.ptr = core::ptr::null_mut();
                 }
-                let len =
-                    pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0);
-                match len {
-                    len if len >= 0 => {
-                        self.len = 1 + usize::try_from(len).map_err(std::io::Error::other)?
-                    }
-                    -1 => self.len = 0,
-                    _ => {
-                        let error = self.conn.last_error_message();
-                        return Err(std::io::Error::other(error));
-                    }
+                pq_sys::PQgetCopyData(self.conn.internal_connection.as_ptr(), &mut self.ptr, 0)
+            };
+            match len {
+                len if len >= 0 => {
+                    self.len = 1 + usize::try_from(len).map_err(std::io::Error::other)?
                 }
-                self.offset = 0;
+                -1 => {
+                    self.done = true;
+                    self.len = 0;
+                    self.conn.consume_results().map_err(std::io::Error::other)?;
+                }
+                _ => {
+                    let error = self.conn.last_error_message();
+                    self.done = true;
+                    self.len = 0;
+                    return Err(std::io::Error::other(error));
+                }
             }
+            self.offset = 0;
         }
         Ok(self.data_slice())
     }

@@ -143,6 +143,7 @@ type_name! {
         Datetime => "datetime",
         Decimal => "decimal",
         Time => "time",
+        Uuid => "uuid",
     }
     diesel::sqlite::Sqlite: "sqlite" {
         Int4 => "integer",
@@ -227,7 +228,7 @@ casts_impl!(
     (Json <- Jsonb),
     (Jsonb <- Json),
     "mysql_backend","mariadb_backend": (Text <- Datetime),
-    "postgres_backend": (Text <- Uuid),
+    "postgres_backend","mariadb_backend": (Text <- Uuid),
     "postgres_backend": (Text <- Inet),
     "postgres_backend": (Text <- Cidr),
     "postgres_backend": (Inet <- Cidr),
@@ -266,7 +267,8 @@ fallible_casts_impl!(
     (Time <- Text),
     (Decimal <- Text),
     "mysql_backend","mariadb_backend": (Datetime <- Text),
-    "postgres_backend": (Uuid <- Text),
+    "postgres_backend","mariadb_backend": (Uuid <- Text),
     "postgres_backend": (Inet <- Text),
     "postgres_backend": (Cidr <- Text),
+    "mariadb_backend": (Uuid <- Binary),
 );

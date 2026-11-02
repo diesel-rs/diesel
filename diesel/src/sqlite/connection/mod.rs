@@ -73,6 +73,9 @@ use core::num::NonZeroI64;
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
 ///
+/// SQLite has no SQLSTATE codes, so
+/// [`DatabaseErrorInformation::sqlstate`] always returns `None`.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`]
