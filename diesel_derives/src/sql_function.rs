@@ -489,16 +489,17 @@ fn expand_nonvariadic(
             &ty_generics,
             arg_name,
             &fn_name,
+            named_parameters,
         ));
 
-    let fn_fragment_impl = generate_function_fragment_tokens(
-        arg_name,
-        &impl_generics_internal,
-        &fn_name,
-        &ty_generics,
-        &sql_name,
-        named_parameters,
-    );
+    let function_parameters = args.iter().map(|arg| {
+        let name = &arg.name;
+        quote! {
+            pub(in super) const #name: FunctionParameter<#named_parameters> = FunctionParameter {
+                name: stringify!(#name),
+            };
+        }
+    });
 
     let args_iter = args.iter();
     let mut tokens = quote! {
@@ -547,7 +548,41 @@ fn expand_nonvariadic(
         {
         }
 
-        #fn_fragment_impl
+        #[allow(non_upper_case_globals)]
+        mod function_parameters {
+            use diesel::internal::sql_functions::FunctionParameter;
+            #(#function_parameters)*
+        }
+
+        impl #impl_generics_internal FunctionFragment<__DieselInternal>
+            for #fn_name #ty_generics
+        where
+            __DieselInternal: diesel::backend::Backend,
+            FunctionParameter<#named_parameters>: QueryFragment<__DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
+            #(#arg_name: QueryFragment<__DieselInternal>,)*
+        {
+            const FUNCTION_NAME: &'static str = #sql_name;
+
+            #[allow(unused_assignments)]
+            fn walk_arguments<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
+                // we unroll the arguments manually here, to prevent borrow check issues
+                let mut needs_comma = false;
+                #(
+                    if !self.#arg_name.is_noop(out.backend())? {
+                        if needs_comma {
+                            out.push_sql(", ");
+                        }
+                        <FunctionParameter<#named_parameters> as QueryFragment<__DieselInternal, __DieselInternal::SqlFunctionParameterNotation>>::walk_ast(
+                                &function_parameters::#arg_name,
+                                out.reborrow(),
+                            )?;
+                        self.#arg_name.walk_ast(out.reborrow())?;
+                        needs_comma = true;
+                    }
+                )*
+                Ok(())
+            }
+        }
 
         #query_fragment_impl
     };
@@ -700,91 +735,6 @@ fn expand_nonvariadic(
         tokens,
         return_type_helper_module_path,
     })
-}
-
-fn generate_function_fragment_tokens(
-    arg_name: &Vec<&Ident>,
-    impl_generics_internal: &ImplGenerics,
-    fn_name: &Ident,
-    ty_generics: &TypeGenerics,
-    sql_name: &str,
-    named_parameters: bool,
-) -> TokenStream {
-    let generate_specialized_fn_fragment_tokens =
-        |named_parameters: bool, specialization: TokenStream| {
-            let push_parameter_name = arg_name.iter().map(|name| {
-                if named_parameters {
-                    Some(quote! {
-                        out.push_sql(stringify!(#name));
-                        out.push_sql("=>");
-                    })
-                } else {
-                    // If `named_parameters == false`, we will pass the parameter by position so we
-                    // don't need to generate any additional tokens
-                    None
-                }
-            });
-
-            quote! {
-                impl #impl_generics_internal FunctionFragment<__DieselInternal, #specialization>
-                    for #fn_name #ty_generics
-                where
-                    __DieselInternal: diesel::backend::Backend + diesel::backend::SqlDialect<SqlFunctionParameterNotation = #specialization>,
-                    #(#arg_name: QueryFragment<__DieselInternal>,)*
-                {
-                    const FUNCTION_NAME: &'static str = <Self as FunctionFragment<__DieselInternal>>::FUNCTION_NAME;
-
-                    #[allow(unused_assignments)]
-                    fn walk_arguments<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
-                        // we unroll the arguments manually here, to prevent borrow check issues
-                        let mut needs_comma = false;
-                        #(
-                            if !self.#arg_name.is_noop(out.backend())? {
-                                if needs_comma {
-                                    out.push_sql(", ");
-                                }
-                                #push_parameter_name
-                                self.#arg_name.walk_ast(out.reborrow())?;
-                                needs_comma = true;
-                            }
-                        )*
-                        Ok(())
-                    }
-                }
-            }
-        };
-
-    let positional_notation_only_impl = generate_specialized_fn_fragment_tokens(
-        // Backends with the `PositionalNotationOnly` marker type do not support named notation, so
-        // this impl will always pass parameters by position
-        false,
-        quote!(diesel::internal::sql_functions::PositionalNotationOnly),
-    );
-    let positional_or_named_notation_impl = generate_specialized_fn_fragment_tokens(
-        named_parameters,
-        quote!(diesel::internal::sql_functions::PositionalOrNamedNotation),
-    );
-
-    quote! {
-        impl #impl_generics_internal FunctionFragment<__DieselInternal>
-            for #fn_name #ty_generics
-        where
-            __DieselInternal: diesel::backend::Backend,
-            Self: FunctionFragment<__DieselInternal, __DieselInternal::SqlFunctionParameterNotation>,
-            #(#arg_name: QueryFragment<__DieselInternal>,)*
-        {
-            const FUNCTION_NAME: &'static str = #sql_name;
-
-            #[allow(unused_assignments)]
-            fn walk_arguments<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()> {
-                <Self as FunctionFragment<__DieselInternal, __DieselInternal::SqlFunctionParameterNotation>>::walk_arguments(self, out)
-            }
-        }
-
-        #positional_notation_only_impl
-
-        #positional_or_named_notation_impl
-    }
 }
 
 fn generate_window_function_tokens(
@@ -1835,6 +1785,7 @@ impl BackendRestriction {
         ty_generics: &TypeGenerics<'_>,
         arg_name: &[&syn::Ident],
         fn_name: &syn::Ident,
+        named_parameters: bool,
     ) -> proc_macro2::TokenStream {
         match *self {
             BackendRestriction::None => {
@@ -1848,6 +1799,7 @@ impl BackendRestriction {
                     arg_name,
                     fn_name,
                     None,
+                    named_parameters,
                 )
             }
             BackendRestriction::BackendBound(_, ref restriction) => {
@@ -1861,6 +1813,7 @@ impl BackendRestriction {
                     arg_name,
                     fn_name,
                     None,
+                    named_parameters,
                 )
             }
             BackendRestriction::SqlDialect(_, ref dialect, ref dialect_type) => {
@@ -1876,6 +1829,7 @@ impl BackendRestriction {
                     arg_name,
                     fn_name,
                     Some(dialect_type),
+                    named_parameters,
                 );
                 quote::quote! {
                     impl #impl_generics QueryFragment<__DieselInternal>
@@ -1904,6 +1858,7 @@ impl BackendRestriction {
                         arg_name,
                         fn_name,
                         None,
+                        named_parameters,
                     )
                 });
 
@@ -1920,19 +1875,20 @@ impl BackendRestriction {
         arg_name: &[&syn::Ident],
         fn_name: &syn::Ident,
         dialect: Option<&syn::Path>,
+        named_parameters: bool,
     ) -> proc_macro2::TokenStream {
         quote::quote! {
             impl #impl_generics QueryFragment<#backend, #dialect>
                 for #fn_name #ty_generics
             where
-                Self: FunctionFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
                 #backend_bound
+                FunctionParameter<#named_parameters>: QueryFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
             #(#arg_name: QueryFragment<#backend>,)*
             {
                 fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, #backend>) -> QueryResult<()>{
-                    out.push_sql(<Self as FunctionFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>>::FUNCTION_NAME);
+                    out.push_sql(<Self as FunctionFragment<#backend>>::FUNCTION_NAME);
                     out.push_sql("(");
-                    <Self as FunctionFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>>::walk_arguments(self, out.reborrow())?;
+                    self.walk_arguments(out.reborrow())?;
                     out.push_sql(")");
                     Ok(())
                 }
