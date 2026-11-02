@@ -6,7 +6,7 @@ use dotenvy::dotenv;
 use std::env;
 
 pub fn establish_connection() -> SqliteConnection {
-    dotenv().ok();
+    let _ = dotenv();
 
     let database_url = env::var("SQLITE_DATABASE_URL")
         .or_else(|_| env::var("DATABASE_URL"))
