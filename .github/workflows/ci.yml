@@ -193,9 +193,19 @@ jobs:
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: bash
+        run: |
+          # community.chocolatey.org intermittently answers 504, so the install is retried
+          for attempt in 1 2 3 4; do
+            choco install sqlite -y && break
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 30))
+          done
+
+      - name: Build sqlite import library (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
         shell: cmd
         run: |
-          choco install sqlite
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
@@ -264,7 +274,12 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mariadb'
         shell: bash
         run: |
-          choco install mariadb --version=12.3.2 -y
+          # community.chocolatey.org intermittently answers 504, so the install is retried
+          for attempt in 1 2 3 4; do
+            choco install mariadb --version=12.3.2 -y && break
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 30))
+          done
           "C:\\Program Files\\MariaDB 12.3\\bin\\mariadb" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
           echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
