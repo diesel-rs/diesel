@@ -1867,6 +1867,7 @@ impl BackendRestriction {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn generate_queryfragment_impl(
         backend: proc_macro2::TokenStream,
         backend_bound: Option<proc_macro2::TokenStream>,
@@ -1883,7 +1884,7 @@ impl BackendRestriction {
             where
                 #backend_bound
                 FunctionParameter<#named_parameters>: QueryFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
-            #(#arg_name: QueryFragment<#backend>,)*
+                #(#arg_name: QueryFragment<#backend>,)*
             {
                 fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, #backend>) -> QueryResult<()>{
                     out.push_sql(<Self as FunctionFragment<#backend>>::FUNCTION_NAME);
