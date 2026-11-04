@@ -1251,7 +1251,7 @@ where
         let lhs =
             lhs.map_err(|_| SqliteCallbackError::Abort("Got an invalid UTF-8 string for lhs"))?;
 
-        Ok((user_ptr.callback)(rhs, lhs))
+        Ok((user_ptr.callback)(lhs, rhs))
     })
     .unwrap_or_else(|p| {
         Err(SqliteCallbackError::Panic(
