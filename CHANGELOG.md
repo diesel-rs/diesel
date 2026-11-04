@@ -98,6 +98,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
 * Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
 * Fix parsing consecutive null values in the binary copy_to stream
 * Fix the copy iterator to only return a single error and stop afterwards
@@ -114,6 +115,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
 * `SqliteConnection::establish` turns off the two-argument `fts3_tokenizer()`, which SQLite builds compiled with `SQLITE_ENABLE_FTS3_TOKENIZER`, such as Ubuntu's system library, enable by default and which lets SQL text make SQLite call through an arbitrary pointer. `SqliteConnection::set_fts3_tokenizer_enabled` is now an `unsafe fn`.
+* Extended libsqlite3-sys support to include 0.39
+* `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
 ## [2.3.14] 2026-10-07
