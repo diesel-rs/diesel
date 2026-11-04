@@ -8,6 +8,13 @@ use crate::mariadb::Mariadb;
 ///  a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
 /// * `unix_socket` expects the path to the unix socket
 ///
+/// Errors carry the SQLSTATE the server or client library reports in
+/// [`DatabaseErrorInformation::sqlstate`](crate::result::DatabaseErrorInformation::sqlstate),
+/// including custom codes raised with
+/// [`SIGNAL`](https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/signal).
+/// The server reports `HY000` for errors without a specific SQLSTATE, as
+/// described at <https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/programmatic-compound-statements-diagnostics/sqlstate>.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)

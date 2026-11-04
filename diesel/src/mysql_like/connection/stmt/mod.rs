@@ -6,9 +6,10 @@ use core::ptr::NonNull;
 use mysqlclient_sys as ffi;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
+use super::error_information::{MysqlLikeErrorInformation, sqlstate_from_ptr};
 use crate::connection::statement_cache::MaybeCached;
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
-use crate::result::{DatabaseErrorKind, Error, QueryResult};
+use crate::result::{DatabaseErrorKind, Error, QueryResult, SqlState};
 
 pub(super) mod iterator;
 mod metadata;
@@ -76,6 +77,14 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
             .into_owned()
     }
 
+    fn last_error_sqlstate(&self) -> Option<SqlState> {
+        // SAFETY: `self.stmt` is the live statement handle owned by `self`.
+        let sqlstate = unsafe { ffi::mysql_stmt_sqlstate(self.stmt.as_ptr()) };
+        // SAFETY: the result is null or the NUL terminated SQLSTATE stored on the
+        // statement handle, which no call changes while `self` is borrowed here.
+        unsafe { sqlstate_from_ptr(sqlstate) }
+    }
+
     ///we return a Option here because mariadb sometimes doesn't provide the statement metadata before the execute
     pub(super) fn metadata(&self) -> QueryResult<Option<StatementMetadata>> {
         let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()) };
@@ -92,7 +101,10 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
         } else {
             Err(DatabaseError(
                 self.last_error_type(),
-                Box::new(error_message),
+                Box::new(MysqlLikeErrorInformation {
+                    message: error_message,
+                    sqlstate: self.last_error_sqlstate(),
+                }),
             ))
         }
     }

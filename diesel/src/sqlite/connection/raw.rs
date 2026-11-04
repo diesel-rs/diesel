@@ -834,7 +834,8 @@ impl RawConnection {
         unsafe {
             ffi::sqlite3_trace_v2(
                 self.internal_connection.as_ptr(),
-                mask.bits(),
+                // An undeclared bit such as 0x40 switches SQLite to the legacy callback ABI.
+                SqliteTraceFlags::from_bits_truncate(mask.bits()).bits(),
                 Some(trace_trampoline::<F>),
                 ptr,
             );
@@ -1428,13 +1429,13 @@ where
         // SAFETY: `user_data` points to a live `F` in `RawConnection::wal_hook`.
         let f = unsafe { &*(user_data as *const F) };
 
-        // SAFETY: when non-null, `db_name` is a valid C string from SQLite. Use
-        // a lossy conversion so a pathological name cannot abort, and map null
-        // to "".
-        let db_name: Cow<'_, str> = if db_name.is_null() {
-            Cow::Borrowed("")
+        // SAFETY: `db_name` is null or a valid C string from SQLite, copied because a DETACH in the hook frees it.
+        let db_name: String = if db_name.is_null() {
+            String::new()
         } else {
-            unsafe { CStr::from_ptr(db_name) }.to_string_lossy()
+            unsafe { CStr::from_ptr(db_name) }
+                .to_string_lossy()
+                .into_owned()
         };
         // SQLite always reports a non-negative page count. Clamp defensively.
         let n_pages = u32::try_from(n_pages).unwrap_or(0);

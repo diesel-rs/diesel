@@ -65,6 +65,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `MysqlConnection::version` to read the version of the connected server
 * Added support for `Uuid` to Mariadb
 * Parallelized some tests for `mysql` and `mariadb` backends
+* Added `DatabaseErrorInformation::sqlstate`, returning the SQLSTATE of a database error as a `SqlState`, whose class is a `SqlStateClass`
+* `PgConnection` reports the SQLSTATE of every server error through `DatabaseErrorInformation::sqlstate`, including custom codes
+* Added `diesel::pg::sql_state` with a `SqlState` constant for every error code PostgreSQL defines
+* `MysqlConnection` and `MariadbConnection` report the SQLSTATE of an error through `DatabaseErrorInformation::sqlstate`
 
 ### Fixed
 
@@ -94,10 +98,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
 * Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
 * Fix parsing consecutive null values in the binary copy_to stream
 * Fix the copy iterator to only return a single error and stop afterwards
 * Fix potential panics while deserializing binary copy_to responses
+* Fixed an issue with a panic during `copy_from` statements could render the connection unusable
+* Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
 
 ### Changed
 
@@ -108,6 +115,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
 * Extended libsqlite3-sys support to include 0.39
+* `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
 ## [2.3.14] 2026-10-07
