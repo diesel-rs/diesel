@@ -249,13 +249,17 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
         shell: bash
         run: |
-          mkdir "C:\\Program Files\\MySQL\\MySQL Server 8.0\\data\\"
-          "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console --initialize --initialize-insecure
-          "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console &
+          # The runner image installs one MySQL server, under a directory named after its version
+          shopt -s nullglob
+          mysql_dirs=("/c/Program Files/MySQL/MySQL Server "*/)
+          mysql_dir=${mysql_dirs[0]:?no MySQL server found under C:/Program Files/MySQL}
+          mkdir "${mysql_dir}data"
+          "${mysql_dir}bin/mysqld" --console --initialize --initialize-insecure
+          "${mysql_dir}bin/mysqld" --console &
           sleep 15
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test;" -u root
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_unit_test;" -u root
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e 'grant all on `diesel_%`.* to 'root'@'localhost';' -uroot
+          "${mysql_dir}bin/mysql" -e "create database diesel_test;" -u root
+          "${mysql_dir}bin/mysql" -e "create database diesel_unit_test;" -u root
+          "${mysql_dir}bin/mysql" -e 'grant all on `diesel_%`.* to 'root'@'localhost';' -uroot
           
       - name: Install mariadb (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mariadb'
