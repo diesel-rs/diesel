@@ -757,17 +757,21 @@ impl SqliteConnection {
 
         impl Drop for Borrowed {
             fn drop(&mut self) {
-                // SAFETY: `self.0` is not touched again after this take.
-                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
                 let SqliteConnection {
                     statement_cache,
-                    raw_connection,
-                    ..
-                } = conn;
-                // Finalize prepared statements, but do not run `RawConnection`'s
-                // `Drop`, which would close a handle we do not own.
-                drop(statement_cache);
-                core::mem::forget(raw_connection);
+                    raw_connection: _,
+                    transaction_state,
+                    metadata_lookup: (),
+                    instrumentation,
+                    serialized_data,
+                } = &mut *self.0;
+                // SAFETY: `self.0` is never used again. Skipping `raw_connection` keeps `db` open.
+                unsafe {
+                    core::ptr::drop_in_place(statement_cache);
+                    core::ptr::drop_in_place(transaction_state);
+                    core::ptr::drop_in_place(instrumentation);
+                    core::ptr::drop_in_place(serialized_data);
+                }
             }
         }
 
@@ -866,6 +870,37 @@ impl SqliteConnection {
 
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
+}
+
+/// Leaves a cached statement unreset after a failed step, so finalizing it fails.
+#[cfg(all(test, not(miri)))]
+#[allow(unsafe_code)]
+pub(in crate::sqlite) fn leak_failed_cursor(conn: &mut SqliteConnection) {
+    use crate::connection::SimpleConnection;
+    use crate::prelude::*;
+    use crate::sql_types::BigInt;
+
+    crate::table! { overflow_numbers (id) { id -> Integer, n -> BigInt, } }
+    crate::define_sql_function!(fn abs(x: BigInt) -> BigInt);
+
+    conn.batch_execute(
+        "CREATE TEMP TABLE IF NOT EXISTS overflow_numbers (id INTEGER PRIMARY KEY, n BIGINT);
+         INSERT OR IGNORE INTO overflow_numbers VALUES (1, 1), (2, -9223372036854775808);",
+    )
+    .unwrap();
+    let query = overflow_numbers::table
+        .order(overflow_numbers::id)
+        .select(abs(overflow_numbers::n));
+    let mut stmt = conn.prepared_query(query).unwrap();
+    // SAFETY: `first_step = true` clears the cached column names, so no stale pointer survives.
+    let first = unsafe { stmt.step(true) };
+    assert!(matches!(first, Ok(true)));
+    // A failed first step resets the statement, so the overflow is on the second row.
+    // SAFETY: `first_step = true` clears the cached column names, so no stale pointer survives.
+    let second = unsafe { stmt.step(true) };
+    assert!(second.is_err());
+    // The query is zero-sized and binds nothing, so this skips the reset and frees nothing.
+    core::mem::forget(stmt);
 }
 
 #[cfg(test)]

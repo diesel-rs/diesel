@@ -854,6 +854,27 @@ mod tests {
     // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
     #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
+    fn on_wal_leaked_failed_cursor_keeps_connection_open() {
+        let (conn, _dir) = &mut wal_connection();
+        crate::sql_query("CREATE TABLE t_wal_leak (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        conn.on_wal(|conn, _db_name, _n_pages| {
+            crate::sqlite::connection::leak_failed_cursor(conn);
+        });
+
+        for _ in 0..2 {
+            crate::sql_query("INSERT INTO t_wal_leak DEFAULT VALUES")
+                .execute(conn)
+                .unwrap();
+        }
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[diesel_test_helper::test]
     fn on_wal_callback_write_re_enters_hook() {
         let (conn, _dir) = &mut wal_connection();
 
