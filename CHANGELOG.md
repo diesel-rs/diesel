@@ -70,7 +70,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `diesel::pg::sql_state` with a `SqlState` constant for every error code PostgreSQL defines
 * `MysqlConnection` and `MariadbConnection` report the SQLSTATE of an error through `DatabaseErrorInformation::sqlstate`
 * Added `diesel::mysql_like::sql_state` with a `SqlState` constant for every SQLSTATE MySQL and MariaDB report
-* Added the `diesel_sqlstate` crate, which holds `SqlState`, `SqlStateClass`, `InvalidSqlState` and the PostgreSQL, MySQL and MariaDB code constants for crates that report SQLSTATEs without depending on diesel. Diesel re-exports them at their existing paths
+* Added the `sql-state` crate, which holds `SqlState`, `SqlStateClass`, `InvalidSqlState` and the PostgreSQL, MySQL and MariaDB code constants for crates that report SQLSTATEs without depending on diesel. Diesel re-exports them at their existing paths
 
 ### Fixed
 

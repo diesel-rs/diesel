@@ -12,7 +12,7 @@
 //! say so.
 //!
 //! ```rust
-//! use diesel_sqlstate::{SqlState, mysql_like};
+//! use sql_state::{SqlState, mysql_like};
 //!
 //! fn retryable(code: SqlState) -> bool {
 //!     matches!(code, mysql_like::SERIALIZATION_FAILURE)
