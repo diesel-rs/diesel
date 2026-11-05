@@ -813,6 +813,8 @@ impl SqliteConnection {
     /// The authorizer may be re-invoked during `sqlite3_step()` if a schema
     /// change triggers statement recompilation.
     ///
+    /// This privileged callback can expose secret SQL, including statements executed by [`batch_execute_sensitive`](Self::batch_execute_sensitive).
+    ///
     /// The callback must not modify the database connection. It is invoked
     /// synchronously on the thread driving the connection, so it is never
     /// called concurrently.
