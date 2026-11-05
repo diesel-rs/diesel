@@ -31,7 +31,16 @@ impl SqliteConnection {
     /// # }
     /// ```
     pub fn batch_execute_sensitive(&mut self, query: &CStr) -> QueryResult<()> {
-        self.batch_execute_with_diagnostics("[REDACTED]", |connection| {
+        self.batch_execute_sensitive_reported_as("[REDACTED]", query)
+    }
+
+    /// Runs `query` like [`batch_execute_sensitive`](Self::batch_execute_sensitive), reporting it to instrumentation as `diagnostic_query`.
+    pub(crate) fn batch_execute_sensitive_reported_as(
+        &mut self,
+        diagnostic_query: &str,
+        query: &CStr,
+    ) -> QueryResult<()> {
+        self.batch_execute_with_diagnostics(diagnostic_query, |connection| {
             connection.exec_sensitive(query)
         })
     }

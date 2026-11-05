@@ -6,8 +6,8 @@ use diesel::sql_types::{Bool, Integer, Text};
 #[cfg(not(miri))]
 use diesel::sqlite::ProgressDecision;
 use diesel::sqlite::pragma::{
-    ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaKeyword, PragmaText, ReadPragma,
-    SchemaPragma, WritePragma,
+    ConnectionPragma, PerConnection, PerSchema, Pragma, PragmaKeyword, PragmaSecret, PragmaText,
+    ReadPragma, SchemaPragma, WritePragma,
 };
 #[cfg(not(miri))]
 use diesel::sqlite::{AuthorizerContext, AuthorizerDecision};
@@ -455,4 +455,182 @@ fn text_with_nul_is_rejected_without_executing_a_prefix() {
         Err(Error::InvalidCString(_))
     ));
     assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
+}
+
+const SECRET: &str = "synthetic_key_7c91a2";
+
+struct SecretKey;
+
+impl Pragma for SecretKey {
+    const NAME: &'static str = "key";
+    type Scope = PerSchema;
+}
+
+impl WritePragma for SecretKey {
+    type Argument<'a> = PragmaSecret<'a>;
+}
+
+// Only used by tests that are compiled out under miri.
+#[cfg(not(miri))]
+struct SecretConnectionText;
+
+#[cfg(not(miri))]
+impl Pragma for SecretConnectionText {
+    const NAME: &'static str = "test_text";
+    type Scope = PerConnection;
+}
+
+#[cfg(not(miri))]
+impl WritePragma for SecretConnectionText {
+    type Argument<'a> = PragmaSecret<'a>;
+}
+
+/// Records each query event's text and whether it carried an error, failing if any event exposes `SECRET`.
+#[cfg(not(miri))]
+fn observe_secret_queries(conn: &mut SqliteConnection) -> Arc<Mutex<Vec<(String, bool)>>> {
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let records = Arc::clone(&events);
+    conn.set_instrumentation(move |event: InstrumentationEvent<'_>| {
+        assert!(!format!("{event:?}").contains(SECRET));
+        match event {
+            InstrumentationEvent::StartQuery { query, .. } => {
+                records.lock().unwrap().push((query.to_string(), false));
+            }
+            InstrumentationEvent::FinishQuery { query, error, .. } => {
+                if let Some(error) = error {
+                    assert!(!format!("{error:?}\n{error}").contains(SECRET));
+                }
+                records
+                    .lock()
+                    .unwrap()
+                    .push((query.to_string(), error.is_some()));
+            }
+            InstrumentationEvent::CacheQuery { sql, .. } => assert!(!sql.contains(SECRET)),
+            _ => {}
+        }
+    });
+    events
+}
+
+#[cfg(not(miri))] // ffi call
+#[diesel_test_helper::test]
+fn secret_reaches_sqlite_quoted_while_events_show_only_the_pragma() {
+    let conn = &mut connection();
+    let arguments = Arc::new(Mutex::new(Vec::new()));
+    let observed = Arc::clone(&arguments);
+    conn.on_authorize(move |context| {
+        if let AuthorizerContext::Pragma(pragma) = context
+            && pragma.name == Some("key")
+        {
+            observed
+                .lock()
+                .unwrap()
+                .push(pragma.argument.map(str::to_owned));
+        }
+        AuthorizerDecision::Allow
+    });
+    let events = observe_secret_queries(conn);
+
+    let values = [
+        format!("{SECRET}'; PRAGMA main.user_version = 91; --"),
+        format!("'{SECRET}'"),
+        format!("{SECRET}'"),
+        format!("'''{SECRET}"),
+    ];
+    for value in &values {
+        assert!(!format!("{:?}", PragmaSecret::from(value.as_str())).contains(SECRET));
+        SecretKey::set(value.as_str(), None, conn).unwrap();
+    }
+
+    let expected: Vec<_> = values.iter().cloned().map(Some).collect();
+    assert_eq!(*arguments.lock().unwrap(), expected);
+    let event = ("PRAGMA `main`.key = [REDACTED]".to_owned(), false);
+    assert_eq!(*events.lock().unwrap(), vec![event; 2 * values.len()]);
+    assert_eq!(0, UserVersion::get::<i32>(None, conn).unwrap());
+}
+
+#[cfg(not(miri))] // ffi string access
+#[diesel_test_helper::test]
+fn secret_pragma_on_an_unknown_schema_fails_without_exposing_the_secret() {
+    let conn = &mut connection();
+    let events = observe_secret_queries(conn);
+    let error = SecretKey::set(SECRET, Some("missing"), conn).unwrap_err();
+    assert!(matches!(error, Error::DatabaseError(..)));
+    assert!(!format!("{error:?}\n{error}").contains(SECRET));
+    assert_eq!(
+        events.lock().unwrap().last(),
+        Some(&("PRAGMA `missing`.key = [REDACTED]".to_owned(), true))
+    );
+}
+
+#[cfg(not(miri))] // ffi call
+#[diesel_test_helper::test]
+fn secret_pragma_still_goes_through_the_authorizer() {
+    let conn = &mut connection();
+    let calls = Arc::new(Mutex::new(0));
+    let observed = Arc::clone(&calls);
+    conn.on_authorize(move |context| match context {
+        AuthorizerContext::Pragma(pragma) if pragma.name == Some("key") => {
+            assert_eq!(pragma.argument, Some(SECRET));
+            *observed.lock().unwrap() += 1;
+            AuthorizerDecision::Deny
+        }
+        _ => AuthorizerDecision::Allow,
+    });
+    observe_secret_queries(conn);
+    for _ in 0..2 {
+        let error = SecretKey::set(SECRET, None, conn).unwrap_err();
+        assert!(matches!(error, Error::DatabaseError(..)));
+        assert!(!format!("{error:?}\n{error}").contains(SECRET));
+    }
+    assert_eq!(*calls.lock().unwrap(), 2);
+}
+
+#[diesel_test_helper::test]
+fn secret_with_nul_is_rejected_without_retaining_secret_bytes() {
+    let conn = &mut connection();
+    for text in [format!("{SECRET}\0tail"), format!("\0{SECRET}")] {
+        let error = SecretKey::set(text.as_str(), None, conn).unwrap_err();
+        assert!(!format!("{error:?}\n{error}").contains(SECRET));
+        let Error::InvalidCString(error) = error else {
+            panic!("expected an invalid C string");
+        };
+        assert!(
+            !error
+                .into_vec()
+                .windows(SECRET.len())
+                .any(|bytes| bytes == SECRET.as_bytes())
+        );
+    }
+}
+
+#[diesel_test_helper::test]
+fn secret_pragma_with_nul_in_the_schema_is_rejected() {
+    let error = SecretKey::set(SECRET, Some("a\0b"), &mut connection()).unwrap_err();
+    assert!(matches!(error, Error::InvalidCString(_)));
+    assert!(!format!("{error:?}\n{error}").contains(SECRET));
+}
+
+#[cfg(not(miri))] // ffi call
+#[diesel_test_helper::test]
+fn connection_scoped_secret_pragma_reaches_sqlite_unqualified() {
+    let conn = &mut connection();
+    let arguments = Arc::new(Mutex::new(Vec::new()));
+    let observed = Arc::clone(&arguments);
+    conn.on_authorize(move |context| {
+        if let AuthorizerContext::Pragma(pragma) = context
+            && pragma.name == Some("test_text")
+        {
+            observed
+                .lock()
+                .unwrap()
+                .push(pragma.argument.map(str::to_owned));
+        }
+        AuthorizerDecision::Allow
+    });
+    let events = observe_secret_queries(conn);
+    SecretConnectionText::set(SECRET, conn).unwrap();
+    assert_eq!(*arguments.lock().unwrap(), [Some(SECRET.to_owned())]);
+    let event = ("PRAGMA test_text = [REDACTED]".to_owned(), false);
+    assert_eq!(*events.lock().unwrap(), [event.clone(), event]);
 }
