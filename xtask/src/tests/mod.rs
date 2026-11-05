@@ -354,6 +354,8 @@ impl TestArgs {
                     "-p",
                     "diesel_table_macro_syntax",
                     "-p",
+                    "diesel_sqlstate",
+                    "-p",
                     "migrations_macros",
                     "-F",
                     "diesel/extras",

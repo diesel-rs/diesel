@@ -7,9 +7,8 @@ use alloc::string::ToString;
 use core::error::Error as StdError;
 use core::fmt::{self, Display};
 
-mod sql_state;
-
-pub use self::sql_state::{InvalidSqlState, SqlState, SqlStateClass};
+#[doc(inline)]
+pub use diesel_sqlstate::{InvalidSqlState, SqlState, SqlStateClass};
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]

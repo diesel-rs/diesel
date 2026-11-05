@@ -7,30 +7,15 @@
 //! with its PL/pgSQL condition name.
 //!
 //! ```rust
-//! use diesel::pg::sql_state;
-//! use diesel::result::SqlState;
+//! use diesel_sqlstate::{SqlState, pg};
 //!
 //! fn retryable(code: SqlState) -> bool {
-//!     matches!(
-//!         code,
-//!         sql_state::T_R_SERIALIZATION_FAILURE | sql_state::T_R_DEADLOCK_DETECTED
-//!     )
+//!     matches!(code, pg::T_R_SERIALIZATION_FAILURE | pg::T_R_DEADLOCK_DETECTED)
 //! }
 //!
 //! assert!(retryable("40001".parse().unwrap()));
 //! assert!(!retryable("23505".parse().unwrap()));
 //! ```
-
-use crate::result::SqlState;
-
-macro_rules! codes {
-    ($($(#[$doc:meta])* $name:ident = $code:literal;)*) => {
-        $(
-            $(#[$doc])*
-            pub const $name: SqlState = SqlState::new(*$code).expect("invalid SQLSTATE");
-        )*
-    };
-}
 
 codes! {
     // Class 00 - Successful Completion

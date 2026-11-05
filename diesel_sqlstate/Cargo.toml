@@ -1,0 +1,17 @@
+[package]
+name = "diesel_sqlstate"
+version = "0.1.0"
+description = "SQLSTATE error codes as a structured type, with the codes PostgreSQL, MySQL and MariaDB report"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/diesel_sqlstate"
+homepage = "https://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel"
+keywords = ["sqlstate", "sql", "postgresql", "mysql", "error"]
+categories = ["database", "no-std::no-alloc"]
+include.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true

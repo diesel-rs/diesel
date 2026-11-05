@@ -18,6 +18,8 @@ use crate::sql_types::TypeMetadata;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 pub use self::connection::MysqlLikeConnection;
 pub use self::value::{MysqlValue, NumericRepresentation};
+#[doc(inline)]
+pub use diesel_sqlstate::mysql_like as sql_state;
 
 /// Data structures for MySQL types which have no corresponding Rust type
 ///
