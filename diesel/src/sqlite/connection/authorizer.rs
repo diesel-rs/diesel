@@ -804,6 +804,9 @@ impl SqliteConnection {
     /// an [`AuthorizerContext`] describing the operation and returns an
     /// [`AuthorizerDecision`].
     ///
+    /// An action whose names are not valid UTF-8 is denied without calling the
+    /// callback.
+    ///
     /// The authorizer is consulted only at statement preparation, so treat it
     /// as defense-in-depth rather than a complete sandbox. SQLite re-checks
     /// already-prepared statements when an authorizer is installed. Removing the
@@ -1017,5 +1020,48 @@ mod tests {
             vec![None],
             "after replacing the authorizer the new decision takes effect"
         );
+    }
+
+    #[diesel_test_helper::test]
+    #[expect(
+        unsafe_code,
+        reason = "a non-UTF-8 identifier cannot be written through `&str` SQL"
+    )]
+    fn non_utf8_names_are_denied_before_the_callback() {
+        use std::sync::Mutex;
+
+        let conn = &mut connection();
+        let sql = c"CREATE VIEW \"helper\xff\" AS SELECT abs(-1) AS id; CREATE VIEW items AS SELECT id FROM \"helper\xff\";";
+        // SAFETY: the connection is live, and `sql` is a NUL-terminated string borrowed for the call.
+        let rc = unsafe {
+            conn.with_raw_connection(|raw| {
+                ffi::sqlite3_exec(
+                    raw,
+                    sql.as_ptr(),
+                    None,
+                    core::ptr::null_mut(),
+                    core::ptr::null_mut(),
+                )
+            })
+        };
+        assert_eq!(rc, ffi::SQLITE_OK);
+
+        let abs_accessors = Arc::new(Mutex::new(Vec::new()));
+        let abs_accessors2 = abs_accessors.clone();
+        conn.on_authorize(move |ctx| {
+            if let AuthorizerContext::Function(function) = ctx
+                && function.function == Some("abs")
+            {
+                abs_accessors2
+                    .lock()
+                    .unwrap()
+                    .push(function.accessor.map(str::to_owned));
+            }
+            AuthorizerDecision::Allow
+        });
+
+        let result = crate::sql_query("SELECT id FROM items").execute(conn);
+        assert!(result.is_err());
+        assert!(abs_accessors.lock().unwrap().iter().all(Option::is_some));
     }
 }
