@@ -1,26 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_with_default_schema_cross_file_foreign_key"
-snapshot_kind: text
 ---
-// @generated automatically by Diesel CLI.
-
-diesel::table! {
-    customers (id) {
-        id -> Int4,
-    }
-}
-
-diesel::table! {
-    orders (id) {
-        id -> Int4,
-        customer_id -> Int4,
-    }
-}
-
-diesel::joinable!(orders -> customers (customer_id));
-
-diesel::allow_tables_to_appear_in_same_query!(customers, orders,);
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
