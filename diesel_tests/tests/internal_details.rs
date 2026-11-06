@@ -1,11 +1,11 @@
-#![cfg(not(feature = "mysql"))]
 use crate::schema::*;
 use diesel::dsl::sql;
+#[cfg(not(feature = "sqlite"))]
+use diesel::result::Error::DatabaseError;
 use diesel::sql_types::*;
 use diesel::*;
 
 #[diesel_test_helper::test]
-#[cfg(not(feature = "mysql"))] // ? IS NULL is invalid syntax for MySQL
 fn bind_params_are_passed_for_null_when_not_inserting() {
     let connection = &mut connection();
     let query =
@@ -18,7 +18,6 @@ fn bind_params_are_passed_for_null_when_not_inserting() {
 fn query_which_cannot_be_transmitted_gives_proper_error_message() {
     use crate::schema::comments::dsl::*;
     use diesel::result::DatabaseErrorKind::UnableToSendCommand;
-    use diesel::result::Error::DatabaseError;
 
     // Create a query with 90000 binds, 2 binds per row
     let data: &[NewComment<'static>] = &[NewComment(1, "hi"); 45_000];
@@ -36,17 +35,40 @@ fn query_which_cannot_be_transmitted_gives_proper_error_message() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
 fn empty_query_gives_proper_error_instead_of_panicking() {
-    use diesel::dsl::sql;
+    #[cfg(not(feature = "sqlite"))]
     use diesel::result::DatabaseErrorKind::Unknown;
-    use diesel::result::Error::DatabaseError;
+    #[cfg(feature = "sqlite")]
+    use diesel::result::Error::QueryBuilderError;
 
     let connection = &mut connection();
     let query = sql::<Integer>("");
 
     match query.execute(connection) {
         Ok(_) => panic!("We successfully executed an empty query"),
+        #[cfg(not(feature = "sqlite"))]
+        Err(DatabaseError(Unknown, info)) => assert_ne!("", info.message()),
+        #[cfg(feature = "sqlite")]
+        Err(QueryBuilderError(info)) => assert_ne!("", info.to_string()),
+        Err(_) => panic!("We got back the wrong kind of error. This test is invalid."),
+    }
+}
+
+#[diesel_test_helper::test]
+fn empty_query_in_batch_execute_does_not_panick() {
+    use diesel::connection::SimpleConnection;
+    #[cfg(not(feature = "sqlite"))]
+    use diesel::result::DatabaseErrorKind::Unknown;
+
+    let connection = &mut connection();
+
+    match connection.batch_execute("") {
+        Ok(_) => {
+            if !(cfg!(feature = "sqlite")) {
+                panic!("We successfully executed an empty query")
+            }
+        }
+        #[cfg(not(feature = "sqlite"))]
         Err(DatabaseError(Unknown, info)) => assert_ne!("", info.message()),
         Err(_) => panic!("We got back the wrong kind of error. This test is invalid."),
     }
