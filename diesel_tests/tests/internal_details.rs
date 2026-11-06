@@ -62,7 +62,7 @@ fn empty_query_in_batch_execute_does_not_panick() {
 
     let connection = &mut connection();
 
-    match dbg!(connection.batch_execute("")) {
+    match connection.batch_execute("") {
         Ok(_) => {
             if !(cfg!(feature = "sqlite")) {
                 panic!("We successfully executed an empty query")
