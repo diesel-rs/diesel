@@ -262,18 +262,8 @@ fn last_error_code(conn: *mut ffi::sqlite3) -> libc::c_int {
 
 impl Drop for Statement {
     fn drop(&mut self) {
-        use crate::util::std_compat::panicking;
-
-        let raw_connection = self.raw_connection();
-        let finalize_result = unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
-        if let Err(e) = ensure_sqlite_ok(finalize_result, raw_connection) {
-            if panicking() {
-                #[cfg(feature = "std")]
-                eprintln!("Error finalizing SQLite prepared statement: {e:?}");
-            } else {
-                panic!("Error finalizing SQLite prepared statement: {e:?}");
-            }
-        }
+        // An error only repeats the last failed step, which already returned it.
+        unsafe { ffi::sqlite3_finalize(self.inner_statement.as_ptr()) };
     }
 }
 

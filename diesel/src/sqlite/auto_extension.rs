@@ -424,6 +424,30 @@ mod tests {
         );
     }
 
+    #[test]
+    fn leaked_failed_cursor_in_auto_extension_fails_open_cleanly() {
+        use std::cell::Cell;
+
+        // Connections other tests open concurrently skip the extension.
+        thread_local!(static ARMED: Cell<bool> = const { Cell::new(false) });
+
+        fn extension(conn: &mut SqliteConnection) -> QueryResult<()> {
+            if ARMED.get() {
+                crate::sqlite::connection::leak_failed_cursor(conn);
+            }
+            Ok(())
+        }
+
+        let _lock = AUTO_EXT_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _reset = TestResetGuard;
+        register_auto_extension(extension).unwrap();
+        ARMED.set(true);
+
+        // `sqlite3_open_v2` reports the error the finalized statement left on the handle.
+        let conn = SqliteConnection::establish(":memory:");
+        assert!(matches!(conn, Err(ConnectionError::BadConnection(_))));
+    }
+
     // A panicking callback becomes `SQLITE_ERROR` with the payload recovered
     // into the message (`&str` and `String` payloads, generic fallback
     // otherwise), and drives the panic-unwind path through the drop guard. Gated

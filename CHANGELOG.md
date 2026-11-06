@@ -107,6 +107,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
 * Fixed a Segmentationfault when issuing an empty query while using libmariadb
 * Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
+* Fixed a double free when a SQLite auto-extension leaked a cursor whose last step failed, and the matching abort in WAL hooks
 
 ### Changed
 
