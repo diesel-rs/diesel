@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.3.14"
+version = "2.4.0"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -43,7 +43,7 @@ downcast-rs = { version = "2.0.1", default-features = false }
 hashbrown = { version = "0.17", optional = true }
 
 [dependencies.diesel_derives]
-version = "~2.3.0"
+version = "~2.4.0"
 path = "../diesel_derives"
 
 [dependencies.sqlstate]

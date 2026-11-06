@@ -1,6 +1,6 @@
 [package]
 name = "diesel-async"
-version = "0.9.2"
+version = "0.10.0"
 authors = ["Georg Semmler <github@weiznich.de>"]
 edition.workspace = true
 autotests = false
@@ -35,7 +35,7 @@ mobc = { version = ">=0.7,<0.10", optional = true }
 pin-project-lite = "0.2.17"
 
 [dependencies.diesel]
-version = "~2.3.9"
+version = "~2.4.0"
 default-features = false
 features = [
   "i-implement-a-third-party-backend-and-opt-into-breaking-changes", "std"
@@ -43,7 +43,7 @@ features = [
 path = "../diesel"
 
 [dependencies.diesel_migrations]
-version = "~2.3.0"
+version = "~2.4.0"
 optional = true
 path = "../diesel_migrations"
 
@@ -56,7 +56,7 @@ futures-util = { version = "0.3.17", features = ["async-await-macro"] }
 dotenvy = "0.15"
 
 [dev-dependencies.diesel]
-version = "~2.3.0"
+version = "~2.4.0"
 default-features = false
 features = [
   "chrono",
@@ -66,7 +66,7 @@ features = [
 path = "../diesel"
 
 [dev-dependencies.diesel_migrations]
-version = "2.3.0"
+version = "2.4.0"
 path = "../diesel_migrations"
 
 [features]
