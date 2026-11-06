@@ -1,0 +1,12 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_json"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    json (jsonb_col) {
+        jsonb_col -> Jsonb,
+        json_col -> Json,
+    }
+}
