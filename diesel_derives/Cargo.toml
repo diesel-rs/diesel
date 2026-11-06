@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "2.3.10"
+version = "2.4.0"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
@@ -15,9 +15,9 @@ include = ["src/**/*.rs", "src/tests/snapshots/*", "LICENSE-*", "README.md", "bu
 syn = { version = "3.0", features = ["derive", "fold", "full", "visit-mut"] }
 quote = "1.0.9"
 proc-macro2 = "1.0.27"
-diesel_table_macro_syntax = { version = "0.3", path = "../diesel_table_macro_syntax" }
+diesel_table_macro_syntax = { version = "0.4", path = "../diesel_table_macro_syntax" }
 diesel_attribute_parser = { version = "0.1", path = "../diesel_attribute_parser" }
-dsl_auto_type = { version = "0.2", path = "../dsl_auto_type" }
+dsl_auto_type = { version = "0.3", path = "../dsl_auto_type" }
 
 [dev-dependencies]
 cfg-if = "1"
