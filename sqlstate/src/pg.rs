@@ -7,7 +7,7 @@
 //! with its PL/pgSQL condition name.
 //!
 //! ```rust
-//! use sql_state::{SqlState, pg};
+//! use sqlstate::{SqlState, pg};
 //!
 //! fn retryable(code: SqlState) -> bool {
 //!     matches!(code, pg::T_R_SERIALIZATION_FAILURE | pg::T_R_DEADLOCK_DETECTED)

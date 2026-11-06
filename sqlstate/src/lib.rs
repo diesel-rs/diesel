@@ -30,7 +30,7 @@ pub mod pg;
 /// custom codes outside the standard, usable as a `match` pattern.
 ///
 /// ```rust
-/// use sql_state::{SqlState, SqlStateClass};
+/// use sqlstate::{SqlState, SqlStateClass};
 ///
 /// const CUSTOM: SqlState = SqlState::new(*b"P1001").unwrap();
 ///

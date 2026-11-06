@@ -8,7 +8,7 @@ use core::error::Error as StdError;
 use core::fmt::{self, Display};
 
 #[doc(inline)]
-pub use sql_state::{InvalidSqlState, SqlState, SqlStateClass};
+pub use sqlstate::{InvalidSqlState, SqlState, SqlStateClass};
 
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]

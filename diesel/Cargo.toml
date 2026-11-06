@@ -51,9 +51,9 @@ hashbrown = { version = "0.16", optional = true }
 version = "~2.3.0"
 path = "../diesel_derives"
 
-[dependencies.sql-state]
-version = "0.1.0"
-path = "../sql_state"
+[dependencies.sqlstate]
+version = "0.2.0"
+path = "../sqlstate"
 
 [target.'cfg(not(all(target_family = "wasm", target_os = "unknown")))'.dependencies]
 libsqlite3-sys = { version = ">=0.17.2, <0.40.0", optional = true, features = ["bundled_bindings"] }

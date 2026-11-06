@@ -3,7 +3,7 @@
 //! and [`errmsg-utf8.txt`](https://github.com/MariaDB/server/blob/11.8/sql/share/errmsg-utf8.txt).
 //!
 //! ```rust
-//! use sql_state::{SqlState, mysql_like};
+//! use sqlstate::{SqlState, mysql_like};
 //!
 //! let code: SqlState = "40001".parse().unwrap();
 //! assert!(matches!(code, mysql_like::SERIALIZATION_FAILURE));

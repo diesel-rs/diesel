@@ -19,7 +19,7 @@ use crate::sql_types::TypeMetadata;
 pub use self::connection::MysqlLikeConnection;
 pub use self::value::{MysqlValue, NumericRepresentation};
 #[doc(inline)]
-pub use ::sql_state::mysql_like as sql_state;
+pub use sqlstate::mysql_like as sql_state;
 
 /// Data structures for MySQL types which have no corresponding Rust type
 ///

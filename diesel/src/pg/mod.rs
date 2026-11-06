@@ -36,7 +36,7 @@ pub use self::transaction::TransactionBuilder;
 #[doc(inline)]
 pub use self::value::PgValue;
 #[doc(inline)]
-pub use ::sql_state::pg as sql_state;
+pub use sqlstate::pg as sql_state;
 
 #[doc(inline)]
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
