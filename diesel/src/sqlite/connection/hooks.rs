@@ -1,3 +1,5 @@
+use crate::sqlite::BorrowedSqliteConnection;
+
 use super::SqliteConnection;
 use core::num::NonZeroU32;
 
@@ -227,19 +229,25 @@ impl SqliteConnection {
     /// # use diesel::connection::SimpleConnection;
     /// # use diesel::sqlite::SqliteConnection;
     /// # use diesel::sqlite::WalCheckpointMode;
+    ///
     /// # let conn = &mut SqliteConnection::establish("test.db").unwrap();
     /// # conn.batch_execute("PRAGMA journal_mode = WAL;").unwrap();
     /// conn.on_wal(|conn, db_name, n_pages| {
     ///     println!("WAL for {db_name}: {n_pages} pages");
     ///     if n_pages > 1000 {
     ///         // The connection may be used here, e.g. to force a checkpoint.
-    ///         let _ = conn.wal_checkpoint(None, WalCheckpointMode::Truncate);
+    ///         unsafe {
+    ///             // SAFETY: This is safe as long as we don't move or replace out the
+    ///             // inner SqliteConnection. None of the functions defined on SqliteConnection
+    ///             // do that
+    ///             let _ = conn.inner_mut().wal_checkpoint(None, WalCheckpointMode::Truncate);
+    ///         }
     ///     }
     /// });
     /// ```
     pub fn on_wal<F>(&mut self, hook: F)
     where
-        F: Fn(&mut SqliteConnection, &str, u32) + Send + 'static,
+        F: Fn(&'_ mut BorrowedSqliteConnection, &str, u32) + Send + 'static,
     {
         self.raw_connection.set_wal_hook(hook);
     }
@@ -859,8 +867,9 @@ mod tests {
         crate::sql_query("CREATE TABLE t_wal_leak (id INTEGER PRIMARY KEY)")
             .execute(conn)
             .unwrap();
-        conn.on_wal(|conn, _db_name, _n_pages| {
-            crate::sqlite::connection::leak_failed_cursor(conn);
+        #[allow(unsafe_code, reason = "Test code")]
+        conn.on_wal(|conn, _db_name, _n_pages| unsafe {
+            crate::sqlite::connection::leak_failed_cursor(conn.inner_mut());
         });
 
         for _ in 0..2 {
@@ -1056,6 +1065,56 @@ mod tests {
         assert!(
             calls.load(Ordering::Relaxed) >= 1,
             "the busy handler should have been invoked at least once"
+        );
+    }
+
+    // A hook closure whose destructor panics while a normal connection is
+    // dropped must not leave the handle open (and the database locked).
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    #[test]
+    fn panicking_hook_drop_on_connection_drop_still_closes_handle() {
+        use crate::connection::SimpleConnection;
+        use crate::sqlite::{SqliteChangeOps, SqliteUpdateRouter};
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicU32, Ordering};
+
+        struct PanicOnDrop;
+        impl Drop for PanicOnDrop {
+            fn drop(&mut self) {
+                panic!("hook closure dropped");
+            }
+        }
+
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("test.db");
+        let path = path.to_str().unwrap();
+        let mut conn = SqliteConnection::establish(path).unwrap();
+        conn.batch_execute("CREATE TABLE t_panic_hook (x)").unwrap();
+
+        // The update hook is the first one `RawConnection::drop` frees.
+        let guard = PanicOnDrop;
+        conn.on_update(
+            SqliteUpdateRouter::new().on_any(SqliteChangeOps::ALL, move |_| {
+                let _ = &guard;
+            }),
+        );
+        let rollbacks = Arc::new(AtomicU32::new(0));
+        let r = rollbacks.clone();
+        conn.on_rollback(move || {
+            r.fetch_add(1, Ordering::SeqCst);
+        });
+        // Leave a write transaction open, so a leaked handle keeps the file locked.
+        conn.batch_execute("BEGIN; INSERT INTO t_panic_hook VALUES (1)")
+            .unwrap();
+
+        let dropped = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(conn)));
+        assert!(dropped.is_err(), "the closure destructor panics");
+
+        let mut other = SqliteConnection::establish(path).unwrap();
+        let write = other.batch_execute("INSERT INTO t_panic_hook VALUES (2)");
+        assert!(
+            write.is_ok(),
+            "the first handle was never closed: {write:?}"
         );
     }
 }

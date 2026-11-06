@@ -38,6 +38,8 @@ mod auto_extension_ffi {
 #[cfg(all(target_family = "wasm", target_os = "unknown"))]
 use ffi as auto_extension_ffi;
 
+use super::BorrowedSqliteConnection;
+
 /// Registers an auto-extension that runs for every SQLite connection opened in
 /// this process, including non-Diesel ones.
 ///
@@ -69,11 +71,17 @@ use ffi as auto_extension_ffi;
 /// use diesel::dsl::sql;
 /// use diesel::prelude::*;
 /// use diesel::sql_types::Integer;
-/// use diesel::sqlite::{register_auto_extension, reset_auto_extension, SqliteConnection};
+/// use diesel::sqlite::{register_auto_extension, reset_auto_extension, SqliteConnection, BorrowedSqliteConnection};
+/// use std::pin::Pin;
 ///
 /// // Registers a case-insensitive collation on every new connection.
-/// fn my_ext(conn: &mut SqliteConnection) -> QueryResult<()> {
-///     conn.register_collation("RUSTNOCASE", |a, b| a.to_lowercase().cmp(&b.to_lowercase()))
+/// fn my_ext(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+///     unsafe {
+///         // SAFETY: This is safe as long as we don't move or replace out the
+///         // inner SqliteConnection. None of the functions defined on SqliteConnection
+///         // do that
+///         conn.inner_mut().register_collation("RUSTNOCASE", |a, b| a.to_lowercase().cmp(&b.to_lowercase()))
+///     }
 /// }
 ///
 /// register_auto_extension(my_ext).unwrap();
@@ -92,7 +100,7 @@ use ffi as auto_extension_ffi;
 #[allow(unsafe_code)]
 pub fn register_auto_extension<F>(extension: F) -> QueryResult<()>
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     // SAFETY: `entry_point` returns a stable function pointer with SQLite's callback ABI.
     let result =
@@ -118,7 +126,7 @@ where
 #[allow(unsafe_code)]
 pub fn cancel_auto_extension<F>(extension: F) -> bool
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     // SAFETY: `entry_point` returns the same stable pointer used for registration.
     unsafe { auto_extension_ffi::sqlite3_cancel_auto_extension(Some(entry_point(extension))) != 0 }
@@ -139,7 +147,7 @@ pub fn reset_auto_extension() {
 /// process and its destructor never runs.
 fn entry_point<F>(extension: F) -> RawAutoExtension
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     core::mem::forget(extension);
     trampoline::<F>
@@ -155,7 +163,7 @@ unsafe extern "C" fn trampoline<F>(
     _p_api: RawApiPointer,
 ) -> c_int
 where
-    F: Fn(&mut SqliteConnection) -> QueryResult<()> + Sync + 'static,
+    F: Fn(&'_ mut BorrowedSqliteConnection) -> QueryResult<()> + Sync + 'static,
 {
     const {
         assert!(
@@ -254,6 +262,7 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::Integer;
+    use crate::sqlite::BorrowedSqliteConnection;
     use std::sync::Mutex;
 
     // `sqlite3_auto_extension` is process-global, so these tests serialize on
@@ -265,8 +274,12 @@ mod tests {
 
     // A benign auto-extension: registers a `TESTCOLL` collation through the
     // normal connection API.
-    fn test_ext_init(conn: &mut SqliteConnection) -> QueryResult<()> {
-        conn.register_collation("TESTCOLL", |a, b| a.cmp(b))
+    #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
+    fn test_ext_init(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+        unsafe {
+            conn.inner_mut()
+                .register_collation("TESTCOLL", |a, b| a.cmp(b))
+        }
     }
 
     fn open_memory_connection() -> SqliteConnection {
@@ -338,10 +351,10 @@ mod tests {
     #[test]
     #[allow(unsafe_code)]
     fn trampoline_maps_result_to_return_code() {
-        fn ok_ext(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn ok_ext(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             Ok(())
         }
-        fn err_ext(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn err_ext(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             Err(Error::QueryBuilderError("boom".into()))
         }
 
@@ -406,9 +419,13 @@ mod tests {
         let guard = Guard;
         // `move` captures the zero-sized `guard` by value, so the closure is a
         // zero-sized type with a non-trivial destructor.
-        register_auto_extension(move |conn: &mut SqliteConnection| {
+        #[allow(unsafe_code, reason = "Test call to inner unsafe function")]
+        register_auto_extension(move |conn: &mut BorrowedSqliteConnection| {
             let _ = &guard;
-            conn.register_collation("TESTCOLL", |a, b| a.cmp(b))
+            unsafe {
+                conn.inner_mut()
+                    .register_collation("TESTCOLL", |a, b| a.cmp(b))
+            }
         })
         .unwrap();
 
@@ -431,9 +448,12 @@ mod tests {
         // Connections other tests open concurrently skip the extension.
         thread_local!(static ARMED: Cell<bool> = const { Cell::new(false) });
 
-        fn extension(conn: &mut SqliteConnection) -> QueryResult<()> {
+        #[allow(unsafe_code, reason = "Test code")]
+        fn extension(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             if ARMED.get() {
-                crate::sqlite::connection::leak_failed_cursor(conn);
+                unsafe {
+                    crate::sqlite::connection::leak_failed_cursor(conn.inner_mut());
+                }
             }
             Ok(())
         }
@@ -448,6 +468,193 @@ mod tests {
         assert!(matches!(conn, Err(ConnectionError::BadConnection(_))));
     }
 
+    #[test]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))] // there is no catch unwind for wasm
+    fn panic_in_borrowed_connection_teardown_keeps_handle_open() {
+        use crate::connection::{Instrumentation, InstrumentationEvent};
+        use std::cell::Cell;
+
+        // Connections other tests open concurrently skip the extension.
+        thread_local!(static ARMED: Cell<bool> = const { Cell::new(false) });
+
+        struct PanicOnDrop;
+
+        impl Instrumentation for PanicOnDrop {
+            fn on_connection_event(&mut self, _event: InstrumentationEvent<'_>) {}
+        }
+
+        impl Drop for PanicOnDrop {
+            fn drop(&mut self) {
+                if ARMED.get() {
+                    panic!("instrumentation dropped");
+                }
+            }
+        }
+
+        fn extension(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+            if ARMED.get() {
+                conn.set_instrumentation(PanicOnDrop);
+            }
+            Ok(())
+        }
+
+        let _lock = AUTO_EXT_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _reset = TestResetGuard;
+        register_auto_extension(extension).unwrap();
+        ARMED.set(true);
+        let conn = SqliteConnection::establish(":memory:");
+        ARMED.set(false);
+
+        // The caught panic fails the open, and the handle is closed exactly once.
+        assert!(matches!(conn, Err(ConnectionError::BadConnection(_))));
+    }
+
+    // Counts calls and destructor runs of the hook closures registered by
+    // `register_all_hooks`. Tests using them hold `AUTO_EXT_TEST_LOCK`.
+    mod hook_tokens {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        pub(super) static FIRED: AtomicUsize = AtomicUsize::new(0);
+        pub(super) static DROPPED: AtomicUsize = AtomicUsize::new(0);
+        /// Dropped together with its hook closure; panics on drop if the flag is set.
+        pub(super) struct Token(pub(super) bool);
+        impl Token {
+            pub(super) fn fire(&self) {
+                FIRED.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        impl Drop for Token {
+            fn drop(&mut self) {
+                DROPPED.fetch_add(1, Ordering::SeqCst);
+                if self.0 {
+                    panic!("hook closure dropped");
+                }
+            }
+        }
+    }
+
+    // Registers all nine hooks through the borrowed connection. The closure of hook
+    // number `panicking` (in `RawConnection` field order) panics when dropped.
+    #[allow(unsafe_code)]
+    fn register_all_hooks(conn: &mut BorrowedSqliteConnection, panicking: usize) {
+        use crate::sqlite::{
+            AuthorizerDecision, BusyDecision, CommitDecision, ProgressDecision, SqliteChangeOps,
+            SqliteTraceFlags, SqliteUpdateRouter,
+        };
+        use core::num::NonZeroU32;
+        use hook_tokens::Token;
+        let conn = unsafe { conn.inner_mut() };
+        let t = Token(panicking == 0);
+        conn.on_update(SqliteUpdateRouter::new().on_any(SqliteChangeOps::ALL, move |_| t.fire()));
+        let t = Token(panicking == 1);
+        conn.on_commit(move || {
+            t.fire();
+            CommitDecision::Proceed
+        });
+        let t = Token(panicking == 2);
+        conn.on_rollback(move || t.fire());
+        let t = Token(panicking == 3);
+        conn.on_progress(NonZeroU32::new(1).unwrap(), move || {
+            t.fire();
+            ProgressDecision::Continue
+        });
+        let t = Token(panicking == 4);
+        conn.on_wal(move |_, _, _| t.fire());
+        let t = Token(panicking == 5);
+        conn.on_busy(move |_| {
+            t.fire();
+            BusyDecision::GiveUp
+        });
+        let t = Token(panicking == 6);
+        conn.on_authorize(move |_| {
+            t.fire();
+            AuthorizerDecision::Allow
+        });
+        let t = Token(panicking == 7);
+        conn.on_trace(SqliteTraceFlags::all(), move |_| t.fire());
+        let t = Token(panicking == 8);
+        conn.on_collation_needed(move |_| {
+            t.fire();
+            None
+        });
+    }
+
+    // Runs statements that would trigger the hooks `register_all_hooks` registers,
+    // except the busy handler and the WAL hook (those need lock contention or WAL mode).
+    fn trigger_hooks(conn: &mut SqliteConnection) {
+        use crate::connection::SimpleConnection;
+        conn.batch_execute(
+            "CREATE TABLE IF NOT EXISTS t (x); INSERT INTO t VALUES (1);
+             BEGIN; INSERT INTO t VALUES (2); ROLLBACK;",
+        )
+        .unwrap();
+        let _ = conn.batch_execute("SELECT 'a' = 'b' COLLATE nosuch");
+    }
+
+    // All nine hooks an auto-extension registers are unregistered and freed.
+    #[test]
+    fn hooks_registered_in_auto_extension_are_unregistered_and_freed() {
+        use std::cell::Cell;
+        use std::sync::atomic::Ordering;
+        thread_local!(static ARMED: Cell<bool> = const { Cell::new(false) });
+        fn extension(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+            if ARMED.get() {
+                register_all_hooks(conn, usize::MAX);
+            }
+            Ok(())
+        }
+        let _lock = AUTO_EXT_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _reset = TestResetGuard;
+        hook_tokens::FIRED.store(0, Ordering::SeqCst);
+        hook_tokens::DROPPED.store(0, Ordering::SeqCst);
+        register_auto_extension(extension).unwrap();
+        ARMED.set(true);
+        let conn = SqliteConnection::establish(":memory:");
+        ARMED.set(false);
+        let mut conn = conn.unwrap();
+        assert_eq!(hook_tokens::DROPPED.load(Ordering::SeqCst), 9);
+        trigger_hooks(&mut conn);
+        assert_eq!(hook_tokens::FIRED.load(Ordering::SeqCst), 0);
+    }
+
+    // A panic while freeing hook number `n` must not close the handle, and must
+    // not leak the closures of the other hooks. Gated off WASM, where
+    // `catch_unwind` aborts because `panic = "abort"`.
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn assert_panicking_hook_drop_frees_all_hooks(n: usize) {
+        use std::cell::Cell;
+        use std::sync::atomic::Ordering;
+        thread_local!(static PANIC_AT: Cell<usize> = const { Cell::new(usize::MAX) });
+        thread_local!(static ARMED: Cell<bool> = const { Cell::new(false) });
+        fn extension(conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
+            if ARMED.get() {
+                register_all_hooks(conn, PANIC_AT.get());
+            }
+            Ok(())
+        }
+        let _lock = AUTO_EXT_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _reset = TestResetGuard;
+        hook_tokens::DROPPED.store(0, Ordering::SeqCst);
+        register_auto_extension(extension).unwrap();
+        PANIC_AT.set(n);
+        ARMED.set(true);
+        let conn = SqliteConnection::establish(":memory:");
+        ARMED.set(false);
+        assert!(matches!(conn, Err(ConnectionError::BadConnection(_))));
+        assert_eq!(hook_tokens::DROPPED.load(Ordering::SeqCst), 9);
+    }
+
+    #[test]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn panicking_first_hook_drop_frees_all_hooks() {
+        assert_panicking_hook_drop_frees_all_hooks(0);
+    }
+
+    #[test]
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    fn panicking_last_hook_drop_frees_all_hooks() {
+        assert_panicking_hook_drop_frees_all_hooks(8);
+    }
+
     // A panicking callback becomes `SQLITE_ERROR` with the payload recovered
     // into the message (`&str` and `String` payloads, generic fallback
     // otherwise), and drives the panic-unwind path through the drop guard. Gated
@@ -456,13 +663,13 @@ mod tests {
     #[allow(unsafe_code)]
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
     fn trampoline_reports_panic_message() {
-        fn panic_str(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn panic_str(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             panic!("boom-str");
         }
-        fn panic_string(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn panic_string(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             panic!("boom-{}", 7);
         }
-        fn panic_other(_conn: &mut SqliteConnection) -> QueryResult<()> {
+        fn panic_other(_conn: &mut BorrowedSqliteConnection) -> QueryResult<()> {
             std::panic::panic_any(7_u8);
         }
 
