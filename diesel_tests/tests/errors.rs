@@ -184,6 +184,7 @@ fn sqlstate_reports_a_custom_code_raised_by_plpgsql() {
 #[diesel_test_helper::test]
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 fn sqlstate_reports_the_code_of_a_mapped_error_on_mysql_like() {
+    use diesel::mysql_like::sql_state;
     use diesel::result::SqlStateClass;
 
     let connection = &mut connection();
@@ -200,6 +201,7 @@ fn sqlstate_reports_the_code_of_a_mapped_error_on_mysql_like() {
         Err(DatabaseError(UniqueViolation, e)) => {
             let code = e.sqlstate().unwrap();
             assert_eq!(code.as_str(), "23000");
+            assert_eq!(code, sql_state::INTEGRITY_CONSTRAINT_VIOLATION);
             assert_eq!(code.class(), SqlStateClass::INTEGRITY_CONSTRAINT_VIOLATION);
         }
         other => panic!("{other:?} did not match Err(DatabaseError(UniqueViolation, e))"),
@@ -218,7 +220,12 @@ fn sqlstate_reports_the_code_of_an_unmapped_error_on_mysql_like() {
 
     match failure {
         Err(DatabaseError(Unknown, e)) => {
-            assert_eq!(e.sqlstate().unwrap().as_str(), "42000");
+            let code = e.sqlstate().unwrap();
+            assert_eq!(code.as_str(), "42000");
+            assert_eq!(
+                code,
+                diesel::mysql_like::sql_state::SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION
+            );
         }
         other => panic!("{other:?} did not match Err(DatabaseError(Unknown, e))"),
     }
