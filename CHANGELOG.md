@@ -47,12 +47,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Exposed the SQLite bind values collected for a query under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature, via public `SqliteBindCollector` and `SqliteBindCollectorData`, each with a `binds()` iterator over the live values and the owned snapshot respectively, plus the `SqliteBindValueRef` and `OwnedSqliteBindValue` enums.
 * Exposed `GroupByClause` and `NoGroupByClause` under the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature so third-party crates can distinguish grouped and ungrouped `SelectStatement` types.
 * Added `--no-schema` CLI flag to the `migration run` subcommand
-* Added `SqliteConnection::auto_vacuum` and `SqliteConnection::set_auto_vacuum` to read and set a database's `auto_vacuum` mode through the typed `AutoVacuumMode` enum, each accepting an optional schema name to target an attached database.
-* Added `SqliteConnection::page_count` and `SqliteConnection::freelist_count` to read a database's total and reclaimable page counts, each accepting an optional schema name to target an attached database.
-* Added `SqliteConnection::incremental_vacuum` to return freelist pages to the filesystem on a database in incremental `auto_vacuum` mode, accepting an optional schema name and an optional bound on how many pages to reclaim.
 * Added `SqliteConnection::vacuum` and `SqliteConnection::vacuum_into` to rebuild a database or write a vacuumed copy of it to a new file, each accepting an optional schema name to target an attached database, with the destination path passed as a bind parameter.
 * Added `BoxedCloneQuery` type. This is a boxed query that uses `Arc` to allow the query to be cloned.
 * Added `SqliteConnection::wal_checkpoint` to checkpoint the write-ahead log through the typed `WalCheckpointMode` enum, returning a `WalCheckpointOutcome` with the busy flag and frame counts, and accepting an optional schema name where `None` checkpoints every attached database.
+* Added the `diesel::sqlite::pragma` module to declare SQLite pragmas as types, read them per schema or per connection into a Rust type the caller chooses, and assign them integer, keyword or quoted text values, with the built-in `PageCount` and `FreelistCount` pragmas for a database's total and reclaimable page counts, the `AutoVacuum` pragma for its `auto_vacuum` mode as an `AutoVacuumMode`, and the `IncrementalVacuum` pragma to release freelist pages in incremental mode.
 * Added support for `RETURNING` to  Mariadb (`UPDATE ... RETURNING` requires Mariadb >= 13)
 * Added support for `VALUES(column)` in Upsert for Mysql and Mariadb
 * Added the `UnsignedTiny`, `UnsignedSmall`, `UnsignedMedium` and `UnsignedBig` variants to `NumericRepresentation` for the MySQL and MariaDB backends
@@ -67,6 +65,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added `MysqlConnection::version` to read the version of the connected server
 * Added support for `Uuid` to Mariadb
 * Parallelized some tests for `mysql` and `mariadb` backends
+* Added `DatabaseErrorInformation::sqlstate`, returning the SQLSTATE of a database error as a `SqlState`, whose class is a `SqlStateClass`
+* `PgConnection` reports the SQLSTATE of every server error through `DatabaseErrorInformation::sqlstate`, including custom codes
+* Added `diesel::pg::sql_state` with a `SqlState` constant for every error code PostgreSQL defines
+* `MysqlConnection` and `MariadbConnection` report the SQLSTATE of an error through `DatabaseErrorInformation::sqlstate`
 
 ### Fixed
 
@@ -99,10 +101,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed reusing the wrong prepared statement with batch inserts with static arrays containing BoxableExpression values
 * Fix a potential out of bounds memory access while executing `sql_query` statements with less binds supplied than expected on the mysql backend
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
 * Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
 * Fix parsing consecutive null values in the binary copy_to stream
 * Fix the copy iterator to only return a single error and stop afterwards
 * Fix potential panics while deserializing binary copy_to responses
+* Fixed an issue with a panic during `copy_from` statements could render the connection unusable
+* Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
+* Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
 
 ### Changed
 
@@ -112,6 +118,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+* `SqliteConnection::establish` turns off the two-argument `fts3_tokenizer()`, which SQLite builds compiled with `SQLITE_ENABLE_FTS3_TOKENIZER`, such as Ubuntu's system library, enable by default and which lets SQL text make SQLite call through an arbitrary pointer. `SqliteConnection::set_fts3_tokenizer_enabled` is now an `unsafe fn`.
+* Extended libsqlite3-sys support to include 0.39
+* `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
 ## [2.3.14] 2026-10-07

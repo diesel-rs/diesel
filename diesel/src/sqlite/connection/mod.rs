@@ -73,6 +73,9 @@ use core::num::NonZeroI64;
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
 ///
+/// SQLite has no SQLSTATE codes, so
+/// [`DatabaseErrorInformation::sqlstate`] always returns `None`.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`]
@@ -821,10 +824,19 @@ impl SqliteConnection {
                             args,
                             conn.internal_connection,
                         )?;
-                        conn.exec(&alloc::format!(
+                        // The template wraps every use in `"`, so doubling embedded
+                        // quotes keeps the argument a single identifier.
+                        let sql = alloc::format!(
                             include_str!("diesel_manage_updated_at.sql"),
-                            table_name = table_name
-                        ))?;
+                            table_name = table_name.replace('"', "\"\"")
+                        );
+                        Statement::prepare(
+                            conn,
+                            &sql,
+                            crate::connection::statement_cache::PrepareForCache::No,
+                            &[],
+                        )?
+                        .run()?;
                         Ok(0) // have to return *something*
                     },
                 )
@@ -844,6 +856,10 @@ impl SqliteConnection {
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
+        // Builds with `SQLITE_ENABLE_FTS3_TOKENIZER` let SQL text pass `fts3_tokenizer()` a pointer to call, and SQLite before 3.12 has no switch.
+        let _ = conn
+            .raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, false);
         Ok(conn)
     }
 }
@@ -1420,6 +1436,87 @@ mod tests {
             });
             assert_no_panic_output(&stderr, "guarded_7c91a2");
         }
+
+        #[test]
+        fn failed_step_returns_error_without_panicking() {
+            let stderr = run_in_child(|| {
+                let mut conn = SqliteConnection::establish(":memory:").unwrap();
+                conn.batch_execute(
+                    "CREATE TABLE readonly_7c91a2 (id INTEGER, updated_at TEXT);
+                     PRAGMA query_only = ON;",
+                )
+                .unwrap();
+                let error = conn
+                    .batch_execute("SELECT diesel_manage_updated_at('readonly_7c91a2')")
+                    .unwrap_err();
+                assert_eq!(format_error(&error), "attempt to write a readonly database");
+            });
+            assert_no_panic_output(&stderr, "readonly_7c91a2");
+        }
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn diesel_manage_updated_at_does_not_execute_its_argument() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .batch_execute(
+                "CREATE TABLE t (id INTEGER PRIMARY KEY, updated_at TEXT);
+                 CREATE TABLE victims (id INTEGER PRIMARY KEY);",
+            )
+            .unwrap();
+        let payload = "t AFTER UPDATE ON t BEGIN SELECT 1; END; DROP TABLE victims; --";
+
+        let result = sql::<Integer>("SELECT diesel_manage_updated_at(")
+            .bind::<Text, _>(payload)
+            .sql(")")
+            .get_result::<i32>(connection);
+
+        let schema = sql::<Text>("SELECT group_concat(name, ',') FROM sqlite_master")
+            .get_result::<String>(connection)
+            .unwrap();
+        assert_eq!(schema, "t,victims");
+        assert_eq!(
+            result.map_err(|e| format_error(&e)),
+            Err(format!("no such table: main.{payload}"))
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn diesel_manage_updated_at_quotes_the_table_name() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        let names = ["users", "select", "odd \"name\"", "a b", "a_b"];
+        for name in names {
+            let quoted = name.replace('"', "\"\"");
+            connection
+                .batch_execute(&format!(
+                    "CREATE TABLE \"{quoted}\" (id INTEGER PRIMARY KEY, updated_at TEXT);
+                     INSERT INTO \"{quoted}\" (id) VALUES (1);"
+                ))
+                .unwrap();
+            sql::<Integer>("SELECT diesel_manage_updated_at(")
+                .bind::<Text, _>(name)
+                .sql(")")
+                .get_result::<i32>(connection)
+                .unwrap();
+            connection
+                .batch_execute(&format!("UPDATE \"{quoted}\" SET id = 2"))
+                .unwrap();
+            let updated = sql::<Integer>(&format!(
+                "SELECT COUNT(*) FROM \"{quoted}\" WHERE updated_at IS NOT NULL"
+            ))
+            .get_result::<i32>(connection)
+            .unwrap();
+            assert_eq!(updated, 1, "table {name}");
+        }
+
+        let triggers =
+            sql::<Text>("SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY rowid")
+                .load::<String>(connection)
+                .unwrap();
+        let expected = names.map(|name| format!("__diesel_manage_updated_at_{name}"));
+        assert_eq!(triggers, expected);
     }
 
     // regression test for https://github.com/diesel-rs/diesel/issues/3425

@@ -14,7 +14,7 @@ use crate::print_schema::{ColumnSorting, DocConfig};
 
 static RESERVED_NAMES: &[&str] = &["table", "columns", "is_nullable"];
 
-pub(super) fn is_reserved_name(name: &str) -> bool {
+fn is_reserved_name(name: &str) -> bool {
     syn::parse_str::<syn::Ident>(name).is_err()
         || RESERVED_NAMES.contains(&name)
         || (
@@ -29,18 +29,13 @@ fn unmappable_char(c: char) -> bool {
     !(c.is_ascii_alphanumeric() || c == '_')
 }
 
-fn replace_unmappable_chars(name: &str) -> Cow<'_, str> {
+pub fn replace_unmappable_chars(name: &str) -> Cow<'_, str> {
     for (idx, c) in name.char_indices() {
         if unmappable_char(c) {
             let mut s = name[..idx].to_string();
             let tail = &name[idx..];
             replace_chars(&mut s, tail, false);
             return Cow::Owned(s);
-            // rust identifier don't start with digits
-        } else if idx == 0 && c.is_ascii_digit() {
-            let mut out = String::from("_");
-            replace_chars(&mut out, &name[idx..], true);
-            return Cow::Owned(out);
         }
     }
     Cow::Borrowed(name)
@@ -60,9 +55,57 @@ fn replace_chars(s: &mut String, tail: &str, mut last_was_underscore: bool) {
     }
 }
 
-pub fn rust_name_for_sql_name(sql_name: &str, table_name: Option<&TableName>) -> String {
-    let name = replace_unmappable_chars(sql_name);
-    if is_reserved_name(&name) || Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
+/// The kind of item a Rust name is derived for, which sets the prefix put before a name that
+/// starts with a digit
+#[derive(Debug, Clone, Copy)]
+pub enum IdentifierKind {
+    /// A schema, whose Rust name `table!` also uses as its SQL name, so the only prefix that
+    /// keeps it valid is `_`
+    Schema,
+    Table,
+    Column,
+    /// A custom type, and the Rust enum generated for it
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+    Type,
+    EnumVariant,
+}
+
+impl IdentifierKind {
+    fn leading_digit_prefix(self) -> &'static str {
+        match self {
+            IdentifierKind::Schema => "_",
+            IdentifierKind::Table => "table_",
+            IdentifierKind::Column => "column_",
+            #[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+            IdentifierKind::Type => "Type",
+            IdentifierKind::EnumVariant => "Variant",
+        }
+    }
+}
+
+/// Makes `name` a valid Rust identifier by prefixing it according to its `kind` if it starts with
+/// a digit, and appending `_` if it is reserved.
+///
+/// Names built from SQL names must go through this function after any case conversion as case
+/// conversions strip trailing `_`
+pub fn make_valid_identifier(name: Cow<'_, str>, kind: IdentifierKind) -> Cow<'_, str> {
+    if name.starts_with(|c: char| c.is_ascii_digit()) {
+        // Rust identifiers cannot start with a digit
+        Cow::Owned(format!("{}{name}", kind.leading_digit_prefix()))
+    } else if is_reserved_name(&name) {
+        Cow::Owned(format!("{name}_"))
+    } else {
+        name
+    }
+}
+
+pub fn rust_name_for_sql_name(
+    sql_name: &str,
+    kind: IdentifierKind,
+    table_name: Option<&TableName>,
+) -> String {
+    let name = make_valid_identifier(replace_unmappable_chars(sql_name), kind);
+    if Some(&name as &str) == table_name.map(|t| t.rust_name.as_str()) {
         format!("{name}_")
     } else {
         name.into_owned()
@@ -265,13 +308,6 @@ pub fn load_foreign_key_constraints(
 
     constraints.map(|mut ct| {
         ct.sort();
-        ct.iter_mut().for_each(|foreign_key_constraint| {
-            for name in &mut foreign_key_constraint.foreign_key_columns_rust {
-                if is_reserved_name(name) {
-                    *name = format!("{name}_");
-                }
-            }
-        });
         tracing::info!(?ct, "Loaded foreign key constraints");
         ct
     })
@@ -328,7 +364,7 @@ fn load_column_structure_data(
             auto_increment,
             ..
         } = c;
-        let rust_name = rust_name_for_sql_name(&column_name, Some(name));
+        let rust_name = rust_name_for_sql_name(&column_name, IdentifierKind::Column, Some(name));
 
         Ok(ColumnDefinition {
             sql_name: column_name,
@@ -357,7 +393,7 @@ pub fn load_table_data(
         load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| rust_name_for_sql_name(k, Some(&name)))
+        .map(|k| rust_name_for_sql_name(k, IdentifierKind::Column, Some(&name)))
         .collect::<Vec<_>>();
     Ok(TableData {
         name,

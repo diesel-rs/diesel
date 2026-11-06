@@ -35,6 +35,7 @@ impl Statement {
         raw_connection: &mut RawConnection,
         param_data: &[Option<Vec<u8>>],
         row_by_row: bool,
+        disallow_copy: bool,
     ) -> QueryResult<PgResult> {
         // This check may seem redundant to the general check in the statement cache
         // but it's mostly here as in depth defence to prevent libpq
@@ -111,7 +112,8 @@ impl Statement {
         if row_by_row {
             raw_connection.enable_row_by_row_mode()?;
         }
-        Ok(raw_connection.get_next_result()?.expect("Is never none"))
+        let result = raw_connection.get_next_result()?.expect("Is never none");
+        handle_copy_in_normal_stmt(raw_connection, disallow_copy, result)
     }
 
     pub(super) fn prepare(
@@ -172,4 +174,22 @@ impl Statement {
             }
         }
     }
+}
+
+pub(super) fn handle_copy_in_normal_stmt(
+    raw_connection: &mut RawConnection,
+    disallow_copy: bool,
+    result: PgResult,
+) -> QueryResult<PgResult> {
+    if disallow_copy
+        && matches!(
+            result.result_status(),
+            pq_sys::ExecStatusType::PGRES_COPY_IN
+                | pq_sys::ExecStatusType::PGRES_COPY_OUT
+                | pq_sys::ExecStatusType::PGRES_COPY_BOTH
+        )
+    {
+        raw_connection.consume_results()?;
+    }
+    Ok(result)
 }
