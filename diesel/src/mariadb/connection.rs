@@ -14,6 +14,7 @@ use crate::mariadb::Mariadb;
 /// [`SIGNAL`](https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/signal).
 /// The server reports `HY000` for errors without a specific SQLSTATE, as
 /// described at <https://mariadb.com/docs/server/reference/sql-statements/programmatic-compound-statements/programmatic-compound-statements-diagnostics/sqlstate>.
+/// [`sql_state`](crate::mysql_like::sql_state) names the codes.
 ///
 /// # Supported loading model implementations
 ///

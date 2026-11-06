@@ -69,6 +69,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * `PgConnection` reports the SQLSTATE of every server error through `DatabaseErrorInformation::sqlstate`, including custom codes
 * Added `diesel::pg::sql_state` with a `SqlState` constant for every error code PostgreSQL defines
 * `MysqlConnection` and `MariadbConnection` report the SQLSTATE of an error through `DatabaseErrorInformation::sqlstate`
+* Added `diesel::mysql_like::sql_state` with a `SqlState` constant for every SQLSTATE MySQL and MariaDB report
+* Added the `sqlstate` crate holding `SqlState`, `SqlStateClass`, `InvalidSqlState` and the SQLSTATE constants, which diesel re-exports
 
 ### Fixed
 
@@ -105,6 +107,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fix potential panics while deserializing binary copy_to responses
 * Fixed an issue with a panic during `copy_from` statements could render the connection unusable
 * Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
+* Fixed a Segmentationfault when issuing an empty query while using libmariadb
+* Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
+* Fixed a double free when a SQLite auto-extension leaked a cursor whose last step failed, and the matching abort in WAL hooks
 
 ### Changed
 
@@ -114,6 +119,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+* `SqliteConnection::establish` turns off the two-argument `fts3_tokenizer()`, which SQLite builds compiled with `SQLITE_ENABLE_FTS3_TOKENIZER`, such as Ubuntu's system library, enable by default and which lets SQL text make SQLite call through an arbitrary pointer. `SqliteConnection::set_fts3_tokenizer_enabled` is now an `unsafe fn`.
+* Extended libsqlite3-sys support to include 0.39
 * `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
