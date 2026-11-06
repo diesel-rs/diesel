@@ -63,6 +63,10 @@ impl PreparedStatementBinds {
     {
         self.0.with_mysql_binds(f)
     }
+
+    pub(super) fn len(&self) -> u64 {
+        self.0.data.len() as u64
+    }
 }
 
 impl OutputBinds {

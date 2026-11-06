@@ -1,5 +1,5 @@
 use crate::QueryResult;
-use crate::query_builder::{BindCollector, MoveableBindCollector};
+use crate::query_builder::{BindCollector, BindData, MoveableBindCollector};
 use crate::serialize::{IsNull, Output};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
@@ -440,6 +440,12 @@ impl MoveableBindCollector<Sqlite> for SqliteBindCollector<'_> {
                 .iter()
                 .map(|(b, _)| Box::new(b.clone()) as Box<dyn core::fmt::Debug>),
         );
+    }
+}
+
+impl BindData for SqliteBindCollectorData {
+    fn len(&self) -> usize {
+        self.binds.len()
     }
 }
 
