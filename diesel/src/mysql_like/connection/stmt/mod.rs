@@ -1,4 +1,5 @@
 #![allow(unsafe_code)] // module uses ffi
+use alloc::ffi::CString;
 use core::ffi as libc;
 use core::ffi::CStr;
 use core::marker::PhantomData;
@@ -38,11 +39,14 @@ impl<DB: MysqlLikeBackend> Statement<DB> {
     }
 
     pub fn prepare(&self, query: &str) -> QueryResult<()> {
+        use crate::result::Error::InvalidCString;
+
+        let query = CString::new(query).map_err(InvalidCString)?;
         unsafe {
             ffi::mysql_stmt_prepare(
                 self.stmt.as_ptr(),
                 query.as_ptr() as *const libc::c_char,
-                query.len() as libc::c_ulong,
+                query.count_bytes() as libc::c_ulong,
             );
         }
         self.did_an_error_occur()
