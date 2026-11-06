@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["SqliteType","Determines how a bind parameter is given to SQLite"]],"mod":[["query_builder","The SQLite query builder"]],"struct":[["Sqlite","The SQLite backend"],["SqliteConnection","Connections for the SQLite backend. Unlike other backends, “connection URLs” for SQLite are file paths, URIs, or special identifiers like `:memory:`."]]});

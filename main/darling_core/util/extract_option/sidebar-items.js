@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["from_mut","from_owned","from_ref"]};

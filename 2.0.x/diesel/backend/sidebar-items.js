@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["sql_dialect"],"trait":["Backend","DieselReserveSpecialization","HasBindCollector","HasRawValue","SqlDialect","TrustedBackend"],"type":["BindCollector","RawValue"]};

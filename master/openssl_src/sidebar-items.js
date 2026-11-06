@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["source_dir","version"],"struct":["Artifacts","Build"]};

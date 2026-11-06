@@ -1,0 +1,384 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `sqlstate/src/mysql_like.rs`."><title>mysql_like.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-020b02a2.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="sqlstate" data-themes="" data-resource-suffix="" data-rustdoc-version="1.101.0-nightly (249c1e4e3 2026-11-05)" data-channel="nightly" data-search-js="search-835b9732.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-b2682d9c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">sqlstate/</div>mysql_like.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! The SQLSTATE codes MySQL 8.4 and MariaDB 11.8 report, taken from
+<a href=#2 id=2 data-nosnippet>2</a>//! [`messages_to_clients.txt`](https://github.com/mysql/mysql-server/blob/mysql-8.4.6/share/messages_to_clients.txt)
+<a href=#3 id=3 data-nosnippet>3</a>//! and [`errmsg-utf8.txt`](https://github.com/MariaDB/server/blob/11.8/sql/share/errmsg-utf8.txt).
+<a href=#4 id=4 data-nosnippet>4</a>//!
+<a href=#5 id=5 data-nosnippet>5</a>//! ```rust
+<a href=#6 id=6 data-nosnippet>6</a>//! use sqlstate::{SqlState, mysql_like};
+<a href=#7 id=7 data-nosnippet>7</a>//!
+<a href=#8 id=8 data-nosnippet>8</a>//! let code: SqlState = "40001".parse().unwrap();
+<a href=#9 id=9 data-nosnippet>9</a>//! assert!(matches!(code, mysql_like::SERIALIZATION_FAILURE));
+<a href=#10 id=10 data-nosnippet>10</a>//! ```
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a></span><span class="expansion"><input id=expand-12 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc = <span class="string">r" `01000`, warning."</span>]
+</span><span class="kw">pub const </span>WARNING: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"01000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01S00`, SRS ID already exists warning. MySQL only."</span>]
+</span><span class="kw">pub const </span>WARN_SRS_ID_ALREADY_EXISTS: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"01S00"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `01S01`, reserved SRID range warning. MySQL only."</span>]
+</span><span class="kw">pub const </span>WARN_RESERVED_SRID_RANGE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"01S01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `02000`, no data."</span>]
+</span><span class="kw">pub const </span>NO_DATA: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"02000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08004`, SQL server rejected establishment of SQL connection."</span>]
+</span><span class="kw">pub const </span>SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"08004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `08S01`, communication link failure."</span>]
+</span><span class="kw">pub const </span>COMMUNICATION_LINK_FAILURE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"08S01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0A000`, feature not supported."</span>]
+</span><span class="kw">pub const </span>FEATURE_NOT_SUPPORTED: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"0A000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0K000`, resignal when handler not active."</span>]
+</span><span class="kw">pub const </span>RESIGNAL_WHEN_HANDLER_NOT_ACTIVE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"0K000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0L000`, invalid grantor. MariaDB only."</span>]
+</span><span class="kw">pub const </span>INVALID_GRANTOR: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"0L000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `0Z002`, stacked diagnostics accessed without active handler."</span>]
+</span><span class="kw">pub const </span>STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER: <span class="kw">crate</span>::SqlState
+    =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"0Z002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `20000`, case not found for case statement."</span>]
+</span><span class="kw">pub const </span>CASE_NOT_FOUND: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"20000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `21000`, cardinality violation."</span>]
+</span><span class="kw">pub const </span>CARDINALITY_VIOLATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"21000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `21S01`, insert value list does not match column list."</span>]
+</span><span class="kw">pub const </span>INSERT_VALUE_LIST_DOES_NOT_MATCH_COLUMN_LIST: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"21S01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22001`, string data, right truncation."</span>]
+</span><span class="kw">pub const </span>STRING_DATA_RIGHT_TRUNCATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22003`, numeric value out of range."</span>]
+</span><span class="kw">pub const </span>NUMERIC_VALUE_OUT_OF_RANGE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22004`, null value not allowed."</span>]
+</span><span class="kw">pub const </span>NULL_VALUE_NOT_ALLOWED: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22007`, invalid datetime format."</span>]
+</span><span class="kw">pub const </span>INVALID_DATETIME_FORMAT: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22007"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22008`, datetime field overflow."</span>]
+</span><span class="kw">pub const </span>DATETIME_FIELD_OVERFLOW: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22008"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22012`, division by zero."</span>]
+</span><span class="kw">pub const </span>DIVISION_BY_ZERO: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22012"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22018`, invalid character value for cast. MySQL only."</span>]
+</span><span class="kw">pub const </span>INVALID_CHARACTER_VALUE_FOR_CAST: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22018"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2201E`, invalid argument for natural logarithm."</span>]
+</span><span class="kw">pub const </span>INVALID_ARGUMENT_FOR_LOGARITHM: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"2201E"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22023`, invalid parameter value."</span>]
+</span><span class="kw">pub const </span>INVALID_PARAMETER_VALUE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22023"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2202H`, invalid tablesample argument. MySQL only."</span>]
+</span><span class="kw">pub const </span>INVALID_TABLESAMPLE_ARGUMENT: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"2202H"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22032`, invalid JSON text. MySQL only."</span>]
+</span><span class="kw">pub const </span>INVALID_JSON_TEXT: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22032"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22034`, more than one SQL/JSON item. MySQL only."</span>]
+</span><span class="kw">pub const </span>MORE_THAN_ONE_SQL_JSON_ITEM: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22034"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22035`, no SQL/JSON item. MySQL only."</span>]
+</span><span class="kw">pub const </span>NO_SQL_JSON_ITEM: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22035"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2203F`, SQL/JSON scalar required. MySQL only."</span>]
+</span><span class="kw">pub const </span>SQL_JSON_SCALAR_REQUIRED: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"2203F"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22S00`, unsupported SRS operation. MySQL only."</span>]
+</span><span class="kw">pub const </span>SRS_NOT_SUPPORTED: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22S00"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22S01`, unexpected geometry type. MySQL only."</span>]
+</span><span class="kw">pub const </span>UNEXPECTED_GEOMETRY_TYPE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22S01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22S02`, longitude out of range. MySQL only."</span>]
+</span><span class="kw">pub const </span>LONGITUDE_OUT_OF_RANGE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22S02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22S03`, latitude out of range. MySQL only."</span>]
+</span><span class="kw">pub const </span>LATITUDE_OUT_OF_RANGE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22S03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22S04`, invalid polygon ring direction. MySQL only."</span>]
+</span><span class="kw">pub const </span>INVALID_CAST_POLYGON_RING_DIRECTION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22S04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `22S05`, aggregate over different SRIDs. MySQL only."</span>]
+</span><span class="kw">pub const </span>GIS_DIFFERENT_SRIDS_AGGREGATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"22S05"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `23000`, integrity constraint violation."</span>]
+</span><span class="kw">pub const </span>INTEGRITY_CONSTRAINT_VIOLATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"23000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `24000`, invalid cursor state."</span>]
+</span><span class="kw">pub const </span>INVALID_CURSOR_STATE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"24000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25000`, invalid transaction state."</span>]
+</span><span class="kw">pub const </span>INVALID_TRANSACTION_STATE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"25000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25001`, active SQL transaction."</span>]
+</span><span class="kw">pub const </span>ACTIVE_SQL_TRANSACTION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"25001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `25006`, read-only SQL transaction."</span>]
+</span><span class="kw">pub const </span>READ_ONLY_SQL_TRANSACTION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"25006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `28000`, invalid authorization specification."</span>]
+</span><span class="kw">pub const </span>INVALID_AUTHORIZATION_SPECIFICATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"28000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F003`, prohibited SQL statement attempted."</span>]
+</span><span class="kw">pub const </span>PROHIBITED_SQL_STATEMENT_ATTEMPTED: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"2F003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `2F005`, function executed no return statement."</span>]
+</span><span class="kw">pub const </span>FUNCTION_EXECUTED_NO_RETURN_STATEMENT: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"2F005"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `35000`, invalid condition number."</span>]
+</span><span class="kw">pub const </span>INVALID_CONDITION_NUMBER: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"35000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `3D000`, invalid catalog name."</span>]
+</span><span class="kw">pub const </span>INVALID_CATALOG_NAME: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"3D000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40000`, transaction rollback. MySQL only."</span>]
+</span><span class="kw">pub const </span>TRANSACTION_ROLLBACK: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"40000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `40001`, serialization failure."</span>]
+</span><span class="kw">pub const </span>SERIALIZATION_FAILURE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"40001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42000`, syntax error or access rule violation."</span>]
+</span><span class="kw">pub const </span>SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42S01`, base table or view already exists."</span>]
+</span><span class="kw">pub const </span>BASE_TABLE_OR_VIEW_ALREADY_EXISTS: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42S01"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42S02`, base table or view not found."</span>]
+</span><span class="kw">pub const </span>BASE_TABLE_OR_VIEW_NOT_FOUND: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42S02"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42S12`, index not found."</span>]
+</span><span class="kw">pub const </span>INDEX_NOT_FOUND: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42S12"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42S21`, column already exists."</span>]
+</span><span class="kw">pub const </span>COLUMN_ALREADY_EXISTS: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42S21"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42S22`, column not found."</span>]
+</span><span class="kw">pub const </span>COLUMN_NOT_FOUND: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42S22"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `42Y07`, unknown database. MySQL only."</span>]
+</span><span class="kw">pub const </span>NO_SUCH_DB: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"42Y07"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `44000`, with check option violation. MariaDB only."</span>]
+</span><span class="kw">pub const </span>WITH_CHECK_OPTION_VIOLATION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"44000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `70100`, operation aborted."</span>]
+</span><span class="kw">pub const </span>OPERATION_ABORTED: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"70100"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HY000`, general error."</span>]
+</span><span class="kw">pub const </span>GENERAL_ERROR: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"HY000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `HY001`, memory allocation error."</span>]
+</span><span class="kw">pub const </span>MEMORY_ALLOCATION_ERROR: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"HY001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `OP000`, invalid role specification. MariaDB only."</span>]
+</span><span class="kw">pub const </span>INVALID_ROLE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"OP000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR000`, SRID 0 cannot be modified. MySQL only."</span>]
+</span><span class="kw">pub const </span>CANT_MODIFY_SRID_0: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR000"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR001`, SRS not found. MySQL only."</span>]
+</span><span class="kw">pub const </span>SRS_NOT_FOUND: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR002`, invalid SRS definition. MySQL only."</span>]
+</span><span class="kw">pub const </span>INVALID_SRS_DEFINITION: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR002"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR003`, missing SRS projection parameter. MySQL only."</span>]
+</span><span class="kw">pub const </span>SRS_PROJ_PARAMETER_MISSING: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR003"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR004`, SRS ID already exists. MySQL only."</span>]
+</span><span class="kw">pub const </span>SRS_ID_ALREADY_EXISTS: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR004"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR005`, SRS used by a column. MySQL only."</span>]
+</span><span class="kw">pub const </span>CANT_MODIFY_SRS_USED_BY_COLUMN: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR005"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SR006`, invalid SRS attribute. MySQL only."</span>]
+</span><span class="kw">pub const </span>INVALID_SRS_ATTRIBUTE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SR006"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `SU001`, unknown unit. MySQL only."</span>]
+</span><span class="kw">pub const </span>UNIT_NOT_FOUND: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"SU001"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XA100`, XA branch rolled back."</span>]
+</span><span class="kw">pub const </span>XA_RBROLLBACK: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XA100"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XA102`, XA branch rolled back after a deadlock."</span>]
+</span><span class="kw">pub const </span>XA_RBDEADLOCK: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XA102"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XA106`, XA branch rolled back after a timeout."</span>]
+</span><span class="kw">pub const </span>XA_RBTIMEOUT: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XA106"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XAE03`, XA resource manager error."</span>]
+</span><span class="kw">pub const </span>XAER_RMERR: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XAE03"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XAE04`, unknown XID."</span>]
+</span><span class="kw">pub const </span>XAER_NOTA: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XAE04"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XAE05`, invalid XA arguments."</span>]
+</span><span class="kw">pub const </span>XAER_INVAL: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XAE05"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XAE07`, XA command not allowed in this state."</span>]
+</span><span class="kw">pub const </span>XAER_RMFAIL: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XAE07"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XAE08`, XID already exists."</span>]
+</span><span class="kw">pub const </span>XAER_DUPID: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XAE08"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);
+<span class="attr">#[doc = <span class="string">r" `XAE09`, work outside the XA transaction."</span>]
+</span><span class="kw">pub const </span>XAER_OUTSIDE: <span class="kw">crate</span>::SqlState =
+    <span class="kw">crate</span>::SqlState::new(<span class="kw-2">*</span><span class="string">b"XAE09"</span>).expect(<span class="string">"invalid SQLSTATE"</span>);</span><span class="original"><a href="lib.rs.html#16-24">codes!</a> {
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="doccomment">/// `01000`, warning.
+<a href=#14 id=14 data-nosnippet>14</a>    </span><a href="../../sqlstate/mysql_like/constant.WARNING.html">WARNING</a> = <span class="string">b"01000"</span>;
+<a href=#15 id=15 data-nosnippet>15</a>    <span class="doccomment">/// `01S00`, SRS ID already exists warning. MySQL only.
+<a href=#16 id=16 data-nosnippet>16</a>    </span><a href="../../sqlstate/mysql_like/constant.WARN_SRS_ID_ALREADY_EXISTS.html">WARN_SRS_ID_ALREADY_EXISTS</a> = <span class="string">b"01S00"</span>;
+<a href=#17 id=17 data-nosnippet>17</a>    <span class="doccomment">/// `01S01`, reserved SRID range warning. MySQL only.
+<a href=#18 id=18 data-nosnippet>18</a>    </span><a href="../../sqlstate/mysql_like/constant.WARN_RESERVED_SRID_RANGE.html">WARN_RESERVED_SRID_RANGE</a> = <span class="string">b"01S01"</span>;
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="doccomment">/// `02000`, no data.
+<a href=#20 id=20 data-nosnippet>20</a>    </span><a href="../../sqlstate/mysql_like/constant.NO_DATA.html">NO_DATA</a> = <span class="string">b"02000"</span>;
+<a href=#21 id=21 data-nosnippet>21</a>    <span class="doccomment">/// `08004`, SQL server rejected establishment of SQL connection.
+<a href=#22 id=22 data-nosnippet>22</a>    </span><a href="../../sqlstate/mysql_like/constant.SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION.html">SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION</a> = <span class="string">b"08004"</span>;
+<a href=#23 id=23 data-nosnippet>23</a>    <span class="doccomment">/// `08S01`, communication link failure.
+<a href=#24 id=24 data-nosnippet>24</a>    </span><a href="../../sqlstate/mysql_like/constant.COMMUNICATION_LINK_FAILURE.html">COMMUNICATION_LINK_FAILURE</a> = <span class="string">b"08S01"</span>;
+<a href=#25 id=25 data-nosnippet>25</a>    <span class="doccomment">/// `0A000`, feature not supported.
+<a href=#26 id=26 data-nosnippet>26</a>    </span><a href="../../sqlstate/mysql_like/constant.FEATURE_NOT_SUPPORTED.html">FEATURE_NOT_SUPPORTED</a> = <span class="string">b"0A000"</span>;
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="doccomment">/// `0K000`, resignal when handler not active.
+<a href=#28 id=28 data-nosnippet>28</a>    </span><a href="../../sqlstate/mysql_like/constant.RESIGNAL_WHEN_HANDLER_NOT_ACTIVE.html">RESIGNAL_WHEN_HANDLER_NOT_ACTIVE</a> = <span class="string">b"0K000"</span>;
+<a href=#29 id=29 data-nosnippet>29</a>    <span class="doccomment">/// `0L000`, invalid grantor. MariaDB only.
+<a href=#30 id=30 data-nosnippet>30</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_GRANTOR.html">INVALID_GRANTOR</a> = <span class="string">b"0L000"</span>;
+<a href=#31 id=31 data-nosnippet>31</a>    <span class="doccomment">/// `0Z002`, stacked diagnostics accessed without active handler.
+<a href=#32 id=32 data-nosnippet>32</a>    </span><a href="../../sqlstate/mysql_like/constant.STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER.html">STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER</a> = <span class="string">b"0Z002"</span>;
+<a href=#33 id=33 data-nosnippet>33</a>    <span class="doccomment">/// `20000`, case not found for case statement.
+<a href=#34 id=34 data-nosnippet>34</a>    </span><a href="../../sqlstate/mysql_like/constant.CASE_NOT_FOUND.html">CASE_NOT_FOUND</a> = <span class="string">b"20000"</span>;
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="doccomment">/// `21000`, cardinality violation.
+<a href=#36 id=36 data-nosnippet>36</a>    </span><a href="../../sqlstate/mysql_like/constant.CARDINALITY_VIOLATION.html">CARDINALITY_VIOLATION</a> = <span class="string">b"21000"</span>;
+<a href=#37 id=37 data-nosnippet>37</a>    <span class="doccomment">/// `21S01`, insert value list does not match column list.
+<a href=#38 id=38 data-nosnippet>38</a>    </span><a href="../../sqlstate/mysql_like/constant.INSERT_VALUE_LIST_DOES_NOT_MATCH_COLUMN_LIST.html">INSERT_VALUE_LIST_DOES_NOT_MATCH_COLUMN_LIST</a> = <span class="string">b"21S01"</span>;
+<a href=#39 id=39 data-nosnippet>39</a>    <span class="doccomment">/// `22001`, string data, right truncation.
+<a href=#40 id=40 data-nosnippet>40</a>    </span><a href="../../sqlstate/mysql_like/constant.STRING_DATA_RIGHT_TRUNCATION.html">STRING_DATA_RIGHT_TRUNCATION</a> = <span class="string">b"22001"</span>;
+<a href=#41 id=41 data-nosnippet>41</a>    <span class="doccomment">/// `22003`, numeric value out of range.
+<a href=#42 id=42 data-nosnippet>42</a>    </span><a href="../../sqlstate/mysql_like/constant.NUMERIC_VALUE_OUT_OF_RANGE.html">NUMERIC_VALUE_OUT_OF_RANGE</a> = <span class="string">b"22003"</span>;
+<a href=#43 id=43 data-nosnippet>43</a>    <span class="doccomment">/// `22004`, null value not allowed.
+<a href=#44 id=44 data-nosnippet>44</a>    </span><a href="../../sqlstate/mysql_like/constant.NULL_VALUE_NOT_ALLOWED.html">NULL_VALUE_NOT_ALLOWED</a> = <span class="string">b"22004"</span>;
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="doccomment">/// `22007`, invalid datetime format.
+<a href=#46 id=46 data-nosnippet>46</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_DATETIME_FORMAT.html">INVALID_DATETIME_FORMAT</a> = <span class="string">b"22007"</span>;
+<a href=#47 id=47 data-nosnippet>47</a>    <span class="doccomment">/// `22008`, datetime field overflow.
+<a href=#48 id=48 data-nosnippet>48</a>    </span><a href="../../sqlstate/mysql_like/constant.DATETIME_FIELD_OVERFLOW.html">DATETIME_FIELD_OVERFLOW</a> = <span class="string">b"22008"</span>;
+<a href=#49 id=49 data-nosnippet>49</a>    <span class="doccomment">/// `22012`, division by zero.
+<a href=#50 id=50 data-nosnippet>50</a>    </span><a href="../../sqlstate/mysql_like/constant.DIVISION_BY_ZERO.html">DIVISION_BY_ZERO</a> = <span class="string">b"22012"</span>;
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="doccomment">/// `22018`, invalid character value for cast. MySQL only.
+<a href=#52 id=52 data-nosnippet>52</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_CHARACTER_VALUE_FOR_CAST.html">INVALID_CHARACTER_VALUE_FOR_CAST</a> = <span class="string">b"22018"</span>;
+<a href=#53 id=53 data-nosnippet>53</a>    <span class="doccomment">/// `2201E`, invalid argument for natural logarithm.
+<a href=#54 id=54 data-nosnippet>54</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_ARGUMENT_FOR_LOGARITHM.html">INVALID_ARGUMENT_FOR_LOGARITHM</a> = <span class="string">b"2201E"</span>;
+<a href=#55 id=55 data-nosnippet>55</a>    <span class="doccomment">/// `22023`, invalid parameter value.
+<a href=#56 id=56 data-nosnippet>56</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_PARAMETER_VALUE.html">INVALID_PARAMETER_VALUE</a> = <span class="string">b"22023"</span>;
+<a href=#57 id=57 data-nosnippet>57</a>    <span class="doccomment">/// `2202H`, invalid tablesample argument. MySQL only.
+<a href=#58 id=58 data-nosnippet>58</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_TABLESAMPLE_ARGUMENT.html">INVALID_TABLESAMPLE_ARGUMENT</a> = <span class="string">b"2202H"</span>;
+<a href=#59 id=59 data-nosnippet>59</a>    <span class="doccomment">/// `22032`, invalid JSON text. MySQL only.
+<a href=#60 id=60 data-nosnippet>60</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_JSON_TEXT.html">INVALID_JSON_TEXT</a> = <span class="string">b"22032"</span>;
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="doccomment">/// `22034`, more than one SQL/JSON item. MySQL only.
+<a href=#62 id=62 data-nosnippet>62</a>    </span><a href="../../sqlstate/mysql_like/constant.MORE_THAN_ONE_SQL_JSON_ITEM.html">MORE_THAN_ONE_SQL_JSON_ITEM</a> = <span class="string">b"22034"</span>;
+<a href=#63 id=63 data-nosnippet>63</a>    <span class="doccomment">/// `22035`, no SQL/JSON item. MySQL only.
+<a href=#64 id=64 data-nosnippet>64</a>    </span><a href="../../sqlstate/mysql_like/constant.NO_SQL_JSON_ITEM.html">NO_SQL_JSON_ITEM</a> = <span class="string">b"22035"</span>;
+<a href=#65 id=65 data-nosnippet>65</a>    <span class="doccomment">/// `2203F`, SQL/JSON scalar required. MySQL only.
+<a href=#66 id=66 data-nosnippet>66</a>    </span><a href="../../sqlstate/mysql_like/constant.SQL_JSON_SCALAR_REQUIRED.html">SQL_JSON_SCALAR_REQUIRED</a> = <span class="string">b"2203F"</span>;
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="doccomment">/// `22S00`, unsupported SRS operation. MySQL only.
+<a href=#68 id=68 data-nosnippet>68</a>    </span><a href="../../sqlstate/mysql_like/constant.SRS_NOT_SUPPORTED.html">SRS_NOT_SUPPORTED</a> = <span class="string">b"22S00"</span>;
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="doccomment">/// `22S01`, unexpected geometry type. MySQL only.
+<a href=#70 id=70 data-nosnippet>70</a>    </span><a href="../../sqlstate/mysql_like/constant.UNEXPECTED_GEOMETRY_TYPE.html">UNEXPECTED_GEOMETRY_TYPE</a> = <span class="string">b"22S01"</span>;
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="doccomment">/// `22S02`, longitude out of range. MySQL only.
+<a href=#72 id=72 data-nosnippet>72</a>    </span><a href="../../sqlstate/mysql_like/constant.LONGITUDE_OUT_OF_RANGE.html">LONGITUDE_OUT_OF_RANGE</a> = <span class="string">b"22S02"</span>;
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="doccomment">/// `22S03`, latitude out of range. MySQL only.
+<a href=#74 id=74 data-nosnippet>74</a>    </span><a href="../../sqlstate/mysql_like/constant.LATITUDE_OUT_OF_RANGE.html">LATITUDE_OUT_OF_RANGE</a> = <span class="string">b"22S03"</span>;
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="doccomment">/// `22S04`, invalid polygon ring direction. MySQL only.
+<a href=#76 id=76 data-nosnippet>76</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_CAST_POLYGON_RING_DIRECTION.html">INVALID_CAST_POLYGON_RING_DIRECTION</a> = <span class="string">b"22S04"</span>;
+<a href=#77 id=77 data-nosnippet>77</a>    <span class="doccomment">/// `22S05`, aggregate over different SRIDs. MySQL only.
+<a href=#78 id=78 data-nosnippet>78</a>    </span><a href="../../sqlstate/mysql_like/constant.GIS_DIFFERENT_SRIDS_AGGREGATION.html">GIS_DIFFERENT_SRIDS_AGGREGATION</a> = <span class="string">b"22S05"</span>;
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="doccomment">/// `23000`, integrity constraint violation.
+<a href=#80 id=80 data-nosnippet>80</a>    </span><a href="../../sqlstate/mysql_like/constant.INTEGRITY_CONSTRAINT_VIOLATION.html">INTEGRITY_CONSTRAINT_VIOLATION</a> = <span class="string">b"23000"</span>;
+<a href=#81 id=81 data-nosnippet>81</a>    <span class="doccomment">/// `24000`, invalid cursor state.
+<a href=#82 id=82 data-nosnippet>82</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_CURSOR_STATE.html">INVALID_CURSOR_STATE</a> = <span class="string">b"24000"</span>;
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="doccomment">/// `25000`, invalid transaction state.
+<a href=#84 id=84 data-nosnippet>84</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_TRANSACTION_STATE.html">INVALID_TRANSACTION_STATE</a> = <span class="string">b"25000"</span>;
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="doccomment">/// `25001`, active SQL transaction.
+<a href=#86 id=86 data-nosnippet>86</a>    </span><a href="../../sqlstate/mysql_like/constant.ACTIVE_SQL_TRANSACTION.html">ACTIVE_SQL_TRANSACTION</a> = <span class="string">b"25001"</span>;
+<a href=#87 id=87 data-nosnippet>87</a>    <span class="doccomment">/// `25006`, read-only SQL transaction.
+<a href=#88 id=88 data-nosnippet>88</a>    </span><a href="../../sqlstate/mysql_like/constant.READ_ONLY_SQL_TRANSACTION.html">READ_ONLY_SQL_TRANSACTION</a> = <span class="string">b"25006"</span>;
+<a href=#89 id=89 data-nosnippet>89</a>    <span class="doccomment">/// `28000`, invalid authorization specification.
+<a href=#90 id=90 data-nosnippet>90</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_AUTHORIZATION_SPECIFICATION.html">INVALID_AUTHORIZATION_SPECIFICATION</a> = <span class="string">b"28000"</span>;
+<a href=#91 id=91 data-nosnippet>91</a>    <span class="doccomment">/// `2F003`, prohibited SQL statement attempted.
+<a href=#92 id=92 data-nosnippet>92</a>    </span><a href="../../sqlstate/mysql_like/constant.PROHIBITED_SQL_STATEMENT_ATTEMPTED.html">PROHIBITED_SQL_STATEMENT_ATTEMPTED</a> = <span class="string">b"2F003"</span>;
+<a href=#93 id=93 data-nosnippet>93</a>    <span class="doccomment">/// `2F005`, function executed no return statement.
+<a href=#94 id=94 data-nosnippet>94</a>    </span><a href="../../sqlstate/mysql_like/constant.FUNCTION_EXECUTED_NO_RETURN_STATEMENT.html">FUNCTION_EXECUTED_NO_RETURN_STATEMENT</a> = <span class="string">b"2F005"</span>;
+<a href=#95 id=95 data-nosnippet>95</a>    <span class="doccomment">/// `35000`, invalid condition number.
+<a href=#96 id=96 data-nosnippet>96</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_CONDITION_NUMBER.html">INVALID_CONDITION_NUMBER</a> = <span class="string">b"35000"</span>;
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="doccomment">/// `3D000`, invalid catalog name.
+<a href=#98 id=98 data-nosnippet>98</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_CATALOG_NAME.html">INVALID_CATALOG_NAME</a> = <span class="string">b"3D000"</span>;
+<a href=#99 id=99 data-nosnippet>99</a>    <span class="doccomment">/// `40000`, transaction rollback. MySQL only.
+<a href=#100 id=100 data-nosnippet>100</a>    </span><a href="../../sqlstate/mysql_like/constant.TRANSACTION_ROLLBACK.html">TRANSACTION_ROLLBACK</a> = <span class="string">b"40000"</span>;
+<a href=#101 id=101 data-nosnippet>101</a>    <span class="doccomment">/// `40001`, serialization failure.
+<a href=#102 id=102 data-nosnippet>102</a>    </span><a href="../../sqlstate/mysql_like/constant.SERIALIZATION_FAILURE.html">SERIALIZATION_FAILURE</a> = <span class="string">b"40001"</span>;
+<a href=#103 id=103 data-nosnippet>103</a>    <span class="doccomment">/// `42000`, syntax error or access rule violation.
+<a href=#104 id=104 data-nosnippet>104</a>    </span><a href="../../sqlstate/mysql_like/constant.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION.html">SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION</a> = <span class="string">b"42000"</span>;
+<a href=#105 id=105 data-nosnippet>105</a>    <span class="doccomment">/// `42S01`, base table or view already exists.
+<a href=#106 id=106 data-nosnippet>106</a>    </span><a href="../../sqlstate/mysql_like/constant.BASE_TABLE_OR_VIEW_ALREADY_EXISTS.html">BASE_TABLE_OR_VIEW_ALREADY_EXISTS</a> = <span class="string">b"42S01"</span>;
+<a href=#107 id=107 data-nosnippet>107</a>    <span class="doccomment">/// `42S02`, base table or view not found.
+<a href=#108 id=108 data-nosnippet>108</a>    </span><a href="../../sqlstate/mysql_like/constant.BASE_TABLE_OR_VIEW_NOT_FOUND.html">BASE_TABLE_OR_VIEW_NOT_FOUND</a> = <span class="string">b"42S02"</span>;
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="doccomment">/// `42S12`, index not found.
+<a href=#110 id=110 data-nosnippet>110</a>    </span><a href="../../sqlstate/mysql_like/constant.INDEX_NOT_FOUND.html">INDEX_NOT_FOUND</a> = <span class="string">b"42S12"</span>;
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="doccomment">/// `42S21`, column already exists.
+<a href=#112 id=112 data-nosnippet>112</a>    </span><a href="../../sqlstate/mysql_like/constant.COLUMN_ALREADY_EXISTS.html">COLUMN_ALREADY_EXISTS</a> = <span class="string">b"42S21"</span>;
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="doccomment">/// `42S22`, column not found.
+<a href=#114 id=114 data-nosnippet>114</a>    </span><a href="../../sqlstate/mysql_like/constant.COLUMN_NOT_FOUND.html">COLUMN_NOT_FOUND</a> = <span class="string">b"42S22"</span>;
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="doccomment">/// `42Y07`, unknown database. MySQL only.
+<a href=#116 id=116 data-nosnippet>116</a>    </span><a href="../../sqlstate/mysql_like/constant.NO_SUCH_DB.html">NO_SUCH_DB</a> = <span class="string">b"42Y07"</span>;
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="doccomment">/// `44000`, with check option violation. MariaDB only.
+<a href=#118 id=118 data-nosnippet>118</a>    </span><a href="../../sqlstate/mysql_like/constant.WITH_CHECK_OPTION_VIOLATION.html">WITH_CHECK_OPTION_VIOLATION</a> = <span class="string">b"44000"</span>;
+<a href=#119 id=119 data-nosnippet>119</a>    <span class="doccomment">/// `70100`, operation aborted.
+<a href=#120 id=120 data-nosnippet>120</a>    </span><a href="../../sqlstate/mysql_like/constant.OPERATION_ABORTED.html">OPERATION_ABORTED</a> = <span class="string">b"70100"</span>;
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="doccomment">/// `HY000`, general error.
+<a href=#122 id=122 data-nosnippet>122</a>    </span><a href="../../sqlstate/mysql_like/constant.GENERAL_ERROR.html">GENERAL_ERROR</a> = <span class="string">b"HY000"</span>;
+<a href=#123 id=123 data-nosnippet>123</a>    <span class="doccomment">/// `HY001`, memory allocation error.
+<a href=#124 id=124 data-nosnippet>124</a>    </span><a href="../../sqlstate/mysql_like/constant.MEMORY_ALLOCATION_ERROR.html">MEMORY_ALLOCATION_ERROR</a> = <span class="string">b"HY001"</span>;
+<a href=#125 id=125 data-nosnippet>125</a>    <span class="doccomment">/// `OP000`, invalid role specification. MariaDB only.
+<a href=#126 id=126 data-nosnippet>126</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_ROLE.html">INVALID_ROLE</a> = <span class="string">b"OP000"</span>;
+<a href=#127 id=127 data-nosnippet>127</a>    <span class="doccomment">/// `SR000`, SRID 0 cannot be modified. MySQL only.
+<a href=#128 id=128 data-nosnippet>128</a>    </span><a href="../../sqlstate/mysql_like/constant.CANT_MODIFY_SRID_0.html">CANT_MODIFY_SRID_0</a> = <span class="string">b"SR000"</span>;
+<a href=#129 id=129 data-nosnippet>129</a>    <span class="doccomment">/// `SR001`, SRS not found. MySQL only.
+<a href=#130 id=130 data-nosnippet>130</a>    </span><a href="../../sqlstate/mysql_like/constant.SRS_NOT_FOUND.html">SRS_NOT_FOUND</a> = <span class="string">b"SR001"</span>;
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="doccomment">/// `SR002`, invalid SRS definition. MySQL only.
+<a href=#132 id=132 data-nosnippet>132</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_SRS_DEFINITION.html">INVALID_SRS_DEFINITION</a> = <span class="string">b"SR002"</span>;
+<a href=#133 id=133 data-nosnippet>133</a>    <span class="doccomment">/// `SR003`, missing SRS projection parameter. MySQL only.
+<a href=#134 id=134 data-nosnippet>134</a>    </span><a href="../../sqlstate/mysql_like/constant.SRS_PROJ_PARAMETER_MISSING.html">SRS_PROJ_PARAMETER_MISSING</a> = <span class="string">b"SR003"</span>;
+<a href=#135 id=135 data-nosnippet>135</a>    <span class="doccomment">/// `SR004`, SRS ID already exists. MySQL only.
+<a href=#136 id=136 data-nosnippet>136</a>    </span><a href="../../sqlstate/mysql_like/constant.SRS_ID_ALREADY_EXISTS.html">SRS_ID_ALREADY_EXISTS</a> = <span class="string">b"SR004"</span>;
+<a href=#137 id=137 data-nosnippet>137</a>    <span class="doccomment">/// `SR005`, SRS used by a column. MySQL only.
+<a href=#138 id=138 data-nosnippet>138</a>    </span><a href="../../sqlstate/mysql_like/constant.CANT_MODIFY_SRS_USED_BY_COLUMN.html">CANT_MODIFY_SRS_USED_BY_COLUMN</a> = <span class="string">b"SR005"</span>;
+<a href=#139 id=139 data-nosnippet>139</a>    <span class="doccomment">/// `SR006`, invalid SRS attribute. MySQL only.
+<a href=#140 id=140 data-nosnippet>140</a>    </span><a href="../../sqlstate/mysql_like/constant.INVALID_SRS_ATTRIBUTE.html">INVALID_SRS_ATTRIBUTE</a> = <span class="string">b"SR006"</span>;
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="doccomment">/// `SU001`, unknown unit. MySQL only.
+<a href=#142 id=142 data-nosnippet>142</a>    </span><a href="../../sqlstate/mysql_like/constant.UNIT_NOT_FOUND.html">UNIT_NOT_FOUND</a> = <span class="string">b"SU001"</span>;
+<a href=#143 id=143 data-nosnippet>143</a>    <span class="doccomment">/// `XA100`, XA branch rolled back.
+<a href=#144 id=144 data-nosnippet>144</a>    </span><a href="../../sqlstate/mysql_like/constant.XA_RBROLLBACK.html">XA_RBROLLBACK</a> = <span class="string">b"XA100"</span>;
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="doccomment">/// `XA102`, XA branch rolled back after a deadlock.
+<a href=#146 id=146 data-nosnippet>146</a>    </span><a href="../../sqlstate/mysql_like/constant.XA_RBDEADLOCK.html">XA_RBDEADLOCK</a> = <span class="string">b"XA102"</span>;
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="doccomment">/// `XA106`, XA branch rolled back after a timeout.
+<a href=#148 id=148 data-nosnippet>148</a>    </span><a href="../../sqlstate/mysql_like/constant.XA_RBTIMEOUT.html">XA_RBTIMEOUT</a> = <span class="string">b"XA106"</span>;
+<a href=#149 id=149 data-nosnippet>149</a>    <span class="doccomment">/// `XAE03`, XA resource manager error.
+<a href=#150 id=150 data-nosnippet>150</a>    </span><a href="../../sqlstate/mysql_like/constant.XAER_RMERR.html">XAER_RMERR</a> = <span class="string">b"XAE03"</span>;
+<a href=#151 id=151 data-nosnippet>151</a>    <span class="doccomment">/// `XAE04`, unknown XID.
+<a href=#152 id=152 data-nosnippet>152</a>    </span><a href="../../sqlstate/mysql_like/constant.XAER_NOTA.html">XAER_NOTA</a> = <span class="string">b"XAE04"</span>;
+<a href=#153 id=153 data-nosnippet>153</a>    <span class="doccomment">/// `XAE05`, invalid XA arguments.
+<a href=#154 id=154 data-nosnippet>154</a>    </span><a href="../../sqlstate/mysql_like/constant.XAER_INVAL.html">XAER_INVAL</a> = <span class="string">b"XAE05"</span>;
+<a href=#155 id=155 data-nosnippet>155</a>    <span class="doccomment">/// `XAE07`, XA command not allowed in this state.
+<a href=#156 id=156 data-nosnippet>156</a>    </span><a href="../../sqlstate/mysql_like/constant.XAER_RMFAIL.html">XAER_RMFAIL</a> = <span class="string">b"XAE07"</span>;
+<a href=#157 id=157 data-nosnippet>157</a>    <span class="doccomment">/// `XAE08`, XID already exists.
+<a href=#158 id=158 data-nosnippet>158</a>    </span><a href="../../sqlstate/mysql_like/constant.XAER_DUPID.html">XAER_DUPID</a> = <span class="string">b"XAE08"</span>;
+<a href=#159 id=159 data-nosnippet>159</a>    <span class="doccomment">/// `XAE09`, work outside the XA transaction.
+<a href=#160 id=160 data-nosnippet>160</a>    </span><a href="../../sqlstate/mysql_like/constant.XAER_OUTSIDE.html">XAER_OUTSIDE</a> = <span class="string">b"XAE09"</span>;
+<a href=#161 id=161 data-nosnippet>161</a>}</span></span>
+</code></pre></div></section></main></body></html>
