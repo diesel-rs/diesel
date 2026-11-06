@@ -359,6 +359,13 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::built_in_window_function_require_order`] for provided default implementations"
     )]
     type BuiltInWindowFunctionRequireOrder;
+
+    /// Configures the notation(s) this backend supports for passing parameters to SQL functions.
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::sql_function_parameter_notation`] for provided default implementations"
+    )]
+    type SqlFunctionParameterNotation;
 }
 
 /// This module contains all options provided by diesel to configure the [`SqlDialect`] trait.
@@ -651,6 +658,22 @@ pub(crate) mod sql_dialect {
         /// for built-in window functions
         #[derive(Debug, Copy, Clone)]
         pub struct NoOrderRequired;
+    }
+
+    /// This module contains all reusable options to configure [`SqlDialect::SqlFunctionParameterNotation`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod sql_function_parameter_notation {
+        /// Indicates that this backend only supports passing parameters to SQL functions by
+        /// position.
+        #[derive(Debug, Copy, Clone)]
+        pub struct PositionalNotationOnly;
+
+        /// Indicates that this backend supports passing parameters to SQL functions either by
+        /// position or by name.
+        #[derive(Debug, Copy, Clone)]
+        pub struct PositionalOrNamedNotation;
     }
 }
 

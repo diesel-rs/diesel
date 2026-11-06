@@ -877,21 +877,32 @@ fn error_message(err_code: libc::c_int) -> &'static str {
 #[allow(unsafe_code)]
 pub(in crate::sqlite) fn leak_failed_cursor(conn: &mut SqliteConnection) {
     use crate::connection::SimpleConnection;
-    use crate::prelude::*;
-    use crate::sql_types::BigInt;
+    use crate::query_builder::{AstPass, QueryFragment, QueryId};
 
-    crate::table! { overflow_numbers (id) { id -> Integer, n -> BigInt, } }
-    crate::define_sql_function!(fn abs(x: BigInt) -> BigInt);
+    /// Overflows `abs` on its second row. Zero-sized, so the statement owns no heap memory.
+    struct OverflowQuery;
+
+    impl QueryId for OverflowQuery {
+        type QueryId = Self;
+        const HAS_STATIC_QUERY_ID: bool = true;
+    }
+
+    impl QueryFragment<Sqlite> for OverflowQuery {
+        fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+            pass.push_sql("SELECT abs(n) FROM overflow_numbers ORDER BY id");
+            Ok(())
+        }
+    }
+
+    // `Box::new` doesn't allocate for a zero-sized query, so `mem::forget` below leaks nothing.
+    const _: () = assert!(core::mem::size_of::<OverflowQuery>() == 0);
 
     conn.batch_execute(
         "CREATE TEMP TABLE IF NOT EXISTS overflow_numbers (id INTEGER PRIMARY KEY, n BIGINT);
          INSERT OR IGNORE INTO overflow_numbers VALUES (1, 1), (2, -9223372036854775808);",
     )
     .unwrap();
-    let query = overflow_numbers::table
-        .order(overflow_numbers::id)
-        .select(abs(overflow_numbers::n));
-    let mut stmt = conn.prepared_query(query).unwrap();
+    let mut stmt = conn.prepared_query(OverflowQuery).unwrap();
     // SAFETY: `first_step = true` clears the cached column names, so no stale pointer survives.
     let first = unsafe { stmt.step(true) };
     assert!(matches!(first, Ok(true)));
@@ -899,7 +910,8 @@ pub(in crate::sqlite) fn leak_failed_cursor(conn: &mut SqliteConnection) {
     // SAFETY: `first_step = true` clears the cached column names, so no stale pointer survives.
     let second = unsafe { stmt.step(true) };
     assert!(second.is_err());
-    // The query is zero-sized and binds nothing, so this skips the reset and frees nothing.
+    // The query is cached (static query id) and binds nothing, so skipping the drop only
+    // skips the reset: the cache keeps the failed statement and no memory is leaked.
     core::mem::forget(stmt);
 }
 
