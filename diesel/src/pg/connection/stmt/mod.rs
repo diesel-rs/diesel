@@ -38,7 +38,7 @@ impl Statement {
     ) -> QueryResult<PgResult> {
         // This check may seem redundant to the general check in the statement cache
         // but it's mostly here as in depth defence to prevent libpq
-        // performing an out of bounds memory access if for direct calls
+        // performing an out of bounds memory access for direct calls
         if self.param_formats.len() != param_data.len() {
             return Err(
                 crate::connection::statement_cache::invalid_prepared_statement_parameter_count(
