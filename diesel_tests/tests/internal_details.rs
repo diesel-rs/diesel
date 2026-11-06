@@ -14,7 +14,7 @@ fn bind_params_are_passed_for_null_when_not_inserting() {
 }
 
 #[diesel_test_helper::test]
-#[cfg(feature = "postgres")]
+#[cfg(not(feature = "sqlite"))]
 fn query_which_cannot_be_transmitted_gives_proper_error_message() {
     use crate::schema::comments::dsl::*;
     use diesel::result::DatabaseErrorKind::UnableToSendCommand;

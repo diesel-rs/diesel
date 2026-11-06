@@ -84,6 +84,7 @@ impl MapErrorNumber for Mysql {
             1048 | 1364 => DatabaseErrorKind::NotNullViolation,
             3819 => DatabaseErrorKind::CheckViolation,
             1213 => DatabaseErrorKind::SerializationFailure,
+            1390 => DatabaseErrorKind::UnableToSendCommand,
             _ => DatabaseErrorKind::Unknown,
         }
     }
