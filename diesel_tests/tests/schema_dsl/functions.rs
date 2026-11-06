@@ -6,6 +6,7 @@ pub fn create_temporary_table<Cols>(name: &str, columns: Cols) -> Temporary<Crea
     Temporary(CreateTable::new(name, columns))
 }
 
+#[cfg(not(feature = "sqlite"))]
 pub fn create_table<Cols>(name: &str, columns: Cols) -> CreateTable<'_, Cols> {
     CreateTable::new(name, columns)
 }
