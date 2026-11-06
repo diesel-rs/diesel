@@ -10,6 +10,9 @@ pub use diesel_derives::define_sql_function;
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub use diesel_derives::sql_function_proc as sql_function;
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::arguments::FunctionParameter;
+
 #[macro_export]
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
@@ -104,6 +107,7 @@ macro_rules! no_arg_sql_function {
 pub(crate) mod aggregate_expressions;
 pub(crate) mod aggregate_folding;
 pub(crate) mod aggregate_ordering;
+pub(crate) mod arguments;
 pub(crate) mod date_and_time;
 pub(crate) mod helper_types;
 pub(crate) mod window_functions;

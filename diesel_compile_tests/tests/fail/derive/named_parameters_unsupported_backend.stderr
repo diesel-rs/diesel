@@ -1,0 +1,111 @@
+error[E0277]: `diesel::internal::sql_functions::FunctionParameter<true>` is no valid SQL fragment for the `Sqlite` backend
+    --> tests/fail/derive/named_parameters_unsupported_backend.rs:20:38
+     |
+  LL |     diesel::select(foo("a")).execute(&mut connection).unwrap();
+     |                              ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |                              |
+     |                              required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Sqlite, diesel::internal::derives::multiconnection::sql_dialect::sql_function_parameter_notation::PositionalNotationOnly>` is not implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
+     = note: this usually means that the `Sqlite` database system does not support 
+             this SQL syntax
+help: the trait `QueryFragment<DB, PositionalOrNamedNotation>` is implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
+    --> ROOT/diesel/src/expression/functions/arguments.rs
+     |
+  LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
+  LL | | where
+  LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
+     | |_______________________________________________________________________________________^
+note: required for `foo<Bound<Text, &str>>` to implement `QueryFragment<Sqlite>`
+    --> tests/fail/derive/named_parameters_unsupported_backend.rs:6:1
+     |
+   LL | #[diesel::declare_sql_function(named_parameters = true)]
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = note: 3 redundant requirements hidden
+     = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `QueryFragment<Sqlite>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
+...
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+          = note: this error originates in the attribute macro `diesel::declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `diesel::internal::sql_functions::FunctionParameter<true>` is no valid SQL fragment for the `Mysql` backend
+    --> tests/fail/derive/named_parameters_unsupported_backend.rs:24:38
+     |
+  LL |     diesel::select(foo("a")).execute(&mut connection).unwrap();
+     |                              ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |                              |
+     |                              required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mysql, diesel::internal::derives::multiconnection::sql_dialect::sql_function_parameter_notation::PositionalNotationOnly>` is not implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
+     = note: this usually means that the `Mysql` database system does not support 
+             this SQL syntax
+help: the trait `QueryFragment<DB, PositionalOrNamedNotation>` is implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
+    --> ROOT/diesel/src/expression/functions/arguments.rs
+     |
+  LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
+  LL | | where
+  LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
+     | |_______________________________________________________________________________________^
+note: required for `foo<Bound<Text, &str>>` to implement `QueryFragment<Mysql>`
+    --> tests/fail/derive/named_parameters_unsupported_backend.rs:6:1
+     |
+   LL | #[diesel::declare_sql_function(named_parameters = true)]
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = note: 3 redundant requirements hidden
+     = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `QueryFragment<Mysql>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `ExecuteDsl<MysqlLikeConnection<Mysql>, Mysql>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
+...
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+          = note: this error originates in the attribute macro `diesel::declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: `diesel::internal::sql_functions::FunctionParameter<true>` is no valid SQL fragment for the `Mariadb` backend
+    --> tests/fail/derive/named_parameters_unsupported_backend.rs:28:38
+     |
+  LL |     diesel::select(foo("a")).execute(&mut connection).unwrap();
+     |                              ------- ^^^^^^^^^^^^^^^ unsatisfied trait bound
+     |                              |
+     |                              required by a bound introduced by this call
+     |
+     = help: the trait `QueryFragment<Mariadb, diesel::internal::derives::multiconnection::sql_dialect::sql_function_parameter_notation::PositionalNotationOnly>` is not implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
+     = note: this usually means that the `Mariadb` database system does not support 
+             this SQL syntax
+help: the trait `QueryFragment<DB, PositionalOrNamedNotation>` is implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
+    --> ROOT/diesel/src/expression/functions/arguments.rs
+     |
+  LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
+  LL | | where
+  LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
+     | |_______________________________________________________________________________________^
+note: required for `foo<Bound<Text, &str>>` to implement `QueryFragment<Mariadb>`
+    --> tests/fail/derive/named_parameters_unsupported_backend.rs:6:1
+     |
+   LL | #[diesel::declare_sql_function(named_parameters = true)]
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = note: 3 redundant requirements hidden
+     = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `QueryFragment<Mariadb>`
+     = note: required for `SelectStatement<NoFromClause, SelectClause<_>>` to implement `ExecuteDsl<MysqlLikeConnection<Mariadb>, Mariadb>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> ROOT/diesel/src/query_dsl/mod.rs
+     |
+LL |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+     |        ------- required by a bound in this associated function
+...
+LL |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
+  
+          = note: this error originates in the attribute macro `diesel::declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+For more information about this error, try `rustc --explain E0277`.
