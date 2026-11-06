@@ -1,8 +1,11 @@
 #[doc(hidden)]
 pub use crate::expression::functions::aggregate_expressions::{
-    FunctionFragment, FunctionParameter, IsAggregateFunction, IsWindowFunction, Order, OverClause,
+    FunctionFragment, IsAggregateFunction, IsWindowFunction, Order, OverClause,
     WindowFunctionFragment,
 };
+
+#[doc(hidden)]
+pub use crate::expression::functions::arguments::FunctionParameter;
 
 #[macro_export]
 #[doc(hidden)]

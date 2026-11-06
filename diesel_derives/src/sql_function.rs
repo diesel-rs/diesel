@@ -492,12 +492,24 @@ fn expand_nonvariadic(
             named_parameters,
         ));
 
-    let function_parameters = args.iter().map(|arg| {
+    let function_parameter_iter = args.iter().map(|arg| {
         let name = &arg.name;
+        let field_name = Ident::new(&format!("param_{name}"), name.span());
         quote! {
-            pub(in super) const #name: FunctionParameter<#named_parameters> = FunctionParameter {
-                name: stringify!(#name),
-            };
+            #field_name: FunctionParameter<#named_parameters>
+        }
+    });
+
+    let function_parameter_name_iter = args.iter().map(|arg| {
+        let name = &arg.name;
+        Ident::new(&format!("param_{name}"), name.span())
+    });
+
+    let function_param_assign = args.iter().map(|arg| {
+        let name = &arg.name;
+        let field_name = Ident::new(&format!("param_{name}"), name.span());
+        quote! {
+            #field_name: diesel::internal::sql_functions::FunctionParameter{ name: stringify!(#name) }
         }
     });
 
@@ -515,6 +527,7 @@ fn expand_nonvariadic(
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::core::marker::PhantomData<#type_args>,)*
+            #(pub(in super) #function_parameter_iter,)*
         }
 
         #[doc = #helper_type_doc]
@@ -548,12 +561,6 @@ fn expand_nonvariadic(
         {
         }
 
-        #[allow(non_upper_case_globals)]
-        mod function_parameters {
-            use diesel::internal::sql_functions::FunctionParameter;
-            #(#function_parameters)*
-        }
-
         impl #impl_generics_internal FunctionFragment<__DieselInternal>
             for #fn_name #ty_generics
         where
@@ -572,10 +579,7 @@ fn expand_nonvariadic(
                         if needs_comma {
                             out.push_sql(", ");
                         }
-                        <FunctionParameter<#named_parameters> as QueryFragment<__DieselInternal, __DieselInternal::SqlFunctionParameterNotation>>::walk_ast(
-                                &function_parameters::#arg_name,
-                                out.reborrow(),
-                            )?;
+                        self.#function_parameter_name_iter.walk_ast(out.reborrow())?;
                         self.#arg_name.walk_ast(out.reborrow())?;
                         needs_comma = true;
                     }
@@ -717,6 +721,7 @@ fn expand_nonvariadic(
             #internals_module_name::#fn_name {
                 #(#arg_struct_assign,)*
                 #(#type_args: ::core::marker::PhantomData,)*
+                #(#function_param_assign,)*
             }
         }
 

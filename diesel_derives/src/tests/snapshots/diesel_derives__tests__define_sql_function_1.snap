@@ -11,6 +11,9 @@ where
 {
     lower_utils::lower {
         input: input.as_expression(),
+        param_input: diesel::internal::sql_functions::FunctionParameter {
+            name: stringify!(input),
+        },
     }
 }
 #[allow(non_camel_case_types, non_snake_case)]
@@ -33,6 +36,7 @@ pub(crate) mod lower_utils {
     #[derive(diesel::sql_types::DieselNumericOps)]
     pub struct lower<input> {
         pub(super) input: input,
+        pub(super) param_input: FunctionParameter<false>,
     }
     ///The return type of [`lower()`](fn@lower)
     pub type HelperType<input> = lower<<input as AsExpression<Text>>::Expression>;
@@ -52,13 +56,6 @@ pub(crate) mod lower_utils {
         input: AppearsOnTable<__DieselInternal>,
         Self: Expression,
     {}
-    #[allow(non_upper_case_globals)]
-    mod function_parameters {
-        use diesel::internal::sql_functions::FunctionParameter;
-        pub(super) const input: FunctionParameter<false> = FunctionParameter {
-            name: stringify!(input),
-        };
-    }
     impl<input, __DieselInternal> FunctionFragment<__DieselInternal> for lower<input>
     where
         __DieselInternal: diesel::backend::Backend,
@@ -81,12 +78,7 @@ pub(crate) mod lower_utils {
                 if needs_comma {
                     out.push_sql(", ");
                 }
-                <FunctionParameter<
-                    false,
-                > as QueryFragment<
-                    __DieselInternal,
-                    __DieselInternal::SqlFunctionParameterNotation,
-                >>::walk_ast(&function_parameters::input, out.reborrow())?;
+                self.param_input.walk_ast(out.reborrow())?;
                 self.input.walk_ast(out.reborrow())?;
                 needs_comma = true;
             }
