@@ -5,6 +5,9 @@ extern crate libsqlite3_sys as ffi;
 use sqlite_wasm_rs as ffi;
 
 use super::SqliteConnection;
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
+use alloc::boxed::Box;
+use alloc::format;
 
 /// SQLite resource limits that can be configured per-connection.
 ///
@@ -110,69 +113,69 @@ pub enum SqliteLimit {
 
 impl SqliteLimit {
     /// SQLite's default for [`Length`](Self::Length).
-    pub const DEFAULT_LENGTH_LIMIT: i32 = 1_000_000_000;
+    pub const DEFAULT_LENGTH_LIMIT: u32 = 1_000_000_000;
     /// Hardened value for [`Length`](Self::Length).
-    pub const SAFE_LENGTH_LIMIT: i32 = 1_000_000;
+    pub const SAFE_LENGTH_LIMIT: u32 = 1_000_000;
 
     /// SQLite's default for [`SqlLength`](Self::SqlLength).
-    pub const DEFAULT_SQL_LENGTH_LIMIT: i32 = 1_000_000_000;
+    pub const DEFAULT_SQL_LENGTH_LIMIT: u32 = 1_000_000_000;
     /// Hardened value for [`SqlLength`](Self::SqlLength).
-    pub const SAFE_SQL_LENGTH_LIMIT: i32 = 100_000;
+    pub const SAFE_SQL_LENGTH_LIMIT: u32 = 100_000;
 
     /// SQLite's default for [`ColumnCount`](Self::ColumnCount).
-    pub const DEFAULT_COLUMN_COUNT_LIMIT: i32 = 2_000;
+    pub const DEFAULT_COLUMN_COUNT_LIMIT: u32 = 2_000;
     /// Hardened value for [`ColumnCount`](Self::ColumnCount).
-    pub const SAFE_COLUMN_COUNT_LIMIT: i32 = 100;
+    pub const SAFE_COLUMN_COUNT_LIMIT: u32 = 100;
 
     /// SQLite's default for [`ExprDepth`](Self::ExprDepth).
-    pub const DEFAULT_EXPR_DEPTH_LIMIT: i32 = 1_000;
+    pub const DEFAULT_EXPR_DEPTH_LIMIT: u32 = 1_000;
     /// Hardened value for [`ExprDepth`](Self::ExprDepth).
-    pub const SAFE_EXPR_DEPTH_LIMIT: i32 = 10;
+    pub const SAFE_EXPR_DEPTH_LIMIT: u32 = 10;
 
     /// SQLite's default for [`CompoundSelect`](Self::CompoundSelect).
-    pub const DEFAULT_COMPOUND_SELECT_LIMIT: i32 = 500;
+    pub const DEFAULT_COMPOUND_SELECT_LIMIT: u32 = 500;
     /// Hardened value for [`CompoundSelect`](Self::CompoundSelect).
-    pub const SAFE_COMPOUND_SELECT_LIMIT: i32 = 3;
+    pub const SAFE_COMPOUND_SELECT_LIMIT: u32 = 3;
 
     /// SQLite's default for [`VdbeOp`](Self::VdbeOp).
-    pub const DEFAULT_VDBE_OP_LIMIT: i32 = 250_000_000;
+    pub const DEFAULT_VDBE_OP_LIMIT: u32 = 250_000_000;
     /// Hardened value for [`VdbeOp`](Self::VdbeOp).
-    pub const SAFE_VDBE_OP_LIMIT: i32 = 25_000;
+    pub const SAFE_VDBE_OP_LIMIT: u32 = 25_000;
 
     /// SQLite's default for [`FunctionArg`](Self::FunctionArg).
-    pub const DEFAULT_FUNCTION_ARG_LIMIT: i32 = 127;
+    pub const DEFAULT_FUNCTION_ARG_LIMIT: u32 = 127;
     /// Hardened value for [`FunctionArg`](Self::FunctionArg).
-    pub const SAFE_FUNCTION_ARG_LIMIT: i32 = 8;
+    pub const SAFE_FUNCTION_ARG_LIMIT: u32 = 8;
 
     /// SQLite's default for [`Attached`](Self::Attached).
-    pub const DEFAULT_ATTACHED_LIMIT: i32 = 10;
+    pub const DEFAULT_ATTACHED_LIMIT: u32 = 10;
     /// Hardened value for [`Attached`](Self::Attached).
-    pub const SAFE_ATTACHED_LIMIT: i32 = 0;
+    pub const SAFE_ATTACHED_LIMIT: u32 = 0;
 
     /// SQLite's default for [`LikePatternLength`](Self::LikePatternLength).
-    pub const DEFAULT_LIKE_PATTERN_LENGTH_LIMIT: i32 = 50_000;
+    pub const DEFAULT_LIKE_PATTERN_LENGTH_LIMIT: u32 = 50_000;
     /// Hardened value for [`LikePatternLength`](Self::LikePatternLength).
-    pub const SAFE_LIKE_PATTERN_LENGTH_LIMIT: i32 = 50;
+    pub const SAFE_LIKE_PATTERN_LENGTH_LIMIT: u32 = 50;
 
     /// SQLite's published default for [`VariableNumber`](Self::VariableNumber).
     ///
     /// A particular build may compile a different maximum. The default
     /// `libsqlite3-sys` bundle sets `SQLITE_MAX_VARIABLE_NUMBER=250000`, so a
     /// connection's runtime default can exceed this published value.
-    pub const DEFAULT_VARIABLE_NUMBER_LIMIT: i32 = 32_766;
+    pub const DEFAULT_VARIABLE_NUMBER_LIMIT: u32 = 32_766;
     /// Hardened value for [`VariableNumber`](Self::VariableNumber).
-    pub const SAFE_VARIABLE_NUMBER_LIMIT: i32 = 10;
+    pub const SAFE_VARIABLE_NUMBER_LIMIT: u32 = 10;
 
     /// SQLite's default for [`TriggerDepth`](Self::TriggerDepth).
-    pub const DEFAULT_TRIGGER_DEPTH_LIMIT: i32 = 1_000;
+    pub const DEFAULT_TRIGGER_DEPTH_LIMIT: u32 = 1_000;
     /// Hardened value for [`TriggerDepth`](Self::TriggerDepth).
-    pub const SAFE_TRIGGER_DEPTH_LIMIT: i32 = 10;
+    pub const SAFE_TRIGGER_DEPTH_LIMIT: u32 = 10;
 
     /// SQLite's default for [`WorkerThreads`](Self::WorkerThreads).
-    pub const DEFAULT_WORKER_THREADS_LIMIT: i32 = 0;
+    pub const DEFAULT_WORKER_THREADS_LIMIT: u32 = 0;
     /// Hardened value for [`WorkerThreads`](Self::WorkerThreads), equal to its
     /// default, so the recommended setter leaves it untouched.
-    pub const SAFE_WORKER_THREADS_LIMIT: i32 = 0;
+    pub const SAFE_WORKER_THREADS_LIMIT: u32 = 0;
 
     /// Convert to the corresponding FFI constant value.
     pub(super) fn to_ffi(self) -> i32 {
@@ -200,6 +203,11 @@ impl SqliteConnection {
     /// SQL. See the [SQLite documentation](https://www.sqlite.org/c3ref/limit.html)
     /// for the meaning of each [`SqliteLimit`].
     ///
+    /// # Errors
+    ///
+    /// Returns an error and leaves the limit unchanged when SQLite applies a
+    /// different value, which it does above its compile-time bound.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -211,13 +219,24 @@ impl SqliteConnection {
     /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
     ///
     /// // Cap SQL statement length at 1 KiB, keeping the previous value.
-    /// let previous = conn.set_limit(SqliteLimit::SqlLength, 1024);
+    /// let previous = conn.set_limit(SqliteLimit::SqlLength, 1024).unwrap();
     /// assert!(previous > 0);
     /// assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 1024);
     /// # }
     /// ```
-    pub fn set_limit(&mut self, limit: SqliteLimit, value: i32) -> i32 {
-        self.raw_connection.set_limit(limit, value)
+    pub fn set_limit(&mut self, limit: SqliteLimit, value: u32) -> QueryResult<u32> {
+        let previous = self.raw_connection.set_limit(limit, value);
+        let applied = self.raw_connection.get_limit(limit);
+        if applied == value {
+            return Ok(previous);
+        }
+        self.raw_connection.set_limit(limit, previous);
+        Err(Error::DatabaseError(
+            DatabaseErrorKind::Unknown,
+            Box::new(format!(
+                "SQLite caps the {limit:?} limit at {applied}, below the requested {value}"
+            )),
+        ))
     }
 
     /// Get the current value of a runtime limit for this connection.
@@ -237,7 +256,7 @@ impl SqliteConnection {
     /// assert!(conn.get_limit(SqliteLimit::SqlLength) > 0);
     /// # }
     /// ```
-    pub fn get_limit(&self, limit: SqliteLimit) -> i32 {
+    pub fn get_limit(&self, limit: SqliteLimit) -> u32 {
         self.raw_connection.get_limit(limit)
     }
 
@@ -266,6 +285,10 @@ impl SqliteConnection {
     /// compile-time only setting with no runtime `sqlite3_limit()` category.
     /// `WorkerThreads` is left untouched (its default of 0 is already safe).
     ///
+    /// # Errors
+    ///
+    /// Returns an error if SQLite rejects one of the values, as [`set_limit`](Self::set_limit) does.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -275,44 +298,45 @@ impl SqliteConnection {
     /// use diesel::sqlite::SqliteLimit;
     ///
     /// let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    /// conn.set_recommended_security_limits();
+    /// conn.set_recommended_security_limits().unwrap();
     /// assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 100_000);
     ///
     /// // Relax an individual limit that is too strict for this application.
-    /// conn.set_limit(SqliteLimit::VariableNumber, 999);
+    /// conn.set_limit(SqliteLimit::VariableNumber, 999).unwrap();
     /// assert_eq!(conn.get_limit(SqliteLimit::VariableNumber), 999);
     /// # }
     /// ```
-    pub fn set_recommended_security_limits(&mut self) {
-        self.set_limit(SqliteLimit::Length, SqliteLimit::SAFE_LENGTH_LIMIT);
-        self.set_limit(SqliteLimit::SqlLength, SqliteLimit::SAFE_SQL_LENGTH_LIMIT);
+    pub fn set_recommended_security_limits(&mut self) -> QueryResult<()> {
+        self.set_limit(SqliteLimit::Length, SqliteLimit::SAFE_LENGTH_LIMIT)?;
+        self.set_limit(SqliteLimit::SqlLength, SqliteLimit::SAFE_SQL_LENGTH_LIMIT)?;
         self.set_limit(
             SqliteLimit::ColumnCount,
             SqliteLimit::SAFE_COLUMN_COUNT_LIMIT,
-        );
-        self.set_limit(SqliteLimit::ExprDepth, SqliteLimit::SAFE_EXPR_DEPTH_LIMIT);
+        )?;
+        self.set_limit(SqliteLimit::ExprDepth, SqliteLimit::SAFE_EXPR_DEPTH_LIMIT)?;
         self.set_limit(
             SqliteLimit::CompoundSelect,
             SqliteLimit::SAFE_COMPOUND_SELECT_LIMIT,
-        );
-        self.set_limit(SqliteLimit::VdbeOp, SqliteLimit::SAFE_VDBE_OP_LIMIT);
+        )?;
+        self.set_limit(SqliteLimit::VdbeOp, SqliteLimit::SAFE_VDBE_OP_LIMIT)?;
         self.set_limit(
             SqliteLimit::FunctionArg,
             SqliteLimit::SAFE_FUNCTION_ARG_LIMIT,
-        );
-        self.set_limit(SqliteLimit::Attached, SqliteLimit::SAFE_ATTACHED_LIMIT);
+        )?;
+        self.set_limit(SqliteLimit::Attached, SqliteLimit::SAFE_ATTACHED_LIMIT)?;
         self.set_limit(
             SqliteLimit::LikePatternLength,
             SqliteLimit::SAFE_LIKE_PATTERN_LENGTH_LIMIT,
-        );
+        )?;
         self.set_limit(
             SqliteLimit::VariableNumber,
             SqliteLimit::SAFE_VARIABLE_NUMBER_LIMIT,
-        );
+        )?;
         self.set_limit(
             SqliteLimit::TriggerDepth,
             SqliteLimit::SAFE_TRIGGER_DEPTH_LIMIT,
-        );
+        )?;
+        Ok(())
     }
 }
 
@@ -332,8 +356,11 @@ mod tests {
 
         // Setting a new value returns the old one, and a second set returns the
         // value installed by the first.
-        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 1024), original);
-        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 2048), 1024);
+        assert_eq!(
+            conn.set_limit(SqliteLimit::SqlLength, 1024).unwrap(),
+            original
+        );
+        assert_eq!(conn.set_limit(SqliteLimit::SqlLength, 2048).unwrap(), 1024);
         assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 2048);
     }
 
@@ -350,7 +377,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_length() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::Length, 100);
+        conn.set_limit(SqliteLimit::Length, 100).unwrap();
 
         assert!(
             crate::sql_query("SELECT length(randomblob(50))")
@@ -386,7 +413,7 @@ mod tests {
         if cfg!(not(miri)) {
             // ffi string access
             let mut conn = connection();
-            conn.set_limit(SqliteLimit::ColumnCount, 10);
+            conn.set_limit(SqliteLimit::ColumnCount, 10).unwrap();
             assert!(crate::sql_query(&wide).execute(&mut conn).is_err());
         }
     }
@@ -394,7 +421,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_expr_depth() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::ExprDepth, 5);
+        conn.set_limit(SqliteLimit::ExprDepth, 5).unwrap();
 
         assert!(crate::sql_query("SELECT 1+1").execute(&mut conn).is_ok());
         if cfg!(not(miri)) {
@@ -408,7 +435,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_compound_select() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::CompoundSelect, 2);
+        conn.set_limit(SqliteLimit::CompoundSelect, 2).unwrap();
 
         assert!(
             crate::sql_query("SELECT 1 UNION SELECT 2")
@@ -440,7 +467,7 @@ mod tests {
         if cfg!(not(miri)) {
             // ffi string access
             let mut conn = connection();
-            conn.set_limit(SqliteLimit::VdbeOp, 5);
+            conn.set_limit(SqliteLimit::VdbeOp, 5).unwrap();
             assert!(crate::sql_query(heavy).execute(&mut conn).is_err());
         }
     }
@@ -448,7 +475,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_function_arg() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::FunctionArg, 3);
+        conn.set_limit(SqliteLimit::FunctionArg, 3).unwrap();
 
         assert!(
             crate::sql_query("SELECT max(1, 2, 3)")
@@ -470,7 +497,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_attached() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::Attached, 0);
+        conn.set_limit(SqliteLimit::Attached, 0).unwrap();
 
         // With zero attachments allowed, any ATTACH is rejected ("too many attached databases").
         assert!(
@@ -489,7 +516,8 @@ mod tests {
         conn.set_limit(
             SqliteLimit::VariableNumber,
             SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT,
-        );
+        )
+        .unwrap();
         let at_limit = format!("SELECT ?{}", SqliteLimit::DEFAULT_VARIABLE_NUMBER_LIMIT);
         let past_limit = format!(
             "SELECT ?{}",
@@ -524,7 +552,7 @@ mod tests {
         // A tiny depth limit is hit before the recursion can terminate
         // ("too many levels of trigger recursion").
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::TriggerDepth, 3);
+        conn.set_limit(SqliteLimit::TriggerDepth, 3).unwrap();
         conn.batch_execute(setup).unwrap();
         if cfg!(not(miri)) {
             // ffi string access
@@ -543,7 +571,7 @@ mod tests {
         // performance. There is therefore no enforcement failure to assert, only that the value
         // is applied and ordinary queries keep working.
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::WorkerThreads, 0);
+        conn.set_limit(SqliteLimit::WorkerThreads, 0).unwrap();
         assert_eq!(conn.get_limit(SqliteLimit::WorkerThreads), 0);
         assert!(crate::sql_query("SELECT 1").execute(&mut conn).is_ok());
     }
@@ -552,7 +580,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_sql_length() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::SqlLength, 20);
+        conn.set_limit(SqliteLimit::SqlLength, 20).unwrap();
 
         // A statement longer than 20 bytes is rejected by SQLite.
         let result =
@@ -563,7 +591,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn set_limit_enforces_like_pattern_length() {
         let mut conn = connection();
-        conn.set_limit(SqliteLimit::LikePatternLength, 100);
+        conn.set_limit(SqliteLimit::LikePatternLength, 100).unwrap();
 
         assert!(
             crate::sql_query("SELECT 'test' LIKE 'te%'")
@@ -580,19 +608,18 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
-    fn set_limit_clamps_above_compile_time_maximum() {
+    fn set_limit_rejects_values_above_compile_time_maximum() {
         let mut conn = connection();
-        // SQLite clamps a requested value to its hard compile-time ceiling
-        // rather than accepting it verbatim.
-        conn.set_limit(SqliteLimit::Length, i32::MAX);
-        let clamped = conn.get_limit(SqliteLimit::Length);
-        assert!(clamped > 0 && clamped < i32::MAX);
+        conn.set_limit(SqliteLimit::Length, 100).unwrap();
+        // SQLite would clamp to its compile-time ceiling, which is reported instead of applied.
+        assert!(conn.set_limit(SqliteLimit::Length, u32::MAX).is_err());
+        assert_eq!(conn.get_limit(SqliteLimit::Length), 100);
     }
 
     #[diesel_test_helper::test]
     fn set_recommended_security_limits_applies_documented_table() {
         let mut conn = connection();
-        conn.set_recommended_security_limits();
+        conn.set_recommended_security_limits().unwrap();
 
         assert_eq!(conn.get_limit(SqliteLimit::Length), 1_000_000);
         assert_eq!(conn.get_limit(SqliteLimit::SqlLength), 100_000);
@@ -675,7 +702,7 @@ mod tests {
     #[diesel_test_helper::test]
     fn safe_limit_constants_match_recommended_setter() {
         let mut conn = connection();
-        conn.set_recommended_security_limits();
+        conn.set_recommended_security_limits().unwrap();
 
         assert_eq!(
             conn.get_limit(SqliteLimit::Length),
