@@ -26,6 +26,7 @@ pub(crate) fn expand(
     input: Vec<SqlFunctionDecl>,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
 ) -> TokenStream {
     let mut result = TokenStream::new();
     let mut return_type_helper_module_paths = vec![];
@@ -35,6 +36,7 @@ pub(crate) fn expand(
             decl,
             legacy_helper_type_and_module,
             generate_return_type_helpers,
+            named_parameters,
         );
         let expanded = match expanded {
             Err(err) => err.into_compile_error(),
@@ -79,6 +81,7 @@ fn expand_one(
     mut input: SqlFunctionDecl,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
 ) -> syn::Result<ExpandedSqlFunction> {
     let attributes = &mut input.attributes;
 
@@ -104,6 +107,7 @@ fn expand_one(
             sql_name,
             legacy_helper_type_and_module,
             generate_return_type_helpers,
+            named_parameters,
         );
     };
 
@@ -121,6 +125,7 @@ fn expand_one(
             input.clone(),
             legacy_helper_type_and_module,
             generate_return_type_helpers,
+            named_parameters,
             variadic_argument_count,
             variant_no,
             variadic_span,
@@ -171,6 +176,7 @@ fn expand_variadic(
     mut input: SqlFunctionDecl,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
     variadic_argument_count: usize,
     variant_no: usize,
     variadic_span: Span,
@@ -298,6 +304,7 @@ fn expand_variadic(
         sql_name,
         legacy_helper_type_and_module,
         generate_return_type_helpers,
+        named_parameters,
     )
 }
 
@@ -370,6 +377,7 @@ fn expand_nonvariadic(
     sql_name: String,
     legacy_helper_type_and_module: bool,
     generate_return_type_helpers: bool,
+    named_parameters: bool,
 ) -> syn::Result<ExpandedSqlFunction> {
     let SqlFunctionDecl {
         attributes,
@@ -389,6 +397,19 @@ fn expand_nonvariadic(
     let skip_return_type_helper = attributes
         .iter()
         .any(|attr| matches!(attr.item, SqlFunctionAttribute::SkipReturnTypeHelper { .. }));
+
+    // Override the block-level `named_parameters` attribute value if it's also specified on an
+    // individual function
+    let named_parameters = attributes
+        .iter()
+        .find_map(|attr| {
+            if let SqlFunctionAttribute::NamedParameters { ref value, .. } = attr.item {
+                Some(value.value)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(named_parameters);
 
     let window_attrs = attributes
         .iter()
@@ -468,7 +489,29 @@ fn expand_nonvariadic(
             &ty_generics,
             arg_name,
             &fn_name,
+            named_parameters,
         ));
+
+    let function_parameter_iter = args.iter().map(|arg| {
+        let name = &arg.name;
+        let field_name = Ident::new(&format!("param_{name}"), name.span());
+        quote! {
+            #field_name: FunctionParameter<#named_parameters>
+        }
+    });
+
+    let function_parameter_name_iter = args.iter().map(|arg| {
+        let name = &arg.name;
+        Ident::new(&format!("param_{name}"), name.span())
+    });
+
+    let function_param_assign = args.iter().map(|arg| {
+        let name = &arg.name;
+        let field_name = Ident::new(&format!("param_{name}"), name.span());
+        quote! {
+            #field_name: diesel::internal::sql_functions::FunctionParameter{ name: stringify!(#name) }
+        }
+    });
 
     let args_iter = args.iter();
     let mut tokens = quote! {
@@ -484,6 +527,7 @@ fn expand_nonvariadic(
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::core::marker::PhantomData<#type_args>,)*
+            #(pub(in super) #function_parameter_iter,)*
         }
 
         #[doc = #helper_type_doc]
@@ -521,6 +565,7 @@ fn expand_nonvariadic(
             for #fn_name #ty_generics
         where
             __DieselInternal: diesel::backend::Backend,
+            FunctionParameter<#named_parameters>: QueryFragment<__DieselInternal, <__DieselInternal as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
             #(#arg_name: QueryFragment<__DieselInternal>,)*
         {
             const FUNCTION_NAME: &'static str = #sql_name;
@@ -534,6 +579,7 @@ fn expand_nonvariadic(
                         if needs_comma {
                             out.push_sql(", ");
                         }
+                        self.#function_parameter_name_iter.walk_ast(out.reborrow())?;
                         self.#arg_name.walk_ast(out.reborrow())?;
                         needs_comma = true;
                     }
@@ -675,6 +721,7 @@ fn expand_nonvariadic(
             #internals_module_name::#fn_name {
                 #(#arg_struct_assign,)*
                 #(#type_args: ::core::marker::PhantomData,)*
+                #(#function_param_assign,)*
             }
         }
 
@@ -1383,6 +1430,22 @@ fn parse_attribute(attr: syn::Attribute) -> Result<AttributeSpanWrapper<SqlFunct
                 },
             })
         }
+        syn::Meta::NameValue(syn::MetaNameValue {
+            path,
+            value:
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Bool(value),
+                    ..
+                }),
+            ..
+        }) if path.is_ident("named_parameters") => Ok(AttributeSpanWrapper {
+            attribute_span: attr.span(),
+            ident_span: value.span(),
+            item: SqlFunctionAttribute::NamedParameters {
+                ident: path.require_ident()?.clone(),
+                value: value.clone(),
+            },
+        }),
         syn::Meta::Path(path) if path.is_ident("window") => Ok(AttributeSpanWrapper {
             attribute_span: attr.span(),
             ident_span: path.span(),
@@ -1727,6 +1790,7 @@ impl BackendRestriction {
         ty_generics: &TypeGenerics<'_>,
         arg_name: &[&syn::Ident],
         fn_name: &syn::Ident,
+        named_parameters: bool,
     ) -> proc_macro2::TokenStream {
         match *self {
             BackendRestriction::None => {
@@ -1740,6 +1804,7 @@ impl BackendRestriction {
                     arg_name,
                     fn_name,
                     None,
+                    named_parameters,
                 )
             }
             BackendRestriction::BackendBound(_, ref restriction) => {
@@ -1753,6 +1818,7 @@ impl BackendRestriction {
                     arg_name,
                     fn_name,
                     None,
+                    named_parameters,
                 )
             }
             BackendRestriction::SqlDialect(_, ref dialect, ref dialect_type) => {
@@ -1768,6 +1834,7 @@ impl BackendRestriction {
                     arg_name,
                     fn_name,
                     Some(dialect_type),
+                    named_parameters,
                 );
                 quote::quote! {
                     impl #impl_generics QueryFragment<__DieselInternal>
@@ -1796,6 +1863,7 @@ impl BackendRestriction {
                         arg_name,
                         fn_name,
                         None,
+                        named_parameters,
                     )
                 });
 
@@ -1804,6 +1872,7 @@ impl BackendRestriction {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn generate_queryfragment_impl(
         backend: proc_macro2::TokenStream,
         backend_bound: Option<proc_macro2::TokenStream>,
@@ -1812,13 +1881,15 @@ impl BackendRestriction {
         arg_name: &[&syn::Ident],
         fn_name: &syn::Ident,
         dialect: Option<&syn::Path>,
+        named_parameters: bool,
     ) -> proc_macro2::TokenStream {
         quote::quote! {
             impl #impl_generics QueryFragment<#backend, #dialect>
                 for #fn_name #ty_generics
             where
                 #backend_bound
-            #(#arg_name: QueryFragment<#backend>,)*
+                FunctionParameter<#named_parameters>: QueryFragment<#backend, <#backend as diesel::backend::SqlDialect>::SqlFunctionParameterNotation>,
+                #(#arg_name: QueryFragment<#backend>,)*
             {
                 fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, #backend>) -> QueryResult<()>{
                     out.push_sql(<Self as FunctionFragment<#backend>>::FUNCTION_NAME);
@@ -1876,6 +1947,10 @@ enum SqlFunctionAttribute {
     SkipReturnTypeHelper {
         ident: Ident,
     },
+    NamedParameters {
+        ident: Ident,
+        value: LitBool,
+    },
     Other(Attribute),
 }
 
@@ -1898,6 +1973,7 @@ impl MySpanned for SqlFunctionAttribute {
             | SqlFunctionAttribute::Window { ident, .. }
             | SqlFunctionAttribute::Variadic { ident, .. }
             | SqlFunctionAttribute::SkipReturnTypeHelper { ident, .. }
+            | SqlFunctionAttribute::NamedParameters { ident, .. }
             | SqlFunctionAttribute::SqlName { ident, .. } => ident.span(),
             SqlFunctionAttribute::Restriction {
                 restriction: BackendRestriction::None,
@@ -2084,34 +2160,57 @@ impl SqlFunctionAttribute {
 #[derive(Default)]
 pub(crate) struct DeclareSqlFunctionArgs {
     pub(crate) generate_return_type_helpers: bool,
+    pub(crate) named_parameters: bool,
 }
 
-impl DeclareSqlFunctionArgs {
-    pub(crate) fn parse_from_macro_input(input: TokenStream) -> syn::Result<Self> {
-        if input.is_empty() {
-            return Ok(Self::default());
-        }
-        let input_span = input.span();
-        let parsed: syn::MetaNameValue = syn::parse2(input).map_err(|e| {
-            let span = e.span();
-            syn::Error::new(
-                span,
-                format!("{e}, the correct format is `generate_return_type_helpers = true/false`"),
-            )
+const DECLARE_SQL_FUNCTION_ERR_MSG: &str = "the correct format is `generate_return_type_helpers = true/false, named_parameters = true/false`";
+
+impl Parse for DeclareSqlFunctionArgs {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let mut generate_return_type_helpers = false;
+        let mut named_parameters = false;
+
+        let parsed =
+            Punctuated::<MetaNameValue, Token![,]>::parse_terminated(input).map_err(|e| {
+                let span = e.span();
+                syn::Error::new(span, format!("{e}, {DECLARE_SQL_FUNCTION_ERR_MSG}"))
+            })?;
+
+        parsed.into_iter().try_for_each(|parsed| {
+            match parsed {
+                MetaNameValue {
+                    path,
+                    value:
+                        syn::Expr::Lit(syn::ExprLit {
+                            lit: syn::Lit::Bool(b),
+                            ..
+                        }),
+                    ..
+                } => {
+                    if path.is_ident("generate_return_type_helpers") {
+                        generate_return_type_helpers = b.value;
+                    } else if path.is_ident("named_parameters") {
+                        named_parameters = b.value;
+                    } else {
+                        return Err(syn::Error::new(
+                            path.span(),
+                            format!("unrecognized parameter, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(syn::Error::new(
+                        parsed.span(),
+                        format!("invalid config, {DECLARE_SQL_FUNCTION_ERR_MSG}"),
+                    ));
+                }
+            }
+            Ok(())
         })?;
-        match parsed {
-            syn::MetaNameValue {
-                path,
-                value:
-                    syn::Expr::Lit(syn::ExprLit {
-                        lit: syn::Lit::Bool(b),
-                        ..
-                    }),
-                ..
-            } if path.is_ident("generate_return_type_helpers") => Ok(Self {
-                generate_return_type_helpers: b.value,
-            }),
-            _ => Err(syn::Error::new(input_span, "Invalid config")),
-        }
+
+        Ok(Self {
+            generate_return_type_helpers,
+            named_parameters,
+        })
     }
 }
