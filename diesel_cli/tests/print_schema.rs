@@ -219,6 +219,12 @@ fn print_schema_custom_enum_derives() {
 }
 
 #[test]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+fn print_schema_with_unmappable_enum_names() {
+    test_print_schema("print_schema_with_unmappable_enum_names", vec![]);
+}
+
+#[test]
 fn print_schema_with_unmappable_names() {
     test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
 }

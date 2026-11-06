@@ -1,7 +1,6 @@
 use diesel::deserialize::Queryable;
 use diesel_table_macro_syntax::ColumnDef;
 use heck::ToPascalCase;
-use std::borrow::Cow;
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
@@ -306,11 +305,10 @@ pub struct EnumVariant {
 
 impl EnumVariant {
     pub fn rust_name(&self) -> String {
-        let n = if super::inference::is_reserved_name(&self.sql_name) {
-            Cow::Owned(format!("{}_", self.sql_name))
-        } else {
-            Cow::Borrowed(&self.sql_name)
-        };
-        n.to_pascal_case()
+        super::inference::make_valid_identifier(
+            self.sql_name.to_pascal_case().into(),
+            super::inference::IdentifierKind::EnumVariant,
+        )
+        .into_owned()
     }
 }

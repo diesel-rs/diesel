@@ -1,12 +1,36 @@
+#![doc = include_str!("../README.md")]
+#![no_std]
+#![warn(
+    unreachable_pub,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    missing_docs,
+    clippy::unwrap_used
+)]
+#![cfg_attr(test, allow(clippy::unwrap_used))]
+
 use core::error::Error as StdError;
 use core::fmt;
 use core::str::FromStr;
+
+macro_rules! codes {
+    ($($(#[$doc:meta])* $name:ident = $code:literal;)*) => {
+        $(
+            $(#[$doc])*
+            pub const $name: $crate::SqlState =
+                $crate::SqlState::new(*$code).expect("invalid SQLSTATE");
+        )*
+    };
+}
+
+pub mod mysql_like;
+pub mod pg;
 
 /// A [SQLSTATE](https://en.wikipedia.org/wiki/SQLSTATE) error code, including
 /// custom codes outside the standard, usable as a `match` pattern.
 ///
 /// ```rust
-/// use diesel::result::{SqlState, SqlStateClass};
+/// use sqlstate::{SqlState, SqlStateClass};
 ///
 /// const CUSTOM: SqlState = SqlState::new(*b"P1001").unwrap();
 ///

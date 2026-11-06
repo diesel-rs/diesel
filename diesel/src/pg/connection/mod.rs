@@ -159,6 +159,13 @@ impl SimpleConnection for PgConnection {
                     raw_result,
                     &self.connection_and_transaction_manager.raw_connection,
                 )
+                .and_then(|r| {
+                    self::stmt::handle_copy_in_normal_stmt(
+                        &mut self.connection_and_transaction_manager.raw_connection,
+                        true,
+                        r,
+                    )
+                })
             }),
             &mut self.connection_and_transaction_manager,
             &|callback| callback(&StrQueryHelper::new(query)),
@@ -218,7 +225,7 @@ impl Connection for PgConnection {
                 true,
                 &mut |query, params, conn, _source| {
                     let res = query
-                        .execute(&mut conn.raw_connection, &params, false)
+                        .execute(&mut conn.raw_connection, &params, false, true)
                         .and_then(|r| r.rows_affected());
                     // according to https://www.postgresql.org/docs/current/libpq-async.html
                     // `PQgetResult` needs to be called till a null pointer is returned
@@ -286,7 +293,7 @@ fn inner_load(
     source: &dyn QueryFragmentHelper<crate::result::Error>,
     row_by_row: bool,
 ) -> Result<PgResult, Error> {
-    let result = stmt.execute(&mut conn.raw_connection, &params, row_by_row);
+    let result = stmt.execute(&mut conn.raw_connection, &params, row_by_row, true);
     update_transaction_manager_status(
         result,
         conn,
@@ -495,7 +502,7 @@ impl PgConnection {
                 where
                     S: CopyFromExpression<T>,
                 {
-                    let _res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
+                    let _res = stmt.execute(&mut conn.raw_connection, &binds, false, false)?;
                     let mut copy_in = CopyFromSink::new(&mut conn.raw_connection);
                     let r = source.write_copy_from(&mut copy_in);
                     copy_in.finish(r.as_ref().err().map(|e| e.to_string()))?;
@@ -546,7 +553,7 @@ impl PgConnection {
             Box::new(command),
             false,
             &mut |stmt, binds, conn, source| {
-                let res = stmt.execute(&mut conn.raw_connection, &binds, false);
+                let res = stmt.execute(&mut conn.raw_connection, &binds, false, false);
                 source.instrumentation(&mut |query| {
                     conn.instrumentation
                         .on_connection_event(InstrumentationEvent::FinishQuery {

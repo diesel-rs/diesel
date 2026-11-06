@@ -20,6 +20,7 @@ use crate::mysql_like::MysqlLikeConnection;
 /// [`SIGNAL`](https://dev.mysql.com/doc/refman/8.4/en/signal.html). The server
 /// reports `HY000` for errors without a specific SQLSTATE, as described at
 /// <https://dev.mysql.com/doc/refman/8.4/en/error-message-elements.html>.
+/// [`sql_state`](crate::mysql_like::sql_state) names the codes.
 ///
 /// # Supported loading model implementations
 ///

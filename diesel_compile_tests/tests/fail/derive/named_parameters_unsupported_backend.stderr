@@ -10,11 +10,11 @@ error[E0277]: `diesel::internal::sql_functions::FunctionParameter<true>` is no v
      = note: this usually means that the `Sqlite` database system does not support 
              this SQL syntax
 help: the trait `QueryFragment<DB, PositionalOrNamedNotation>` is implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
-    --> ROOT/diesel/src/expression/functions/aggregate_expressions.rs
+    --> ROOT/diesel/src/expression/functions/arguments.rs
      |
- LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
- LL | | where
- LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
+  LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
+  LL | | where
+  LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
      | |_______________________________________________________________________________________^
 note: required for `foo<Bound<Text, &str>>` to implement `QueryFragment<Sqlite>`
     --> tests/fail/derive/named_parameters_unsupported_backend.rs:6:1
@@ -47,11 +47,11 @@ error[E0277]: `diesel::internal::sql_functions::FunctionParameter<true>` is no v
      = note: this usually means that the `Mysql` database system does not support 
              this SQL syntax
 help: the trait `QueryFragment<DB, PositionalOrNamedNotation>` is implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
-    --> ROOT/diesel/src/expression/functions/aggregate_expressions.rs
+    --> ROOT/diesel/src/expression/functions/arguments.rs
      |
- LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
- LL | | where
- LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
+  LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
+  LL | | where
+  LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
      | |_______________________________________________________________________________________^
 note: required for `foo<Bound<Text, &str>>` to implement `QueryFragment<Mysql>`
     --> tests/fail/derive/named_parameters_unsupported_backend.rs:6:1
@@ -84,11 +84,11 @@ error[E0277]: `diesel::internal::sql_functions::FunctionParameter<true>` is no v
      = note: this usually means that the `Mariadb` database system does not support 
              this SQL syntax
 help: the trait `QueryFragment<DB, PositionalOrNamedNotation>` is implemented for `diesel::internal::sql_functions::FunctionParameter<true>`
-    --> ROOT/diesel/src/expression/functions/aggregate_expressions.rs
+    --> ROOT/diesel/src/expression/functions/arguments.rs
      |
- LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
- LL | | where
- LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
+  LL | / impl<DB> QueryFragment<DB, PositionalOrNamedNotation> for FunctionParameter<true>
+  LL | | where
+  LL | |     DB: Backend + SqlDialect<SqlFunctionParameterNotation = PositionalOrNamedNotation>,
      | |_______________________________________________________________________________________^
 note: required for `foo<Bound<Text, &str>>` to implement `QueryFragment<Mariadb>`
     --> tests/fail/derive/named_parameters_unsupported_backend.rs:6:1
