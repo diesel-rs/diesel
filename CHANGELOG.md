@@ -12,6 +12,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Treat a MySQL or MariaDB connection whose last command was cancelled midway (for example by a timeout) as broken in the connection pool implementations, instead of handing it to the next borrower
 * Report the SQLSTATE of a MySQL or MariaDB server error through `DatabaseErrorInformation::sqlstate`
 * Report the SQLSTATE of a PostgreSQL error through `DatabaseErrorInformation::sqlstate`
+* Reject a cached prepared statement whose number of bind parameters differs from the query's on PostgreSQL, MySQL and MariaDB connections
 
 ## [0.9.2] - 2026-06-19
 

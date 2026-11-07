@@ -1,9 +1,9 @@
-use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper};
+use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper, StatementHelper};
 use crate::AsyncMultiConnectionHelper;
 use crate::{AnsiTransactionManager, AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
 use core::marker::PhantomData;
 use diesel::connection::statement_cache::{
-    MaybeCached, QueryFragmentForCachedStatement, StatementCache,
+    MaybeCached, PreparedStatement, QueryFragmentForCachedStatement, StatementCache,
 };
 use diesel::connection::StrQueryHelper;
 use diesel::connection::{CacheSize, Instrumentation};
@@ -37,7 +37,7 @@ use self::serialize::ToSqlHelper;
 /// `mysql://[user[:password]@]host/database_name` or `mariadb://[user[:password]@]host/database_name`
 pub struct AsyncMysqlLikeConnection<DB: MysqlLikeBackend> {
     conn: mysql_async::Conn,
-    stmt_cache: StatementCache<DB, Statement>,
+    stmt_cache: StatementCache<DB, StatementHelper<Statement>>,
     transaction_manager: AnsiTransactionManager,
     instrumentation: DynInstrumentation,
     stmt_to_free: Vec<mysql_async::Statement>,
@@ -125,7 +125,7 @@ where
     {
         self.with_prepared_statement(source, |conn, stmt, binds| async move {
             let params = mysql_async::Params::try_from(binds)?;
-            conn.exec_drop(&*stmt, params)
+            conn.exec_drop(&stmt.0, params)
                 .await
                 .map_err(ErrorHelper::<DB>::new)?;
             conn.affected_rows()
@@ -195,8 +195,9 @@ fn prepare_statement_helper<'a, DB: MysqlLikeAsyncBackend>(
     sql: &str,
     _is_for_cache: diesel::connection::statement_cache::PrepareForCache,
     _metadata: &[MysqlType],
-) -> CallbackHelper<impl Future<Output = QueryResult<(Statement, &'a mut mysql_async::Conn)>> + Send>
-{
+) -> CallbackHelper<
+    impl Future<Output = QueryResult<(StatementHelper<Statement>, &'a mut mysql_async::Conn)>> + Send,
+> {
     // ideally we wouldn't clone the SQL string here
     // but as we usually cache statements anyway
     // this is a fixed one time const
@@ -206,8 +207,14 @@ fn prepare_statement_helper<'a, DB: MysqlLikeAsyncBackend>(
     let sql = sql.to_owned();
     CallbackHelper(async move {
         let s = conn.prep(sql).await.map_err(ErrorHelper::<DB>::new)?;
-        Ok((s, conn))
+        Ok((StatementHelper(s), conn))
     })
+}
+
+impl PreparedStatement for StatementHelper<Statement> {
+    fn parameter_count(&self) -> u64 {
+        u64::from(self.0.num_params())
+    }
 }
 
 #[expect(private_bounds)]
@@ -256,7 +263,7 @@ where
         query: T,
         callback: impl (FnOnce(
                 &'conn mut mysql_async::Conn,
-                MaybeCached<'conn, Statement>,
+                MaybeCached<'conn, StatementHelper<Statement>>,
                 ToSqlHelper<DB>,
             ) -> F)
             + Send
@@ -313,6 +320,7 @@ where
             let helper = QueryFragmentHelper {
                 sql,
                 safe_to_cache: is_safe_to_cache_prepared,
+                bind_count: binds.len(),
             };
             let inner = async {
                 let (stmt, conn) = stmt_cache
@@ -328,7 +336,7 @@ where
                     .await?;
                 // for any not cached statement we need to remember to close them on the next connection usage
                 if let MaybeCached::CannotCache(stmt) = &stmt {
-                    stmt_to_free.push(stmt.clone());
+                    stmt_to_free.push(stmt.0.clone());
                 }
                 callback(
                     conn,
@@ -353,17 +361,17 @@ where
 
     async fn poll_result_stream<'conn>(
         conn: &'conn mut mysql_async::Conn,
-        stmt: MaybeCached<'_, mysql_async::Statement>,
+        stmt: MaybeCached<'_, StatementHelper<Statement>>,
         binds: ToSqlHelper<DB>,
     ) -> QueryResult<impl Stream<Item = QueryResult<MysqlLikeRow<DB>>> + Send + use<'conn, DB>>
     {
         let params = mysql_async::Params::try_from(binds)?;
         let stmt_for_exec = match stmt {
                 MaybeCached::Cached(ref s) => {
-                    (*s).clone()
+                    s.0.clone()
                 },
                 MaybeCached::CannotCache(ref s) => {
-                    s.clone()
+                    s.0.clone()
                 },
                 _ => unreachable!(
                     "Diesel has only two variants here at the time of writing.\n\

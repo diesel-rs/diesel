@@ -39,6 +39,10 @@ impl QueryFragmentForCachedStatement<Mariadb> for QueryFragmentHelper {
     fn is_safe_to_cache_prepared(&self, _backend: &Mariadb) -> QueryResult<bool> {
         Ok(self.safe_to_cache)
     }
+
+    fn parameter_count(&self, _backend: &Mariadb) -> QueryResult<usize> {
+        Ok(self.bind_count)
+    }
 }
 
 impl UrlHelper for Mariadb {

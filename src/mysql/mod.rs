@@ -39,6 +39,10 @@ impl QueryFragmentForCachedStatement<Mysql> for QueryFragmentHelper {
     fn is_safe_to_cache_prepared(&self, _backend: &Mysql) -> QueryResult<bool> {
         Ok(self.safe_to_cache)
     }
+
+    fn parameter_count(&self, _backend: &Mysql) -> QueryResult<usize> {
+        Ok(self.bind_count)
+    }
 }
 
 impl UrlHelper for Mysql {

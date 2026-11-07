@@ -53,7 +53,11 @@ where
     }
 }
 
+/// A driver's prepared statement as stored in diesel's statement cache
+pub(crate) struct StatementHelper<S>(pub(crate) S);
+
 pub(crate) struct QueryFragmentHelper {
     pub(crate) sql: String,
     pub(crate) safe_to_cache: bool,
+    pub(crate) bind_count: usize,
 }

@@ -127,6 +127,52 @@ async fn test_basic_insert_and_load() -> QueryResult<()> {
     Ok(())
 }
 
+// The sqlite wrapper hands diesel a `CollectedQuery`, which diesel caches by its SQL
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "mariadb"))]
+#[tokio::test]
+async fn cached_statement_with_a_different_bind_count_is_rejected() {
+    use diesel::query_builder::{AstPass, Query, QueryFragment, QueryId};
+    use diesel::sql_types::{Bool, Integer};
+
+    // The derived `QueryId` claims a static query id although the SQL depends on
+    // the number of values, so both queries below share one statement cache entry
+    #[derive(QueryId)]
+    struct InList(Vec<i32>);
+
+    impl QueryFragment<TestBackend> for InList {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, TestBackend>) -> QueryResult<()> {
+            out.push_sql("SELECT 1 IN (");
+            for (i, v) in self.0.iter().enumerate() {
+                if i > 0 {
+                    out.push_sql(", ");
+                }
+                out.push_bind_param::<Integer, _>(v)?;
+            }
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+
+    impl Query for InList {
+        type SqlType = Bool;
+    }
+
+    impl diesel::query_dsl::RunQueryDslSupport for InList {}
+
+    let conn = &mut connection().await;
+    let r = InList(vec![2]).get_result::<bool>(conn).await;
+    assert_eq!(r, Ok(false));
+    let r = InList((1..=64).collect()).get_result::<bool>(conn).await;
+    assert_eq!(
+        r.map_err(|e| e.to_string()),
+        Err(
+            "prepared statement expected a different number of parameters than provided: \
+             Expected 1, provided: 64"
+                .to_owned()
+        )
+    );
+}
+
 #[cfg(feature = "postgres")]
 diesel::define_sql_function!(fn pg_sleep(interval: diesel::sql_types::Double));
 
