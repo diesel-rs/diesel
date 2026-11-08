@@ -7,11 +7,11 @@
 use self::error_helper::ErrorHelper;
 use self::row::PgRow;
 use self::serialize::ToSqlHelper;
-use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper};
+use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper, StatementHelper};
 use crate::AsyncMultiConnectionHelper;
 use crate::{AnsiTransactionManager, AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
 use diesel::connection::statement_cache::{
-    PrepareForCache, QueryFragmentForCachedStatement, StatementCache,
+    PrepareForCache, PreparedStatement, QueryFragmentForCachedStatement, StatementCache,
 };
 use diesel::connection::StrQueryHelper;
 use diesel::connection::{CacheSize, Instrumentation};
@@ -168,7 +168,7 @@ const FAKE_OID: u32 = 0;
 /// [tokio_postgres_rustls]: https://docs.rs/tokio-postgres-rustls/0.12.0/tokio_postgres_rustls/
 pub struct AsyncPgConnection {
     conn: tokio_postgres::Client,
-    stmt_cache: Mutex<StatementCache<diesel::pg::Pg, Statement>>,
+    stmt_cache: Mutex<StatementCache<diesel::pg::Pg, StatementHelper<Statement>>>,
     transaction_state: Mutex<AnsiTransactionManager>,
     metadata_cache: Mutex<PgMetadataCache>,
     connection_future: Option<broadcast::Receiver<Arc<tokio_postgres::Error>>>,
@@ -391,7 +391,8 @@ fn prepare_statement_helper<'conn>(
     _is_for_cache: PrepareForCache,
     metadata: &[PgTypeMetadata],
 ) -> CallbackHelper<
-    impl Future<Output = QueryResult<(Statement, &'conn tokio_postgres::Client)>> + Send,
+    impl Future<Output = QueryResult<(StatementHelper<Statement>, &'conn tokio_postgres::Client)>>
+        + Send,
 > {
     let bind_types = metadata
         .iter()
@@ -410,7 +411,7 @@ fn prepare_statement_helper<'conn>(
             .prepare_typed(&sql, &bind_types)
             .await
             .map_err(ErrorHelper);
-        Ok((stmt?, conn))
+        Ok((StatementHelper(stmt?), conn))
     })
 }
 
@@ -668,6 +669,7 @@ impl AsyncPgConnection {
                 let helper = QueryFragmentHelper {
                     sql: sql.clone(),
                     safe_to_cache: is_safe_to_cache_prepared,
+                    bind_count: bind_collector.binds.len(),
                 };
                 let instrumentation = Arc::clone(&instrumentation);
                 stmt_cache
@@ -686,6 +688,7 @@ impl AsyncPgConnection {
                         },
                     )
                     .await?
+                    .0
                     .0
                     .clone()
             };
@@ -1097,6 +1100,16 @@ impl QueryFragmentForCachedStatement<Pg> for QueryFragmentHelper {
 
     fn is_safe_to_cache_prepared(&self, _backend: &Pg) -> QueryResult<bool> {
         Ok(self.safe_to_cache)
+    }
+
+    fn parameter_count(&self, _backend: &Pg) -> QueryResult<usize> {
+        Ok(self.bind_count)
+    }
+}
+
+impl PreparedStatement for StatementHelper<Statement> {
+    fn parameter_count(&self) -> u64 {
+        u64::try_from(self.0.params().len()).expect("usize is not larger than 64 bits")
     }
 }
 

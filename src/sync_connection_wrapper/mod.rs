@@ -96,6 +96,7 @@ mod implementation {
     use diesel::connection::{
         Connection, LoadConnection, TransactionManagerStatus, WithMetadataLookup,
     };
+    use diesel::query_builder::bind_collector::BindData;
     use diesel::query_builder::{
         AsQuery, CollectedQuery, MoveableBindCollector, QueryBuilder, QueryFragment, QueryId,
     };
@@ -144,7 +145,7 @@ mod implementation {
         C: Connection + LoadConnection + WithMetadataLookup + 'static,
         <C as Connection>::TransactionManager: Send,
         // BindCollector bounds
-        MD: Send + 'static,
+        MD: BindData,
         for<'a> <C::Backend as Backend>::BindCollector<'a>:
             MoveableBindCollector<C::Backend, BindData = MD> + std::default::Default,
         // Row bounds
@@ -208,7 +209,7 @@ mod implementation {
         C: Connection + LoadConnection + WithMetadataLookup + 'static,
         <C as Connection>::TransactionManager: Send,
         // BindCollector bounds
-        MD: Send + 'static,
+        MD: BindData,
         for<'a> <C::Backend as Backend>::BindCollector<'a>:
             MoveableBindCollector<C::Backend, BindData = MD> + std::default::Default,
         // Row bounds
@@ -292,7 +293,7 @@ mod implementation {
         C: Connection + LoadConnection + WithMetadataLookup + 'static,
         <C as Connection>::TransactionManager: Send,
         // BindCollector bounds
-        MD: Send + 'static,
+        MD: BindData,
         for<'a> <C::Backend as Backend>::BindCollector<'a>:
             MoveableBindCollector<C::Backend, BindData = MD> + std::default::Default,
         // Row bounds
@@ -438,7 +439,7 @@ mod implementation {
             C: Connection + LoadConnection + WithMetadataLookup + 'static,
             <C as Connection>::TransactionManager: Send,
             // BindCollector bounds
-            MD: Send + 'static,
+            MD: BindData,
             for<'b> <C::Backend as Backend>::BindCollector<'b>:
                 MoveableBindCollector<C::Backend, BindData = MD> + std::default::Default,
             // Arguments/Return bounds
