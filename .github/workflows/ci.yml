@@ -91,6 +91,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
@@ -319,15 +320,41 @@ jobs:
           RUST: ${{ matrix.rust }}
         run: |
           rustup override set $RUST
+          rustup component add llvm-tools-preview
           cargo --version
           rustc --version
+
+      - uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
+        with:
+          tool: cargo-llvm-cov
 
       - name: Test diesel_async
         shell: bash
         env:
           BACKEND: ${{ matrix.backend }}
+          # Recording doctest coverage is a nightly only feature.
+          COV_DOCTESTS: ${{ matrix.rust == 'nightly' && '--doctests' || '' }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" != "merge_group" ]; then
+            cargo llvm-cov show-env --sh $COV_DOCTESTS > "$RUNNER_TEMP/llvm-cov.env"
+            source "$RUNNER_TEMP/llvm-cov.env"
+            cargo llvm-cov clean --workspace
+          fi
           cargo test --manifest-path Cargo.toml --no-default-features -F "$BACKEND" --features "deadpool bb8 mobc async-connection-wrapper migrations"
+          if [ "$GITHUB_EVENT_NAME" != "merge_group" ]; then
+            cargo llvm-cov report --codecov --output-path codecov.json --ignore-filename-regex 'doctest_setup\.rs' --failure-mode all $COV_DOCTESTS
+          fi
+
+      - name: Upload coverage
+        if: github.event_name != 'merge_group'
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: codecov.json
+          disable_search: true
+          flags: ${{ matrix.backend }}
+          plugins: noop
+          name: ${{ matrix.os }}-${{ matrix.backend }}-${{ matrix.rust }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run examples (Postgres)
         if: matrix.backend == 'postgres'
