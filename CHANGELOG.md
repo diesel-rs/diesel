@@ -100,7 +100,11 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed a failed top-level `COMMIT`, such as a deferred foreign key violation on SQLite, leaving the transaction open
 * Fixed `embed_migrations!` making the crate hash depend on the directory the crate is built in, which broke reproducible builds
 * Reject subselects that reference an ungrouped column of an aggregating outer query
+* Fixed a out of bounds memory access while trying to reuse prepared statements with a different number of bind elements on the postgres backend
+* Fixed reusing the wrong prepared statement with batch inserts with static arrays containing BoxableExpression values
+* Fix a potential out of bounds memory access while executing `sql_query` statements with less binds supplied than expected on the mysql backend
 * Fixed the SQLite `diesel_manage_updated_at` function to return the SQL error when creating its trigger fails, for example on a missing table or an authorizer denial, instead of panicking
+* `diesel print-schema` now generates valid Rust names for custom types whose name starts with a digit or converts to `Self`, such as the PostgreSQL types `2fa_method` and `self` (now `Type2faMethod` and `Self_`) or the MySQL/MariaDB enum type of a table named `24h_orders`, now prefixed with `Type`
 * Fix `copy_to().load()` to correctly close the copy stream at the end of the statement to bring back the connection into a usable state
 * Fix parsing consecutive null values in the binary copy_to stream
 * Fix the copy iterator to only return a single error and stop afterwards
@@ -111,6 +115,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
 * Fixed a double free when a SQLite auto-extension leaked a cursor whose last step failed, and the matching abort in WAL hooks
 * Fixed `diesel print-schema` now correctly emits `Json` as column type on MariaDB for json columns 
+* Fixed an issue with a panic during `copy_from` statements could render the connection unusable
+* Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
+* Fixed a Segmentationfault when issuing an empty query while using libmariadb
+* Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
+* Fix a potential use-after-free issues for SQLite database deserialized in during register_auto_extension
+* Fix that the iterator returned by `SqliteConnection::load_iter` is correctly fused and doesn't return values after the first `None` or statement related `Some(Err(_))` by reexecuting the statement
+* Fix a potential use-after-free memory bug while holding rows in the Mysql backend longer than the connection/result iterator exists
 
 ### Changed
 
@@ -120,6 +131,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Improved documentation and added examples for `filter_target` on `IncompleteOnConflict`
 * A MySQL or MariaDB read whose requested signedness disagrees with the column's now errors instead of reinterpreting the bits, which affects a signed value read through `Unsigned<T>` and an `UNSIGNED BIGINT` above `i64::MAX` read as `BigInt`
 * Custom expression types used in the `WHERE` clause of a subselect need a `ValidGrouping<GB>` impl that is generic over `GB`, as derived impls already are, because an impl of only `ValidGrouping<()>` no longer compiles there
+* `SqliteConnection::establish` turns off the two-argument `fts3_tokenizer()`, which SQLite builds compiled with `SQLITE_ENABLE_FTS3_TOKENIZER`, such as Ubuntu's system library, enable by default and which lets SQL text make SQLite call through an arbitrary pointer. `SqliteConnection::set_fts3_tokenizer_enabled` is now an `unsafe fn`.
+* Extended libsqlite3-sys support to include 0.39
+* `diesel print-schema` now prefixes a table or column name that starts with a digit with `table_` or `column_` instead of `_`, so `24h_orders` gives `table_24h_orders` instead of `_24h_orders`
 
 
 ## [2.3.14] 2026-10-07
