@@ -91,6 +91,11 @@ impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
@@ -129,6 +134,11 @@ impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }
@@ -179,6 +189,11 @@ impl<T: QuerySource, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// ```rust
     /// # include!("../../doctest_setup.rs");
     /// #
+    /// # // Reading the query result requires reading memory allocated by the
+    /// # // native sqlite library, which miri cannot track provenance for.
+    /// # #[cfg(miri)]
+    /// # fn main() {}
+    /// # #[cfg(not(miri))]
     /// # fn main() {
     /// #     run_test().unwrap();
     /// # }

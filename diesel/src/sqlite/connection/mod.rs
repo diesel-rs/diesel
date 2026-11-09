@@ -62,7 +62,6 @@ use crate::result::*;
 use crate::sql_types::TypeMetadata;
 use crate::sqlite::Sqlite;
 use alloc::string::String;
-use alloc::vec::Vec;
 use core::ffi as libc;
 use core::num::NonZeroI64;
 
@@ -72,6 +71,9 @@ use core::num::NonZeroI64;
 /// - File paths (`test.db`)
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
+///
+/// SQLite has no SQLSTATE codes, so
+/// [`DatabaseErrorInformation::sqlstate`] always returns `None`.
 ///
 /// # Supported loading model implementations
 ///
@@ -91,6 +93,11 @@ use core::num::NonZeroI64;
 /// ```rust,dejadoc
 /// # include!("../../doctest_setup.rs");
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -202,17 +209,6 @@ pub struct SqliteConnection {
     // and avoiding static mut which will be deprecated in 2024 edition
     metadata_lookup: (),
     instrumentation: DynInstrumentation,
-    // We potentially need to store a serialized
-    // database in here to make sure the database bytes
-    // live as long as the connection
-    // This is used by SqliteConnection::deserialize_readonly_database_from_buffer
-    // only
-    // This field needs to come after the RawConnection
-    // as we need to make sure the data are still there until the
-    // connection is dropped
-    //
-    // We are not allowed to modify the inner buffer until the database connection is dropped
-    serialized_data: Vec<Vec<u8>>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -622,18 +618,7 @@ impl SqliteConnection {
     // only instead? (So `Cow<'static, [u8]>`?)
     #[allow(unsafe_code)]
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
-        // we copy the buffer here
-        // to make sure the underlying buffer lives as long as the connection
-        self.serialized_data.push(data.to_vec());
-        let last = self
-            .serialized_data
-            .last()
-            .expect("We literally pushed it above, so it's there");
-        unsafe {
-            // SAFETY: We store the buffer inside of the connection and we never touch it until
-            // we drop the connection
-            self.raw_connection.deserialize(last)
-        }
+        self.raw_connection.deserialize(data)
     }
 
     /// Provides temporary access to the raw SQLite database connection handle.
@@ -749,17 +734,19 @@ impl SqliteConnection {
 
         impl Drop for Borrowed {
             fn drop(&mut self) {
-                // SAFETY: `self.0` is not touched again after this take.
-                let conn = unsafe { core::mem::ManuallyDrop::take(&mut self.0) };
                 let SqliteConnection {
                     statement_cache,
-                    raw_connection,
-                    ..
-                } = conn;
-                // Finalize prepared statements, but do not run `RawConnection`'s
-                // `Drop`, which would close a handle we do not own.
-                drop(statement_cache);
-                core::mem::forget(raw_connection);
+                    raw_connection: _,
+                    transaction_state,
+                    metadata_lookup: (),
+                    instrumentation,
+                } = &mut *self.0;
+                // SAFETY: `self.0` is never used again. Skipping `raw_connection` keeps `db` open.
+                unsafe {
+                    core::ptr::drop_in_place(statement_cache);
+                    core::ptr::drop_in_place(transaction_state);
+                    core::ptr::drop_in_place(instrumentation);
+                }
             }
         }
 
@@ -769,7 +756,6 @@ impl SqliteConnection {
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::default_instrumentation(),
-            serialized_data: Vec::new(),
         }));
 
         let result = f(&mut conn.0);
@@ -816,10 +802,19 @@ impl SqliteConnection {
                             args,
                             conn.internal_connection,
                         )?;
-                        conn.exec(&alloc::format!(
+                        // The template wraps every use in `"`, so doubling embedded
+                        // quotes keeps the argument a single identifier.
+                        let sql = alloc::format!(
                             include_str!("diesel_manage_updated_at.sql"),
-                            table_name = table_name
-                        ))?;
+                            table_name = table_name.replace('"', "\"\"")
+                        );
+                        Statement::prepare(
+                            conn,
+                            &sql,
+                            crate::connection::statement_cache::PrepareForCache::No,
+                            &[],
+                        )?
+                        .run()?;
                         Ok(0) // have to return *something*
                     },
                 )
@@ -835,16 +830,62 @@ impl SqliteConnection {
             transaction_state: AnsiTransactionManager::default(),
             metadata_lookup: (),
             instrumentation: DynInstrumentation::none(),
-            serialized_data: Vec::new(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
+        // Builds with `SQLITE_ENABLE_FTS3_TOKENIZER` let SQL text pass `fts3_tokenizer()` a pointer to call, and SQLite before 3.12 has no switch.
+        let _ = conn
+            .raw_connection
+            .set_db_config_bool(ffi::SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER, false);
         Ok(conn)
     }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
     ffi::code_to_str(err_code)
+}
+
+/// Leaves a cached statement unreset after a failed step, so finalizing it fails.
+#[cfg(all(test, not(miri)))]
+#[allow(unsafe_code)]
+pub(in crate::sqlite) fn leak_failed_cursor(conn: &mut SqliteConnection) {
+    use crate::connection::SimpleConnection;
+    use crate::query_builder::{AstPass, QueryFragment, QueryId};
+
+    /// Overflows `abs` on its second row. Zero-sized, so the statement owns no heap memory.
+    struct OverflowQuery;
+
+    impl QueryId for OverflowQuery {
+        type QueryId = Self;
+        const HAS_STATIC_QUERY_ID: bool = true;
+    }
+
+    impl QueryFragment<Sqlite> for OverflowQuery {
+        fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+            pass.push_sql("SELECT abs(n) FROM overflow_numbers ORDER BY id");
+            Ok(())
+        }
+    }
+
+    // `Box::new` doesn't allocate for a zero-sized query, so `mem::forget` below leaks nothing.
+    const _: () = assert!(core::mem::size_of::<OverflowQuery>() == 0);
+
+    conn.batch_execute(
+        "CREATE TEMP TABLE IF NOT EXISTS overflow_numbers (id INTEGER PRIMARY KEY, n BIGINT);
+         INSERT OR IGNORE INTO overflow_numbers VALUES (1, 1), (2, -9223372036854775808);",
+    )
+    .unwrap();
+    let mut stmt = conn.prepared_query(OverflowQuery).unwrap();
+    // SAFETY: `first_step = true` clears the cached column names, so no stale pointer survives.
+    let first = unsafe { stmt.step(true) };
+    assert!(matches!(first, Ok(true)));
+    // A failed first step resets the statement, so the overflow is on the second row.
+    // SAFETY: `first_step = true` clears the cached column names, so no stale pointer survives.
+    let second = unsafe { stmt.step(true) };
+    assert!(second.is_err());
+    // The query is cached (static query id) and binds nothing, so skipping the drop only
+    // skips the reset: the cache keeps the failed statement and no memory is leaked.
+    core::mem::forget(stmt);
 }
 
 #[cfg(test)]
@@ -1415,6 +1456,87 @@ mod tests {
             });
             assert_no_panic_output(&stderr, "guarded_7c91a2");
         }
+
+        #[test]
+        fn failed_step_returns_error_without_panicking() {
+            let stderr = run_in_child(|| {
+                let mut conn = SqliteConnection::establish(":memory:").unwrap();
+                conn.batch_execute(
+                    "CREATE TABLE readonly_7c91a2 (id INTEGER, updated_at TEXT);
+                     PRAGMA query_only = ON;",
+                )
+                .unwrap();
+                let error = conn
+                    .batch_execute("SELECT diesel_manage_updated_at('readonly_7c91a2')")
+                    .unwrap_err();
+                assert_eq!(format_error(&error), "attempt to write a readonly database");
+            });
+            assert_no_panic_output(&stderr, "readonly_7c91a2");
+        }
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn diesel_manage_updated_at_does_not_execute_its_argument() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .batch_execute(
+                "CREATE TABLE t (id INTEGER PRIMARY KEY, updated_at TEXT);
+                 CREATE TABLE victims (id INTEGER PRIMARY KEY);",
+            )
+            .unwrap();
+        let payload = "t AFTER UPDATE ON t BEGIN SELECT 1; END; DROP TABLE victims; --";
+
+        let result = sql::<Integer>("SELECT diesel_manage_updated_at(")
+            .bind::<Text, _>(payload)
+            .sql(")")
+            .get_result::<i32>(connection);
+
+        let schema = sql::<Text>("SELECT group_concat(name, ',') FROM sqlite_master")
+            .get_result::<String>(connection)
+            .unwrap();
+        assert_eq!(schema, "t,victims");
+        assert_eq!(
+            result.map_err(|e| format_error(&e)),
+            Err(format!("no such table: main.{payload}"))
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[diesel_test_helper::test]
+    fn diesel_manage_updated_at_quotes_the_table_name() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        let names = ["users", "select", "odd \"name\"", "a b", "a_b"];
+        for name in names {
+            let quoted = name.replace('"', "\"\"");
+            connection
+                .batch_execute(&format!(
+                    "CREATE TABLE \"{quoted}\" (id INTEGER PRIMARY KEY, updated_at TEXT);
+                     INSERT INTO \"{quoted}\" (id) VALUES (1);"
+                ))
+                .unwrap();
+            sql::<Integer>("SELECT diesel_manage_updated_at(")
+                .bind::<Text, _>(name)
+                .sql(")")
+                .get_result::<i32>(connection)
+                .unwrap();
+            connection
+                .batch_execute(&format!("UPDATE \"{quoted}\" SET id = 2"))
+                .unwrap();
+            let updated = sql::<Integer>(&format!(
+                "SELECT COUNT(*) FROM \"{quoted}\" WHERE updated_at IS NOT NULL"
+            ))
+            .get_result::<i32>(connection)
+            .unwrap();
+            assert_eq!(updated, 1, "table {name}");
+        }
+
+        let triggers =
+            sql::<Text>("SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY rowid")
+                .load::<String>(connection)
+                .unwrap();
+        let expected = names.map(|name| format!("__diesel_manage_updated_at_{name}"));
+        assert_eq!(triggers, expected);
     }
 
     // regression test for https://github.com/diesel-rs/diesel/issues/3425
@@ -1625,5 +1747,44 @@ mod tests {
             .get_result::<String>(conn)
             .unwrap();
         assert_eq!(conn.version().to_string(), reported);
+    }
+
+    #[cfg(all(
+        feature = "std",
+        not(all(target_family = "wasm", target_os = "unknown")),
+        // runs processes
+        not(miri)
+    ))]
+    #[diesel_test_helper::test]
+    fn deserialize_in_auto_extension_keeps_buffer_alive() {
+        use super::oom_test_support::run_in_child;
+
+        run_in_child(|| {
+            use std::sync::OnceLock;
+            fn load_image(conn: &mut SqliteConnection) -> QueryResult<()> {
+                // `conn` is a borrowed connection; its `serialized_data` is dropped
+                // when this callback returns, but SQLite keeps using the buffer.
+                conn.deserialize_readonly_database_from_buffer(IMAGE.get().unwrap())
+            }
+
+            static IMAGE: OnceLock<Vec<u8>> = OnceLock::new();
+
+            let mut src = SqliteConnection::establish(":memory:").unwrap();
+            src.batch_execute("CREATE TABLE t(x TEXT); INSERT INTO t VALUES ('hello');")
+                .unwrap();
+            let image = src
+                .serialize_database_to_buffer()
+                .try_as_slice()
+                .unwrap()
+                .to_vec();
+            IMAGE.set(image).unwrap();
+
+            crate::sqlite::register_auto_extension(load_image).unwrap();
+            let mut conn = SqliteConnection::establish(":memory:").unwrap();
+            crate::sqlite::reset_auto_extension();
+
+            let rows: QueryResult<Vec<String>> = sql::<Text>("SELECT x FROM t").load(&mut conn);
+            assert_eq!(rows.unwrap(), vec!["hello".to_string()]);
+        });
     }
 }

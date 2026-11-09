@@ -1,6 +1,10 @@
 use crate::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_inequality() {
     use crate::schema::users::dsl::*;
@@ -27,6 +31,10 @@ fn filter_by_inequality() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_gt() {
     use crate::schema::users::dsl::*;
@@ -46,6 +54,10 @@ fn filter_by_gt() {
     assert_eq!(vec![jim], users.filter(id.gt(2)).load(connection).unwrap());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_ge() {
     use crate::schema::users::dsl::*;
@@ -65,6 +77,10 @@ fn filter_by_ge() {
     assert_eq!(vec![jim], users.filter(id.ge(3)).load(connection).unwrap());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_lt() {
     use crate::schema::users::dsl::*;
@@ -84,6 +100,10 @@ fn filter_by_lt() {
     assert_eq!(vec![sean], users.filter(id.lt(2)).load(connection).unwrap());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_le() {
     use crate::schema::users::dsl::*;
@@ -103,6 +123,10 @@ fn filter_by_le() {
     assert_eq!(vec![sean], users.filter(id.le(1)).load(connection).unwrap());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_between() {
     use crate::schema::users::dsl::*;
@@ -130,6 +154,10 @@ fn filter_by_between() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_like() {
     use crate::schema::users::dsl::*;
@@ -205,6 +233,10 @@ fn filter_by_ilike() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn filter_by_in() {
     use crate::schema::users::dsl::*;

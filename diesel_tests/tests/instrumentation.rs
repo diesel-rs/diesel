@@ -130,6 +130,10 @@ fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries
     assert_matches!(events[1], Event::FinishQuery { .. });
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn check_events_are_emitted_for_execute_returning_count_does_contain_error_for_failures() {
     let (events_to_check, mut conn) = setup_test_case();
@@ -175,6 +179,10 @@ fn check_events_are_emitted_for_execute_returning_id_does_contain_error_for_fail
     assert_matches!(events[4], Event::FinishQuery { error: Some(_), .. });
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn check_events_are_emitted_for_load_does_contain_error_for_failures() {
     let (events_to_check, mut conn) = setup_test_case();

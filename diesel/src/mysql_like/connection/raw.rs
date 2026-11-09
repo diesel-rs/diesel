@@ -1,15 +1,17 @@
 #![allow(unsafe_code)] // module uses ffi
+use alloc::ffi::CString;
 use core::ffi as libc;
 use core::ffi::CStr;
 use core::ptr::{self, NonNull};
 use mysqlclient_sys as ffi;
 use std::sync::Once;
 
+use super::error_information::{MysqlLikeErrorInformation, sqlstate_from_ptr};
 use super::statement_cache::PrepareForCache;
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
 use crate::mysql_like::{MysqlLikeBackend, MysqlType};
-use crate::result::{ConnectionError, ConnectionResult, QueryResult};
+use crate::result::{ConnectionError, ConnectionResult, QueryResult, SqlState};
 
 pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
@@ -118,6 +120,14 @@ impl RawConnection {
             .into_owned()
     }
 
+    fn last_error_sqlstate(&self) -> Option<SqlState> {
+        // SAFETY: `self.0` is the live handle owned by `self`.
+        let sqlstate = unsafe { ffi::mysql_sqlstate(self.0.as_ptr()) };
+        // SAFETY: the result is null or the NUL terminated SQLSTATE stored on the
+        // handle, which no call changes while `self` is borrowed here.
+        unsafe { sqlstate_from_ptr(sqlstate) }
+    }
+
     pub(super) fn server_info(&self) -> Option<&CStr> {
         // SAFETY: `self.0` is the live handle owned by `self`, and the call only reads it.
         let info = unsafe { ffi::mysql_get_server_info(self.0.as_ptr()) };
@@ -128,12 +138,15 @@ impl RawConnection {
     }
 
     pub(super) fn execute(&self, query: &str) -> QueryResult<()> {
+        use crate::result::Error::InvalidCString;
+
+        let query = CString::new(query).map_err(InvalidCString)?;
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_query(
                 self.0.as_ptr(),
                 query.as_ptr() as *const libc::c_char,
-                query.len() as libc::c_ulong,
+                query.count_bytes() as libc::c_ulong,
             );
         }
         self.did_an_error_occur()?;
@@ -192,7 +205,10 @@ impl RawConnection {
         } else {
             Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
-                Box::new(error_message),
+                Box::new(MysqlLikeErrorInformation {
+                    message: error_message,
+                    sqlstate: self.last_error_sqlstate(),
+                }),
             ))
         }
     }

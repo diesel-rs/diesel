@@ -24,3 +24,31 @@ test-group = 'cli_tests'
 # `insert_get_results_batch`, and `insert_get_results_batch`.
 filter = 'test(insert_get_result) | test(insert_insertable_struct_get_results_batch)'
 retries = 2
+
+[profile.mysql]
+inherits = 'default'
+threads-required = 'num-test-threads'
+
+[[profile.mysql.overrides]]
+filter = 'test(types) | test(view_testing) | test(cast::) | test(limit_offset::) | test(transactions::)'
+threads-required = 1
+
+[[profile.mysql.overrides]]
+filter = 'test(serialize_as::) | test(perf_details::) | test(deserialization::) | test(order::)'
+threads-required = 1
+
+[[profile.mysql.overrides]]
+filter = 'test(parsing::) | test(infer::) | test(operations::) | test(debug::)'
+threads-required = 1
+
+[[profile.mysql.overrides]]
+filter = 'package(diesel_tests)'
+threads-required = 'num-test-threads'
+
+[[profile.mysql.overrides]]
+filter = '(package(diesel_cli) & test(infer_schema_internals))'
+threads-required = 'num-test-threads'
+
+[[profile.mysql.overrides]]
+filter = 'package(diesel) | package(diesel_*) | package(migrations_macros)'
+threads-required = 1

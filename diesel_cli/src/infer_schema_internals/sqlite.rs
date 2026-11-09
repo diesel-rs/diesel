@@ -104,6 +104,7 @@ pub fn load_foreign_key_constraints(
                     };
                     let foreign_key_columns_rust = super::inference::rust_name_for_sql_name(
                         &row.foreign_key,
+                        super::inference::IdentifierKind::Column,
                         Some(&child_table),
                     );
                     Ok(ForeignKeyConstraint {

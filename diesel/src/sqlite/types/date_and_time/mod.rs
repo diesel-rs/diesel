@@ -94,10 +94,14 @@ impl ToSql<sql_types::TimestamptzSqlite, Sqlite> for String {
     }
 }
 
+// Every test in this module decodes query results, which requires reading
+// memory allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
 #[cfg(all(
     test,
     feature = "chrono",
     feature = "time",
+    not(miri),
     not(all(target_family = "wasm", target_os = "unknown"))
 ))]
 #[allow(clippy::cast_possible_truncation)] // it's a test

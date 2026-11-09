@@ -280,6 +280,11 @@ where
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// #
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// use diesel::sql_types::Text;
 /// #   let conn = &mut establish_connection();
@@ -429,6 +434,11 @@ where
 ///     name: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -472,6 +482,11 @@ where
 ///     }
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test();
 /// # }
@@ -510,6 +525,11 @@ where
 ///     title: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
 /// #
@@ -554,6 +574,11 @@ where
 ///     title: String,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
 /// #
@@ -606,6 +631,11 @@ where
 ///     post_title: PostTitle,
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
 /// #
@@ -690,6 +720,11 @@ where
 ///     posts::columns::title
 /// }
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() -> QueryResult<()> {
 /// #     let connection = &mut establish_connection();
 /// #
@@ -956,6 +991,11 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # use schema::users;
 /// use diesel::sql_types::Bool;
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -998,6 +1038,11 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// use diesel::expression::ValidGrouping;
 /// use diesel::sql_types::Text;
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }
@@ -1064,6 +1109,11 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// use diesel::dsl::InnerJoinQuerySource;
 /// use diesel::sql_types::Bool;
 ///
+/// # // Reading the query result requires reading memory allocated by the
+/// # // native sqlite library, which miri cannot track provenance for.
+/// # #[cfg(miri)]
+/// # fn main() {}
+/// # #[cfg(not(miri))]
 /// # fn main() {
 /// #     run_test().unwrap();
 /// # }

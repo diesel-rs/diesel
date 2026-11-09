@@ -2,6 +2,10 @@ use super::schema::*;
 use crate::schema_dsl::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
@@ -19,6 +23,10 @@ fn selecting_basic_data() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_a_struct() {
     use crate::schema::users::dsl::*;
@@ -36,6 +44,10 @@ fn selecting_a_struct() {
     assert_eq!(expected_users, actual_users);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn with_safe_select() {
     use crate::schema::users::dsl::*;
@@ -71,6 +83,10 @@ fn with_select_sql() {
     assert_eq!(Ok(3), select_count.first(connection));
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_nullable_followed_by_non_null() {
     use crate::schema::users::dsl::*;
@@ -141,6 +157,10 @@ fn selecting_columns_and_tables_with_reserved_names() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_columns_with_different_definition_order() {
     let connection = &mut connection();
@@ -164,6 +184,10 @@ fn selecting_columns_with_different_definition_order() {
     assert_eq!(Ok(&expected_user), user_from_select.as_ref());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selection_using_subselect() {
     use crate::schema::posts::dsl::*;
@@ -500,6 +524,10 @@ fn select_for_no_key_update_modifiers() {
     }
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -523,6 +551,10 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
     assert_eq!(Ok(vec![tess]), users_with_post_using_name_as_title);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_multiple_aggregate_expressions_without_group_by() {
     use self::users::dsl::*;

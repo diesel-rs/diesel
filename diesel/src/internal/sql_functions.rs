@@ -4,6 +4,9 @@ pub use crate::expression::functions::aggregate_expressions::{
     WindowFunctionFragment,
 };
 
+#[doc(hidden)]
+pub use crate::expression::functions::arguments::FunctionParameter;
+
 #[macro_export]
 #[doc(hidden)]
 #[cfg(feature = "__sqlite-shared")]

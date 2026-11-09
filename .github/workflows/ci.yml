@@ -75,6 +75,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
@@ -193,9 +194,19 @@ jobs:
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: bash
+        run: |
+          # community.chocolatey.org intermittently answers 504, so the install is retried
+          for attempt in 1 2 3 4; do
+            choco install sqlite -y && break
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 30))
+          done
+
+      - name: Build sqlite import library (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
         shell: cmd
         run: |
-          choco install sqlite
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
@@ -225,20 +236,28 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
         shell: bash
         run: |
-          mkdir "C:\\Program Files\\MySQL\\MySQL Server 8.0\\data\\"
-          "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console --initialize --initialize-insecure
-          "C:\\Program Files\\MySQL\MySQL Server 8.0\\bin\\mysqld" --console &
+          # The runner image installs one MySQL server, under a directory named after its version
+          shopt -s nullglob
+          mysql_dirs=("/c/Program Files/MySQL/MySQL Server "*/)
+          mysql_dir=${mysql_dirs[0]:?no MySQL server found under C:/Program Files/MySQL}
+          mysql_lib_dir=$(cygpath -w "${mysql_dir}lib")
+          mysql_bin_dir=$(cygpath -w "${mysql_dir}bin")
+          mysql_version=$("${mysql_dir}bin/mysqld" --version | sed -nE 's/.* Ver ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p')
+          : "${mysql_version:?could not read the version of ${mysql_dir}bin/mysqld}"
+          mkdir "${mysql_dir}data"
+          "${mysql_dir}bin/mysqld" --console --initialize --initialize-insecure
+          "${mysql_dir}bin/mysqld" --console &
           # Wait until the server actually accepts connections instead of a fixed
           # sleep, which races a slow startup on the Windows runner.
           for i in $(seq 1 60); do
-            if "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqladmin" ping -u root --silent >/dev/null 2>&1; then
+            if "${mysql_dir}bin/mysqladmin" ping -u root --silent >/dev/null 2>&1; then
               break
             fi
             echo "Waiting for MySQL to accept connections ($i)..."
             sleep 2
           done
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqladmin" ping -u root --silent >/dev/null 2>&1 || { echo "MySQL did not become ready in time"; exit 1; }
-          "C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
+          "${mysql_dir}bin/mysqladmin" ping -u root --silent >/dev/null 2>&1 || { echo "MySQL did not become ready in time"; exit 1; }
+          "${mysql_dir}bin/mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
           # remove doxygen because mysqlclient build otherwise breaks?
           rm "C:/Strawberry/c/bin/doxygen.exe"
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
@@ -246,17 +265,22 @@ jobs:
           echo "MYSQL_DATABASE_URL=mysql://root@127.0.0.1/diesel_test" >> $GITHUB_ENV
           echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@127.0.0.1/diesel_example" >> $GITHUB_ENV
           echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@127.0.0.1/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=C:\Program Files\MySQL\MySQL Server 8.0\lib" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_VERSION=8.0.40" >> $GITHUB_ENV
-          echo "C:\Program Files\MySQL\MySQL Server 8.0\lib" >> $GITHUB_PATH
-          echo "C:\Program Files\MySQL\MySQL Server 8.0\bin" >> $GITHUB_PATH
-          dir "C:\Program Files\MySQL\MySQL Server 8.0\lib"
+          echo "MYSQLCLIENT_LIB_DIR=${mysql_lib_dir}" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_VERSION=${mysql_version}" >> $GITHUB_ENV
+          echo "${mysql_lib_dir}" >> $GITHUB_PATH
+          echo "${mysql_bin_dir}" >> $GITHUB_PATH
+          dir "${mysql_lib_dir}"
 
       - name: Install mariadb (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mariadb'
         shell: bash
         run: |
-          choco install mariadb --version=12.3.2 -y
+          # community.chocolatey.org intermittently answers 504, so the install is retried
+          for attempt in 1 2 3 4; do
+            choco install mariadb --version=12.3.2 -y && break
+            if [ "$attempt" -eq 4 ]; then exit 1; fi
+            sleep $((attempt * 30))
+          done
           "C:\\Program Files\\MariaDB 12.3\\bin\\mariadb" -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -u root
           echo "OPENSSL_RUST_USE_NASM=0" >> $GITHUB_ENV
           echo OPENSSL_SRC_PERL=C:/Strawberry/perl/bin/perl >> $GITHUB_ENV
@@ -719,6 +743,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libsqlite3-dev pkg-config
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
+        with:
+          tool: nextest
       - name: Run miri tests for the sqlite backend
         run: |
-          cargo xtask run-tests --miri sqlite
+          # The flags after `--` are passed to the underlying cargo
+          # nextest/test invocations. These features are required to run the
+          # same set of unit and doc tests as the non-miri test run.
+          cargo xtask run-tests --miri sqlite -- -F diesel/serde_json -F diesel/extras -F diesel/with-deprecated

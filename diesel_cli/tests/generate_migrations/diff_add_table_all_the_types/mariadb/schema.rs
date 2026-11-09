@@ -26,6 +26,7 @@ table! {
         char_col -> Char,
         tinytext_col -> Tinytext,
         mediumtext_col -> Mediumtext,
+        uuid_col -> Uuid,
         tinyblob_col -> Tinyblob,
         blob_col -> Blob,
         longblob_col -> Longblob,

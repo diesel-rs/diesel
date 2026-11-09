@@ -328,7 +328,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 note: required by a bound in `diesel::HasQuery`
    --> ROOT/diesel/src/query_builder/has_query.rs
     |
- LL | pub trait HasQuery<DB: Backend>:
+LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
@@ -368,7 +368,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 note: required by a bound in `diesel::HasQuery`
    --> ROOT/diesel/src/query_builder/has_query.rs
     |
- LL | pub trait HasQuery<DB: Backend>:
+LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
@@ -422,7 +422,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 note: required by a bound in `diesel::HasQuery`
    --> ROOT/diesel/src/query_builder/has_query.rs
     |
- LL | pub trait HasQuery<DB: Backend>:
+LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
@@ -462,7 +462,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 note: required by a bound in `diesel::HasQuery`
    --> ROOT/diesel/src/query_builder/has_query.rs
     |
- LL | pub trait HasQuery<DB: Backend>:
+LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + AppearsOnTable<<Self::BaseQuery as AcceptedQueries>::From>
@@ -526,7 +526,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
 note: required by a bound in `diesel::HasQuery`
    --> ROOT/diesel/src/query_builder/has_query.rs
     |
- LL | pub trait HasQuery<DB: Backend>:
+LL | pub trait HasQuery<DB: Backend>:
     |           -------- required by a bound in this trait
 ...
 LL |                           + ValidGrouping<<Self::BaseQuery as AcceptedQueries>::GroupBy>,

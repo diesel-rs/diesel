@@ -17,9 +17,7 @@ pub(crate) use self::copy_to::CopyToCommand;
 pub use self::copy_from::{CopyFromQuery, CopyHeader, ExecuteCopyFromDsl};
 pub use self::copy_to::CopyToQuery;
 
-const COPY_MAGIC_HEADER: [u8; 11] = [
-    0x50, 0x47, 0x43, 0x4F, 0x50, 0x59, 0x0A, 0xFF, 0x0D, 0x0A, 0x00,
-];
+const COPY_MAGIC_HEADER: [u8; 11] = *b"PGCOPY\n\xff\r\n\0";
 
 /// Describes the format used by `COPY FROM` or `COPY TO`
 /// statements

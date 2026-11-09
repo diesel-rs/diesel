@@ -25,6 +25,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::{SqliteConnection, CommitDecision};
     /// use std::sync::{Arc, Mutex};
@@ -55,6 +59,9 @@ impl SqliteConnection {
     /// }).unwrap();
     ///
     /// assert_eq!(*commits.lock().unwrap(), 1);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_commit<F>(&mut self, hook: F)
     where
@@ -90,6 +97,10 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```rust
+    /// # // This test registers Rust callbacks that sqlite invokes through the
+    /// # // FFI boundary, which is not supported by miri `-Zmiri-native-lib`.
+    /// # #[cfg(not(miri))]
+    /// # fn main() {
     /// use diesel::prelude::*;
     /// use diesel::sqlite::SqliteConnection;
     /// use std::sync::Arc;
@@ -111,6 +122,9 @@ impl SqliteConnection {
     /// });
     ///
     /// assert_eq!(rollbacks.load(Ordering::Relaxed), 1);
+    /// # }
+    /// # #[cfg(miri)]
+    /// # fn main() {}
     /// ```
     pub fn on_rollback<F>(&mut self, hook: F)
     where
@@ -840,6 +854,27 @@ mod tests {
     // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
     #[cfg(not(miri))] // ffi call
     #[diesel_test_helper::test]
+    fn on_wal_leaked_failed_cursor_keeps_connection_open() {
+        let (conn, _dir) = &mut wal_connection();
+        crate::sql_query("CREATE TABLE t_wal_leak (id INTEGER PRIMARY KEY)")
+            .execute(conn)
+            .unwrap();
+        conn.on_wal(|conn, _db_name, _n_pages| {
+            crate::sqlite::connection::leak_failed_cursor(conn);
+        });
+
+        for _ in 0..2 {
+            crate::sql_query("INSERT INTO t_wal_leak DEFAULT VALUES")
+                .execute(conn)
+                .unwrap();
+        }
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[diesel_test_helper::test]
     fn on_wal_callback_write_re_enters_hook() {
         let (conn, _dir) = &mut wal_connection();
 
@@ -886,6 +921,58 @@ mod tests {
             logged, 1,
             "the write performed inside the callback should persist"
         );
+    }
+
+    #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+    // Registers a callback that is invoked by the native library, which is not
+    // supported when running under miri with a native libsqlite3 (`-Zmiri-native-lib`).
+    #[cfg(not(miri))] // ffi call
+    #[diesel_test_helper::test]
+    fn on_wal_db_name_survives_detach_in_hook() {
+        // Raw SQL because the typed DSL cannot name a schema attached at runtime.
+        for schema in [
+            "wal_detach_arc".to_string(),
+            format!("wal_{}", "a".repeat(2000)),
+        ] {
+            let dir = tempfile::tempdir().unwrap();
+            let mut conn =
+                SqliteConnection::establish(dir.path().join("main.db").to_str().unwrap()).unwrap();
+            let archive = dir.path().join("archive.db");
+            crate::sql_query(format!(
+                "ATTACH DATABASE '{}' AS {schema}",
+                archive.display()
+            ))
+            .execute(&mut conn)
+            .unwrap();
+            crate::sql_query(format!("PRAGMA {schema}.journal_mode = WAL"))
+                .execute(&mut conn)
+                .unwrap();
+            crate::sql_query(format!("CREATE TABLE {schema}.log (line TEXT NOT NULL)"))
+                .execute(&mut conn)
+                .unwrap();
+
+            let observed: Arc<std::sync::Mutex<Option<(String, String)>>> = Default::default();
+            let observed2 = observed.clone();
+            conn.on_wal(move |conn, db_name, _| {
+                let at_entry = db_name.to_owned();
+                crate::sql_query(format!("DETACH DATABASE {at_entry}"))
+                    .execute(conn)
+                    .unwrap();
+                // `db_name` must stay readable after the DETACH ran.
+                *observed2.lock().unwrap() = Some((at_entry, db_name.to_owned()));
+            });
+
+            crate::sql_query(format!("INSERT INTO {schema}.log (line) VALUES ('hello')"))
+                .execute(&mut conn)
+                .unwrap();
+
+            let (at_entry, after) = observed.lock().unwrap().take().expect("WAL hook fired");
+            assert_eq!(at_entry, schema, "the hook fires for the attached schema");
+            assert_eq!(
+                after, at_entry,
+                "db_name must stay valid after a DETACH inside the hook"
+            );
+        }
     }
 
     #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]

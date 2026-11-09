@@ -285,6 +285,10 @@ fn check_filter_with_boxed_group_by_subselect() {
     assert!(source.execute(conn).is_ok());
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_subselect_referencing_grouped_outer_column() {
     use diesel::dsl::count_star;
@@ -321,6 +325,10 @@ fn select_subselect_referencing_grouped_outer_column() {
     );
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_exists_with_boxed_subselect_predicate() {
     use diesel::dsl::exists;

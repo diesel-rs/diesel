@@ -9,7 +9,8 @@ use core::str;
 
 use super::raw::{RawConnection, RawResult, ResultField};
 use super::row::PgRow;
-use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
+use crate::pg::sql_state;
+use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult, SqlState};
 use core::cell::OnceCell;
 
 #[allow(missing_debug_implementations)]
@@ -55,25 +56,28 @@ impl PgResult {
                 // https://www.postgresql.org/docs/current/libpq-async.html
                 while conn.get_next_result().map_or(true, |r| r.is_some()) {}
 
-                let mut error_kind = match internal_result.get_result_field(ResultField::SqlState) {
-                    Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
-                    Some(error_codes::FOREIGN_KEY_VIOLATION) => {
+                let sqlstate = internal_result
+                    .get_result_field(ResultField::SqlState)
+                    .and_then(|code| code.parse::<SqlState>().ok());
+                let mut error_kind = match sqlstate {
+                    Some(sql_state::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
+                    Some(sql_state::FOREIGN_KEY_VIOLATION) => {
                         DatabaseErrorKind::ForeignKeyViolation
                     }
-                    Some(error_codes::SERIALIZATION_FAILURE) => {
+                    Some(sql_state::T_R_SERIALIZATION_FAILURE) => {
                         DatabaseErrorKind::SerializationFailure
                     }
-                    Some(error_codes::READ_ONLY_TRANSACTION) => {
+                    Some(sql_state::READ_ONLY_SQL_TRANSACTION) => {
                         DatabaseErrorKind::ReadOnlyTransaction
                     }
-                    Some(error_codes::NOT_NULL_VIOLATION) => DatabaseErrorKind::NotNullViolation,
-                    Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
-                    Some(error_codes::RESTRICT_VIOLATION) => DatabaseErrorKind::RestrictViolation,
-                    Some(error_codes::EXCLUSION_VIOLATION) => DatabaseErrorKind::ExclusionViolation,
-                    Some(error_codes::CONNECTION_EXCEPTION)
-                    | Some(error_codes::CONNECTION_FAILURE)
-                    | Some(error_codes::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
-                    | Some(error_codes::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
+                    Some(sql_state::NOT_NULL_VIOLATION) => DatabaseErrorKind::NotNullViolation,
+                    Some(sql_state::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
+                    Some(sql_state::RESTRICT_VIOLATION) => DatabaseErrorKind::RestrictViolation,
+                    Some(sql_state::EXCLUSION_VIOLATION) => DatabaseErrorKind::ExclusionViolation,
+                    Some(sql_state::CONNECTION_EXCEPTION)
+                    | Some(sql_state::CONNECTION_FAILURE)
+                    | Some(sql_state::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
+                    | Some(sql_state::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
                         DatabaseErrorKind::ClosedConnection
                     }
                     _ => DatabaseErrorKind::Unknown,
@@ -179,6 +183,10 @@ impl PgResult {
                 (or libpq is giving out negative column count)",
         )
     }
+
+    pub(super) fn result_status(&self) -> pq_sys::ExecStatusType {
+        self.internal_result.result_status()
+    }
 }
 
 struct PgErrorInformation {
@@ -218,24 +226,11 @@ impl DatabaseErrorInformation for PgErrorInformation {
             .get_result_field(ResultField::StatementPosition)?;
         str_pos.parse::<i32>().ok()
     }
-}
 
-mod error_codes {
-    //! These error codes are documented at
-    //! <https://www.postgresql.org/docs/current/errcodes-appendix.html>
-    //!
-    //! They are not exposed programmatically through libpq.
-    pub(in crate::pg::connection) const CONNECTION_EXCEPTION: &str = "08000";
-    pub(in crate::pg::connection) const CONNECTION_FAILURE: &str = "08006";
-    pub(in crate::pg::connection) const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
-    pub(in crate::pg::connection) const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str =
-        "08004";
-    pub(in crate::pg::connection) const RESTRICT_VIOLATION: &str = "23001";
-    pub(in crate::pg::connection) const NOT_NULL_VIOLATION: &str = "23502";
-    pub(in crate::pg::connection) const FOREIGN_KEY_VIOLATION: &str = "23503";
-    pub(in crate::pg::connection) const UNIQUE_VIOLATION: &str = "23505";
-    pub(in crate::pg::connection) const CHECK_VIOLATION: &str = "23514";
-    pub(in crate::pg::connection) const EXCLUSION_VIOLATION: &str = "23P01";
-    pub(in crate::pg::connection) const READ_ONLY_TRANSACTION: &str = "25006";
-    pub(in crate::pg::connection) const SERIALIZATION_FAILURE: &str = "40001";
+    fn sqlstate(&self) -> Option<SqlState> {
+        self.result
+            .get_result_field(ResultField::SqlState)?
+            .parse()
+            .ok()
+    }
 }

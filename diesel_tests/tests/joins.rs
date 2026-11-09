@@ -2,6 +2,10 @@ use crate::schema::*;
 use diesel::sql_types::Text;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn belongs_to() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -27,6 +31,10 @@ fn belongs_to() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_single_from_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -55,6 +63,10 @@ fn select_single_from_join() {
     assert_eq!(expected_titles, actual_titles);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_multiple_from_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -81,6 +93,10 @@ fn select_multiple_from_join() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn join_boxed_query() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -108,6 +124,10 @@ fn join_boxed_query() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_only_one_side_of_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -126,6 +146,10 @@ fn select_only_one_side_of_join() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn left_outer_joins() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -157,6 +181,10 @@ fn left_outer_joins() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn columns_on_right_side_of_left_outer_joins_are_nullable() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -184,6 +212,10 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -207,6 +239,10 @@ fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_called() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -235,6 +271,10 @@ fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_calle
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_complex_from_left_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -268,6 +308,10 @@ fn select_complex_from_left_join() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn select_right_side_with_nullable_column_first() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -301,6 +345,10 @@ fn select_right_side_with_nullable_column_first() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 #[allow(clippy::type_complexity)]
 fn select_left_join_right_side_with_non_null_inside() {
@@ -364,6 +412,10 @@ extern "SQL" {
     fn lower(x: Text) -> Text;
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_complex_expression_from_right_side_of_left_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -389,6 +441,10 @@ fn selecting_complex_expression_from_right_side_of_left_join() {
     assert_eq!(Ok(expected_data), titles);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_complex_expression_from_both_sides_of_outer_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -419,6 +475,10 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
     assert_eq!(Ok(expected_data), titles);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn join_with_explicit_on_clause() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
@@ -454,6 +514,10 @@ fn join_with_explicit_on_clause() {
     assert_eq!(expected_data, data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_parent_child_grandchild() {
     let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
@@ -536,6 +600,10 @@ fn selecting_parent_child_grandchild() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_grandchild_child_parent() {
     let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
@@ -558,6 +626,10 @@ fn selecting_grandchild_child_parent() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_four_tables_deep() {
     let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
@@ -597,6 +669,10 @@ fn selecting_four_tables_deep() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_parent_child_sibling() {
     let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
@@ -628,6 +704,10 @@ fn selecting_parent_child_sibling() {
     assert_eq!(Ok(expected), data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_crazy_nested_joins() {
     let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();

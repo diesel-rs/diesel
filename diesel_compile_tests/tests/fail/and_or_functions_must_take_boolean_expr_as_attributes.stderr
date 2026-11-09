@@ -41,6 +41,6 @@ note: required by a bound in `diesel::BoolExpressionMethods::or`
  LL |     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
     |        -- required by a bound in this associated function
 ...
- LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
+LL |         ST: SqlType + TypedExpressionType + BoolOrNullableBool,
     |                                             ^^^^^^^^^^^^^^^^^^ required by this bound in `BoolExpressionMethods::or`
 For more information about this error, try `rustc --explain E0277`.

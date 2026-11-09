@@ -1,6 +1,10 @@
 use super::schema::*;
 use diesel::*;
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_basic_data() {
     use crate::schema::users;
@@ -30,6 +34,10 @@ fn selecting_basic_data() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn selecting_custom_base_query() {
     use crate::schema::{posts, users};
@@ -71,6 +79,10 @@ fn selecting_custom_base_query() {
     assert_eq!(expected_data, actual_data);
 }
 
+// This test reads query results, which requires reading memory
+// allocated by the native sqlite library. Miri cannot track the
+// provenance of that memory when using `-Zmiri-native-lib`.
+#[cfg(not(miri))]
 #[diesel_test_helper::test]
 fn fully_custom() {
     use crate::schema::{posts, users};
