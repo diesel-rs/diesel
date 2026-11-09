@@ -17,3 +17,6 @@ insta = "1.43"
 [[test]]
 path = "tests/lib.rs"
 name = "integration_tests"
+
+[lints]
+workspace = true

@@ -13,3 +13,6 @@ openssl-sys = { workspace = true, features = ["vendored"] }
 name = "custom-types"
 path = "src/main.rs"
 doc = false
+
+[lints]
+workspace = true

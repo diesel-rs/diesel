@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 // Function to connect to database.
 use composite_types::establish_connection;
 

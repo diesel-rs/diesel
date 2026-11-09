@@ -9,7 +9,6 @@ allow = [
     "PostgreSQL",
     "Apache-2.0 WITH LLVM-exception",
     "Unicode-3.0",
-    "BSD-3-Clause",
     "GPL-2.0-only",
     "Zlib",
     "MPL-2.0",
@@ -22,7 +21,8 @@ multiple-versions = "deny"
 skip-tree = [
     "windows-targets",
     "windows-sys",
-    "rand",
+    "r2d2",
+    "syn",
 ]
 
 [bans.build]

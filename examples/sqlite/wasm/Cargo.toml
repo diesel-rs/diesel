@@ -19,3 +19,6 @@ sqlite-wasm-rs = { version = "0.6.1", features = ["wasm-bindgen"] }
 [lib]
 crate-type = ["cdylib"]
 doc = false
+
+[lints]
+workspace = true

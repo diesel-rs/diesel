@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 #[rustfmt::skip]
 pub mod schema;
 
