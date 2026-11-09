@@ -16,7 +16,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
-* Correctly implement `Error::source` for the error types of `diesel_migrations` and `diesel_infer_query`. The `Display` output of `RunMigrationsError` and `diesel_infer_query::Error` no longer includes the underlying error, which `Error::source` returns instead. Diesel CLI now prints the complete error chain
+* Correctly implement `Error::source` for `diesel::r2d2::Error` and for the error types of `diesel_migrations` and `diesel_infer_query`. The `Display` output of `RunMigrationsError` and `diesel_infer_query::Error` no longer includes the underlying error, which `Error::source` returns instead. Diesel CLI now prints the complete error chain
 
 ### Changed
 
