@@ -49,7 +49,7 @@ pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 fn main() {
     if let Err(e) = inner_main() {
-        eprintln!("{e}");
+        eprintln!("{}", crate::errors::format_error(&e));
         std::process::exit(1)
     }
 }

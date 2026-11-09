@@ -7,7 +7,7 @@
 #[non_exhaustive]
 pub enum Error {
     /// Parsing the SQL failed with the provided error message
-    #[error("failed to parse sql: {0:?}")]
+    #[error("failed to parse sql")]
     #[non_exhaustive]
     ParserError(#[from] sqlparser::parser::ParserError),
     /// Handling this kind of SQL is currently not supported by this crate
@@ -24,10 +24,11 @@ pub enum Error {
         query_source: String,
     },
     /// The schema resolver returned an error
-    #[error("could not resolve view data: {inner}")]
+    #[error("could not resolve view data")]
     #[non_exhaustive]
     ResolverFailure {
         /// The inner resolver failure
+        #[source]
         inner: Box<dyn std::error::Error + Send + Sync + 'static>,
     },
     /// The query contained an unnamed field that needs to be resolved
@@ -55,3 +56,41 @@ pub enum Error {
 
 /// A result type using the error provided by this crate as default
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[cfg(test)]
+mod tests {
+    use super::Error;
+
+    fn format_error(error: &dyn std::error::Error) -> String {
+        std::iter::successors(Some(error), |error| error.source())
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>()
+            .join(": ")
+    }
+
+    #[test]
+    fn parser_error_exposes_source() {
+        let error = Error::from(sqlparser::parser::ParserError::ParserError(
+            "Expected: SELECT, found: EOF".into(),
+        ));
+
+        assert_eq!(error.to_string(), "failed to parse sql");
+        assert_eq!(
+            format_error(&error),
+            "failed to parse sql: sql parser error: Expected: SELECT, found: EOF"
+        );
+    }
+
+    #[test]
+    fn resolver_failure_exposes_source() {
+        let error = Error::ResolverFailure {
+            inner: "relation `users` does not exist".into(),
+        };
+
+        assert_eq!(error.to_string(), "could not resolve view data");
+        assert_eq!(
+            format_error(&error),
+            "could not resolve view data: relation `users` does not exist"
+        );
+    }
+}

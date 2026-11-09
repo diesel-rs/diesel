@@ -147,7 +147,7 @@ fn error_migrations_fails() {
     assert!(
         result
             .stderr()
-            .contains("Failed to run run_error_migrations_fails with: ")
+            .contains("Failed to run run_error_migrations_fails: ")
     );
 }
 
