@@ -5,7 +5,7 @@ description: "Test: print_schema_json"
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    Json (id) {
+    json (id) {
         id -> Integer,
         json_col -> Json,
     }
