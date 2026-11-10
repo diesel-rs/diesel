@@ -131,7 +131,7 @@ fn create_migrations_dir(
 ) -> Result<PathBuf, crate::errors::Error> {
     let dir = match self::migrations::migrations_dir(migration_dir, config_file) {
         Ok(dir) => dir,
-        Err(_) => find_project_root()?.join("migrations"),
+        Err(_) => find_project_root().unwrap_or_default().join("migrations"),
     };
 
     if dir.exists() {
@@ -161,13 +161,14 @@ fn create_migrations_dir(
 fn create_config_file(
     config_file: Option<std::path::PathBuf>,
     migrations_dir: &Path,
+    current_path: &Path,
 ) -> Result<(), crate::errors::Error> {
     use std::io::Write;
     let path = Config::file_path(config_file);
     if !path.exists() {
         let source_content = include_str!("default_files/diesel.toml").to_string();
         let migrations_dir_relative =
-            convert_absolute_path_to_relative(migrations_dir, &find_project_root()?);
+            convert_absolute_path_to_relative(migrations_dir, current_path);
         // convert the path to a valid toml string (escaping backslashes on windows)
         let migrations_dir_toml_string = migrations_dir_relative
             .display()
