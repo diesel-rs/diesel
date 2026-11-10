@@ -12,6 +12,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+* Extended libsqlite3-sys support to include 0.39
+
 ## [2.3.14] 2026-10-07
 
 * Add support for sqlite-wasm-rs 0.6
