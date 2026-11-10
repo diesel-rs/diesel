@@ -216,8 +216,14 @@ pub fn run_setup_command(
     config_file: Option<std::path::PathBuf>,
     no_default_migration: bool,
 ) -> Result<(), crate::errors::Error> {
+    let current_dir =
+        std::env::current_dir().map_err(|e| crate::errors::Error::IoError(e, None))?;
+    let current_path = config_file
+        .as_deref()
+        .and_then(|c| c.parent().map(|p| p.to_owned()))
+        .unwrap_or(current_dir);
     let migration_dir = crate::create_migrations_dir(migration_dir, config_file.clone())?;
-    crate::create_config_file(config_file, &migration_dir)?;
+    crate::create_config_file(config_file, &migration_dir, &current_path)?;
 
     setup_database(database_url, &migration_dir, no_default_migration)?;
     Ok(())

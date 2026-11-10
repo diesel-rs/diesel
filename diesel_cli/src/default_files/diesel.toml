@@ -4,6 +4,9 @@
 [print_schema]
 file = "src/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
+include_views = true
+generate_rust_enum_definitions = true
+custom_enum_derives = ["Clone", "Copy", "PartialEq", "Eq"]
 
 [migrations_directory]
 dir = "migrations"
