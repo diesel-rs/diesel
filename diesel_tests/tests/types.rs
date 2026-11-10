@@ -1913,3 +1913,39 @@ fn deserialize_wrong_primitive_gives_good_error() {
          Was a numeric accidentally marked as double?"
     );
 }
+
+// Regression test: the first row of a text query with a value longer than the
+// initial output buffer used to load as an empty string with libmariadb 3.4.x,
+// because the length written by the truncated fetch was used as the value length.
+#[derive(QueryableByName, Debug)]
+struct TextBodyRow {
+    #[diesel(sql_type = Text)]
+    body: String,
+}
+
+#[diesel_test_helper::test]
+#[cfg(feature = "mysql")]
+fn truncated_text_row_keeps_its_length_for_following_rows() {
+    let connection = &mut connection();
+    sql_query("DROP TABLE IF EXISTS mysql_truncated_text_rows")
+        .execute(connection)
+        .unwrap();
+    sql_query("CREATE TABLE mysql_truncated_text_rows (id INT PRIMARY KEY, body TEXT NOT NULL)")
+        .execute(connection)
+        .unwrap();
+    sql_query("INSERT INTO mysql_truncated_text_rows VALUES (1, REPEAT('x', 5000)), (2, 'short')")
+        .execute(connection)
+        .unwrap();
+
+    let rows = sql_query("SELECT body FROM mysql_truncated_text_rows ORDER BY id")
+        .load::<TextBodyRow>(connection)
+        .unwrap();
+
+    assert_eq!(2, rows.len());
+    assert_eq!("x".repeat(5000), rows[0].body);
+    assert_eq!("short", rows[1].body);
+
+    sql_query("DROP TABLE mysql_truncated_text_rows")
+        .execute(connection)
+        .unwrap();
+}

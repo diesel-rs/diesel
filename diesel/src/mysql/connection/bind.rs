@@ -24,13 +24,19 @@ fn bind_buffer(data: Vec<u8>) -> (Option<NonNull<u8>>, libc::c_ulong, usize) {
 
 pub(super) struct PreparedStatementBinds(Binds);
 
-pub(super) struct OutputBinds(Binds);
+pub(super) struct OutputBinds {
+    binds: Binds,
+    binds_are_invalid: bool,
+}
 
 impl Clone for OutputBinds {
     fn clone(&self) -> Self {
-        Self(Binds {
-            data: self.0.data.clone(),
-        })
+        Self {
+            binds: Binds {
+                data: self.binds.data.clone(),
+            },
+            binds_are_invalid: true,
+        }
     }
 }
 
@@ -71,28 +77,40 @@ impl OutputBinds {
             .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self(Binds { data }))
+        Ok(Self {
+            binds: Binds { data },
+            binds_are_invalid: true,
+        })
     }
 
     pub(super) fn populate_dynamic_buffers(&mut self, stmt: &StatementUse<'_>) -> QueryResult<()> {
-        for (i, data) in self.0.data.iter_mut().enumerate() {
-            data.did_numeric_overflow_occur()?;
-            // This is safe because we are re-binding the invalidated buffers
-            // at the end of this function
-            unsafe {
-                if let Some((mut bind, offset)) = data.bind_for_truncated_data() {
-                    stmt.fetch_column(&mut bind, i, offset)?
-                } else {
-                    data.update_buffer_length()
+        fn fetch_binds(binds: &mut Binds, stmt: &StatementUse<'_>) -> QueryResult<()> {
+            for (i, data) in binds.data.iter_mut().enumerate() {
+                data.did_numeric_overflow_occur()?;
+                // This is safe because we are re-binding the invalidated buffers
+                // before the next call to `mysql_stmt_fetch`
+                unsafe {
+                    if let Some((mut bind, offset)) = data.bind_for_truncated_data() {
+                        stmt.fetch_column(&mut bind, i, offset)?
+                    } else {
+                        data.update_buffer_length()
+                    }
                 }
             }
+            Ok(())
         }
-
-        unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }
+        // we need to be careful here to always set `self.binds_are_invalid` even
+        // if we return an error
+        let res = fetch_binds(&mut self.binds, stmt);
+        // binds need to be rebound with `mysql_stmt_bind_result` before calling `mysql_stmt_fetch`
+        // Rebinding here would reset the length libmariadb wrote for this value
+        // (libmariadb 3.4.x sets it to 0), so the value must be read before that happens
+        self.binds_are_invalid = true;
+        res
     }
 
     pub(super) fn update_buffer_lengths(&mut self) {
-        for data in &mut self.0.data {
+        for data in &mut self.binds.data {
             data.update_buffer_length();
         }
     }
@@ -101,7 +119,17 @@ impl OutputBinds {
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
-        self.0.with_mysql_binds(f)
+        self.binds.with_mysql_binds(f)
+    }
+
+    pub(super) fn bind_results(&mut self, stmt: &StatementUse<'_>) -> QueryResult<()> {
+        unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }?;
+        self.binds_are_invalid = false;
+        Ok(())
+    }
+
+    pub(crate) fn are_invalid(&self) -> bool {
+        self.binds_are_invalid
     }
 }
 
@@ -122,7 +150,7 @@ impl Binds {
 impl Index<usize> for OutputBinds {
     type Output = BindData;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.0.data[index]
+        &self.binds.data[index]
     }
 }
 
@@ -960,7 +988,7 @@ mod tests {
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &_)> = output_binds
-            .0
+            .binds
             .data
             .into_iter()
             .zip(metadata.fields())
@@ -1350,6 +1378,41 @@ mod tests {
         assert!(to_value::<BigInt, i64>(unsigned_big_col).is_err());
     }
 
+    // Regression test: libmariadb 3.4.x overwrites the length of an output bind when
+    // the results are rebound. A truncated value must still be read with its full length.
+    #[diesel_test_helper::test]
+    fn truncated_text_value_keeps_its_length() {
+        let conn = &mut crate::test_helpers::connection();
+
+        crate::sql_query("DROP TABLE IF EXISTS truncated_text_bind")
+            .execute(conn)
+            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE truncated_text_bind(id INTEGER PRIMARY KEY, body TEXT NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+        crate::sql_query(
+            "INSERT INTO truncated_text_bind(id, body) VALUES (1, REPEAT('x', 5000)), (2, 'short')",
+        )
+        .execute(conn)
+        .unwrap();
+
+        let body = query_single_table(
+            "SELECT body FROM truncated_text_bind WHERE id = 1",
+            conn,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
+        );
+        assert_eq!(
+            body.value().unwrap().as_bytes(),
+            "x".repeat(5000).as_bytes()
+        );
+
+        crate::sql_query("DROP TABLE truncated_text_bind")
+            .execute(conn)
+            .unwrap();
+    }
+
     fn query_single_table(
         query: &'static str,
         conn: &MysqlConnection,
@@ -1363,12 +1426,15 @@ mod tests {
 
         let bind = BindData::from_tpe_and_flags(bind_tpe.into());
 
-        let mut binds = OutputBinds(Binds { data: vec![bind] });
+        let mut binds = OutputBinds {
+            binds: Binds { data: vec![bind] },
+            binds_are_invalid: true,
+        };
 
         let stmt = stmt.execute_statement(&mut binds).unwrap();
         stmt.populate_row_buffers(&mut binds).unwrap();
 
-        binds.0.data.remove(0)
+        binds.binds.data.remove(0)
     }
 
     fn input_bind(

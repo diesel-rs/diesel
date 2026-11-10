@@ -12,6 +12,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Fixed
+
+* Fixed the MySQL and MariaDB backends loading the first row of a text query as an empty value when the value is longer than the initial output buffer, with libmariadb 3.4.x
+
 ## [2.3.14] 2026-10-07
 
 * Add support for sqlite-wasm-rs 0.6
