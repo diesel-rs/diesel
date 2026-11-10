@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use diesel::prelude::*;
 use getting_started_step_3_sqlite::*;
 use std::env::args;

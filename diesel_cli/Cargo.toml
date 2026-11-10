@@ -49,7 +49,7 @@ libsqlite3-sys = { workspace = true, optional = true }
 pq-sys = { workspace = true, optional = true }
 openssl-sys = { workspace = true, features = ["vendored"], optional = true }
 mysqlclient-sys = { workspace = true, optional = true }
-diffy = "0.4.0"
+diffy = "0.5.0"
 regex = "1.0.6"
 serde_regex = "1.1"
 diesel_attribute_parser = { version = "0.1", path = "../diesel_attribute_parser" }
@@ -57,8 +57,9 @@ diesel_table_macro_syntax = { version = "0.3", path = "../diesel_table_macro_syn
 syn = { version = "3", features = ["visit", "extra-traits"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3.10", features = ["env-filter"] }
+lazy_static = "1.2" # raise the minimal version as lazy_static 1.0 is broken
 thiserror = "2.0.0"
-similar-asserts = "1.6.0"
+similar-asserts = "2.0.0"
 fd-lock = "4.0.2"
 
 [dependencies.diesel]

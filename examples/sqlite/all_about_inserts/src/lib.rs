@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use chrono::NaiveDateTime;
 #[cfg(test)]
 use diesel::debug_query;

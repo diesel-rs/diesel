@@ -62,6 +62,7 @@ use crate::query_builder::*;
 use crate::result::*;
 use crate::sql_types::TypeMetadata;
 use crate::sqlite::Sqlite;
+#[cfg(not(miri))]
 use alloc::string::String;
 use core::ffi as libc;
 use core::num::NonZeroI64;

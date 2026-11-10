@@ -149,7 +149,10 @@ impl BorrowedSqliteConnection {
 //
 // These tests rely on sqlite calling the registered hooks, which is not
 // supported when running under miri with a native libsqlite3.
-#[cfg(all(test, not(miri)))]
+#[cfg(all(
+    test,
+    not(any(miri, all(target_family = "wasm", target_os = "unknown")))
+))]
 mod tests {
     use super::*;
     use crate::connection::SimpleConnection;

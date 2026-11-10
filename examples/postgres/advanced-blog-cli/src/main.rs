@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 mod auth;
 mod cli;
 mod comment;

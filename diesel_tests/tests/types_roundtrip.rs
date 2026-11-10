@@ -32,6 +32,7 @@ where
     let connection = &mut connection_without_transaction();
     let query = select(value.clone().into_sql::<ST>());
     let result = query.get_result::<T>(connection);
+    #[allow(clippy::print_stdout, reason = "Test code")]
     match result {
         Ok(res) => {
             if cmp(&value, &res) {

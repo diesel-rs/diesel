@@ -477,7 +477,12 @@ jobs:
       - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
         with:
           # Keep in sync with wasm-bindgen-test in diesel/Cargo.toml.
-          tool: wasm-bindgen@0.2.128
+          tool: wasm-bindgen@0.2.130
+      - name: Set environment variables
+        shell: bash
+        run: |
+          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
 
       - name: Test unit and integration tests
         env:

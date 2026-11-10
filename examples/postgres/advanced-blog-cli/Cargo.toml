@@ -23,3 +23,6 @@ lazy_static = "1.0"
 name = "advanced-blog-cli"
 path = "src/main.rs"
 doc = false
+
+[lints]
+workspace = true

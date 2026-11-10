@@ -209,6 +209,7 @@ impl Statement {
     }
 
     /// Steps the statement once for its side effects.
+    #[cfg(not(miri))]
     pub(super) fn run(&mut self) -> QueryResult<()> {
         // SAFETY: `inner_statement` stays a live prepared statement until `Drop`.
         match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {

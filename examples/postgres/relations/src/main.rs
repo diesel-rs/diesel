@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use diesel::prelude::*;
 use dotenvy::dotenv;
 use std::env;

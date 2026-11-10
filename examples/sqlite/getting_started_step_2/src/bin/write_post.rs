@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use getting_started_step_2_sqlite::*;
 use std::io::{Read, stdin};
 
