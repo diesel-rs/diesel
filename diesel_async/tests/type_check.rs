@@ -1,4 +1,4 @@
-use crate::{connection, TestConnection};
+use crate::{TestConnection, connection};
 use diesel::deserialize::FromSqlRow;
 use diesel::expression::{AsExpression, ValidGrouping};
 use diesel::prelude::*;

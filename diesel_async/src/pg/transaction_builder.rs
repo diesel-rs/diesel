@@ -1,9 +1,9 @@
 use crate::transaction_manager::AsyncFunc;
 use crate::{AnsiTransactionManager, AsyncConnection, TransactionManager};
+use diesel::QueryResult;
 use diesel::backend::Backend;
 use diesel::pg::Pg;
 use diesel::query_builder::{AstPass, QueryBuilder, QueryFragment};
-use diesel::QueryResult;
 
 /// Used to build a transaction, specifying additional details.
 ///
@@ -394,9 +394,9 @@ mod tests {
             };
         }
 
-        let database_url =
-            dbg!(std::env::var("DATABASE_URL")
-                .expect("DATABASE_URL must be set in order to run tests"));
+        let database_url = dotenvy::var("PG_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
         let mut conn = crate::AsyncPgConnection::establish(&database_url)
             .await
             .unwrap();

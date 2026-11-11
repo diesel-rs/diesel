@@ -1,7 +1,7 @@
 use diesel::migration::{Migration, MigrationVersion, Result};
 
-use crate::async_connection_wrapper::AsyncConnectionWrapper;
 use crate::AsyncConnection;
+use crate::async_connection_wrapper::AsyncConnectionWrapper;
 
 /// A diesel-migration [`MigrationHarness`](diesel_migrations::MigrationHarness) to run migrations
 /// via an [`AsyncConnection`](crate::AsyncConnection)
@@ -25,7 +25,7 @@ use crate::AsyncConnection;
 ///
 /// let mut connection = connection_no_data().await;
 ///
-/// // Alternativly use `diesel_migrations::embed_migrations!()`
+/// // Alternatively use `diesel_migrations::embed_migrations!()`
 /// // to get a list of migrations
 /// let migrations = FileBasedMigrations::find_migrations_directory()?;
 ///
@@ -82,7 +82,7 @@ use crate::AsyncConnection;
 /// use diesel_async::AsyncMigrationHarness;
 /// use diesel_migrations::{FileBasedMigrations, MigrationHarness};
 ///
-/// // Alternativly use `diesel_migrations::embed_migrations!()`
+/// // Alternatively use `diesel_migrations::embed_migrations!()`
 /// // to get a list of migrations
 /// let migrations = FileBasedMigrations::find_migrations_directory()?;
 ///

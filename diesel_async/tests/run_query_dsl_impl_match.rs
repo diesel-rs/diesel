@@ -1,4 +1,4 @@
-use super::{connection, users, User};
+use super::{User, connection, users};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 

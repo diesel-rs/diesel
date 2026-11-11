@@ -1,10 +1,11 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
 use diesel::{ConnectionError, ConnectionResult};
-use diesel_async::pooled_connection::bb8::Pool;
+use diesel_async::AsyncPgConnection;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::pooled_connection::ManagerConfig;
-use diesel_async::AsyncPgConnection;
-use futures_util::future::BoxFuture;
+use diesel_async::pooled_connection::bb8::Pool;
 use futures_util::FutureExt;
+use futures_util::future::BoxFuture;
 use rustls::ClientConfig;
 use rustls_platform_verifier::ConfigVerifierExt;
 use std::time::Duration;
@@ -44,7 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn establish_connection(config: &str) -> BoxFuture<'_, ConnectionResult<AsyncPgConnection>> {
     let fut = async {
         // We first set up the way we want rustls to work.
-        let rustls_config = ClientConfig::with_platform_verifier();
+        let rustls_config =
+            ClientConfig::with_platform_verifier().expect("Failed to initialize rustls");
         let tls = tokio_postgres_rustls::MakeRustlsConnect::new(rustls_config);
         let (client, conn) = tokio_postgres::connect(config, tls)
             .await

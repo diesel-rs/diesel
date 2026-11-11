@@ -1,9 +1,9 @@
-use diesel::connection::AnsiTransactionManager;
 use diesel::SqliteConnection;
+use diesel::connection::AnsiTransactionManager;
 
+use crate::TransactionManager;
 use crate::sync_connection_wrapper::SyncTransactionManagerWrapper;
 use crate::transaction_manager::AsyncFunc;
-use crate::TransactionManager;
 
 use super::SyncConnectionWrapper;
 

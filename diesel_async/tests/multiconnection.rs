@@ -1,7 +1,7 @@
 use crate::users;
 use diesel::{
-    connection::Instrumentation, prelude::*, table, AsChangeset, BoxableExpression, Insertable,
-    QueryDsl, Queryable, Selectable, SelectableHelper,
+    AsChangeset, BoxableExpression, Insertable, QueryDsl, Queryable, Selectable, SelectableHelper,
+    connection::Instrumentation, prelude::*, table,
 };
 use diesel_async::{AsyncConnection, RunQueryDsl};
 
@@ -98,10 +98,10 @@ async fn check_queries_work() {
     let b = Box::new(users::name.eq("John"))
         as Box<
             dyn BoxableExpression<
-                users::table,
-                self::multi_connection_impl::MultiBackend,
-                SqlType = _,
-            >,
+                    users::table,
+                    self::multi_connection_impl::MultiBackend,
+                    SqlType = _,
+                >,
         >;
 
     let _ = users::table

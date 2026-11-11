@@ -17,7 +17,7 @@ fn test_sync_wrapper() {
     #[cfg(feature = "sqlite")]
     let _guard = rt.enter();
 
-    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let db_url = crate::db_url();
     let mut conn = AsyncConnectionWrapper::<crate::TestConnection>::establish(&db_url).unwrap();
 
     let res =
@@ -27,10 +27,9 @@ fn test_sync_wrapper() {
 
 #[tokio::test]
 async fn test_sync_wrapper_async_query() {
-    use diesel_async::{AsyncConnection, RunQueryDsl};
+    use diesel_async::RunQueryDsl;
 
-    let db_url = std::env::var("DATABASE_URL").unwrap();
-    let conn = crate::TestConnection::establish(&db_url).await.unwrap();
+    let conn = crate::connection_without_transaction().await;
     let mut conn = AsyncConnectionWrapper::<_>::from(conn);
 
     let res = diesel::select(1.into_sql::<diesel::sql_types::Integer>())
@@ -43,7 +42,7 @@ async fn test_sync_wrapper_async_query() {
 async fn test_sync_wrapper_under_runtime() {
     use diesel::RunQueryDsl;
 
-    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let db_url = crate::db_url();
     tokio::task::spawn_blocking(move || {
         let mut conn = AsyncConnectionWrapper::<crate::TestConnection>::establish(&db_url).unwrap();
 
@@ -59,7 +58,7 @@ async fn test_sync_wrapper_under_runtime() {
 fn check_run_migration() {
     use diesel_migrations::MigrationHarness;
 
-    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let db_url = crate::db_url();
     let migrations: Vec<Box<dyn Migration<crate::TestBackend>>> = Vec::new();
     let mut conn = AsyncConnectionWrapper::<crate::TestConnection>::establish(&db_url).unwrap();
 
@@ -69,7 +68,7 @@ fn check_run_migration() {
 
 #[tokio::test]
 async fn test_sync_wrapper_unwrap() {
-    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let db_url = crate::db_url();
 
     let conn = tokio::task::spawn_blocking(move || {
         use diesel::RunQueryDsl;

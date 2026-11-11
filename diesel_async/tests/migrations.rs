@@ -1,3 +1,4 @@
+#![allow(clippy::await_holding_lock, reason = "test code")]
 use diesel_async::AsyncMigrationHarness;
 use diesel_migrations::MigrationHarness;
 
@@ -18,8 +19,8 @@ async fn plain_connection() {
 #[cfg(feature = "deadpool")]
 #[tokio::test(flavor = "multi_thread")]
 async fn pool_connection() {
-    use diesel_async::pooled_connection::deadpool::Pool;
     use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::pooled_connection::deadpool::Pool;
     let _guard = SEQUENTIAL.lock().unwrap();
 
     let db_url = std::env::var("DATABASE_URL").unwrap();

@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 use diesel::backend::Backend;
-use diesel::mysql_like::data_types::{MysqlTime, MysqlTimestampType};
 use diesel::mysql_like::MysqlLikeBackend;
+use diesel::mysql_like::data_types::{MysqlTime, MysqlTimestampType};
 use diesel::mysql_like::{MysqlType, MysqlValue};
 use diesel::row::{PartialRow, RowIndex, RowSealed};
 use mysql_async::consts::{ColumnFlags, ColumnType};

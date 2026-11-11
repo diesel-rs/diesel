@@ -1,4 +1,4 @@
-use super::{users, User};
+use super::{User, users};
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 #[cfg(not(feature = "sqlite"))]
@@ -7,10 +7,12 @@ use diesel_async::SaveChangesDsl;
 #[tokio::test]
 #[cfg(feature = "bb8")]
 async fn save_changes_bb8() {
-    use diesel_async::pooled_connection::bb8::Pool;
     use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::pooled_connection::bb8::Pool;
 
-    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let db_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
 
     let config = AsyncDieselConnectionManager::<super::TestConnection>::new(db_url);
     let pool = Pool::builder().max_size(1).build(config).await.unwrap();
@@ -41,8 +43,8 @@ async fn save_changes_bb8() {
 #[tokio::test]
 #[cfg(feature = "deadpool")]
 async fn save_changes_deadpool() {
-    use diesel_async::pooled_connection::deadpool::Pool;
     use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::pooled_connection::deadpool::Pool;
 
     let db_url = std::env::var("DATABASE_URL").unwrap();
 
@@ -75,8 +77,8 @@ async fn save_changes_deadpool() {
 #[tokio::test]
 #[cfg(feature = "mobc")]
 async fn save_changes_mobc() {
-    use diesel_async::pooled_connection::mobc::Pool;
     use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::pooled_connection::mobc::Pool;
 
     let db_url = std::env::var("DATABASE_URL").unwrap();
 
@@ -109,8 +111,8 @@ async fn save_changes_mobc() {
 #[tokio::test(flavor = "multi_thread")]
 #[cfg(all(feature = "sync-connection-wrapper", feature = "deadpool"))]
 async fn cancel_blocking_task_deadpool() {
-    use diesel_async::pooled_connection::deadpool::Pool;
     use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::pooled_connection::deadpool::Pool;
     use tokio::sync::oneshot;
 
     let db_url = std::env::var("DATABASE_URL").unwrap();
@@ -173,8 +175,8 @@ async fn connection_with_cancelled_query_is_broken() {
 #[tokio::test]
 #[cfg(all(feature = "bb8", any(feature = "mysql", feature = "mariadb")))]
 async fn cancelled_query_does_not_poison_bb8() {
-    use diesel_async::pooled_connection::bb8::Pool;
     use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+    use diesel_async::pooled_connection::bb8::Pool;
     use std::time::Duration;
 
     let db_url = std::env::var("DATABASE_URL").unwrap();

@@ -7,13 +7,13 @@
 use self::error_helper::ErrorHelper;
 use self::row::PgRow;
 use self::serialize::ToSqlHelper;
-use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper, StatementHelper};
 use crate::AsyncMultiConnectionHelper;
+use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper, StatementHelper};
 use crate::{AnsiTransactionManager, AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
+use diesel::connection::StrQueryHelper;
 use diesel::connection::statement_cache::{
     PrepareForCache, PreparedStatement, QueryFragmentForCachedStatement, StatementCache,
 };
-use diesel::connection::StrQueryHelper;
 use diesel::connection::{CacheSize, Instrumentation};
 use diesel::connection::{DynInstrumentation, InstrumentationEvent};
 use diesel::pg::{
@@ -26,17 +26,17 @@ use diesel::sql_types::TypeMetadata;
 use diesel::{ConnectionError, ConnectionResult, QueryResult};
 use futures_core::future::BoxFuture;
 use futures_core::stream::BoxStream;
+use futures_util::TryFutureExt;
 use futures_util::future::Either;
 use futures_util::stream::TryStreamExt;
-use futures_util::TryFutureExt;
 use futures_util::{FutureExt, StreamExt};
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::Arc;
-use tokio::sync::{broadcast, mpsc, oneshot, Mutex};
+use tokio::sync::{Mutex, broadcast, mpsc, oneshot};
+use tokio_postgres::Statement;
 use tokio_postgres::types::ToSql;
 use tokio_postgres::types::Type;
-use tokio_postgres::Statement;
 
 pub use self::transaction_builder::TransactionBuilder;
 
@@ -375,12 +375,11 @@ fn update_transaction_manager_status<T>(
 ) -> QueryResult<T> {
     if let Err(diesel::result::Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) =
         query_result
+        && !transaction_manager.is_commit
     {
-        if !transaction_manager.is_commit {
-            transaction_manager
-                .status
-                .set_requires_rollback_maybe_up_to_top_level(true);
-        }
+        transaction_manager
+            .status
+            .set_requires_rollback_maybe_up_to_top_level(true);
     }
     query_result
 }
@@ -392,7 +391,8 @@ fn prepare_statement_helper<'conn>(
     metadata: &[PgTypeMetadata],
 ) -> CallbackHelper<
     impl Future<Output = QueryResult<(StatementHelper<Statement>, &'conn tokio_postgres::Client)>>
-        + Send,
+    + Send
+    + use<'conn>,
 > {
     let bind_types = metadata
         .iter()
@@ -402,7 +402,7 @@ fn prepare_statement_helper<'conn>(
     // but as we usually cache statements anyway
     // this is a fixed one time const
     //
-    // The probleme with not cloning it is that we then cannot express
+    // The problem with not cloning it is that we then cannot express
     // the right result lifetime anymore (at least not easily)
     let sql = sql.to_string();
     CallbackHelper(async move {
@@ -913,13 +913,14 @@ fn construct_bind_data(query: &dyn QueryFragment<diesel::pg::Pg>) -> BindData {
 }
 
 type GeneratedOidTypeMap = Option<HashMap<(Option<String>, String), (u32, u32)>>;
+type OidGenerator = dyn FnMut(&str, Option<&str>) -> (u32, u32) + 'static;
 
 /// Collects types that need to be looked up, and causes fake OIDs to be written into the bind collector
 /// so they can be replaced with asynchronously fetched OIDs after the original query is dropped
 struct PgAsyncMetadataLookup {
     custom_oid: bool,
     generated_oids: GeneratedOidTypeMap,
-    oid_generator: Box<dyn FnMut(&str, Option<&str>) -> (u32, u32) + 'static>,
+    oid_generator: Box<OidGenerator>,
 }
 
 impl PgMetadataLookup for PgAsyncMetadataLookup {
@@ -1117,14 +1118,15 @@ impl PreparedStatement for StatementHelper<Statement> {
 mod tests {
     use super::*;
     use crate::run_query_dsl::RunQueryDsl;
-    use diesel::sql_types::Integer;
     use diesel::IntoSql;
+    use diesel::sql_types::Integer;
     use futures_util::future::try_join;
 
     #[tokio::test]
     async fn pipelining() {
-        let database_url =
-            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in order to run tests");
+        let database_url = dotenvy::var("PG_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
 
         let conn = crate::AsyncPgConnection::establish(&database_url)
             .await
@@ -1144,8 +1146,9 @@ mod tests {
 
     #[tokio::test]
     async fn pipelining_with_composed_futures() {
-        let database_url =
-            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in order to run tests");
+        let database_url = dotenvy::var("PG_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
 
         let conn = crate::AsyncPgConnection::establish(&database_url)
             .await
@@ -1178,8 +1181,9 @@ mod tests {
 
     #[tokio::test]
     async fn pipelining_with_composed_futures_and_transaction() {
-        let database_url =
-            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in order to run tests");
+        let database_url = dotenvy::var("PG_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
 
         let mut conn = crate::AsyncPgConnection::establish(&database_url)
             .await

@@ -46,7 +46,7 @@ impl QueryFragmentForCachedStatement<Mariadb> for QueryFragmentHelper {
 }
 
 impl UrlHelper for Mariadb {
-    //`mysql_async` exprects `mysql` as schema
+    //`mysql_async` expects `mysql` as schema
     fn check_and_replace_schema<'a>(url: &'a str) -> Result<Cow<'a, str>, mysql_async::UrlError> {
         let mut url = url::Url::parse(url)?;
         let scheme = url.scheme();

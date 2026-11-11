@@ -1,15 +1,15 @@
+use diesel::QueryResult;
 use diesel::connection::InstrumentationEvent;
 use diesel::connection::TransactionManagerStatus;
 use diesel::connection::{
     InTransactionStatus, TransactionDepthChange, ValidTransactionManagerStatus,
 };
 use diesel::result::Error;
-use diesel::QueryResult;
 use std::borrow::Cow;
 use std::future::Future;
 use std::num::NonZeroU32;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// A helper trait to allow us asserting additional bounds on `AsyncFnOnce`
 /// Especially this lets us assert bounds on the future returned by the closure
@@ -242,7 +242,7 @@ impl AnsiTransactionManager {
         let was_broken = is_broken.swap(true, Ordering::Relaxed);
         debug_assert!(
             !was_broken,
-            "Tried to execute a transaction SQL on transaction manager that was previously cancled"
+            "Tried to execute a transaction SQL on transaction manager that was previously canceled"
         );
         let res = f.await;
         is_broken.store(false, Ordering::Relaxed);

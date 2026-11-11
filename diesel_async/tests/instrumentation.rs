@@ -1,9 +1,9 @@
-use crate::users;
 use crate::TestConnection;
+use crate::users;
 use assert_matches::assert_matches;
+use diesel::QueryResult;
 use diesel::connection::InstrumentationEvent;
 use diesel::query_builder::AsQuery;
-use diesel::QueryResult;
 use diesel_async::AsyncConnection;
 use diesel_async::AsyncConnectionCore;
 use diesel_async::SimpleAsyncConnection;
@@ -119,8 +119,8 @@ async fn check_events_are_emitted_for_load() {
 }
 
 #[tokio::test]
-async fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_for_uncached_queries(
-) {
+async fn check_events_are_emitted_for_execute_returning_count_does_not_contain_cache_for_uncached_queries()
+ {
     let (events_to_check, mut conn) = setup_test_case().await;
     conn.execute_returning_count(diesel::sql_query("select 1"))
         .await

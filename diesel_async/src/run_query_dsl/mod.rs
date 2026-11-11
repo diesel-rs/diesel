@@ -1,12 +1,12 @@
 mod utils;
 
+use crate::AsyncConnectionCore;
 #[cfg(any(feature = "mysql", feature = "mariadb"))]
 use crate::mysql_like::MysqlLikeAsyncBackend;
-use crate::AsyncConnectionCore;
+use diesel::AsChangeset;
 use diesel::associations::HasTable;
 use diesel::query_builder::IntoUpdateTarget;
 use diesel::result::QueryResult;
-use diesel::AsChangeset;
 use futures_core::future::BoxFuture;
 #[cfg(any(
     feature = "mysql",
@@ -15,7 +15,7 @@ use futures_core::future::BoxFuture;
     feature = "sqlite"
 ))]
 use futures_util::FutureExt;
-use futures_util::{stream, StreamExt, TryStreamExt};
+use futures_util::{StreamExt, TryStreamExt, stream};
 use std::future::Future;
 
 /// The traits used by `QueryDsl`.

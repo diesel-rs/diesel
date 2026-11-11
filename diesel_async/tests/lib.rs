@@ -1,5 +1,5 @@
-use diesel::prelude::{ExpressionMethods, OptionalExtension, QueryDsl};
 use diesel::QueryResult;
+use diesel::prelude::{ExpressionMethods, OptionalExtension, QueryDsl};
 use diesel_async::*;
 use std::fmt::Debug;
 
@@ -374,7 +374,58 @@ async fn connection() -> TestConnection {
     conn
 }
 
+#[cfg(feature = "sqlite")]
+fn db_url() -> String {
+    String::from(":memory:")
+}
+
+#[cfg(feature = "mysql")]
+fn db_url() -> String {
+    dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests")
+}
+
+#[cfg(feature = "mariadb")]
+fn db_url() -> String {
+    dotenvy::var("MARIADB_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests")
+}
+
+#[cfg(feature = "postgres")]
+fn db_url() -> String {
+    dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests")
+}
+
+#[cfg(feature = "sqlite")]
+pub async fn backend_specific_connection() -> TestConnection {
+    let mut conn = TestConnection::establish(&db_url()).await.unwrap();
+    diesel::sql_query("PRAGMA foreign_keys = ON")
+        .execute(&mut conn)
+        .await
+        .unwrap();
+    conn
+}
+
+#[cfg(not(feature = "sqlite"))]
+pub async fn backend_specific_connection() -> TestConnection {
+    let connection_url = db_url();
+    let mut conn = TestConnection::establish(&connection_url).await.unwrap();
+    if cfg!(feature = "postgres") {
+        // we do match the error messages in some tests and depending on your
+        // operating system configuration postgres may return localized error messages
+        // This forces the language to english
+        diesel::sql_query("SET lc_messages TO 'en_US.UTF-8'")
+            .execute(&mut conn)
+            .await
+            .unwrap();
+    }
+    conn
+}
+
 async fn connection_without_transaction() -> TestConnection {
-    let db_url = std::env::var("DATABASE_URL").unwrap();
-    TestConnection::establish(&db_url).await.unwrap()
+    backend_specific_connection().await
 }

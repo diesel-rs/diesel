@@ -1,8 +1,8 @@
 use core::marker::PhantomData;
+use diesel::QueryResult;
 use diesel::data_types::MysqlTime;
 use diesel::mysql_like::MysqlType;
 use diesel::mysql_like::{MysqlLikeBackend, MysqlValue};
-use diesel::QueryResult;
 use mysql_async::{Params, Value};
 use std::convert::TryInto;
 

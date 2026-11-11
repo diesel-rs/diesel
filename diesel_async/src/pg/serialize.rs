@@ -1,5 +1,5 @@
 use diesel::pg::PgTypeMetadata;
-use tokio_postgres::types::{private::BytesMut, IsNull, Type, WrongType};
+use tokio_postgres::types::{IsNull, Type, WrongType, private::BytesMut};
 
 #[derive(Debug)]
 pub(super) struct ToSqlHelper(pub(super) PgTypeMetadata, pub(super) Option<Vec<u8>>);

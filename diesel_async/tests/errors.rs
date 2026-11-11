@@ -4,7 +4,7 @@ use diesel::dsl::{delete, insert_into, sql};
 use diesel::pg::sql_state;
 use diesel::result::{DatabaseErrorKind, Error};
 use diesel::sql_types::Integer;
-use diesel::{table, Insertable, IntoSql};
+use diesel::{Insertable, IntoSql, table};
 use diesel_async::{RunQueryDsl, SimpleAsyncConnection};
 
 table! {

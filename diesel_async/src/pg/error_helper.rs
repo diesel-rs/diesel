@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::sync::Arc;
 
-use diesel::result::SqlState;
 use diesel::ConnectionError;
+use diesel::result::SqlState;
 
 pub(super) struct ErrorHelper(pub(super) tokio_postgres::Error);
 

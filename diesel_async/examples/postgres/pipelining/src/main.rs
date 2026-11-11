@@ -1,3 +1,5 @@
+#![allow(clippy::print_stdout, reason = "Example code")]
+
 use diesel::prelude::*;
 use diesel_async::{AsyncConnection, AsyncPgConnection, RunQueryDsl};
 
@@ -9,6 +11,7 @@ diesel::table! {
 }
 
 #[derive(HasQuery, Debug)]
+#[allow(dead_code, reason = "That's an example")]
 struct User {
     id: i32,
     name: String,

@@ -7,12 +7,21 @@ pub fn get_exclude_for_backend<'a>(
 ) -> Vec<&'a str> {
     let examples = metadata.workspace_root.join("examples");
     let backend_examples = examples.join(backend);
+    let async_examples = metadata
+        .workspace_root
+        .join("diesel_async")
+        .join("examples");
+    let async_backend_examples = async_examples.join(backend);
     let mut out = metadata
         .workspace_packages()
         .into_iter()
         .filter_map(move |p| {
-            if p.manifest_path.starts_with(&examples)
-                && !p.manifest_path.starts_with(&backend_examples)
+            if (p.manifest_path.starts_with(&examples)
+                && !p.manifest_path.starts_with(&backend_examples))
+                || (p.manifest_path.starts_with(&async_examples)
+                    && !(backend == "sqlite"
+                        && p.manifest_path.ends_with("sync-wrapper/Cargo.toml"))
+                    && !p.manifest_path.starts_with(&async_backend_examples))
             {
                 Some(["--exclude", &p.name])
             } else {
@@ -35,6 +44,8 @@ pub fn get_exclude_for_backend<'a>(
             // needs to be tested in a separate step
             // due to broken cargo workspace feature unification
             "sqlite-wasm-example",
+            // not compatible yet
+            "diesel-async",
         ];
         out.extend(
             additional_excludes

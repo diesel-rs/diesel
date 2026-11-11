@@ -1,9 +1,9 @@
 use crate::UpdateAndFetchResults;
 use crate::{AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection, TransactionManager};
+use diesel::QueryResult;
 use diesel::associations::HasTable;
 use diesel::connection::CacheSize;
 use diesel::connection::Instrumentation;
-use diesel::QueryResult;
 use futures_util::future::BoxFuture;
 use std::ops::DerefMut;
 

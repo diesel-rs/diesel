@@ -1,8 +1,8 @@
 use core::marker::PhantomData;
 
+use diesel::ConnectionError;
 use diesel::mysql_like::MysqlLikeBackend;
 use diesel::result::{DatabaseErrorInformation, DatabaseErrorKind, SqlState};
-use diesel::ConnectionError;
 use mysql_async::{Error, ServerError};
 
 pub(super) struct ErrorHelper<DB: MysqlLikeBackend>(pub(super) Error, PhantomData<DB>);

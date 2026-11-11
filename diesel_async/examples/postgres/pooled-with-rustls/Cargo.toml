@@ -1,7 +1,8 @@
 [package]
 name = "pooled-with-rustls"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,12 +10,16 @@ edition = "2021"
 diesel-async = { version = "0.9.0", path = "../../../", features = ["bb8", "postgres"] }
 futures-util = "0.3.21"
 rustls = "0.23.8"
-rustls-platform-verifier = "0.5.0"
+rustls-platform-verifier = "0.7.0"
 tokio = { version = "1.2.0", default-features = false, features = ["macros", "rt-multi-thread"] }
 tokio-postgres = "0.7.7"
-tokio-postgres-rustls = "0.13.0"
+tokio-postgres-rustls = { version = "0.14.0", default-features = false, features = ["aws-lc-rs"] }
 
 
 [dependencies.diesel]
 version = "2.3.0"
 default-features = false
+path = "../../../../diesel"
+
+[lints]
+workspace = true

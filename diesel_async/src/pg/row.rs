@@ -1,7 +1,7 @@
 use diesel::backend::Backend;
 use diesel::row::{Field, PartialRow, RowIndex, RowSealed};
 use std::{error::Error, num::NonZeroU32};
-use tokio_postgres::{types::Type, Row};
+use tokio_postgres::{Row, types::Type};
 
 pub struct PgRow {
     row: Row,

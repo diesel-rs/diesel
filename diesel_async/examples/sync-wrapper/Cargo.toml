@@ -1,7 +1,8 @@
 [package]
 name = "sync-wrapper"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,10 +15,15 @@ tokio = { version = "1.2.0", default-features = false, features = ["macros", "rt
 version = "2.3.0"
 default-features = false
 features = ["returning_clauses_for_sqlite_3_35"]
+path = "../../../diesel"
 
 [dependencies.diesel_migrations]
 version = "2.3.0"
+path = "../../../diesel_migrations"
 
 [features]
 default = ["sqlite"]
 sqlite = ["diesel-async/sqlite"]
+
+[lints]
+workspace = true

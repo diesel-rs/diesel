@@ -1,5 +1,5 @@
-use diesel::connection::statement_cache::{MaybeCached, StatementCallbackReturnType};
 use diesel::QueryResult;
+use diesel::connection::statement_cache::{MaybeCached, StatementCallbackReturnType};
 use futures_core::future::BoxFuture;
 use futures_util::future::Either;
 use futures_util::{FutureExt, TryFutureExt};

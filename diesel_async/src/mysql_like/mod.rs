@@ -1,22 +1,22 @@
-use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper, StatementHelper};
 use crate::AsyncMultiConnectionHelper;
+use crate::stmt_cache::{CallbackHelper, QueryFragmentHelper, StatementHelper};
 use crate::{AnsiTransactionManager, AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
 use core::marker::PhantomData;
+use diesel::QueryResult;
+use diesel::connection::StrQueryHelper;
 use diesel::connection::statement_cache::{
     MaybeCached, PreparedStatement, QueryFragmentForCachedStatement, StatementCache,
 };
-use diesel::connection::StrQueryHelper;
 use diesel::connection::{CacheSize, Instrumentation};
 use diesel::connection::{DynInstrumentation, InstrumentationEvent};
 use diesel::mysql_like::{MysqlLikeBackend, MysqlType};
 use diesel::query_builder::QueryBuilder;
-use diesel::query_builder::{bind_collector::RawBytesBindCollector, QueryFragment, QueryId};
+use diesel::query_builder::{QueryFragment, QueryId, bind_collector::RawBytesBindCollector};
 use diesel::result::{ConnectionError, ConnectionResult};
 use diesel::sql_types::TypeMetadata;
-use diesel::QueryResult;
+use futures_core::Stream;
 use futures_core::future::BoxFuture;
 use futures_core::stream::BoxStream;
-use futures_core::Stream;
 use futures_util::{FutureExt, StreamExt, TryStreamExt};
 use mysql_async::prelude::Queryable;
 use mysql_async::{Opts, OptsBuilder, Statement, UrlError};
@@ -196,13 +196,15 @@ fn prepare_statement_helper<'a, DB: MysqlLikeAsyncBackend>(
     _is_for_cache: diesel::connection::statement_cache::PrepareForCache,
     _metadata: &[MysqlType],
 ) -> CallbackHelper<
-    impl Future<Output = QueryResult<(StatementHelper<Statement>, &'a mut mysql_async::Conn)>> + Send,
+    impl Future<Output = QueryResult<(StatementHelper<Statement>, &'a mut mysql_async::Conn)>>
+    + Send
+    + use<'a, DB>,
 > {
     // ideally we wouldn't clone the SQL string here
     // but as we usually cache statements anyway
     // this is a fixed one time const
     //
-    // The probleme with not cloning it is that we then cannot express
+    // The problem with not cloning it is that we then cannot express
     // the right result lifetime anymore (at least not easily)
     let sql = sql.to_owned();
     CallbackHelper(async move {
@@ -262,12 +264,12 @@ where
         &'conn mut self,
         query: T,
         callback: impl (FnOnce(
-                &'conn mut mysql_async::Conn,
-                MaybeCached<'conn, StatementHelper<Statement>>,
-                ToSqlHelper<DB>,
-            ) -> F)
-            + Send
-            + 'conn,
+            &'conn mut mysql_async::Conn,
+            MaybeCached<'conn, StatementHelper<Statement>>,
+            ToSqlHelper<DB>,
+        ) -> F)
+        + Send
+        + 'conn,
     ) -> BoxFuture<'conn, QueryResult<R>>
     where
         R: Send + 'conn,
@@ -285,11 +287,11 @@ where
             .map(|()| bind_collector);
 
         let AsyncMysqlLikeConnection {
-            ref mut conn,
-            ref mut stmt_cache,
-            ref mut transaction_manager,
-            ref mut instrumentation,
-            ref mut stmt_to_free,
+            conn,
+            stmt_cache,
+            transaction_manager,
+            instrumentation,
+            stmt_to_free,
             ..
         } = self;
 
@@ -367,17 +369,13 @@ where
     {
         let params = mysql_async::Params::try_from(binds)?;
         let stmt_for_exec = match stmt {
-                MaybeCached::Cached(ref s) => {
-                    s.0.clone()
-                },
-                MaybeCached::CannotCache(ref s) => {
-                    s.0.clone()
-                },
-                _ => unreachable!(
-                    "Diesel has only two variants here at the time of writing.\n\
+            MaybeCached::Cached(ref s) => s.0.clone(),
+            MaybeCached::CannotCache(ref s) => s.0.clone(),
+            _ => unreachable!(
+                "Diesel has only two variants here at the time of writing.\n\
                      If you ever see this error message please open in issue in the diesel-async issue tracker"
-                ),
-            };
+            ),
+        };
 
         let res = conn
             .exec_iter(stmt_for_exec, params)
