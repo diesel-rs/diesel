@@ -1,9 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_with_multiple_schema_cross_schema_foreign_key"
-snapshot_kind: text
 ---
-// @generated automatically by Diesel CLI.
 // @generated automatically by Diesel CLI.
 
 pub mod game {

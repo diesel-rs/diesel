@@ -1,9 +1,7 @@
 ---
 source: diesel_cli/tests/print_schema.rs
 description: "Test: print_schema_with_same_schema_cross_file_foreign_key"
-snapshot_kind: text
 ---
-// @generated automatically by Diesel CLI.
 // @generated automatically by Diesel CLI.
 
 pub mod inventory {
