@@ -60,6 +60,9 @@ pub trait MigrationHarness<DB: Backend> {
     }
 
     /// Revert all applied migrations from a given migration source
+    ///
+    /// This method returns a error on the first migration not contained
+    /// within the given migration source
     fn revert_all_migrations<S: MigrationSource<DB>>(
         &mut self,
         source: S,

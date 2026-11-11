@@ -117,6 +117,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fix that the iterator returned by `SqliteConnection::load_iter` is correctly fused and doesn't return values after the first `None` or statement related `Some(Err(_))` by reexecuting the statement
 * Fix a potential use-after-free memory bug while holding rows in the Mysql backend longer than the connection/result iterator exists
 * Provide a BorrowedSqliteConnection passed to various hooks to prevent users calling `std::mem::replace` or similar methods
+* Fixed `diesel_tests::migration::test_rust_migrations` to allow consecutive runs without failing
 
 ### Changed
 
