@@ -66,13 +66,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: ${{ matrix.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -199,7 +199,8 @@ jobs:
 
       - name: Build sqlite import library (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
-        shell: cmd
+        # we need cmd for initializing visual studio
+        shell: cmd # zizmor: ignore[misfeature]
         run: |
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
           for /f "usebackq tokens=*" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -property installationPath`) do call "%%i\VC\Auxiliary\Build\vcvars64.bat"
@@ -298,7 +299,7 @@ jobs:
           cargo --version
           rustc --version
 
-      - uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
+      - uses: taiki-e/install-action@v2.87.13
         with:
           tool: cargo-llvm-cov,nextest
 
@@ -360,7 +361,7 @@ jobs:
 
       - name: Upload coverage
         if: github.event_name != 'merge_group'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        uses: codecov/codecov-action@v7.1.1
         with:
           files: codecov.json
           disable_search: true
@@ -382,7 +383,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -390,7 +391,7 @@ jobs:
           rustup update stable
           rustup override set stable
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -409,7 +410,7 @@ jobs:
     name: Check rustfmt style && run clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -419,7 +420,7 @@ jobs:
           rustup component add clippy
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Fixing up rustup
@@ -437,7 +438,7 @@ jobs:
           sudo apt-get -o DPkg::Lock::Timeout=300 update
           sudo apt-get -o DPkg::Lock::Timeout=300 -y install libsqlite3-dev libpq-dev libmysqlclient-dev libtirpc-dev
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@v2.87.13
         with:
           tool: typos
       - name: Set environment variables
@@ -453,7 +454,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -464,11 +465,11 @@ jobs:
           rustup component add rustfmt
           rustup target add wasm32-unknown-unknown
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: sqlite_wasm-cargo-${{ hashFiles('**/Cargo.toml') }}
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@v2.87.13
         with:
           # Keep in sync with wasm-bindgen-test in diesel/Cargo.toml.
           tool: wasm-bindgen@0.2.130
@@ -493,7 +494,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -503,7 +504,7 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -530,7 +531,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -540,7 +541,7 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
@@ -578,7 +579,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -588,7 +589,7 @@ jobs:
           rustup component add rust-src
           rustup component add rustfmt
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: mysql_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install Mysql (Linux)
@@ -637,18 +638,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
         run: |
           rustup install 1.88.0
           rustup install nightly
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@v2.87.13
         with:
           tool: cargo-hack,cargo-minimal-versions
       - name: Cache cargo registry
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install dependencies
@@ -677,14 +678,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
         run: |
           rustup update stable
           rustup override set stable
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@v2.87.13
         with:
           tool: cargo-semver-checks
       - name: Run cargo semver-checks
@@ -695,7 +696,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -717,7 +718,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -737,7 +738,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rustfmt_and_clippy]
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Setup rust toolchain
@@ -749,7 +750,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libsqlite3-dev pkg-config
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@26e9283f268b880168bdbd2c545dfcd60ec2c6ab # v2.87.13
+        uses: taiki-e/install-action@v2.87.13
         with:
           tool: nextest
       - name: Run miri tests for the sqlite backend
@@ -758,3 +759,28 @@ jobs:
           # nextest/test invocations. These features are required to run the
           # same set of unit and doc tests as the non-miri test run.
           cargo xtask run-tests --miri sqlite -- -F diesel/serde_json -F diesel/extras -F diesel/with-deprecated
+
+  verify-actions:
+    name: Verify sound github actions usage
+    runs-on: ubuntu-slim
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - run: gh extension install github/gh-actions-lock --pin v0.4.1
+      - run: |
+          shopt -s extglob
+          # the release yaml is generated, so don't check it
+          gh actions-lock --verify .github/workflows/!(release).yml
+      - name: Install zizmor
+        uses: taiki-e/install-action@v2.87.13
+        with:
+          tool: zizmor@1.32.0
+      - name: Zizmor
+        run: |
+          shopt -s extglob
+          # don't lint against the release yaml, thats
+          # generated
+          zizmor .github/workflows/!(release).yml -p

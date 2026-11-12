@@ -1052,7 +1052,7 @@ mod tests {
         );
     }
 
- #[diesel_test_helper::test]
+    #[diesel_test_helper::test]
     #[expect(
         unsafe_code,
         reason = "a non-UTF-8 identifier cannot be written through `&str` SQL"
