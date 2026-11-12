@@ -12,6 +12,9 @@ allow = [
     "GPL-2.0-only",
     "Zlib",
     "MPL-2.0",
+    "ISC",
+    "BSD-3-Clause",
+    "CDLA-Permissive-2.0",
 ]
 # ignore private packages
 private = { ignore = true }
@@ -23,6 +26,8 @@ skip-tree = [
     "windows-sys",
     "r2d2",
     "syn",
+    "const-oid",
+    "wasi",
 ]
 
 [bans.build]

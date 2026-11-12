@@ -298,8 +298,13 @@ impl TestArgs {
                 .arg("-F")
                 .arg(format!("diesel-dynamic-schema/{backend}"))
                 .arg("-F")
-                .arg(format!("diesel_migrations/{backend}"))
-                .args(&self.flags);
+                .arg(format!("diesel_migrations/{backend}"));
+            if !self.wasm {
+                command
+                    .arg("-F")
+                    .arg(format!("diesel-async/{backend}"))
+                    .args(&self.flags);
+            }
 
             if matches!(self.backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
@@ -370,6 +375,11 @@ impl TestArgs {
                 .arg(format!("diesel_migrations/{backend}"))
                 .arg("-F")
                 .arg(format!("migrations_macros/{backend}"));
+            if !self.wasm {
+                command
+                    .args(["-p", "diesel-async", "-F"])
+                    .arg(format!("diesel-async/{backend}"));
+            };
             if matches!(backend, Backend::Mysql | Backend::Mariadb) {
                 // cannot run mysql tests in parallel
                 command.args(["-j", "1"]);

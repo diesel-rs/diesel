@@ -49,8 +49,7 @@ zero-postgres = { optional = true, version = "=0.8.0", features = [
 ] }
 
 [dependencies.diesel-async]
-git = "https://github.com/diesel-rs/diesel_async"
-branch = "main"
+path = "../diesel_async"
 optional = true
 default-features = false
 
