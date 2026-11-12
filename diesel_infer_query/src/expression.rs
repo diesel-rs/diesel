@@ -7,7 +7,7 @@ use crate::query_source::QuerySource;
 use crate::select::{CaseCondition, Expression};
 use crate::views::ParseContext;
 use sqlparser::ast::{
-    Expr, FunctionArg, FunctionArgExpr, FunctionArguments, ObjectNamePart, Value,
+    Expr, FunctionArg, FunctionArgExpr, FunctionArguments, InTarget, ObjectNamePart, Value,
 };
 use std::collections::HashMap;
 
@@ -223,10 +223,11 @@ pub(crate) fn infer_expr(
                 else_clause,
             })
         }
-        Expr::InList {
+        Expr::In {
             expr,
-            list,
             negated,
+            target: InTarget::List(list),
+            global: false,
         } => Ok(Expression::In {
             left: Box::new(infer_expr(expr, query_source_lookup, context)?),
             negated: *negated,
@@ -242,10 +243,11 @@ pub(crate) fn infer_expr(
             let results = crate::select::parse_query(query, Some(query_source_lookup), context)?;
             Ok(Expression::Subquery { selection: results })
         }
-        Expr::InSubquery {
+        Expr::In {
             expr,
-            subquery,
             negated,
+            target: InTarget::Subquery(subquery),
+            global: false,
         } => {
             let results = crate::select::parse_query(subquery, Some(query_source_lookup), context)?;
             Ok(Expression::InSubQuery {
@@ -264,7 +266,11 @@ pub(crate) fn infer_expr(
         | Expr::IsUnknown(..)
         | Expr::IsNotUnknown(..)
         | Expr::IsNormalized { .. }
-        | Expr::InUnnest { .. }
+        | Expr::In {
+            target: InTarget::Table { .. } | InTarget::Unnest(..),
+            ..
+        }
+        | Expr::In { global: true, .. }
         | Expr::Like { .. }
         | Expr::ILike { .. }
         | Expr::SimilarTo { .. }
