@@ -2095,15 +2095,15 @@ mod multi_connection_impl {
             }
         }
         impl diesel_async::AsyncConnectionCore for MultiConnection {
-            type LoadFuture<'conn, 'query> = futures_util::future::BoxFuture<
+            type LoadFuture<'conn, 'query> = diesel_async::futures_util::future::BoxFuture<
                 'conn,
                 diesel::QueryResult<Self::Stream<'conn, 'query>>,
             >;
-            type ExecuteFuture<'conn, 'query> = futures_util::future::BoxFuture<
+            type ExecuteFuture<'conn, 'query> = diesel_async::futures_util::future::BoxFuture<
                 'conn,
                 diesel::QueryResult<usize>,
             >;
-            type Stream<'conn, 'query> = futures_util::stream::BoxStream<
+            type Stream<'conn, 'query> = diesel_async::futures_util::stream::BoxStream<
                 'conn,
                 diesel::QueryResult<Self::Row<'conn, 'query>>,
             >;
@@ -2137,7 +2137,7 @@ mod multi_connection_impl {
                         Box::pin(async move {
                             Ok(
                                 Box::pin(
-                                    futures_util::StreamExt::map(
+                                    diesel_async::futures_util::StreamExt::map(
                                         r.await?,
                                         |result| result.map(super::row::MultiRow::Pg),
                                     ),
@@ -2163,7 +2163,7 @@ mod multi_connection_impl {
                         Box::pin(async move {
                             Ok(
                                 Box::pin(
-                                    futures_util::StreamExt::map(
+                                    diesel_async::futures_util::StreamExt::map(
                                         r.await?,
                                         |result| result.map(super::row::MultiRow::Sqlite),
                                     ),

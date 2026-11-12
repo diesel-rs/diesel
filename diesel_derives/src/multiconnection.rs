@@ -268,7 +268,7 @@ fn generate_connection_impl(
                     #load_query
                     Box::pin(async move {
                         Ok(Box::pin(
-                            futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
+                            diesel_async::futures_util::StreamExt::map(r.await?, |result| result.map(super::row::MultiRow::#variant_ident))
                         ) as Self::Stream<'conn, 'query>)
                     })
                 }
@@ -276,9 +276,9 @@ fn generate_connection_impl(
         });
         quote::quote! {
             impl #conn_load for MultiConnection {
-                type LoadFuture<'conn, 'query> = futures_util::future::BoxFuture<'conn, diesel::QueryResult<Self::Stream<'conn, 'query>>>;
-                type ExecuteFuture<'conn, 'query> = futures_util::future::BoxFuture<'conn, diesel::QueryResult<usize>>;
-                type Stream<'conn, 'query> = futures_util::stream::BoxStream<'conn, diesel::QueryResult<Self::Row<'conn, 'query>>>;
+                type LoadFuture<'conn, 'query> = diesel_async::futures_util::future::BoxFuture<'conn, diesel::QueryResult<Self::Stream<'conn, 'query>>>;
+                type ExecuteFuture<'conn, 'query> = diesel_async::futures_util::future::BoxFuture<'conn, diesel::QueryResult<usize>>;
+                type Stream<'conn, 'query> = diesel_async::futures_util::stream::BoxStream<'conn, diesel::QueryResult<Self::Row<'conn, 'query>>>;
                 type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
 
                 type Backend = super::MultiBackend;
