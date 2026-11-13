@@ -6,6 +6,7 @@ include.workspace = true
 edition = "2024"
 license = "MPL-2.0"
 autotests = false
+description = "Nullability inference engine for SQL queries"
 
 [dependencies]
 sqlparser = { version = "0.64.0", features = ["visitor"] }
