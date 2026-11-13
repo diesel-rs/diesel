@@ -1,0 +1,344 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/x509-cert-0.2.5/src/time.rs`."><title>time.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="x509_cert" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">x509_cert/</div>time.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! X.501 time types as defined in RFC 5280
+<a href=#2 id=2 data-nosnippet>2</a>
+<a href=#3 id=3 data-nosnippet>3</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/fmt/index.html">core::fmt</a>;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">core::time::Duration</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span>der::asn1::{<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html">GeneralizedTime</a>, <a href="../../der/asn1/utc_time/struct.UtcTime.html">UtcTime</a>};
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span>der::{<a href="../../der_derive/derive.Choice.html">Choice</a>, <a href="../../der/datetime/struct.DateTime.html">DateTime</a>, <a href="../../der_derive/derive.Sequence.html">Sequence</a>, <a href="../../der_derive/derive.ValueOrd.html">ValueOrd</a>};
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">std::time::SystemTime</a>;
+<a href=#10 id=10 data-nosnippet>10</a>
+<a href=#11 id=11 data-nosnippet>11</a><span class="doccomment">/// X.501 `Time` as defined in [RFC 5280 Section 4.1.2.5].
+<a href=#12 id=12 data-nosnippet>12</a>///
+<a href=#13 id=13 data-nosnippet>13</a>/// Schema definition from [RFC 5280 Appendix A]:
+<a href=#14 id=14 data-nosnippet>14</a>///
+<a href=#15 id=15 data-nosnippet>15</a>/// ```text
+<a href=#16 id=16 data-nosnippet>16</a>/// Time ::= CHOICE {
+<a href=#17 id=17 data-nosnippet>17</a>///      utcTime        UTCTime,
+<a href=#18 id=18 data-nosnippet>18</a>///      generalTime    GeneralizedTime
+<a href=#19 id=19 data-nosnippet>19</a>/// }
+<a href=#20 id=20 data-nosnippet>20</a>/// ```
+<a href=#21 id=21 data-nosnippet>21</a>///
+<a href=#22 id=22 data-nosnippet>22</a>/// [RFC 5280 Section 4.1.2.5]: https://tools.ietf.org/html/rfc5280#section-4.1.2.5
+<a href=#23 id=23 data-nosnippet>23</a>/// [RFC 5280 Appendix A]: https://tools.ietf.org/html/rfc5280#page-117
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="attr">#[cfg_attr(feature = <span class="string">"arbitrary"</span>, derive(arbitrary::Arbitrary))]
+<a href=#25 id=25 data-nosnippet>25</a></span><span class="expansion"><input id=expand-25 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Choice&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>Time&lt;&gt; {
+    <span class="kw">fn </span>can_decode(tag: ::der::Tag) -&gt; bool {
+
+        <span class="attr">#[allow(non_exhaustive_omitted_patterns)]
+        </span><span class="kw">match </span>tag {
+            ::der::Tag::UtcTime | ::der::Tag::GeneralizedTime =&gt; <span class="bool-val">true</span>,
+            <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+        }
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Decode&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>Time&lt;&gt; {
+    <span class="kw">fn </span>decode&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R)
+        -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>der::Reader <span class="kw">as _</span>;
+        <span class="kw">match </span>reader.peek_tag()<span class="question-mark">? </span>{
+            ::der::Tag::UtcTime =&gt;
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>::UtcTime(::der::asn1::UtcTime::decode(reader)<span class="question-mark">?</span>.try_into()<span class="question-mark">?</span>)),
+            ::der::Tag::GeneralizedTime =&gt;
+                <span class="prelude-val">Ok</span>(<span class="self">Self</span>::GeneralTime(::der::asn1::GeneralizedTime::decode(reader)<span class="question-mark">?</span>.try_into()<span class="question-mark">?</span>)),
+            actual =&gt;
+                <span class="prelude-val">Err</span>(der::ErrorKind::TagUnexpected {
+                            expected: <span class="prelude-val">None</span>,
+                            actual,
+                        }.into()),
+        }
+    }
+}
+<span class="kw">impl </span>::der::EncodeValue <span class="kw">for </span>Time&lt;&gt; {
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, encoder: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::UtcTime(variant) =&gt;
+                ::der::asn1::UtcTime::try_from(variant)<span class="question-mark">?</span>.encode_value(encoder),
+            <span class="self">Self</span>::GeneralTime(variant) =&gt;
+                ::der::asn1::GeneralizedTime::try_from(variant)<span class="question-mark">?</span>.encode_value(encoder),
+        }
+    }
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::UtcTime(variant) =&gt; variant.value_len(),
+            <span class="self">Self</span>::GeneralTime(variant) =&gt; variant.value_len(),
+        }
+    }
+}
+<span class="kw">impl </span>::der::Tagged <span class="kw">for </span>Time&lt;&gt; {
+    <span class="kw">fn </span>tag(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Tag {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::UtcTime(<span class="kw">_</span>) =&gt; ::der::Tag::UtcTime,
+            <span class="self">Self</span>::GeneralTime(<span class="kw">_</span>) =&gt; ::der::Tag::GeneralizedTime,
+        }
+    }
+}</span><span class="original"><a href="../../der_derive/derive.Choice.html">Choice</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Time { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>Time {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Time {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;UtcTime&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;GeneralizedTime&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Time {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::UtcTime(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"UtcTime"</span>, <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::GeneralTime(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f,
+                    <span class="string">"GeneralTime"</span>, <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>Time {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;UtcTime&gt;;
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;GeneralizedTime&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>Time { }
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Time {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        ::core::intrinsics::discriminant_value(<span class="self">self</span>) ==
+                ::core::intrinsics::discriminant_value(other) &amp;&amp;
+            <span class="kw">match </span>(<span class="self">self</span>, other) {
+                (<span class="self">Self</span>::UtcTime(__self_0), <span class="self">Self</span>::UtcTime(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                (<span class="self">Self</span>::GeneralTime(__self_0), <span class="self">Self</span>::GeneralTime(__arg1_0)) =&gt;
+                    __self_0 == __arg1_0,
+                <span class="kw">_ </span>=&gt; <span class="kw">unsafe </span>{ ::core::intrinsics::unreachable() }
+            }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="kw">impl </span>::der::ValueOrd <span class="kw">for </span>Time&lt;&gt; {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="attr">#[allow(unused_imports)]
+        </span><span class="kw">use </span>::der::ValueOrd;
+        <span class="kw">match </span>(<span class="self">self</span>, other) {
+            (<span class="self">Self</span>::UtcTime(this), <span class="self">Self</span>::UtcTime(other)) =&gt;
+                this.value_cmp(other),
+            (<span class="self">Self</span>::GeneralTime(this), <span class="self">Self</span>::GeneralTime(other)) =&gt;
+                this.value_cmp(other),
+            <span class="kw">_ </span>=&gt; ::core::panicking::unreachable_default_msg(),
+        }
+    }
+}</span><span class="original"><a href="../../der_derive/derive.ValueOrd.html">ValueOrd</a></span></span></span><span class="attr">)]
+<a href=#26 id=26 data-nosnippet>26</a></span><span class="kw">pub enum </span><a href="../../x509_cert/time/enum.Time.html">Time</a> {
+<a href=#27 id=27 data-nosnippet>27</a>    <span class="doccomment">/// Legacy UTC time (has 2-digit year, valid from 1970 to 2049).
+<a href=#28 id=28 data-nosnippet>28</a>    ///
+<a href=#29 id=29 data-nosnippet>29</a>    /// Note: RFC 5280 specifies 1950-2049, however due to common operations working on
+<a href=#30 id=30 data-nosnippet>30</a>    /// `UNIX_EPOCH` this implementation's lower bound is 1970.
+<a href=#31 id=31 data-nosnippet>31</a>    </span><span class="attr">#[asn1(<span class="kw">type </span>= <span class="string">"UTCTime"</span>)]
+<a href=#32 id=32 data-nosnippet>32</a>    </span>UtcTime(<a href="../../der/asn1/utc_time/struct.UtcTime.html">UtcTime</a>),
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a>    <span class="doccomment">/// Modern [`GeneralizedTime`] encoding with 4-digit year.
+<a href=#35 id=35 data-nosnippet>35</a>    </span><span class="attr">#[asn1(<span class="kw">type </span>= <span class="string">"GeneralizedTime"</span>)]
+<a href=#36 id=36 data-nosnippet>36</a>    </span>GeneralTime(<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html">GeneralizedTime</a>),
+<a href=#37 id=37 data-nosnippet>37</a>}
+<a href=#38 id=38 data-nosnippet>38</a>
+<a href=#39 id=39 data-nosnippet>39</a><span class="kw">impl </span><a href="#26-37">Time</a> {
+<a href=#40 id=40 data-nosnippet>40</a>    <span class="doccomment">/// Time used for Certificate who do not expire.
+<a href=#41 id=41 data-nosnippet>41</a>    </span><span class="kw">pub const </span>INFINITY: <a href="#26-37">Time</a> =
+<a href=#42 id=42 data-nosnippet>42</a>        Time::<a href="#36">GeneralTime</a>(<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html">GeneralizedTime</a>::<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html#method.from_date_time">from_date_time</a>(<a href="../../der/datetime/struct.DateTime.html">DateTime</a>::<a href="../../der/datetime/struct.DateTime.html#associatedconstant.INFINITY">INFINITY</a>));
+<a href=#43 id=43 data-nosnippet>43</a>
+<a href=#44 id=44 data-nosnippet>44</a>    <span class="doccomment">/// Get duration since `UNIX_EPOCH`.
+<a href=#45 id=45 data-nosnippet>45</a>    </span><span class="kw">pub fn </span>to_unix_duration(<span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a> {
+<a href=#46 id=46 data-nosnippet>46</a>        <span class="kw">match </span><a class="self" href="#45">self</a> {
+<a href=#47 id=47 data-nosnippet>47</a>            Time::<a href="#32">UtcTime</a>(t) =&gt; <a href="#47">t</a>.<a href="../../der/asn1/utc_time/struct.UtcTime.html#method.to_unix_duration">to_unix_duration</a>(),
+<a href=#48 id=48 data-nosnippet>48</a>            Time::<a href="#36">GeneralTime</a>(t) =&gt; <a href="#48">t</a>.<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html#method.to_unix_duration">to_unix_duration</a>(),
+<a href=#49 id=49 data-nosnippet>49</a>        }
+<a href=#50 id=50 data-nosnippet>50</a>    }
+<a href=#51 id=51 data-nosnippet>51</a>
+<a href=#52 id=52 data-nosnippet>52</a>    <span class="doccomment">/// Get Time as DateTime
+<a href=#53 id=53 data-nosnippet>53</a>    </span><span class="kw">pub fn </span>to_date_time(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="../../der/datetime/struct.DateTime.html">DateTime</a> {
+<a href=#54 id=54 data-nosnippet>54</a>        <span class="kw">match </span><a class="self" href="#53">self</a> {
+<a href=#55 id=55 data-nosnippet>55</a>            Time::<a href="#32">UtcTime</a>(t) =&gt; <a href="#55">t</a>.<a href="../../der/asn1/utc_time/struct.UtcTime.html#method.to_date_time">to_date_time</a>(),
+<a href=#56 id=56 data-nosnippet>56</a>            Time::<a href="#36">GeneralTime</a>(t) =&gt; <a href="#56">t</a>.<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html#method.to_date_time">to_date_time</a>(),
+<a href=#57 id=57 data-nosnippet>57</a>        }
+<a href=#58 id=58 data-nosnippet>58</a>    }
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a>    <span class="doccomment">/// Convert to [`SystemTime`].
+<a href=#61 id=61 data-nosnippet>61</a>    </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#62 id=62 data-nosnippet>62</a>    </span><span class="kw">pub fn </span>to_system_time(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a> {
+<a href=#63 id=63 data-nosnippet>63</a>        <span class="kw">match </span><a class="self" href="#62">self</a> {
+<a href=#64 id=64 data-nosnippet>64</a>            Time::<a href="#32">UtcTime</a>(t) =&gt; <a href="#64">t</a>.<a href="../../der/asn1/utc_time/struct.UtcTime.html#method.to_system_time">to_system_time</a>(),
+<a href=#65 id=65 data-nosnippet>65</a>            Time::<a href="#36">GeneralTime</a>(t) =&gt; <a href="#65">t</a>.<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html#method.to_system_time">to_system_time</a>(),
+<a href=#66 id=66 data-nosnippet>66</a>        }
+<a href=#67 id=67 data-nosnippet>67</a>    }
+<a href=#68 id=68 data-nosnippet>68</a>
+<a href=#69 id=69 data-nosnippet>69</a>    <span class="doccomment">/// Convert time to UTCTime representation
+<a href=#70 id=70 data-nosnippet>70</a>    /// As per RFC 5280: 4.1.2.5, date through 2049 should be expressed as UTC Time.
+<a href=#71 id=71 data-nosnippet>71</a>    </span><span class="attr">#[cfg(feature = <span class="string">"builder"</span>)]
+<a href=#72 id=72 data-nosnippet>72</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>rfc5280_adjust_utc_time(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; der::Result&lt;()&gt; {
+<a href=#73 id=73 data-nosnippet>73</a>        <span class="kw">if let </span>Time::GeneralTime(t) = <span class="self">self </span>{
+<a href=#74 id=74 data-nosnippet>74</a>            <span class="kw">let </span>date = t.to_date_time();
+<a href=#75 id=75 data-nosnippet>75</a>            <span class="kw">if </span>date.year() &lt;= UtcTime::MAX_YEAR {
+<a href=#76 id=76 data-nosnippet>76</a>                <span class="kw-2">*</span><span class="self">self </span>= Time::UtcTime(UtcTime::from_date_time(date)<span class="question-mark">?</span>);
+<a href=#77 id=77 data-nosnippet>77</a>            }
+<a href=#78 id=78 data-nosnippet>78</a>        }
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a>        <span class="prelude-val">Ok</span>(())
+<a href=#81 id=81 data-nosnippet>81</a>    }
+<a href=#82 id=82 data-nosnippet>82</a>}
+<a href=#83 id=83 data-nosnippet>83</a>
+<a href=#84 id=84 data-nosnippet>84</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">fmt::Display</a> <span class="kw">for </span><a href="#26-37">Time</a> {
+<a href=#85 id=85 data-nosnippet>85</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#86 id=86 data-nosnippet>86</a><span class="expansion"><input id=expand-86 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{0}"</span>, <span class="self">self</span>.to_date_time()))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#85">f</a>, <span class="string">"{}"</span>, <span class="self">self</span>.to_date_time())</span></span>
+<a href=#87 id=87 data-nosnippet>87</a>    }
+<a href=#88 id=88 data-nosnippet>88</a>}
+<a href=#89 id=89 data-nosnippet>89</a>
+<a href=#90 id=90 data-nosnippet>90</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="../../der/asn1/utc_time/struct.UtcTime.html">UtcTime</a>&gt; <span class="kw">for </span><a href="#26-37">Time</a> {
+<a href=#91 id=91 data-nosnippet>91</a>    <span class="kw">fn </span>from(time: <a href="../../der/asn1/utc_time/struct.UtcTime.html">UtcTime</a>) -&gt; <a href="#26-37">Time</a> {
+<a href=#92 id=92 data-nosnippet>92</a>        Time::<a href="#32">UtcTime</a>(<a href="#91">time</a>)
+<a href=#93 id=93 data-nosnippet>93</a>    }
+<a href=#94 id=94 data-nosnippet>94</a>}
+<a href=#95 id=95 data-nosnippet>95</a>
+<a href=#96 id=96 data-nosnippet>96</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html">GeneralizedTime</a>&gt; <span class="kw">for </span><a href="#26-37">Time</a> {
+<a href=#97 id=97 data-nosnippet>97</a>    <span class="kw">fn </span>from(time: <a href="../../der/asn1/generalized_time/struct.GeneralizedTime.html">GeneralizedTime</a>) -&gt; <a href="#26-37">Time</a> {
+<a href=#98 id=98 data-nosnippet>98</a>        Time::<a href="#36">GeneralTime</a>(<a href="#97">time</a>)
+<a href=#99 id=99 data-nosnippet>99</a>    }
+<a href=#100 id=100 data-nosnippet>100</a>}
+<a href=#101 id=101 data-nosnippet>101</a>
+<a href=#102 id=102 data-nosnippet>102</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#103 id=103 data-nosnippet>103</a></span><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="#26-37">Time</a>&gt; <span class="kw">for </span><a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a> {
+<a href=#104 id=104 data-nosnippet>104</a>    <span class="kw">fn </span>from(time: <a href="#26-37">Time</a>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a> {
+<a href=#105 id=105 data-nosnippet>105</a>        <a href="#104">time</a>.<a href="#62-67">to_system_time</a>()
+<a href=#106 id=106 data-nosnippet>106</a>    }
+<a href=#107 id=107 data-nosnippet>107</a>}
+<a href=#108 id=108 data-nosnippet>108</a>
+<a href=#109 id=109 data-nosnippet>109</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#110 id=110 data-nosnippet>110</a></span><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<span class="kw-2">&amp;</span><a href="#26-37">Time</a>&gt; <span class="kw">for </span><a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a> {
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="kw">fn </span>from(time: <span class="kw-2">&amp;</span><a href="#26-37">Time</a>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a> {
+<a href=#112 id=112 data-nosnippet>112</a>        <a href="#111">time</a>.<a href="#62-67">to_system_time</a>()
+<a href=#113 id=113 data-nosnippet>113</a>    }
+<a href=#114 id=114 data-nosnippet>114</a>}
+<a href=#115 id=115 data-nosnippet>115</a>
+<a href=#116 id=116 data-nosnippet>116</a><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#117 id=117 data-nosnippet>117</a></span><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html">TryFrom</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a>&gt; <span class="kw">for </span><a href="#26-37">Time</a> {
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="kw">type </span>Error = der::<a href="../../der/error/struct.Error.html">Error</a>;
+<a href=#119 id=119 data-nosnippet>119</a>
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">fn </span>try_from(time: <a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a>) -&gt; der::<a href="../../der/error/type.Result.html">Result</a>&lt;<a href="#26-37">Time</a>&gt; {
+<a href=#121 id=121 data-nosnippet>121</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(GeneralizedTime::try_from(time)<span class="question-mark">?</span>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into">into</a>())
+<a href=#122 id=122 data-nosnippet>122</a>    }
+<a href=#123 id=123 data-nosnippet>123</a>}
+<a href=#124 id=124 data-nosnippet>124</a>
+<a href=#125 id=125 data-nosnippet>125</a><span class="doccomment">/// X.501 `Validity` as defined in [RFC 5280 Section 4.1.2.5]
+<a href=#126 id=126 data-nosnippet>126</a>///
+<a href=#127 id=127 data-nosnippet>127</a>/// ```text
+<a href=#128 id=128 data-nosnippet>128</a>/// Validity ::= SEQUENCE {
+<a href=#129 id=129 data-nosnippet>129</a>///     notBefore      Time,
+<a href=#130 id=130 data-nosnippet>130</a>///     notAfter       Time
+<a href=#131 id=131 data-nosnippet>131</a>/// }
+<a href=#132 id=132 data-nosnippet>132</a>/// ```
+<a href=#133 id=133 data-nosnippet>133</a>/// [RFC 5280 Section 4.1.2.5]: https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.5
+<a href=#134 id=134 data-nosnippet>134</a></span><span class="attr">#[cfg_attr(feature = <span class="string">"arbitrary"</span>, derive(arbitrary::Arbitrary))]
+<a href=#135 id=135 data-nosnippet>135</a></span><span class="expansion"><input id=expand-135 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Validity { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>Validity {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Validity {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;Time&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Validity {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"Validity not_before not_after"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.not_before,
+            &amp;&amp;<span class="self">self</span>.not_after)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::Eq <span class="kw">for </span>Validity {
+    <span class="attr">#[inline]
+    #[doc(hidden)]
+    #[coverage(off)]
+    </span><span class="kw">fn </span>assert_fields_are_eq(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="kw">let _</span>: ::core::cmp::AssertParamIsEq&lt;Time&gt;;
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.Eq.html">Eq</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>Validity
+    {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Validity {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.not_before == other.not_before &amp;&amp;
+            <span class="self">self</span>.not_after == other.not_after
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span>, <span class=expanded><span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::DecodeValue&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>Validity {
+    <span class="kw">fn </span>decode_value&lt;R: ::der::Reader&lt;<span class="lifetime">'__der_lifetime</span>&gt;&gt;(reader: <span class="kw-2">&amp;mut </span>R,
+        header: ::der::Header) -&gt; ::der::Result&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">use </span>::der::{Decode <span class="kw">as _</span>, DecodeValue <span class="kw">as _</span>, Reader <span class="kw">as _</span>};
+        reader.read_nested(header.length,
+            |reader|
+                {
+                    <span class="kw">let </span>not_before = reader.decode()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>not_after = reader.decode()<span class="question-mark">?</span>;
+                    <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ not_before, not_after })
+                })
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::EncodeValue <span class="kw">for </span>Validity {
+    <span class="kw">fn </span>value_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::der::Result&lt;::der::Length&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        [<span class="self">self</span>.not_before.encoded_len()<span class="question-mark">?</span>,
+                        <span class="self">self</span>.not_after.encoded_len()<span class="question-mark">?</span>].into_iter().try_fold(::der::Length::ZERO,
+            |acc, len| acc + len)
+    }
+    <span class="kw">fn </span>encode_value(<span class="kw-2">&amp;</span><span class="self">self</span>, writer: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>::der::Writer)
+        -&gt; ::der::Result&lt;()&gt; {
+        <span class="kw">use </span>::der::Encode <span class="kw">as _</span>;
+        <span class="self">self</span>.not_before.encode(writer)<span class="question-mark">?</span>;
+        <span class="self">self</span>.not_after.encode(writer)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+<span class="kw">impl</span>&lt;<span class="lifetime">'__der_lifetime</span>&gt; ::der::Sequence&lt;<span class="lifetime">'__der_lifetime</span>&gt; <span class="kw">for </span>Validity {}</span><span class="original"><a href="../../der_derive/derive.Sequence.html">Sequence</a></span>, <span class=expanded><span class="kw">impl </span>::der::ValueOrd <span class="kw">for </span>Validity&lt;&gt; {
+    <span class="kw">fn </span>value_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>)
+        -&gt; ::der::Result&lt;::core::cmp::Ordering&gt; {
+        <span class="attr">#[allow(unused_imports)]
+        </span><span class="kw">use </span>::der::{DerOrd, ValueOrd};
+        <span class="kw">match </span><span class="self">self</span>.not_before.der_cmp(<span class="kw-2">&amp;</span>other.not_before)<span class="question-mark">? </span>{
+            ::core::cmp::Ordering::Equal =&gt; (),
+            other =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(other),
+        }
+        <span class="kw">match </span><span class="self">self</span>.not_after.der_cmp(<span class="kw-2">&amp;</span>other.not_after)<span class="question-mark">? </span>{
+            ::core::cmp::Ordering::Equal =&gt; (),
+            other =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(other),
+        }
+        <span class="prelude-val">Ok</span>(::core::cmp::Ordering::Equal)
+    }
+}</span><span class="original"><a href="../../der_derive/derive.ValueOrd.html">ValueOrd</a></span></span></span><span class="attr">)]
+<a href=#136 id=136 data-nosnippet>136</a></span><span class="kw">pub struct </span><a href="#136-142">Validity</a> {
+<a href=#137 id=137 data-nosnippet>137</a>    <span class="doccomment">/// notBefore value
+<a href=#138 id=138 data-nosnippet>138</a>    </span><span class="kw">pub </span>not_before: <a href="#26-37">Time</a>,
+<a href=#139 id=139 data-nosnippet>139</a>
+<a href=#140 id=140 data-nosnippet>140</a>    <span class="doccomment">/// notAfter value
+<a href=#141 id=141 data-nosnippet>141</a>    </span><span class="kw">pub </span>not_after: <a href="#26-37">Time</a>,
+<a href=#142 id=142 data-nosnippet>142</a>}
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a><span class="kw">impl </span><a href="#136-142">Validity</a> {
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="doccomment">/// Creates a `Validity` which starts now and lasts for `duration`.
+<a href=#146 id=146 data-nosnippet>146</a>    </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+<a href=#147 id=147 data-nosnippet>147</a>    </span><span class="kw">pub fn </span>from_now(duration: <a href="https://doc.rust-lang.org/nightly/core/time/struct.Duration.html">Duration</a>) -&gt; der::<a href="../../der/error/type.Result.html">Result</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#148 id=148 data-nosnippet>148</a>        <span class="kw">let </span>now = <a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html">SystemTime</a>::<a href="https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html#method.now">now</a>();
+<a href=#149 id=149 data-nosnippet>149</a>        <span class="kw">let </span>then = <a href="#148">now</a> + <a href="#147">duration</a>;
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<span class="self">Self </span>{
+<a href=#152 id=152 data-nosnippet>152</a>            not_before: Time::try_from(now)<span class="question-mark">?</span>,
+<a href=#153 id=153 data-nosnippet>153</a>            not_after: Time::try_from(then)<span class="question-mark">?</span>,
+<a href=#154 id=154 data-nosnippet>154</a>        })
+<a href=#155 id=155 data-nosnippet>155</a>    }
+<a href=#156 id=156 data-nosnippet>156</a>}
+</code></pre></div></section></main></body></html>

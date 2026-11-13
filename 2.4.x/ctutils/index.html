@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="RustCrypto: Constant-Time Utilities"><title>ctutils - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="ctutils" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate ctutils</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../ctutils/index.html"><img src="https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg" alt="logo"></a><h2><a href="../ctutils/index.html">ctutils</a><span class="version">0.4.8</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#rustcrypto-constant-time-utilities" title="RustCrypto: Constant-Time Utilities">RustCrypto: Constant-Time Utilities</a><ul><li><a href="#about" title="About">About</a></li><li><a href="#what-makes-this-crate-different-from-subtle" title="What makes this crate different from `subtle`?">What makes this crate different from <code>subtle</code>?</a></li><li><a href="#-security-warning" title="⚠️ Security Warning">⚠️ Security Warning</a></li><li><a href="#minimum-supported-rust-version-msrv-policy" title="Minimum Supported Rust Version (MSRV) Policy">Minimum Supported Rust Version (MSRV) Policy</a></li><li><a href="#license" title="License">License</a></li></ul></li><li><a href="#api-design" title="API Design">API Design</a><ul><li><a href="#choice-constant-time-analogue-for-bool" title="`Choice`: constant-time analogue for `bool`"><code>Choice</code>: constant-time analogue for <code>bool</code></a></li><li><a href="#ctoption-constant-time-analogue-for-option" title="`CtOption`: constant-time analogue for `Option`"><code>CtOption</code>: constant-time analogue for <code>Option</code></a></li><li><a href="#ctassign-constant-time-additional-assignment-using-predication" title="`CtAssign`: constant-time additional assignment using predication"><code>CtAssign</code>: constant-time additional assignment using predication</a></li><li><a href="#cteq-constant-time-analogue-for-partialeqeq" title="`CtEq`: constant-time analogue for `PartialEq`/`Eq`"><code>CtEq</code>: constant-time analogue for <code>PartialEq</code>/<code>Eq</code></a></li><li><a href="#ctselect-constant-time-predication" title="`CtSelect`: constant-time predication"><code>CtSelect</code>: constant-time predication</a></li></ul></li><li><a href="#subtle-interop" title="`subtle` interop"><code>subtle</code> interop</a></li><li><a href="#subtle-migration-guide" title="`subtle` migration guide"><code>subtle</code> migration guide</a><ul><li><a href="#ctoption-notes" title="`CtOption` notes"><code>CtOption</code> notes</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>ctutils</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/ctutils/lib.rs.html#1-142">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="rustcrypto-constant-time-utilities"><a class="doc-anchor" href="#rustcrypto-constant-time-utilities">§</a><a href="https://github.com/RustCrypto">RustCrypto</a>: Constant-Time Utilities</h2>
+<p><a href="https://crates.io/crates/ctutils"><img src="https://img.shields.io/crates/v/ctutils.svg" alt="Crate" /></a>
+<a href="https://docs.rs/ctutils/"><img src="https://docs.rs/ctutils/badge.svg" alt="Docs" /></a>
+<a href="https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml"><img src="https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml/badge.svg" alt="Build Status" /></a>
+<img src="https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg" alt="Apache 2.0/MIT Licensed" />
+<img src="https://img.shields.io/badge/rustc-1.87+-blue.svg" alt="MSRV" />
+<a href="https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils"><img src="https://img.shields.io/badge/zulip-join_chat-blue.svg" alt="Project Chat" /></a></p>
+<p>Constant-time utility library with selection and equality testing support targeting cryptographic
+applications. Supports <code>const fn</code> where appropriate. Built on the <a href="https://docs.rs/cmov"><code>cmov</code></a> crate which provides
+architecture-specific predication intrinsics. Heavily inspired by the <a href="https://docs.rs/subtle"><code>subtle</code></a> crate.</p>
+<h3 id="about"><a class="doc-anchor" href="#about">§</a>About</h3>
+<p>This crate contains constant-time equivalents of the <code>bool</code> and <code>Option</code> types (<code>Choice</code> and
+<code>CtOption</code> respectively), along with traits that can be used in combination with them.</p>
+<p>The <code>CtOption</code> type notably provides eagerly evaluated combinator methods (as opposed to the lazily
+evaluated combinators on <code>Option</code>) which make it possible to write constant-time code using
+an idiomatic Rust style.</p>
+<p>This is an experimental next-generation constant-time library inspired by <code>subtle</code>, but for now we
+recommend you continue to stick with <code>subtle</code>. We may attempt to get some of the changes in this
+library incorporated into <code>subtle</code> for a potential v3.0.</p>
+<h3 id="what-makes-this-crate-different-from-subtle"><a class="doc-anchor" href="#what-makes-this-crate-different-from-subtle">§</a>What makes this crate different from <code>subtle</code>?</h3>
+<ul>
+<li>Pervasive <code>const fn</code> support
+<ul>
+<li>Almost all constructors/methods on <code>Choice</code> are <code>const fn</code></li>
+<li><code>Choice</code> can be constructed using various <code>const fn</code> predicates on integer types, enabling
+writing constant-time <code>const fn</code> logic</li>
+<li><code>CtOption</code> supports <code>const fn</code> constructors and <code>*_copied</code> methods to access the inner value
+when it’s a <code>Copy</code> type</li>
+<li>Macros to act as <code>CtOption</code> pseudo-combinators: <code>map!</code> and <code>unwrap_or!</code></li>
+<li>Expanded selection of <code>CtOption</code> combinators that more closely mirrors <code>std::option::Option</code></li>
+</ul>
+</li>
+<li>Guaranteed constant-time equality testing and conditional selection on <code>x86(_64)</code> and <code>aarch64</code>
+using <code>asm!</code> implementations in the <code>cmov</code> crate which call special constant-time CPU instructions
+with a portable “best effort” fallback on other platforms using bitwise arithmetic and <code>black_box</code></li>
+<li>No <code>Copy</code> bounds, which means all functionality can work with heap-allocated types in addition to
+stack-allocated</li>
+<li>Expanded selection of traits: <code>CtFind</code> and <code>CtLookup</code> for arrays and slices</li>
+</ul>
+<p>Many features of this crate are extractions from the <a href="https://docs.rs/crypto-bigint"><code>crypto-bigint</code></a> crate, where we implement all
+core logic as <code>const fn</code> and needed solutions for implementing constant-time code despite the
+unique constraints it imposes.</p>
+<h3 id="-security-warning"><a class="doc-anchor" href="#-security-warning">§</a>⚠️ Security Warning</h3>
+<p>The implementation contained in this crate has never been independently audited!</p>
+<p>USE AT YOUR OWN RISK!</p>
+<p>Below are security issues this crate has experienced in the past:</p>
+<ul>
+<li><a href="https://rustsec.org/advisories/RUSTSEC-2026-0385.html">RUSTSEC-2026-0385</a>: Non-constant-time mask generation and <code>u128</code> comparisons</li>
+</ul>
+<h3 id="minimum-supported-rust-version-msrv-policy"><a class="doc-anchor" href="#minimum-supported-rust-version-msrv-policy">§</a>Minimum Supported Rust Version (MSRV) Policy</h3>
+<p>MSRV increases are not considered breaking changes and can happen in patch releases.</p>
+<p>The crate MSRV accounts for all supported targets and crate feature combinations.</p>
+<h3 id="license"><a class="doc-anchor" href="#license">§</a>License</h3>
+<p>Licensed under either of:</p>
+<ul>
+<li><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></li>
+<li><a href="http://opensource.org/licenses/MIT">MIT license</a></li>
+</ul>
+<p>at your option.</p>
+<h4 id="contribution"><a class="doc-anchor" href="#contribution">§</a>Contribution</h4>
+<p>Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.</p>
+<h2 id="api-design"><a class="doc-anchor" href="#api-design">§</a>API Design</h2><h3 id="choice-constant-time-analogue-for-bool"><a class="doc-anchor" href="#choice-constant-time-analogue-for-bool">§</a><a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a>: constant-time analogue for <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html" title="primitive bool"><code>bool</code></a></h3>
+<p>Values of this type are one of either <a href="struct.Choice.html#associatedconstant.FALSE" title="associated constant ctutils::Choice::FALSE"><code>Choice::FALSE</code></a> or <a href="struct.Choice.html#associatedconstant.TRUE" title="associated constant ctutils::Choice::TRUE"><code>Choice::TRUE</code></a>.</p>
+<p>To achieve constant-time operation, <code>Choice</code> is ultimately used in combination with special
+CPU-specific constant-time predication instructions implemented by the <a href="https://docs.rs/cmov"><code>cmov</code></a> crate
+(with a portable “best effort” fallback that cannot provide guarantees).</p>
+<p>It additionally uses various methods to hint to the compiler that it should avoid inserting
+branches based on its value where it otherwise would if <code>bool</code> were used instead, but cannot
+provide guarantees in this regard.</p>
+<h3 id="ctoption-constant-time-analogue-for-option"><a class="doc-anchor" href="#ctoption-constant-time-analogue-for-option">§</a><a href="struct.CtOption.html" title="struct ctutils::CtOption"><code>CtOption</code></a>: constant-time analogue for <a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option"><code>Option</code></a></h3>
+<p>The core <code>Option</code> type is typically great for representing the conditional absence or presence
+of a value, and provides a number of handy combinators for operating on them.</p>
+<p>However, it has a rather fundamental flaw when constant-time is desirable: its combinators are
+lazily evaluated. To ensure constant-time operation, all combinators must be eagerly evaluated
+so they aren’t conditionally executed based on the value’s presence.</p>
+<p><code>CtOption</code> instead carries a <code>Choice</code> along with a value, which makes it possible to do
+something it isn’t with <code>Option</code>: evaluate combinators eagerly instead of lazily, running the
+same functions regardless of the value’s effective presence or absence.</p>
+<h3 id="ctassign-constant-time-additional-assignment-using-predication"><a class="doc-anchor" href="#ctassign-constant-time-additional-assignment-using-predication">§</a><a href="trait.CtAssign.html" title="trait ctutils::CtAssign"><code>CtAssign</code></a>: constant-time additional assignment using <a href="https://en.wikipedia.org/wiki/Predication_(computer_architecture)">predication</a></h3>
+<p>Support for conditionally assigning to a type or slices thereof (for types which impl the
+<a href="trait.CtAssignSlice.html" title="trait ctutils::CtAssignSlice"><code>CtAssignSlice</code></a> trait) based on a provided condition value.</p>
+<p>Uses predication instructions or a portable simulation thereof to perform constant-time
+conditional assignment based ona  <a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a>.</p>
+<p><em>NOTE: for <code>subtle</code> users, this trait provides the equivalent of the
+<code>ConditionallySelectable::conditional_assign</code> method, but as its own trait without a <code>Sized</code>
+bound so it can also be impl’d for slices</em></p>
+<h3 id="cteq-constant-time-analogue-for-partialeqeq"><a class="doc-anchor" href="#cteq-constant-time-analogue-for-partialeqeq">§</a><a href="trait.CtEq.html" title="trait ctutils::CtEq"><code>CtEq</code></a>: constant-time analogue for <a href="https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html" title="trait core::cmp::PartialEq"><code>PartialEq</code></a>/<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html" title="trait core::cmp::Eq"><code>Eq</code></a></h3>
+<p>Equality testing often short circuits for performance reasons, but when comparing values in
+constant-time such short-circuiting is forbidden.</p>
+<p>The <code>CtEq</code> trait is a replacement for these scenarios. It’s impl’d for several core types
+including unsigned and signed integers as well as slices and arrays. It returns a <code>Choice</code>
+as opposed to a <code>bool</code>], following the standard practice in this crate.</p>
+<p><em>NOTE: for <code>subtle</code> users, this is the equivalent of the <code>ConstantTimeEq</code> trait</em></p>
+<h3 id="ctselect-constant-time-predication"><a class="doc-anchor" href="#ctselect-constant-time-predication">§</a><a href="trait.CtSelect.html" title="trait ctutils::CtSelect"><code>CtSelect</code></a>: constant-time <a href="https://en.wikipedia.org/wiki/Predication_(computer_architecture)">predication</a></h3>
+<p>Predication in computer architecture describes methods for conditionally modifying state
+using non-branch instructions which perform conditional modifications based on a <em>predicate</em>
+or boolean value, in the design of this library a <code>Choice</code>.</p>
+<p>The <code>CtSelect</code> trait provides methods for performing conditional selection between two
+different inputs and returning a new one.</p>
+<p><em>NOTE: for <code>subtle</code> users, this is the equivalent of the <code>ConditionallySelectable</code> trait</em></p>
+<h2 id="subtle-interop"><a class="doc-anchor" href="#subtle-interop">§</a><a href="https://docs.rs/subtle"><code>subtle</code></a> interop</h2>
+<p>When the <code>subtle</code> feature of this crate is enabled, bidirectional <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From"><code>From</code></a> impls are available
+for the following types:</p>
+<ul>
+<li><a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a> &lt;=&gt; [<code>subtle::Choice</code>]</li>
+<li><a href="struct.CtOption.html" title="struct ctutils::CtOption"><code>CtOption</code></a> &lt;=&gt; [<code>subtle::CtOption</code>]</li>
+</ul>
+<p>This makes it possible to use <code>ctutils</code> in a codebase where other dependencies are using
+<code>subtle</code>.</p>
+<h2 id="subtle-migration-guide"><a class="doc-anchor" href="#subtle-migration-guide">§</a><a href="https://docs.rs/subtle"><code>subtle</code></a> migration guide</h2>
+<p>This library presents an API which is largely the same shape as <code>subtle</code> and amenable to mostly
+mechanical find-and-replace updates. Using the above <code>subtle</code> interop, you can also migrate
+incrementally by converting <code>ctutils::Choice</code> &lt;=&gt; <code>subtle::Choice</code> and <code>ctutils::CtOption</code>
+&lt;=&gt; <code>subtle::CtOption</code>.</p>
+<p>The following substitutions can be used to perform the migration:</p>
+<ol>
+<li><code>subtle</code> =&gt; <code>ctutils</code></li>
+<li><code>ConstantTimeEq</code> =&gt; <code>CtEq</code>, <code>ConstantTimeGreater</code> =&gt; <code>CtGt</code>, <code>ConstantTimeLess</code> =&gt; <code>CtLt</code>.
+<ul>
+<li>These all use the same <code>ct_eq</code>/<code>ct_gt</code>/<code>ct_lt</code> method names as <code>subtle</code> with the same type
+signatures, so only the trait names need to be changed.</li>
+</ul>
+</li>
+<li><code>ConditionallySelectable</code> =&gt; <code>CtSelect</code>, <code>conditional_select</code> =&gt; <code>ct_select</code>.
+<ul>
+<li>Note that <code>ct_select</code> has a slightly different type signature in that it accepts <code>&amp;self</code>
+as the LHS argument. This needs to be changed in the <code>impl</code> blocks, but call sites are
+compatible if you update the method name alone because it’s valid “fully qualified syntax”.
+Changing them from <code>T::conditional_select(&amp;a, &amp;b, choice)</code> =&gt; <code>a.ct_select(&amp;b, choice)</code>
+may still be nice for brevity.</li>
+<li><code>conditional_assign</code> =&gt; <code>CtAssign::ct_assign</code>: this one will require some manual work as
+this method has been split out of <code>ConditionallySelectable</code> into its own <code>CtAssign</code> trait,
+which makes it possible to impl on DSTs like slices which can’t be returned from a select
+operation because they’re <code>!Sized</code>.</li>
+</ul>
+</li>
+<li><code>ConditionallyNegatable</code> =&gt; <code>CtNeg</code>, <code>conditional_negate</code> =&gt; <code>ct_neg</code></li>
+</ol>
+<h3 id="ctoption-notes"><a class="doc-anchor" href="#ctoption-notes">§</a><code>CtOption</code> notes</h3>
+<p>A notable semantic change from <code>subtle</code> is combinators like <code>CtOption::map</code> no longer have a
+<code>Default</code> bound and will call the provided function with the contained value unconditionally.</p>
+<p>This means whatever value was provided at the time the <code>CtOption</code> was constructed now needs to
+uphold whatever invariants the provided function is expecting.</p>
+<p>Code which previously constructed a <code>CtOption</code> with an invalid inner value that worked with
+<code>subtle</code> because the <code>Default</code> value upheld these invariants might break when the provided
+function is now called with the invalid inner value.</p>
+<p>See also: <a href="https://github.com/dalek-cryptography/subtle/issues/63">dalek-cryptography/subtle#63</a></p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="primitives/index.html" title="mod ctutils::primitives">primitives</a></dt><dd>Constant-time integer primitives for cryptographic arithmetic.</dd></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.map.html" title="macro ctutils::map">map</a></dt><dd>Helper macro for providing behavior like the <a href="struct.CtOption.html#method.map" title="method ctutils::CtOption::map"><code>CtOption::map</code></a> combinator that works in
+<code>const fn</code> contexts.</dd><dt><a class="macro" href="macro.unwrap_or.html" title="macro ctutils::unwrap_or">unwrap_<wbr>or</a></dt><dd>Helper macro for providing behavior like the <a href="struct.CtOption.html#method.unwrap_or" title="method ctutils::CtOption::unwrap_or"><code>CtOption::unwrap_or</code></a> combinator that works in
+<code>const fn</code> contexts.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Choice.html" title="struct ctutils::Choice">Choice</a></dt><dd>Constant-time analogue of <code>bool</code> providing a “best effort” optimization barrier.</dd><dt><a class="struct" href="struct.CtOption.html" title="struct ctutils::CtOption">CtOption</a></dt><dd>Equivalent of <a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option"><code>Option</code></a> but predicated on a <a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a> with combinators that allow for
+constant-time operations which always perform the same sequence of instructions regardless of
+the value of <code>is_some</code>.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.CtAssign.html" title="trait ctutils::CtAssign">CtAssign</a></dt><dd>Constant-time conditional assignment: assign a given value to another based on a <a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a>.</dd><dt><a class="trait" href="trait.CtAssignSlice.html" title="trait ctutils::CtAssignSlice">CtAssign<wbr>Slice</a></dt><dd>Implementing this trait enables use of the <a href="trait.CtAssign.html" title="trait ctutils::CtAssign"><code>CtAssign</code></a> trait for <code>[T]</code> where <code>T</code> is the
+<code>Self</code> type implementing the trait, via a blanket impl.</dd><dt><a class="trait" href="trait.CtEq.html" title="trait ctutils::CtEq">CtEq</a></dt><dd>Constant-time equality: like <code>(Partial)Eq</code> with <a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a> instead of <a href="https://doc.rust-lang.org/nightly/core/primitive.bool.html" title="primitive bool"><code>bool</code></a>.</dd><dt><a class="trait" href="trait.CtEqSlice.html" title="trait ctutils::CtEqSlice">CtEq<wbr>Slice</a></dt><dd>Implementing this trait enables use of the <a href="trait.CtEq.html" title="trait ctutils::CtEq"><code>CtEq</code></a> trait for <code>[T]</code> where <code>T</code> is the
+<code>Self</code> type implementing the trait, via a blanket impl.</dd><dt><a class="trait" href="trait.CtFind.html" title="trait ctutils::CtFind">CtFind</a></dt><dd>Constant-time equivalent of <a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.find" title="method core::iter::traits::iterator::Iterator::find"><code>Iterator::find</code></a>, which can search a collection by iterating over
+every element and applying the given predicate to each item, then selecting the first matching
+entry.</dd><dt><a class="trait" href="trait.CtGt.html" title="trait ctutils::CtGt">CtGt</a></dt><dd>Constant time greater than.</dd><dt><a class="trait" href="trait.CtLookup.html" title="trait ctutils::CtLookup">CtLookup</a></dt><dd>Constant-time lookup by index, similar to the <a href="https://doc.rust-lang.org/nightly/core/ops/index/trait.Index.html" title="trait core::ops::index::Index"><code>Index</code></a> trait, but returning an owned result in
+constant-time.</dd><dt><a class="trait" href="trait.CtLt.html" title="trait ctutils::CtLt">CtLt</a></dt><dd>Constant time less than.</dd><dt><a class="trait" href="trait.CtNeg.html" title="trait ctutils::CtNeg">CtNeg</a></dt><dd>Constant-time conditional negation: negates a value when <code>choice</code> is <a href="struct.Choice.html#associatedconstant.TRUE" title="associated constant ctutils::Choice::TRUE"><code>Choice::TRUE</code></a>.</dd><dt><a class="trait" href="trait.CtSelect.html" title="trait ctutils::CtSelect">CtSelect</a></dt><dd>Constant-time selection: choose between two values based on a given <a href="struct.Choice.html" title="struct ctutils::Choice"><code>Choice</code></a>.</dd><dt><a class="trait" href="trait.CtSelectArray.html" title="trait ctutils::CtSelectArray">CtSelect<wbr>Array</a></dt><dd>Implementing this trait enables use of the <a href="trait.CtSelect.html" title="trait ctutils::CtSelect"><code>CtSelect</code></a> trait to construct <code>[T; N]</code> where <code>T</code>
+is the <code>Self</code> type implementing the trait, via a blanket impl.</dd><dt><a class="trait" href="trait.CtSelectUsingCtAssign.html" title="trait ctutils::CtSelectUsingCtAssign">CtSelect<wbr>Using<wbr>CtAssign</a></dt><dd>Marker trait which enables a blanket impl of <a href="trait.CtSelect.html" title="trait ctutils::CtSelect"><code>CtSelect</code></a> for types which also impl
+<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone"><code>Clone</code></a> + <a href="trait.CtAssign.html" title="trait ctutils::CtAssign"><code>CtAssign</code></a>.</dd></dl></section></div></main></body></html>

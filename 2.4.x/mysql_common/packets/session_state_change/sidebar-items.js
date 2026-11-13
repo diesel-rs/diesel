@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SessionStateChange"],"struct":["Gtids","Schema","SystemVariable","TransactionCharacteristics","TransactionState","Unsupported"]};

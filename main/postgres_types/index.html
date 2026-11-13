@@ -1,0 +1,117 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Conversions to and from Postgres types."><title>postgres_types - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="postgres_types" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate postgres_types</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../postgres_types/index.html">postgres_<wbr>types</a><span class="version">0.2.14</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#derive" title="Derive">Derive</a><ul><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#domains" title="Domains">Domains</a></li><li><a href="#newtypes" title="Newtypes">Newtypes</a></li><li><a href="#composites" title="Composites">Composites</a></li><li><a href="#naming" title="Naming">Naming</a></li><li><a href="#allowing-enum-mismatches" title="Allowing Enum Mismatches">Allowing Enum Mismatches</a></li></ul></li></ul><h3><a href="#macros">Crate Items</a></h3><ul class="block"><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums-1" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>postgres_<wbr>types</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/postgres_types/lib.rs.html#1-1346">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Conversions to and from Postgres types.</p>
+<p>This crate is used by the <code>tokio-postgres</code> and <code>postgres</code> crates. You normally don’t need to depend directly on it
+unless you want to define your own <code>ToSql</code> or <code>FromSql</code> definitions.</p>
+<h2 id="derive"><a class="doc-anchor" href="#derive">§</a>Derive</h2>
+<p>If the <code>derive</code> cargo feature is enabled, you can derive <code>ToSql</code> and <code>FromSql</code> implementations for custom Postgres
+types. Explicitly, modify your <code>Cargo.toml</code> file to include the following:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+postgres-types = { version = &quot;0.X.X&quot;, features = [&quot;derive&quot;] }</code></pre></div><h3 id="enums"><a class="doc-anchor" href="#enums">§</a>Enums</h3>
+<p>Postgres enums correspond to C-like enums in Rust:</p>
+<div class="example-wrap"><pre class="language-sql"><code>CREATE TYPE &quot;Mood&quot; AS ENUM (
+    &#39;Sad&#39;,
+    &#39;Ok&#39;,
+    &#39;Happy&#39;
+);</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+</span><span class="kw">enum </span>Mood {
+    Sad,
+    <span class="prelude-val">Ok</span>,
+    Happy,
+}</code></pre></div><h3 id="domains"><a class="doc-anchor" href="#domains">§</a>Domains</h3>
+<p>Postgres domains correspond to tuple structs with one member in Rust:</p>
+<div class="example-wrap"><pre class="language-sql"><code>CREATE DOMAIN &quot;SessionId&quot; AS BYTEA CHECK(octet_length(VALUE) = 16);</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+</span><span class="kw">struct </span>SessionId(Vec&lt;u8&gt;);</code></pre></div><h3 id="newtypes"><a class="doc-anchor" href="#newtypes">§</a>Newtypes</h3>
+<p>The <code>#[postgres(transparent)]</code> attribute can be used on a single-field tuple struct to create a
+Rust-only wrapper type that will use the <a href="trait.ToSql.html" title="trait postgres_types::ToSql"><code>ToSql</code></a> &amp; <a href="trait.FromSql.html" title="trait postgres_types::FromSql"><code>FromSql</code></a> implementation of the inner
+value :</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+#[postgres(transparent)]
+</span><span class="kw">struct </span>UserId(i32);</code></pre></div><h3 id="composites"><a class="doc-anchor" href="#composites">§</a>Composites</h3>
+<p>Postgres composite types correspond to structs in Rust:</p>
+<div class="example-wrap"><pre class="language-sql"><code>CREATE TYPE &quot;InventoryItem&quot; AS (
+    name TEXT,
+    supplier_id INT,
+    price DOUBLE PRECISION
+);</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+</span><span class="kw">struct </span>InventoryItem {
+    name: String,
+    supplier_id: i32,
+    price: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+}</code></pre></div><h3 id="naming"><a class="doc-anchor" href="#naming">§</a>Naming</h3>
+<p>The derived implementations will enforce exact matches of type, field, and variant names between the Rust and
+Postgres types. The <code>#[postgres(name = "...")]</code> attribute can be used to adjust the name on a type, variant, or
+field:</p>
+<div class="example-wrap"><pre class="language-sql"><code>CREATE TYPE mood AS ENUM (
+    &#39;sad&#39;,
+    &#39;ok&#39;,
+    &#39;happy&#39;
+);</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+#[postgres(name = <span class="string">"mood"</span>)]
+</span><span class="kw">enum </span>Mood {
+    <span class="attr">#[postgres(name = <span class="string">"sad"</span>)]
+    </span>Sad,
+    <span class="attr">#[postgres(name = <span class="string">"ok"</span>)]
+    </span><span class="prelude-val">Ok</span>,
+    <span class="attr">#[postgres(name = <span class="string">"happy"</span>)]
+    </span>Happy,
+}</code></pre></div>
+<p>Alternatively, the <code>#[postgres(rename_all = "...")]</code> attribute can be used to rename all fields or variants
+with the chosen casing convention. This will not affect the struct or enum’s type name. Note that
+<code>#[postgres(name = "...")]</code> takes precendence when used in conjunction with <code>#[postgres(rename_all = "...")]</code>:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+#[postgres(name = <span class="string">"mood"</span>, rename_all = <span class="string">"snake_case"</span>)]
+</span><span class="kw">enum </span>Mood {
+    <span class="attr">#[postgres(name = <span class="string">"ok"</span>)]
+    </span><span class="prelude-val">Ok</span>,             <span class="comment">// ok
+    </span>VeryHappy,      <span class="comment">// very_happy
+</span>}</code></pre></div>
+<p>The following case conventions are supported:</p>
+<ul>
+<li><code>"lowercase"</code></li>
+<li><code>"UPPERCASE"</code></li>
+<li><code>"PascalCase"</code></li>
+<li><code>"camelCase"</code></li>
+<li><code>"snake_case"</code></li>
+<li><code>"SCREAMING_SNAKE_CASE"</code></li>
+<li><code>"kebab-case"</code></li>
+<li><code>"SCREAMING-KEBAB-CASE"</code></li>
+<li><code>"Train-Case"</code></li>
+</ul>
+<h3 id="allowing-enum-mismatches"><a class="doc-anchor" href="#allowing-enum-mismatches">§</a>Allowing Enum Mismatches</h3>
+<p>By default the generated implementation of <a href="trait.ToSql.html" title="trait postgres_types::ToSql"><code>ToSql</code></a> &amp; <a href="trait.FromSql.html" title="trait postgres_types::FromSql"><code>FromSql</code></a> for enums will require an exact match of the enum
+variants between the Rust and Postgres types.
+To allow mismatches, the <code>#[postgres(allow_mismatch)]</code> attribute can be used on the enum definition:</p>
+<div class="example-wrap"><pre class="language-sql"><code>CREATE TYPE mood AS ENUM (
+  &#39;Sad&#39;,
+  &#39;Ok&#39;,
+  &#39;Happy&#39;
+);</code></pre></div>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>postgres_types::{ToSql, FromSql};
+
+<span class="attr">#[derive(Debug, ToSql, FromSql)]
+#[postgres(allow_mismatch)]
+</span><span class="kw">enum </span>Mood {
+   Happy,
+   Meh,
+}</code></pre></div></div></details><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.accepts.html" title="macro postgres_types::accepts">accepts</a></dt><dd>Generates a simple implementation of <code>ToSql::accepts</code> which accepts the
+types passed to it.</dd><dt><a class="macro" href="macro.to_sql_checked.html" title="macro postgres_types::to_sql_checked">to_<wbr>sql_<wbr>checked</a></dt><dd>Generates an implementation of <code>ToSql::to_sql_checked</code>.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Field.html" title="struct postgres_types::Field">Field</a></dt><dd>Information about a field of a composite type.</dd><dt><a class="struct" href="struct.PgLsn.html" title="struct postgres_types::PgLsn">PgLsn</a></dt><dd>Postgres <code>PG_LSN</code> type.</dd><dt><a class="struct" href="struct.Type.html" title="struct postgres_types::Type">Type</a></dt><dd>A Postgres type.</dd><dt><a class="struct" href="struct.WasNull.html" title="struct postgres_types::WasNull">WasNull</a></dt><dd>An error indicating that a <code>NULL</code> Postgres value was passed to a <code>FromSql</code>
+implementation that does not support <code>NULL</code> values.</dd><dt><a class="struct" href="struct.WrongType.html" title="struct postgres_types::WrongType">Wrong<wbr>Type</a></dt><dd>An error indicating that a conversion was attempted between incompatible
+Rust and Postgres types.</dd></dl><h2 id="enums-1" class="section-header">Enums<a href="#enums-1" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Date.html" title="enum postgres_types::Date">Date</a></dt><dd>A wrapper that can be used to represent infinity with <code>Type::Date</code> types.</dd><dt><a class="enum" href="enum.Format.html" title="enum postgres_types::Format">Format</a></dt><dd>Supported Postgres message format types</dd><dt><a class="enum" href="enum.IsNull.html" title="enum postgres_types::IsNull">IsNull</a></dt><dd>An enum representing the nullability of a Postgres value.</dd><dt><a class="enum" href="enum.Kind.html" title="enum postgres_types::Kind">Kind</a></dt><dd>Represents the kind of a Postgres type.</dd><dt><a class="enum" href="enum.Timestamp.html" title="enum postgres_types::Timestamp">Timestamp</a></dt><dd>A wrapper that can be used to represent infinity with <code>Type::Timestamp</code> and <code>Type::Timestamptz</code>
+types.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.BorrowToSql.html" title="trait postgres_types::BorrowToSql">Borrow<wbr>ToSql</a></dt><dd>A trait used by clients to abstract over <code>&amp;dyn ToSql</code> and <code>T: ToSql</code>.</dd><dt><a class="trait" href="trait.FromSql.html" title="trait postgres_types::FromSql">FromSql</a></dt><dd>A trait for types that can be created from a Postgres value.</dd><dt><a class="trait" href="trait.FromSqlOwned.html" title="trait postgres_types::FromSqlOwned">From<wbr>SqlOwned</a></dt><dd>A trait for types which can be created from a Postgres value without borrowing any data.</dd><dt><a class="trait" href="trait.ToSql.html" title="trait postgres_types::ToSql">ToSql</a></dt><dd>A trait for types that can be converted into Postgres values.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.Oid.html" title="type postgres_types::Oid">Oid</a></dt><dd>A Postgres OID.</dd></dl></section></div></main></body></html>

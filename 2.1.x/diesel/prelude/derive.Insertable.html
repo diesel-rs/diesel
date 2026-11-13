@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Implements `Insertable`"><title>Insertable in diesel::prelude - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc derive"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In diesel::prelude</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Derive Macro <a href="../index.html">diesel</a>::<wbr><a href="index.html">prelude</a>::<wbr><a class="derive" href="#">Insertable</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../src/diesel_derives/lib.rs.html#411">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>#[derive(Insertable)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[diesel]
+    #[table_name]
+    #[column_name]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Implements <code>Insertable</code></p>
+<p>To implement <code>Insertable</code> this derive needs to know the corresponding table
+type. By default, it uses the <code>snake_case</code> type name with an added <code>s</code>
+from the current scope.
+It is possible to change this default by using <code>#[diesel(table_name = something)]</code>.
+If <code>table_name</code> attribute is given multiple times, impls for each table are generated.</p>
+<p>If a field name of your
+struct differs from the name of the corresponding column,
+you can annotate the field with <code>#[diesel(column_name = some_column_name)]</code>.</p>
+<p>Your struct can also contain fields which implement <code>Insertable</code>. This is
+useful when you want to have one field map to more than one column (for
+example, an enum that maps to a label and a value column). Add
+<code>#[diesel(embed)]</code> to any such fields.</p>
+<p>To provide custom serialization behavior for a field, you can use
+<code>#[diesel(serialize_as = SomeType)]</code>. If this attribute is present, Diesel
+will call <code>.into</code> on the corresponding field and serialize the instance of <code>SomeType</code>,
+rather than the actual field on your struct. This can be used to add custom behavior for a
+single field, or use types that are otherwise unsupported by Diesel.
+Using <code>#[diesel(serialize_as)]</code> is <strong>incompatible</strong> with <code>#[diesel(embed)]</code>.
+Normally, Diesel produces two implementations of the <code>Insertable</code> trait for your
+struct using this derive: one for an owned version and one for a borrowed version.
+Using <code>#[diesel(serialize_as)]</code> implies a conversion using <code>.into</code> which consumes the underlying value.
+Hence, once you use <code>#[diesel(serialize_as)]</code>, Diesel can no longer insert borrowed
+versions of your struct.</p>
+<h2 id="attributes"><a class="doc-anchor" href="#attributes">§</a>Attributes</h2><h3 id="optional-container-attributes"><a class="doc-anchor" href="#optional-container-attributes">§</a>Optional container attributes</h3>
+<ul>
+<li><code>#[diesel(table_name = path::to::table)]</code>, specifies a path to the table this type
+is insertable into. The path is relative to the current module.
+If this attribute is not used, the type name converted to
+<code>snake_case</code> with an added <code>s</code> is used as table name</li>
+<li><code>#[diesel(treat_none_as_default_value = false)]</code>, specifies that <code>None</code> values
+should be converted to <code>NULL</code> values on the SQL side instead of being treated as <code>DEFAULT</code>
+value primitive. <em>Note</em>: This option may control if your query is stored in the
+prepared statement cache or not*</li>
+</ul>
+<h3 id="optional-field-attributes"><a class="doc-anchor" href="#optional-field-attributes">§</a>Optional field attributes</h3>
+<ul>
+<li><code>#[diesel(column_name = some_column_name)]</code>, overrides the column the current
+field maps to <code>some_column_name</code>. By default, the field name is used
+as column name</li>
+<li><code>#[diesel(embed)]</code>, specifies that the current field maps not only
+to a single database field, but is a struct that implements <code>Insertable</code></li>
+<li><code>#[diesel(serialize_as = SomeType)]</code>, instead of serializing the actual
+field type, Diesel will convert the field into <code>SomeType</code> using <code>.into</code> and
+serialize that instead. By default, this derive will serialize directly using
+the actual field type.</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>If we want to customize the serialization during insert, we can use <code>#[diesel(serialize_as)]</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Debug, FromSqlRow, AsExpression)]
+#[diesel(sql_type = sql_types::Text)]
+</span><span class="kw">struct </span>UppercaseString(<span class="kw">pub </span>String);
+
+<span class="kw">impl </span>Into&lt;UppercaseString&gt; <span class="kw">for </span>String {
+    <span class="kw">fn </span>into(<span class="self">self</span>) -&gt; UppercaseString {
+        UppercaseString(<span class="self">self</span>.to_uppercase())
+    }
+}
+
+<span class="kw">impl</span>&lt;DB&gt; ToSql&lt;sql_types::Text, DB&gt; <span class="kw">for </span>UppercaseString
+    <span class="kw">where
+        </span>DB: Backend,
+        String: ToSql&lt;sql_types::Text, DB&gt;,
+{
+    <span class="kw">fn </span>to_sql&lt;<span class="lifetime">'b</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'b </span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>Output&lt;<span class="lifetime">'b</span>, <span class="lifetime">'_</span>, DB&gt;) -&gt; serialize::Result {
+        <span class="self">self</span>.<span class="number">0</span>.to_sql(out)
+    }
+}
+
+<span class="attr">#[derive(Insertable, PartialEq, Debug)]
+#[diesel(table_name = users)]
+</span><span class="kw">struct </span>InsertableUser {
+    id: i32,
+    <span class="attr">#[diesel(serialize_as = UppercaseString)]
+    </span>name: String,
+}
+
+<span class="kw">let </span>user = InsertableUser {
+    id: <span class="number">1</span>,
+    name: <span class="string">"thomas"</span>.to_string(),
+};
+
+diesel::insert_into(users)
+    .values(user)
+    .execute(connection)
+    .unwrap();
+
+<span class="macro">assert_eq!</span>(
+    <span class="prelude-val">Ok</span>(<span class="string">"THOMAS"</span>.to_string()),
+    users.select(name).first(connection)
+);</code></pre></div>
+</div></details></section></div></main></body></html>

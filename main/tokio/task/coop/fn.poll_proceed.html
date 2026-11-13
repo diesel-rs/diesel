@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Decrements the task budget and returns `Poll::Pending` if the budget is depleted. This indicates that the task should yield to the scheduler. Otherwise, returns `RestoreOnPending` which can be used to commit the budget consumption."><title>poll_proceed in tokio::task::coop - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="tokio" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">poll_proceed</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../tokio/index.html">tokio</a><span class="version">1.54.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">poll_<wbr>proceed</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In tokio::<wbr>task::<wbr>coop</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">tokio</a>::<wbr><a href="../index.html">task</a>::<wbr><a href="index.html">coop</a></div><h1>Function <span class="fn">poll_<wbr>proceed</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/tokio/task/coop/mod.rs.html#343-364">Source</a> </span></div><pre class="rust item-decl"><code>pub fn poll_proceed(cx: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/task/wake/struct.Context.html" title="struct core::task::wake::Context">Context</a>&lt;'_&gt;) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/task/poll/enum.Poll.html" title="enum core::task::poll::Poll">Poll</a>&lt;<a class="struct" href="struct.RestoreOnPending.html" title="struct tokio::task::coop::RestoreOnPending">RestoreOnPending</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Decrements the task budget and returns <a href="https://doc.rust-lang.org/nightly/core/task/poll/enum.Poll.html#variant.Pending" title="variant core::task::poll::Poll::Pending"><code>Poll::Pending</code></a> if the budget is depleted.
+This indicates that the task should yield to the scheduler. Otherwise, returns
+<a href="struct.RestoreOnPending.html" title="struct tokio::task::coop::RestoreOnPending"><code>RestoreOnPending</code></a> which can be used to commit the budget consumption.</p>
+<p>The returned <a href="struct.RestoreOnPending.html" title="struct tokio::task::coop::RestoreOnPending"><code>RestoreOnPending</code></a> will revert the budget to its former
+value when dropped unless <a href="struct.RestoreOnPending.html#method.made_progress" title="method tokio::task::coop::RestoreOnPending::made_progress"><code>RestoreOnPending::made_progress</code></a>
+is called. It is the caller’s responsibility to do so when it <em>was</em> able to
+make progress after the call to <a href="fn.poll_proceed.html" title="fn tokio::task::coop::poll_proceed"><code>poll_proceed</code></a>.
+Restoring the budget automatically ensures the task can try to make progress in some other
+way.</p>
+<p>Note that <a href="struct.RestoreOnPending.html" title="struct tokio::task::coop::RestoreOnPending"><code>RestoreOnPending</code></a> restores the budget <strong>as it was before <a href="fn.poll_proceed.html" title="fn tokio::task::coop::poll_proceed"><code>poll_proceed</code></a></strong>.
+Therefore, if the budget is <em>further</em> adjusted between when <a href="fn.poll_proceed.html" title="fn tokio::task::coop::poll_proceed"><code>poll_proceed</code></a> returns and
+<a href="struct.RestoreOnPending.html" title="struct tokio::task::coop::RestoreOnPending"><code>RestoreOnPending</code></a> is dropped, those adjustments are erased unless the caller indicates
+that progress was made.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>This example wraps the <code>futures::channel::mpsc::UnboundedReceiver</code> to
+cooperate with the Tokio scheduler. Each time a value is received, task budget
+is consumed. If no budget is available, the task yields to the scheduler.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::pin::Pin;
+<span class="kw">use </span>std::task::{ready, Context, Poll};
+<span class="kw">use </span>tokio::task::coop;
+<span class="kw">use </span>futures::stream::{Stream, StreamExt};
+<span class="kw">use </span>futures::channel::mpsc::UnboundedReceiver;
+
+<span class="kw">struct </span>CoopUnboundedReceiver&lt;T&gt; {
+   receiver: UnboundedReceiver&lt;T&gt;,
+}
+
+<span class="kw">impl</span>&lt;T&gt; Stream <span class="kw">for </span>CoopUnboundedReceiver&lt;T&gt; {
+    <span class="kw">type </span>Item = T;
+    <span class="kw">fn </span>poll_next(
+        <span class="kw-2">mut </span><span class="self">self</span>: Pin&lt;<span class="kw-2">&amp;mut </span><span class="self">Self</span>&gt;,
+        cx: <span class="kw-2">&amp;mut </span>Context&lt;<span class="lifetime">'_</span>&gt;
+    ) -&gt; Poll&lt;<span class="prelude-ty">Option</span>&lt;T&gt;&gt; {
+        <span class="kw">let </span>coop = <span class="macro">ready!</span>(coop::poll_proceed(cx));
+        <span class="kw">match </span><span class="self">self</span>.receiver.poll_next_unpin(cx) {
+            Poll::Ready(v) =&gt; {
+                <span class="comment">// We received a value, so consume budget.
+                </span>coop.made_progress();
+                Poll::Ready(v)
+            }
+            Poll::Pending =&gt; Poll::Pending,
+       }
+    }
+}</code></pre></div></div></details></section></div></main></body></html>

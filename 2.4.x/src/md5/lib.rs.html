@@ -1,0 +1,152 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/md-5-0.11.0/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="md5" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">md5/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-2"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="attr">#![no_std]
+<a href=#2 id=2 data-nosnippet>2</a></span><span class="expansion"><input id=expand-2 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#![doc = <span class=expanded><span class="string">"# RustCrypto: MD5\n\n[![crate][crate-image]][crate-link]\n[![Docs][docs-image]][docs-link]\n![Apache2/MIT licensed][license-image]\n![Rust Version][rustc-image]\n[![Project Chat][chat-image]][chat-link]\n[![Build Status][build-image]][build-link]\n\nPure Rust implementation of the [MD5] cryptographic hash algorithm.\n\n## \u{26a0}\u{fe0f} Security Warning\n\nThis crate is provided for the purposes of legacy interoperability with\nprotocols and systems which mandate the use of MD5.\n\nHowever, MD5 is [cryptographically broken and unsuitable for further use][1].\n\nCollision attacks against MD5 are both practical and trivial, and\n[theoretical attacks against MD5\'s preimage resistance have been found][2].\n\n[RFC 6151] advises no new IETF protocols can be designed MD5-based constructions,\nincluding HMAC-MD5.\n\n## Examples\n\n```rust\nuse md5::{Md5, Digest};\nuse hex_literal::hex;\n\nlet mut hasher = Md5::new();\nhasher.update(b\"hello world\");\nlet hash = hasher.finalize();\n\nassert_eq!(hash, hex!(\"5eb63bbbe01eeed093cb22bb8f5acdc3\"));\n```\n\nSee the [`digest`] crate docs for additional examples.\n\n## License\n\nThe crate is licensed under either of:\n\n* [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)\n* [MIT license](http://opensource.org/licenses/MIT)\n\nat your option.\n\n### Contribution\n\nUnless you explicitly state otherwise, any contribution intentionally submitted\nfor inclusion in the work by you, as defined in the Apache-2.0 license, shall be\ndual licensed as above, without any additional terms or conditions.\n\n[//]: # (badges)\n\n[crate-image]: https://img.shields.io/crates/v/md-5.svg\n[crate-link]: https://crates.io/crates/md-5\n[docs-image]: https://docs.rs/md-5/badge.svg\n[docs-link]: https://docs.rs/md-5/\n[license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg\n[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg\n[chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg\n[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260041-hashes\n[build-image]: https://github.com/RustCrypto/hashes/actions/workflows/md5.yml/badge.svg?branch=master\n[build-link]: https://github.com/RustCrypto/hashes/actions/workflows/md5.yml?query=branch:master\n\n[//]: # (general links)\n\n[MD5]: https://en.wikipedia.org/wiki/MD5\n[`digest`]: https://docs.rs/digest\n[1]: https://www.kb.cert.org/vuls/id/836068\n[2]: https://dl.acm.org/citation.cfm?id=1724151\n[RFC 6151]: https://tools.ietf.org/html/rfc6151\n"</span></span><span class="original"><span class="macro">include_str!</span>(<span class="string">"../README.md"</span>)</span></span></span><span class="attr">]
+<a href=#3 id=3 data-nosnippet>3</a>#![doc(
+<a href=#4 id=4 data-nosnippet>4</a>    html_logo_url = <span class="string">"https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"</span>,
+<a href=#5 id=5 data-nosnippet>5</a>    html_favicon_url = <span class="string">"https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
+<a href=#6 id=6 data-nosnippet>6</a></span>)]
+<a href=#7 id=7 data-nosnippet>7</a>#![cfg_attr(docsrs, feature(doc_cfg))]
+<a href=#8 id=8 data-nosnippet>8</a>#![warn(missing_docs, unreachable_pub)]
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a></span><span class="kw">pub use </span>digest::{<a class="self" href="../../digest/index.html">self</a>, <a href="../../md5/trait.Digest.html">Digest</a>};
+<a href=#11 id=11 data-nosnippet>11</a>
+<a href=#12 id=12 data-nosnippet>12</a><span class="doccomment">/// Block-level types
+<a href=#13 id=13 data-nosnippet>13</a></span><span class="kw">pub mod </span><a href="block_api.rs.html#1-135">block_api</a>;
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">mod </span><a href="compress.rs.html#1-17">compress</a>;
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">mod </span><a href="consts.rs.html#1-16">consts</a>;
+<a href=#16 id=16 data-nosnippet>16</a>
+<a href=#17 id=17 data-nosnippet>17</a><span class="expansion"><input id=expand-17 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class=expanded><span class="attr">#[doc = <span class="string">r" MD5 hasher state."</span>]
+</span><span class="kw">pub struct </span>Md5 {
+    core: block_api::Md5Core,
+    buffer: ::digest::block_api::Buffer&lt;block_api::Md5Core&gt;,
+}
+<span class="kw">impl </span>core::fmt::Debug <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
+        f.write_str(<span class="string">"Md5 { ... }"</span>)
+    }
+}
+<span class="kw">impl </span>::digest::block_api::BlockSizeUser <span class="kw">for </span>Md5 {
+    <span class="kw">type </span>BlockSize =
+        &lt;block_api::Md5Core <span class="kw">as </span>::digest::common::BlockSizeUser&gt;::BlockSize;
+}
+<span class="kw">impl </span>::digest::OutputSizeUser <span class="kw">for </span>Md5 {
+    <span class="kw">type </span>OutputSize =
+        &lt;block_api::Md5Core <span class="kw">as
+        </span>::digest::block_api::OutputSizeUser&gt;::OutputSize;
+}
+<span class="kw">impl </span>::digest::block_api::CoreProxy <span class="kw">for </span>Md5 {
+    <span class="kw">type </span>Core = block_api::Md5Core;
+    <span class="kw">fn </span>compose(core: <span class="self">Self</span>::Core,
+        buffer: ::digest::block_api::Buffer&lt;<span class="self">Self</span>::Core&gt;) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ core, buffer }
+    }
+    <span class="kw">fn </span>decompose(<span class="self">self</span>)
+        -&gt; (<span class="self">Self</span>::Core, ::digest::block_api::Buffer&lt;<span class="self">Self</span>::Core&gt;) {
+        <span class="kw">let </span><span class="self">Self </span>{ core, buffer } = <span class="self">self</span>;
+        (core, buffer)
+    }
+}
+<span class="kw">impl </span>::digest::Update <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, data: <span class="kw-2">&amp;</span>[u8]) {
+        <span class="kw">let </span><span class="self">Self </span>{ core, buffer } = <span class="self">self</span>;
+        buffer.digest_blocks(data,
+            |blocks|
+                {
+                    ::digest::block_api::UpdateCore::update_blocks(core, blocks)
+                });
+    }
+}
+<span class="kw">impl </span>::digest::FixedOutput <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>finalize_into(<span class="kw-2">mut </span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>::digest::Output&lt;<span class="self">Self</span>&gt;) {
+        <span class="kw">let </span><span class="self">Self </span>{ core, buffer } = <span class="kw-2">&amp;mut </span><span class="self">self</span>;
+        ::digest::block_api::FixedOutputCore::finalize_fixed_core(core,
+            buffer, out);
+    }
+}
+<span class="kw">impl </span>::digest::common::AlgorithmName <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>write_alg_name(f: <span class="kw-2">&amp;mut </span>core::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;)
+        -&gt; <span class="prelude-ty">Result</span>&lt;(), core::fmt::Error&gt; {
+        &lt;block_api::Md5Core <span class="kw">as
+                </span>::digest::common::AlgorithmName&gt;::write_alg_name(f)
+    }
+}
+<span class="kw">impl </span>Default <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ core: Default::default(), buffer: Default::default() }
+    }
+}
+<span class="kw">impl </span>Clone <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            core: Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.core),
+            buffer: Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.buffer),
+        }
+    }
+}
+<span class="kw">impl </span>::digest::HashMarker <span class="kw">for </span>Md5 {}
+<span class="kw">const _</span>: () =
+    {
+        <span class="kw">fn </span>check(v: <span class="kw-2">&amp;</span>block_api::Md5Core) { v <span class="kw">as </span><span class="kw-2">&amp;</span><span class="kw">dyn </span>::digest::HashMarker; }
+    };
+<span class="kw">impl </span>::digest::Reset <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        ::digest::Reset::reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>.core);
+        <span class="self">self</span>.buffer.reset();
+    }
+}
+<span class="kw">impl </span>::digest::FixedOutputReset <span class="kw">for </span>Md5 {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>finalize_into_reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>::digest::Output&lt;<span class="self">Self</span>&gt;) {
+        <span class="kw">let </span><span class="self">Self </span>{ core, buffer } = <span class="self">self</span>;
+        ::digest::block_api::FixedOutputCore::finalize_fixed_core(core,
+            buffer, out);
+        ::digest::Reset::reset(<span class="self">self</span>);
+    }
+}
+<span class="kw">impl </span>::digest::common::hazmat::SerializableState <span class="kw">for </span>Md5 {
+    <span class="kw">type </span>SerializedStateSize =
+        ::digest::typenum::Sum&lt;&lt;block_api::Md5Core <span class="kw">as
+        </span>::digest::common::hazmat::SerializableState&gt;::SerializedStateSize,
+        ::digest::block_buffer::SerializedBufferSize&lt;&lt;block_api::Md5Core <span class="kw">as
+        </span>::digest::block_api::BlockSizeUser&gt;::BlockSize,
+        &lt;block_api::Md5Core <span class="kw">as
+        </span>::digest::block_api::BufferKindUser&gt;::BufferKind&gt;&gt;;
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>serialize(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::digest::common::hazmat::SerializedState&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>serialized_core = <span class="self">self</span>.core.serialize();
+        <span class="kw">let </span>serialized_buf = <span class="self">self</span>.buffer.serialize();
+        serialized_core.concat(serialized_buf)
+    }
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>deserialize(serialized_state:
+            <span class="kw-2">&amp;</span>::digest::common::hazmat::SerializedState&lt;<span class="self">Self</span>&gt;)
+        -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, ::digest::common::hazmat::DeserializeStateError&gt; {
+        <span class="kw">use </span>::digest::common::hazmat::{
+            SerializableState, DeserializeStateError,
+        };
+        <span class="kw">let </span>(serialized_core, serialized_buf) =
+            serialized_state.split_ref::&lt;&lt;block_api::Md5Core <span class="kw">as
+                </span>SerializableState&gt;::SerializedStateSize&gt;();
+        <span class="kw">let </span>core = SerializableState::deserialize(serialized_core)<span class="question-mark">?</span>;
+        <span class="kw">let </span>buffer =
+            ::digest::block_buffer::BlockBuffer::deserialize(serialized_buf).map_err(|<span class="kw">_</span>|
+                        DeserializeStateError)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ core, buffer })
+    }
+}
+<span class="kw">impl </span>::digest::const_oid::AssociatedOid <span class="kw">for </span>Md5 {
+    <span class="kw">const </span>OID: ::digest::const_oid::ObjectIdentifier =
+        ::digest::const_oid::ObjectIdentifier::new_unwrap(<span class="string">"1.2.840.113549.2.5"</span>);
+}</span><span class="original"><a href="../../digest/macro.buffer_fixed.html">digest::buffer_fixed!</a>(
+<a href=#18 id=18 data-nosnippet>18</a>    <span class="doccomment">/// MD5 hasher state.
+<a href=#19 id=19 data-nosnippet>19</a>    </span><span class="kw">pub struct </span><a href="../../md5/struct.Md5.html">Md5</a>(block_api::<a href="block_api.rs.html#20-23">Md5Core</a>);
+<a href=#20 id=20 data-nosnippet>20</a>    oid: <span class="string">"1.2.840.113549.2.5"</span>;
+<a href=#21 id=21 data-nosnippet>21</a>    <span class="kw">impl</span>: FixedHashTraits;
+<a href=#22 id=22 data-nosnippet>22</a>)</span></span>;
+</code></pre></div></section></main></body></html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/aws-lc-rs-1.19.0/src/rsa.rs`."><title>rsa.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="aws_lc_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">aws_lc_rs/</div>rsa.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Copyright 2015-2016 Brian Smith.
+<a href=#2 id=2 data-nosnippet>2</a>// SPDX-License-Identifier: ISC
+<a href=#3 id=3 data-nosnippet>3</a>// Modifications copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+<a href=#4 id=4 data-nosnippet>4</a>// SPDX-License-Identifier: Apache-2.0 OR ISC
+<a href=#5 id=5 data-nosnippet>5</a>
+<a href=#6 id=6 data-nosnippet>6</a></span><span class="doccomment">//! RSA Signature and Encryption Support.
+<a href=#7 id=7 data-nosnippet>7</a>//!
+<a href=#8 id=8 data-nosnippet>8</a>//! # OAEP Encryption / Decryption
+<a href=#9 id=9 data-nosnippet>9</a>//!
+<a href=#10 id=10 data-nosnippet>10</a>//! ```rust
+<a href=#11 id=11 data-nosnippet>11</a>//! # use std::error::Error;
+<a href=#12 id=12 data-nosnippet>12</a>//! # fn main() -&gt; Result&lt;(), Box&lt;dyn Error&gt;&gt; {
+<a href=#13 id=13 data-nosnippet>13</a>//! use aws_lc_rs::{
+<a href=#14 id=14 data-nosnippet>14</a>//!     encoding::{AsDer, Pkcs8V1Der, PublicKeyX509Der},
+<a href=#15 id=15 data-nosnippet>15</a>//!     rsa::{KeySize, OAEP_SHA256_MGF1SHA256, OaepPublicEncryptingKey, OaepPrivateDecryptingKey, PublicEncryptingKey, PrivateDecryptingKey}
+<a href=#16 id=16 data-nosnippet>16</a>//! };
+<a href=#17 id=17 data-nosnippet>17</a>//!
+<a href=#18 id=18 data-nosnippet>18</a>//! // Generate a RSA 2048-bit key.
+<a href=#19 id=19 data-nosnippet>19</a>//! let private_key = PrivateDecryptingKey::generate(KeySize::Rsa2048)?;
+<a href=#20 id=20 data-nosnippet>20</a>//!
+<a href=#21 id=21 data-nosnippet>21</a>//! // Serialize the RSA private key to DER encoded PKCS#8 format for later usage.
+<a href=#22 id=22 data-nosnippet>22</a>//! let private_key_der = AsDer::&lt;Pkcs8V1Der&gt;::as_der(&amp;private_key)?;
+<a href=#23 id=23 data-nosnippet>23</a>//! let private_key_der_bytes = private_key_der.as_ref();
+<a href=#24 id=24 data-nosnippet>24</a>//!
+<a href=#25 id=25 data-nosnippet>25</a>//! // Load a RSA private key from DER encoded PKCS#8 document.
+<a href=#26 id=26 data-nosnippet>26</a>//! let private_key = PrivateDecryptingKey::from_pkcs8(private_key_der_bytes)?;
+<a href=#27 id=27 data-nosnippet>27</a>//!
+<a href=#28 id=28 data-nosnippet>28</a>//! // Retrieve the RSA public key
+<a href=#29 id=29 data-nosnippet>29</a>//! let public_key = private_key.public_key();
+<a href=#30 id=30 data-nosnippet>30</a>//!
+<a href=#31 id=31 data-nosnippet>31</a>//! // Serialize the RSA public key to DER encoded X.509 SubjectPublicKeyInfo for later usage.
+<a href=#32 id=32 data-nosnippet>32</a>//! let public_key_der = AsDer::&lt;PublicKeyX509Der&gt;::as_der(&amp;public_key)?;
+<a href=#33 id=33 data-nosnippet>33</a>//! let public_key_der_bytes = public_key_der.as_ref();
+<a href=#34 id=34 data-nosnippet>34</a>//!
+<a href=#35 id=35 data-nosnippet>35</a>//! // Load a RSA public key from DER encoded X.509 SubjectPublicKeyInfo.
+<a href=#36 id=36 data-nosnippet>36</a>//! let public_key = PublicEncryptingKey::from_der(public_key_der_bytes)?;
+<a href=#37 id=37 data-nosnippet>37</a>//!
+<a href=#38 id=38 data-nosnippet>38</a>//! // Construct a RSA-OAEP public encrypting key
+<a href=#39 id=39 data-nosnippet>39</a>//! let public_key = OaepPublicEncryptingKey::new(public_key)?;
+<a href=#40 id=40 data-nosnippet>40</a>//!
+<a href=#41 id=41 data-nosnippet>41</a>//! // The maximum size plaintext can be determined by calling `OaepPublicEncryptingKey::max_plaintext_size`
+<a href=#42 id=42 data-nosnippet>42</a>//! let message = b"hello world";
+<a href=#43 id=43 data-nosnippet>43</a>//! let mut ciphertext = vec![0u8; public_key.ciphertext_size()]; // Output will be the size of the RSA key length in bytes rounded up.
+<a href=#44 id=44 data-nosnippet>44</a>//!
+<a href=#45 id=45 data-nosnippet>45</a>//! // Encrypt a message with the public key without the optional label provided.
+<a href=#46 id=46 data-nosnippet>46</a>//! let ciphertext = public_key.encrypt(&amp;OAEP_SHA256_MGF1SHA256, message, &amp;mut ciphertext, None)?;
+<a href=#47 id=47 data-nosnippet>47</a>//!
+<a href=#48 id=48 data-nosnippet>48</a>//! assert_ne!(message, ciphertext);
+<a href=#49 id=49 data-nosnippet>49</a>//!
+<a href=#50 id=50 data-nosnippet>50</a>//! // Construct a RSA-OAEP private decrypting key
+<a href=#51 id=51 data-nosnippet>51</a>//! let private_key = OaepPrivateDecryptingKey::new(private_key)?;
+<a href=#52 id=52 data-nosnippet>52</a>//!
+<a href=#53 id=53 data-nosnippet>53</a>//! // Decrypt a message with the private key.
+<a href=#54 id=54 data-nosnippet>54</a>//! let mut plaintext = vec![0u8; private_key.min_output_size()];
+<a href=#55 id=55 data-nosnippet>55</a>//! let plaintext = private_key.decrypt(&amp;OAEP_SHA256_MGF1SHA256, ciphertext, &amp;mut plaintext, None)?;
+<a href=#56 id=56 data-nosnippet>56</a>//!
+<a href=#57 id=57 data-nosnippet>57</a>//! assert_eq!(message, plaintext);
+<a href=#58 id=58 data-nosnippet>58</a>//!
+<a href=#59 id=59 data-nosnippet>59</a>//! # Ok(())
+<a href=#60 id=60 data-nosnippet>60</a>//! # }
+<a href=#61 id=61 data-nosnippet>61</a>//! ```
+<a href=#62 id=62 data-nosnippet>62</a>
+<a href=#63 id=63 data-nosnippet>63</a></span><span class="comment">// *R* and *r* in Montgomery math refer to different things, so we always use
+<a href=#64 id=64 data-nosnippet>64</a>// `R` to refer to *R* to avoid confusion, even when that's against the normal
+<a href=#65 id=65 data-nosnippet>65</a>// naming conventions. Also the standard camelCase names are used for `KeyPair`
+<a href=#66 id=66 data-nosnippet>66</a>// components.
+<a href=#67 id=67 data-nosnippet>67</a>
+<a href=#68 id=68 data-nosnippet>68</a></span><span class="kw">mod </span><a href="rsa/encoding.rs.html#4-104">encoding</a>;
+<a href=#69 id=69 data-nosnippet>69</a><span class="kw">mod </span><a href="rsa/encryption.rs.html#4-214">encryption</a>;
+<a href=#70 id=70 data-nosnippet>70</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span><a href="rsa/key.rs.html#5-797">key</a>;
+<a href=#71 id=71 data-nosnippet>71</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span><a href="rsa/signature.rs.html#4-493">signature</a>;
+<a href=#72 id=72 data-nosnippet>72</a>
+<a href=#73 id=73 data-nosnippet>73</a><span class="kw">pub use </span><span class="self">self</span>::encryption::oaep::{
+<a href=#74 id=74 data-nosnippet>74</a>    <a href="rsa/encryption/oaep.rs.html#52-56">OaepAlgorithm</a>, <a href="rsa/encryption/oaep.rs.html#187-189">OaepPrivateDecryptingKey</a>, <a href="rsa/encryption/oaep.rs.html#83-85">OaepPublicEncryptingKey</a>, <a href="rsa/encryption/oaep.rs.html#21-25">OAEP_SHA1_MGF1SHA1</a>,
+<a href=#75 id=75 data-nosnippet>75</a>    <a href="rsa/encryption/oaep.rs.html#28-32">OAEP_SHA256_MGF1SHA256</a>, <a href="rsa/encryption/oaep.rs.html#35-39">OAEP_SHA384_MGF1SHA384</a>, <a href="rsa/encryption/oaep.rs.html#42-46">OAEP_SHA512_MGF1SHA512</a>,
+<a href=#76 id=76 data-nosnippet>76</a>};
+<a href=#77 id=77 data-nosnippet>77</a><span class="kw">pub use </span><span class="self">self</span>::encryption::pkcs1::{<a href="rsa/encryption/pkcs1.rs.html#104-106">Pkcs1PrivateDecryptingKey</a>, <a href="rsa/encryption/pkcs1.rs.html#17-19">Pkcs1PublicEncryptingKey</a>};
+<a href=#78 id=78 data-nosnippet>78</a><span class="kw">pub use </span><span class="self">self</span>::encryption::{<a href="rsa/encryption.rs.html#20-32">EncryptionAlgorithmId</a>, <a href="rsa/encryption.rs.html#35">PrivateDecryptingKey</a>, <a href="rsa/encryption.rs.html#155">PublicEncryptingKey</a>};
+<a href=#79 id=79 data-nosnippet>79</a><span class="kw">pub use </span><span class="self">self</span>::key::{<a href="rsa/key.rs.html#86-95">KeyPair</a>, <a href="rsa/key.rs.html#104-125">KeyPairComponents</a>, <a href="rsa/key.rs.html#43-55">KeySize</a>, <a href="rsa/key.rs.html#469-475">PublicKey</a>, <a href="rsa/key.rs.html#582-587">PublicKeyComponents</a>};
+<a href=#80 id=80 data-nosnippet>80</a><span class="attr">#[allow(clippy::module_name_repetitions)]
+<a href=#81 id=81 data-nosnippet>81</a></span><span class="kw">pub use </span><span class="self">self</span>::signature::{<a href="rsa/signature.rs.html#99-105">RsaParameters</a>, <a href="rsa/signature.rs.html#44-65">RsaPssSaltLength</a>};
+<a href=#82 id=82 data-nosnippet>82</a>
+<a href=#83 id=83 data-nosnippet>83</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><a href="rsa/signature.rs.html#297-309"><span class="self">self</span>::signature::RsaVerificationAlgorithmId</a>;
+<a href=#84 id=84 data-nosnippet>84</a>
+<a href=#85 id=85 data-nosnippet>85</a><span class="attr">#[cfg(test)]
+<a href=#86 id=86 data-nosnippet>86</a></span><span class="kw">mod </span>tests {
+<a href=#87 id=87 data-nosnippet>87</a>    <span class="attr">#[cfg(feature = <span class="string">"fips"</span>)]
+<a href=#88 id=88 data-nosnippet>88</a>    </span><span class="kw">mod </span>fips;
+<a href=#89 id=89 data-nosnippet>89</a>
+<a href=#90 id=90 data-nosnippet>90</a>    <span class="attr">#[cfg(feature = <span class="string">"ring-io"</span>)]
+<a href=#91 id=91 data-nosnippet>91</a>    #[test]
+<a href=#92 id=92 data-nosnippet>92</a>    </span><span class="kw">fn </span>test_rsa() {
+<a href=#93 id=93 data-nosnippet>93</a>        <span class="kw">use </span><span class="kw">crate</span>::signature::KeyPair;
+<a href=#94 id=94 data-nosnippet>94</a>        <span class="kw">use </span><span class="kw">crate</span>::test::from_dirty_hex;
+<a href=#95 id=95 data-nosnippet>95</a>        <span class="kw">let </span>rsa_pkcs8_input: Vec&lt;u8&gt; = from_dirty_hex(
+<a href=#96 id=96 data-nosnippet>96</a>            <span class="string">r"308204bd020100300d06092a864886f70d0101010500048204a7308204a30201000282010100b9d7a
+<a href=#97 id=97 data-nosnippet>97</a>        f84fa4184a5f22037ec8aff2db5f78bd8c21e714e579ae57c6398c4950f3a694b17bfccf488766159aec5bb7c2c4
+<a href=#98 id=98 data-nosnippet>98</a>        3d59c798cbd45a09c9c86933f126879ee7eadcd404f61ecfc425197cab03946ba381a49ef3b4d0f60b17f8a747cd
+<a href=#99 id=99 data-nosnippet>99</a>        e56a834a7f6008f35ffb2f60a54ceda1974ff2a9963aba7f80d4e2916a93d8c74bb1ba5f3b189a4e8f0377bd3e94
+<a href=#100 id=100 data-nosnippet>100</a>        b5cc3f9c53cb8c8c7c0af394818755e968b7a76d9cada8da7af5fbe25da2a09737d5e4e4d7092aa16a0718d7322c
+<a href=#101 id=101 data-nosnippet>101</a>        e8aca767015128d6d35775ea9cb8bb1ac6512e1b787d34015221be780a37b1d69bc3708bfd8832591be6095a768f
+<a href=#102 id=102 data-nosnippet>102</a>        0fd3b3457927e6ae3641d55799a29a0a269cb4a693bc14b0203010001028201001c5fb7e69fa6dd2fd0f5e653f12
+<a href=#103 id=103 data-nosnippet>103</a>        ce0b7c5a1ce6864e97bc2985dad4e2f86e4133d21d25b3fe774f658cca83aace9e11d8905d62c20b6cd28a680a77
+<a href=#104 id=104 data-nosnippet>104</a>        357cfe1afac201f3d1532898afb40cce0560bedd2c49fc833bd98da3d1cd03cded0c637d4173e62de865b572d410
+<a href=#105 id=105 data-nosnippet>105</a>        f9ba83324cd7a3573359428232f1628f6d104e9e6c5f380898b5570201cf11eb5f7e0c4933139c7e7fba67582287
+<a href=#106 id=106 data-nosnippet>106</a>        ffb81b84fa81e9a2d9739815a25790c06ead7abcf286bd43c6e3d009d01f15fca3d720bbea48b0c8ccf8764f3c82
+<a href=#107 id=107 data-nosnippet>107</a>        2e61159d8efcbff38c794f8afe040b45df14c976a91b1b6d886a55b8e68969bcb30c7197920d97d7721d78d954d8
+<a href=#108 id=108 data-nosnippet>108</a>        9ffecbcc93c6ee82a86fe754102818100eba1cbe453f5cb2fb7eabc12d697267d25785a8f7b43cc2cb14555d3618
+<a href=#109 id=109 data-nosnippet>109</a>        c63929b19839dcd4212397ecda8ad872f97ede6ac95ebda7322bbc9409bac2b24ae56ad62202800c670365ae2867
+<a href=#110 id=110 data-nosnippet>110</a>        1195fe934978a5987bee2fcea06561b782630b066b0a35c3f559a281f0f729fc282ef8ebdbb065d60000223da6ed
+<a href=#111 id=111 data-nosnippet>111</a>        b732fa32d82bb02818100c9e81e353315fd88eff53763ed7b3859f419a0a158f5155851ce0fe6e43188e44fb43dd
+<a href=#112 id=112 data-nosnippet>112</a>        25bcdb7f3839fe84a5db88c6525e5bcbae513bae5ff54398106bd8ae4d241c082f8a64a9089531f7b57b09af5204
+<a href=#113 id=113 data-nosnippet>113</a>        2efa097140702dda55a2141c174dd7a324761267728a6cc4ce386c034393d855ebe985c4e5f2aec2bd3f2e2123ab
+<a href=#114 id=114 data-nosnippet>114</a>        1028180566889dd9c50798771397a68aa1ad9b970e136cc811676ac3901c51c741c48737dbf187de8c47eec68acc
+<a href=#115 id=115 data-nosnippet>115</a>        05b8a4490c164230c0366a36c2c52fc075a56a3e7eecf3c39b091c0336c2b5e00913f0de5f62c5046ceb9d88188c
+<a href=#116 id=116 data-nosnippet>116</a>        c740d34bd44839bd4d0c346527cea93a15596727d139e53c35eed25043bc4ac18950f237c02777b0281800f9dd98
+<a href=#117 id=117 data-nosnippet>117</a>        049e44088efee6a8b5b19f5c0d765880c12c25a154bb6817a5d5a0b798544aea76f9c58c707fe3d4c4b3573fe7ad
+<a href=#118 id=118 data-nosnippet>118</a>        0eb291580d22ae9f5ccc0d311a40590d1af1f3236427c2d72f57367d3ec185b9771cb5d041a8ab93409e59a9d68f
+<a href=#119 id=119 data-nosnippet>119</a>        99c72f91c658a3fe5aed59f9f938c368530a4a45f4a7c7155f3906c4354030ef102818100c89e0ba805c970abd84
+<a href=#120 id=120 data-nosnippet>120</a>        a70770d8fc57bfaa34748a58b77fcddaf0ca285db91953ef5728c1be7470da5540df6af56bb04c0f5ec500f83b08
+<a href=#121 id=121 data-nosnippet>121</a>        057664cb1551e1e29c58d8b1e9d70e23ed57fdf9936c591a83c1dc954f6654d4a245b6d8676d045c2089ffce537d
+<a href=#122 id=122 data-nosnippet>122</a>        234fc88e98d92afa92926c75b286e8fee70e273d762bbe63cd63b"</span>,
+<a href=#123 id=123 data-nosnippet>123</a>        );
+<a href=#124 id=124 data-nosnippet>124</a>
+<a href=#125 id=125 data-nosnippet>125</a>        <span class="kw">let </span>key = <span class="kw">super</span>::KeyPair::from_pkcs8(<span class="kw-2">&amp;</span>rsa_pkcs8_input).unwrap();
+<a href=#126 id=126 data-nosnippet>126</a>        <span class="kw">let </span>pk = key.public_key();
+<a href=#127 id=127 data-nosnippet>127</a>        <span class="kw">let </span>modulus_bytes = pk.modulus().big_endian_without_leading_zero();
+<a href=#128 id=128 data-nosnippet>128</a>        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>rsa_pkcs8_input[<span class="number">38</span>..<span class="number">294</span>], modulus_bytes);
+<a href=#129 id=129 data-nosnippet>129</a>    }
+<a href=#130 id=130 data-nosnippet>130</a>
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="attr">#[test]
+<a href=#132 id=132 data-nosnippet>132</a>    </span><span class="kw">fn </span>test_debug() {
+<a href=#133 id=133 data-nosnippet>133</a>        <span class="kw">use </span><span class="kw">crate</span>::signature;
+<a href=#134 id=134 data-nosnippet>134</a>        <span class="macro">assert_eq!</span>(
+<a href=#135 id=135 data-nosnippet>135</a>            <span class="string">"{ RSA_PSS_SHA512 }"</span>,
+<a href=#136 id=136 data-nosnippet>136</a>            <span class="macro">format!</span>(<span class="string">"{:?}"</span>, signature::RSA_PSS_SHA512)
+<a href=#137 id=137 data-nosnippet>137</a>        );
+<a href=#138 id=138 data-nosnippet>138</a>
+<a href=#139 id=139 data-nosnippet>139</a>        <span class="macro">assert_eq!</span>(
+<a href=#140 id=140 data-nosnippet>140</a>            <span class="string">"{ RSA_PSS_2048_8192_SHA256 }"</span>,
+<a href=#141 id=141 data-nosnippet>141</a>            <span class="macro">format!</span>(<span class="string">"{:?}"</span>, signature::RSA_PSS_2048_8192_SHA256)
+<a href=#142 id=142 data-nosnippet>142</a>        );
+<a href=#143 id=143 data-nosnippet>143</a>
+<a href=#144 id=144 data-nosnippet>144</a>        <span class="macro">assert_eq!</span>(
+<a href=#145 id=145 data-nosnippet>145</a>            <span class="string">"{ RSA_PSS_SHA256, RSA-PSS salt length: Custom(123) }"</span>,
+<a href=#146 id=146 data-nosnippet>146</a>            <span class="macro">format!</span>(
+<a href=#147 id=147 data-nosnippet>147</a>                <span class="string">"{:?}"</span>,
+<a href=#148 id=148 data-nosnippet>148</a>                signature::RSA_PSS_SHA256
+<a href=#149 id=149 data-nosnippet>149</a>                    .with_pss_salt_length(signature::RsaPssSaltLength::Custom(<span class="number">123</span>)),
+<a href=#150 id=150 data-nosnippet>150</a>            ),
+<a href=#151 id=151 data-nosnippet>151</a>        );
+<a href=#152 id=152 data-nosnippet>152</a>        <span class="macro">assert_eq!</span>(
+<a href=#153 id=153 data-nosnippet>153</a>            <span class="string">"{ RSA_PSS_2048_8192_SHA256, RSA-PSS salt length: Max }"</span>,
+<a href=#154 id=154 data-nosnippet>154</a>            <span class="macro">format!</span>(
+<a href=#155 id=155 data-nosnippet>155</a>                <span class="string">"{:?}"</span>,
+<a href=#156 id=156 data-nosnippet>156</a>                signature::RSA_PSS_2048_8192_SHA256
+<a href=#157 id=157 data-nosnippet>157</a>                    .with_pss_salt_length(signature::RsaPssSaltLength::Max),
+<a href=#158 id=158 data-nosnippet>158</a>            ),
+<a href=#159 id=159 data-nosnippet>159</a>        );
+<a href=#160 id=160 data-nosnippet>160</a>    }
+<a href=#161 id=161 data-nosnippet>161</a>}
+</code></pre></div></section></main></body></html>

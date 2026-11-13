@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ExcludeConstraintOperator","TableConstraint"],"struct":["CheckConstraint","ConstraintUsingIndex","ExcludeConstraint","ExcludeConstraintElement","ForeignKeyConstraint","FullTextOrSpatialConstraint","IndexConstraint","PrimaryKeyConstraint","UniqueConstraint"]};

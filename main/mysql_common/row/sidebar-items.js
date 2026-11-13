@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["new_row"],"mod":["convert"],"struct":["Row","RowDeserializer"],"trait":["ColumnIndex"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["schema","table"],"mod":["dynamic_value"],"struct":["Column","DynamicSelectClause","Schema","Table"]};

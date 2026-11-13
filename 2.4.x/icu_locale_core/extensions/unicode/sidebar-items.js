@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":[["attribute",1],["key",1],["subdivision_suffix",1],["value",1]],"struct":["Attribute","Attributes","Key","Keywords","SubdivisionId","SubdivisionSuffix","Unicode","Value"]};

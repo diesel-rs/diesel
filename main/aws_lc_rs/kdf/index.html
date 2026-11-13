@@ -1,0 +1,169 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Key-based Key Derivation Function (KBKDF) in Counter Mode"><title>aws_lc_rs::kdf - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="aws_lc_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module kdf</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../aws_lc_rs/index.html">aws_<wbr>lc_<wbr>rs</a><span class="version">1.19.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module kdf</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#key-based-key-derivation-function-kbkdf-in-counter-mode" title="Key-based Key Derivation Function (KBKDF) in Counter Mode">Key-based Key Derivation Function (KBKDF) in Counter Mode</a><ul><li><a href="#example-usage-with-hmac-sha256-prf" title="Example: Usage with HMAC-SHA256 PRF">Example: Usage with HMAC-SHA256 PRF</a></li><li><a href="#example-usage-with-hmac-sha256-prf-using-nist-fixedinfo-construction" title="Example: Usage with HMAC-SHA256 PRF using NIST FixedInfo Construction">Example: Usage with HMAC-SHA256 PRF using NIST FixedInfo Construction</a></li></ul></li><li><a href="#single-step-key-derivation-function-sskdf" title="Single-step Key Derivation Function (SSKDF)">Single-step Key Derivation Function (SSKDF)</a><ul><li><a href="#sskdf-using-digest" title="SSKDF using digest">SSKDF using digest</a></li><li><a href="#sskdf-using-hmac" title="SSKDF using HMAC">SSKDF using HMAC</a></li></ul></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate aws_<wbr>lc_<wbr>rs</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">aws_lc_rs</a></div><h1>Module <span>kdf</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/aws_lc_rs/kdf.rs.html#4-443">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="key-based-key-derivation-function-kbkdf-in-counter-mode"><a class="doc-anchor" href="#key-based-key-derivation-function-kbkdf-in-counter-mode">§</a>Key-based Key Derivation Function (KBKDF) in Counter Mode</h2>
+<p><a href="fn.kbkdf_ctr_hmac.html" title="fn aws_lc_rs::kdf::kbkdf_ctr_hmac"><code>kbkdf_ctr_hmac</code></a> provides an implementation of KDF in Counter Mode using HMAC PRF specified in
+<a href="https://doi.org/10.6028/NIST.SP.800-108r1-upd1">NIST SP 800-108r1-upd1</a> section 4.1. Further details
+regarding the implementation can be found on the accompanying function documentation.</p>
+<p>Key-based key derivation functions are used to derive additional keys from an existing cryptographic key.</p>
+<h3 id="example-usage-with-hmac-sha256-prf"><a class="doc-anchor" href="#example-usage-with-hmac-sha256-prf">§</a>Example: Usage with HMAC-SHA256 PRF</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::kdf::{
+        get_kbkdf_ctr_hmac_algorithm, kbkdf_ctr_hmac, KbkdfCtrHmacAlgorithm,
+        KbkdfCtrHmacAlgorithmId,
+    };
+<span class="kw">use </span>aws_lc_rs::error::Unspecified;
+
+<span class="kw">const </span>OUTPUT_KEY_LEN: usize = <span class="number">16</span>;
+
+<span class="kw">let </span>key: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x01</span>, <span class="number">0x85</span>, <span class="number">0xfb</span>, <span class="number">0x76</span>, <span class="number">0x61</span>, <span class="number">0xf6</span>, <span class="number">0xdd</span>, <span class="number">0x40</span>, <span class="number">0x8d</span>, <span class="number">0x98</span>, <span class="number">0x2f</span>, <span class="number">0x81</span>, <span class="number">0x0f</span>, <span class="number">0xcd</span>, <span class="number">0x50</span>,
+    <span class="number">0x04</span>,
+];
+
+<span class="kw">let </span>info: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0xc3</span>, <span class="number">0xf1</span>, <span class="number">0x71</span>, <span class="number">0x2a</span>, <span class="number">0x82</span>, <span class="number">0x61</span>, <span class="number">0x36</span>, <span class="number">0x43</span>, <span class="number">0xe0</span>, <span class="number">0xf7</span>, <span class="number">0x63</span>, <span class="number">0xa7</span>, <span class="number">0xa0</span>, <span class="number">0xa3</span>, <span class="number">0x15</span>,
+    <span class="number">0x88</span>, <span class="number">0xb6</span>, <span class="number">0xae</span>, <span class="number">0xd9</span>, <span class="number">0x50</span>, <span class="number">0x56</span>, <span class="number">0xdf</span>, <span class="number">0xc5</span>, <span class="number">0x12</span>, <span class="number">0x55</span>, <span class="number">0x0c</span>, <span class="number">0xf2</span>, <span class="number">0xd0</span>, <span class="number">0x0d</span>, <span class="number">0x68</span>,
+    <span class="number">0xa3</span>, <span class="number">0x2d</span>,
+];
+
+<span class="kw">let </span><span class="kw-2">mut </span>output_key = [<span class="number">0u8</span>; OUTPUT_KEY_LEN];
+
+<span class="kw">let </span>kbkdf_ctr_hmac_sha256: <span class="kw-2">&amp;</span>KbkdfCtrHmacAlgorithm =
+    get_kbkdf_ctr_hmac_algorithm(KbkdfCtrHmacAlgorithmId::Sha256).ok_or(Unspecified)<span class="question-mark">?</span>;
+
+kbkdf_ctr_hmac(kbkdf_ctr_hmac_sha256, key, info, <span class="kw-2">&amp;mut </span>output_key)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    output_key,
+    [
+        <span class="number">0xc6</span>, <span class="number">0x3f</span>, <span class="number">0x74</span>, <span class="number">0x7b</span>, <span class="number">0x67</span>, <span class="number">0xbe</span>, <span class="number">0x71</span>, <span class="number">0xf5</span>, <span class="number">0x7b</span>, <span class="number">0xa4</span>, <span class="number">0x56</span>, <span class="number">0x21</span>, <span class="number">0x17</span>, <span class="number">0xdd</span>,
+        <span class="number">0x29</span>, <span class="number">0x4
+    </span>]
+);
+</code></pre></div><h3 id="example-usage-with-hmac-sha256-prf-using-nist-fixedinfo-construction"><a class="doc-anchor" href="#example-usage-with-hmac-sha256-prf-using-nist-fixedinfo-construction">§</a>Example: Usage with HMAC-SHA256 PRF using NIST FixedInfo Construction</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::kdf::{
+        get_kbkdf_ctr_hmac_algorithm, kbkdf_ctr_hmac, KbkdfCtrHmacAlgorithm,
+        KbkdfCtrHmacAlgorithmId,
+    };
+
+
+<span class="kw">use </span>aws_lc_rs::error::Unspecified;
+<span class="kw">const </span>OUTPUT_KEY_LEN: usize = <span class="number">16</span>;
+
+<span class="kw">let </span>key: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x01</span>, <span class="number">0x85</span>, <span class="number">0xfb</span>, <span class="number">0x76</span>, <span class="number">0x61</span>, <span class="number">0xf6</span>, <span class="number">0xdd</span>, <span class="number">0x40</span>, <span class="number">0x8d</span>, <span class="number">0x98</span>, <span class="number">0x2f</span>, <span class="number">0x81</span>, <span class="number">0x0f</span>, <span class="number">0xcd</span>, <span class="number">0x50</span>,
+    <span class="number">0x04</span>,
+];
+
+<span class="kw">let </span>label: <span class="kw-2">&amp;</span>[u8] = <span class="string">b"KBKDF HMAC Counter Label"</span>;
+<span class="kw">let </span>context: <span class="kw-2">&amp;</span>[u8] = <span class="string">b"KBKDF HMAC Counter Context"</span>;
+
+<span class="kw">let </span>output_len_bits_be: [u8; <span class="number">4</span>] = {
+    <span class="comment">// Multiply `output_len` by eight to convert from bytes to bits
+    // Convert value to a 32-bit big-endian representation
+    </span><span class="kw">let </span>len: u32 = (OUTPUT_KEY_LEN * <span class="number">8</span>).try_into()<span class="question-mark">?</span>;
+    len.to_be_bytes()
+};
+
+<span class="comment">// FixedInfo String: Label || 0x00 || Context || [L]
+</span><span class="kw">let </span><span class="kw-2">mut </span>info = Vec::&lt;u8&gt;::new();
+info.extend_from_slice(label);
+info.push(<span class="number">0x0</span>);
+info.extend_from_slice(context);
+info.extend_from_slice(<span class="kw-2">&amp;</span>output_len_bits_be);
+
+<span class="kw">let </span><span class="kw-2">mut </span>output_key = [<span class="number">0u8</span>; OUTPUT_KEY_LEN];
+
+<span class="kw">let </span>kbkdf_ctr_hmac_sha256: <span class="kw-2">&amp;</span>KbkdfCtrHmacAlgorithm =
+    get_kbkdf_ctr_hmac_algorithm(KbkdfCtrHmacAlgorithmId::Sha256).ok_or(Unspecified)<span class="question-mark">?</span>;
+
+kbkdf_ctr_hmac(kbkdf_ctr_hmac_sha256, key, <span class="kw-2">&amp;</span>info, <span class="kw-2">&amp;mut </span>output_key)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    output_key,
+    [
+        <span class="number">0xcd</span>, <span class="number">0xe0</span>, <span class="number">0x92</span>, <span class="number">0xc8</span>, <span class="number">0xfe</span>, <span class="number">0x96</span>, <span class="number">0x21</span>, <span class="number">0x51</span>, <span class="number">0x88</span>, <span class="number">0xd4</span>, <span class="number">0x3d</span>, <span class="number">0xe4</span>, <span class="number">0x6c</span>, <span class="number">0xf6</span>,
+        <span class="number">0x37</span>, <span class="number">0xcb
+    </span>]
+);
+</code></pre></div><h2 id="single-step-key-derivation-function-sskdf"><a class="doc-anchor" href="#single-step-key-derivation-function-sskdf">§</a>Single-step Key Derivation Function (SSKDF)</h2>
+<p><a href="fn.sskdf_digest.html" title="fn aws_lc_rs::kdf::sskdf_digest"><code>sskdf_digest</code></a> and <a href="fn.sskdf_hmac.html" title="fn aws_lc_rs::kdf::sskdf_hmac"><code>sskdf_hmac</code></a> provided implementations of a one-step key derivation function defined in
+section 4 of <a href="https://doi.org/10.6028/NIST.SP.800-56Cr2">NIST SP 800-56Cr2</a>.</p>
+<p>These functions are used to derive keying material from a shared secret during a key establishment scheme.</p>
+<h3 id="sskdf-using-digest"><a class="doc-anchor" href="#sskdf-using-digest">§</a>SSKDF using digest</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::kdf::{
+        get_sskdf_digest_algorithm, sskdf_digest, SskdfDigestAlgorithm, SskdfDigestAlgorithmId,
+    };
+
+<span class="kw">use </span>aws_lc_rs::error::Unspecified;
+
+<span class="kw">const </span>OUTPUT_KEY_LEN: usize = <span class="number">16</span>;
+
+<span class="kw">let </span>shared_secret: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x59</span>, <span class="number">0x09</span>, <span class="number">0x6b</span>, <span class="number">0x7b</span>, <span class="number">0xb7</span>, <span class="number">0x2b</span>, <span class="number">0x94</span>, <span class="number">0xc5</span>, <span class="number">0x55</span>, <span class="number">0x5c</span>, <span class="number">0x36</span>, <span class="number">0xc9</span>, <span class="number">0x76</span>, <span class="number">0x8f</span>, <span class="number">0xd8</span>,
+    <span class="number">0xe4</span>, <span class="number">0xed</span>, <span class="number">0x8f</span>, <span class="number">0x39</span>, <span class="number">0x5e</span>, <span class="number">0x78</span>, <span class="number">0x48</span>, <span class="number">0x5e</span>, <span class="number">0xb9</span>, <span class="number">0xf9</span>, <span class="number">0xdd</span>, <span class="number">0x43</span>, <span class="number">0x65</span>, <span class="number">0x55</span>, <span class="number">0x00</span>,
+    <span class="number">0xed</span>, <span class="number">0x7a</span>,
+];
+
+<span class="kw">let </span>info: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x9b</span>, <span class="number">0xca</span>, <span class="number">0xd7</span>, <span class="number">0xe8</span>, <span class="number">0xee</span>, <span class="number">0xf7</span>, <span class="number">0xb2</span>, <span class="number">0x1a</span>, <span class="number">0x98</span>, <span class="number">0xff</span>, <span class="number">0x18</span>, <span class="number">0x60</span>, <span class="number">0x5c</span>, <span class="number">0x68</span>, <span class="number">0x16</span>,
+    <span class="number">0xbd</span>,
+];
+
+<span class="kw">let </span><span class="kw-2">mut </span>output_key = [<span class="number">0u8</span>; OUTPUT_KEY_LEN];
+
+<span class="kw">let </span>sskdf_digest_sha256: <span class="kw-2">&amp;</span>SskdfDigestAlgorithm =
+    get_sskdf_digest_algorithm(SskdfDigestAlgorithmId::Sha256).ok_or(Unspecified)<span class="question-mark">?</span>;
+
+sskdf_digest(sskdf_digest_sha256, shared_secret, info, <span class="kw-2">&amp;mut </span>output_key)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    output_key,
+    [
+        <span class="number">0x21</span>, <span class="number">0x79</span>, <span class="number">0x35</span>, <span class="number">0x6c</span>, <span class="number">0xdc</span>, <span class="number">0x30</span>, <span class="number">0x1</span>, <span class="number">0xe6</span>, <span class="number">0x3f</span>, <span class="number">0x91</span>, <span class="number">0xb3</span>, <span class="number">0xc8</span>, <span class="number">0x10</span>, <span class="number">0x7</span>, <span class="number">0xba</span>,
+        <span class="number">0x31
+    </span>]
+);</code></pre></div><h3 id="sskdf-using-hmac"><a class="doc-anchor" href="#sskdf-using-hmac">§</a>SSKDF using HMAC</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::kdf::{
+        get_sskdf_hmac_algorithm, sskdf_hmac, SskdfHmacAlgorithm, SskdfHmacAlgorithmId,
+    };
+
+
+<span class="kw">use </span>aws_lc_rs::error::Unspecified;
+
+
+<span class="kw">const </span>OUTPUT_KEY_LEN: usize = <span class="number">16</span>;
+
+<span class="kw">let </span>shared_secret: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x59</span>, <span class="number">0x09</span>, <span class="number">0x6b</span>, <span class="number">0x7b</span>, <span class="number">0xb7</span>, <span class="number">0x2b</span>, <span class="number">0x94</span>, <span class="number">0xc5</span>, <span class="number">0x55</span>, <span class="number">0x5c</span>, <span class="number">0x36</span>, <span class="number">0xc9</span>, <span class="number">0x76</span>, <span class="number">0x8f</span>, <span class="number">0xd8</span>,
+    <span class="number">0xe4</span>, <span class="number">0xed</span>, <span class="number">0x8f</span>, <span class="number">0x39</span>, <span class="number">0x5e</span>, <span class="number">0x78</span>, <span class="number">0x48</span>, <span class="number">0x5e</span>, <span class="number">0xb9</span>, <span class="number">0xf9</span>, <span class="number">0xdd</span>, <span class="number">0x43</span>, <span class="number">0x65</span>, <span class="number">0x55</span>, <span class="number">0x00</span>,
+    <span class="number">0xed</span>, <span class="number">0x7a</span>,
+];
+
+<span class="kw">let </span>info: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x9b</span>, <span class="number">0xca</span>, <span class="number">0xd7</span>, <span class="number">0xe8</span>, <span class="number">0xee</span>, <span class="number">0xf7</span>, <span class="number">0xb2</span>, <span class="number">0x1a</span>, <span class="number">0x98</span>, <span class="number">0xff</span>, <span class="number">0x18</span>, <span class="number">0x60</span>, <span class="number">0x5c</span>, <span class="number">0x68</span>, <span class="number">0x16</span>,
+    <span class="number">0xbd</span>,
+];
+
+<span class="kw">let </span>salt: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>[
+    <span class="number">0x2b</span>, <span class="number">0xc5</span>, <span class="number">0xf1</span>, <span class="number">0x6c</span>, <span class="number">0x48</span>, <span class="number">0x34</span>, <span class="number">0x72</span>, <span class="number">0xd8</span>, <span class="number">0xda</span>, <span class="number">0x53</span>, <span class="number">0xf6</span>, <span class="number">0xc3</span>, <span class="number">0x0f</span>, <span class="number">0x0a</span>, <span class="number">0xf4</span>,
+    <span class="number">0x02</span>,
+];
+
+<span class="kw">let </span><span class="kw-2">mut </span>output_key = [<span class="number">0u8</span>; OUTPUT_KEY_LEN];
+
+<span class="kw">let </span>sskdf_hmac_sha256: <span class="kw-2">&amp;</span>SskdfHmacAlgorithm =
+    get_sskdf_hmac_algorithm(SskdfHmacAlgorithmId::Sha256).ok_or(Unspecified)<span class="question-mark">?</span>;
+
+sskdf_hmac(
+    sskdf_hmac_sha256,
+    shared_secret,
+    info,
+    salt,
+    <span class="kw-2">&amp;mut </span>output_key,
+)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(
+    output_key,
+    [
+        <span class="number">0x4c</span>, <span class="number">0x36</span>, <span class="number">0x80</span>, <span class="number">0x2d</span>, <span class="number">0xf5</span>, <span class="number">0xd8</span>, <span class="number">0xd6</span>, <span class="number">0x1b</span>, <span class="number">0xd5</span>, <span class="number">0xc2</span>, <span class="number">0x4</span>, <span class="number">0x7e</span>, <span class="number">0x5</span>, <span class="number">0x5a</span>, <span class="number">0x6d</span>,
+        <span class="number">0xcb
+    </span>]
+);</code></pre></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.KbkdfCtrHmacAlgorithm.html" title="struct aws_lc_rs::kdf::KbkdfCtrHmacAlgorithm">Kbkdf<wbr>CtrHmac<wbr>Algorithm</a></dt><dd>KBKDF in Counter Mode with HMAC Algorithm</dd><dt><a class="struct" href="struct.SskdfDigestAlgorithm.html" title="struct aws_lc_rs::kdf::SskdfDigestAlgorithm">Sskdf<wbr>Digest<wbr>Algorithm</a></dt><dd>SSKDF algorithm using digest</dd><dt><a class="struct" href="struct.SskdfHmacAlgorithm.html" title="struct aws_lc_rs::kdf::SskdfHmacAlgorithm">Sskdf<wbr>Hmac<wbr>Algorithm</a></dt><dd>SSKDF algorithm using HMAC</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.KbkdfCtrHmacAlgorithmId.html" title="enum aws_lc_rs::kdf::KbkdfCtrHmacAlgorithmId">Kbkdf<wbr>CtrHmac<wbr>Algorithm<wbr>Id</a></dt><dd>Key-based Derivation Function Algorithm Identifier</dd><dt><a class="enum" href="enum.SskdfDigestAlgorithmId.html" title="enum aws_lc_rs::kdf::SskdfDigestAlgorithmId">Sskdf<wbr>Digest<wbr>Algorithm<wbr>Id</a></dt><dd>Single-step (One-step) Key Derivation Function Digest Algorithm Identifier</dd><dt><a class="enum" href="enum.SskdfHmacAlgorithmId.html" title="enum aws_lc_rs::kdf::SskdfHmacAlgorithmId">Sskdf<wbr>Hmac<wbr>Algorithm<wbr>Id</a></dt><dd>Single-step (One-step) Key Derivation Function HMAC Algorithm Identifier</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.get_kbkdf_ctr_hmac_algorithm.html" title="fn aws_lc_rs::kdf::get_kbkdf_ctr_hmac_algorithm">get_<wbr>kbkdf_<wbr>ctr_<wbr>hmac_<wbr>algorithm</a></dt><dd>Retrieve <a href="struct.KbkdfCtrHmacAlgorithm.html" title="struct aws_lc_rs::kdf::KbkdfCtrHmacAlgorithm"><code>KbkdfCtrHmacAlgorithm</code></a> using the <a href="enum.KbkdfCtrHmacAlgorithmId.html" title="enum aws_lc_rs::kdf::KbkdfCtrHmacAlgorithmId"><code>KbkdfCtrHmacAlgorithmId</code></a> specified by <code>id</code>.</dd><dt><a class="fn" href="fn.get_sskdf_digest_algorithm.html" title="fn aws_lc_rs::kdf::get_sskdf_digest_algorithm">get_<wbr>sskdf_<wbr>digest_<wbr>algorithm</a></dt><dd>Retrieve <a href="struct.SskdfDigestAlgorithm.html" title="struct aws_lc_rs::kdf::SskdfDigestAlgorithm"><code>SskdfDigestAlgorithm</code></a> using the <a href="enum.SskdfDigestAlgorithmId.html" title="enum aws_lc_rs::kdf::SskdfDigestAlgorithmId"><code>SskdfDigestAlgorithmId</code></a> specified by <code>id</code>.</dd><dt><a class="fn" href="fn.get_sskdf_hmac_algorithm.html" title="fn aws_lc_rs::kdf::get_sskdf_hmac_algorithm">get_<wbr>sskdf_<wbr>hmac_<wbr>algorithm</a></dt><dd>Retrieve <a href="struct.SskdfHmacAlgorithm.html" title="struct aws_lc_rs::kdf::SskdfHmacAlgorithm"><code>SskdfHmacAlgorithm</code></a> using the <a href="enum.SskdfHmacAlgorithmId.html" title="enum aws_lc_rs::kdf::SskdfHmacAlgorithmId"><code>SskdfHmacAlgorithmId</code></a> specified by <code>id</code>.</dd><dt><a class="fn" href="fn.kbkdf_ctr_hmac.html" title="fn aws_lc_rs::kdf::kbkdf_ctr_hmac">kbkdf_<wbr>ctr_<wbr>hmac</a></dt><dd>Key-based Key Derivation Function (KBKDF) in Counter Mode with HMAC PRF</dd><dt><a class="fn" href="fn.sskdf_digest.html" title="fn aws_lc_rs::kdf::sskdf_digest">sskdf_<wbr>digest</a></dt><dd>Single-step Key Derivation Function using digest</dd><dt><a class="fn" href="fn.sskdf_hmac.html" title="fn aws_lc_rs::kdf::sskdf_hmac">sskdf_<wbr>hmac</a></dt><dd>Single-step Key Derivation Function using HMAC</dd></dl></section></div></main></body></html>

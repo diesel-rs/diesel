@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PoolError","RecyclingMethod"],"mod":["bb8"],"struct":["AsyncDieselConnectionManager","ManagerConfig"],"type":["RecycleCheckCallback","SetupCallback"]};

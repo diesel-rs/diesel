@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["IpNetwork","IpNetworkError","NetworkSize"],"fn":["ip_mask_to_prefix","ipv4_mask_to_prefix","ipv6_mask_to_prefix"],"struct":["IpNetworkIterator","Ipv4Network","Ipv4NetworkIterator","Ipv6Network","Ipv6NetworkIterator"]};

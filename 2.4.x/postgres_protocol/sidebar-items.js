@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["IsNull"],"mod":["authentication","escape","message","password","types"],"type":["Lsn","Oid"]};

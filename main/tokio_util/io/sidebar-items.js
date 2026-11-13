@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["poll_read_buf","poll_write_buf","read_buf","write_all_vectored"],"mod":["simplex"],"struct":["CopyToBytes","InspectReader","InspectWriter","ReaderStream","SinkWriter","StreamReader","WriteAllVectored"]};

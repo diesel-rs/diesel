@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Date","Format","IsNull","Kind","Timestamp"],"macro":[["accepts",1],["to_sql_checked",1]],"struct":["Field","PgLsn","Type","WasNull","WrongType"],"trait":["BorrowToSql","FromSql","FromSqlOwned","ToSql"],"type":["Oid"]};

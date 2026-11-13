@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An asynchronous, pipelined, PostgreSQL client."><title>tokio_postgres - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="tokio_postgres" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate tokio_postgres</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../tokio_postgres/index.html">tokio_<wbr>postgres</a><span class="version">0.7.18</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#example" title="Example">Example</a></li><li><a href="#behavior" title="Behavior">Behavior</a></li><li><a href="#pipelining" title="Pipelining">Pipelining</a></li><li><a href="#runtime" title="Runtime">Runtime</a></li><li><a href="#ssltls-support" title="SSL/TLS support">SSL/TLS support</a></li><li><a href="#features" title="Features">Features</a></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>tokio_<wbr>postgres</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/tokio_postgres/lib.rs.html#1-267">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>An asynchronous, pipelined, PostgreSQL client.</p>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>tokio_postgres::{NoTls, Error};
+
+<span class="attr">#[tokio::main] </span><span class="comment">// By default, tokio_postgres uses the tokio crate as its runtime.
+</span><span class="kw">async fn </span>main() -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="comment">// Connect to the database.
+    </span><span class="kw">let </span>(client, connection) =
+        tokio_postgres::connect(<span class="string">"host=localhost user=postgres"</span>, NoTls).<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="comment">// The connection object performs the actual communication with the database,
+    // so spawn it off to run on its own.
+    </span>tokio::spawn(<span class="kw">async move </span>{
+        <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = connection.<span class="kw">await </span>{
+            <span class="macro">eprintln!</span>(<span class="string">"connection error: {}"</span>, e);
+        }
+    });
+
+    <span class="comment">// Now we can execute a simple statement that just returns its parameter.
+    </span><span class="kw">let </span>rows = client
+        .query(<span class="string">"SELECT $1::TEXT"</span>, <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">"hello world"</span>])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="comment">// And then check that we got back the same string we sent over.
+    </span><span class="kw">let </span>value: <span class="kw-2">&amp;</span>str = rows[<span class="number">0</span>].get(<span class="number">0</span>);
+    <span class="macro">assert_eq!</span>(value, <span class="string">"hello world"</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</code></pre></div><h2 id="behavior"><a class="doc-anchor" href="#behavior">§</a>Behavior</h2>
+<p>Calling a method like <code>Client::query</code> on its own does nothing. The associated request is not sent to the database
+until the future returned by the method is first polled. Requests are executed in the order that they are first
+polled, not in the order that their futures are created.</p>
+<h2 id="pipelining"><a class="doc-anchor" href="#pipelining">§</a>Pipelining</h2>
+<p>The client supports <em>pipelined</em> requests. Pipelining can improve performance in use cases in which multiple,
+independent queries need to be executed. In a traditional workflow, each query is sent to the server after the
+previous query completes. In contrast, pipelining allows the client to send all of the queries to the server up
+front, minimizing time spent by one side waiting for the other to finish sending data:</p>
+<div class="example-wrap"><pre class="language-not_rust"><code>            Sequential                              Pipelined
+| Client         | Server          |    | Client         | Server          |
+|----------------|-----------------|    |----------------|-----------------|
+| send query 1   |                 |    | send query 1   |                 |
+|                | process query 1 |    | send query 2   | process query 1 |
+| receive rows 1 |                 |    | send query 3   | process query 2 |
+| send query 2   |                 |    | receive rows 1 | process query 3 |
+|                | process query 2 |    | receive rows 2 |                 |
+| receive rows 2 |                 |    | receive rows 3 |                 |
+| send query 3   |                 |
+|                | process query 3 |
+| receive rows 3 |                 |</code></pre></div>
+<p>In both cases, the PostgreSQL server is executing the queries sequentially - pipelining just allows both sides of
+the connection to work concurrently when possible.</p>
+<p>Pipelining happens automatically when futures are polled concurrently (for example, by using the futures <code>join</code>
+combinator):</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>futures_util::future;
+<span class="kw">use </span>std::future::Future;
+<span class="kw">use </span>tokio_postgres::{Client, Error, Statement};
+
+<span class="kw">async fn </span>pipelined_prepare(
+    client: <span class="kw-2">&amp;</span>Client,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(Statement, Statement), Error&gt;
+{
+    future::try_join(
+        client.prepare(<span class="string">"SELECT * FROM foo"</span>),
+        client.prepare(<span class="string">"INSERT INTO bar (id, name) VALUES ($1, $2)"</span>)
+    ).<span class="kw">await
+</span>}</code></pre></div><h2 id="runtime"><a class="doc-anchor" href="#runtime">§</a>Runtime</h2>
+<p>The client works with arbitrary <code>AsyncRead + AsyncWrite</code> streams. Convenience APIs are provided to handle the
+connection process, but these are gated by the <code>runtime</code> Cargo feature, which is enabled by default. If disabled,
+all dependence on the tokio runtime is removed.</p>
+<h2 id="ssltls-support"><a class="doc-anchor" href="#ssltls-support">§</a>SSL/TLS support</h2>
+<p>TLS support is implemented via external libraries. <code>Client::connect</code> and <code>Config::connect</code> take a TLS implementation
+as an argument. The <code>NoTls</code> type in this crate can be used when TLS is not required. Otherwise, the
+<code>postgres-openssl</code> and <code>postgres-native-tls</code> crates provide implementations backed by the <code>openssl</code> and <code>native-tls</code>
+crates, respectively.</p>
+<h2 id="features"><a class="doc-anchor" href="#features">§</a>Features</h2>
+<p>The following features can be enabled from <code>Cargo.toml</code>:</p>
+<div class="table"><table><thead><tr><th>Feature</th><th>Description</th><th>Extra dependencies</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>runtime</code></td><td>Enable convenience API for the connection process based on the <code>tokio</code> crate.</td><td><a href="https://crates.io/crates/tokio">tokio</a> 1.0 with the features <code>net</code> and <code>time</code></td><td>yes</td></tr>
+<tr><td><code>array-impls</code></td><td>Enables <code>ToSql</code> and <code>FromSql</code> trait impls for arrays</td><td>-</td><td>no</td></tr>
+<tr><td><code>with-bit-vec-0_6</code></td><td>Enable support for the <code>bit-vec</code> crate.</td><td><a href="https://crates.io/crates/bit-vec">bit-vec</a> 0.6</td><td>no</td></tr>
+<tr><td><code>with-bit-vec-0_7</code></td><td>Enable support for the <code>bit-vec</code> crate.</td><td><a href="https://crates.io/crates/bit-vec">bit-vec</a> 0.7</td><td>no</td></tr>
+<tr><td><code>with-bit-vec-0_8</code></td><td>Enable support for the <code>bit-vec</code> crate.</td><td><a href="https://crates.io/crates/bit-vec">bit-vec</a> 0.8</td><td>no</td></tr>
+<tr><td><code>with-bit-vec-0_9</code></td><td>Enable support for the <code>bit-vec</code> crate.</td><td><a href="https://crates.io/crates/bit-vec">bit-vec</a> 0.9</td><td>no</td></tr>
+<tr><td><code>with-chrono-0_4</code></td><td>Enable support for the <code>chrono</code> crate.</td><td><a href="https://crates.io/crates/chrono">chrono</a> 0.4</td><td>no</td></tr>
+<tr><td><code>with-cidr-0_3</code></td><td>Enable support for the <code>cidr</code> crate.</td><td><a href="https://crates.io/crates/cidr">cidr</a> 0.3</td><td>no</td></tr>
+<tr><td><code>with-eui48-0_4</code></td><td>Enable support for the 0.4 version of the <code>eui48</code> crate. This is deprecated and will be removed.</td><td><a href="https://crates.io/crates/eui48">eui48</a> 0.4</td><td>no</td></tr>
+<tr><td><code>with-eui48-1</code></td><td>Enable support for the 1.0 version of the <code>eui48</code> crate.</td><td><a href="https://crates.io/crates/eui48">eui48</a> 1.0</td><td>no</td></tr>
+<tr><td><code>with-geo-types-0_6</code></td><td>Enable support for the 0.6 version of the <code>geo-types</code> crate.</td><td><a href="https://crates.io/crates/geo-types/0.6.0">geo-types</a> 0.6</td><td>no</td></tr>
+<tr><td><code>with-geo-types-0_7</code></td><td>Enable support for the 0.7 version of the <code>geo-types</code> crate.</td><td><a href="https://crates.io/crates/geo-types/0.7.0">geo-types</a> 0.7</td><td>no</td></tr>
+<tr><td><code>with-jiff-0_1</code></td><td>Enable support for the 0.1 version of the <code>jiff</code> crate.</td><td><a href="https://crates.io/crates/jiff/0.1.0">jiff</a> 0.1</td><td>no</td></tr>
+<tr><td><code>with-jiff-0_2</code></td><td>Enable support for the 0.2 version of the <code>jiff</code> crate.</td><td><a href="https://crates.io/crates/jiff/0.2.16">jiff</a> 0.2</td><td>no</td></tr>
+<tr><td><code>with-serde_json-1</code></td><td>Enable support for the <code>serde_json</code> crate.</td><td><a href="https://crates.io/crates/serde_json">serde_json</a> 1.0</td><td>no</td></tr>
+<tr><td><code>with-uuid-0_8</code></td><td>Enable support for the <code>uuid</code> crate.</td><td><a href="https://crates.io/crates/uuid">uuid</a> 0.8</td><td>no</td></tr>
+<tr><td><code>with-uuid-1</code></td><td>Enable support for the <code>uuid</code> crate.</td><td><a href="https://crates.io/crates/uuid">uuid</a> 1.0</td><td>no</td></tr>
+<tr><td><code>with-time-0_2</code></td><td>Enable support for the 0.2 version of the <code>time</code> crate.</td><td><a href="https://crates.io/crates/time/0.2.0">time</a> 0.2</td><td>no</td></tr>
+<tr><td><code>with-time-0_3</code></td><td>Enable support for the 0.3 version of the <code>time</code> crate.</td><td><a href="https://crates.io/crates/time/0.3.0">time</a> 0.3</td><td>no</td></tr>
+</tbody></table>
+</div></div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.Config"><code>pub use crate::config::<a class="struct" href="config/struct.Config.html" title="struct tokio_postgres::config::Config">Config</a>;</code></dt><dt id="reexport.Error"><code>pub use crate::error::<a class="struct" href="error/struct.Error.html" title="struct tokio_postgres::error::Error">Error</a>;</code></dt><dt id="reexport.Row"><code>pub use crate::row::<a class="struct" href="row/struct.Row.html" title="struct tokio_postgres::row::Row">Row</a>;</code></dt><dt id="reexport.SimpleQueryRow"><code>pub use crate::row::<a class="struct" href="row/struct.SimpleQueryRow.html" title="struct tokio_postgres::row::SimpleQueryRow">SimpleQueryRow</a>;</code></dt><dt id="reexport.NoTls"><code>pub use crate::tls::<a class="struct" href="tls/struct.NoTls.html" title="struct tokio_postgres::tls::NoTls">NoTls</a>;</code></dt><dt id="reexport.fallible_iterator"><code>pub use <a class="mod" href="../fallible_iterator/index.html" title="mod fallible_iterator">fallible_iterator</a>;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="binary_copy/index.html" title="mod tokio_postgres::binary_copy">binary_<wbr>copy</a></dt><dd>Utilities for working with the PostgreSQL binary copy format.</dd><dt><a class="mod" href="config/index.html" title="mod tokio_postgres::config">config</a></dt><dd>Connection configuration.</dd><dt><a class="mod" href="error/index.html" title="mod tokio_postgres::error">error</a></dt><dd>Errors.</dd><dt><a class="mod" href="row/index.html" title="mod tokio_postgres::row">row</a></dt><dd>Rows.</dd><dt><a class="mod" href="tls/index.html" title="mod tokio_postgres::tls">tls</a></dt><dd>TLS support.</dd><dt><a class="mod" href="types/index.html" title="mod tokio_postgres::types">types</a></dt><dd>Types.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.CancelToken.html" title="struct tokio_postgres::CancelToken">Cancel<wbr>Token</a></dt><dd>The capability to request cancellation of in-progress queries on a
+connection.</dd><dt><a class="struct" href="struct.Client.html" title="struct tokio_postgres::Client">Client</a></dt><dd>An asynchronous PostgreSQL client.</dd><dt><a class="struct" href="struct.Column.html" title="struct tokio_postgres::Column">Column</a></dt><dd>Information about a column of a query.</dd><dt><a class="struct" href="struct.Connection.html" title="struct tokio_postgres::Connection">Connection</a></dt><dd>A connection to a PostgreSQL database.</dd><dt><a class="struct" href="struct.CopyInSink.html" title="struct tokio_postgres::CopyInSink">Copy<wbr>InSink</a></dt><dd>A sink for <code>COPY ... FROM STDIN</code> query data.</dd><dt><a class="struct" href="struct.CopyOutStream.html" title="struct tokio_postgres::CopyOutStream">Copy<wbr>OutStream</a></dt><dd>A stream of <code>COPY ... TO STDOUT</code> query data.</dd><dt><a class="struct" href="struct.Notification.html" title="struct tokio_postgres::Notification">Notification</a></dt><dd>An asynchronous notification.</dd><dt><a class="struct" href="struct.Portal.html" title="struct tokio_postgres::Portal">Portal</a></dt><dd>A portal.</dd><dt><a class="struct" href="struct.RowStream.html" title="struct tokio_postgres::RowStream">RowStream</a></dt><dd>A stream of table rows.</dd><dt><a class="struct" href="struct.SimpleColumn.html" title="struct tokio_postgres::SimpleColumn">Simple<wbr>Column</a></dt><dd>Information about a column of a single query row.</dd><dt><a class="struct" href="struct.SimpleQueryStream.html" title="struct tokio_postgres::SimpleQueryStream">Simple<wbr>Query<wbr>Stream</a></dt><dd>A stream of simple query results.</dd><dt><a class="struct" href="struct.Socket.html" title="struct tokio_postgres::Socket">Socket</a></dt><dd>The standard stream type used by the crate.</dd><dt><a class="struct" href="struct.Statement.html" title="struct tokio_postgres::Statement">Statement</a></dt><dd>A prepared statement.</dd><dt><a class="struct" href="struct.Transaction.html" title="struct tokio_postgres::Transaction">Transaction</a></dt><dd>A representation of a PostgreSQL database transaction.</dd><dt><a class="struct" href="struct.TransactionBuilder.html" title="struct tokio_postgres::TransactionBuilder">Transaction<wbr>Builder</a></dt><dd>A builder for database transactions.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.AsyncMessage.html" title="enum tokio_postgres::AsyncMessage">Async<wbr>Message</a></dt><dd>An asynchronous message from the server.</dd><dt><a class="enum" href="enum.IsolationLevel.html" title="enum tokio_postgres::IsolationLevel">Isolation<wbr>Level</a></dt><dd>The isolation level of a database transaction.</dd><dt><a class="enum" href="enum.SimpleQueryMessage.html" title="enum tokio_postgres::SimpleQueryMessage">Simple<wbr>Query<wbr>Message</a></dt><dd>Message returned by the <code>SimpleQuery</code> stream.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.GenericClient.html" title="trait tokio_postgres::GenericClient">Generic<wbr>Client</a></dt><dd>A trait allowing abstraction over connections and transactions.</dd><dt><a class="trait" href="trait.ToStatement.html" title="trait tokio_postgres::ToStatement">ToStatement</a></dt><dd>A trait abstracting over prepared and unprepared statements.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.connect.html" title="fn tokio_postgres::connect">connect</a></dt><dd>A convenience function which parses a connection string and connects to the database.</dd></dl></section></div></main></body></html>

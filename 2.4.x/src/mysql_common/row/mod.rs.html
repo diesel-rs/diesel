@@ -1,0 +1,341 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/mysql_common-0.37.3/src/row/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mysql_common" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">mysql_common/row/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="comment">// Copyright (c) 2017 Anatoly Ikorsky
+<a href=#2 id=2 data-nosnippet>2</a>//
+<a href=#3 id=3 data-nosnippet>3</a>// Licensed under the Apache License, Version 2.0
+<a href=#4 id=4 data-nosnippet>4</a>// &lt;LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0&gt; or the MIT
+<a href=#5 id=5 data-nosnippet>5</a>// license &lt;LICENSE-MIT or http://opensource.org/licenses/MIT&gt;, at your
+<a href=#6 id=6 data-nosnippet>6</a>// option. All files in the project carrying such notice may not be copied,
+<a href=#7 id=7 data-nosnippet>7</a>// modified, or distributed except according to those terms.
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a></span><span class="kw">use crate</span>::{
+<a href=#10 id=10 data-nosnippet>10</a>    <a href="../io.rs.html#81">io::ParseBuf</a>,
+<a href=#11 id=11 data-nosnippet>11</a>    <a href="../misc/mod.rs.html#141-146">misc::unexpected_buf_eof</a>,
+<a href=#12 id=12 data-nosnippet>12</a>    packets::{<a href="../packets/mod.rs.html#225-236">Column</a>, <a href="../packets/mod.rs.html#2577">NullBitmap</a>},
+<a href=#13 id=13 data-nosnippet>13</a>    proto::{<a href="../proto/mod.rs.html#22">Binary</a>, <a href="../proto/mod.rs.html#31-49">MyDeserialize</a>, <a href="../proto/mod.rs.html#18">Text</a>},
+<a href=#14 id=14 data-nosnippet>14</a>    value::{
+<a href=#15 id=15 data-nosnippet>15</a>        <a href="../value/mod.rs.html#53">BinValue</a>, <a href="../value/mod.rs.html#29-32">SerializationSide</a>, <a href="../value/mod.rs.html#50">TextValue</a>, <a href="../value/mod.rs.html#59-70">Value</a>, <a href="../value/mod.rs.html#147">ValueDeserializer</a>,
+<a href=#16 id=16 data-nosnippet>16</a>        convert::{<a href="../value/convert/mod.rs.html#116-136">FromValue</a>, <a href="../value/convert/mod.rs.html#109">FromValueError</a>, <a href="../value/convert/mod.rs.html#589-591">from_value</a>, <a href="../value/convert/mod.rs.html#594-596">from_value_opt</a>},
+<a href=#17 id=17 data-nosnippet>17</a>    },
+<a href=#18 id=18 data-nosnippet>18</a>};
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">use </span>std::{<a href="https://doc.rust-lang.org/nightly/alloc/borrow/enum.Cow.html">borrow::Cow</a>, <a href="https://doc.rust-lang.org/nightly/alloc/fmt/index.html">fmt</a>, <a href="https://doc.rust-lang.org/nightly/std/io/index.html">io</a>, <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">marker::PhantomData</a>, <a href="https://doc.rust-lang.org/nightly/core/ops/index/trait.Index.html">ops::Index</a>, <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">sync::Arc</a>};
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">pub mod </span><a href="convert/mod.rs.html#9-880">convert</a>;
+<a href=#22 id=22 data-nosnippet>22</a>
+<a href=#23 id=23 data-nosnippet>23</a><span class="doccomment">/// Client side representation of a MySql row.
+<a href=#24 id=24 data-nosnippet>24</a>///
+<a href=#25 id=25 data-nosnippet>25</a>/// It allows you to move column values out of a row with `Row::take` method but note that it
+<a href=#26 id=26 data-nosnippet>26</a>/// makes row incomplete. Calls to `from_row_opt` on incomplete row will return
+<a href=#27 id=27 data-nosnippet>27</a>/// `Error::FromRowError` and also numerical indexing on taken columns will panic.
+<a href=#28 id=28 data-nosnippet>28</a></span><span class="expansion"><input id=expand-28 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Row {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        Row {
+            values: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.values),
+            columns: ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.columns),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::StructuralPartialEq <span class="kw">for </span>Row { }
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::cmp::PartialEq <span class="kw">for </span>Row {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.values == other.values &amp;&amp; <span class="self">self</span>.columns == other.columns
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span></span></span><span class="attr">)]
+<a href=#29 id=29 data-nosnippet>29</a></span><span class="kw">pub struct </span><a href="../../../mysql_common/row/struct.Row.html">Row</a> {
+<a href=#30 id=30 data-nosnippet>30</a>    values: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../value/mod.rs.html#59-70">Value</a>&gt;&gt;,
+<a href=#31 id=31 data-nosnippet>31</a>    columns: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;[<a href="../packets/mod.rs.html#225-236">Column</a>]&gt;,
+<a href=#32 id=32 data-nosnippet>32</a>}
+<a href=#33 id=33 data-nosnippet>33</a>
+<a href=#34 id=34 data-nosnippet>34</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html">fmt::Debug</a> <span class="kw">for </span><a href="#29-32">Row</a> {
+<a href=#35 id=35 data-nosnippet>35</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#36 id=36 data-nosnippet>36</a>        <span class="kw">let </span><span class="kw-2">mut </span>debug = <a href="#35">f</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html#method.debug_struct">debug_struct</a>(<span class="string">"Row"</span>);
+<a href=#37 id=37 data-nosnippet>37</a>        <span class="kw">for </span>(val, column) <span class="kw">in </span><span class="self">self</span>.values.iter().zip(<span class="self">self</span>.columns.iter()) {
+<a href=#38 id=38 data-nosnippet>38</a>            <span class="kw">match </span><span class="kw-2">*</span>val {
+<a href=#39 id=39 data-nosnippet>39</a>                <span class="prelude-val">Some</span>(<span class="kw-2">ref </span>val) =&gt; {
+<a href=#40 id=40 data-nosnippet>40</a>                    debug.field(column.name_str().as_ref(), val);
+<a href=#41 id=41 data-nosnippet>41</a>                }
+<a href=#42 id=42 data-nosnippet>42</a>                <span class="prelude-val">None </span>=&gt; {
+<a href=#43 id=43 data-nosnippet>43</a>                    debug.field(column.name_str().as_ref(), <span class="kw-2">&amp;</span><span class="string">"&lt;taken&gt;"</span>);
+<a href=#44 id=44 data-nosnippet>44</a>                }
+<a href=#45 id=45 data-nosnippet>45</a>            }
+<a href=#46 id=46 data-nosnippet>46</a>        }
+<a href=#47 id=47 data-nosnippet>47</a>        <a href="#36">debug</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/builders/struct.DebugStruct.html#method.finish">finish</a>()
+<a href=#48 id=48 data-nosnippet>48</a>    }
+<a href=#49 id=49 data-nosnippet>49</a>}
+<a href=#50 id=50 data-nosnippet>50</a>
+<a href=#51 id=51 data-nosnippet>51</a><span class="doccomment">/// Creates `Row` from values and columns.
+<a href=#52 id=52 data-nosnippet>52</a></span><span class="kw">pub fn </span><a href="../../../mysql_common/row/fn.new_row.html">new_row</a>(values: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../value/mod.rs.html#59-70">Value</a>&gt;, columns: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;[<a href="../packets/mod.rs.html#225-236">Column</a>]&gt;) -&gt; <a href="#29-32">Row</a> {
+<a href=#53 id=53 data-nosnippet>53</a><span class="expansion"><input id=expand-53 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">if </span>!(values.len() == columns.len()) {
+    ::core::panicking::panic(<span class="string">"assertion failed: values.len() == columns.len()"</span>)
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(values.len() == columns.len())</span></span>;
+<a href=#54 id=54 data-nosnippet>54</a>    <a href="#29-32">Row</a> {
+<a href=#55 id=55 data-nosnippet>55</a>        values: <a href="#52">values</a>.<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>().<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(<a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>).<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>::&lt;<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<span class="kw">_</span>&gt;&gt;(),
+<a href=#56 id=56 data-nosnippet>56</a>        <a href="#52">columns</a>,
+<a href=#57 id=57 data-nosnippet>57</a>    }
+<a href=#58 id=58 data-nosnippet>58</a>}
+<a href=#59 id=59 data-nosnippet>59</a>
+<a href=#60 id=60 data-nosnippet>60</a><span class="doccomment">/// Creates `Row` from values (cells may be missing).
+<a href=#61 id=61 data-nosnippet>61</a></span><span class="attr">#[doc(hidden)]
+<a href=#62 id=62 data-nosnippet>62</a></span><span class="kw">pub fn </span>new_row_raw(values: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../value/mod.rs.html#59-70">Value</a>&gt;&gt;, columns: <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;[<a href="../packets/mod.rs.html#225-236">Column</a>]&gt;) -&gt; <a href="#29-32">Row</a> {
+<a href=#63 id=63 data-nosnippet>63</a><span class="expansion"><input id=expand-63 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">    <span class=expanded><span class="kw">if </span>!(values.len() == columns.len()) {
+    ::core::panicking::panic(<span class="string">"assertion failed: values.len() == columns.len()"</span>)
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.assert.html">assert!</a>(values.len() == columns.len())</span></span>;
+<a href=#64 id=64 data-nosnippet>64</a>    <a href="#29-32">Row</a> { <a href="#62">values</a>, <a href="#62">columns</a> }
+<a href=#65 id=65 data-nosnippet>65</a>}
+<a href=#66 id=66 data-nosnippet>66</a>
+<a href=#67 id=67 data-nosnippet>67</a><span class="kw">impl </span><a href="#29-32">Row</a> {
+<a href=#68 id=68 data-nosnippet>68</a>    <span class="doccomment">/// Returns length of a row.
+<a href=#69 id=69 data-nosnippet>69</a>    </span><span class="kw">pub fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a> {
+<a href=#70 id=70 data-nosnippet>70</a>        <a class="self" href="#69">self</a>.values.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.len">len</a>()
+<a href=#71 id=71 data-nosnippet>71</a>    }
+<a href=#72 id=72 data-nosnippet>72</a>
+<a href=#73 id=73 data-nosnippet>73</a>    <span class="doccomment">/// Returns true if the row has a length of 0.
+<a href=#74 id=74 data-nosnippet>74</a>    </span><span class="kw">pub fn </span>is_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#75 id=75 data-nosnippet>75</a>        <a class="self" href="#74">self</a>.values.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.is_empty">is_empty</a>()
+<a href=#76 id=76 data-nosnippet>76</a>    }
+<a href=#77 id=77 data-nosnippet>77</a>
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="doccomment">/// Returns columns of this row.
+<a href=#79 id=79 data-nosnippet>79</a>    </span><span class="kw">pub fn </span>columns_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="../packets/mod.rs.html#225-236">Column</a>] {
+<a href=#80 id=80 data-nosnippet>80</a>        <span class="kw-2">&amp;</span><a class="self" href="#79">self</a>.columns
+<a href=#81 id=81 data-nosnippet>81</a>    }
+<a href=#82 id=82 data-nosnippet>82</a>
+<a href=#83 id=83 data-nosnippet>83</a>    <span class="doccomment">/// Returns columns of this row.
+<a href=#84 id=84 data-nosnippet>84</a>    </span><span class="kw">pub fn </span>columns(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;[<a href="../packets/mod.rs.html#225-236">Column</a>]&gt; {
+<a href=#85 id=85 data-nosnippet>85</a>        <a class="self" href="#84">self</a>.columns.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>()
+<a href=#86 id=86 data-nosnippet>86</a>    }
+<a href=#87 id=87 data-nosnippet>87</a>
+<a href=#88 id=88 data-nosnippet>88</a>    <span class="doccomment">/// Returns reference to the value of a column with index `index` if it exists and wasn't taken
+<a href=#89 id=89 data-nosnippet>89</a>    /// by `Row::take` method.
+<a href=#90 id=90 data-nosnippet>90</a>    ///
+<a href=#91 id=91 data-nosnippet>91</a>    /// Non panicking version of `row[usize]`.
+<a href=#92 id=92 data-nosnippet>92</a>    </span><span class="kw">pub fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="../value/mod.rs.html#59-70">Value</a>&gt; {
+<a href=#93 id=93 data-nosnippet>93</a>        <a class="self" href="#92">self</a>.values.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.get">get</a>(<a href="#92">index</a>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|x| <a href="#93">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>())
+<a href=#94 id=94 data-nosnippet>94</a>    }
+<a href=#95 id=95 data-nosnippet>95</a>
+<a href=#96 id=96 data-nosnippet>96</a>    <span class="doccomment">/// Will copy value at index `index` if it was not taken by `Row::take` earlier,
+<a href=#97 id=97 data-nosnippet>97</a>    /// then will convert it to `T`.
+<a href=#98 id=98 data-nosnippet>98</a>    </span><span class="kw">pub fn </span>get&lt;T, I&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, index: I) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;T&gt;
+<a href=#99 id=99 data-nosnippet>99</a>    <span class="kw">where
+<a href=#100 id=100 data-nosnippet>100</a>        </span>T: <a href="../value/convert/mod.rs.html#116-136">FromValue</a>,
+<a href=#101 id=101 data-nosnippet>101</a>        I: <a href="#202-204">ColumnIndex</a>,
+<a href=#102 id=102 data-nosnippet>102</a>    {
+<a href=#103 id=103 data-nosnippet>103</a>        <a href="#98">index</a>.<a href="#203">idx</a>(<span class="kw-2">&amp;</span><a class="self" href="#98">self</a>.columns).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|idx| {
+<a href=#104 id=104 data-nosnippet>104</a>            <a class="self" href="#98">self</a>.values
+<a href=#105 id=105 data-nosnippet>105</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.get">get</a>(<a href="#103">idx</a>)
+<a href=#106 id=106 data-nosnippet>106</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|x| <a href="#106">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>())
+<a href=#107 id=107 data-nosnippet>107</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|x| <a href="../value/convert/mod.rs.html#589-591">from_value</a>::&lt;T&gt;(<a href="#107">x</a>.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>()))
+<a href=#108 id=108 data-nosnippet>108</a>        })
+<a href=#109 id=109 data-nosnippet>109</a>    }
+<a href=#110 id=110 data-nosnippet>110</a>
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="doccomment">/// Will copy value at index `index` if it was not taken by `Row::take` or `Row::take_opt`
+<a href=#112 id=112 data-nosnippet>112</a>    /// earlier, then will attempt convert it to `T`. Unlike `Row::get`, `Row::get_opt` will
+<a href=#113 id=113 data-nosnippet>113</a>    /// allow you to directly handle errors if the value could not be converted to `T`.
+<a href=#114 id=114 data-nosnippet>114</a>    </span><span class="kw">pub fn </span>get_opt&lt;T, I&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, index: I) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;T, <a href="../value/convert/mod.rs.html#109">FromValueError</a>&gt;&gt;
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="kw">where
+<a href=#116 id=116 data-nosnippet>116</a>        </span>T: <a href="../value/convert/mod.rs.html#116-136">FromValue</a>,
+<a href=#117 id=117 data-nosnippet>117</a>        I: <a href="#202-204">ColumnIndex</a>,
+<a href=#118 id=118 data-nosnippet>118</a>    {
+<a href=#119 id=119 data-nosnippet>119</a>        <a href="#114">index</a>
+<a href=#120 id=120 data-nosnippet>120</a>            .<a href="#203">idx</a>(<span class="kw-2">&amp;</span><a class="self" href="#114">self</a>.columns)
+<a href=#121 id=121 data-nosnippet>121</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|idx| <a class="self" href="#114">self</a>.values.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.get">get</a>(<a href="#121">idx</a>))
+<a href=#122 id=122 data-nosnippet>122</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|x| <a href="#122">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>())
+<a href=#123 id=123 data-nosnippet>123</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(|x| <a href="../value/convert/mod.rs.html#594-596">from_value_opt</a>::&lt;T&gt;(<a href="#123">x</a>.<a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">clone</a>()))
+<a href=#124 id=124 data-nosnippet>124</a>    }
+<a href=#125 id=125 data-nosnippet>125</a>
+<a href=#126 id=126 data-nosnippet>126</a>    <span class="doccomment">/// Will take value of a column with index `index` if it exists and wasn't taken earlier then
+<a href=#127 id=127 data-nosnippet>127</a>    /// will converts it to `T`.
+<a href=#128 id=128 data-nosnippet>128</a>    </span><span class="kw">pub fn </span>take&lt;T, I&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: I) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;T&gt;
+<a href=#129 id=129 data-nosnippet>129</a>    <span class="kw">where
+<a href=#130 id=130 data-nosnippet>130</a>        </span>T: <a href="../value/convert/mod.rs.html#116-136">FromValue</a>,
+<a href=#131 id=131 data-nosnippet>131</a>        I: <a href="#202-204">ColumnIndex</a>,
+<a href=#132 id=132 data-nosnippet>132</a>    {
+<a href=#133 id=133 data-nosnippet>133</a>        <a href="#128">index</a>.<a href="#203">idx</a>(<span class="kw-2">&amp;</span><a class="self" href="#128">self</a>.columns).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|idx| {
+<a href=#134 id=134 data-nosnippet>134</a>            <a class="self" href="#128">self</a>.values
+<a href=#135 id=135 data-nosnippet>135</a>                .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.get_mut">get_mut</a>(<a href="#133">idx</a>)
+<a href=#136 id=136 data-nosnippet>136</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|x| <a href="#136">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.take">take</a>())
+<a href=#137 id=137 data-nosnippet>137</a>                .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(<a href="../value/convert/mod.rs.html#589-591">from_value</a>::&lt;T&gt;)
+<a href=#138 id=138 data-nosnippet>138</a>        })
+<a href=#139 id=139 data-nosnippet>139</a>    }
+<a href=#140 id=140 data-nosnippet>140</a>
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="doccomment">/// Will take value of a column with index `index` if it exists and wasn't taken earlier then
+<a href=#142 id=142 data-nosnippet>142</a>    /// will attempt to convert it to `T`. Unlike `Row::take`, `Row::take_opt` will allow you to
+<a href=#143 id=143 data-nosnippet>143</a>    /// directly handle errors if the value could not be converted to `T`.
+<a href=#144 id=144 data-nosnippet>144</a>    </span><span class="kw">pub fn </span>take_opt&lt;T, I&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: I) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;T, <a href="../value/convert/mod.rs.html#109">FromValueError</a>&gt;&gt;
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="kw">where
+<a href=#146 id=146 data-nosnippet>146</a>        </span>T: <a href="../value/convert/mod.rs.html#116-136">FromValue</a>,
+<a href=#147 id=147 data-nosnippet>147</a>        I: <a href="#202-204">ColumnIndex</a>,
+<a href=#148 id=148 data-nosnippet>148</a>    {
+<a href=#149 id=149 data-nosnippet>149</a>        <a href="#144">index</a>
+<a href=#150 id=150 data-nosnippet>150</a>            .<a href="#203">idx</a>(<span class="kw-2">&amp;</span><a class="self" href="#144">self</a>.columns)
+<a href=#151 id=151 data-nosnippet>151</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|idx| <a class="self" href="#144">self</a>.values.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.get_mut">get_mut</a>(<a href="#151">idx</a>))
+<a href=#152 id=152 data-nosnippet>152</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.and_then">and_then</a>(|x| <a href="#152">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.take">take</a>())
+<a href=#153 id=153 data-nosnippet>153</a>            .<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(<a href="../value/convert/mod.rs.html#594-596">from_value_opt</a>::&lt;T&gt;)
+<a href=#154 id=154 data-nosnippet>154</a>    }
+<a href=#155 id=155 data-nosnippet>155</a>
+<a href=#156 id=156 data-nosnippet>156</a>    <span class="doccomment">/// Unwraps values of a row.
+<a href=#157 id=157 data-nosnippet>157</a>    ///
+<a href=#158 id=158 data-nosnippet>158</a>    /// # Panics
+<a href=#159 id=159 data-nosnippet>159</a>    ///
+<a href=#160 id=160 data-nosnippet>160</a>    /// Panics if any of columns was taken by `take` method.
+<a href=#161 id=161 data-nosnippet>161</a>    </span><span class="kw">pub fn </span>unwrap(<span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../value/mod.rs.html#59-70">Value</a>&gt; {
+<a href=#162 id=162 data-nosnippet>162</a>        <a class="self" href="#161">self</a>.values
+<a href=#163 id=163 data-nosnippet>163</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html#tymethod.into_iter">into_iter</a>()
+<a href=#164 id=164 data-nosnippet>164</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.map">map</a>(|x| <a href="#164">x</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.expect">expect</a>(<span class="string">"Can't unwrap row if some of columns was taken"</span>))
+<a href=#165 id=165 data-nosnippet>165</a>            .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>()
+<a href=#166 id=166 data-nosnippet>166</a>    }
+<a href=#167 id=167 data-nosnippet>167</a>
+<a href=#168 id=168 data-nosnippet>168</a>    <span class="doccomment">/// Unwraps values as is (taken cells will be `None`).
+<a href=#169 id=169 data-nosnippet>169</a>    </span><span class="attr">#[doc(hidden)]
+<a href=#170 id=170 data-nosnippet>170</a>    </span><span class="kw">pub fn </span>unwrap_raw(<span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../value/mod.rs.html#59-70">Value</a>&gt;&gt; {
+<a href=#171 id=171 data-nosnippet>171</a>        <a class="self" href="#170">self</a>.values
+<a href=#172 id=172 data-nosnippet>172</a>    }
+<a href=#173 id=173 data-nosnippet>173</a>
+<a href=#174 id=174 data-nosnippet>174</a>    <span class="attr">#[doc(hidden)]
+<a href=#175 id=175 data-nosnippet>175</a>    </span><span class="kw">pub fn </span>place(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>, value: <a href="../value/mod.rs.html#59-70">Value</a>) {
+<a href=#176 id=176 data-nosnippet>176</a>        <a class="self" href="#175">self</a>.values[<a href="#175">index</a>] = <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<a href="#175">value</a>);
+<a href=#177 id=177 data-nosnippet>177</a>    }
+<a href=#178 id=178 data-nosnippet>178</a>}
+<a href=#179 id=179 data-nosnippet>179</a>
+<a href=#180 id=180 data-nosnippet>180</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/ops/index/trait.Index.html">Index</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; <span class="kw">for </span><a href="#29-32">Row</a> {
+<a href=#181 id=181 data-nosnippet>181</a>    <span class="kw">type </span>Output = <a href="../value/mod.rs.html#59-70">Value</a>;
+<a href=#182 id=182 data-nosnippet>182</a>
+<a href=#183 id=183 data-nosnippet>183</a>    <span class="kw">fn </span>index(<span class="kw-2">&amp;</span><span class="self">self</span>, index: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>) -&gt; <span class="kw-2">&amp;</span><a href="../value/mod.rs.html#59-70">Value</a> {
+<a href=#184 id=184 data-nosnippet>184</a>        <a class="self" href="#183">self</a>.values[<a href="#183">index</a>].<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_ref">as_ref</a>().<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap">unwrap</a>()
+<a href=#185 id=185 data-nosnippet>185</a>    }
+<a href=#186 id=186 data-nosnippet>186</a>}
+<a href=#187 id=187 data-nosnippet>187</a>
+<a href=#188 id=188 data-nosnippet>188</a><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; <a href="https://doc.rust-lang.org/nightly/core/ops/index/trait.Index.html">Index</a>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>&gt; <span class="kw">for </span><a href="#29-32">Row</a> {
+<a href=#189 id=189 data-nosnippet>189</a>    <span class="kw">type </span>Output = <a href="../value/mod.rs.html#59-70">Value</a>;
+<a href=#190 id=190 data-nosnippet>190</a>
+<a href=#191 id=191 data-nosnippet>191</a>    <span class="kw">fn </span>index&lt;<span class="lifetime">'r</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'r </span><span class="self">self</span>, index: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'r </span><a href="../value/mod.rs.html#59-70">Value</a> {
+<a href=#192 id=192 data-nosnippet>192</a>        <span class="kw">for </span>(i, column) <span class="kw">in </span><span class="self">self</span>.columns.iter().enumerate() {
+<a href=#193 id=193 data-nosnippet>193</a>            <span class="kw">if </span>column.name_ref() == index.as_bytes() {
+<a href=#194 id=194 data-nosnippet>194</a>                <span class="kw">return </span><span class="self">self</span>.values[i].as_ref().unwrap();
+<a href=#195 id=195 data-nosnippet>195</a>            }
+<a href=#196 id=196 data-nosnippet>196</a>        }
+<a href=#197 id=197 data-nosnippet>197</a><span class="expansion"><input id=expand-197 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"No such column: `{0}` in row {1:?}"</span>,
+            index, <span class="self">self</span>));
+};</span><span class="original"><a href="https://doc.rust-lang.org/nightly/std/macro.panic.html">panic!</a>(<span class="string">"No such column: `{}` in row {:?}"</span>, index, <span class="self">self</span>)</span></span>;
+<a href=#198 id=198 data-nosnippet>198</a>    }
+<a href=#199 id=199 data-nosnippet>199</a>}
+<a href=#200 id=200 data-nosnippet>200</a>
+<a href=#201 id=201 data-nosnippet>201</a><span class="doccomment">/// Things that may be used as an index of a row column.
+<a href=#202 id=202 data-nosnippet>202</a></span><span class="kw">pub trait </span><a href="../../../mysql_common/row/trait.ColumnIndex.html">ColumnIndex</a> {
+<a href=#203 id=203 data-nosnippet>203</a>    <span class="kw">fn </span>idx(<span class="kw-2">&amp;</span><span class="self">self</span>, columns: <span class="kw-2">&amp;</span>[<a href="../packets/mod.rs.html#225-236">Column</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt;;
+<a href=#204 id=204 data-nosnippet>204</a>}
+<a href=#205 id=205 data-nosnippet>205</a>
+<a href=#206 id=206 data-nosnippet>206</a><span class="kw">impl </span><a href="#202-204">ColumnIndex</a> <span class="kw">for </span><a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a> {
+<a href=#207 id=207 data-nosnippet>207</a>    <span class="kw">fn </span>idx(<span class="kw-2">&amp;</span><span class="self">self</span>, columns: <span class="kw-2">&amp;</span>[<a href="../packets/mod.rs.html#225-236">Column</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#208 id=208 data-nosnippet>208</a>        <span class="kw">if </span><span class="kw-2">*</span><a class="self" href="#207">self</a> &gt;= <a href="#207">columns</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() {
+<a href=#209 id=209 data-nosnippet>209</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#210 id=210 data-nosnippet>210</a>        } <span class="kw">else </span>{
+<a href=#211 id=211 data-nosnippet>211</a>            <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw-2">*</span><a class="self" href="#207">self</a>)
+<a href=#212 id=212 data-nosnippet>212</a>        }
+<a href=#213 id=213 data-nosnippet>213</a>    }
+<a href=#214 id=214 data-nosnippet>214</a>}
+<a href=#215 id=215 data-nosnippet>215</a>
+<a href=#216 id=216 data-nosnippet>216</a><span class="kw">impl </span><a href="#202-204">ColumnIndex</a> <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'_ </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a> {
+<a href=#217 id=217 data-nosnippet>217</a>    <span class="kw">fn </span>idx(<span class="kw-2">&amp;</span><span class="self">self</span>, columns: <span class="kw-2">&amp;</span>[<a href="../packets/mod.rs.html#225-236">Column</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; {
+<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">for </span>(i, c) <span class="kw">in </span>columns.iter().enumerate() {
+<a href=#219 id=219 data-nosnippet>219</a>            <span class="kw">if </span>c.name_ref() == <span class="self">self</span>.as_bytes() {
+<a href=#220 id=220 data-nosnippet>220</a>                <span class="kw">return </span><span class="prelude-val">Some</span>(i);
+<a href=#221 id=221 data-nosnippet>221</a>            }
+<a href=#222 id=222 data-nosnippet>222</a>        }
+<a href=#223 id=223 data-nosnippet>223</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#224 id=224 data-nosnippet>224</a>    }
+<a href=#225 id=225 data-nosnippet>225</a>}
+<a href=#226 id=226 data-nosnippet>226</a>
+<a href=#227 id=227 data-nosnippet>227</a><span class="doccomment">/// Row deserializer.
+<a href=#228 id=228 data-nosnippet>228</a>///
+<a href=#229 id=229 data-nosnippet>229</a>/// `S` – serialization side (see [`SerializationSide`]);
+<a href=#230 id=230 data-nosnippet>230</a>/// `P` – protocol.
+<a href=#231 id=231 data-nosnippet>231</a></span><span class="expansion"><input id=expand-231 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;S: ::core::fmt::Debug, P: ::core::fmt::Debug&gt;
+    ::core::fmt::Debug <span class="kw">for </span>RowDeserializer&lt;S, P&gt; {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"RowDeserializer"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, &amp;&amp;<span class="self">self</span>.<span class="number">1</span>)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;S: ::core::clone::Clone, P: ::core::clone::Clone&gt;
+    ::core::clone::Clone <span class="kw">for </span>RowDeserializer&lt;S, P&gt; {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        RowDeserializer(::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>),
+            ::core::clone::Clone::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">1</span>))
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;S: ::core::cmp::PartialEq,
+    P: ::core::cmp::PartialEq&gt; ::core::marker::StructuralPartialEq <span class="kw">for
+    </span>RowDeserializer&lt;S, P&gt; {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl</span>&lt;S: ::core::cmp::PartialEq,
+    P: ::core::cmp::PartialEq&gt; ::core::cmp::PartialEq <span class="kw">for
+    </span>RowDeserializer&lt;S, P&gt; {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        <span class="self">self</span>.<span class="number">0 </span>== other.<span class="number">0 </span>&amp;&amp; <span class="self">self</span>.<span class="number">1 </span>== other.<span class="number">1
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/cmp/derive.PartialEq.html">PartialEq</a></span></span></span><span class="attr">)]
+<a href=#232 id=232 data-nosnippet>232</a></span><span class="kw">pub struct </span><a href="../../../mysql_common/row/struct.RowDeserializer.html">RowDeserializer</a>&lt;S, P&gt;(<a href="#29-32">Row</a>, <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>&lt;(S, P)&gt;);
+<a href=#233 id=233 data-nosnippet>233</a>
+<a href=#234 id=234 data-nosnippet>234</a><span class="kw">impl</span>&lt;S, P&gt; <a href="#232">RowDeserializer</a>&lt;S, P&gt; {
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="kw">pub fn </span>into_inner(<span class="self">self</span>) -&gt; <a href="#29-32">Row</a> {
+<a href=#236 id=236 data-nosnippet>236</a>        <a class="self" href="#235">self</a>.<span class="number">0
+<a href=#237 id=237 data-nosnippet>237</a>    </span>}
+<a href=#238 id=238 data-nosnippet>238</a>}
+<a href=#239 id=239 data-nosnippet>239</a>
+<a href=#240 id=240 data-nosnippet>240</a><span class="kw">impl</span>&lt;S, P&gt; <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html">From</a>&lt;<a href="#232">RowDeserializer</a>&lt;S, P&gt;&gt; <span class="kw">for </span><a href="#29-32">Row</a> {
+<a href=#241 id=241 data-nosnippet>241</a>    <span class="kw">fn </span>from(x: <a href="#232">RowDeserializer</a>&lt;S, P&gt;) -&gt; <span class="self">Self </span>{
+<a href=#242 id=242 data-nosnippet>242</a>        <a href="#241">x</a>.<span class="number">0
+<a href=#243 id=243 data-nosnippet>243</a>    </span>}
+<a href=#244 id=244 data-nosnippet>244</a>}
+<a href=#245 id=245 data-nosnippet>245</a>
+<a href=#246 id=246 data-nosnippet>246</a><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>, T&gt; <a href="../proto/mod.rs.html#31-49">MyDeserialize</a>&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span><a href="#232">RowDeserializer</a>&lt;T, <a href="../proto/mod.rs.html#18">Text</a>&gt; {
+<a href=#247 id=247 data-nosnippet>247</a>    <span class="kw">const </span>SIZE: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; = <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#248 id=248 data-nosnippet>248</a>    <span class="kw">type </span>Ctx = <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;[<a href="../packets/mod.rs.html#225-236">Column</a>]&gt;;
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="kw">fn </span>deserialize(columns: <span class="self">Self</span>::Ctx, buf: <span class="kw-2">&amp;mut </span><a href="../io.rs.html#81">ParseBuf</a>&lt;<span class="lifetime">'de</span>&gt;) -&gt; io::<a href="https://doc.rust-lang.org/nightly/core/io/error/type.Result.html">Result</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#251 id=251 data-nosnippet>251</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.with_capacity">with_capacity</a>(<a href="#250">columns</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>());
+<a href=#252 id=252 data-nosnippet>252</a>
+<a href=#253 id=253 data-nosnippet>253</a>        <span class="kw">for _ in </span><span class="number">0</span>..columns.len() {
+<a href=#254 id=254 data-nosnippet>254</a>            values.push(<span class="prelude-val">Some</span>(
+<a href=#255 id=255 data-nosnippet>255</a>                ValueDeserializer::&lt;TextValue&gt;::deserialize((), <span class="kw-2">&amp;mut *</span>buf)<span class="question-mark">?</span>.<span class="number">0</span>,
+<a href=#256 id=256 data-nosnippet>256</a>            ))
+<a href=#257 id=257 data-nosnippet>257</a>        }
+<a href=#258 id=258 data-nosnippet>258</a>
+<a href=#259 id=259 data-nosnippet>259</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<span class="self">Self</span>(<a href="#29-32">Row</a> { <a href="#251">values</a>, <a href="#250">columns</a> }, <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>))
+<a href=#260 id=260 data-nosnippet>260</a>    }
+<a href=#261 id=261 data-nosnippet>261</a>}
+<a href=#262 id=262 data-nosnippet>262</a>
+<a href=#263 id=263 data-nosnippet>263</a><span class="kw">impl</span>&lt;<span class="lifetime">'de</span>, S: <a href="../value/mod.rs.html#29-32">SerializationSide</a>&gt; <a href="../proto/mod.rs.html#31-49">MyDeserialize</a>&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span><a href="#232">RowDeserializer</a>&lt;S, <a href="../proto/mod.rs.html#22">Binary</a>&gt; {
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">const </span>SIZE: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>&gt; = <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">type </span>Ctx = <a href="https://doc.rust-lang.org/nightly/alloc/rcs/arc/struct.Arc.html">Arc</a>&lt;[<a href="../packets/mod.rs.html#225-236">Column</a>]&gt;;
+<a href=#266 id=266 data-nosnippet>266</a>
+<a href=#267 id=267 data-nosnippet>267</a>    <span class="kw">fn </span>deserialize(columns: <span class="self">Self</span>::Ctx, buf: <span class="kw-2">&amp;mut </span><a href="../io.rs.html#81">ParseBuf</a>&lt;<span class="lifetime">'de</span>&gt;) -&gt; io::<a href="https://doc.rust-lang.org/nightly/core/io/error/type.Result.html">Result</a>&lt;<span class="self">Self</span>&gt; {
+<a href=#268 id=268 data-nosnippet>268</a>        <span class="kw">use </span><a href="../value/mod.rs.html#59-70">Value</a>::<span class="kw-2">*</span>;
+<a href=#269 id=269 data-nosnippet>269</a>
+<a href=#270 id=270 data-nosnippet>270</a>        buf.checked_eat_u8().ok_or_else(unexpected_buf_eof)<span class="question-mark">?</span>;
+<a href=#271 id=271 data-nosnippet>271</a>
+<a href=#272 id=272 data-nosnippet>272</a>        <span class="kw">let </span>bitmap = NullBitmap::&lt;S, Cow&lt;<span class="lifetime">'de</span>, [u8]&gt;&gt;::deserialize(columns.len(), <span class="kw-2">&amp;mut *</span>buf)<span class="question-mark">?</span>;
+<a href=#273 id=273 data-nosnippet>273</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.with_capacity">with_capacity</a>(<a href="#267">columns</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>());
+<a href=#274 id=274 data-nosnippet>274</a>
+<a href=#275 id=275 data-nosnippet>275</a>        <span class="kw">for </span>(i, column) <span class="kw">in </span>columns.iter().enumerate() {
+<a href=#276 id=276 data-nosnippet>276</a>            <span class="kw">if </span>bitmap.is_null(i) {
+<a href=#277 id=277 data-nosnippet>277</a>                values.push(<span class="prelude-val">Some</span>(NULL))
+<a href=#278 id=278 data-nosnippet>278</a>            } <span class="kw">else </span>{
+<a href=#279 id=279 data-nosnippet>279</a>                values.push(<span class="prelude-val">Some</span>(
+<a href=#280 id=280 data-nosnippet>280</a>                    ValueDeserializer::&lt;BinValue&gt;::deserialize(
+<a href=#281 id=281 data-nosnippet>281</a>                        (column.column_type(), column.flags()),
+<a href=#282 id=282 data-nosnippet>282</a>                        <span class="kw-2">&amp;mut *</span>buf,
+<a href=#283 id=283 data-nosnippet>283</a>                    )<span class="question-mark">?
+<a href=#284 id=284 data-nosnippet>284</a>                    </span>.<span class="number">0</span>,
+<a href=#285 id=285 data-nosnippet>285</a>                ));
+<a href=#286 id=286 data-nosnippet>286</a>            }
+<a href=#287 id=287 data-nosnippet>287</a>        }
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<span class="self">Self</span>(<a href="#29-32">Row</a> { <a href="#273">values</a>, <a href="#267">columns</a> }, <a href="https://doc.rust-lang.org/nightly/core/marker/struct.PhantomData.html">PhantomData</a>))
+<a href=#290 id=290 data-nosnippet>290</a>    }
+<a href=#291 id=291 data-nosnippet>291</a>}
+</code></pre></div></section></main></body></html>

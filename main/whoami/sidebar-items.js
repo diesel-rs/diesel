@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CpuArchitecture","DesktopEnvironment","Platform","Width"],"fn":["account","account_os","cpu_arch","desktop_env","devicename","devicename_os","distro","hostname","lang_prefs","platform","realname","realname_os","username","username_os"],"struct":["Error","Language","LanguagePreferences"],"type":["Result"]};

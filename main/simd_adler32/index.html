@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="simd-adler32"><title>simd_adler32 - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="simd_adler32" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate simd_adler32</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../simd_adler32/index.html">simd_<wbr>adler32</a><span class="version">0.3.10</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#simd-adler32" title="simd-adler32">simd-adler32</a><ul><li><a href="#features" title="Features">Features</a></li><li><a href="#quick-start" title="Quick start">Quick start</a></li><li><a href="#feature-flags" title="Feature flags">Feature flags</a></li><li><a href="#support" title="Support">Support</a></li><li><a href="#cpu-feature-detection" title="CPU Feature Detection">CPU Feature Detection</a></li></ul></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>simd_<wbr>adler32</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/simd_adler32/lib.rs.html#1-325">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="simd-adler32"><a class="doc-anchor" href="#simd-adler32">§</a>simd-adler32</h2>
+<p>A SIMD-accelerated Adler-32 hash algorithm implementation.</p>
+<h3 id="features"><a class="doc-anchor" href="#features">§</a>Features</h3>
+<ul>
+<li>No dependencies</li>
+<li>Support <code>no_std</code> (with <code>default-features = false</code>)</li>
+<li>Runtime CPU feature detection (when <code>std</code> enabled)</li>
+<li>Blazing fast performance on as many targets as possible (currently only x86 and x86_64)</li>
+<li>Default to scalar implementation when simd not available</li>
+</ul>
+<h3 id="quick-start"><a class="doc-anchor" href="#quick-start">§</a>Quick start</h3>
+<blockquote>
+<p>Cargo.toml</p>
+</blockquote>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+simd-adler32 = &quot;*&quot;</code></pre></div>
+<blockquote>
+<p>example.rs</p>
+</blockquote>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>simd_adler32::Adler32;
+
+<span class="kw">let </span><span class="kw-2">mut </span>adler = Adler32::new();
+adler.write(<span class="string">b"rust is pretty cool, man"</span>);
+<span class="kw">let </span>hash = adler.finish();
+
+<span class="macro">println!</span>(<span class="string">"{}"</span>, hash);
+<span class="comment">// 1921255656</span></code></pre></div><h3 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature flags</h3>
+<ul>
+<li><code>std</code> - Enabled by default</li>
+</ul>
+<p>Enables std support, see <a href="#cpu-feature-detection">CPU Feature Detection</a> for runtime
+detection support.</p>
+<ul>
+<li><code>nightly</code></li>
+</ul>
+<p>Enables nightly features required for avx512 support.</p>
+<ul>
+<li><code>const-generics</code> - Enabled by default</li>
+</ul>
+<p>Enables const-generics support allowing for user-defined array hashing by value.  See
+<a href="trait.Adler32Hash.html" title="trait simd_adler32::Adler32Hash"><code>Adler32Hash</code></a> for details.</p>
+<h3 id="support"><a class="doc-anchor" href="#support">§</a>Support</h3>
+<p><strong>CPU Features</strong></p>
+<div class="table"><table><thead><tr><th>impl</th><th>arch</th><th>feature</th></tr></thead><tbody>
+<tr><td>✅</td><td><code>x86</code>, <code>x86_64</code></td><td>avx512</td></tr>
+<tr><td>✅</td><td><code>x86</code>, <code>x86_64</code></td><td>avx2</td></tr>
+<tr><td>✅</td><td><code>x86</code>, <code>x86_64</code></td><td>ssse3</td></tr>
+<tr><td>✅</td><td><code>x86</code>, <code>x86_64</code></td><td>sse2</td></tr>
+<tr><td>🚧</td><td><code>arm</code>, <code>aarch64</code></td><td>neon</td></tr>
+<tr><td></td><td><code>wasm32</code></td><td>simd128</td></tr>
+</tbody></table>
+</div>
+<p><strong>MSRV</strong> <code>1.36.0</code>**</p>
+<p>Minimum supported rust version is tested before a new version is published. [**] Feature
+<code>const-generics</code> needs to disabled to build on rustc versions <code>&lt;1.51</code> which can be done
+by updating your dependency definition to the following.</p>
+<h3 id="cpu-feature-detection"><a class="doc-anchor" href="#cpu-feature-detection">§</a>CPU Feature Detection</h3>
+<p>simd-adler32 supports both runtime and compile time CPU feature detection using the
+<code>std::is_x86_feature_detected</code> macro when the <code>Adler32</code> struct is instantiated with
+the <code>new</code> fn.</p>
+<p>Without <code>std</code> feature enabled simd-adler32 falls back to compile time feature detection
+using <code>target-feature</code> or <code>target-cpu</code> flags supplied to rustc. See <a href="https://rust-lang.github.io/packed_simd/perf-guide/target-feature/rustflags.html">https://rust-lang.github.io/packed_simd/perf-guide/target-feature/rustflags.html</a>
+for more information.</p>
+<p>Feature detection tries to use the fastest supported feature first.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Adler32.html" title="struct simd_adler32::Adler32">Adler32</a></dt><dd>An adler32 hash generator type.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Adler32Hash.html" title="trait simd_adler32::Adler32Hash">Adler32<wbr>Hash</a></dt><dd>A Adler-32 hash-able type.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.adler32.html" title="fn simd_adler32::adler32">adler32</a></dt><dd>Compute Adler-32 hash on <code>Adler32Hash</code> type.</dd></dl></section></div></main></body></html>

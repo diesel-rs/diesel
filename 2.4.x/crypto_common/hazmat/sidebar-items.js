@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["DeserializeStateError"],"trait":["SerializableState"],"type":["AddSerializedStateSize","SerializedState","SubSerializedStateSize"]};

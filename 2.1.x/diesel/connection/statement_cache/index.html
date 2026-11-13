@@ -1,0 +1,106 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Helper types for prepared statement caching"><title>diesel::connection::statement_cache - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (e3181b091 2024-04-18)" data-channel="nightly" data-search-js="search-5b46ae87cc198d72.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../diesel/index.html">diesel</a><span class="version">2.1.6</span></h2></div><h2 class="location"><a href="#">Module statement_cache</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></section><h2><a href="../index.html">In diesel::connection</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../diesel/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../index.html">diesel</a>::<wbr><a href="../index.html">connection</a>::<wbr><a class="mod" href="#">statement_cache</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/diesel/connection/statement_cache.rs.html#1-329">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>i-implement-a-third-party-backend-and-opt-into-breaking-changes</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Helper types for prepared statement caching</p>
+<h3 id="a-primer-on-prepared-statement-caching-in-diesel"><a class="doc-anchor" href="#a-primer-on-prepared-statement-caching-in-diesel">§</a>A primer on prepared statement caching in Diesel</h3>
+<p>Diesel uses prepared statements for virtually all queries. This is most
+visible in our lack of any sort of “quoting” API. Values must always be
+transmitted as bind parameters, we do not support direct interpolation. The
+only method in the public API that doesn’t require the use of prepared
+statements is <a href="../trait.SimpleConnection.html#tymethod.batch_execute" title="method diesel::connection::SimpleConnection::batch_execute"><code>SimpleConnection::batch_execute</code></a>.</p>
+<p>In order to avoid the cost of re-parsing and planning subsequent queries,
+Diesel caches the prepared statement whenever possible. Queries will fall
+into one of three buckets:</p>
+<ul>
+<li>Unsafe to cache</li>
+<li>Cached by SQL</li>
+<li>Cached by type</li>
+</ul>
+<p>A query is considered unsafe to cache if it represents a potentially
+unbounded number of queries. This is communicated to the connection through
+<a href="../../query_builder/trait.QueryFragment.html#method.is_safe_to_cache_prepared" title="method diesel::query_builder::QueryFragment::is_safe_to_cache_prepared"><code>QueryFragment::is_safe_to_cache_prepared</code></a>. While this is done as a full AST
+pass, after monomorphisation and inlining this will usually be optimized to
+a constant. Only boxed queries will need to do actual work to answer this
+question.</p>
+<p>The majority of AST nodes are safe to cache if their components are safe to
+cache. There are at least 4 cases where a query is unsafe to cache:</p>
+<ul>
+<li>queries containing <code>IN</code> with bind parameters
+<ul>
+<li>This requires 1 bind parameter per value, and is therefore unbounded</li>
+<li><code>IN</code> with subselects are cached (assuming the subselect is safe to
+cache)</li>
+<li><code>IN</code> statements for postgresql are cached as they use <code>= ANY($1)</code> instead
+which does not cause a unbound number of binds</li>
+</ul>
+</li>
+<li><code>INSERT</code> statements with a variable number of rows
+<ul>
+<li>The SQL varies based on the number of rows being inserted.</li>
+</ul>
+</li>
+<li><code>UPDATE</code> statements
+<ul>
+<li>Technically it’s bounded on “number of optional values being passed to
+<code>SET</code> factorial” but that’s still quite high, and not worth caching
+for the same reason as single row inserts</li>
+</ul>
+</li>
+<li><code>SqlLiteral</code> nodes
+<ul>
+<li>We have no way of knowing whether the SQL was generated dynamically or
+not, so we must assume that it’s unbounded</li>
+</ul>
+</li>
+</ul>
+<p>For queries which are unsafe to cache, the statement cache will never insert
+them. They will be prepared and immediately released after use (or in the
+case of PG they will use the unnamed prepared statement).</p>
+<p>For statements which are able to be cached, we then have to determine what
+to use as the cache key. The standard method that virtually all ORMs or
+database access layers use in the wild is to store the statements in a
+hash map, using the SQL as the key.</p>
+<p>However, the majority of queries using Diesel that are safe to cache as
+prepared statements will be uniquely identified by their type. For these
+queries, we can bypass the query builder entirely. Since our AST is
+generally optimized away by the compiler, for these queries the cost of
+fetching a prepared statement from the cache is the cost of <a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html#method.get" title="method std::collections::hash::map::HashMap::get"><code>HashMap&lt;u32, _&gt;::get</code></a>, where the key we’re fetching by is a compile time constant. For
+these types, the AST pass to gather the bind parameters will also be
+optimized to accessing each parameter individually.</p>
+<p>Determining if a query can be cached by type is the responsibility of the
+<a href="../../query_builder/trait.QueryId.html" title="trait diesel::query_builder::QueryId"><code>QueryId</code></a> trait. This trait is quite similar to <code>Any</code>, but with a few
+differences:</p>
+<ul>
+<li>No <code>'static</code> bound
+<ul>
+<li>Something being a reference never changes the SQL that is generated,
+so <code>&amp;T</code> has the same query id as <code>T</code>.</li>
+</ul>
+</li>
+<li><code>Option&lt;TypeId&gt;</code> instead of <code>TypeId</code>
+<ul>
+<li>We need to be able to constrain on this trait being implemented, but
+not all types will actually have a static query id. Hopefully once
+specialization is stable we can remove the <code>QueryId</code> bound and
+specialize on it instead (or provide a blanket impl for all <code>T</code>)</li>
+</ul>
+</li>
+<li>Implementors give a more broad type than <code>Self</code>
+<ul>
+<li>This really only affects bind parameters. There are 6 different Rust
+types which can be used for a parameter of type <code>timestamp</code>. The same
+statement can be used regardless of the Rust type, so <a href="crate::expression::bound::Bound"><code>Bound&lt;ST, T&gt;</code></a>
+defines its <a href="../../query_builder/trait.QueryId.html" title="trait diesel::query_builder::QueryId"><code>QueryId</code></a> as <a href="crate::expression::bound::Bound"><code>Bound&lt;ST, ()&gt;</code></a>.</li>
+</ul>
+</li>
+</ul>
+<p>A type returning <code>Some(id)</code> or <code>None</code> for its query ID is based on whether
+the SQL it generates can change without the type changing. At the moment,
+the only type which is safe to cache as a prepared statement but does not
+have a static query ID is something which has been boxed.</p>
+<p>One potential optimization that we don’t perform is storing the queries
+which are cached by type ID in a separate map. Since a type ID is a u64,
+this would allow us to use a specialized map which knows that there will
+never be hashing collisions (also known as a perfect hashing function),
+which would mean lookups are always constant time. However, this would save
+nanoseconds on an operation that will take microseconds or even
+milliseconds.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.StatementCache.html" title="struct diesel::connection::statement_cache::StatementCache">StatementCache</a></div><div class="desc docblock-short">A prepared statement cache</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.MaybeCached.html" title="enum diesel::connection::statement_cache::MaybeCached">MaybeCached</a></div><div class="desc docblock-short">Wraps a possibly cached prepared statement</div></li><li><div class="item-name"><a class="enum" href="enum.PrepareForCache.html" title="enum diesel::connection::statement_cache::PrepareForCache">PrepareForCache</a></div><div class="desc docblock-short">A helper type that indicates if a certain query
+is cached inside of the prepared statement cache or not</div></li><li><div class="item-name"><a class="enum" href="enum.StatementCacheKey.html" title="enum diesel::connection::statement_cache::StatementCacheKey">StatementCacheKey</a></div><div class="desc docblock-short">The lookup key used by <a href="struct.StatementCache.html" title="struct diesel::connection::statement_cache::StatementCache"><code>StatementCache</code></a> internally</div></li></ul></section></div></main></body></html>

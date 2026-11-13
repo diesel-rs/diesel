@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Define flag value using the `enum` syntax. See below for details."><title>flags in flagset - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="flagset" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">flags</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../flagset/index.html">flagset</a><span class="version">0.4.7</span></h2></div><div class="sidebar-elems"><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">flagset</a></div><h1>Macro <span class="macro">flags</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/flagset/lib.rs.html#1261-1350">Source</a> </span></div><pre class="rust item-decl"><code>macro_rules! flags {
+    () =&gt; { ... };
+    ($(#[$m:meta])* $p:vis enum $n:ident: $t:ty { $($(#[$a:meta])* $k:ident),+ $(,)* } $($next:tt)*) =&gt; { ... };
+    ($(#[$m:meta])* $p:vis enum $n:ident: $t:ty { $($(#[$a:meta])*$k:ident = $v:expr),* $(,)* } $($next:tt)*) =&gt; { ... };
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Define flag value using the <code>enum</code> syntax. See below for details.</p>
+<p>Each enumeration value <strong>MUST</strong> have a specified value.</p>
+<p>The width of the bitfield <strong>MUST</strong> also be specified by its integer type.</p>
+<p>It is important to note that the size of the flag enumeration itself is
+unrelated to the size of the corresponding <code>FlagSet</code> instance.</p>
+<p>It is also worth noting that this macro automatically implements a variety
+of standard traits including:</p>
+<ul>
+<li>Copy</li>
+<li>Clone</li>
+<li>Debug</li>
+<li>PartialEq</li>
+<li>Eq</li>
+<li>From&lt;$enum&gt; for $integer</li>
+<li>Not</li>
+<li>BitAnd</li>
+<li>BitOr</li>
+<li>BitXor</li>
+<li>Sub</li>
+<li>Rem</li>
+</ul>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::mem::{align_of, size_of};
+<span class="kw">use </span>flagset::{FlagSet, flags};
+
+<span class="macro">flags!</span> {
+    <span class="kw">enum </span>FlagEmpty: u32 {}
+
+    <span class="kw">enum </span>Flag8: u8 {
+        Foo = <span class="number">0b001</span>,
+        Bar = <span class="number">0b010</span>,
+        Baz = <span class="number">0b100
+    </span>}
+
+    <span class="kw">pub enum </span>Flag16: u16 {
+        Foo,
+        Bar,
+        <span class="attr">#[deprecated]
+        </span>Baz,
+    }
+
+    <span class="attr">#[derive(PartialOrd, Ord)]
+    </span><span class="kw">enum </span>Flag32: u32 {
+        Foo = <span class="number">0b001</span>,
+        <span class="attr">#[deprecated]
+        </span>Bar = <span class="number">0b010</span>,
+        Baz = <span class="number">0b100
+    </span>}
+
+    <span class="attr">#[repr(u64)]
+    </span><span class="kw">enum </span>Flag64: u64 {
+        Foo = <span class="number">0b001</span>,
+        Bar = <span class="number">0b010</span>,
+        Baz = <span class="number">0b100
+    </span>}
+
+    <span class="attr">#[repr(u32)]
+    </span><span class="kw">enum </span>Flag128: u128 {
+        Foo = <span class="number">0b001</span>,
+        Bar = <span class="number">0b010</span>,
+        Baz = <span class="number">0b100
+    </span>}
+}
+
+<span class="macro">assert_eq!</span>(size_of::&lt;Flag8&gt;(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(size_of::&lt;Flag16&gt;(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(size_of::&lt;Flag32&gt;(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(size_of::&lt;Flag64&gt;(), <span class="number">8</span>);
+<span class="macro">assert_eq!</span>(size_of::&lt;Flag128&gt;(), <span class="number">4</span>);
+
+<span class="macro">assert_eq!</span>(align_of::&lt;Flag8&gt;(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(align_of::&lt;Flag16&gt;(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(align_of::&lt;Flag32&gt;(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(align_of::&lt;Flag64&gt;(), align_of::&lt;u64&gt;());
+<span class="macro">assert_eq!</span>(align_of::&lt;Flag128&gt;(), align_of::&lt;u32&gt;());
+
+<span class="macro">assert_eq!</span>(size_of::&lt;FlagSet&lt;Flag8&gt;&gt;(), size_of::&lt;u8&gt;());
+<span class="macro">assert_eq!</span>(size_of::&lt;FlagSet&lt;Flag16&gt;&gt;(), size_of::&lt;u16&gt;());
+<span class="macro">assert_eq!</span>(size_of::&lt;FlagSet&lt;Flag32&gt;&gt;(), size_of::&lt;u32&gt;());
+<span class="macro">assert_eq!</span>(size_of::&lt;FlagSet&lt;Flag64&gt;&gt;(), size_of::&lt;u64&gt;());
+<span class="macro">assert_eq!</span>(size_of::&lt;FlagSet&lt;Flag128&gt;&gt;(), size_of::&lt;u128&gt;());
+
+<span class="macro">assert_eq!</span>(align_of::&lt;FlagSet&lt;Flag8&gt;&gt;(), align_of::&lt;u8&gt;());
+<span class="macro">assert_eq!</span>(align_of::&lt;FlagSet&lt;Flag16&gt;&gt;(), align_of::&lt;u16&gt;());
+<span class="macro">assert_eq!</span>(align_of::&lt;FlagSet&lt;Flag32&gt;&gt;(), align_of::&lt;u32&gt;());
+<span class="macro">assert_eq!</span>(align_of::&lt;FlagSet&lt;Flag64&gt;&gt;(), align_of::&lt;u64&gt;());
+<span class="macro">assert_eq!</span>(align_of::&lt;FlagSet&lt;Flag128&gt;&gt;(), align_of::&lt;u128&gt;());</code></pre></div></div></details></section></div></main></body></html>

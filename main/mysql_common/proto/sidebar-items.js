@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["codec","sync_framed"],"struct":["Binary","Text"],"trait":["MyDeserialize","MySerialize"]};

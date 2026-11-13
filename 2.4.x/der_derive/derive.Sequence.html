@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Derive the `Sequence` trait on a `struct`."><title>Sequence in der_derive - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="der_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc derive"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Sequence</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../der_derive/index.html">der_<wbr>derive</a><span class="version">0.7.3</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Sequence</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#asn1type---attribute" title="`#[asn1(type = &#34;...&#34;)]` attribute"><code>#[asn1(type = "...")]</code> attribute</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate der_<wbr>derive</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">der_derive</a></div><h1>Derive Macro <span class="derive">Sequence</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/der_derive/lib.rs.html#274-280">Source</a> </span></div><pre class="rust item-decl"><code>#[derive(Sequence)]
+{
+    <span class="comment">// Attributes available to this derive:</span>
+    #[asn1]
+}
+</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Derive the <a href="https://docs.rs/der/latest/der/trait.Sequence.html"><code>Sequence</code></a> trait on a <code>struct</code>.</p>
+<p>This custom derive macro can be used to automatically impl the
+<code>Sequence</code> trait for any struct which can be decoded/encoded as an
+ASN.1 <code>SEQUENCE</code>.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<div class="example-wrap ignore"><a href="#" class="tooltip" title="This example is not tested">ⓘ</a><pre class="rust rust-example-rendered"><code><span class="kw">use </span>der::{
+    asn1::{Any, ObjectIdentifier},
+    Sequence
+};
+
+<span class="doccomment">/// X.509 `AlgorithmIdentifier`
+</span><span class="attr">#[derive(Sequence)]
+</span><span class="kw">pub struct </span>AlgorithmIdentifier&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="doccomment">/// This field contains an ASN.1 `OBJECT IDENTIFIER`, a.k.a. OID.
+    </span><span class="kw">pub </span>algorithm: ObjectIdentifier,
+
+    <span class="doccomment">/// This field is `OPTIONAL` and contains the ASN.1 `ANY` type, which
+    /// in this example allows arbitrary algorithm-defined parameters.
+    </span><span class="kw">pub </span>parameters: <span class="prelude-ty">Option</span>&lt;Any&lt;<span class="lifetime">'a</span>&gt;&gt;
+}</code></pre></div><h2 id="asn1type---attribute"><a class="doc-anchor" href="#asn1type---attribute">§</a><code>#[asn1(type = "...")]</code> attribute</h2>
+<p>See <a href="https://docs.rs/der_derive/">toplevel documentation for the <code>der_derive</code> crate</a> for more
+information about the <code>#[asn1]</code> attribute.</p>
+</div></details></section></div></main></body></html>

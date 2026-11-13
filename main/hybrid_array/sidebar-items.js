@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["sizes"],"struct":["Array","TryFromIteratorError"],"trait":["ArraySize","AsArrayMut","AsArrayRef","AssocArraySize","Flatten","SliceExt","Unflatten"],"type":["ArrayN"]};

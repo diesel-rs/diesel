@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="RustCrypto: CMOV (Conditional Move)"><title>cmov - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="cmov" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="icon" href="https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate cmov</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../cmov/index.html"><img src="https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg" alt="logo"></a><h2><a href="../cmov/index.html">cmov</a><span class="version">0.5.4</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#rustcrypto-cmov-conditional-move" title="RustCrypto: CMOV (Conditional Move)">RustCrypto: CMOV (Conditional Move)</a><ul><li><a href="#about" title="About">About</a></li><li><a href="#supported-target-architectures" title="Supported target architectures">Supported target architectures</a></li><li><a href="#-security-warning" title="⚠️ Security Warning">⚠️ Security Warning</a></li><li><a href="#minimum-supported-rust-version-msrv-policy" title="Minimum Supported Rust Version (MSRV) Policy">Minimum Supported Rust Version (MSRV) Policy</a></li><li><a href="#license" title="License">License</a></li></ul></li></ul><h3><a href="#traits">Crate Items</a></h3><ul class="block"><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>cmov</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/cmov/lib.rs.html#1-337">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="rustcrypto-cmov-conditional-move"><a class="doc-anchor" href="#rustcrypto-cmov-conditional-move">§</a><a href="https://github.com/RustCrypto">RustCrypto</a>: CMOV (Conditional Move)</h2>
+<p><a href="https://crates.io/crates/cmov"><img src="https://img.shields.io/crates/v/cmov.svg" alt="Crate" /></a>
+<a href="https://docs.rs/cmov/"><img src="https://docs.rs/cmov/badge.svg" alt="Docs" /></a>
+<a href="https://github.com/RustCrypto/utils/actions/workflows/cmov.yml"><img src="https://github.com/RustCrypto/utils/actions/workflows/cmov.yml/badge.svg" alt="Build Status" /></a>
+<img src="https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg" alt="Apache 2.0/MIT Licensed" />
+<img src="https://img.shields.io/badge/rustc-1.85+-blue.svg" alt="MSRV" />
+<a href="https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils"><img src="https://img.shields.io/badge/zulip-join_chat-blue.svg" alt="Project Chat" /></a></p>
+<p>Conditional move CPU intrinsics which are guaranteed on major platforms to execute in constant-time
+and not be rewritten as branches by the compiler.</p>
+<p>Provides wrappers for the <a href="https://www.jaist.ac.jp/iscenter-new/mpc/altix/altixdata/opt/intel/vtune/doc/users_guide/mergedProjects/analyzer_ec/mergedProjects/reference_olh/mergedProjects/instructions/instruct32_hh/vc35.htm">CMOV family</a> of instructions on <code>x86</code>/<code>x86_64</code> and the <a href="https://developer.arm.com/documentation/dui0802/b/CSEL">CSEL</a>
+instruction on <code>aarch64</code> CPUs, along with a portable fallback implementation for other CPU
+architectures.</p>
+<h3 id="about"><a class="doc-anchor" href="#about">§</a>About</h3>
+<p>Conditional move intrinsics provide <a href="https://en.wikipedia.org/wiki/Predication_(computer_architecture)">predication</a> which allows selection
+of one or more values without using branch instructions, thus making the
+selection constant-time with respect to the values, and not subject to CPU
+execution features which might introduce timing or other microarchitectural
+sidechannels introduced by branch prediction or other speculative execution
+features.</p>
+<p>This crate provides wrappers for the CMOV/CSEL instructions implemented using
+inline <code>asm!</code>, which means the implementation is a black box that will not be
+rewritten by e.g. LLVM’s architecture-specific lowerings, such as the
+<a href="https://dsprenkels.com/cmov-conversion.html">x86-cmov-conversion</a> pass.</p>
+<p>This is a <em>low level crate</em> who’s API is designed to make it easy to build
+portable abstractions across various CPU architectures and is not intended for
+general purpose use.</p>
+<p>See the <a href="https://docs.rs/ctutils"><code>ctutils</code></a> crate for a higher-level API build on top of <code>cmov</code>.</p>
+<h3 id="supported-target-architectures"><a class="doc-anchor" href="#supported-target-architectures">§</a>Supported target architectures</h3>
+<p>This crate provides guaranteed constant-time operation using inline <code>asm!</code>
+on the following CPU architectures:</p>
+<ul>
+<li><input disabled="" type="checkbox" checked=""/>
+<code>x86</code>/<code>x86_64</code> (<code>CMOVZ</code>, <code>CMOVNZ</code>)</li>
+<li><input disabled="" type="checkbox" checked=""/>
+<code>arm</code> (mask generation only)</li>
+<li><input disabled="" type="checkbox" checked=""/>
+<code>aarch64</code> (<code>CSEL</code>)</li>
+<li><input disabled="" type="checkbox" checked=""/>
+<code>riscv32</code> (mask generation only)</li>
+<li><input disabled="" type="checkbox" checked=""/>
+<code>riscv64</code> (mask generation only)</li>
+</ul>
+<p>On other target architectures, a “best effort” portable fallback implementation
+based on bitwise arithmetic is used instead, augmented with tactical usage of
+<code>core::hint::black_box</code> based on past analysis of the generated assembly.
+However, we cannot guarantee that this implementation generates branch-free
+code, especially on hypothetical future rustc versions which introduce new
+optimizations.</p>
+<p>Please <a href="https://github.com/RustCrypto/utils/issues">open an issue</a> if you notice non-constant-time CPU instructions
+(e.g. branches, secret-dependent address calculations) being generated and we
+will treat it as a security issue and do our best to find a solution.</p>
+<p>You can also open an issue to request first-class support for native
+predication instructions on other architectures we don’t currently support.</p>
+<h4 id="x86--x86_64-notes"><a class="doc-anchor" href="#x86--x86_64-notes">§</a><code>x86</code> / <code>x86_64</code> notes</h4>
+<p>Intel has confirmed that all extant CPUs implement the CMOV family of
+instructions in constant-time, and that this property will hold for future
+Intel CPUs as well.</p>
+<h3 id="-security-warning"><a class="doc-anchor" href="#-security-warning">§</a>⚠️ Security Warning</h3>
+<p>The implementation contained in this crate has never been independently audited!
+USE AT YOUR OWN RISK!</p>
+<p>Below are security issues this crate has experienced in the past:</p>
+<ul>
+<li><a href="https://rustsec.org/advisories/RUSTSEC-2026-0003.html">RUSTSEC-2026-0003</a>: Non-constant-time code generation on ARM32 targets</li>
+<li><a href="https://github.com/RustCrypto/utils/security/advisories/GHSA-3rjw-m598-pq24">GHSA-3rjw-m598-pq24</a>: <code>Cmov</code>/<code>CmovEq</code> on ARM64 can produce wrong results if high-bits of registers are set</li>
+</ul>
+<h3 id="minimum-supported-rust-version-msrv-policy"><a class="doc-anchor" href="#minimum-supported-rust-version-msrv-policy">§</a>Minimum Supported Rust Version (MSRV) Policy</h3>
+<p>MSRV increases are not considered breaking changes and can happen in patch
+releases.</p>
+<p>The crate MSRV accounts for all supported targets and crate feature
+combinations, excluding explicitly unstable features.</p>
+<h3 id="license"><a class="doc-anchor" href="#license">§</a>License</h3>
+<p>Licensed under either of:</p>
+<ul>
+<li><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></li>
+<li><a href="http://opensource.org/licenses/MIT">MIT license</a></li>
+</ul>
+<p>at your option.</p>
+<h4 id="contribution"><a class="doc-anchor" href="#contribution">§</a>Contribution</h4>
+<p>Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.</p>
+</div></details><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Cmov.html" title="trait cmov::Cmov">Cmov</a></dt><dd>Conditional move</dd><dt><a class="trait" href="trait.CmovEq.html" title="trait cmov::CmovEq">CmovEq</a></dt><dd>Conditional move with equality comparison</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.Condition.html" title="type cmov::Condition">Condition</a></dt><dd>Condition: the argument given to <a href="trait.Cmov.html" title="trait cmov::Cmov"><code>Cmov</code></a> and <a href="trait.CmovEq.html" title="trait cmov::CmovEq"><code>CmovEq</code></a> representing an effective boolean
+condition by virtue of being zero or non-zero.</dd></dl></section></div></main></body></html>

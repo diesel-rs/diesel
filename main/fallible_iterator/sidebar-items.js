@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["convert"],"struct":["Chain","Cloned","Convert","Cycle","Enumerate","Filter","FilterMap","FlatMap","Flatten","Fuse","Inspect","Iterator","Map","MapErr","Peekable","Rev","Scan","Skip","SkipWhile","StepBy","Take","TakeWhile","Zip"],"trait":["DoubleEndedFallibleIterator","FallibleIterator","FromFallibleIterator","IntoFallibleIterator"]};

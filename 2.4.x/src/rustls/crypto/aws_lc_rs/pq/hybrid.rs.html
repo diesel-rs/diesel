@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustls-0.23.46/src/crypto/aws_lc_rs/pq/hybrid.rs`."><title>hybrid.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../../../../" data-static-root-path="../../../../../static.files/" data-current-crate="rustls" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../../../static.files/src-script-813739b1.js"></script><script defer src="../../../../../src-files.js"></script><script defer src="../../../../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../../../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">rustls/crypto/aws_lc_rs/pq/</div>hybrid.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">alloc::boxed::Box</a>;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">alloc::vec::Vec</a>;
+<a href=#3 id=3 data-nosnippet>3</a>
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span><a href="mod.rs.html#57"><span class="kw">super</span>::INVALID_KEY_SHARE</a>;
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::crypto::{<a href="../../mod.rs.html#433-598">ActiveKeyExchange</a>, <a href="../../mod.rs.html#601-610">CompletedKeyExchange</a>, <a href="../../mod.rs.html#613-616">SharedSecret</a>, <a href="../../mod.rs.html#367-430">SupportedKxGroup</a>};
+<a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span><a href="../../../msgs/ffdhe_groups.rs.html#8-11"><span class="kw">crate</span>::ffdhe_groups::FfdheGroup</a>;
+<a href=#7 id=7 data-nosnippet>7</a><span class="kw">use crate</span>::{<a href="../../../error.rs.html#18-116">Error</a>, <a href="../../../msgs/enums.rs.html#237-259">NamedGroup</a>, <a href="../../../enums.rs.html#93-109">ProtocolVersion</a>};
+<a href=#8 id=8 data-nosnippet>8</a>
+<a href=#9 id=9 data-nosnippet>9</a><span class="doccomment">/// A generalization of hybrid key exchange.
+<a href=#10 id=10 data-nosnippet>10</a></span><span class="expansion"><input id=expand-10 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Hybrid {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field4_finish(f,
+            <span class="string">"Hybrid classical post_quantum name layout"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.classical,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.post_quantum, <span class="kw-2">&amp;</span><span class="self">self</span>.name, &amp;&amp;<span class="self">self</span>.layout)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#11 id=11 data-nosnippet>11</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Hybrid {
+<a href=#12 id=12 data-nosnippet>12</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) classical: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">dyn </span><a href="../../mod.rs.html#367-430">SupportedKxGroup</a>,
+<a href=#13 id=13 data-nosnippet>13</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) post_quantum: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">dyn </span><a href="../../mod.rs.html#367-430">SupportedKxGroup</a>,
+<a href=#14 id=14 data-nosnippet>14</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) name: <a href="../../../msgs/enums.rs.html#237-259">NamedGroup</a>,
+<a href=#15 id=15 data-nosnippet>15</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) layout: <a href="#151-166">Layout</a>,
+<a href=#16 id=16 data-nosnippet>16</a>}
+<a href=#17 id=17 data-nosnippet>17</a>
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">impl </span><a href="../../mod.rs.html#367-430">SupportedKxGroup</a> <span class="kw">for </span><a href="#11-16">Hybrid</a> {
+<a href=#19 id=19 data-nosnippet>19</a>    <span class="kw">fn </span>start(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="kw">dyn </span><a href="../../mod.rs.html#433-598">ActiveKeyExchange</a>&gt;, <a href="../../../error.rs.html#18-116">Error</a>&gt; {
+<a href=#20 id=20 data-nosnippet>20</a>        <span class="kw">let </span>classical = <span class="self">self</span>.classical.start()<span class="question-mark">?</span>;
+<a href=#21 id=21 data-nosnippet>21</a>        <span class="kw">let </span>post_quantum = <span class="self">self</span>.post_quantum.start()<span class="question-mark">?</span>;
+<a href=#22 id=22 data-nosnippet>22</a>
+<a href=#23 id=23 data-nosnippet>23</a>        <span class="kw">let </span>combined_pub_key = <a class="self" href="#19">self</a>
+<a href=#24 id=24 data-nosnippet>24</a>            .layout
+<a href=#25 id=25 data-nosnippet>25</a>            .<a href="#199-204">concat</a>(<a href="#21">post_quantum</a>.<a href="../../mod.rs.html#579">pub_key</a>(), <a href="#20">classical</a>.<a href="../../mod.rs.html#579">pub_key</a>());
+<a href=#26 id=26 data-nosnippet>26</a>
+<a href=#27 id=27 data-nosnippet>27</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>::<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html#method.new">new</a>(<a href="#97-103">ActiveHybrid</a> {
+<a href=#28 id=28 data-nosnippet>28</a>            <a href="#20">classical</a>,
+<a href=#29 id=29 data-nosnippet>29</a>            <a href="#21">post_quantum</a>,
+<a href=#30 id=30 data-nosnippet>30</a>            name: <a class="self" href="#19">self</a>.name,
+<a href=#31 id=31 data-nosnippet>31</a>            layout: <a class="self" href="#19">self</a>.layout,
+<a href=#32 id=32 data-nosnippet>32</a>            <a href="#23">combined_pub_key</a>,
+<a href=#33 id=33 data-nosnippet>33</a>        }))
+<a href=#34 id=34 data-nosnippet>34</a>    }
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a>    <span class="kw">fn </span>start_and_complete(<span class="kw-2">&amp;</span><span class="self">self</span>, client_share: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../../mod.rs.html#601-610">CompletedKeyExchange</a>, <a href="../../../error.rs.html#18-116">Error</a>&gt; {
+<a href=#37 id=37 data-nosnippet>37</a>        <span class="kw">let </span>(post_quantum_share, classical_share) = <span class="self">self
+<a href=#38 id=38 data-nosnippet>38</a>            </span>.layout
+<a href=#39 id=39 data-nosnippet>39</a>            .split_received_client_share(client_share)
+<a href=#40 id=40 data-nosnippet>40</a>            .ok_or(INVALID_KEY_SHARE)<span class="question-mark">?</span>;
+<a href=#41 id=41 data-nosnippet>41</a>
+<a href=#42 id=42 data-nosnippet>42</a>        <span class="kw">let </span>cl = <span class="self">self
+<a href=#43 id=43 data-nosnippet>43</a>            </span>.classical
+<a href=#44 id=44 data-nosnippet>44</a>            .start_and_complete(classical_share)<span class="question-mark">?</span>;
+<a href=#45 id=45 data-nosnippet>45</a>        <span class="kw">let </span>pq = <span class="self">self
+<a href=#46 id=46 data-nosnippet>46</a>            </span>.post_quantum
+<a href=#47 id=47 data-nosnippet>47</a>            .start_and_complete(post_quantum_share)<span class="question-mark">?</span>;
+<a href=#48 id=48 data-nosnippet>48</a>
+<a href=#49 id=49 data-nosnippet>49</a>        <span class="kw">let </span>combined_pub_key = <a class="self" href="#36">self</a>
+<a href=#50 id=50 data-nosnippet>50</a>            .layout
+<a href=#51 id=51 data-nosnippet>51</a>            .<a href="#199-204">concat</a>(<span class="kw-2">&amp;</span><a href="#45">pq</a>.pub_key, <span class="kw-2">&amp;</span><a href="#42">cl</a>.pub_key);
+<a href=#52 id=52 data-nosnippet>52</a>        <span class="kw">let </span>secret = <a class="self" href="#36">self</a>
+<a href=#53 id=53 data-nosnippet>53</a>            .layout
+<a href=#54 id=54 data-nosnippet>54</a>            .<a href="#199-204">concat</a>(<a href="#45">pq</a>.secret.<a href="../../mod.rs.html#620-622">secret_bytes</a>(), <a href="#42">cl</a>.secret.<a href="../../mod.rs.html#620-622">secret_bytes</a>());
+<a href=#55 id=55 data-nosnippet>55</a>
+<a href=#56 id=56 data-nosnippet>56</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../../mod.rs.html#601-610">CompletedKeyExchange</a> {
+<a href=#57 id=57 data-nosnippet>57</a>            group: <a class="self" href="#36">self</a>.name,
+<a href=#58 id=58 data-nosnippet>58</a>            pub_key: <a href="#49">combined_pub_key</a>,
+<a href=#59 id=59 data-nosnippet>59</a>            secret: <a href="../../mod.rs.html#613-616">SharedSecret</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#52">secret</a>),
+<a href=#60 id=60 data-nosnippet>60</a>        })
+<a href=#61 id=61 data-nosnippet>61</a>    }
+<a href=#62 id=62 data-nosnippet>62</a>
+<a href=#63 id=63 data-nosnippet>63</a>    <span class="kw">fn </span>ffdhe_group(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../../../msgs/ffdhe_groups.rs.html#8-11">FfdheGroup</a>&lt;<span class="lifetime">'static</span>&gt;&gt; {
+<a href=#64 id=64 data-nosnippet>64</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#65 id=65 data-nosnippet>65</a>    }
+<a href=#66 id=66 data-nosnippet>66</a>
+<a href=#67 id=67 data-nosnippet>67</a>    <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="../../../msgs/enums.rs.html#237-259">NamedGroup</a> {
+<a href=#68 id=68 data-nosnippet>68</a>        <a class="self" href="#67">self</a>.name
+<a href=#69 id=69 data-nosnippet>69</a>    }
+<a href=#70 id=70 data-nosnippet>70</a>
+<a href=#71 id=71 data-nosnippet>71</a>    <span class="kw">fn </span>fips(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#72 id=72 data-nosnippet>72</a>        <span class="comment">// Behold! The Night Mare: SP800-56C rev 2:
+<a href=#73 id=73 data-nosnippet>73</a>        //
+<a href=#74 id=74 data-nosnippet>74</a>        // "In addition to the currently approved techniques for the generation of the
+<a href=#75 id=75 data-nosnippet>75</a>        // shared secret Z as specified in SP 800-56A and SP 800-56B, this Recommendation
+<a href=#76 id=76 data-nosnippet>76</a>        // permits the use of a "hybrid" shared secret of the form Z′ = Z || T, a
+<a href=#77 id=77 data-nosnippet>77</a>        // concatenation consisting of a "standard" shared secret Z that was generated
+<a href=#78 id=78 data-nosnippet>78</a>        // during the execution of a key-establishment scheme (as currently specified in
+<a href=#79 id=79 data-nosnippet>79</a>        // [SP 800-56A] or [SP 800-56B])"
+<a href=#80 id=80 data-nosnippet>80</a>        //
+<a href=#81 id=81 data-nosnippet>81</a>        // NIST plan to adjust this and allow both orders: see
+<a href=#82 id=82 data-nosnippet>82</a>        // &lt;https://csrc.nist.gov/pubs/sp/800/227/ipd&gt; (Jan 2025) lines 1070-1080.
+<a href=#83 id=83 data-nosnippet>83</a>        //
+<a href=#84 id=84 data-nosnippet>84</a>        // But, for now, we follow the SP800-56C logic: the element appearing first is the
+<a href=#85 id=85 data-nosnippet>85</a>        // one that controls approval.
+<a href=#86 id=86 data-nosnippet>86</a>        </span><span class="kw">match </span><a class="self" href="#71">self</a>.layout.post_quantum_first {
+<a href=#87 id=87 data-nosnippet>87</a>            <span class="bool-val">true </span>=&gt; <a class="self" href="#71">self</a>.post_quantum.<a href="../../mod.rs.html#420-422">fips</a>(),
+<a href=#88 id=88 data-nosnippet>88</a>            <span class="bool-val">false </span>=&gt; <a class="self" href="#71">self</a>.classical.<a href="../../mod.rs.html#420-422">fips</a>(),
+<a href=#89 id=89 data-nosnippet>89</a>        }
+<a href=#90 id=90 data-nosnippet>90</a>    }
+<a href=#91 id=91 data-nosnippet>91</a>
+<a href=#92 id=92 data-nosnippet>92</a>    <span class="kw">fn </span>usable_for_version(<span class="kw-2">&amp;</span><span class="self">self</span>, version: <a href="../../../enums.rs.html#93-109">ProtocolVersion</a>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#93 id=93 data-nosnippet>93</a>        <a href="#92">version</a> == ProtocolVersion::<a href="../../../enums.rs.html#93-109">TLSv1_3</a>
+<a href=#94 id=94 data-nosnippet>94</a>    }
+<a href=#95 id=95 data-nosnippet>95</a>}
+<a href=#96 id=96 data-nosnippet>96</a>
+<a href=#97 id=97 data-nosnippet>97</a><span class="kw">struct </span>ActiveHybrid {
+<a href=#98 id=98 data-nosnippet>98</a>    classical: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="kw">dyn </span><a href="../../mod.rs.html#433-598">ActiveKeyExchange</a>&gt;,
+<a href=#99 id=99 data-nosnippet>99</a>    post_quantum: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="kw">dyn </span><a href="../../mod.rs.html#433-598">ActiveKeyExchange</a>&gt;,
+<a href=#100 id=100 data-nosnippet>100</a>    name: <a href="../../../msgs/enums.rs.html#237-259">NamedGroup</a>,
+<a href=#101 id=101 data-nosnippet>101</a>    layout: <a href="#151-166">Layout</a>,
+<a href=#102 id=102 data-nosnippet>102</a>    combined_pub_key: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;,
+<a href=#103 id=103 data-nosnippet>103</a>}
+<a href=#104 id=104 data-nosnippet>104</a>
+<a href=#105 id=105 data-nosnippet>105</a><span class="kw">impl </span><a href="../../mod.rs.html#433-598">ActiveKeyExchange</a> <span class="kw">for </span><a href="#97-103">ActiveHybrid</a> {
+<a href=#106 id=106 data-nosnippet>106</a>    <span class="kw">fn </span>complete(<span class="self">self</span>: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="self">Self</span>&gt;, peer_pub_key: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../../mod.rs.html#613-616">SharedSecret</a>, <a href="../../../error.rs.html#18-116">Error</a>&gt; {
+<a href=#107 id=107 data-nosnippet>107</a>        <span class="kw">let </span>(post_quantum_share, classical_share) = <span class="self">self
+<a href=#108 id=108 data-nosnippet>108</a>            </span>.layout
+<a href=#109 id=109 data-nosnippet>109</a>            .split_received_server_share(peer_pub_key)
+<a href=#110 id=110 data-nosnippet>110</a>            .ok_or(INVALID_KEY_SHARE)<span class="question-mark">?</span>;
+<a href=#111 id=111 data-nosnippet>111</a>
+<a href=#112 id=112 data-nosnippet>112</a>        <span class="kw">let </span>cl = <span class="self">self
+<a href=#113 id=113 data-nosnippet>113</a>            </span>.classical
+<a href=#114 id=114 data-nosnippet>114</a>            .complete(classical_share)<span class="question-mark">?</span>;
+<a href=#115 id=115 data-nosnippet>115</a>        <span class="kw">let </span>pq = <span class="self">self
+<a href=#116 id=116 data-nosnippet>116</a>            </span>.post_quantum
+<a href=#117 id=117 data-nosnippet>117</a>            .complete(post_quantum_share)<span class="question-mark">?</span>;
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a>        <span class="kw">let </span>secret = <a class="self" href="#106">self</a>
+<a href=#120 id=120 data-nosnippet>120</a>            .layout
+<a href=#121 id=121 data-nosnippet>121</a>            .<a href="#199-204">concat</a>(<a href="#115">pq</a>.<a href="../../mod.rs.html#620-622">secret_bytes</a>(), <a href="#112">cl</a>.<a href="../../mod.rs.html#620-622">secret_bytes</a>());
+<a href=#122 id=122 data-nosnippet>122</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(<a href="../../mod.rs.html#613-616">SharedSecret</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>(<a href="#119">secret</a>))
+<a href=#123 id=123 data-nosnippet>123</a>    }
+<a href=#124 id=124 data-nosnippet>124</a>
+<a href=#125 id=125 data-nosnippet>125</a>    <span class="doccomment">/// Allow the classical computation to be offered and selected separately.
+<a href=#126 id=126 data-nosnippet>126</a>    </span><span class="kw">fn </span>hybrid_component(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;(<a href="../../../msgs/enums.rs.html#237-259">NamedGroup</a>, <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>])&gt; {
+<a href=#127 id=127 data-nosnippet>127</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>((<a class="self" href="#126">self</a>.classical.<a href="../../mod.rs.html#597">group</a>(), <a class="self" href="#126">self</a>.classical.<a href="../../mod.rs.html#579">pub_key</a>()))
+<a href=#128 id=128 data-nosnippet>128</a>    }
+<a href=#129 id=129 data-nosnippet>129</a>
+<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">fn </span>complete_hybrid_component(
+<a href=#131 id=131 data-nosnippet>131</a>        <span class="self">self</span>: <a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="self">Self</span>&gt;,
+<a href=#132 id=132 data-nosnippet>132</a>        peer_pub_key: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#133 id=133 data-nosnippet>133</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html">Result</a>&lt;<a href="../../mod.rs.html#613-616">SharedSecret</a>, <a href="../../../error.rs.html#18-116">Error</a>&gt; {
+<a href=#134 id=134 data-nosnippet>134</a>        <a class="self" href="#131">self</a>.classical.<a href="../../mod.rs.html#448">complete</a>(<a href="#132">peer_pub_key</a>)
+<a href=#135 id=135 data-nosnippet>135</a>    }
+<a href=#136 id=136 data-nosnippet>136</a>
+<a href=#137 id=137 data-nosnippet>137</a>    <span class="kw">fn </span>pub_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>] {
+<a href=#138 id=138 data-nosnippet>138</a>        <span class="kw-2">&amp;</span><a class="self" href="#137">self</a>.combined_pub_key
+<a href=#139 id=139 data-nosnippet>139</a>    }
+<a href=#140 id=140 data-nosnippet>140</a>
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="kw">fn </span>ffdhe_group(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="../../../msgs/ffdhe_groups.rs.html#8-11">FfdheGroup</a>&lt;<span class="lifetime">'static</span>&gt;&gt; {
+<a href=#142 id=142 data-nosnippet>142</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>
+<a href=#143 id=143 data-nosnippet>143</a>    }
+<a href=#144 id=144 data-nosnippet>144</a>
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="kw">fn </span>group(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="../../../msgs/enums.rs.html#237-259">NamedGroup</a> {
+<a href=#146 id=146 data-nosnippet>146</a>        <a class="self" href="#145">self</a>.name
+<a href=#147 id=147 data-nosnippet>147</a>    }
+<a href=#148 id=148 data-nosnippet>148</a>}
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a><span class="expansion"><input id=expand-150 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]#[doc(hidden)]</span><span class="kw">unsafe impl </span>::core::clone::TrivialClone
+    <span class="kw">for </span>Layout {
+}
+<span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::clone::Clone <span class="kw">for </span>Layout {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;usize&gt;;
+        <span class="kw">let _</span>: ::core::clone::AssertParamIsClone&lt;bool&gt;;
+        <span class="kw-2">*</span><span class="self">self
+    </span>}
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/clone/derive.Clone.html">Clone</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::marker::Copy <span class="kw">for </span>Layout { }</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/marker/derive.Copy.html">Copy</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Layout {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field4_finish(f,
+            <span class="string">"Layout classical_share_len post_quantum_client_share_len post_quantum_server_share_len post_quantum_first"</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.classical_share_len, <span class="kw-2">&amp;</span><span class="self">self</span>.post_quantum_client_share_len,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.post_quantum_server_share_len, &amp;&amp;<span class="self">self</span>.post_quantum_first)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#151 id=151 data-nosnippet>151</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Layout {
+<a href=#152 id=152 data-nosnippet>152</a>    <span class="doccomment">/// Length of classical key share.
+<a href=#153 id=153 data-nosnippet>153</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) classical_share_len: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#154 id=154 data-nosnippet>154</a>
+<a href=#155 id=155 data-nosnippet>155</a>    <span class="doccomment">/// Length of post-quantum key share sent by client
+<a href=#156 id=156 data-nosnippet>156</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) post_quantum_client_share_len: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#157 id=157 data-nosnippet>157</a>
+<a href=#158 id=158 data-nosnippet>158</a>    <span class="doccomment">/// Length of post-quantum key share sent by server
+<a href=#159 id=159 data-nosnippet>159</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) post_quantum_server_share_len: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#160 id=160 data-nosnippet>160</a>
+<a href=#161 id=161 data-nosnippet>161</a>    <span class="doccomment">/// Whether the post-quantum element comes first in shares and secrets.
+<a href=#162 id=162 data-nosnippet>162</a>    ///
+<a href=#163 id=163 data-nosnippet>163</a>    /// For dismal and unprincipled reasons, SECP256R1MLKEM768 has the
+<a href=#164 id=164 data-nosnippet>164</a>    /// classical element first, while X25519MLKEM768 has it second.
+<a href=#165 id=165 data-nosnippet>165</a>    </span><span class="kw">pub</span>(<span class="kw">crate</span>) post_quantum_first: <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>,
+<a href=#166 id=166 data-nosnippet>166</a>}
+<a href=#167 id=167 data-nosnippet>167</a>
+<a href=#168 id=168 data-nosnippet>168</a><span class="kw">impl </span><a href="#151-166">Layout</a> {
+<a href=#169 id=169 data-nosnippet>169</a>    <span class="kw">fn </span>split_received_client_share&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, share: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>], <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>])&gt; {
+<a href=#170 id=170 data-nosnippet>170</a>        <a class="self" href="#169">self</a>.<a href="#178-197">split</a>(<a href="#169">share</a>, <a class="self" href="#169">self</a>.post_quantum_client_share_len)
+<a href=#171 id=171 data-nosnippet>171</a>    }
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a>    <span class="kw">fn </span>split_received_server_share&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, share: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>], <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>])&gt; {
+<a href=#174 id=174 data-nosnippet>174</a>        <a class="self" href="#173">self</a>.<a href="#178-197">split</a>(<a href="#173">share</a>, <a class="self" href="#173">self</a>.post_quantum_server_share_len)
+<a href=#175 id=175 data-nosnippet>175</a>    }
+<a href=#176 id=176 data-nosnippet>176</a>
+<a href=#177 id=177 data-nosnippet>177</a>    <span class="doccomment">/// Return the PQ and classical component of a key share.
+<a href=#178 id=178 data-nosnippet>178</a>    </span><span class="kw">fn </span>split&lt;<span class="lifetime">'a</span>&gt;(
+<a href=#179 id=179 data-nosnippet>179</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#180 id=180 data-nosnippet>180</a>        share: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>],
+<a href=#181 id=181 data-nosnippet>181</a>        post_quantum_share_len: <a href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
+<a href=#182 id=182 data-nosnippet>182</a>    ) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>], <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>])&gt; {
+<a href=#183 id=183 data-nosnippet>183</a>        <span class="kw">if </span><a href="#180">share</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.len">len</a>() != <a class="self" href="#179">self</a>.classical_share_len + <a href="#181">post_quantum_share_len</a> {
+<a href=#184 id=184 data-nosnippet>184</a>            <span class="kw">return </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a>;
+<a href=#185 id=185 data-nosnippet>185</a>        }
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw">match </span><a class="self" href="#179">self</a>.post_quantum_first {
+<a href=#188 id=188 data-nosnippet>188</a>            <span class="bool-val">true </span>=&gt; {
+<a href=#189 id=189 data-nosnippet>189</a>                <span class="kw">let </span>(first_share, second_share) = <a href="#180">share</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.split_at">split_at</a>(<a href="#181">post_quantum_share_len</a>);
+<a href=#190 id=190 data-nosnippet>190</a>                (<a href="#189">first_share</a>, <a href="#189">second_share</a>)
+<a href=#191 id=191 data-nosnippet>191</a>            }
+<a href=#192 id=192 data-nosnippet>192</a>            <span class="bool-val">false </span>=&gt; {
+<a href=#193 id=193 data-nosnippet>193</a>                <span class="kw">let </span>(first_share, second_share) = <a href="#180">share</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.split_at">split_at</a>(<a class="self" href="#179">self</a>.classical_share_len);
+<a href=#194 id=194 data-nosnippet>194</a>                (<a href="#193">second_share</a>, <a href="#193">first_share</a>)
+<a href=#195 id=195 data-nosnippet>195</a>            }
+<a href=#196 id=196 data-nosnippet>196</a>        })
+<a href=#197 id=197 data-nosnippet>197</a>    }
+<a href=#198 id=198 data-nosnippet>198</a>
+<a href=#199 id=199 data-nosnippet>199</a>    <span class="kw">fn </span>concat(<span class="kw-2">&amp;</span><span class="self">self</span>, post_quantum: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>], classical: <span class="kw-2">&amp;</span>[<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt; {
+<a href=#200 id=200 data-nosnippet>200</a>        <span class="kw">match </span><a class="self" href="#199">self</a>.post_quantum_first {
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="bool-val">true </span>=&gt; [<a href="#199">post_quantum</a>, <a href="#199">classical</a>].<a href="https://doc.rust-lang.org/nightly/std/primitive.slice.html#method.concat">concat</a>(),
+<a href=#202 id=202 data-nosnippet>202</a>            <span class="bool-val">false </span>=&gt; [<a href="#199">classical</a>, <a href="#199">post_quantum</a>].<a href="https://doc.rust-lang.org/nightly/std/primitive.slice.html#method.concat">concat</a>(),
+<a href=#203 id=203 data-nosnippet>203</a>        }
+<a href=#204 id=204 data-nosnippet>204</a>    }
+<a href=#205 id=205 data-nosnippet>205</a>}
+</code></pre></div></section></main></body></html>

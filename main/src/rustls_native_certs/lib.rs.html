@@ -1,0 +1,674 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustls-native-certs-0.8.5/src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="rustls_native_certs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">rustls_native_certs/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! rustls-native-certs allows rustls to use the platform's native certificate
+<a href=#2 id=2 data-nosnippet>2</a>//! store when operating as a TLS client.
+<a href=#3 id=3 data-nosnippet>3</a>//!
+<a href=#4 id=4 data-nosnippet>4</a>//! It provides a single function [`load_native_certs()`], which returns a
+<a href=#5 id=5 data-nosnippet>5</a>//! collection of certificates found by reading the platform-native
+<a href=#6 id=6 data-nosnippet>6</a>//! certificate store.
+<a href=#7 id=7 data-nosnippet>7</a>//!
+<a href=#8 id=8 data-nosnippet>8</a>//! If the SSL_CERT_FILE environment variable is set, certificates (in PEM
+<a href=#9 id=9 data-nosnippet>9</a>//! format) are read from that file instead.
+<a href=#10 id=10 data-nosnippet>10</a>//!
+<a href=#11 id=11 data-nosnippet>11</a>//! If you want to load these certificates into a `rustls::RootCertStore`,
+<a href=#12 id=12 data-nosnippet>12</a>//! you'll likely want to do something like this:
+<a href=#13 id=13 data-nosnippet>13</a>//!
+<a href=#14 id=14 data-nosnippet>14</a>//! ```no_run
+<a href=#15 id=15 data-nosnippet>15</a>//! let mut roots = rustls::RootCertStore::empty();
+<a href=#16 id=16 data-nosnippet>16</a>//! for cert in rustls_native_certs::load_native_certs().expect("could not load platform certs") {
+<a href=#17 id=17 data-nosnippet>17</a>//!     roots.add(cert).unwrap();
+<a href=#18 id=18 data-nosnippet>18</a>//! }
+<a href=#19 id=19 data-nosnippet>19</a>//! ```
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a></span><span class="comment">// Enable documentation for all features on docs.rs
+<a href=#22 id=22 data-nosnippet>22</a></span><span class="attr">#![cfg_attr(rustls_native_certs_docsrs, feature(doc_cfg))]
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a></span><span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/core/error/trait.Error.html">std::error::Error</a> <span class="kw">as </span>StdError;
+<a href=#25 id=25 data-nosnippet>25</a><span class="kw">use </span>std::path::{<a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>, <a href="https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html">PathBuf</a>};
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">use </span>std::{<a href="https://doc.rust-lang.org/nightly/core/macro.env.html">env</a>, <a href="https://doc.rust-lang.org/nightly/alloc/fmt/index.html">fmt</a>, <a href="https://doc.rust-lang.org/nightly/std/fs/index.html">fs</a>, <a href="https://doc.rust-lang.org/nightly/std/io/index.html">io</a>};
+<a href=#27 id=27 data-nosnippet>27</a>
+<a href=#28 id=28 data-nosnippet>28</a><span class="kw">use </span>pki_types::pem::{<a class="self" href="../../rustls_pki_types/pem/index.html">self</a>, <a href="../../rustls_pki_types/pem/trait.PemObject.html">PemObject</a>};
+<a href=#29 id=29 data-nosnippet>29</a><span class="kw">use </span><a href="../../rustls_pki_types/struct.CertificateDer.html">pki_types::CertificateDer</a>;
+<a href=#30 id=30 data-nosnippet>30</a>
+<a href=#31 id=31 data-nosnippet>31</a><span class="attr">#[cfg(all(unix, not(target_os = <span class="string">"macos"</span>)))]
+<a href=#32 id=32 data-nosnippet>32</a></span><span class="kw">mod </span><a href="unix.rs.html#1-10">unix</a>;
+<a href=#33 id=33 data-nosnippet>33</a><span class="attr">#[cfg(all(unix, not(target_os = <span class="string">"macos"</span>)))]
+<a href=#34 id=34 data-nosnippet>34</a></span><span class="kw">use </span><a href="#32">unix</a> <span class="kw">as </span>platform;
+<a href=#35 id=35 data-nosnippet>35</a>
+<a href=#36 id=36 data-nosnippet>36</a><span class="attr">#[cfg(windows)]
+<a href=#37 id=37 data-nosnippet>37</a></span><span class="kw">mod </span>windows;
+<a href=#38 id=38 data-nosnippet>38</a><span class="attr">#[cfg(windows)]
+<a href=#39 id=39 data-nosnippet>39</a></span><span class="kw">use </span>windows <span class="kw">as </span>platform;
+<a href=#40 id=40 data-nosnippet>40</a>
+<a href=#41 id=41 data-nosnippet>41</a><span class="attr">#[cfg(target_os = <span class="string">"macos"</span>)]
+<a href=#42 id=42 data-nosnippet>42</a></span><span class="kw">mod </span>macos;
+<a href=#43 id=43 data-nosnippet>43</a><span class="attr">#[cfg(target_os = <span class="string">"macos"</span>)]
+<a href=#44 id=44 data-nosnippet>44</a></span><span class="kw">use </span>macos <span class="kw">as </span>platform;
+<a href=#45 id=45 data-nosnippet>45</a>
+<a href=#46 id=46 data-nosnippet>46</a><span class="doccomment">/// Load root certificates found in the platform's native certificate store.
+<a href=#47 id=47 data-nosnippet>47</a>///
+<a href=#48 id=48 data-nosnippet>48</a>/// ## Environment Variables
+<a href=#49 id=49 data-nosnippet>49</a>///
+<a href=#50 id=50 data-nosnippet>50</a>/// | Env. Var.     | Description                                                                           |
+<a href=#51 id=51 data-nosnippet>51</a>/// |---------------|---------------------------------------------------------------------------------------|
+<a href=#52 id=52 data-nosnippet>52</a>/// | SSL_CERT_FILE | File containing an arbitrary number of certificates in PEM format.                    |
+<a href=#53 id=53 data-nosnippet>53</a>/// | SSL_CERT_DIR  | Colon separated list of directories containing certificate files.                     |
+<a href=#54 id=54 data-nosnippet>54</a>///
+<a href=#55 id=55 data-nosnippet>55</a>/// If **either** (or **both**) are set, certificates are only loaded from
+<a href=#56 id=56 data-nosnippet>56</a>/// the locations specified via environment variables and not the platform-
+<a href=#57 id=57 data-nosnippet>57</a>/// native certificate store.
+<a href=#58 id=58 data-nosnippet>58</a>///
+<a href=#59 id=59 data-nosnippet>59</a>/// ## Certificate Validity
+<a href=#60 id=60 data-nosnippet>60</a>///
+<a href=#61 id=61 data-nosnippet>61</a>/// All certificates are expected to be in PEM format. A file may contain
+<a href=#62 id=62 data-nosnippet>62</a>/// multiple certificates.
+<a href=#63 id=63 data-nosnippet>63</a>///
+<a href=#64 id=64 data-nosnippet>64</a>/// Example:
+<a href=#65 id=65 data-nosnippet>65</a>///
+<a href=#66 id=66 data-nosnippet>66</a>/// ```text
+<a href=#67 id=67 data-nosnippet>67</a>/// -----BEGIN CERTIFICATE-----
+<a href=#68 id=68 data-nosnippet>68</a>/// MIICGzCCAaGgAwIBAgIQQdKd0XLq7qeAwSxs6S+HUjAKBggqhkjOPQQDAzBPMQsw
+<a href=#69 id=69 data-nosnippet>69</a>/// CQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJuZXQgU2VjdXJpdHkgUmVzZWFyY2gg
+<a href=#70 id=70 data-nosnippet>70</a>/// R3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBYMjAeFw0yMDA5MDQwMDAwMDBaFw00
+<a href=#71 id=71 data-nosnippet>71</a>/// MDA5MTcxNjAwMDBaME8xCzAJBgNVBAYTAlVTMSkwJwYDVQQKEyBJbnRlcm5ldCBT
+<a href=#72 id=72 data-nosnippet>72</a>/// ZWN1cml0eSBSZXNlYXJjaCBHcm91cDEVMBMGA1UEAxMMSVNSRyBSb290IFgyMHYw
+<a href=#73 id=73 data-nosnippet>73</a>/// EAYHKoZIzj0CAQYFK4EEACIDYgAEzZvVn4CDCuwJSvMWSj5cz3es3mcFDR0HttwW
+<a href=#74 id=74 data-nosnippet>74</a>/// +1qLFNvicWDEukWVEYmO6gbf9yoWHKS5xcUy4APgHoIYOIvXRdgKam7mAHf7AlF9
+<a href=#75 id=75 data-nosnippet>75</a>/// ItgKbppbd9/w+kHsOdx1ymgHDB/qo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0T
+<a href=#76 id=76 data-nosnippet>76</a>/// AQH/BAUwAwEB/zAdBgNVHQ4EFgQUfEKWrt5LSDv6kviejM9ti6lyN5UwCgYIKoZI
+<a href=#77 id=77 data-nosnippet>77</a>/// zj0EAwMDaAAwZQIwe3lORlCEwkSHRhtFcP9Ymd70/aTSVaYgLXTWNLxBo1BfASdW
+<a href=#78 id=78 data-nosnippet>78</a>/// tL4ndQavEi51mI38AjEAi/V3bNTIZargCyzuFJ0nN6T5U6VR5CmD1/iQMVtCnwr1
+<a href=#79 id=79 data-nosnippet>79</a>/// /q4AaOeMSQ+2b1tbFfLn
+<a href=#80 id=80 data-nosnippet>80</a>/// -----END CERTIFICATE-----
+<a href=#81 id=81 data-nosnippet>81</a>/// -----BEGIN CERTIFICATE-----
+<a href=#82 id=82 data-nosnippet>82</a>/// MIIBtjCCAVugAwIBAgITBmyf1XSXNmY/Owua2eiedgPySjAKBggqhkjOPQQDAjA5
+<a href=#83 id=83 data-nosnippet>83</a>/// MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6b24g
+<a href=#84 id=84 data-nosnippet>84</a>/// Um9vdCBDQSAzMB4XDTE1MDUyNjAwMDAwMFoXDTQwMDUyNjAwMDAwMFowOTELMAkG
+<a href=#85 id=85 data-nosnippet>85</a>/// A1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJvb3Qg
+<a href=#86 id=86 data-nosnippet>86</a>/// Q0EgMzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCmXp8ZBf8ANm+gBG1bG8lKl
+<a href=#87 id=87 data-nosnippet>87</a>/// ui2yEujSLtf6ycXYqm0fc4E7O5hrOXwzpcVOho6AF2hiRVd9RFgdszflZwjrZt6j
+<a href=#88 id=88 data-nosnippet>88</a>/// QjBAMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMB0GA1UdDgQWBBSr
+<a href=#89 id=89 data-nosnippet>89</a>/// ttvXBp43rDCGB5Fwx5zEGbF4wDAKBggqhkjOPQQDAgNJADBGAiEA4IWSoxe3jfkr
+<a href=#90 id=90 data-nosnippet>90</a>/// BqWTrBqYaGFy+uGh0PsceGCmQ5nFuMQCIQCcAu/xlJyzlvnrxir4tiz+OpAUFteM
+<a href=#91 id=91 data-nosnippet>91</a>/// YyRIHN8wfdVoOw==
+<a href=#92 id=92 data-nosnippet>92</a>/// -----END CERTIFICATE-----
+<a href=#93 id=93 data-nosnippet>93</a>///
+<a href=#94 id=94 data-nosnippet>94</a>/// ```
+<a href=#95 id=95 data-nosnippet>95</a>///
+<a href=#96 id=96 data-nosnippet>96</a>/// For reasons of compatibility, an attempt is made to skip invalid sections
+<a href=#97 id=97 data-nosnippet>97</a>/// of a certificate file but this means it's also possible for a malformed
+<a href=#98 id=98 data-nosnippet>98</a>/// certificate to be skipped.
+<a href=#99 id=99 data-nosnippet>99</a>///
+<a href=#100 id=100 data-nosnippet>100</a>/// If a certificate isn't loaded, and no error is reported, check if:
+<a href=#101 id=101 data-nosnippet>101</a>///
+<a href=#102 id=102 data-nosnippet>102</a>/// 1. the certificate is in PEM format (see example above)
+<a href=#103 id=103 data-nosnippet>103</a>/// 2. *BEGIN CERTIFICATE* line starts with exactly five hyphens (`'-'`)
+<a href=#104 id=104 data-nosnippet>104</a>/// 3. *END CERTIFICATE* line ends with exactly five hyphens (`'-'`)
+<a href=#105 id=105 data-nosnippet>105</a>/// 4. there is a line break after the certificate.
+<a href=#106 id=106 data-nosnippet>106</a>///
+<a href=#107 id=107 data-nosnippet>107</a>/// ## Errors
+<a href=#108 id=108 data-nosnippet>108</a>///
+<a href=#109 id=109 data-nosnippet>109</a>/// This function fails in a platform-specific way, expressed in a `std::io::Error`.
+<a href=#110 id=110 data-nosnippet>110</a>///
+<a href=#111 id=111 data-nosnippet>111</a>/// ## Caveats
+<a href=#112 id=112 data-nosnippet>112</a>///
+<a href=#113 id=113 data-nosnippet>113</a>/// This function can be expensive: on some platforms it involves loading
+<a href=#114 id=114 data-nosnippet>114</a>/// and parsing a ~300KB disk file.  It's therefore prudent to call
+<a href=#115 id=115 data-nosnippet>115</a>/// this sparingly.
+<a href=#116 id=116 data-nosnippet>116</a>///
+<a href=#117 id=117 data-nosnippet>117</a>/// [c_rehash]: https://www.openssl.org/docs/manmaster/man1/c_rehash.html
+<a href=#118 id=118 data-nosnippet>118</a></span><span class="kw">pub fn </span><a href="../../rustls_native_certs/fn.load_native_certs.html">load_native_certs</a>() -&gt; <a href="#130-135">CertificateResult</a> {
+<a href=#119 id=119 data-nosnippet>119</a>    <span class="kw">let </span>paths = <a href="#192-195">CertPaths</a>::<a href="#198-212">from_env</a>();
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">match </span>(<span class="kw-2">&amp;</span><a href="#119">paths</a>.dirs, <span class="kw-2">&amp;</span><a href="#119">paths</a>.file) {
+<a href=#121 id=121 data-nosnippet>121</a>        (v, <span class="kw">_</span>) <span class="kw">if </span>!<a href="#121">v</a>.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.is_empty">is_empty</a>() =&gt; <a href="#119">paths</a>.<a href="#217-219">load</a>(),
+<a href=#122 id=122 data-nosnippet>122</a>        (<span class="kw">_</span>, <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw">_</span>)) =&gt; <a href="#119">paths</a>.<a href="#217-219">load</a>(),
+<a href=#123 id=123 data-nosnippet>123</a>        <span class="kw">_ </span>=&gt; platform::<a href="unix.rs.html#3-10">load_native_certs</a>(),
+<a href=#124 id=124 data-nosnippet>124</a>    }
+<a href=#125 id=125 data-nosnippet>125</a>}
+<a href=#126 id=126 data-nosnippet>126</a>
+<a href=#127 id=127 data-nosnippet>127</a><span class="doccomment">/// Results from trying to load certificates from the platform's native store.
+<a href=#128 id=128 data-nosnippet>128</a></span><span class="attr">#[non_exhaustive]
+<a href=#129 id=129 data-nosnippet>129</a></span><span class="expansion"><input id=expand-129 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>CertificateResult {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"CertificateResult certs errors"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.certs, &amp;&amp;<span class="self">self</span>.errors)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span>, <span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>CertificateResult {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        CertificateResult {
+            certs: ::core::default::Default::default(),
+            errors: ::core::default::Default::default(),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span></span></span><span class="attr">)]
+<a href=#130 id=130 data-nosnippet>130</a></span><span class="kw">pub struct </span><a href="../../rustls_native_certs/struct.CertificateResult.html">CertificateResult</a> {
+<a href=#131 id=131 data-nosnippet>131</a>    <span class="doccomment">/// Any certificates that were successfully loaded.
+<a href=#132 id=132 data-nosnippet>132</a>    </span><span class="kw">pub </span>certs: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'static</span>&gt;&gt;,
+<a href=#133 id=133 data-nosnippet>133</a>    <span class="doccomment">/// Any errors encountered while loading certificates.
+<a href=#134 id=134 data-nosnippet>134</a>    </span><span class="kw">pub </span>errors: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="#364-367">Error</a>&gt;,
+<a href=#135 id=135 data-nosnippet>135</a>}
+<a href=#136 id=136 data-nosnippet>136</a>
+<a href=#137 id=137 data-nosnippet>137</a><span class="kw">impl </span><a href="#130-135">CertificateResult</a> {
+<a href=#138 id=138 data-nosnippet>138</a>    <span class="doccomment">/// Return the found certificates if no error occurred, otherwise panic.
+<a href=#139 id=139 data-nosnippet>139</a>    </span><span class="attr">#[track_caller]
+<a href=#140 id=140 data-nosnippet>140</a>    </span><span class="kw">pub fn </span>expect(<span class="self">self</span>, msg: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'static</span>&gt;&gt; {
+<a href=#141 id=141 data-nosnippet>141</a>        <span class="kw">match </span><a class="self" href="#140">self</a>.errors.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.is_empty">is_empty</a>() {
+<a href=#142 id=142 data-nosnippet>142</a>            <span class="bool-val">true </span>=&gt; <a class="self" href="#140">self</a>.certs,
+<a href=#143 id=143 data-nosnippet>143</a><span class="expansion"><input id=expand-143 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="bool-val">false </span>=&gt; <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"{1}: {0:?}"</span>, <span class="self">self</span>.errors,
+            msg));
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/std/macro.panic.html">panic!</a>(<span class="string">"{msg}: {:?}"</span>, <span class="self">self</span>.errors)</span></span>,
+<a href=#144 id=144 data-nosnippet>144</a>        }
+<a href=#145 id=145 data-nosnippet>145</a>    }
+<a href=#146 id=146 data-nosnippet>146</a>
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="doccomment">/// Return the found certificates if no error occurred, otherwise panic.
+<a href=#148 id=148 data-nosnippet>148</a>    </span><span class="attr">#[track_caller]
+<a href=#149 id=149 data-nosnippet>149</a>    </span><span class="kw">pub fn </span>unwrap(<span class="self">self</span>) -&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>&lt;<span class="lifetime">'static</span>&gt;&gt; {
+<a href=#150 id=150 data-nosnippet>150</a>        <span class="kw">match </span><a class="self" href="#149">self</a>.errors.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.is_empty">is_empty</a>() {
+<a href=#151 id=151 data-nosnippet>151</a>            <span class="bool-val">true </span>=&gt; <a class="self" href="#149">self</a>.certs,
+<a href=#152 id=152 data-nosnippet>152</a><span class="expansion"><input id=expand-152 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">            <span class="bool-val">false </span>=&gt; <span class=expanded>{
+    ::core::panicking::panic_fmt(<span class="macro">format_args!</span>(<span class="string">"errors occurred while loading certificates: {0:?}"</span>,
+            <span class="self">self</span>.errors));
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/std/macro.panic.html">panic!</a>(
+<a href=#153 id=153 data-nosnippet>153</a>                <span class="string">"errors occurred while loading certificates: {:?}"</span>,
+<a href=#154 id=154 data-nosnippet>154</a>                <span class="self">self</span>.errors
+<a href=#155 id=155 data-nosnippet>155</a>            )</span></span>,
+<a href=#156 id=156 data-nosnippet>156</a>        }
+<a href=#157 id=157 data-nosnippet>157</a>    }
+<a href=#158 id=158 data-nosnippet>158</a>
+<a href=#159 id=159 data-nosnippet>159</a>    <span class="kw">fn </span>pem_error(<span class="kw-2">&amp;mut </span><span class="self">self</span>, err: pem::<a href="../../rustls_pki_types/pem/enum.Error.html">Error</a>, path: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>) {
+<a href=#160 id=160 data-nosnippet>160</a>        <a class="self" href="#159">self</a>.errors.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.push">push</a>(<a href="#364-367">Error</a> {
+<a href=#161 id=161 data-nosnippet>161</a>            context: <span class="string">"failed to read PEM from file"</span>,
+<a href=#162 id=162 data-nosnippet>162</a>            kind: <span class="kw">match </span><a href="#159">err</a> {
+<a href=#163 id=163 data-nosnippet>163</a>                pem::Error::<a href="../../rustls_pki_types/pem/enum.Error.html#variant.Io">Io</a>(err) =&gt; ErrorKind::<a href="#396">Io</a> {
+<a href=#164 id=164 data-nosnippet>164</a>                    inner: <a href="#163">err</a>,
+<a href=#165 id=165 data-nosnippet>165</a>                    path: <a href="#159">path</a>.<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>(),
+<a href=#166 id=166 data-nosnippet>166</a>                },
+<a href=#167 id=167 data-nosnippet>167</a>                <span class="kw">_ </span>=&gt; ErrorKind::<a href="#398">Pem</a>(<a href="#159">err</a>),
+<a href=#168 id=168 data-nosnippet>168</a>            },
+<a href=#169 id=169 data-nosnippet>169</a>        });
+<a href=#170 id=170 data-nosnippet>170</a>    }
+<a href=#171 id=171 data-nosnippet>171</a>
+<a href=#172 id=172 data-nosnippet>172</a>    <span class="kw">fn </span>io_error(<span class="kw-2">&amp;mut </span><span class="self">self</span>, err: io::<a href="https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html">Error</a>, path: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>, context: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>) {
+<a href=#173 id=173 data-nosnippet>173</a>        <a class="self" href="#172">self</a>.errors.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.push">push</a>(<a href="#364-367">Error</a> {
+<a href=#174 id=174 data-nosnippet>174</a>            <a href="#172">context</a>,
+<a href=#175 id=175 data-nosnippet>175</a>            kind: ErrorKind::<a href="#396">Io</a> {
+<a href=#176 id=176 data-nosnippet>176</a>                inner: <a href="#172">err</a>,
+<a href=#177 id=177 data-nosnippet>177</a>                path: <a href="#172">path</a>.<a href="https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html#tymethod.to_owned">to_owned</a>(),
+<a href=#178 id=178 data-nosnippet>178</a>            },
+<a href=#179 id=179 data-nosnippet>179</a>        });
+<a href=#180 id=180 data-nosnippet>180</a>    }
+<a href=#181 id=181 data-nosnippet>181</a>
+<a href=#182 id=182 data-nosnippet>182</a>    <span class="attr">#[cfg(any(windows, target_os = <span class="string">"macos"</span>))]
+<a href=#183 id=183 data-nosnippet>183</a>    </span><span class="kw">fn </span>os_error(<span class="kw-2">&amp;mut </span><span class="self">self</span>, err: Box&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">'static</span>&gt;, context: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str) {
+<a href=#184 id=184 data-nosnippet>184</a>        <span class="self">self</span>.errors.push(Error {
+<a href=#185 id=185 data-nosnippet>185</a>            context,
+<a href=#186 id=186 data-nosnippet>186</a>            kind: ErrorKind::Os(err),
+<a href=#187 id=187 data-nosnippet>187</a>        });
+<a href=#188 id=188 data-nosnippet>188</a>    }
+<a href=#189 id=189 data-nosnippet>189</a>}
+<a href=#190 id=190 data-nosnippet>190</a>
+<a href=#191 id=191 data-nosnippet>191</a><span class="doccomment">/// Certificate paths from `SSL_CERT_FILE` and/or `SSL_CERT_DIR`.
+<a href=#192 id=192 data-nosnippet>192</a></span><span class="kw">struct </span>CertPaths {
+<a href=#193 id=193 data-nosnippet>193</a>    file: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html">PathBuf</a>&gt;,
+<a href=#194 id=194 data-nosnippet>194</a>    dirs: <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html">PathBuf</a>&gt;,
+<a href=#195 id=195 data-nosnippet>195</a>}
+<a href=#196 id=196 data-nosnippet>196</a>
+<a href=#197 id=197 data-nosnippet>197</a><span class="kw">impl </span><a href="#192-195">CertPaths</a> {
+<a href=#198 id=198 data-nosnippet>198</a>    <span class="kw">fn </span>from_env() -&gt; <span class="self">Self </span>{
+<a href=#199 id=199 data-nosnippet>199</a>        <span class="self">Self </span>{
+<a href=#200 id=200 data-nosnippet>200</a>            file: env::<a href="https://doc.rust-lang.org/nightly/std/env/fn.var_os.html">var_os</a>(<a href="#401">ENV_CERT_FILE</a>).<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.map">map</a>(<a href="https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html">PathBuf</a>::<a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from">from</a>),
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="comment">// Read `SSL_CERT_DIR`, split it on the platform delimiter (`:` on Unix, `;` on Windows),
+<a href=#202 id=202 data-nosnippet>202</a>            // and return the entries as `PathBuf`s.
+<a href=#203 id=203 data-nosnippet>203</a>            //
+<a href=#204 id=204 data-nosnippet>204</a>            // See &lt;https://docs.openssl.org/3.5/man1/openssl-rehash/#options&gt;
+<a href=#205 id=205 data-nosnippet>205</a>            </span>dirs: <span class="kw">match </span>env::<a href="https://doc.rust-lang.org/nightly/std/env/fn.var_os.html">var_os</a>(<a href="#402">ENV_CERT_DIR</a>) {
+<a href=#206 id=206 data-nosnippet>206</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(dirs) =&gt; env::<a href="https://doc.rust-lang.org/nightly/std/env/fn.split_paths.html">split_paths</a>(<span class="kw-2">&amp;</span><a href="#206">dirs</a>)
+<a href=#207 id=207 data-nosnippet>207</a>                    .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.filter">filter</a>(|p| !<a href="#207">p</a>.<a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html#method.as_os_str">as_os_str</a>().<a href="https://doc.rust-lang.org/nightly/std/ffi/os_str/struct.OsStr.html#method.is_empty">is_empty</a>())
+<a href=#208 id=208 data-nosnippet>208</a>                    .<a href="https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#method.collect">collect</a>(),
+<a href=#209 id=209 data-nosnippet>209</a>                <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>(),
+<a href=#210 id=210 data-nosnippet>210</a>            },
+<a href=#211 id=211 data-nosnippet>211</a>        }
+<a href=#212 id=212 data-nosnippet>212</a>    }
+<a href=#213 id=213 data-nosnippet>213</a>
+<a href=#214 id=214 data-nosnippet>214</a>    <span class="doccomment">/// Load certificates from the paths.
+<a href=#215 id=215 data-nosnippet>215</a>    ///
+<a href=#216 id=216 data-nosnippet>216</a>    /// See [`load_certs_from_paths()`].
+<a href=#217 id=217 data-nosnippet>217</a>    </span><span class="kw">fn </span>load(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a href="#130-135">CertificateResult</a> {
+<a href=#218 id=218 data-nosnippet>218</a>        <a href="#248-273">load_certs_from_paths_internal</a>(<a class="self" href="#217">self</a>.file.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.as_deref">as_deref</a>(), <span class="kw-2">&amp;</span><a class="self" href="#217">self</a>.dirs)
+<a href=#219 id=219 data-nosnippet>219</a>    }
+<a href=#220 id=220 data-nosnippet>220</a>}
+<a href=#221 id=221 data-nosnippet>221</a>
+<a href=#222 id=222 data-nosnippet>222</a><span class="doccomment">/// Load certificates from the given paths.
+<a href=#223 id=223 data-nosnippet>223</a>///
+<a href=#224 id=224 data-nosnippet>224</a>/// If both are `None`, returns an empty [`CertificateResult`].
+<a href=#225 id=225 data-nosnippet>225</a>///
+<a href=#226 id=226 data-nosnippet>226</a>/// If `file` is `Some`, it is always used, so it must be a path to an existing,
+<a href=#227 id=227 data-nosnippet>227</a>/// accessible file from which certificates can be loaded successfully. While parsing,
+<a href=#228 id=228 data-nosnippet>228</a>/// the rustls-pki-types PEM parser will ignore parts of the file which are
+<a href=#229 id=229 data-nosnippet>229</a>/// not considered part of a certificate. Certificates which are not in the right
+<a href=#230 id=230 data-nosnippet>230</a>/// format (PEM) or are otherwise corrupted may get ignored silently.
+<a href=#231 id=231 data-nosnippet>231</a>///
+<a href=#232 id=232 data-nosnippet>232</a>/// If `dir` is defined, a directory must exist at this path, and all files
+<a href=#233 id=233 data-nosnippet>233</a>/// contained in it must be loaded successfully, subject to the rules outlined above for `file`.
+<a href=#234 id=234 data-nosnippet>234</a>/// The directory is not scanned recursively and may be empty.
+<a href=#235 id=235 data-nosnippet>235</a>///
+<a href=#236 id=236 data-nosnippet>236</a>/// On Unix, each file is read at most once: directory entries that resolve to a file
+<a href=#237 id=237 data-nosnippet>237</a>/// already read (for example the symlinks created by `openssl rehash`, or a link to
+<a href=#238 id=238 data-nosnippet>238</a>/// `file`) are skipped.
+<a href=#239 id=239 data-nosnippet>239</a></span><span class="kw">pub fn </span><a href="../../rustls_native_certs/fn.load_certs_from_paths.html">load_certs_from_paths</a>(file: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>&gt;, dir: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>&gt;) -&gt; <a href="#130-135">CertificateResult</a> {
+<a href=#240 id=240 data-nosnippet>240</a>    <span class="kw">let </span>dir = <span class="kw">match </span><a href="#239">dir</a> {
+<a href=#241 id=241 data-nosnippet>241</a><span class="expansion"><input id=expand-241 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(d) =&gt; <span class=expanded>::alloc::boxed::box_assume_init_into_vec_unsafe(::alloc::intrinsics::write_box_via_move(::alloc::boxed::Box::new_uninit(),
+        [d]))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/alloc/macro.vec.html">vec!</a>[d]</span></span>,
+<a href=#242 id=242 data-nosnippet>242</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None">None</a> =&gt; <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html">Vec</a>::<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.new">new</a>(),
+<a href=#243 id=243 data-nosnippet>243</a>    };
+<a href=#244 id=244 data-nosnippet>244</a>
+<a href=#245 id=245 data-nosnippet>245</a>    <a href="#248-273">load_certs_from_paths_internal</a>(<a href="#239">file</a>, <a href="#240">dir</a>.<a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html#tymethod.as_ref">as_ref</a>())
+<a href=#246 id=246 data-nosnippet>246</a>}
+<a href=#247 id=247 data-nosnippet>247</a>
+<a href=#248 id=248 data-nosnippet>248</a><span class="kw">fn </span>load_certs_from_paths_internal(
+<a href=#249 id=249 data-nosnippet>249</a>    file: <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>&gt;,
+<a href=#250 id=250 data-nosnippet>250</a>    dir: <span class="kw-2">&amp;</span>[<span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html">AsRef</a>&lt;<a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>&gt;],
+<a href=#251 id=251 data-nosnippet>251</a>) -&gt; <a href="#130-135">CertificateResult</a> {
+<a href=#252 id=252 data-nosnippet>252</a>    <span class="kw">let </span><span class="kw-2">mut </span>out = <a href="#130-135">CertificateResult</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>();
+<a href=#253 id=253 data-nosnippet>253</a>    <span class="kw">if </span><a href="#249">file</a>.<a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.is_none">is_none</a>() &amp;&amp; <a href="#250">dir</a>.<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.is_empty">is_empty</a>() {
+<a href=#254 id=254 data-nosnippet>254</a>        <span class="kw">return </span><a href="#252">out</a>;
+<a href=#255 id=255 data-nosnippet>255</a>    }
+<a href=#256 id=256 data-nosnippet>256</a>
+<a href=#257 id=257 data-nosnippet>257</a>    <span class="kw">let </span><span class="kw-2">mut </span>seen = <a href="#280-284">SeenFiles</a>::<a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">default</a>();
+<a href=#258 id=258 data-nosnippet>258</a>    <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(cert_file) = <a href="#249">file</a> {
+<a href=#259 id=259 data-nosnippet>259</a>        <span class="kw">if let </span><a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(metadata) = fs::<a href="https://doc.rust-lang.org/nightly/std/fs/fn.metadata.html">metadata</a>(<a href="#258">cert_file</a>) {
+<a href=#260 id=260 data-nosnippet>260</a>            <a href="#257">seen</a>.<a href="#290-302">first_visit</a>(<span class="kw-2">&amp;</span><a href="#259">metadata</a>);
+<a href=#261 id=261 data-nosnippet>261</a>        }
+<a href=#262 id=262 data-nosnippet>262</a>        <a href="#346-361">load_pem_certs</a>(<a href="#258">cert_file</a>, <span class="kw-2">&amp;mut </span><a href="#252">out</a>);
+<a href=#263 id=263 data-nosnippet>263</a>    }
+<a href=#264 id=264 data-nosnippet>264</a>
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">for </span>cert_dir <span class="kw">in </span>dir.iter() {
+<a href=#266 id=266 data-nosnippet>266</a>        load_pem_certs_from_dir(cert_dir.as_ref(), <span class="kw-2">&amp;mut </span>out, <span class="kw-2">&amp;mut </span>seen);
+<a href=#267 id=267 data-nosnippet>267</a>    }
+<a href=#268 id=268 data-nosnippet>268</a>
+<a href=#269 id=269 data-nosnippet>269</a>    <a href="#252">out</a>.certs
+<a href=#270 id=270 data-nosnippet>270</a>        .<a href="https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.sort_unstable_by">sort_unstable_by</a>(|a, b| <a href="#270">a</a>.<a href="https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html#tymethod.cmp">cmp</a>(<a href="#270">b</a>));
+<a href=#271 id=271 data-nosnippet>271</a>    <a href="#252">out</a>.certs.<a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html#method.dedup">dedup</a>();
+<a href=#272 id=272 data-nosnippet>272</a>    <a href="#252">out</a>
+<a href=#273 id=273 data-nosnippet>273</a>}
+<a href=#274 id=274 data-nosnippet>274</a>
+<a href=#275 id=275 data-nosnippet>275</a><span class="doccomment">/// Files already read, by identity.
+<a href=#276 id=276 data-nosnippet>276</a>///
+<a href=#277 id=277 data-nosnippet>277</a>/// Certificate directories typically hold several symlinks to each certificate
+<a href=#278 id=278 data-nosnippet>278</a>/// (hash names, readable names) and often a copy of the bundle file too.
+<a href=#279 id=279 data-nosnippet>279</a></span><span class="expansion"><input id=expand-279 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::default::Default <span class="kw">for </span>SeenFiles {
+    <span class="attr">#[inline]
+    </span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        SeenFiles { ids: ::core::default::Default::default() }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/default/derive.Default.html">Default</a></span></span></span><span class="attr">)]
+<a href=#280 id=280 data-nosnippet>280</a></span><span class="kw">struct </span>SeenFiles {
+<a href=#281 id=281 data-nosnippet>281</a>    <span class="doccomment">/// `(device, inode)` of each file read.
+<a href=#282 id=282 data-nosnippet>282</a>    </span><span class="attr">#[cfg(unix)]
+<a href=#283 id=283 data-nosnippet>283</a>    </span>ids: std::collections::<a href="https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html">HashSet</a>&lt;(<a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>, <a href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>)&gt;,
+<a href=#284 id=284 data-nosnippet>284</a>}
+<a href=#285 id=285 data-nosnippet>285</a>
+<a href=#286 id=286 data-nosnippet>286</a><span class="kw">impl </span><a href="#280-284">SeenFiles</a> {
+<a href=#287 id=287 data-nosnippet>287</a>    <span class="doccomment">/// Records the file and returns whether it was not seen before.
+<a href=#288 id=288 data-nosnippet>288</a>    ///
+<a href=#289 id=289 data-nosnippet>289</a>    /// Always `true` where std exposes no stable file identity.
+<a href=#290 id=290 data-nosnippet>290</a>    </span><span class="kw">fn </span>first_visit(<span class="kw-2">&amp;mut </span><span class="self">self</span>, metadata: <span class="kw-2">&amp;</span>fs::<a href="https://doc.rust-lang.org/nightly/std/fs/struct.Metadata.html">Metadata</a>) -&gt; <a href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a> {
+<a href=#291 id=291 data-nosnippet>291</a>        <span class="attr">#[cfg(unix)]
+<a href=#292 id=292 data-nosnippet>292</a>        </span>{
+<a href=#293 id=293 data-nosnippet>293</a>            <span class="kw">use </span><a href="https://doc.rust-lang.org/nightly/std/os/unix/fs/trait.MetadataExt.html">std::os::unix::fs::MetadataExt</a>;
+<a href=#294 id=294 data-nosnippet>294</a>            <a class="self" href="#290">self</a>.ids
+<a href=#295 id=295 data-nosnippet>295</a>                .<a href="https://doc.rust-lang.org/nightly/std/collections/hash/set/struct.HashSet.html#method.insert">insert</a>((<a href="#290">metadata</a>.<a href="https://doc.rust-lang.org/nightly/std/os/unix/fs/trait.MetadataExt.html#tymethod.dev">dev</a>(), <a href="#290">metadata</a>.<a href="https://doc.rust-lang.org/nightly/std/os/unix/fs/trait.MetadataExt.html#tymethod.ino">ino</a>()))
+<a href=#296 id=296 data-nosnippet>296</a>        }
+<a href=#297 id=297 data-nosnippet>297</a>        <span class="attr">#[cfg(not(unix))]
+<a href=#298 id=298 data-nosnippet>298</a>        </span>{
+<a href=#299 id=299 data-nosnippet>299</a>            <span class="kw">let _ </span>= metadata;
+<a href=#300 id=300 data-nosnippet>300</a>            <span class="bool-val">true
+<a href=#301 id=301 data-nosnippet>301</a>        </span>}
+<a href=#302 id=302 data-nosnippet>302</a>    }
+<a href=#303 id=303 data-nosnippet>303</a>}
+<a href=#304 id=304 data-nosnippet>304</a>
+<a href=#305 id=305 data-nosnippet>305</a><span class="doccomment">/// Load certificate from certificate directory (what OpenSSL calls CAdir)
+<a href=#306 id=306 data-nosnippet>306</a></span><span class="kw">fn </span>load_pem_certs_from_dir(dir: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>, out: <span class="kw-2">&amp;mut </span><a href="#130-135">CertificateResult</a>, seen: <span class="kw-2">&amp;mut </span><a href="#280-284">SeenFiles</a>) {
+<a href=#307 id=307 data-nosnippet>307</a>    <span class="kw">let </span>dir_reader = <span class="kw">match </span>fs::<a href="https://doc.rust-lang.org/nightly/std/fs/fn.read_dir.html">read_dir</a>(<a href="#306">dir</a>) {
+<a href=#308 id=308 data-nosnippet>308</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(reader) =&gt; <a href="#308">reader</a>,
+<a href=#309 id=309 data-nosnippet>309</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(err) =&gt; {
+<a href=#310 id=310 data-nosnippet>310</a>            <a href="#306">out</a>.<a href="#172-180">io_error</a>(<a href="#309">err</a>, <a href="#306">dir</a>, <span class="string">"opening directory"</span>);
+<a href=#311 id=311 data-nosnippet>311</a>            <span class="kw">return</span>;
+<a href=#312 id=312 data-nosnippet>312</a>        }
+<a href=#313 id=313 data-nosnippet>313</a>    };
+<a href=#314 id=314 data-nosnippet>314</a>
+<a href=#315 id=315 data-nosnippet>315</a>    <span class="kw">for </span>entry <span class="kw">in </span>dir_reader {
+<a href=#316 id=316 data-nosnippet>316</a>        <span class="kw">let </span>entry = <span class="kw">match </span>entry {
+<a href=#317 id=317 data-nosnippet>317</a>            <span class="prelude-val">Ok</span>(entry) =&gt; entry,
+<a href=#318 id=318 data-nosnippet>318</a>            <span class="prelude-val">Err</span>(err) =&gt; {
+<a href=#319 id=319 data-nosnippet>319</a>                out.io_error(err, dir, <span class="string">"reading directory entries"</span>);
+<a href=#320 id=320 data-nosnippet>320</a>                <span class="kw">continue</span>;
+<a href=#321 id=321 data-nosnippet>321</a>            }
+<a href=#322 id=322 data-nosnippet>322</a>        };
+<a href=#323 id=323 data-nosnippet>323</a>
+<a href=#324 id=324 data-nosnippet>324</a>        <span class="kw">let </span>path = entry.path();
+<a href=#325 id=325 data-nosnippet>325</a>
+<a href=#326 id=326 data-nosnippet>326</a>        <span class="comment">// `openssl rehash` used to create this directory uses symlinks. So,
+<a href=#327 id=327 data-nosnippet>327</a>        // make sure we resolve them.
+<a href=#328 id=328 data-nosnippet>328</a>        </span><span class="kw">let </span>metadata = <span class="kw">match </span>fs::metadata(<span class="kw-2">&amp;</span>path) {
+<a href=#329 id=329 data-nosnippet>329</a>            <span class="prelude-val">Ok</span>(metadata) =&gt; metadata,
+<a href=#330 id=330 data-nosnippet>330</a>            <span class="prelude-val">Err</span>(e) <span class="kw">if </span>e.kind() == io::ErrorKind::NotFound =&gt; {
+<a href=#331 id=331 data-nosnippet>331</a>                <span class="comment">// Dangling symlink
+<a href=#332 id=332 data-nosnippet>332</a>                </span><span class="kw">continue</span>;
+<a href=#333 id=333 data-nosnippet>333</a>            }
+<a href=#334 id=334 data-nosnippet>334</a>            <span class="prelude-val">Err</span>(e) =&gt; {
+<a href=#335 id=335 data-nosnippet>335</a>                out.io_error(e, <span class="kw-2">&amp;</span>path, <span class="string">"failed to open file"</span>);
+<a href=#336 id=336 data-nosnippet>336</a>                <span class="kw">continue</span>;
+<a href=#337 id=337 data-nosnippet>337</a>            }
+<a href=#338 id=338 data-nosnippet>338</a>        };
+<a href=#339 id=339 data-nosnippet>339</a>
+<a href=#340 id=340 data-nosnippet>340</a>        <span class="kw">if </span>metadata.is_file() &amp;&amp; seen.first_visit(<span class="kw-2">&amp;</span>metadata) {
+<a href=#341 id=341 data-nosnippet>341</a>            load_pem_certs(<span class="kw-2">&amp;</span>path, out);
+<a href=#342 id=342 data-nosnippet>342</a>        }
+<a href=#343 id=343 data-nosnippet>343</a>    }
+<a href=#344 id=344 data-nosnippet>344</a>}
+<a href=#345 id=345 data-nosnippet>345</a>
+<a href=#346 id=346 data-nosnippet>346</a><span class="kw">fn </span>load_pem_certs(path: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/path/struct.Path.html">Path</a>, out: <span class="kw-2">&amp;mut </span><a href="#130-135">CertificateResult</a>) {
+<a href=#347 id=347 data-nosnippet>347</a>    <span class="kw">let </span>iter = <span class="kw">match </span><a href="../../rustls_pki_types/struct.CertificateDer.html">CertificateDer</a>::<a href="../../rustls_pki_types/pem/trait.PemObject.html#method.pem_file_iter">pem_file_iter</a>(<a href="#346">path</a>) {
+<a href=#348 id=348 data-nosnippet>348</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Ok">Ok</a>(iter) =&gt; <a href="#348">iter</a>,
+<a href=#349 id=349 data-nosnippet>349</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html#variant.Err">Err</a>(err) =&gt; {
+<a href=#350 id=350 data-nosnippet>350</a>            <a href="#346">out</a>.<a href="#159-170">pem_error</a>(<a href="#349">err</a>, <a href="#346">path</a>);
+<a href=#351 id=351 data-nosnippet>351</a>            <span class="kw">return</span>;
+<a href=#352 id=352 data-nosnippet>352</a>        }
+<a href=#353 id=353 data-nosnippet>353</a>    };
+<a href=#354 id=354 data-nosnippet>354</a>
+<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">for </span>result <span class="kw">in </span>iter {
+<a href=#356 id=356 data-nosnippet>356</a>        <span class="kw">match </span>result {
+<a href=#357 id=357 data-nosnippet>357</a>            <span class="prelude-val">Ok</span>(cert) =&gt; out.certs.push(cert),
+<a href=#358 id=358 data-nosnippet>358</a>            <span class="prelude-val">Err</span>(err) =&gt; out.pem_error(err, path),
+<a href=#359 id=359 data-nosnippet>359</a>        }
+<a href=#360 id=360 data-nosnippet>360</a>    }
+<a href=#361 id=361 data-nosnippet>361</a>}
+<a href=#362 id=362 data-nosnippet>362</a>
+<a href=#363 id=363 data-nosnippet>363</a><span class="expansion"><input id=expand-363 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>Error {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        ::core::fmt::Formatter::debug_struct_field2_finish(f,
+            <span class="string">"Error context kind"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.context, &amp;&amp;<span class="self">self</span>.kind)
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#364 id=364 data-nosnippet>364</a></span><span class="kw">pub struct </span><a href="../../rustls_native_certs/struct.Error.html">Error</a> {
+<a href=#365 id=365 data-nosnippet>365</a>    <span class="kw">pub </span>context: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a>,
+<a href=#366 id=366 data-nosnippet>366</a>    <span class="kw">pub </span>kind: <a href="#395-399">ErrorKind</a>,
+<a href=#367 id=367 data-nosnippet>367</a>}
+<a href=#368 id=368 data-nosnippet>368</a>
+<a href=#369 id=369 data-nosnippet>369</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/error/trait.Error.html">StdError</a> <span class="kw">for </span><a href="#364-367">Error</a> {
+<a href=#370 id=370 data-nosnippet>370</a>    <span class="kw">fn </span>source(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <a class="prelude-ty" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html">Option</a>&lt;<span class="kw-2">&amp;</span>(<span class="kw">dyn </span><a href="https://doc.rust-lang.org/nightly/core/error/trait.Error.html">StdError</a> + <span class="lifetime">'static</span>)&gt; {
+<a href=#371 id=371 data-nosnippet>371</a>        <a class="prelude-val" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.Some">Some</a>(<span class="kw">match </span><span class="kw-2">&amp;</span><a class="self" href="#370">self</a>.kind {
+<a href=#372 id=372 data-nosnippet>372</a>            ErrorKind::<a href="#396">Io</a> { inner, .. } =&gt; <a href="#372">inner</a>,
+<a href=#373 id=373 data-nosnippet>373</a>            ErrorKind::<a href="#397">Os</a>(err) =&gt; <span class="kw-2">&amp;**</span><a href="#373">err</a>,
+<a href=#374 id=374 data-nosnippet>374</a>            ErrorKind::<a href="#398">Pem</a>(err) =&gt; <a href="#374">err</a>,
+<a href=#375 id=375 data-nosnippet>375</a>        })
+<a href=#376 id=376 data-nosnippet>376</a>    }
+<a href=#377 id=377 data-nosnippet>377</a>}
+<a href=#378 id=378 data-nosnippet>378</a>
+<a href=#379 id=379 data-nosnippet>379</a><span class="kw">impl </span><a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html">fmt::Display</a> <span class="kw">for </span><a href="#364-367">Error</a> {
+<a href=#380 id=380 data-nosnippet>380</a>    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html">Formatter</a>&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::<a href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html">Result</a> {
+<a href=#381 id=381 data-nosnippet>381</a>        f.write_str(<span class="self">self</span>.context)<span class="question-mark">?</span>;
+<a href=#382 id=382 data-nosnippet>382</a>        f.write_str(<span class="string">": "</span>)<span class="question-mark">?</span>;
+<a href=#383 id=383 data-nosnippet>383</a>        <span class="kw">match </span><span class="kw-2">&amp;</span><a class="self" href="#380">self</a>.kind {
+<a href=#384 id=384 data-nosnippet>384</a>            ErrorKind::<a href="#396">Io</a> { inner, path } =&gt; {
+<a href=#385 id=385 data-nosnippet>385</a><span class="expansion"><input id=expand-385 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro">                <span class=expanded>f.write_fmt(<span class="macro">format_args!</span>(<span class="string">"{1} at \'{0}\'"</span>, path.display(), inner))</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/macro.write.html">write!</a>(<a href="#380">f</a>, <span class="string">"{inner} at '{}'"</span>, path.display())</span></span>
+<a href=#386 id=386 data-nosnippet>386</a>            }
+<a href=#387 id=387 data-nosnippet>387</a>            ErrorKind::<a href="#397">Os</a>(err) =&gt; <a href="#387">err</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt">fmt</a>(<a href="#380">f</a>),
+<a href=#388 id=388 data-nosnippet>388</a>            ErrorKind::<a href="#398">Pem</a>(err) =&gt; <a href="#388">err</a>.<a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Display.html#tymethod.fmt">fmt</a>(<a href="#380">f</a>),
+<a href=#389 id=389 data-nosnippet>389</a>        }
+<a href=#390 id=390 data-nosnippet>390</a>    }
+<a href=#391 id=391 data-nosnippet>391</a>}
+<a href=#392 id=392 data-nosnippet>392</a>
+<a href=#393 id=393 data-nosnippet>393</a><span class="attr">#[non_exhaustive]
+<a href=#394 id=394 data-nosnippet>394</a></span><span class="expansion"><input id=expand-394 tabindex=0 type=checkbox aria-label="Collapse/expand macro" title="Collapse/expand macro"><span class="attr">#[derive(<span class=expanded><span class="attr">#[automatically_derived]</span><span class="kw">impl </span>::core::fmt::Debug <span class="kw">for </span>ErrorKind {
+    <span class="attr">#[inline]
+    #[rustc_trivial_field_reads]
+    </span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>::core::fmt::Formatter) -&gt; ::core::fmt::Result {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Io { inner: __self_0, path: __self_1 } =&gt;
+                ::core::fmt::Formatter::debug_struct_field2_finish(f,
+                    <span class="string">"Io inner path"</span>, __self_0, <span class="kw-2">&amp;</span>__self_1),
+            <span class="self">Self</span>::Os(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f, <span class="string">"Os"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+            <span class="self">Self</span>::Pem(__self_0) =&gt;
+                ::core::fmt::Formatter::debug_struct_field1_finish(f, <span class="string">"Pem"</span>,
+                    <span class="kw-2">&amp;</span>__self_0),
+        }
+    }
+}</span><span class="original"><a href="https://doc.rust-lang.org/nightly/core/fmt/macros/derive.Debug.html">Debug</a></span></span></span><span class="attr">)]
+<a href=#395 id=395 data-nosnippet>395</a></span><span class="kw">pub enum </span><a href="../../rustls_native_certs/enum.ErrorKind.html">ErrorKind</a> {
+<a href=#396 id=396 data-nosnippet>396</a>    Io { inner: io::<a href="https://doc.rust-lang.org/nightly/core/io/error/struct.Error.html">Error</a>, path: <a href="https://doc.rust-lang.org/nightly/std/path/struct.PathBuf.html">PathBuf</a> },
+<a href=#397 id=397 data-nosnippet>397</a>    Os(<a href="https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html">Box</a>&lt;<span class="kw">dyn </span><a href="https://doc.rust-lang.org/nightly/core/error/trait.Error.html">StdError</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html">Send</a> + <a href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html">Sync</a> + <span class="lifetime">'static</span>&gt;),
+<a href=#398 id=398 data-nosnippet>398</a>    Pem(pem::<a href="../../rustls_pki_types/pem/enum.Error.html">Error</a>),
+<a href=#399 id=399 data-nosnippet>399</a>}
+<a href=#400 id=400 data-nosnippet>400</a>
+<a href=#401 id=401 data-nosnippet>401</a><span class="kw">const </span>ENV_CERT_FILE: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a> = <span class="string">"SSL_CERT_FILE"</span>;
+<a href=#402 id=402 data-nosnippet>402</a><span class="kw">const </span>ENV_CERT_DIR: <span class="kw-2">&amp;</span><a href="https://doc.rust-lang.org/nightly/std/primitive.str.html">str</a> = <span class="string">"SSL_CERT_DIR"</span>;
+<a href=#403 id=403 data-nosnippet>403</a>
+<a href=#404 id=404 data-nosnippet>404</a><span class="attr">#[cfg(test)]
+<a href=#405 id=405 data-nosnippet>405</a></span><span class="kw">mod </span>tests {
+<a href=#406 id=406 data-nosnippet>406</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#407 id=407 data-nosnippet>407</a>
+<a href=#408 id=408 data-nosnippet>408</a>    <span class="kw">use </span>std::fs::File;
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="attr">#[cfg(unix)]
+<a href=#410 id=410 data-nosnippet>410</a>    </span><span class="kw">use </span>std::fs::Permissions;
+<a href=#411 id=411 data-nosnippet>411</a>    <span class="kw">use </span>std::io::Write;
+<a href=#412 id=412 data-nosnippet>412</a>    <span class="attr">#[cfg(unix)]
+<a href=#413 id=413 data-nosnippet>413</a>    </span><span class="kw">use </span>std::os::unix::fs::PermissionsExt;
+<a href=#414 id=414 data-nosnippet>414</a>
+<a href=#415 id=415 data-nosnippet>415</a>    <span class="attr">#[test]
+<a href=#416 id=416 data-nosnippet>416</a>    </span><span class="kw">fn </span>deduplication() {
+<a href=#417 id=417 data-nosnippet>417</a>        <span class="kw">let </span>temp_dir = tempfile::TempDir::new().unwrap();
+<a href=#418 id=418 data-nosnippet>418</a>        <span class="kw">let </span>cert1 = <span class="macro">include_str!</span>(<span class="string">"../tests/badssl-com-chain.pem"</span>);
+<a href=#419 id=419 data-nosnippet>419</a>        <span class="kw">let </span>cert2 = <span class="macro">include_str!</span>(<span class="string">"../integration-tests/one-existing-ca.pem"</span>);
+<a href=#420 id=420 data-nosnippet>420</a>        <span class="kw">let </span>file_path = temp_dir
+<a href=#421 id=421 data-nosnippet>421</a>            .path()
+<a href=#422 id=422 data-nosnippet>422</a>            .join(<span class="string">"ca-certificates.crt"</span>);
+<a href=#423 id=423 data-nosnippet>423</a>        <span class="kw">let </span>dir_path = temp_dir.path().to_path_buf();
+<a href=#424 id=424 data-nosnippet>424</a>
+<a href=#425 id=425 data-nosnippet>425</a>        {
+<a href=#426 id=426 data-nosnippet>426</a>            <span class="kw">let </span><span class="kw-2">mut </span>file = File::create(<span class="kw-2">&amp;</span>file_path).unwrap();
+<a href=#427 id=427 data-nosnippet>427</a>            <span class="macro">write!</span>(file, <span class="string">"{}"</span>, cert1).unwrap();
+<a href=#428 id=428 data-nosnippet>428</a>            <span class="macro">write!</span>(file, <span class="string">"{}"</span>, cert2).unwrap();
+<a href=#429 id=429 data-nosnippet>429</a>        }
+<a href=#430 id=430 data-nosnippet>430</a>
+<a href=#431 id=431 data-nosnippet>431</a>        {
+<a href=#432 id=432 data-nosnippet>432</a>            <span class="comment">// Duplicate (already in `file_path`)
+<a href=#433 id=433 data-nosnippet>433</a>            </span><span class="kw">let </span><span class="kw-2">mut </span>file = File::create(dir_path.join(<span class="string">"71f3bb26.0"</span>)).unwrap();
+<a href=#434 id=434 data-nosnippet>434</a>            <span class="macro">write!</span>(file, <span class="string">"{}"</span>, cert1).unwrap();
+<a href=#435 id=435 data-nosnippet>435</a>        }
+<a href=#436 id=436 data-nosnippet>436</a>
+<a href=#437 id=437 data-nosnippet>437</a>        {
+<a href=#438 id=438 data-nosnippet>438</a>            <span class="comment">// Duplicate (already in `file_path`)
+<a href=#439 id=439 data-nosnippet>439</a>            </span><span class="kw">let </span><span class="kw-2">mut </span>file = File::create(dir_path.join(<span class="string">"912e7cd5.0"</span>)).unwrap();
+<a href=#440 id=440 data-nosnippet>440</a>            <span class="macro">write!</span>(file, <span class="string">"{}"</span>, cert2).unwrap();
+<a href=#441 id=441 data-nosnippet>441</a>        }
+<a href=#442 id=442 data-nosnippet>442</a>
+<a href=#443 id=443 data-nosnippet>443</a>        <span class="kw">let </span>result = CertPaths {
+<a href=#444 id=444 data-nosnippet>444</a>            file: <span class="prelude-val">Some</span>(file_path.clone()),
+<a href=#445 id=445 data-nosnippet>445</a>            dirs: <span class="macro">vec!</span>[],
+<a href=#446 id=446 data-nosnippet>446</a>        }
+<a href=#447 id=447 data-nosnippet>447</a>        .load();
+<a href=#448 id=448 data-nosnippet>448</a>        <span class="macro">assert_eq!</span>(result.certs.len(), <span class="number">2</span>);
+<a href=#449 id=449 data-nosnippet>449</a>
+<a href=#450 id=450 data-nosnippet>450</a>        <span class="kw">let </span>result = CertPaths {
+<a href=#451 id=451 data-nosnippet>451</a>            file: <span class="prelude-val">None</span>,
+<a href=#452 id=452 data-nosnippet>452</a>            dirs: <span class="macro">vec!</span>[dir_path.clone()],
+<a href=#453 id=453 data-nosnippet>453</a>        }
+<a href=#454 id=454 data-nosnippet>454</a>        .load();
+<a href=#455 id=455 data-nosnippet>455</a>        <span class="macro">assert_eq!</span>(result.certs.len(), <span class="number">2</span>);
+<a href=#456 id=456 data-nosnippet>456</a>
+<a href=#457 id=457 data-nosnippet>457</a>        <span class="kw">let </span>result = CertPaths {
+<a href=#458 id=458 data-nosnippet>458</a>            file: <span class="prelude-val">Some</span>(file_path),
+<a href=#459 id=459 data-nosnippet>459</a>            dirs: <span class="macro">vec!</span>[dir_path],
+<a href=#460 id=460 data-nosnippet>460</a>        }
+<a href=#461 id=461 data-nosnippet>461</a>        .load();
+<a href=#462 id=462 data-nosnippet>462</a>        <span class="macro">assert_eq!</span>(result.certs.len(), <span class="number">2</span>);
+<a href=#463 id=463 data-nosnippet>463</a>    }
+<a href=#464 id=464 data-nosnippet>464</a>
+<a href=#465 id=465 data-nosnippet>465</a>    <span class="doccomment">/// Each read of this file records one PEM error, which makes reads countable.
+<a href=#466 id=466 data-nosnippet>466</a>    </span><span class="attr">#[cfg(unix)]
+<a href=#467 id=467 data-nosnippet>467</a>    </span><span class="kw">const </span>MALFORMED_PEM: <span class="kw-2">&amp;</span>str = <span class="string">"-----BEGIN CERTIFICATE-----\n!!!\n-----END CERTIFICATE-----\n"</span>;
+<a href=#468 id=468 data-nosnippet>468</a>
+<a href=#469 id=469 data-nosnippet>469</a>    <span class="attr">#[test]
+<a href=#470 id=470 data-nosnippet>470</a>    #[cfg(unix)]
+<a href=#471 id=471 data-nosnippet>471</a>    </span><span class="kw">fn </span>dir_symlinks_to_same_file_read_once() {
+<a href=#472 id=472 data-nosnippet>472</a>        <span class="kw">use </span>std::os::unix::fs::symlink;
+<a href=#473 id=473 data-nosnippet>473</a>
+<a href=#474 id=474 data-nosnippet>474</a>        <span class="kw">let </span>temp_dir = tempfile::TempDir::new().unwrap();
+<a href=#475 id=475 data-nosnippet>475</a>        <span class="kw">let </span>dir = temp_dir.path();
+<a href=#476 id=476 data-nosnippet>476</a>        fs::write(dir.join(<span class="string">"Example_Root.pem"</span>), MALFORMED_PEM).unwrap();
+<a href=#477 id=477 data-nosnippet>477</a>        symlink(<span class="string">"Example_Root.pem"</span>, dir.join(<span class="string">"01234567.0"</span>)).unwrap();
+<a href=#478 id=478 data-nosnippet>478</a>        symlink(dir.join(<span class="string">"Example_Root.pem"</span>), dir.join(<span class="string">"89abcdef.0"</span>)).unwrap();
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a>        <span class="kw">let </span>result = load_certs_from_paths_internal(<span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>[dir]);
+<a href=#481 id=481 data-nosnippet>481</a>        <span class="macro">assert_eq!</span>(result.errors.len(), <span class="number">1</span>, <span class="string">"{:?}"</span>, result.errors);
+<a href=#482 id=482 data-nosnippet>482</a>    }
+<a href=#483 id=483 data-nosnippet>483</a>
+<a href=#484 id=484 data-nosnippet>484</a>    <span class="attr">#[test]
+<a href=#485 id=485 data-nosnippet>485</a>    #[cfg(unix)]
+<a href=#486 id=486 data-nosnippet>486</a>    </span><span class="kw">fn </span>dir_entry_for_cert_file_skipped() {
+<a href=#487 id=487 data-nosnippet>487</a>        <span class="kw">use </span>std::os::unix::fs::symlink;
+<a href=#488 id=488 data-nosnippet>488</a>
+<a href=#489 id=489 data-nosnippet>489</a>        <span class="kw">let </span>file_dir = tempfile::TempDir::new().unwrap();
+<a href=#490 id=490 data-nosnippet>490</a>        <span class="kw">let </span>cert_dir = tempfile::TempDir::new().unwrap();
+<a href=#491 id=491 data-nosnippet>491</a>        <span class="kw">let </span>file = file_dir.path().join(<span class="string">"ca-bundle.crt"</span>);
+<a href=#492 id=492 data-nosnippet>492</a>        fs::write(<span class="kw-2">&amp;</span>file, MALFORMED_PEM).unwrap();
+<a href=#493 id=493 data-nosnippet>493</a>        symlink(<span class="kw-2">&amp;</span>file, cert_dir.path().join(<span class="string">"ca-bundle.crt"</span>)).unwrap();
+<a href=#494 id=494 data-nosnippet>494</a>
+<a href=#495 id=495 data-nosnippet>495</a>        <span class="kw">let </span>result = load_certs_from_paths_internal(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>file), <span class="kw-2">&amp;</span>[cert_dir.path()]);
+<a href=#496 id=496 data-nosnippet>496</a>        <span class="macro">assert_eq!</span>(result.errors.len(), <span class="number">1</span>, <span class="string">"{:?}"</span>, result.errors);
+<a href=#497 id=497 data-nosnippet>497</a>    }
+<a href=#498 id=498 data-nosnippet>498</a>
+<a href=#499 id=499 data-nosnippet>499</a>    <span class="attr">#[test]
+<a href=#500 id=500 data-nosnippet>500</a>    #[cfg(unix)]
+<a href=#501 id=501 data-nosnippet>501</a>    </span><span class="kw">fn </span>dir_copies_with_same_content_all_read() {
+<a href=#502 id=502 data-nosnippet>502</a>        <span class="kw">let </span>temp_dir = tempfile::TempDir::new().unwrap();
+<a href=#503 id=503 data-nosnippet>503</a>        fs::write(temp_dir.path().join(<span class="string">"a.pem"</span>), MALFORMED_PEM).unwrap();
+<a href=#504 id=504 data-nosnippet>504</a>        fs::write(temp_dir.path().join(<span class="string">"b.pem"</span>), MALFORMED_PEM).unwrap();
+<a href=#505 id=505 data-nosnippet>505</a>
+<a href=#506 id=506 data-nosnippet>506</a>        <span class="kw">let </span>result = load_certs_from_paths_internal(<span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>[temp_dir.path()]);
+<a href=#507 id=507 data-nosnippet>507</a>        <span class="macro">assert_eq!</span>(result.errors.len(), <span class="number">2</span>, <span class="string">"{:?}"</span>, result.errors);
+<a href=#508 id=508 data-nosnippet>508</a>    }
+<a href=#509 id=509 data-nosnippet>509</a>
+<a href=#510 id=510 data-nosnippet>510</a>    <span class="attr">#[test]
+<a href=#511 id=511 data-nosnippet>511</a>    #[cfg(unix)]
+<a href=#512 id=512 data-nosnippet>512</a>    </span><span class="kw">fn </span>dir_symlinks_still_load_certs() {
+<a href=#513 id=513 data-nosnippet>513</a>        <span class="kw">use </span>std::os::unix::fs::symlink;
+<a href=#514 id=514 data-nosnippet>514</a>
+<a href=#515 id=515 data-nosnippet>515</a>        <span class="kw">let </span>temp_dir = tempfile::TempDir::new().unwrap();
+<a href=#516 id=516 data-nosnippet>516</a>        <span class="kw">let </span>dir = temp_dir.path();
+<a href=#517 id=517 data-nosnippet>517</a>        fs::write(
+<a href=#518 id=518 data-nosnippet>518</a>            dir.join(<span class="string">"chain.pem"</span>),
+<a href=#519 id=519 data-nosnippet>519</a>            <span class="macro">include_str!</span>(<span class="string">"../tests/badssl-com-chain.pem"</span>),
+<a href=#520 id=520 data-nosnippet>520</a>        )
+<a href=#521 id=521 data-nosnippet>521</a>        .unwrap();
+<a href=#522 id=522 data-nosnippet>522</a>        symlink(<span class="string">"chain.pem"</span>, dir.join(<span class="string">"71f3bb26.0"</span>)).unwrap();
+<a href=#523 id=523 data-nosnippet>523</a>
+<a href=#524 id=524 data-nosnippet>524</a>        <span class="kw">let </span>result = load_certs_from_paths_internal(<span class="prelude-val">None</span>, <span class="kw-2">&amp;</span>[dir]);
+<a href=#525 id=525 data-nosnippet>525</a>        <span class="macro">assert!</span>(result.errors.is_empty(), <span class="string">"{:?}"</span>, result.errors);
+<a href=#526 id=526 data-nosnippet>526</a>        <span class="macro">assert_eq!</span>(result.certs.len(), <span class="number">1</span>);
+<a href=#527 id=527 data-nosnippet>527</a>    }
+<a href=#528 id=528 data-nosnippet>528</a>
+<a href=#529 id=529 data-nosnippet>529</a>    <span class="attr">#[test]
+<a href=#530 id=530 data-nosnippet>530</a>    </span><span class="kw">fn </span>malformed_file_from_env() {
+<a href=#531 id=531 data-nosnippet>531</a>        <span class="comment">// Certificate parser tries to extract certs from file ignoring
+<a href=#532 id=532 data-nosnippet>532</a>        // invalid sections.
+<a href=#533 id=533 data-nosnippet>533</a>        </span><span class="kw">let </span><span class="kw-2">mut </span>result = CertificateResult::default();
+<a href=#534 id=534 data-nosnippet>534</a>        load_pem_certs(Path::new(<span class="macro">file!</span>()), <span class="kw-2">&amp;mut </span>result);
+<a href=#535 id=535 data-nosnippet>535</a>        <span class="macro">assert_eq!</span>(result.certs.len(), <span class="number">0</span>);
+<a href=#536 id=536 data-nosnippet>536</a>        <span class="macro">assert!</span>(result.errors.is_empty());
+<a href=#537 id=537 data-nosnippet>537</a>    }
+<a href=#538 id=538 data-nosnippet>538</a>
+<a href=#539 id=539 data-nosnippet>539</a>    <span class="attr">#[test]
+<a href=#540 id=540 data-nosnippet>540</a>    </span><span class="kw">fn </span>from_env_missing_file() {
+<a href=#541 id=541 data-nosnippet>541</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = CertificateResult::default();
+<a href=#542 id=542 data-nosnippet>542</a>        load_pem_certs(Path::new(<span class="string">"no/such/file"</span>), <span class="kw-2">&amp;mut </span>result);
+<a href=#543 id=543 data-nosnippet>543</a>        <span class="kw">match </span><span class="kw-2">&amp;</span>first_error(<span class="kw-2">&amp;</span>result).kind {
+<a href=#544 id=544 data-nosnippet>544</a>            ErrorKind::Io { inner, .. } =&gt; <span class="macro">assert_eq!</span>(inner.kind(), io::ErrorKind::NotFound),
+<a href=#545 id=545 data-nosnippet>545</a>            <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"unexpected error {:?}"</span>, result.errors),
+<a href=#546 id=546 data-nosnippet>546</a>        }
+<a href=#547 id=547 data-nosnippet>547</a>    }
+<a href=#548 id=548 data-nosnippet>548</a>
+<a href=#549 id=549 data-nosnippet>549</a>    <span class="attr">#[test]
+<a href=#550 id=550 data-nosnippet>550</a>    </span><span class="kw">fn </span>from_env_missing_dir() {
+<a href=#551 id=551 data-nosnippet>551</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = CertificateResult::default();
+<a href=#552 id=552 data-nosnippet>552</a>        load_pem_certs_from_dir(
+<a href=#553 id=553 data-nosnippet>553</a>            Path::new(<span class="string">"no/such/directory"</span>),
+<a href=#554 id=554 data-nosnippet>554</a>            <span class="kw-2">&amp;mut </span>result,
+<a href=#555 id=555 data-nosnippet>555</a>            <span class="kw-2">&amp;mut </span>SeenFiles::default(),
+<a href=#556 id=556 data-nosnippet>556</a>        );
+<a href=#557 id=557 data-nosnippet>557</a>        <span class="kw">match </span><span class="kw-2">&amp;</span>first_error(<span class="kw-2">&amp;</span>result).kind {
+<a href=#558 id=558 data-nosnippet>558</a>            ErrorKind::Io { inner, .. } =&gt; <span class="macro">assert_eq!</span>(inner.kind(), io::ErrorKind::NotFound),
+<a href=#559 id=559 data-nosnippet>559</a>            <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"unexpected error {:?}"</span>, result.errors),
+<a href=#560 id=560 data-nosnippet>560</a>        }
+<a href=#561 id=561 data-nosnippet>561</a>    }
+<a href=#562 id=562 data-nosnippet>562</a>
+<a href=#563 id=563 data-nosnippet>563</a>    <span class="attr">#[test]
+<a href=#564 id=564 data-nosnippet>564</a>    #[cfg(unix)]
+<a href=#565 id=565 data-nosnippet>565</a>    </span><span class="kw">fn </span>from_env_with_non_regular_and_empty_file() {
+<a href=#566 id=566 data-nosnippet>566</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = CertificateResult::default();
+<a href=#567 id=567 data-nosnippet>567</a>        load_pem_certs(Path::new(<span class="string">"/dev/null"</span>), <span class="kw-2">&amp;mut </span>result);
+<a href=#568 id=568 data-nosnippet>568</a>        <span class="macro">assert_eq!</span>(result.certs.len(), <span class="number">0</span>);
+<a href=#569 id=569 data-nosnippet>569</a>        <span class="macro">assert!</span>(result.errors.is_empty());
+<a href=#570 id=570 data-nosnippet>570</a>    }
+<a href=#571 id=571 data-nosnippet>571</a>
+<a href=#572 id=572 data-nosnippet>572</a>    <span class="attr">#[test]
+<a href=#573 id=573 data-nosnippet>573</a>    #[cfg(unix)]
+<a href=#574 id=574 data-nosnippet>574</a>    </span><span class="kw">fn </span>from_env_bad_dir_perms() {
+<a href=#575 id=575 data-nosnippet>575</a>        <span class="comment">// Create a temp dir that we can't read from.
+<a href=#576 id=576 data-nosnippet>576</a>        </span><span class="kw">let </span>temp_dir = tempfile::TempDir::new().unwrap();
+<a href=#577 id=577 data-nosnippet>577</a>        fs::set_permissions(temp_dir.path(), Permissions::from_mode(<span class="number">0o000</span>)).unwrap();
+<a href=#578 id=578 data-nosnippet>578</a>
+<a href=#579 id=579 data-nosnippet>579</a>        test_cert_paths_bad_perms(CertPaths {
+<a href=#580 id=580 data-nosnippet>580</a>            file: <span class="prelude-val">None</span>,
+<a href=#581 id=581 data-nosnippet>581</a>            dirs: <span class="macro">vec!</span>[temp_dir.path().into()],
+<a href=#582 id=582 data-nosnippet>582</a>        })
+<a href=#583 id=583 data-nosnippet>583</a>    }
+<a href=#584 id=584 data-nosnippet>584</a>
+<a href=#585 id=585 data-nosnippet>585</a>    <span class="attr">#[test]
+<a href=#586 id=586 data-nosnippet>586</a>    #[cfg(unix)]
+<a href=#587 id=587 data-nosnippet>587</a>    </span><span class="kw">fn </span>from_env_bad_file_perms() {
+<a href=#588 id=588 data-nosnippet>588</a>        <span class="comment">// Create a tmp dir with a file inside that we can't read from.
+<a href=#589 id=589 data-nosnippet>589</a>        </span><span class="kw">let </span>temp_dir = tempfile::TempDir::new().unwrap();
+<a href=#590 id=590 data-nosnippet>590</a>        <span class="kw">let </span>file_path = temp_dir.path().join(<span class="string">"unreadable.pem"</span>);
+<a href=#591 id=591 data-nosnippet>591</a>        <span class="kw">let </span>cert_file = File::create(<span class="kw-2">&amp;</span>file_path).unwrap();
+<a href=#592 id=592 data-nosnippet>592</a>        cert_file
+<a href=#593 id=593 data-nosnippet>593</a>            .set_permissions(Permissions::from_mode(<span class="number">0o000</span>))
+<a href=#594 id=594 data-nosnippet>594</a>            .unwrap();
+<a href=#595 id=595 data-nosnippet>595</a>
+<a href=#596 id=596 data-nosnippet>596</a>        test_cert_paths_bad_perms(CertPaths {
+<a href=#597 id=597 data-nosnippet>597</a>            file: <span class="prelude-val">Some</span>(file_path.clone()),
+<a href=#598 id=598 data-nosnippet>598</a>            dirs: <span class="macro">vec!</span>[],
+<a href=#599 id=599 data-nosnippet>599</a>        });
+<a href=#600 id=600 data-nosnippet>600</a>    }
+<a href=#601 id=601 data-nosnippet>601</a>
+<a href=#602 id=602 data-nosnippet>602</a>    <span class="attr">#[cfg(unix)]
+<a href=#603 id=603 data-nosnippet>603</a>    </span><span class="kw">fn </span>test_cert_paths_bad_perms(cert_paths: CertPaths) {
+<a href=#604 id=604 data-nosnippet>604</a>        <span class="kw">let </span>result = cert_paths.load();
+<a href=#605 id=605 data-nosnippet>605</a>
+<a href=#606 id=606 data-nosnippet>606</a>        <span class="kw">if let </span>(<span class="prelude-val">None</span>, <span class="bool-val">true</span>) = (cert_paths.file, cert_paths.dirs.is_empty()) {
+<a href=#607 id=607 data-nosnippet>607</a>            <span class="macro">panic!</span>(<span class="string">"only one of file or dir should be set"</span>);
+<a href=#608 id=608 data-nosnippet>608</a>        };
+<a href=#609 id=609 data-nosnippet>609</a>
+<a href=#610 id=610 data-nosnippet>610</a>        <span class="kw">let </span>error = first_error(<span class="kw-2">&amp;</span>result);
+<a href=#611 id=611 data-nosnippet>611</a>        <span class="kw">match </span><span class="kw-2">&amp;</span>error.kind {
+<a href=#612 id=612 data-nosnippet>612</a>            ErrorKind::Io { inner, .. } =&gt; {
+<a href=#613 id=613 data-nosnippet>613</a>                <span class="macro">assert_eq!</span>(inner.kind(), io::ErrorKind::PermissionDenied);
+<a href=#614 id=614 data-nosnippet>614</a>                inner
+<a href=#615 id=615 data-nosnippet>615</a>            }
+<a href=#616 id=616 data-nosnippet>616</a>            <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"unexpected error {:?}"</span>, result.errors),
+<a href=#617 id=617 data-nosnippet>617</a>        };
+<a href=#618 id=618 data-nosnippet>618</a>    }
+<a href=#619 id=619 data-nosnippet>619</a>
+<a href=#620 id=620 data-nosnippet>620</a>    <span class="kw">fn </span>first_error(result: <span class="kw-2">&amp;</span>CertificateResult) -&gt; <span class="kw-2">&amp;</span>Error {
+<a href=#621 id=621 data-nosnippet>621</a>        result.errors.first().unwrap()
+<a href=#622 id=622 data-nosnippet>622</a>    }
+<a href=#623 id=623 data-nosnippet>623</a>}
+</code></pre></div></section></main></body></html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Authenticated Encryption with Associated Data (AEAD)."><title>aws_lc_rs::aead - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="aws_lc_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module aead</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../aws_lc_rs/index.html">aws_<wbr>lc_<wbr>rs</a><span class="version">1.19.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module aead</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#randomized-nonce-api" title="Randomized Nonce API">Randomized Nonce API</a></li><li><a href="#tls-aead-apis" title="TLS AEAD APIs">TLS AEAD APIs</a></li><li><a href="#nonce-sequence-apis" title="Nonce Sequence APIs">Nonce Sequence APIs</a><ul><li><a href="#prepared-nonce-apis-with-nonce-sequence" title="Prepared Nonce API’s with Nonce Sequence">Prepared Nonce API’s with Nonce Sequence</a></li></ul></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#constants" title="Constants">Constants</a></li><li><a href="#traits" title="Traits">Traits</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate aws_<wbr>lc_<wbr>rs</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">aws_lc_rs</a></div><h1>Module <span>aead</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/aws_lc_rs/aead.rs.html#6-1174">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Authenticated Encryption with Associated Data (AEAD).</p>
+<p>See <a href="https://eprint.iacr.org/2000/025">Authenticated encryption: relations among notions and analysis of the
+generic composition paradigm</a> for an introduction to the concept of
+AEADs.</p>
+<h2 id="randomized-nonce-api"><a class="doc-anchor" href="#randomized-nonce-api">§</a>Randomized Nonce API</h2>
+<p><a href="struct.RandomizedNonceKey.html" title="struct aws_lc_rs::aead::RandomizedNonceKey"><code>RandomizedNonceKey</code></a> provides a simplified API interface that doesn’t
+require the caller to handle construction of a <code>NonceSequence</code> or <code>Nonce</code> values
+themselves.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::aead::{Aad, RandomizedNonceKey, AES_128_GCM};
+
+<span class="kw">let </span>key_bytes = <span class="kw-2">&amp;</span>[
+    <span class="number">0xa5</span>, <span class="number">0xf3</span>, <span class="number">0x8d</span>, <span class="number">0x0d</span>, <span class="number">0x2d</span>, <span class="number">0x7c</span>, <span class="number">0x48</span>, <span class="number">0x56</span>, <span class="number">0xe7</span>, <span class="number">0xf3</span>, <span class="number">0xc3</span>, <span class="number">0x63</span>, <span class="number">0x0d</span>, <span class="number">0x40</span>, <span class="number">0x5b</span>,
+    <span class="number">0x9e</span>,
+];
+
+<span class="comment">// Create AES-128-GCM key
+</span><span class="kw">let </span>key = RandomizedNonceKey::new(<span class="kw-2">&amp;</span>AES_128_GCM, key_bytes)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>message = <span class="string">"test message"</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>in_out = Vec::from(message);
+
+<span class="comment">// Seal the plaintext message (in_out) and append the tag to the ciphertext.
+// The randomized nonce used for encryption will be returned.
+</span><span class="kw">let </span>nonce = key.seal_in_place_append_tag(Aad::empty(), <span class="kw-2">&amp;mut </span>in_out)<span class="question-mark">?</span>;
+
+<span class="comment">// Open the ciphertext message (in_out), using the provided nonce, and validating the tag.
+</span><span class="kw">let </span>plaintext = key.open_in_place(nonce, Aad::empty(), <span class="kw-2">&amp;mut </span>in_out)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(message.as_bytes(), plaintext);</code></pre></div><h2 id="tls-aead-apis"><a class="doc-anchor" href="#tls-aead-apis">§</a>TLS AEAD APIs</h2>
+<p>Systems developers creating TLS protocol implementations should use
+<a href="struct.TlsRecordSealingKey.html" title="struct aws_lc_rs::aead::TlsRecordSealingKey"><code>TlsRecordSealingKey</code></a> and <a href="struct.TlsRecordOpeningKey.html" title="struct aws_lc_rs::aead::TlsRecordOpeningKey"><code>TlsRecordOpeningKey</code></a> respectively for AEAD.</p>
+<h2 id="nonce-sequence-apis"><a class="doc-anchor" href="#nonce-sequence-apis">§</a>Nonce Sequence APIs</h2>
+<p>The <a href="struct.UnboundKey.html" title="struct aws_lc_rs::aead::UnboundKey"><code>UnboundKey</code></a>, <a href="struct.OpeningKey.html" title="struct aws_lc_rs::aead::OpeningKey"><code>OpeningKey</code></a>, <a href="struct.SealingKey.html" title="struct aws_lc_rs::aead::SealingKey"><code>SealingKey</code></a>, and <a href="struct.LessSafeKey.html" title="struct aws_lc_rs::aead::LessSafeKey"><code>LessSafeKey</code></a> types are the
+AEAD API’s provided for compatibility with the original <em>ring</em> API.</p>
+<p>Users should prefer <a href="struct.RandomizedNonceKey.html" title="struct aws_lc_rs::aead::RandomizedNonceKey"><code>RandomizedNonceKey</code></a> which provides a simplified experience around
+Nonce construction.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::aead::{
+    nonce_sequence, Aad, BoundKey, OpeningKey, SealingKey, UnboundKey, AES_128_GCM,
+};
+<span class="kw">use </span>aws_lc_rs::rand;
+<span class="kw">use </span>aws_lc_rs::test::from_hex;
+
+<span class="kw">let </span>plaintext = <span class="string">"plaintext value"</span>;
+
+<span class="comment">// Generate random bytes for secret key
+</span><span class="kw">let </span><span class="kw-2">mut </span>key_bytes = [<span class="number">0u8</span>; <span class="number">16</span>];
+rand::fill(<span class="kw-2">&amp;mut </span>key_bytes).expect(<span class="string">"Unable to generate key"</span>);
+
+<span class="comment">// Contextual information must match between encryption and decryption
+</span><span class="kw">let </span>aad_content = <span class="string">"aws-lc-rs documentation"</span>;
+<span class="kw">let </span>sequence_id = <span class="number">0xabcdef01u32</span>.to_be_bytes();
+
+<span class="comment">// Buffer containing plaintext. This will be modified to contain the ciphertext.
+</span><span class="kw">let </span><span class="kw-2">mut </span>in_out_buffer = Vec::from(plaintext);
+
+<span class="comment">// Construct a SealingKey for encryption
+</span><span class="kw">let </span>unbound_key = UnboundKey::new(<span class="kw-2">&amp;</span>AES_128_GCM, <span class="kw-2">&amp;</span>key_bytes).unwrap();
+<span class="kw">let </span>nonce_sequence = nonce_sequence::Counter64Builder::new()
+    .identifier(sequence_id)
+    .build();
+<span class="kw">let </span><span class="kw-2">mut </span>sealing_key = SealingKey::new(unbound_key, nonce_sequence);
+
+<span class="comment">// Encrypt a value using the SealingKey
+</span><span class="kw">let </span>aad = Aad::from(aad_content);
+sealing_key
+    .seal_in_place_append_tag(aad, <span class="kw-2">&amp;mut </span>in_out_buffer)
+    .expect(<span class="string">"Encryption failed"</span>);
+
+<span class="comment">// The buffer now contains the ciphertext followed by a "tag" value.
+</span><span class="kw">let </span>plaintext_len = in_out_buffer.len() - AES_128_GCM.tag_len();
+
+<span class="comment">// Construct an OpeningKey for decryption
+</span><span class="kw">let </span>unbound_key = UnboundKey::new(<span class="kw-2">&amp;</span>AES_128_GCM, <span class="kw-2">&amp;</span>key_bytes).unwrap();
+<span class="kw">let </span>nonce_sequence = nonce_sequence::Counter64Builder::new()
+    .identifier(sequence_id)
+    .build();
+<span class="kw">let </span><span class="kw-2">mut </span>opening_key = OpeningKey::new(unbound_key, nonce_sequence);
+
+<span class="comment">// Decrypt the value using the OpeningKey
+</span><span class="kw">let </span>aad = Aad::from(aad_content);
+opening_key
+    .open_in_place(aad, <span class="kw-2">&amp;mut </span>in_out_buffer)
+    .expect(<span class="string">"Decryption failed"</span>);
+
+<span class="kw">let </span>decrypted_plaintext = core::str::from_utf8(<span class="kw-2">&amp;</span>in_out_buffer[<span class="number">0</span>..plaintext_len]).unwrap();
+
+<span class="macro">assert_eq!</span>(plaintext, decrypted_plaintext);</code></pre></div><h3 id="prepared-nonce-apis-with-nonce-sequence"><a class="doc-anchor" href="#prepared-nonce-apis-with-nonce-sequence">§</a>Prepared Nonce API’s with Nonce Sequence</h3>
+<p>If you prefer to use the <a href="trait.NonceSequence.html" title="trait aws_lc_rs::aead::NonceSequence">NonceSequence</a> based API’s, and need to know the <a href="struct.Nonce.html" title="struct aws_lc_rs::aead::Nonce">Nonce</a> explicit nonce used for a
+cryptographic key operation operation, then <a href="struct.SealingKeyPreparedNonce.html" title="struct aws_lc_rs::aead::SealingKeyPreparedNonce">SealingKeyPreparedNonce</a> and
+<a href="struct.OpeningKeyPreparedNonce.html" title="struct aws_lc_rs::aead::OpeningKeyPreparedNonce">OpeningKeyPreparedNonce</a> are available to you.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>aws_lc_rs::aead::{
+    nonce_sequence::Counter32Builder, Aad, BoundKey, OpeningKey, SealingKey, UnboundKey,
+    AES_128_GCM,
+};
+<span class="kw">use </span>std::vec::Vec;
+
+<span class="kw">let </span>key_bytes = <span class="kw-2">&amp;</span>[
+    <span class="number">0xa5</span>, <span class="number">0xf3</span>, <span class="number">0x8d</span>, <span class="number">0x0d</span>, <span class="number">0x2d</span>, <span class="number">0x7c</span>, <span class="number">0x48</span>, <span class="number">0x56</span>, <span class="number">0xe7</span>, <span class="number">0xf3</span>, <span class="number">0xc3</span>, <span class="number">0x63</span>, <span class="number">0x0d</span>, <span class="number">0x40</span>, <span class="number">0x5b</span>,
+    <span class="number">0x9e</span>,
+];
+
+<span class="comment">// Create AES-128-GCM SealingKey
+</span><span class="kw">let </span><span class="kw-2">mut </span>sealing_key = SealingKey::new(
+    UnboundKey::new(<span class="kw-2">&amp;</span>AES_128_GCM, key_bytes)<span class="question-mark">?</span>,
+    Counter32Builder::new()
+        .identifier([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>])
+        .build(),
+);
+
+<span class="comment">// Create AES-128-GCM OpeningKey
+</span><span class="kw">let </span><span class="kw-2">mut </span>opening_key = OpeningKey::new(
+    UnboundKey::new(<span class="kw-2">&amp;</span>AES_128_GCM, key_bytes)<span class="question-mark">?</span>,
+    Counter32Builder::new()
+        .identifier([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>])
+        .build(),
+);
+
+<span class="kw">let </span>message = <span class="string">"test message"</span>;
+<span class="kw">let </span><span class="kw-2">mut </span>in_out = Vec::from(message);
+
+<span class="comment">// Create a SealingKeyPreparedNonce which consumes a nonce from the underlying sequence
+</span><span class="kw">let </span>seal_prepared_nonce = sealing_key.prepare_nonce()<span class="question-mark">?</span>;
+
+<span class="comment">// Query the nonce that will be used for our seal operation with our prepared nonce
+</span><span class="kw">let </span>seal_nonce_bytes = Vec::from(seal_prepared_nonce.nonce().as_ref().as_slice());
+
+<span class="comment">// Use the prepared nonce and seal the plaintext
+</span>seal_prepared_nonce.seal_in_place_append_tag(Aad::empty(), <span class="kw-2">&amp;mut </span>in_out)<span class="question-mark">?</span>;
+
+<span class="comment">// Create a OpeningKeyPreparedNonce which consumes a nonce from the underlying sequence
+</span><span class="kw">let </span>open_prepared_nonce = opening_key.prepare_nonce()<span class="question-mark">?</span>;
+
+<span class="comment">// Query the nonce that will be used for our seal operation with our prepared nonce
+</span><span class="kw">let </span>open_nonce_bytes = Vec::from(open_prepared_nonce.nonce().as_ref().as_slice());
+
+<span class="comment">// Since we initialized the Counter32Builder the same between both builders the nonce here
+// will match the one from the opening key.
+</span><span class="macro">assert_eq!</span>(seal_nonce_bytes.as_slice(), open_nonce_bytes.as_slice());
+
+<span class="kw">let </span>plaintext = open_prepared_nonce.open_in_place(Aad::empty(), <span class="kw-2">&amp;mut </span>in_out)<span class="question-mark">?</span>;
+
+<span class="macro">assert_eq!</span>(message.as_bytes(), plaintext);</code></pre></div></div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="chacha20_poly1305_openssh/index.html" title="mod aws_lc_rs::aead::chacha20_poly1305_openssh">chacha20_<wbr>poly1305_<wbr>openssh</a></dt><dd>The <a href="http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.bin/ssh/PROTOCOL.chacha20poly1305?annotate=HEAD">chacha20-poly1305@openssh.com</a> AEAD-ish construct.</dd><dt><a class="mod" href="nonce_sequence/index.html" title="mod aws_lc_rs::aead::nonce_sequence">nonce_<wbr>sequence</a></dt><dd>Implementations of <code>NonceSequence</code> for use with <code>BoundKey</code>s.</dd><dt><a class="mod" href="quic/index.html" title="mod aws_lc_rs::aead::quic">quic</a></dt><dd>QUIC Header Protection.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Aad.html" title="struct aws_lc_rs::aead::Aad">Aad</a></dt><dd>The additionally authenticated data (AAD) for an opening or sealing
+operation. This data is authenticated but is <strong>not</strong> encrypted.</dd><dt><a class="struct" href="struct.Algorithm.html" title="struct aws_lc_rs::aead::Algorithm">Algorithm</a></dt><dd>An AEAD Algorithm.</dd><dt><a class="struct" href="struct.LessSafeKey.html" title="struct aws_lc_rs::aead::LessSafeKey">Less<wbr>Safe<wbr>Key</a></dt><dd>Immutable keys for use in situations where <code>OpeningKey</code>/<code>SealingKey</code> and
+<code>NonceSequence</code> cannot reasonably be used.</dd><dt><a class="struct" href="struct.Nonce.html" title="struct aws_lc_rs::aead::Nonce">Nonce</a></dt><dd>A nonce for a single AEAD opening or sealing operation.</dd><dt><a class="struct" href="struct.OpeningKey.html" title="struct aws_lc_rs::aead::OpeningKey">Opening<wbr>Key</a></dt><dd>An AEAD key for authenticating and decrypting (“opening”), bound to a nonce
+sequence.</dd><dt><a class="struct" href="struct.OpeningKeyPreparedNonce.html" title="struct aws_lc_rs::aead::OpeningKeyPreparedNonce">Opening<wbr>KeyPrepared<wbr>Nonce</a></dt><dd>A key operation with a precomputed nonce from a key’s associated <code>NonceSequence</code>.</dd><dt><a class="struct" href="struct.RandomizedNonceKey.html" title="struct aws_lc_rs::aead::RandomizedNonceKey">Randomized<wbr>Nonce<wbr>Key</a></dt><dd>AEAD Cipher key using a randomized nonce.</dd><dt><a class="struct" href="struct.SealingKey.html" title="struct aws_lc_rs::aead::SealingKey">Sealing<wbr>Key</a></dt><dd>An AEAD key for encrypting and signing (“sealing”), bound to a nonce
+sequence.</dd><dt><a class="struct" href="struct.SealingKeyPreparedNonce.html" title="struct aws_lc_rs::aead::SealingKeyPreparedNonce">Sealing<wbr>KeyPrepared<wbr>Nonce</a></dt><dd>A key operation with a precomputed nonce from a key’s associated <code>NonceSequence</code>.</dd><dt><a class="struct" href="struct.Tag.html" title="struct aws_lc_rs::aead::Tag">Tag</a></dt><dd>An authentication tag.</dd><dt><a class="struct" href="struct.TlsRecordOpeningKey.html" title="struct aws_lc_rs::aead::TlsRecordOpeningKey">TlsRecord<wbr>Opening<wbr>Key</a></dt><dd>AEAD Encryption key used for TLS protocol record encryption.</dd><dt><a class="struct" href="struct.TlsRecordSealingKey.html" title="struct aws_lc_rs::aead::TlsRecordSealingKey">TlsRecord<wbr>Sealing<wbr>Key</a></dt><dd>AEAD Encryption key used for TLS protocol record encryption.</dd><dt><a class="struct" href="struct.UnboundKey.html" title="struct aws_lc_rs::aead::UnboundKey">Unbound<wbr>Key</a></dt><dd>An AEAD key without a designated role or nonce sequence.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.TlsProtocolId.html" title="enum aws_lc_rs::aead::TlsProtocolId">TlsProtocol<wbr>Id</a></dt><dd>The Transport Layer Security (TLS) protocol version.</dd></dl><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><dl class="item-table"><dt><a class="constant" href="constant.AES_128_GCM.html" title="constant aws_lc_rs::aead::AES_128_GCM">AES_<wbr>128_<wbr>GCM</a></dt><dd>AES-128 in GCM mode with 128-bit tags and 96 bit nonces.</dd><dt><a class="constant" href="constant.AES_128_GCM_SIV.html" title="constant aws_lc_rs::aead::AES_128_GCM_SIV">AES_<wbr>128_<wbr>GCM_<wbr>SIV</a></dt><dd>AES-128 in GCM mode with nonce reuse resistance, 128-bit tags and 96 bit nonces.</dd><dt><a class="constant" href="constant.AES_192_GCM.html" title="constant aws_lc_rs::aead::AES_192_GCM">AES_<wbr>192_<wbr>GCM</a></dt><dd>AES-192 in GCM mode with 128-bit tags and 96 bit nonces.</dd><dt><a class="constant" href="constant.AES_256_GCM.html" title="constant aws_lc_rs::aead::AES_256_GCM">AES_<wbr>256_<wbr>GCM</a></dt><dd>AES-256 in GCM mode with 128-bit tags and 96 bit nonces.</dd><dt><a class="constant" href="constant.AES_256_GCM_SIV.html" title="constant aws_lc_rs::aead::AES_256_GCM_SIV">AES_<wbr>256_<wbr>GCM_<wbr>SIV</a></dt><dd>AES-256 in GCM mode with nonce reuse resistance, 128-bit tags and 96 bit nonces.</dd><dt><a class="constant" href="constant.CHACHA20_POLY1305.html" title="constant aws_lc_rs::aead::CHACHA20_POLY1305">CHACH<wbr>A20_<wbr>POLY1305</a></dt><dd>ChaCha20-Poly1305 as described in <a href="https://tools.ietf.org/html/rfc7539">RFC 7539</a>.</dd><dt><a class="constant" href="constant.MAX_TAG_LEN.html" title="constant aws_lc_rs::aead::MAX_TAG_LEN">MAX_<wbr>TAG_<wbr>LEN</a></dt><dd>The maximum length of a tag for the algorithms in this module.</dd><dt><a class="constant" href="constant.NONCE_LEN.html" title="constant aws_lc_rs::aead::NONCE_LEN">NONCE_<wbr>LEN</a></dt><dd>All the AEADs we support use 96-bit nonces.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.BoundKey.html" title="trait aws_lc_rs::aead::BoundKey">Bound<wbr>Key</a></dt><dd>An AEAD key bound to a nonce sequence.</dd><dt><a class="trait" href="trait.NonceSequence.html" title="trait aws_lc_rs::aead::NonceSequence">Nonce<wbr>Sequence</a></dt><dd>A sequences of unique nonces.</dd></dl></section></div></main></body></html>

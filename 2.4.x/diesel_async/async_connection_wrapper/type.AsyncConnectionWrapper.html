@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A helper type that wraps an `AsyncConnection` to provide a sync `diesel::Connection` implementation."><title>AsyncConnectionWrapper in diesel_async::async_connection_wrapper - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel_async" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc type"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">AsyncConnectionWrapper</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../diesel_async/index.html">diesel_<wbr>async</a><span class="version">0.10.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Async<wbr>Connection<wbr>Wrapper</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#aliased-type">Aliased Type</a></h3></section><div id="rustdoc-modnav"><h2><a href="index.html">In diesel_<wbr>async::<wbr>async_<wbr>connection_<wbr>wrapper</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">diesel_async</a>::<wbr><a href="index.html">async_connection_wrapper</a></div><h1>Type Alias <span class="type">Async<wbr>Connection<wbr>Wrapper</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/diesel_async/async_connection_wrapper.rs.html#91-92">Source</a> </span></div><pre class="rust item-decl"><code>pub type AsyncConnectionWrapper&lt;C, B = Tokio&gt; = AsyncConnectionWrapper&lt;C, B&gt;;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A helper type that wraps an <a href="../trait.AsyncConnection.html" title="trait diesel_async::AsyncConnection"><code>AsyncConnection</code></a> to
+provide a sync <a href="../../diesel/connection/trait.Connection.html" title="trait diesel::connection::Connection"><code>diesel::Connection</code></a> implementation.</p>
+<p>Internally this wrapper type will use <code>block_on</code> to wait for
+the execution of futures from the inner connection. This implies you
+cannot use functions of this type in a scope with an already existing
+tokio runtime. If you are in a situation where you want to use this
+connection wrapper in the scope of an existing tokio runtime (for example
+for running migrations via <code>diesel_migration</code>) you need to wrap
+the relevant code block into a <code>tokio::task::spawn_blocking</code> task.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::users;
+<span class="kw">use </span>diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
+<span class="kw">use </span>diesel::prelude::{RunQueryDsl, Connection};
+<span class="kw">let </span><span class="kw-2">mut </span>conn = AsyncConnectionWrapper::&lt;DbConnection&gt;::establish(<span class="kw-2">&amp;</span>database_url)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>all_users = users::table.load::&lt;(i32, String)&gt;(<span class="kw-2">&amp;mut </span>conn)<span class="question-mark">?</span>;</code></pre></div>
+<p>If you are in the scope of an existing tokio runtime you need to use
+<code>tokio::task::spawn_blocking</code> to encapsulate the blocking tasks</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>schema::users;
+<span class="kw">use </span>diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
+
+<span class="kw">async fn </span>some_async_fn() {
+     <span class="comment">// need to use `spawn_blocking` to execute
+     // a blocking task in the scope of an existing runtime
+     </span><span class="kw">let </span>res = tokio::task::spawn_blocking(<span class="kw">move </span>|| {
+         <span class="kw">use </span>diesel::prelude::{RunQueryDsl, Connection};
+         <span class="kw">let </span><span class="kw-2">mut </span>conn = AsyncConnectionWrapper::&lt;DbConnection&gt;::establish(<span class="kw-2">&amp;</span>database_url)<span class="question-mark">?</span>;
+
+         <span class="kw">let </span>all_users = users::table.load::&lt;(i32, String)&gt;(<span class="kw-2">&amp;mut </span>conn)<span class="question-mark">?</span>;
+         <span class="prelude-val">Ok</span>::&lt;<span class="kw">_</span>, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;(())
+     }).<span class="kw">await</span>;
+
+}
+</code></pre></div></div></details><h2 id="aliased-type" class="section-header">Aliased Type<a href="#aliased-type" class="anchor">§</a></h2><pre class="rust item-decl"><code>pub struct AsyncConnectionWrapper&lt;C, B = Tokio&gt; { <span class="comment">/* private fields */</span> }</code></pre></section></div></main></body></html>

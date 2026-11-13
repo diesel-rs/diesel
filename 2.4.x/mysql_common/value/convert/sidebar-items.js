@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["OptionIr2","ParseIrOpt"],"fn":["from_value","from_value_opt"],"mod":["bigint","uuid"],"struct":["FromValueError","ParseIr","ValueIr"],"trait":["FromValue","ToValue"]};

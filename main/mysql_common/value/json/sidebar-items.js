@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["serde_integration"],"struct":["Deserialized","Serialized"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CertPolicies","TrustAnchorChoice","Version"],"struct":["CertPathControls","TrustAnchorInfo"],"type":["CertPolicyFlags"]};

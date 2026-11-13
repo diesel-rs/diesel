@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates an `INSERT` statement for the target table."><title>insert_into in diesel::dsl - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="diesel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0-nightly (7908a1d65 2023-04-17)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-1a524efa7bd4ab32.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../../diesel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../../diesel/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><div class="sidebar-elems"><h2><a href="index.html">In diesel::dsl</a></h2></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="../index.html">diesel</a>::<wbr><a href="index.html">dsl</a>::<wbr><a class="fn" href="#">insert_into</a><button id="copy-path" title="Copy item path to clipboard"><img src="../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../src/diesel/query_builder/functions.rs.html#405-407">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn insert_into&lt;T: <a class="trait" href="../prelude/trait.Table.html" title="trait diesel::prelude::Table">Table</a>&gt;(target: T) -&gt; <a class="struct" href="../query_builder/struct.IncompleteInsertStatement.html" title="struct diesel::query_builder::IncompleteInsertStatement">IncompleteInsertStatement</a>&lt;T&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates an <code>INSERT</code> statement for the target table.</p>
+<p>You may add data by calling <a href="../query_builder/struct.IncompleteInsertStatement.html#method.values" title="method diesel::query_builder::IncompleteInsertStatement::values"><code>values()</code></a> or <a href="../query_builder/struct.IncompleteInsertStatement.html#method.default_values" title="method diesel::query_builder::IncompleteInsertStatement::default_values"><code>default_values()</code></a>
+as shown in the examples.</p>
+<p>Backends that support the <code>RETURNING</code> clause, such as PostgreSQL,
+can return the inserted rows by calling <a href="../prelude/trait.RunQueryDsl.html#method.get_results" title="method diesel::prelude::RunQueryDsl::get_results"><code>.get_results</code></a> instead of <a href="../prelude/trait.RunQueryDsl.html#method.execute" title="method diesel::prelude::RunQueryDsl::execute"><code>.execute</code></a>.</p>
+<h2 id="examples"><a href="#examples">Examples</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>rows_inserted = diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span>name.eq(<span class="string">&quot;Sean&quot;</span>))
+    .execute(connection);
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), rows_inserted);
+
+<span class="kw">let </span>new_users = <span class="macro">vec!</span>[
+    name.eq(<span class="string">&quot;Tess&quot;</span>),
+    name.eq(<span class="string">&quot;Jim&quot;</span>),
+];
+
+<span class="kw">let </span>rows_inserted = diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span>new_users)
+    .execute(connection);
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">2</span>), rows_inserted);</code></pre></div>
+<h4 id="using-a-tuple-for-values"><a href="#using-a-tuple-for-values">Using a tuple for values</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>new_user = (id.eq(<span class="number">1</span>), name.eq(<span class="string">&quot;Sean&quot;</span>));
+<span class="kw">let </span>rows_inserted = diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span>new_user)
+    .execute(connection);
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">1</span>), rows_inserted);
+
+<span class="kw">let </span>new_users = <span class="macro">vec!</span>[
+    (id.eq(<span class="number">2</span>), name.eq(<span class="string">&quot;Tess&quot;</span>)),
+    (id.eq(<span class="number">3</span>), name.eq(<span class="string">&quot;Jim&quot;</span>)),
+];
+
+<span class="kw">let </span>rows_inserted = diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span>new_users)
+    .execute(connection);
+
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="number">2</span>), rows_inserted);</code></pre></div>
+<h4 id="using-struct-for-values"><a href="#using-struct-for-values">Using struct for values</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Insertable)]
+#[diesel(table_name = users)]
+</span><span class="kw">struct </span>NewUser&lt;<span class="lifetime">&#39;a</span>&gt; {
+    name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+}
+
+<span class="comment">// Insert one record at a time
+
+</span><span class="kw">let </span>new_user = NewUser { name: <span class="string">&quot;Ruby Rhod&quot; </span>};
+
+diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span>new_user)
+    .execute(connection)
+    .unwrap();
+
+<span class="comment">// Insert many records
+
+</span><span class="kw">let </span>new_users = <span class="macro">vec!</span>[
+    NewUser { name: <span class="string">&quot;Leeloo Multipass&quot; </span>},
+    NewUser { name: <span class="string">&quot;Korben Dallas&quot; </span>},
+];
+
+<span class="kw">let </span>inserted_names = diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span>new_users)
+    .execute(connection)
+    .unwrap();</code></pre></div>
+<h4 id="inserting-default-value-for-a-column"><a href="#inserting-default-value-for-a-column">Inserting default value for a column</a></h4>
+<p>You can use <code>Option&lt;T&gt;</code> to allow a column to be set to the default value when needed.</p>
+<p>When the field is set to <code>None</code>, diesel inserts the default value on supported databases.
+When the field is set to <code>Some(..)</code>, diesel inserts the given value.</p>
+<p>The column <code>color</code> in <code>brands</code> table is <code>NOT NULL DEFAULT 'Green'</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Insertable)]
+#[diesel(table_name = brands)]
+</span><span class="kw">struct </span>NewBrand {
+    color: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}
+
+<span class="comment">// Insert `Red`
+</span><span class="kw">let </span>new_brand = NewBrand { color: <span class="prelude-val">Some</span>(<span class="string">&quot;Red&quot;</span>.into()) };
+
+diesel::insert_into(brands)
+    .values(<span class="kw-2">&amp;</span>new_brand)
+    .execute(connection)
+    .unwrap();
+
+<span class="comment">// Insert the default color
+</span><span class="kw">let </span>new_brand = NewBrand { color: <span class="prelude-val">None </span>};
+
+diesel::insert_into(brands)
+    .values(<span class="kw-2">&amp;</span>new_brand)
+    .execute(connection)
+    .unwrap();</code></pre></div>
+<h4 id="inserting-default-value-for-a-nullable-column"><a href="#inserting-default-value-for-a-nullable-column">Inserting default value for a nullable column</a></h4>
+<p>The column <code>accent</code> in <code>brands</code> table is <code>DEFAULT 'Green'</code>. It is a nullable column.</p>
+<p>You can use <code>Option&lt;Option&lt;T&gt;&gt;</code> in this case.</p>
+<p>When the field is set to <code>None</code>, diesel inserts the default value on supported databases.
+When the field is set to <code>Some(None)</code>, diesel inserts <code>NULL</code>.
+When the field is set to <code>Some(Some(..))</code> diesel inserts the given value.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[derive(Insertable)]
+#[diesel(table_name = brands)]
+</span><span class="kw">struct </span>NewBrand {
+    accent: <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt;,
+}
+
+<span class="comment">// Insert `Red`
+</span><span class="kw">let </span>new_brand = NewBrand { accent: <span class="prelude-val">Some</span>(<span class="prelude-val">Some</span>(<span class="string">&quot;Red&quot;</span>.into())) };
+
+diesel::insert_into(brands)
+    .values(<span class="kw-2">&amp;</span>new_brand)
+    .execute(connection)
+    .unwrap();
+
+<span class="comment">// Insert the default accent
+</span><span class="kw">let </span>new_brand = NewBrand { accent: <span class="prelude-val">None </span>};
+
+diesel::insert_into(brands)
+    .values(<span class="kw-2">&amp;</span>new_brand)
+    .execute(connection)
+    .unwrap();
+
+<span class="comment">// Insert `NULL`
+</span><span class="kw">let </span>new_brand = NewBrand { accent: <span class="prelude-val">Some</span>(<span class="prelude-val">None</span>) };
+
+diesel::insert_into(brands)
+    .values(<span class="kw-2">&amp;</span>new_brand)
+    .execute(connection)
+    .unwrap();</code></pre></div>
+<h4 id="insert-from-select"><a href="#insert-from-select">Insert from select</a></h4>
+<p>When inserting from a select statement,
+the column list can be specified with <a href="../query_builder/struct.InsertStatement.html#method.into_columns" title="method diesel::query_builder::InsertStatement::into_columns"><code>.into_columns</code></a>.
+(See also <a href="../prelude/trait.Insertable.html#method.insert_into" title="method diesel::prelude::Insertable::insert_into"><code>SelectStatement::insert_into</code></a>, which generally
+reads better for select statements)</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>new_posts = users::table
+    .select((
+        users::name.concat(<span class="string">&quot;&#39;s First Post&quot;</span>),
+        users::id,
+    ));
+diesel::insert_into(posts::table)
+    .values(new_posts)
+    .into_columns((posts::title, posts::user_id))
+    .execute(conn)<span class="question-mark">?</span>;
+
+<span class="kw">let </span>inserted_posts = posts::table
+    .select(posts::title)
+    .load::&lt;String&gt;(conn)<span class="question-mark">?</span>;
+<span class="kw">let </span>expected = <span class="macro">vec!</span>[<span class="string">&quot;Sean&#39;s First Post&quot;</span>, <span class="string">&quot;Tess&#39;s First Post&quot;</span>];
+<span class="macro">assert_eq!</span>(expected, inserted_posts);</code></pre></div>
+<h4 id="with-return-value"><a href="#with-return-value">With return value</a></h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>inserted_names = diesel::insert_into(users)
+    .values(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+        name.eq(<span class="string">&quot;Diva Plavalaguna&quot;</span>),
+        name.eq(<span class="string">&quot;Father Vito Cornelius&quot;</span>),
+    ])
+    .returning(name)
+    .get_results(connection);
+<span class="macro">assert_eq!</span>(<span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[<span class="string">&quot;Diva Plavalaguna&quot;</span>.to_string(), <span class="string">&quot;Father Vito Cornelius&quot;</span>.to_string()]), inserted_names);</code></pre></div>
+</div></details></section></div></main></body></html>

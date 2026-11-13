@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="RustCrypto: DER Custom Derive Support"><title>der_derive - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="der_derive" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate der_derive</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../der_derive/index.html">der_<wbr>derive</a><span class="version">0.7.3</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#rustcrypto-der-custom-derive-support" title="RustCrypto: DER Custom Derive Support">RustCrypto: DER Custom Derive Support</a><ul><li><a href="#minimum-supported-rust-version" title="Minimum Supported Rust Version">Minimum Supported Rust Version</a></li><li><a href="#license" title="License">License</a></li><li><a href="#about" title="About">About</a></li><li><a href="#why-not-serde" title="Why not `serde`?">Why not <code>serde</code>?</a></li><li><a href="#toplevel-attributes" title="Toplevel attributes">Toplevel attributes</a></li><li><a href="#field-level-attributes" title="Field-level attributes">Field-level attributes</a></li></ul></li></ul><h3><a href="#derives">Crate Items</a></h3><ul class="block"><li><a href="#derives" title="Derive Macros">Derive Macros</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>der_<wbr>derive</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/der_derive/lib.rs.html#1-295">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="rustcrypto-der-custom-derive-support"><a class="doc-anchor" href="#rustcrypto-der-custom-derive-support">§</a><a href="https://github.com/rustcrypto">RustCrypto</a>: DER Custom Derive Support</h2>
+<p><a href="https://crates.io/crates/der_derive"><img src="https://img.shields.io/crates/v/der_derive.svg" alt="crate" /></a>
+<a href="https://docs.rs/der_derive/"><img src="https://docs.rs/der_derive/badge.svg" alt="Docs" /></a>
+<a href="https://github.com/RustCrypto/formats/actions/workflows/der.yml"><img src="https://github.com/RustCrypto/formats/actions/workflows/der.yml/badge.svg" alt="Build Status" /></a>
+<img src="https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg" alt="Apache2/MIT licensed" />
+<img src="https://img.shields.io/badge/rustc-1.65+-blue.svg" alt="Rust Version" />
+<a href="https://rustcrypto.zulipchat.com/#narrow/stream/300570-formats"><img src="https://img.shields.io/badge/zulip-join_chat-blue.svg" alt="Project Chat" /></a></p>
+<p>Custom derive support for the <code>der</code> crate’s <code>Choice</code> and <code>Sequence</code> traits:</p>
+<p><a href="https://github.com/RustCrypto/formats/tree/master/der">https://github.com/RustCrypto/formats/tree/master/der</a></p>
+<p><a href="https://docs.rs/der_derive/">Documentation</a></p>
+<h3 id="minimum-supported-rust-version"><a class="doc-anchor" href="#minimum-supported-rust-version">§</a>Minimum Supported Rust Version</h3>
+<p>This crate requires <strong>Rust 1.65</strong> at a minimum.</p>
+<p>We may change the MSRV in the future, but it will be accompanied by a minor
+version bump.</p>
+<h3 id="license"><a class="doc-anchor" href="#license">§</a>License</h3>
+<p>Licensed under either of:</p>
+<ul>
+<li><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a></li>
+<li><a href="http://opensource.org/licenses/MIT">MIT license</a></li>
+</ul>
+<p>at your option.</p>
+<h4 id="contribution"><a class="doc-anchor" href="#contribution">§</a>Contribution</h4>
+<p>Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.</p>
+<h3 id="about"><a class="doc-anchor" href="#about">§</a>About</h3>
+<p>Custom derive support for the <a href="https://docs.rs/der/"><code>der</code></a> crate.</p>
+<p>This crate contains custom derive macros intended to be used in the
+following way:</p>
+<ul>
+<li><a href="derive.Choice.html" title="derive der_derive::Choice"><code>Choice</code></a>: map ASN.1 <code>CHOICE</code> to a Rust enum.</li>
+<li><a href="derive.Enumerated.html" title="derive der_derive::Enumerated"><code>Enumerated</code></a>: map ASN.1 <code>ENUMERATED</code> to a C-like Rust enum.</li>
+<li><a href="derive.Sequence.html" title="derive der_derive::Sequence"><code>Sequence</code></a>: map ASN.1 <code>SEQUENCE</code> to a Rust struct.</li>
+<li><a href="derive.ValueOrd.html" title="derive der_derive::ValueOrd"><code>ValueOrd</code></a>: determine DER ordering for ASN.1 <code>SET OF</code>.</li>
+</ul>
+<p>Note that this crate shouldn’t be used directly, but instead accessed
+by using the <code>derive</code> feature of the <code>der</code> crate, which re-exports the
+above macros from the toplevel.</p>
+<h3 id="why-not-serde"><a class="doc-anchor" href="#why-not-serde">§</a>Why not <code>serde</code>?</h3>
+<p>The <code>der</code> crate is designed to be easily usable in embedded environments,
+including ones where code size comes at a premium.</p>
+<p>This crate (i.e. <code>der_derive</code>) is able to generate code which is
+significantly smaller than <code>serde_derive</code>. This is because the <code>der</code>
+crate has been designed with high-level abstractions which reduce
+code size, including trait object-based encoders which allow encoding
+logic which is duplicated in <code>serde</code> serializers to be implemented in
+a single place in the <code>der</code> crate.</p>
+<p>This is a deliberate tradeoff in terms of performance, flexibility, and
+code size. At least for now, the <code>der</code> crate is optimizing for leveraging
+as many abstractions as it can to minimize code size.</p>
+<h3 id="toplevel-attributes"><a class="doc-anchor" href="#toplevel-attributes">§</a>Toplevel attributes</h3>
+<p>The following attributes can be added to an <code>enum</code> or <code>struct</code> when
+deriving either <a href="derive.Choice.html" title="derive der_derive::Choice"><code>Choice</code></a> or <a href="derive.Sequence.html" title="derive der_derive::Sequence"><code>Sequence</code></a> respectively:</p>
+<h4 id="asn1tag_mode---attribute-explicit-vs-implicit"><a class="doc-anchor" href="#asn1tag_mode---attribute-explicit-vs-implicit">§</a><code>#[asn1(tag_mode = "...")]</code> attribute: <code>EXPLICIT</code> vs <code>IMPLICIT</code></h4>
+<p>This attribute can be used to declare the tagging mode used by a particular
+ASN.1 module.</p>
+<p>It’s used when parsing <code>CONTEXT-SENSITIVE</code> fields.</p>
+<p>The default is <code>EXPLICIT</code>, so the attribute only needs to be added when
+a particular module is declared <code>IMPLICIT</code>.</p>
+<h3 id="field-level-attributes"><a class="doc-anchor" href="#field-level-attributes">§</a>Field-level attributes</h3>
+<p>The following attributes can be added to either the fields of a particular
+<code>struct</code> or the variants of a particular <code>enum</code>:</p>
+<h4 id="asn1context_specific---attribute-context-specific-support"><a class="doc-anchor" href="#asn1context_specific---attribute-context-specific-support">§</a><code>#[asn1(context_specific = "...")]</code> attribute: <code>CONTEXT-SPECIFIC</code> support</h4>
+<p>This attribute can be added to associate a particular <code>CONTEXT-SPECIFIC</code>
+tag number with a given enum variant or struct field.</p>
+<p>The value must be quoted and contain a number, e.g. <code>#[asn1(context_specific = "29")]</code>.</p>
+<h4 id="asn1default---attribute-default-support"><a class="doc-anchor" href="#asn1default---attribute-default-support">§</a><code>#[asn1(default = "...")]</code> attribute: <code>DEFAULT</code> support</h4>
+<p>This behaves like <code>serde_derive</code>’s <code>default</code> attribute, allowing you to
+specify the path to a function which returns a default value.</p>
+<h4 id="asn1extensible--true-attribute-support-for--extensibility-operator"><a class="doc-anchor" href="#asn1extensible--true-attribute-support-for--extensibility-operator">§</a><code>#[asn1(extensible = "true")]</code> attribute: support for <code>...</code> extensibility operator</h4>
+<p>This attribute can be applied to the fields of <code>struct</code> types, and will
+skip over unrecognized lower-numbered <code>CONTEXT-SPECIFIC</code> fields when
+looking for a particular field of a struct.</p>
+<h4 id="asn1optional--true-attribute-support-for-optional-fields"><a class="doc-anchor" href="#asn1optional--true-attribute-support-for-optional-fields">§</a><code>#[asn1(optional = "true")]</code> attribute: support for <code>OPTIONAL</code> fields</h4>
+<p>This attribute explicitly annotates a field as <code>OPTIONAL</code>.</p>
+<h4 id="asn1type---attribute-asn1-type-declaration"><a class="doc-anchor" href="#asn1type---attribute-asn1-type-declaration">§</a><code>#[asn1(type = "...")]</code> attribute: ASN.1 type declaration</h4>
+<p>This attribute can be used to specify the ASN.1 type for a particular
+<code>enum</code> variant or <code>struct</code> field.</p>
+<p>It’s presently mandatory for all <code>enum</code> variants, even when using one of
+the ASN.1 types defined by this crate.</p>
+<p>For structs, placing this attribute on a field makes it possible to
+decode/encode types which don’t directly implement the <code>Decode</code>/<code>Encode</code>
+traits but do impl <code>From</code> and <code>TryInto</code> and <code>From</code> for one of the ASN.1 types
+listed below (use the ASN.1 type keywords as the <code>type</code>):</p>
+<ul>
+<li><code>BIT STRING</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.BitString.html"><code>der::asn1::BitString</code></a></li>
+<li><code>IA5String</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.Ia5String.html"><code>der::asn1::IA5String</code></a></li>
+<li><code>GeneralizedTime</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.GeneralizedTime.html"><code>der::asn1::GeneralizedTime</code></a></li>
+<li><code>OCTET STRING</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.OctetString.html"><code>der::asn1::OctetString</code></a></li>
+<li><code>PrintableString</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.PrintableString.html"><code>der::asn1::PrintableString</code></a></li>
+<li><code>UTCTime</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.UtcTime.html"><code>der::asn1::UtcTime</code></a></li>
+<li><code>UTF8String</code>: performs an intermediate conversion to <a href="https://docs.rs/der/latest/der/asn1/struct.Utf8String.html"><code>der::asn1::Utf8String</code></a></li>
+</ul>
+<h4 id="asn1constructed---attribute-support-for-constructed-inner-types"><a class="doc-anchor" href="#asn1constructed---attribute-support-for-constructed-inner-types">§</a><code>#[asn1(constructed = "...")]</code> attribute: support for constructed inner types</h4>
+<p>This attribute can be used to specify that an “inner” type is constructed. It is most
+commonly used when a <code>CHOICE</code> has a constructed inner type.</p>
+<p>Note: please open a GitHub Issue if you would like to request support
+for additional ASN.1 types.</p>
+</div></details><h2 id="derives" class="section-header">Derive Macros<a href="#derives" class="anchor">§</a></h2><dl class="item-table"><dt><a class="derive" href="derive.Choice.html" title="derive der_derive::Choice">Choice</a></dt><dd>Derive the <a href="https://docs.rs/der/latest/der/trait.Choice.html"><code>Choice</code></a> trait on an <code>enum</code>.</dd><dt><a class="derive" href="derive.Enumerated.html" title="derive der_derive::Enumerated">Enumerated</a></dt><dd>Derive decoders and encoders for ASN.1 <a href="derive.Enumerated.html" title="derive der_derive::Enumerated"><code>Enumerated</code></a> types on a
+C-like <code>enum</code> type.</dd><dt><a class="derive" href="derive.Sequence.html" title="derive der_derive::Sequence">Sequence</a></dt><dd>Derive the <a href="https://docs.rs/der/latest/der/trait.Sequence.html"><code>Sequence</code></a> trait on a <code>struct</code>.</dd><dt><a class="derive" href="derive.ValueOrd.html" title="derive der_derive::ValueOrd">Value<wbr>Ord</a></dt><dd>Derive the <a href="https://docs.rs/der/latest/der/trait.ValueOrd.html"><code>ValueOrd</code></a> trait on a <code>struct</code>.</dd></dl></section></div></main></body></html>

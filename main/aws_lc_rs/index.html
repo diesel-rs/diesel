@@ -1,0 +1,187 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A ring-compatible crypto library using the cryptographic operations provided by AWS-LC. It uses either the auto-generated aws-lc-sys or aws-lc-fips-sys Foreign Function Interface (FFI) crates found in this repository for invoking AWS-LC."><title>aws_lc_rs - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-1f5a765c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="aws_lc_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.102.0-nightly (8eb778d04 2026-11-12)" data-channel="nightly" data-search-js="search-69faa2c4.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-9b351432.js" ><script src="../static.files/storage-41dd4d93.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-419f3a3f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-101b5a15.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate aws_lc_rs</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../aws_lc_rs/index.html">aws_<wbr>lc_<wbr>rs</a><span class="version">1.19.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#build" title="Build">Build</a></li><li><a href="#feature-flags" title="Feature Flags">Feature Flags</a><ul><li><a href="#alloc-default" title="alloc (default)">alloc (default)</a></li><li><a href="#ring-io-default" title="ring-io (default)">ring-io (default)</a></li><li><a href="#ring-sig-verify-default" title="ring-sig-verify (default)">ring-sig-verify (default)</a></li><li><a href="#fips" title="fips">fips</a></li><li><a href="#non-fips" title="non-fips">non-fips</a></li><li><a href="#asan" title="asan">asan</a></li><li><a href="#bindgen" title="bindgen">bindgen</a></li><li><a href="#prebuilt-nasm" title="prebuilt-nasm">prebuilt-nasm</a></li><li><a href="#dev-tests-only" title="dev-tests-only">dev-tests-only</a></li><li><a href="#legacy-des" title="legacy-des">legacy-des</a></li></ul></li><li><a href="#use-of-prebuilt-nasm-objects" title="Use of prebuilt NASM objects">Use of prebuilt NASM objects</a><ul><li><a href="#about-prebuilt-nasm-objects" title="About prebuilt NASM objects">About prebuilt NASM objects</a></li></ul></li><li><a href="#ring-compatibility" title="ring-compatibility">ring-compatibility</a></li><li><a href="#post-quantum-cryptography" title="Post-Quantum Cryptography">Post-Quantum Cryptography</a></li><li><a href="#motivation" title="Motivation">Motivation</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1>Crate <span>aws_<wbr>lc_<wbr>rs</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/aws_lc_rs/lib.rs.html#5-500">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A <a href="https://github.com/briansmith/ring"><em>ring</em></a>-compatible crypto library using the cryptographic
+operations provided by <a href="https://github.com/aws/aws-lc"><em>AWS-LC</em></a>. It uses either the
+auto-generated <a href="https://crates.io/crates/aws-lc-sys"><em>aws-lc-sys</em></a> or
+<a href="https://crates.io/crates/aws-lc-fips-sys"><em>aws-lc-fips-sys</em></a>
+Foreign Function Interface (FFI) crates found in this repository for invoking <em>AWS-LC</em>.</p>
+<h2 id="build"><a class="doc-anchor" href="#build">§</a>Build</h2>
+<p><code>aws-lc-rs</code> is available through <a href="https://crates.io/crates/aws-lc-rs">crates.io</a>. It can
+be added to your project in the <a href="https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html">standard way</a>
+using <code>Cargo.toml</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+aws-lc-rs = &quot;1&quot;</code></pre></div>
+<p>Consuming projects will need a C/C++ compiler to build.</p>
+<p><strong>Non-FIPS builds (default):</strong></p>
+<ul>
+<li>CMake is <strong>never</strong> required</li>
+<li>Bindgen is <strong>never</strong> required (pre-generated bindings are provided)</li>
+<li>Go is <strong>never</strong> required</li>
+</ul>
+<p><strong>FIPS builds:</strong> Require <strong>CMake</strong>, <strong>Go</strong>, and potentially <strong>bindgen</strong> depending on the target platform.</p>
+<p>See our <a href="https://aws.github.io/aws-lc-rs/">User Guide</a> for guidance on installing build requirements.</p>
+<h2 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature Flags</h2><h5 id="alloc-default"><a class="doc-anchor" href="#alloc-default">§</a>alloc (default)</h5>
+<p>Allows implementation to allocate values of arbitrary size. (The meaning of this feature differs
+from the “alloc” feature of <em>ring</em>.) Currently, this is required by the <code>io::writer</code> module.</p>
+<h5 id="ring-io-default"><a class="doc-anchor" href="#ring-io-default">§</a>ring-io (default)</h5>
+<p>Enable feature to access the  <code>io</code>  module.</p>
+<h5 id="ring-sig-verify-default"><a class="doc-anchor" href="#ring-sig-verify-default">§</a>ring-sig-verify (default)</h5>
+<p>Enable feature to preserve compatibility with ring’s <code>signature::VerificationAlgorithm::verify</code>
+function. This adds a requirement on <code>untrusted = "0.7.1"</code>.</p>
+<h5 id="fips"><a class="doc-anchor" href="#fips">§</a>fips</h5>
+<p>Enable this feature to have aws-lc-rs use the <a href="https://crates.io/crates/aws-lc-fips-sys"><em>aws-lc-fips-sys</em></a>
+crate for the cryptographic implementations. The aws-lc-fips-sys crate provides bindings to the
+latest version of the AWS-LC-FIPS module that has completed FIPS validation testing by an
+accredited lab and has been submitted to NIST for certification. This will continue to be the
+case as we periodically submit new versions of the AWS-LC-FIPS module to NIST for certification.
+Currently, aws-lc-fips-sys binds to
+<a href="https://github.com/aws/aws-lc/tree/fips-2025-09-12-lts">AWS-LC-FIPS 4.x</a>.</p>
+<p>Consult with your local FIPS compliance team to determine the version of AWS-LC-FIPS module that you require. Consumers
+needing to remain on a previous version of the AWS-LC-FIPS module should pin to specific versions of aws-lc-rs to avoid
+automatically being upgraded to a newer module version.
+(See <a href="https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html">cargo’s documentation</a>
+on how to specify dependency versions.)</p>
+<div class="table"><table><thead><tr><th>AWS-LC-FIPS module</th><th>aws-lc-rs</th></tr></thead><tbody>
+<tr><td>2.0.x</td><td>&lt;1.12.0</td></tr>
+<tr><td>3.0.x</td><td>&lt;1.18.0</td></tr>
+<tr><td>4.x</td><td><em>latest</em></td></tr>
+</tbody></table>
+</div>
+<p>Refer to the
+<a href="https://csrc.nist.gov/Projects/cryptographic-module-validation-program/modules-in-process/Modules-In-Process-List">NIST Cryptographic Module Validation Program’s Modules In Progress List</a>
+for the latest status of the static or dynamic AWS-LC Cryptographic Module. Please see the
+<a href="https://github.com/aws/aws-lc/blob/main/crypto/fipsmodule/FIPS.md">FIPS.md in the aws-lc repository</a>
+for relevant security policies and information on supported operating environments.
+We will also update our release notes and documentation to reflect any changes in FIPS certification status.</p>
+<h5 id="non-fips"><a class="doc-anchor" href="#non-fips">§</a>non-fips</h5>
+<p>Enable this feature to guarantee that the non-FIPS <a href="https://crates.io/crates/aws-lc-sys"><em>aws-lc-sys</em></a>
+crate is used for cryptographic implementations. This feature is mutually exclusive with the <code>fips</code>
+feature - enabling both will result in a compile-time error. Use this feature when you need a
+compile-time guarantee that your build is using the non-FIPS cryptographic module.</p>
+<h5 id="asan"><a class="doc-anchor" href="#asan">§</a>asan</h5>
+<p>Performs an “address sanitizer” build. This can be used to help detect memory leaks. See the
+<a href="https://doc.rust-lang.org/beta/unstable-book/compiler-flags/sanitizer.html#addresssanitizer">“Address Sanitizer” section</a>
+of the <a href="https://doc.rust-lang.org/beta/unstable-book/">Rust Unstable Book</a>.</p>
+<p><strong>Preferred alternative:</strong> Instead of the <code>asan</code> feature flag, you can set the
+<code>AWS_LC_SYS_SANITIZER</code> environment variable (or <code>AWS_LC_FIPS_SYS_SANITIZER</code> for FIPS builds)
+to one of: <code>asan</code>, <code>msan</code>, <code>tsan</code>. This approach does not require forwarding a feature through
+the dependency graph and also supports MemorySanitizer and ThreadSanitizer.
+MSAN and TSAN require the standard library to be rebuilt with sanitizer instrumentation, so
+you must install the <code>rust-src</code> component and pass <code>-Zbuild-std</code> to Cargo. For example:</p>
+<div class="example-wrap"><pre class="language-bash"><code>rustup component add rust-src --toolchain nightly
+AWS_LC_SYS_SANITIZER=msan RUSTFLAGS=&quot;-Zsanitizer=memory -Zsanitizer-memory-track-origins&quot; \
+    cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu</code></pre></div>
+<p><strong>Note:</strong> MSAN is not currently supported for FIPS builds due to a missing preprocessor guard
+in the upstream AWS-LC <code>bcm.c</code> integrity check.</p>
+<h5 id="bindgen"><a class="doc-anchor" href="#bindgen">§</a>bindgen</h5>
+<p>Causes <code>aws-lc-sys</code> or <code>aws-lc-fips-sys</code> to generates fresh bindings for AWS-LC instead of using
+the pre-generated bindings. This feature requires <code>libclang</code> to be installed. See the
+<a href="https://rust-lang.github.io/rust-bindgen/requirements.html">requirements</a>
+for <a href="https://github.com/rust-lang/rust-bindgen">rust-bindgen</a></p>
+<h5 id="prebuilt-nasm"><a class="doc-anchor" href="#prebuilt-nasm">§</a>prebuilt-nasm</h5>
+<p>Enables the use of crate provided prebuilt NASM objects under certain conditions. This only affects builds for
+Windows x86-64 platforms. This feature is ignored if the “fips” feature is also enabled.</p>
+<p>Use of prebuilt NASM objects is prevented if either of the following conditions are true:</p>
+<ul>
+<li>The NASM assembler is detected in the build environment</li>
+<li><code>AWS_LC_SYS_PREBUILT_NASM</code> environment variable is set with a value of <code>0</code></li>
+</ul>
+<p>Be aware that <a href="https://doc.rust-lang.org/cargo/reference/features.html#feature-unification">features are additive</a>;
+by enabling this feature, it is enabled for all crates within the same build.</p>
+<h5 id="dev-tests-only"><a class="doc-anchor" href="#dev-tests-only">§</a>dev-tests-only</h5>
+<p>Enables the <code>rand::unsealed</code> module, which re-exports the normally sealed <code>SecureRandom</code> trait.
+This allows consumers to provide their own implementations of <code>SecureRandom</code> (e.g., a
+deterministic RNG) for testing purposes. When enabled, a <code>mut_fill</code> method is also available on
+<code>SecureRandom</code>.</p>
+<p>This feature is restricted to <strong>dev/debug profile builds only</strong> — attempting to use it in a
+release build will result in a compile-time error.</p>
+<p>It can be enabled in two ways:</p>
+<ul>
+<li><strong>Feature flag:</strong> <code>cargo test --features dev-tests-only</code></li>
+<li><strong>Environment variable:</strong> <code>AWS_LC_RS_DEV_TESTS_ONLY=1 cargo test</code></li>
+</ul>
+<p><strong>⚠️ Warning:</strong> This feature is intended <strong>only</strong> for development and testing. It must not be
+used in production builds. The <code>rand::unsealed</code> module and <code>mut_fill</code> method are not part of the
+stable public API and may change without notice.</p>
+<h5 id="legacy-des"><a class="doc-anchor" href="#legacy-des">§</a>legacy-des</h5>
+<p>Enables single DES and Triple DES as opt-in symmetric ciphers under the
+<a href="cipher/index.html" title="mod aws_lc_rs::cipher"><code>cipher</code></a> module, exposing <code>DES_FOR_LEGACY_USE_ONLY</code> (single DES),
+<code>DES_EDE_FOR_LEGACY_USE_ONLY</code> (2-key Triple DES) and
+<code>DES_EDE3_FOR_LEGACY_USE_ONLY</code> (3-key Triple DES), together with the
+supporting key-length and IV-length constants. Only CBC and ECB operating
+modes are supported.</p>
+<p><strong>⚠️ Warning:</strong> Single DES and Triple DES are legacy algorithms. Single DES
+provides only 56 bits of effective security and has been considered insecure
+for decades. Triple DES has been disallowed for encryption by
+<a href="https://csrc.nist.gov/publications/detail/sp/800-131a/rev-2/final">NIST SP 800-131A Rev. 2</a>:
+2-key Triple DES after 2015, and 3-key Triple DES after 2023. This feature
+exists solely to support interoperability. All exposed items are marked
+<code>#[deprecated]</code> so that any use site produces a compiler warning. <strong>Do not
+use single DES or Triple DES in new designs.</strong> If you only need
+confidentiality, prefer AES-GCM or another AEAD from the <a href="aead/index.html" title="mod aws_lc_rs::aead"><code>aead</code></a> module;
+if you specifically need a block cipher, prefer one of the AES algorithms
+in <a href="cipher/index.html" title="mod aws_lc_rs::cipher"><code>cipher</code></a>.</p>
+<p><strong>Build-time impact:</strong> The default <code>aws-lc-sys</code> bindings do not expose the
+low-level <code>DES_*</code> symbols this feature relies on, so enabling <code>legacy-des</code>
+also enables <code>aws-lc-sys?/all-bindings</code>. Concretely:</p>
+<ul>
+<li>On platforms with pre-generated per-target bindings, the build switches
+from the universal bindings to the per-target bindings (no extra
+tooling required).</li>
+<li>On platforms <em>without</em> pre-generated bindings for the selected target,
+<code>bindgen</code> is invoked at build time, which requires <code>libclang</code> to be
+installed in the build environment.</li>
+</ul>
+<p>Because <a href="https://doc.rust-lang.org/cargo/reference/features.html#feature-unification">features are
+additive</a>,
+enabling <code>legacy-des</code> anywhere in your dependency graph applies the
+above to the entire build.</p>
+<h2 id="use-of-prebuilt-nasm-objects"><a class="doc-anchor" href="#use-of-prebuilt-nasm-objects">§</a>Use of prebuilt NASM objects</h2>
+<p>Prebuilt NASM objects are <strong>only</strong> applicable to Windows x86-64 platforms. They are <strong>never</strong> used on any other platform (Linux, macOS, etc.).</p>
+<p>For Windows x86 and x86-64, NASM is required for assembly code compilation. On these platforms,
+we recommend that you install <a href="https://www.nasm.us/">the NASM assembler</a>. <strong>If NASM is
+detected in the build environment, it is always used</strong> to compile the assembly files. Prebuilt NASM objects are only used as a fallback.</p>
+<p>If a NASM assembler is not available, and the “fips” feature is not enabled, then the build fails unless one of the following conditions are true:</p>
+<ul>
+<li>You are building for <code>x86-64</code> and either:
+<ul>
+<li>The <code>AWS_LC_SYS_PREBUILT_NASM</code> environment variable is found and has a value of “1”; OR</li>
+<li><code>AWS_LC_SYS_PREBUILT_NASM</code> is <em>not found</em> in the environment AND the “prebuilt-nasm” feature has been enabled.</li>
+</ul>
+</li>
+</ul>
+<p>If the above cases apply, then the crate provided prebuilt NASM objects will be used for the build. To prevent usage of prebuilt NASM
+objects, install NASM in the build environment and/or set the variable <code>AWS_LC_SYS_PREBUILT_NASM</code> to <code>0</code> in the build environment to prevent their use.</p>
+<h3 id="about-prebuilt-nasm-objects"><a class="doc-anchor" href="#about-prebuilt-nasm-objects">§</a>About prebuilt NASM objects</h3>
+<p>Prebuilt NASM objects are generated using automation similar to the crate provided pregenerated bindings. See the repository’s
+<a href="https://github.com/aws/aws-lc-rs/blob/main/.github/workflows/sys-bindings-generator.yml">GitHub workflow configuration</a> for more information.
+The prebuilt NASM objects are checked into the repository
+and are <a href="https://github.com/aws/aws-lc-rs/tree/main/aws-lc-sys/builder/prebuilt-nasm">available for inspection</a>.
+For each PR submitted,
+<a href="https://github.com/aws/aws-lc-rs/blob/main/.github/workflows/tests.yml">CI verifies</a>
+that the NASM objects newly built from source match the NASM objects currently in the repository.</p>
+<h2 id="ring-compatibility"><a class="doc-anchor" href="#ring-compatibility">§</a><em>ring</em>-compatibility</h2>
+<p>Although this library attempts to be fully compatible with <em>ring</em> (v0.16.x), there are a few places where our
+behavior is observably different.</p>
+<ul>
+<li>Our implementation requires the <code>std</code> library. We currently do not support a
+<a href="https://docs.rust-embedded.org/book/intro/no-std.html"><code>#![no_std]</code></a> build.</li>
+<li><code>aws-lc-rs</code> supports the platforms supported by <code>aws-lc-sys</code> and AWS-LC. See the
+<a href="https://aws.github.io/aws-lc-rs/platform_support.html">Platform Support</a> page in our User Guide.</li>
+<li><code>Ed25519KeyPair::from_pkcs8</code> and <code>Ed25519KeyPair::from_pkcs8_maybe_unchecked</code> both support
+parsing of v1 or v2 PKCS#8 documents. If a v2 encoded key is provided to either function,
+public key component, if present, will be verified to match the one derived from the encoded
+private key.</li>
+</ul>
+<h2 id="post-quantum-cryptography"><a class="doc-anchor" href="#post-quantum-cryptography">§</a>Post-Quantum Cryptography</h2>
+<p>Details on the post-quantum algorithms supported by aws-lc-rs can be found at
+<a href="https://github.com/aws/aws-lc/tree/main/crypto/fipsmodule/PQREADME.md">PQREADME</a>.</p>
+<h2 id="motivation"><a class="doc-anchor" href="#motivation">§</a>Motivation</h2>
+<p>Rust developers increasingly need to deploy applications that meet US and Canadian government
+cryptographic requirements. We evaluated how to deliver FIPS validated cryptography in idiomatic
+and performant Rust, built around our AWS-LC offering. We found that the popular ring (v0.16)
+library fulfilled much of the cryptographic needs in the Rust community, but it did not meet the
+needs of developers with FIPS requirements. Our intention is to contribute a drop-in replacement
+for ring that provides FIPS support and is compatible with the ring API. Rust developers with
+prescribed cryptographic requirements can seamlessly integrate aws-lc-rs into their applications
+and deploy them into AWS Regions.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="aead/index.html" title="mod aws_lc_rs::aead">aead</a></dt><dd>Authenticated Encryption with Associated Data (AEAD).</dd><dt><a class="mod" href="agreement/index.html" title="mod aws_lc_rs::agreement">agreement</a></dt><dd>Key Agreement: ECDH, including X25519.</dd><dt><a class="mod" href="cipher/index.html" title="mod aws_lc_rs::cipher">cipher</a></dt><dd>Block and Stream Ciphers for Encryption and Decryption.</dd><dt><a class="mod" href="cmac/index.html" title="mod aws_lc_rs::cmac">cmac</a></dt><dd>CMAC is specified in <a href="https://tools.ietf.org/html/rfc4493">RFC 4493</a> and <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38b.pdf">NIST SP 800-38B</a>.</dd><dt><a class="mod" href="constant_time/index.html" title="mod aws_lc_rs::constant_time">constant_<wbr>time</a></dt><dd>Constant-time operations.</dd><dt><a class="mod" href="digest/index.html" title="mod aws_lc_rs::digest">digest</a></dt><dd>SHA-2, SHA-3 and the legacy SHA-1 digest algorithms.</dd><dt><a class="mod" href="encoding/index.html" title="mod aws_lc_rs::encoding">encoding</a></dt><dd>Serialization formats</dd><dt><a class="mod" href="error/index.html" title="mod aws_lc_rs::error">error</a></dt><dd>Error reporting.</dd><dt><a class="mod" href="hkdf/index.html" title="mod aws_lc_rs::hkdf">hkdf</a></dt><dd>HMAC-based Extract-and-Expand Key Derivation Function.</dd><dt><a class="mod" href="hmac/index.html" title="mod aws_lc_rs::hmac">hmac</a></dt><dd>HMAC is specified in <a href="https://tools.ietf.org/html/rfc2104">RFC 2104</a>.</dd><dt><a class="mod" href="iv/index.html" title="mod aws_lc_rs::iv">iv</a></dt><dd>Initialization Vector (IV) cryptographic primitives</dd><dt><a class="mod" href="kdf/index.html" title="mod aws_lc_rs::kdf">kdf</a></dt><dd>Key-based Key Derivation Function (KBKDF) in Counter Mode</dd><dt><a class="mod" href="kem/index.html" title="mod aws_lc_rs::kem">kem</a></dt><dd>Key-Encapsulation Mechanisms (KEMs), including support for Kyber Round 3 Submission.</dd><dt><a class="mod" href="key_wrap/index.html" title="mod aws_lc_rs::key_wrap">key_<wbr>wrap</a></dt><dd>Key Wrap Algorithms.</dd><dt><a class="mod" href="pbkdf2/index.html" title="mod aws_lc_rs::pbkdf2">pbkdf2</a></dt><dd>PBKDF2 derivation and verification.</dd><dt><a class="mod" href="pkcs8/index.html" title="mod aws_lc_rs::pkcs8">pkcs8</a></dt><dd>PKCS#8 is specified in <a href="https://tools.ietf.org/html/rfc5208.">RFC 5208</a>.</dd><dt><a class="mod" href="rand/index.html" title="mod aws_lc_rs::rand">rand</a></dt><dd>Cryptographic pseudo-random number generation.</dd><dt><a class="mod" href="rsa/index.html" title="mod aws_lc_rs::rsa">rsa</a></dt><dd>RSA Signature and Encryption Support.</dd><dt><a class="mod" href="signature/index.html" title="mod aws_lc_rs::signature">signature</a></dt><dd>Public key signatures: signing and verification.</dd><dt><a class="mod" href="tls_prf/index.html" title="mod aws_lc_rs::tls_prf">tls_prf</a></dt><dd>TLS 1.2 PRF API’s for usage in <a href="https://www.rfc-editor.org/rfc/rfc5246">RFC 5246</a> and <a href="https://www.rfc-editor.org/rfc/rfc7627">RFC 7627</a>.</dd></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.test_file.html" title="macro aws_lc_rs::test_file">test_<wbr>file</a></dt><dd>References a test input file.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.awslc_version.html" title="fn aws_lc_rs::awslc_version">awslc_<wbr>version</a></dt><dd>The version number of the linked AWS-LC library (e.g. <code>"5.1.0"</code>).</dd><dt><a class="fn" href="fn.fips_version.html" title="fn aws_lc_rs::fips_version">fips_<wbr>version</a></dt><dd>The FIPS module version this build corresponds to, or <code>None</code> if the build
+does not correspond to an AWS-LC FIPS release branch.</dd><dt><a class="fn" href="fn.init.html" title="fn aws_lc_rs::init">init</a></dt><dd>Initialize the <em>AWS-LC</em> library. (This should generally not be needed.)</dd><dt><a class="fn" href="fn.try_fips_cpu_jitter_entropy.html" title="fn aws_lc_rs::try_fips_cpu_jitter_entropy">try_<wbr>fips_<wbr>cpu_<wbr>jitter_<wbr>entropy</a></dt><dd>Indicates whether the underlying implementation is FIPS.</dd><dt><a class="fn" href="fn.try_fips_mode.html" title="fn aws_lc_rs::try_fips_mode">try_<wbr>fips_<wbr>mode</a></dt><dd>Indicates whether the underlying implementation is FIPS.</dd><dt><a class="fn" href="fn.try_fips_self_test.html" title="fn aws_lc_rs::try_fips_self_test">try_<wbr>fips_<wbr>self_<wbr>test</a></dt><dd>Runs the AWS-LC cryptographic algorithm self-tests on demand.</dd></dl><script type="text/json" id="notable-traits-data">{"&[u8]":"<h3>Notable traits for <code>&amp;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.u8.html\">u8</a>]</code></h3><pre><code><div class=\"where\">impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/alloc/io/read/trait.Read.html\" title=\"trait alloc::io::read::Read\">Read</a> for &amp;[<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.u8.html\">u8</a>]</div></code></pre>"}</script></section></div></main></body></html>
