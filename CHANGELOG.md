@@ -118,6 +118,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fix a potential use-after-free memory bug while holding rows in the Mysql backend longer than the connection/result iterator exists
 * Provide a BorrowedSqliteConnection passed to various hooks to prevent users calling `std::mem::replace` or similar methods
 * Fixed `diesel_tests::migration::test_rust_migrations` to allow consecutive runs without failing
+* `diesel print-schema` no longer treats a user-defined PostgreSQL type as a type provided by Diesel if it has the same name as one, like an enum named `range`, `money` or `interval`, or a domain named `longtext` that is selected by `pg_domains_as_custom_types`. Such types now get a definition in the `sql_types` module like any other custom type
 
 ### Changed
 

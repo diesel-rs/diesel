@@ -424,6 +424,7 @@ pub fn run_print_schema<W: IoWrite>(
     Ok(())
 }
 
+#[cfg(any(feature = "sqlite", feature = "mysql", feature = "mariadb"))]
 fn common_diesel_types(types: &mut HashSet<&str>) {
     types.insert("Bool");
     types.insert("Integer");
@@ -471,48 +472,84 @@ fn mysql_like_diesel_types(types: &mut HashSet<&str>) {
     types.insert("Json");
 }
 
+/// Returns the OID of the built-in PostgreSQL type that Diesel provides
+/// under the given name, if there is one
 #[cfg(feature = "postgres")]
-fn pg_diesel_types() -> HashSet<&'static str> {
-    let mut types = HashSet::new();
-    types.insert("Cidr");
-    types.insert("Citext");
-    types.insert("Inet");
-    types.insert("Jsonb");
-    types.insert("MacAddr");
-    types.insert("MacAddr8");
-    types.insert("Money");
-    types.insert("Oid");
-    types.insert("Range");
-    types.insert("Timestamptz");
-    types.insert("Uuid");
-    types.insert("Json");
-    types.insert("PgLsn");
-    types.insert("Record");
-    types.insert("Interval");
+fn pg_diesel_type_oid(conn: &mut diesel::PgConnection, rust_name: &str) -> Option<u32> {
+    use diesel::pg::Pg;
+    use diesel::sql_types::{self, HasSqlType};
 
-    // hidden type defs
-    types.insert("Int4range");
-    types.insert("Int8range");
-    types.insert("Daterange");
-    types.insert("Numrange");
-    types.insert("Tsrange");
-    types.insert("Tstzrange");
-    types.insert("Int4multirange");
-    types.insert("Int8multirange");
-    types.insert("Datemultirange");
-    types.insert("Nummultirange");
-    types.insert("Tsmultirange");
-    types.insert("Tstzmultirange");
-    types.insert("SmallSerial");
-    types.insert("BigSerial");
-    types.insert("Serial");
-    types.insert("Bytea");
-    types.insert("Bpchar");
-    types.insert("Macaddr");
-    types.insert("Macaddr8");
+    fn oid<ST>(conn: &mut diesel::PgConnection) -> Option<u32>
+    where
+        Pg: HasSqlType<ST>,
+    {
+        <Pg as HasSqlType<ST>>::metadata(conn).oid().ok()
+    }
 
-    common_diesel_types(&mut types);
-    types
+    match rust_name {
+        "Bool" => oid::<sql_types::Bool>(conn),
+        "Int2" => oid::<sql_types::SmallInt>(conn),
+        "Int4" => oid::<sql_types::Integer>(conn),
+        "Int8" => oid::<sql_types::BigInt>(conn),
+        "Float4" => oid::<sql_types::Float>(conn),
+        "Float8" => oid::<sql_types::Double>(conn),
+        "Numeric" => oid::<sql_types::Numeric>(conn),
+        "Text" => oid::<sql_types::Text>(conn),
+        "Bpchar" => oid::<sql_types::Bpchar>(conn),
+        // The generated schema uses `diesel::sql_types::Char`, which is an alias for `Text`.
+        // The PostgreSQL type `"char"` itself is represented by `CChar`
+        "Char" => oid::<sql_types::CChar>(conn),
+        // `diesel::sql_types::Varchar` is an alias for `Text` and `diesel::sql_types::Bit`
+        // is an alias for `Binary`, so there is no SQL type that carries the OID
+        // of `varchar` or `bit`
+        "Varchar" => Some(1043),
+        "Bit" => Some(1560),
+        "Bytea" => oid::<sql_types::Binary>(conn),
+        "Date" => oid::<sql_types::Date>(conn),
+        "Time" => oid::<sql_types::Time>(conn),
+        "Timestamp" => oid::<sql_types::Timestamp>(conn),
+        "Timestamptz" => oid::<sql_types::Timestamptz>(conn),
+        "Interval" => oid::<sql_types::Interval>(conn),
+        "Uuid" => oid::<sql_types::Uuid>(conn),
+        "Json" => oid::<sql_types::Json>(conn),
+        "Jsonb" => oid::<sql_types::Jsonb>(conn),
+        "Inet" => oid::<sql_types::Inet>(conn),
+        "Cidr" => oid::<sql_types::Cidr>(conn),
+        "Macaddr" => oid::<sql_types::MacAddr>(conn),
+        "Macaddr8" => oid::<sql_types::MacAddr8>(conn),
+        "Money" => oid::<sql_types::Money>(conn),
+        "Oid" => oid::<sql_types::Oid>(conn),
+        "PgLsn" => oid::<sql_types::PgLsn>(conn),
+        "Int4range" => oid::<sql_types::Int4range>(conn),
+        "Int8range" => oid::<sql_types::Int8range>(conn),
+        "Daterange" => oid::<sql_types::Daterange>(conn),
+        "Numrange" => oid::<sql_types::Numrange>(conn),
+        "Tsrange" => oid::<sql_types::Tsrange>(conn),
+        "Tstzrange" => oid::<sql_types::Tstzrange>(conn),
+        "Int4multirange" => oid::<sql_types::Int4multirange>(conn),
+        "Int8multirange" => oid::<sql_types::Int8multirange>(conn),
+        "Datemultirange" => oid::<sql_types::Datemultirange>(conn),
+        "Nummultirange" => oid::<sql_types::Nummultirange>(conn),
+        "Tsmultirange" => oid::<sql_types::Tsmultirange>(conn),
+        "Tstzmultirange" => oid::<sql_types::Tstzmultirange>(conn),
+        // `citext` comes from an extension, so its OID is looked up by name
+        "Citext" => oid::<sql_types::Citext>(conn),
+        _ => None,
+    }
+}
+
+/// Checks if the type of a column is a type provided by Diesel
+///
+/// A user defined type can have the same name as a built-in type,
+/// so the name is not enough: the OID of the type must match as well.
+#[cfg(feature = "postgres")]
+fn is_pg_diesel_type(conn: &mut diesel::PgConnection, ty: &ColumnType) -> QueryResult<bool> {
+    let Some(diesel_type_oid) = pg_diesel_type_oid(conn, &ty.rust_name) else {
+        return Ok(false);
+    };
+    let column_type_oid =
+        crate::infer_schema_internals::pg::get_type_oid(conn, &ty.sql_name, ty.schema.as_deref())?;
+    Ok(column_type_oid == diesel_type_oid)
 }
 
 #[cfg(feature = "mysql")]
@@ -581,9 +618,10 @@ pub(crate) fn load_custom_types(
     config: &config::PrintSchema,
 ) -> QueryResult<CustomTypeInfos> {
     let backend = Backend::for_connection(connection);
-    let diesel_provided_types = match backend {
+    let diesel_provided_types: HashSet<&str> = match backend {
+        // PostgreSQL types are compared by their OID, see `is_pg_diesel_type`
         #[cfg(feature = "postgres")]
-        Backend::Pg => pg_diesel_types(),
+        Backend::Pg => HashSet::new(),
         #[cfg(feature = "sqlite")]
         Backend::Sqlite => sqlite_diesel_types(),
         #[cfg(feature = "mysql")]
@@ -597,8 +635,16 @@ pub(crate) fn load_custom_types(
             cd.columns()
                 .iter()
                 .map(|c| {
-                    Some(&c.ty)
-                        .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
+                    let is_diesel_provided_type = diesel_provided_types
+                        .contains(c.ty.rust_name.as_str())
+                        || match connection {
+                            #[cfg(feature = "postgres")]
+                            InferConnection::Pg(conn) => is_pg_diesel_type(conn, &c.ty)?,
+                            #[cfg(any(feature = "sqlite", feature = "mysql", feature = "mariadb"))]
+                            _ => false,
+                        };
+                    let custom_type = (!is_diesel_provided_type)
+                        .then_some(&c.ty)
                         // Skip generating custom SQL type definitions if the type matches any
                         // regex specified in `except_custom_type_definitions`.
                         // Matching is performed against:
@@ -649,11 +695,12 @@ pub(crate) fn load_custom_types(
                                     ..ty.clone()
                                 }
                             }
-                        })
+                        });
+                    Ok(custom_type)
                 })
-                .collect::<Vec<Option<ColumnType>>>()
+                .collect::<QueryResult<Vec<Option<ColumnType>>>>()
         })
-        .collect::<Vec<_>>();
+        .collect::<QueryResult<Vec<_>>>()?;
 
     let (enum_variants, type_comments) = match connection {
         #[cfg(feature = "postgres")]

@@ -485,6 +485,12 @@ fn print_schema_citext() {
     test_print_schema("print_schema_citext", vec![])
 }
 
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_custom_type_named_like_builtin_type() {
+    test_print_schema("print_schema_custom_type_named_like_builtin_type", vec![])
+}
+
 #[test]
 fn print_schema_with_multiple_schema() {
     test_multiple_print_schema(

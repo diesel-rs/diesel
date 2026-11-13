@@ -326,6 +326,20 @@ pub fn get_type_comment(
         .get_result::<Option<String>>(conn)
 }
 
+pub fn get_type_oid(
+    conn: &mut PgConnection,
+    type_name: &str,
+    schema_name: Option<&str>,
+) -> QueryResult<u32> {
+    let default_schema = Pg::default_schema(conn)?;
+
+    pg_type::table
+        .select(pg_type::oid)
+        .filter(pg_type::typname.eq(type_name))
+        .filter(pg_type::typnamespace.eq(regnamespace(schema_name.unwrap_or(&default_schema))))
+        .get_result(conn)
+}
+
 #[cfg(test)]
 mod test {
     extern crate dotenvy;
