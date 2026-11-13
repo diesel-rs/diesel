@@ -29,12 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.1
         with:
           persist-credentials: false
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           workspaces: fuzz -> fuzz/target
           key: fuzz-test-${{ hashFiles('fuzz/Cargo.lock') }}
@@ -50,11 +50,11 @@ jobs:
       list: ${{ steps.read.outputs.list }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.1
         with:
           persist-credentials: false
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@v2.87.13
         with:
           tool: cargo-fuzz
 
@@ -82,12 +82,12 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.1
         with:
           persist-credentials: false
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@f51f967e158417aafa338a1e46ab22095f07aa01 # v2.8.2
+        uses: Swatinem/rust-cache@v2.8.2
         with:
           workspaces: fuzz -> fuzz/target
           key: fuzz-${{ matrix.target }}-${{ hashFiles('fuzz/Cargo.lock') }}
@@ -95,7 +95,7 @@ jobs:
       - name: Install nightly toolchain
         run: rustup toolchain install nightly --component rust-src
 
-      - uses: taiki-e/install-action@60581cd7025e0e855cebd745379013e286d9c787 # v2.64.2
+      - uses: taiki-e/install-action@v2.87.13
         with:
           tool: cargo-fuzz
 
@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: ${{ matrix.target }}-artifacts
           path: fuzz/artifacts/${{ matrix.target }}/

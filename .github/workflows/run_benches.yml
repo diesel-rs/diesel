@@ -19,7 +19,7 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.1
         with:
           persist-credentials: false
 
@@ -75,7 +75,7 @@ jobs:
         run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" -- --save-baseline changes > pr_$BACKEND.txt
 
       - name: Upload PR ${{ matrix.backend }} Benchmark Results
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: pr_${{ matrix.backend }}.txt
           path: ./pr_${{ matrix.backend }}.txt
@@ -85,7 +85,7 @@ jobs:
           mv diesel_bench/target/criterion /tmp
 
       - name: Checkout base branch
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@v6.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           repository: ${{ github.event.pull_request.base.repo.full_name }}
@@ -102,7 +102,7 @@ jobs:
         run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "$BACKEND" -- --save-baseline main > base_$BACKEND.txt
 
       - name: Upload base ${{ matrix.backend }} Benchmark Results
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@v6.0.0
         env:
           BACKEND: ${{ matrix.backend }}
         with:
@@ -110,7 +110,7 @@ jobs:
           path: ./base_$BACKEND.txt
 
       - name: Upload GitHub Event
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@v6.0.0
         env:
           BACKEND: ${{ matrix.backend }}
         with:

@@ -3,5 +3,5 @@ source: diesel_cli/tests/help_snapshots.rs
 expression: res.stdout()
 ---
 diesel 
- Version: 2.3.14
+ Version: 2.4.0
  Supported Backends: mysql

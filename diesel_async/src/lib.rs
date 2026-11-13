@@ -144,6 +144,8 @@ pub use self::mysql::MysqlCancelToken;
 pub use self::pg::AsyncPgConnection;
 #[doc(inline)]
 pub use self::run_query_dsl::*;
+#[doc(hidden)] // for diesel_derives;
+pub use futures_util;
 
 #[doc(inline)]
 #[cfg(feature = "migrations")]

@@ -5,11 +5,11 @@ edition.workspace = true
 publish = false
 
 [dependencies]
-diesel-async = { version = "0.9.0", path = "../../../", features = ["bb8", "postgres"] }
+diesel-async = { version = "0.10.0", path = "../../../", features = ["bb8", "postgres"] }
 tokio = { version = "1.2.0", default-features = false, features = ["macros", "rt-multi-thread"] }
 
 [dependencies.diesel]
-version = "2.3.0"
+version = "2.4.0"
 default-features = false
 path = "../../../../diesel"
 
