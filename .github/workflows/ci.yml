@@ -770,10 +770,7 @@ jobs:
         with:
           persist-credentials: false
       - run: gh extension install github/gh-actions-lock --pin v0.4.1
-      - run: |
-          shopt -s extglob
-          # the release yaml is generated, so don't check it
-          gh actions-lock --verify .github/workflows/!(release).yml
+      - run: gh actions-lock --verify
       - name: Install zizmor
         uses: taiki-e/install-action@v2.87.13
         with:
