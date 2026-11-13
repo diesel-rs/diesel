@@ -36,7 +36,7 @@ LL | / impl<ST, F, S, D, W, O, L, Of, G, H, LC> LimitDsl
 LL | |     for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, H, LC>
 LL | | where
 LL | |     Self: SelectQuery<SqlType = ST>,
-    | |                       ------------ unsatisfied requirement introduced here: `<diesel::internal::table_macro::SelectStatement<diesel::internal::table_macro::FromClause<children::table>, diesel::query_builder::select_clause::SelectClause<parents::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<children::columns::parent_id, parents::columns::id>>>> as SelectQuery>::SqlType == _`
+    | |                       ------------ unsatisfied requirement introduced here: `<SelectStatement<_, _, _, _> as SelectQuery>::SqlType == _`
 LL | |     SelectStatement<F, S, D, W, O, LimitOffsetClause<LimitClause<Limit>, Of>, G, H, LC>:
 LL | |         SelectQuery<SqlType = ST>,
     | |__________________________________^
@@ -142,8 +142,9 @@ error[E0277]: the trait bound `(id, Exists<_>): Expression` is not satisfied
 note: required by a bound in `diesel::QueryDsl::select`
    --> ROOT/diesel/src/query_dsl/mod.rs
     |
+ LL | pub trait QueryDsl: Sized {
+...
 LL |     fn select<Selection>(self, selection: Selection) -> Select<Self, Selection>
-    |        ------ required by a bound in this associated function
 LL |     where
 LL |         Selection: Expression,
     |                    ^^^^^^^^^^ required by this bound in `QueryDsl::select`

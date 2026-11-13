@@ -18,7 +18,7 @@ LL | |     Self: HasTable,
 LL | |     W: ValidWhereClause<F>,
     | |________-------------------^
     |          |
-    |          unsatisfied requirement introduced here: `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>: diesel::query_builder::where_clause::ValidWhereClause<users::table>`
+    |          unsatisfied requirement introduced here: `WhereClause<Grouped<_>>: ValidWhereClause<table>`
 note: required by a bound in `diesel::update`
    --> ROOT/diesel/src/query_builder/functions.rs
     |
@@ -85,4 +85,4 @@ LL | |     Self: HasTable,
 LL | |     W: ValidWhereClause<F>,
     | |________-------------------^
     |          |
-    |          unsatisfied requirement introduced here: `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>: diesel::query_builder::where_clause::ValidWhereClause<users::table>`
+    |          unsatisfied requirement introduced here: `WhereClause<Grouped<_>>: ValidWhereClause<table>`

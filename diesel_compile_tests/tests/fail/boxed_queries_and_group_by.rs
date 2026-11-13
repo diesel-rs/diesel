@@ -89,8 +89,7 @@ fn main() {
     users::table
         .into_boxed()
         .group_by(users::id)
-        //~^ ERROR: the trait bound `BoxedSelectStatement<'_, _, _, _>: GroupByDsl<_>` is not satisfied
-        //~| ERROR: the trait bound `SelectStatement<FromClause<_>>: GroupByDsl<_>` is not satisfied
+        //~^ ERROR: the trait bound `SelectStatement<FromClause<_>>: GroupByDsl<_>` is not satisfied
         //~| ERROR: the trait bound `BoxedSelectStatement<'_, _, _, _>: QueryRelation` is not satisfied
         .select(users::name)
         .load::<String>(&mut conn);

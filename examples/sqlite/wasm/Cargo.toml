@@ -10,11 +10,11 @@ diesel_migrations = { path = "../../../diesel_migrations", features = ["sqlite"]
 serde = { version = "1.0.217", features = ["derive"] }
 serde-wasm-bindgen = "0.6.5"
 wasm-bindgen = "0.2.99"
-wasm-bindgen-futures = "0.4.49"
 
 [target.'cfg(all(target_family = "wasm", target_os = "unknown"))'.dependencies]
 sqlite-wasm-vfs = { version = "0.3.0", features = ["sahpool"] }
 sqlite-wasm-rs = { version = "0.6.1", features = ["wasm-bindgen"] }
+wasm-bindgen-futures = "0.4.49"
 
 [lib]
 crate-type = ["cdylib"]

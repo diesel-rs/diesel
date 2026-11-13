@@ -65,8 +65,6 @@ note: required for `__Derived<nullable_int_col, max<Nullable<_>, _>>` to impleme
     |
  LL | #[declare_sql_function]
     | ^^^^^^^^^^^^^^^^^^^^^^^ type parameter would need to implement `ValidGrouping<()>`
-    = help: consider manually implementing `ValidGrouping<()>` to avoid undesired bounds caused by "imperfect derives"
-    = note: to learn more, visit <https://github.com/rust-lang/rust/issues/26925>
     = note: required for `SelectStatement<FromClause<table>>` to implement `SelectDsl<f<nullable_int_col, max<_, _>>>`
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)

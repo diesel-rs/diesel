@@ -43,8 +43,9 @@ help: the trait `SelectableExpression<table>` is not implemented for `diesel::pg
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -134,8 +135,9 @@ help: the trait `SelectableExpression<table>` is not implemented for `diesel::pg
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -159,8 +161,9 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<OldIdent>>:
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
@@ -194,8 +197,9 @@ note: expected this to be `diesel::query_source::Once`
 note: required by a bound in `load`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ---- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

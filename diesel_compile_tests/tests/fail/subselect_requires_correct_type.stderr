@@ -21,8 +21,9 @@ LL | |     Self: SelectQuery<SqlType = ST>,
 note: required by a bound in `eq_any`
    --> ROOT/diesel/src/expression_methods/global_expression_methods.rs
     |
+  LL | pub trait ExpressionMethods: Expression + Sized {
+...
 LL |     fn eq_any<T>(self, values: T) -> dsl::EqAny<Self, T>
-    |        ------ required by a bound in this associated function
 ...
 LL |         T: AsInExpression<Self::SqlType>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `ExpressionMethods::eq_any`

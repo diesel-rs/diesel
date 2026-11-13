@@ -15,10 +15,6 @@ include = ["README.md", "src/**/*.rs", "Cargo.toml", "LICENSE-MIT", "LICENSE-APA
 
 [dependencies]
 futures-core = "0.3.17"
-futures-channel = { version = "0.3.17", default-features = false, features = [
-  "std",
-  "sink",
-], optional = true }
 futures-util = { version = "0.3.17", default-features = false, features = [
   "alloc",
   "sink",
@@ -97,7 +93,6 @@ deadpool = ["pool", "dep:deadpool"]
 __mysql_like_shared = [
   "mysql_async",
   "mysql_common",
-  "futures-channel",
   "tokio",
 ]
 

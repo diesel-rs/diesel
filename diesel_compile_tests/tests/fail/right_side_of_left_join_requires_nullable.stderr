@@ -149,7 +149,6 @@ LL | #[declare_sql_function]
    | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
 LL | extern "SQL" {
 LL |     fn lower(x: Text) -> Text;
-   |        ----- required by a bound in this function
 
       = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -322,7 +321,6 @@ LL | #[declare_sql_function]
    | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
 LL | extern "SQL" {
 LL |     fn lower(x: Text) -> Text;
-   |        ----- required by a bound in this function
 
       = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -495,7 +493,6 @@ note: required by a bound in `lower`
     | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
  LL | extern "SQL" {
  LL |     fn lower(x: Text) -> Text;
-    |        ----- required by a bound in this function
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -648,7 +645,6 @@ note: required by a bound in `lower`
     | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
  LL | extern "SQL" {
  LL |     fn lower(x: Text) -> Text;
-    |        ----- required by a bound in this function
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -821,7 +817,6 @@ note: required by a bound in `lower`
     | ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
  LL | extern "SQL" {
  LL |     fn lower(x: Text) -> Text;
-    |        ----- required by a bound in this function
  
         = note: this error originates in the attribute macro `declare_sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
