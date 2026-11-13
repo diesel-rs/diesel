@@ -148,13 +148,14 @@ mod test {
             "id",
             "varchar(255)",
             None,
+            0,
             false,
             Some(255),
             Some("column comment".to_string()),
             false,
         );
         let id_without_comment =
-            ColumnInformation::new("id", "varchar(255)", None, false, Some(255), None, false);
+            ColumnInformation::new("id", "varchar(255)", None, 0, false, Some(255), None, false);
         assert_eq!(
             Ok(vec![id_with_comment]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
