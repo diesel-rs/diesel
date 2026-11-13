@@ -17,6 +17,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Fixed
 
 * `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
+* `diesel print-schema` no longer treats a user-defined PostgreSQL type as a type provided by Diesel if it has the same name as one, like an enum named `range`, `money` or `interval`, or a domain named `longtext` that is selected by `pg_domains_as_custom_types`. Such types now get a definition in the `sql_types` module like any other custom type
 
 ### Changed
 
