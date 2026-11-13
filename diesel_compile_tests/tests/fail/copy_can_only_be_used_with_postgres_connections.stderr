@@ -9,11 +9,13 @@ error[E0271]: type mismatch resolving `<MysqlLikeConnection<Mysql> as Connection
 note: required by a bound in `diesel::ExecuteCopyFromDsl::execute`
    --> ROOT/diesel/src/pg/query_builder/copy/copy_from.rs
     |
+LL | pub trait ExecuteCopyFromDsl<C>
+LL | where
 LL |     C: Connection<Backend = Pg>,
     |                   ^^^^^^^^^^^^ required by this bound in `ExecuteCopyFromDsl::execute`
 ...
 LL |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
-    |        ------- required by a bound in this associated function
+    |
 
 error[E0277]: the trait bound `CopyFromQuery<table, _>: ExecuteCopyFromDsl<_>` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:52:18
@@ -63,8 +65,9 @@ LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> ROOT/diesel/src/pg/query_builder/copy/copy_to.rs
     |
+LL | ...CopyToQuery<T, NotSet>
+...
 LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |       ---- required by a bound in this associated function
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
@@ -90,8 +93,9 @@ LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> ROOT/diesel/src/pg/query_builder/copy/copy_to.rs
     |
+LL | ...CopyToQuery<T, NotSet>
+...
 LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |       ---- required by a bound in this associated function
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
@@ -108,11 +112,13 @@ error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend
 note: required by a bound in `diesel::ExecuteCopyFromDsl::execute`
    --> ROOT/diesel/src/pg/query_builder/copy/copy_from.rs
     |
+LL | pub trait ExecuteCopyFromDsl<C>
+LL | where
 LL |     C: Connection<Backend = Pg>,
     |                   ^^^^^^^^^^^^ required by this bound in `ExecuteCopyFromDsl::execute`
 ...
 LL |     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
-    |        ------- required by a bound in this associated function
+    |
 
 error[E0277]: the trait bound `CopyFromQuery<table, _>: ExecuteCopyFromDsl<_>` is not satisfied
    --> tests/fail/copy_can_only_be_used_with_postgres_connections.rs:65:18
@@ -162,8 +168,9 @@ LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> ROOT/diesel/src/pg/query_builder/copy/copy_to.rs
     |
+LL | ...CopyToQuery<T, NotSet>
+...
 LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |       ---- required by a bound in this associated function
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`
@@ -189,8 +196,9 @@ LL | |     C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
 note: required by a bound in `CopyToQuery::<T, pg::query_builder::copy::copy_to::NotSet>::load`
    --> ROOT/diesel/src/pg/query_builder/copy/copy_to.rs
     |
+LL | ...CopyToQuery<T, NotSet>
+...
 LL | ...fn load<U, C>(self, conn: &mut C) -> QueryResult<impl Iterator<Item = QueryResult<U>> + '_>
-    |       ---- required by a bound in this associated function
 ...
 LL | ...C: ExecuteCopyToConnection,
     |       ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CopyToQuery::<T, NotSet>::load`

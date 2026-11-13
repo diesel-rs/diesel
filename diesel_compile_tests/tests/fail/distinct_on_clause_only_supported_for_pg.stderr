@@ -24,8 +24,9 @@ help: the trait `QueryFragment<Sqlite, NotSpecialized>` is not implemented for `
 note: required by a bound in `get_results`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ----------- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
@@ -57,8 +58,9 @@ help: the trait `QueryFragment<Mysql, NotSpecialized>` is not implemented for `D
 note: required by a bound in `get_results`
     --> ROOT/diesel/src/query_dsl/mod.rs
      |
+LL | pub trait RunQueryDsl<Conn>: Sized {
+...
 LL |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
-     |        ----------- required by a bound in this associated function
 LL |     where
 LL |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`

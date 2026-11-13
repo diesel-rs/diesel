@@ -17,6 +17,8 @@ LL | | }
 note: required by a bound in `diesel::QuerySource::DefaultSelection`
   --> ROOT/diesel/src/query_source/mod.rs
    |
+LL | pub trait QuerySource {
+...
 LL |     type DefaultSelection: SelectableExpression<Self>;
    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QuerySource::DefaultSelection`
 
@@ -71,6 +73,8 @@ error[E0277]: the trait bound `(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, 
 note: required by a bound in `diesel::Table::AllColumns`
    --> ROOT/diesel/src/query_source/mod.rs
     |
+ LL | pub trait Table: QuerySource + AsQuery + Sized {
+...
 LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
     |                                                   ^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
  
@@ -95,6 +99,8 @@ error[E0277]: cannot select `(_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
 note: required by a bound in `diesel::Table::AllColumns`
    --> ROOT/diesel/src/query_source/mod.rs
     |
+ LL | pub trait Table: QuerySource + AsQuery + Sized {
+...
 LL |     type AllColumns: SelectableExpression<Self> + ValidGrouping<()>;
     |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `Table::AllColumns`
  

@@ -81,6 +81,8 @@ impl ClippyArgs {
                 "diesel_derives/chrono",
                 "-F",
                 "diesel_derives/time",
+                "-F",
+                "diesel-async/migrations",
             ])
             .args(&self.flags)
             .current_dir(&metadata.workspace_root);

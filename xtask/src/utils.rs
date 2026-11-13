@@ -19,9 +19,10 @@ pub fn get_exclude_for_backend<'a>(
             if (p.manifest_path.starts_with(&examples)
                 && !p.manifest_path.starts_with(&backend_examples))
                 || (p.manifest_path.starts_with(&async_examples)
-                    && !(backend == "sqlite"
+                    && ((!(backend == "sqlite"
                         && p.manifest_path.ends_with("sync-wrapper/Cargo.toml"))
-                    && !p.manifest_path.starts_with(&async_backend_examples))
+                        && !p.manifest_path.starts_with(&async_backend_examples))
+                        || wasm))
             {
                 Some(["--exclude", &p.name])
             } else {

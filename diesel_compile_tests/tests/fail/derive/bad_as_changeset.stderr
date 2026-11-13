@@ -97,8 +97,6 @@ note: required for `&'update User` to implement `diesel::AsChangeset`
    |
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ type parameter would need to implement `diesel::AsChangeset`
-   = help: consider manually implementing `diesel::AsChangeset` to avoid undesired bounds caused by "imperfect derives"
-   = note: to learn more, visit <https://github.com/rust-lang/rust/issues/26925>
 
       = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
 
@@ -122,8 +120,6 @@ note: required for `&'update User` to implement `diesel::AsChangeset`
    |
 LL | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^ type parameter would need to implement `diesel::AsChangeset`
-   = help: consider manually implementing `diesel::AsChangeset` to avoid undesired bounds caused by "imperfect derives"
-   = note: to learn more, visit <https://github.com/rust-lang/rust/issues/26925>
 
       = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
 
