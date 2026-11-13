@@ -1,9 +1,15 @@
+use std::borrow::Cow;
+
+use diesel::dsl::{exists, sql};
 use diesel::mariadb::{Mariadb, MariadbConnection};
+use diesel::sql_types::{Nullable, Text};
 use diesel::*;
 
 use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
+use crate::infer_schema_internals::mysql_like::{column_query, information_schema, null_if_text};
+use crate::print_schema::ColumnSorting;
 
 /// Even though this is using `information_schema`, Mariadb needs non-ANSI columns
 /// in order to do this.
@@ -45,13 +51,79 @@ pub fn load_foreign_key_constraints(
     ))
 }
 
+pub fn get_table_data(
+    conn: &mut MariadbConnection,
+    table: &TableName,
+    column_sorting: &ColumnSorting,
+) -> QueryResult<Vec<ColumnInformation>> {
+    use information_schema::check_constraints::dsl::{
+        check_clause, check_constraints, constraint_schema, table_name as cc_table_name,
+    };
+    use information_schema::columns::dsl::*;
+
+    let schema_name = match table.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Mariadb::default_schema(conn)?),
+    };
+
+    let query = column_query::query(&table.sql_name, &schema_name).select((
+        (
+            column_name,
+            column_type,
+            None::<String>.into_sql::<Nullable<Text>>(),
+            __is_nullable,
+            character_maximum_length,
+            // MySQL comments are not nullable and are empty strings if not set
+            null_if_text(column_comment, ""),
+            extra,
+        ),
+        exists(
+            check_constraints
+                .filter(
+                    cc_table_name
+                        .eq(table_name)
+                        .and(constraint_schema.eq(table_schema)),
+                )
+                .filter(check_clause.like(sql::<Text>(
+                    "CONCAT('%json_valid(`',`columns`.`column_name`,'`)%')",
+                ))),
+        ),
+    ));
+    let table_columns = match column_sorting {
+        ColumnSorting::OrdinalPosition => query
+            .order(ordinal_position)
+            .load::<(ColumnInformation, bool)>(conn),
+        ColumnSorting::Name => query
+            .order(column_name)
+            .load::<(ColumnInformation, bool)>(conn),
+    }?;
+    let table_columns = table_columns
+        .into_iter()
+        .map(|(mut c, is_json)| {
+            if c.max_length.is_some() && !c.type_name.contains('(') {
+                // Mysql returns something in character_maximum_length regardless
+                // of whether it's specified at field creation time
+                // In addition there is typically a shared limitation at row level,
+                // so it's typically not even the real max.
+                // This basically means no max.
+                // https://dev.mysql.com/doc/refman/8.0/en/column-count-limit.html
+                // https://chartio.com/resources/tutorials/understanding-strorage-sizes-for-mysql-text-data-types/
+                c.max_length = None;
+            }
+            if is_json && c.type_name == "longtext" {
+                c.type_name = "json".to_owned();
+            }
+            c
+        })
+        .collect();
+    Ok(table_columns)
+}
+
 #[cfg(test)]
 use super::mysql_like::{
     determine_column_type, determine_type_name, determine_unsigned, get_enum_variants,
-    get_table_comment, get_table_data,
+    get_table_comment,
 };
-#[cfg(test)]
-use crate::print_schema::ColumnSorting;
 
 #[test]
 fn values_which_already_map_to_type_are_returned_unchanged() {

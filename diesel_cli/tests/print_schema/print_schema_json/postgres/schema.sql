@@ -1,0 +1,1 @@
+CREATE TABLE json(jsonb_col JSONB PRIMARY KEY, json_col JSON NOT NULL);

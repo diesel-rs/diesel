@@ -110,6 +110,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
 * Fixed a Segmentationfault when issuing an empty query while using libmariadb
 * Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
+* Fixed a double free when a SQLite auto-extension leaked a cursor whose last step failed, and the matching abort in WAL hooks
+* Fixed `diesel print-schema` now correctly emits `Json` as column type on MariaDB for json columns 
+* Fixed an issue with a panic during `copy_from` statements could render the connection unusable
+* Fixed an issue with using `COPY FROM/TO` via `sql_query` and `batch_execute` which could render the connection unusable
+* Fixed a Segmentationfault when issuing an empty query while using libmariadb
+* Fixed SQL injection through the SQLite `diesel_manage_updated_at` function, which now quotes its argument as a table name and runs a single statement. Table names containing `"`, spaces or keywords now work
 * Fix a potential use-after-free issues for SQLite database deserialized in during register_auto_extension
 * Fix that the iterator returned by `SqliteConnection::load_iter` is correctly fused and doesn't return values after the first `None` or statement related `Some(Err(_))` by reexecuting the statement
 * Fix a potential use-after-free memory bug while holding rows in the Mysql backend longer than the connection/result iterator exists

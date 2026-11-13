@@ -202,12 +202,10 @@ fn get_column_information(
             super::pg::get_table_data(c, table, column_sorting, pg_domains_as_custom_types)
         }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref mut c) => {
-            super::mysql_like::get_table_data(c, table, column_sorting)
-        }
+        InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
         #[cfg(feature = "mariadb")]
         InferConnection::Mariadb(ref mut c) => {
-            super::mysql_like::get_table_data(c, table, column_sorting)
+            super::mariadb::get_table_data(c, table, column_sorting)
         }
     };
     if let Err(NotFound) = column_info {
