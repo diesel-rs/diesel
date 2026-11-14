@@ -22,14 +22,14 @@ const _: () = {
                 let field = diesel::row::NamedRow::get::<
                     diesel::dsl::SqlTypeOf<users::r#id>,
                     i32,
-                >(row, "id")?;
+                >(row, <users::r#id as diesel::query_source::Column>::NAME)?;
                 <i32 as ::core::convert::Into<i32>>::into(field)
             };
             let mut name = {
                 let field = diesel::row::NamedRow::get::<
                     diesel::dsl::SqlTypeOf<users::r#name>,
                     String,
-                >(row, "name")?;
+                >(row, <users::r#name as diesel::query_source::Column>::NAME)?;
                 <String as ::core::convert::Into<String>>::into(field)
             };
             diesel::deserialize::Result::Ok(Self { id, name })

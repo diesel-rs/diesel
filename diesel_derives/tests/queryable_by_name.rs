@@ -12,6 +12,14 @@ table! {
     }
 }
 
+table! {
+    renamed_columns (id) {
+        id -> Integer,
+        #[sql_name = "type"]
+        kind -> Integer,
+    }
+}
+
 #[cfg(feature = "sqlite")]
 table! {
     multiple_sql_types_for_text {
@@ -138,7 +146,29 @@ fn struct_with_multiple_sql_types_for_text_from_table() {
     );
 }
 
-// FIXME: Test usage with renamed columns
+#[test]
+fn struct_with_renamed_column() {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[diesel(table_name = renamed_columns)]
+    struct RenamedColumns {
+        id: i32,
+        kind: i32,
+        #[diesel(column_name = kind)]
+        kind_again: i32,
+    }
+
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS id, 2 AS type").get_result(conn);
+    assert_eq!(
+        Ok(RenamedColumns {
+            id: 1,
+            kind: 2,
+            kind_again: 2
+        }),
+        data
+    );
+}
+
 #[test]
 fn struct_with_no_table() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]

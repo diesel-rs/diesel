@@ -748,7 +748,9 @@ fn derive_queryable_inner(input: proc_macro2::TokenStream) -> proc_macro2::Token
 /// If the name of a field on your struct is different from the column in your
 /// `table!` declaration, or if you're deriving this trait on a tuple struct,
 /// you can annotate the field with `#[diesel(column_name = some_column)]`. For tuple
-/// structs, all fields must have this annotation.
+/// structs, all fields must have this annotation. A field that takes its SQL
+/// type from the table is read under the column's SQL name, so a column
+/// declared with `#[sql_name = "..."]` in `table!` is looked up under that name.
 ///
 /// If a field is another struct which implements `QueryableByName`,
 /// instead of a column, you can annotate that with `#[diesel(embed)]`.

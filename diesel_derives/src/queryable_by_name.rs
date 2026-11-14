@@ -26,8 +26,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             } else {
                 let st = sql_type(f, &model)?;
                 let deserialize_ty = f.ty_for_deserialize();
-                let name = f.column_name()?;
-                let name = LitStr::new(&name.to_string(), name.span());
+                let name = column_name(f, &model)?;
                 Ok(quote!(
                    {
                        let field = diesel::row::NamedRow::get::<#st, #deserialize_ty>(row, #name)?;
@@ -133,5 +132,20 @@ fn sql_type(field: &Field, model: &Model) -> Result<Type> {
             let column_name = field.column_name()?.to_ident()?;
             Ok(parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>))
         }
+    }
+}
+
+/// Returns the name a field is read under. A field typed from the table uses
+/// the column's `NAME`, which honours its `sql_name`, and any other field uses
+/// its own column name.
+fn column_name(field: &Field, model: &Model) -> Result<TokenStream> {
+    let column_name = field.column_name()?;
+    if field.sql_type.is_some() {
+        let name = LitStr::new(&column_name.to_string(), column_name.span());
+        Ok(quote!(#name))
+    } else {
+        let table_name = &model.table_names()[0];
+        let column_name = column_name.to_ident()?;
+        Ok(quote!(<#table_name::#column_name as diesel::query_source::Column>::NAME))
     }
 }
