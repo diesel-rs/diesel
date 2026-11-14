@@ -135,9 +135,6 @@ fn sql_type(field: &Field, model: &Model) -> Result<Type> {
     }
 }
 
-/// Returns the name a field is read under. A field typed from the table uses
-/// the column's `NAME`, which honours its `sql_name`, and any other field uses
-/// its own column name.
 fn column_name(field: &Field, model: &Model) -> Result<TokenStream> {
     let column_name = field.column_name()?;
     if field.sql_type.is_some() {

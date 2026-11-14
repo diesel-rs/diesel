@@ -16,7 +16,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
-* `#[derive(QueryableByName)]` reads a field that takes its SQL type from the table under the column's `#[sql_name]`, so `sql_query` can load tables with renamed columns
+* `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
 
 ### Changed
 
