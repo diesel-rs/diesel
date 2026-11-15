@@ -5,8 +5,15 @@ description: "Test: print_schema_materialized_view_infer_nullable"
 // @generated automatically by Diesel CLI.
 
 diesel::view! {
+    user_hair_colors {
+        id -> Int4,
+        hair_color -> Nullable<Text>,
+    }
+}
+
+diesel::view! {
     user_ids {
-        id -> Nullable<Int4>,
+        id -> Int4,
     }
 }
 
@@ -18,4 +25,4 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(user_ids, users,);
+diesel::allow_tables_to_appear_in_same_query!(user_hair_colors, user_ids, users,);
