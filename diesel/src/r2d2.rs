@@ -251,7 +251,14 @@ impl fmt::Display for Error {
     }
 }
 
-impl ::core::error::Error for Error {}
+impl ::core::error::Error for Error {
+    fn source(&self) -> Option<&(dyn ::core::error::Error + 'static)> {
+        match *self {
+            Error::ConnectionError(ref e) => e.source(),
+            Error::QueryError(ref e) => e.source(),
+        }
+    }
+}
 
 impl From<crate::result::Error> for Error {
     fn from(other: crate::result::Error) -> Self {
@@ -491,6 +498,21 @@ mod tests {
 
     use crate::r2d2::*;
     use crate::test_helpers::*;
+
+    #[diesel_test_helper::test]
+    fn error_forwards_the_source_of_the_wrapped_error() {
+        let integer_error = u8::try_from(256_i32).unwrap_err();
+        let expected = format!("Internal integer conversion failed: {integer_error}");
+
+        let error = Error::QueryError(crate::result::Error::IntegerConversion(integer_error));
+        assert_eq!(format_error(&error), expected);
+
+        let error =
+            Error::ConnectionError(crate::result::ConnectionError::CouldntSetupConfiguration(
+                crate::result::Error::IntegerConversion(integer_error),
+            ));
+        assert_eq!(format_error(&error), expected);
+    }
 
     #[diesel_test_helper::test]
     fn establish_basic_connection() {

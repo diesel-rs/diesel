@@ -444,7 +444,7 @@ pub fn load_view_data(
                                 }
                             }
                             Err(e) => {
-                                tracing::warn!(view = %name, error = %e, "Failed to infer nullability for view fields");
+                                tracing::warn!(view = %name, error = %crate::errors::format_error(&e), "Failed to infer nullability for view fields");
                             }
                         }
                     } else {
@@ -453,7 +453,7 @@ pub fn load_view_data(
                 }
             }
             Err(e) => {
-                tracing::warn!(view = %name, error = %e, "Failed to infer nullablity for view fields")
+                tracing::warn!(view = %name, error = %crate::errors::format_error(&e), "Failed to infer nullablity for view fields")
             }
         }
     }
