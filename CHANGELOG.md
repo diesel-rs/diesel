@@ -16,6 +16,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Fixed
 
+* `#[derive(QueryableByName)]` now respects `#[sql_name]` on table columns
+
 ### Changed
 
 
