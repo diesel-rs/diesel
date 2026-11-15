@@ -142,6 +142,18 @@ fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_typ
     RegNamespace::new(quote_ident(schema))
 }
 
+#[derive(Queryable)]
+struct Row {
+    column_name: String,
+    type_name: String,
+    type_schema: Option<String>,
+    domain_name: Option<String>,
+    domain_schema: Option<String>,
+    nullable: String,
+    max_length: Option<i32>,
+    comment: Option<String>,
+}
+
 pub fn get_table_data(
     conn: &mut PgConnection,
     table: &TableName,
@@ -149,18 +161,6 @@ pub fn get_table_data(
     domains_as_custom_types: &[&regex::Regex],
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
-
-    #[derive(Queryable)]
-    struct Row {
-        column_name: String,
-        type_name: String,
-        type_schema: Option<String>,
-        domain_name: Option<String>,
-        domain_schema: Option<String>,
-        nullable: String,
-        max_length: Option<i32>,
-        comment: Option<String>,
-    }
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
