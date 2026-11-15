@@ -143,7 +143,7 @@ fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_typ
 }
 
 #[derive(Queryable)]
-struct Row {
+struct ColumnRow {
     column_name: String,
     type_name: String,
     type_schema: Option<String>,
@@ -181,7 +181,7 @@ pub fn get_table_data(
         .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name));
 
-    let rows: Vec<Row> = match column_sorting {
+    let rows: Vec<ColumnRow> = match column_sorting {
         ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
         ColumnSorting::Name => query.order(column_name).load(conn),
     }?;
