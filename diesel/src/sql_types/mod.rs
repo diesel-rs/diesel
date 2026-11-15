@@ -283,14 +283,21 @@ pub type Bit = Binary;
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 /// - [`time::Date`][Date] with `feature = "time"`
+/// - [`jiff::civil::Date`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 /// - [`time::Date`][Date] with `feature = "time"`
+/// - [`jiff::civil::Date`] with `feature = "jiff"`
 ///
 /// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
 /// [Date]: https://docs.rs/time/0.3.9/time/struct.Date.html
+#[cfg_attr(feature = "jiff", doc = " [`jiff::civil::Date`]: jiff::civil::Date")]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::Date`]: https://docs.rs/jiff/1/jiff/civil/struct.Date.html"
+)]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1082, array_oid = 1182))]
 #[diesel(sqlite_type(name = "Text"))]

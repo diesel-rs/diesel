@@ -58,6 +58,20 @@ mod chrono {
     struct DurationProxy(Duration);
 }
 
+#[cfg(feature = "jiff")]
+mod jiff {
+    use jiff::civil;
+
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
+    use crate::sql_types::Date;
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Date)]
+    struct DateProxy(civil::Date);
+}
+
 #[cfg(feature = "time")]
 mod time {
     use time::{Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime};
