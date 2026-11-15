@@ -142,15 +142,23 @@ fn regnamespace(schema: &str) -> RegNamespace<quote_ident<AsExprOf<&str, sql_typ
     RegNamespace::new(quote_ident(schema))
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, QueryableByName)]
 struct ColumnRow {
+    #[diesel(sql_type = sql_types::Text)]
     column_name: String,
+    #[diesel(sql_type = sql_types::Text)]
     type_name: String,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
     type_schema: Option<String>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
     domain_name: Option<String>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
     domain_schema: Option<String>,
+    #[diesel(sql_type = sql_types::Text)]
     nullable: String,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Integer>)]
     max_length: Option<i32>,
+    #[diesel(sql_type = sql_types::Nullable<sql_types::Text>)]
     comment: Option<String>,
 }
 
