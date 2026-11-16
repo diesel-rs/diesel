@@ -1175,7 +1175,7 @@ where
             *inner = obj;
         }
         // at this point the inner value is never null
-        // as we initialised in in the null branch above,
+        // as we initialised in the null branch above,
         // therefore it's sound to dereference the pointer here
         &mut **inner
     };
