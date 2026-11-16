@@ -64,7 +64,7 @@ mod jiff {
 
     use crate::deserialize::FromSqlRow;
     use crate::expression::AsExpression;
-    use crate::sql_types::{Date, Time};
+    use crate::sql_types::{Date, Time, Timestamp};
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
@@ -75,6 +75,12 @@ mod jiff {
     #[diesel(foreign_derive)]
     #[diesel(sql_type = Time)]
     struct TimeProxy(civil::Time);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Timestamp)]
+    #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
+    struct DateTimeProxy(civil::DateTime);
 }
 
 #[cfg(feature = "time")]
