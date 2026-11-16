@@ -335,14 +335,21 @@ pub struct Interval;
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 /// - [`time::Time`][Time] with `feature = "time"`
+/// - [`jiff::civil::Time`] with `feature = "jiff"`
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 /// - [`time::Time`][Time] with `feature = "time"`
+/// - [`jiff::civil::Time`] with `feature = "jiff"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
 /// [Time]: /time/struct.Time.html
+#[cfg_attr(feature = "jiff", doc = " [`jiff::civil::Time`]: jiff::civil::Time")]
+#[cfg_attr(
+    not(feature = "jiff"),
+    doc = " [`jiff::civil::Time`]: https://docs.rs/jiff/1/jiff/civil/struct.Time.html"
+)]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 1083, array_oid = 1183))]
 #[diesel(sqlite_type(name = "Text"))]

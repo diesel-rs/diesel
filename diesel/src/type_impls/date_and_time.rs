@@ -64,12 +64,17 @@ mod jiff {
 
     use crate::deserialize::FromSqlRow;
     use crate::expression::AsExpression;
-    use crate::sql_types::Date;
+    use crate::sql_types::{Date, Time};
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
     #[diesel(sql_type = Date)]
     struct DateProxy(civil::Date);
+
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Time)]
+    struct TimeProxy(civil::Time);
 }
 
 #[cfg(feature = "time")]

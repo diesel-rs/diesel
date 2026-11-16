@@ -1,17 +1,36 @@
 //! This module makes it possible to map `jiff` date and time values to postgres `Date`
-//! fields. It is enabled with the `jiff` feature.
+//! and `Time` fields. It is enabled with the `jiff` feature.
 
-use jiff::Span;
 use jiff::civil;
+use jiff::{SignedDuration, Span};
 
-use super::PgDate;
+use super::{PgDate, PgTime};
 use crate::deserialize::{self, Defaultable, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
-use crate::sql_types::Date;
+use crate::sql_types::{Date, Time};
 
 // Postgres dates start from January 1st 2000.
 const PG_EPOCH_DATE: civil::Date = civil::date(2000, 1, 1);
+
+impl ToSql<Time, Pg> for civil::Time {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let micros_since_midnight = self.duration_since(civil::Time::midnight()).as_micros();
+        ToSql::<Time, Pg>::to_sql(
+            &PgTime(micros_since_midnight.try_into()?),
+            &mut out.reborrow(),
+        )
+    }
+}
+
+impl FromSql<Time, Pg> for civil::Time {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let PgTime(micros_since_midnight) = FromSql::<Time, Pg>::from_sql(bytes)?;
+        let duration = SignedDuration::from_micros(micros_since_midnight);
+        // `24:00:00` wraps around to midnight, like in the `chrono` and `time` integrations.
+        Ok(civil::Time::midnight().wrapping_add(duration))
+    }
+}
 
 impl ToSql<Date, Pg> for civil::Date {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
@@ -36,14 +55,61 @@ impl Defaultable for civil::Date {
 
 #[cfg(test)]
 mod tests {
-    use jiff::civil::{self, date};
+    use jiff::civil::{self, date, time};
 
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::result::Error::{DatabaseError, DeserializationError};
     use crate::select;
-    use crate::sql_types::Date;
+    use crate::sql_types::{Date, Time};
     use crate::test_helpers::connection;
+
+    #[diesel_test_helper::test]
+    fn times_of_day_encode_correctly() {
+        let connection = &mut connection();
+        let midnight = time(0, 0, 0, 0);
+        let query = select(sql::<Time>("'00:00:00'::time").eq(midnight));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        let noon = time(12, 0, 0, 0);
+        let query = select(sql::<Time>("'12:00:00'::time").eq(noon));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        let roughly_half_past_eleven = time(23, 37, 4, 2_200_000);
+        let query = select(sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        let max_time = civil::Time::MAX;
+        let query = select(sql::<Time>("'23:59:59.999999'::time").eq(max_time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn times_of_day_decode_correctly() {
+        let connection = &mut connection();
+        let midnight = time(0, 0, 0, 0);
+        let query = select(sql::<Time>("'00:00:00'::time"));
+        assert_eq!(Ok(midnight), query.get_result(connection));
+
+        let noon = time(12, 0, 0, 0);
+        let query = select(sql::<Time>("'12:00:00'::time"));
+        assert_eq!(Ok(noon), query.get_result(connection));
+
+        let roughly_half_past_eleven = time(23, 37, 4, 2_200_000);
+        let query = select(sql::<Time>("'23:37:04.002200'::time"));
+        assert_eq!(Ok(roughly_half_past_eleven), query.get_result(connection));
+
+        let last_microsecond = time(23, 59, 59, 999_999_000);
+        let query = select(sql::<Time>("'23:59:59.999999'::time"));
+        assert_eq!(Ok(last_microsecond), query.get_result(connection));
+    }
+
+    #[diesel_test_helper::test]
+    fn end_of_day_decodes_as_midnight() {
+        let connection = &mut connection();
+        let query = select(sql::<Time>("'24:00:00'::time"));
+        assert_eq!(Ok(time(0, 0, 0, 0)), query.get_result(connection));
+    }
 
     #[diesel_test_helper::test]
     fn dates_encode_correctly() {

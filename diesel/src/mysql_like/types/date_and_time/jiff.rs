@@ -1,5 +1,5 @@
 //! This module makes it possible to map `jiff` date and time values to MySQL `Date`
-//! fields. It is enabled with the `jiff` feature.
+//! and `Time` fields. It is enabled with the `jiff` feature.
 
 use jiff::civil;
 
@@ -7,7 +7,44 @@ use super::{MysqlTime, MysqlTimestampType};
 use crate::deserialize::{self, FromSql};
 use crate::mysql_like::{MysqlLikeBackend, MysqlValue};
 use crate::serialize::{self, Output, ToSql};
-use crate::sql_types::Date;
+use crate::sql_types::{Date, Time};
+
+impl<DB: MysqlLikeBackend> ToSql<Time, DB> for civil::Time {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        let mysql_time = MysqlTime {
+            year: 0,
+            month: 0,
+            day: 0,
+            hour: self.hour().try_into()?,
+            minute: self.minute().try_into()?,
+            second: self.second().try_into()?,
+            second_part: (self.subsec_nanosecond() / 1_000).try_into()?,
+            neg: false,
+            time_type: MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            time_zone_displacement: 0,
+        };
+
+        <MysqlTime as ToSql<Time, DB>>::to_sql(&mysql_time, &mut out.reborrow())
+    }
+}
+
+impl<DB: MysqlLikeBackend> FromSql<Time, DB> for civil::Time {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
+        let mysql_time = <MysqlTime as FromSql<Time, DB>>::from_sql(bytes)?;
+        if mysql_time.neg {
+            return Err("Negative times cannot be deserialized as jiff::civil::Time".into());
+        }
+
+        let subsec_nanosecond = i32::try_from(mysql_time.second_part)?.saturating_mul(1_000);
+        civil::Time::new(
+            mysql_time.hour.try_into()?,
+            mysql_time.minute.try_into()?,
+            mysql_time.second.try_into()?,
+            subsec_nanosecond,
+        )
+        .map_err(|err| format!("Unable to convert {mysql_time:?} to jiff: {err}").into())
+    }
+}
 
 impl<DB: MysqlLikeBackend> ToSql<Date, DB> for civil::Date {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
@@ -42,13 +79,78 @@ impl<DB: MysqlLikeBackend> FromSql<Date, DB> for civil::Date {
 
 #[cfg(test)]
 mod tests {
-    use jiff::civil::{self, date};
+    use jiff::civil::{self, date, time};
 
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::result::Error::DeserializationError;
     use crate::select;
-    use crate::sql_types::Date;
+    use crate::sql_types::{Date, Time};
     use crate::test_helpers::connection;
+
+    #[diesel_test_helper::test]
+    fn times_of_day_encode_correctly() {
+        let connection = &mut connection();
+        let midnight = time(0, 0, 0, 0);
+        let query = select(sql::<Time>("CAST('00:00:00' AS TIME)").eq(midnight));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        let noon = time(12, 0, 0, 0);
+        let query = select(sql::<Time>("CAST('12:00:00' AS TIME)").eq(noon));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        let roughly_half_past_eleven = time(23, 37, 4, 0);
+        let query = select(sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn times_of_day_decode_correctly() {
+        let connection = &mut connection();
+        let midnight = time(0, 0, 0, 0);
+        let query = select(sql::<Time>("CAST('00:00:00' AS TIME)"));
+        assert_eq!(Ok(midnight), query.get_result(connection));
+
+        let noon = time(12, 0, 0, 0);
+        let query = select(sql::<Time>("CAST('12:00:00' AS TIME)"));
+        assert_eq!(Ok(noon), query.get_result(connection));
+
+        let roughly_half_past_eleven = time(23, 37, 4, 0);
+        let query = select(sql::<Time>("CAST('23:37:04' AS TIME)"));
+        assert_eq!(Ok(roughly_half_past_eleven), query.get_result(connection));
+    }
+
+    #[diesel_test_helper::test]
+    fn times_of_day_with_microseconds_encode_correctly() {
+        let connection = &mut connection();
+        let with_micros = time(8, 30, 0, 123_456_000);
+        let query = select(sql::<Time>("CAST('08:30:00.123456' AS TIME(6))").eq(with_micros));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn times_of_day_with_microseconds_decode_correctly() {
+        let connection = &mut connection();
+        let with_micros = time(8, 30, 0, 123_456_000);
+        let query = select(sql::<Time>("CAST('08:30:00.123456' AS TIME(6))"));
+        assert_eq!(Ok(with_micros), query.get_result(connection));
+    }
+
+    #[diesel_test_helper::test]
+    fn times_outside_of_a_day_fail_to_decode() {
+        let connection = &mut connection();
+        let query = select(sql::<Time>("CAST('24:00:00' AS TIME)"));
+        assert!(matches!(
+            query.get_result::<civil::Time>(connection),
+            Err(DeserializationError(_))
+        ));
+
+        let query = select(sql::<Time>("CAST('-01:00:00' AS TIME)"));
+        assert!(matches!(
+            query.get_result::<civil::Time>(connection),
+            Err(DeserializationError(_))
+        ));
+    }
 
     #[diesel_test_helper::test]
     fn dates_encode_correctly() {
