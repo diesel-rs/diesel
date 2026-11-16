@@ -265,7 +265,7 @@ impl RawConnection {
                     self.0.as_ptr(),
                     mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
                     1_u32.as_ptr() as *const core::ffi::c_void,
-                )
+                );
             },
             SSL_MODE_REQUIRED | SSL_MODE_VERIFY_CA | SSL_MODE_VERIFY_IDENTITY => {
                 unsafe {
@@ -273,15 +273,16 @@ impl RawConnection {
                         self.0.as_ptr(),
                         mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
                         1_u32.as_ptr() as *const core::ffi::c_void,
-                    )
+                    );
                 }
                 unsafe {
                     mysqlclient_sys::mysql_optionsv(
                         self.0.as_ptr(),
                         mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
                         1_u32.as_ptr() as *const core::ffi::c_void,
-                    )
+                    );
                 }
+                ()
             }
             _ => (),
         }
