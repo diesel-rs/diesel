@@ -4,6 +4,10 @@ use core::ffi as libc;
 use core::ffi::CStr;
 use core::ptr::{self, NonNull};
 use mysqlclient_sys as ffi;
+#[cfg(feature = "mariadb")]
+use mysqlclient_sys::mysql_ssl_mode::{
+    SSL_MODE_PREFERRED, SSL_MODE_REQUIRED, SSL_MODE_VERIFY_CA, SSL_MODE_VERIFY_IDENTITY,
+};
 use std::sync::Once;
 
 use super::error_information::{MysqlLikeErrorInformation, sqlstate_from_ptr};
@@ -246,6 +250,7 @@ impl RawConnection {
         let v = ssl_mode as u32;
         let v_ptr: *const u32 = &v;
         let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
+        #[cfg(not(feature = "mariadb"))]
         unsafe {
             mysqlclient_sys::mysql_options(
                 self.0.as_ptr(),
@@ -253,6 +258,33 @@ impl RawConnection {
                 n.as_ptr() as *const core::ffi::c_void,
             )
         };
+        #[cfg(feature = "mariadb")]
+        match ssl_mode {
+            SSL_MODE_PREFERRED => unsafe {
+                mysqlclient_sys::mysql_optionsv(
+                    self.0.as_ptr(),
+                    mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
+                    1_u32.as_ptr() as *const core::ffi::c_void,
+                )
+            },
+            SSL_MODE_REQUIRED | SSL_MODE_VERIFY_CA | SSL_MODE_VERIFY_IDENTITY => {
+                unsafe {
+                    mysqlclient_sys::mysql_optionsv(
+                        self.0.as_ptr(),
+                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
+                        1_u32.as_ptr() as *const core::ffi::c_void,
+                    )
+                }
+                unsafe {
+                    mysqlclient_sys::mysql_optionsv(
+                        self.0.as_ptr(),
+                        mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
+                        1_u32.as_ptr() as *const core::ffi::c_void,
+                    )
+                }
+            }
+            _ => (),
+        }
     }
 
     fn set_ssl_ca(&self, ssl_ca: &CStr) {
