@@ -1,5 +1,5 @@
 //! This module makes it possible to map `jiff` date and time values to postgres `Date`,
-//! `Time` and `Timestamp` fields. It is enabled with the `jiff` feature.
+//! `Time`, `Timestamp` and `Timestamptz` fields. It is enabled with the `jiff` feature.
 
 use jiff::civil;
 use jiff::{SignedDuration, Span};
@@ -8,11 +8,12 @@ use super::{PgDate, PgTime, PgTimestamp};
 use crate::deserialize::{self, Defaultable, FromSql};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
-use crate::sql_types::{Date, Time, Timestamp};
+use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
 
 // Postgres dates and timestamps start from January 1st 2000.
 const PG_EPOCH_DATE: civil::Date = civil::date(2000, 1, 1);
 const PG_EPOCH: civil::DateTime = PG_EPOCH_DATE.at(0, 0, 0, 0);
+const PG_EPOCH_TIMESTAMP: jiff::Timestamp = jiff::Timestamp::constant(946_684_800, 0); // 2000-01-01T00:00:00Z
 
 impl FromSql<Timestamp, Pg> for civil::DateTime {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
@@ -35,6 +36,30 @@ impl ToSql<Timestamp, Pg> for civil::DateTime {
 impl Defaultable for civil::DateTime {
     fn default_value() -> Self {
         PG_EPOCH
+    }
+}
+
+impl FromSql<Timestamptz, Pg> for jiff::Timestamp {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let PgTimestamp(micros_since_epoch) = FromSql::<Timestamptz, Pg>::from_sql(bytes)?;
+        let duration = SignedDuration::from_micros(micros_since_epoch);
+        Ok(PG_EPOCH_TIMESTAMP.checked_add(duration)?)
+    }
+}
+
+impl ToSql<Timestamptz, Pg> for jiff::Timestamp {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        let micros_since_epoch = self.duration_since(PG_EPOCH_TIMESTAMP).as_micros();
+        ToSql::<Timestamptz, Pg>::to_sql(
+            &PgTimestamp(micros_since_epoch.try_into()?),
+            &mut out.reborrow(),
+        )
+    }
+}
+
+impl Defaultable for jiff::Timestamp {
+    fn default_value() -> Self {
+        PG_EPOCH_TIMESTAMP
     }
 }
 
@@ -88,7 +113,7 @@ mod tests {
     use crate::prelude::*;
     use crate::result::Error::{DatabaseError, DeserializationError};
     use crate::select;
-    use crate::sql_types::{Date, Time, Timestamp};
+    use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
     use crate::test_helpers::connection;
 
     #[diesel_test_helper::test]
@@ -100,11 +125,36 @@ mod tests {
     }
 
     #[diesel_test_helper::test]
+    fn unix_epoch_encodes_correctly_with_utc_timezone() {
+        let connection = &mut connection();
+        let time = jiff::Timestamp::UNIX_EPOCH;
+        let query = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn unix_epoch_encodes_correctly_with_timezone() {
+        let connection = &mut connection();
+        let time: jiff::Timestamp = "1970-01-01T00:00:00-01:00".parse().unwrap();
+        let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
     fn unix_epoch_decodes_correctly() {
         let connection = &mut connection();
         let time = datetime(1970, 1, 1, 0, 0, 0, 0);
         let epoch_from_sql =
             select(sql::<Timestamp>("'1970-01-01'::timestamp")).get_result(connection);
+        assert_eq!(Ok(time), epoch_from_sql);
+    }
+
+    #[diesel_test_helper::test]
+    fn unix_epoch_decodes_correctly_with_timezone() {
+        let connection = &mut connection();
+        let time = jiff::Timestamp::UNIX_EPOCH;
+        let epoch_from_sql =
+            select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz")).get_result(connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
@@ -119,6 +169,23 @@ mod tests {
         let time = naive_now - SignedDuration::from_secs(60);
         let query = select(now.at_time_zone("utc").gt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
+
+        let time = jiff::Timestamp::now() + SignedDuration::from_secs(60);
+        let query = select(now.into_sql::<Timestamptz>().lt(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        let time = jiff::Timestamp::now() - SignedDuration::from_secs(60);
+        let query = select(now.into_sql::<Timestamptz>().gt(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[diesel_test_helper::test]
+    fn times_with_timezones_round_trip_after_conversion() {
+        let connection = &mut connection();
+        let time: jiff::Timestamp = "2016-01-02T01:00:00+01:00".parse().unwrap();
+        let expected = datetime(2016, 1, 1, 20, 0, 0, 0);
+        let query = select(time.into_sql::<Timestamptz>().at_time_zone("EDT"));
+        assert_eq!(Ok(expected), query.get_result(connection));
     }
 
     #[diesel_test_helper::test]
@@ -176,6 +243,79 @@ mod tests {
         let query = select(civil::DateTime::MIN.into_sql::<Timestamp>());
         assert!(matches!(
             query.get_result::<civil::DateTime>(connection),
+            Err(DatabaseError(..))
+        ));
+    }
+
+    #[diesel_test_helper::test]
+    fn timestamps_round_trip() {
+        let connection = &mut connection();
+        for (value, text) in [
+            (jiff::Timestamp::UNIX_EPOCH, "1970-01-01 00:00:00Z"),
+            (
+                jiff::Timestamp::constant(1_514_808_000, 500_000),
+                "2018-01-01 12:00:00.0005Z",
+            ),
+            (
+                jiff::Timestamp::constant(1_514_808_000, 0),
+                "2018-01-01 13:00:00+01",
+            ),
+        ] {
+            let query = select(sql::<Timestamptz>(&format!("'{text}'::timestamptz")).eq(value));
+            assert!(query.get_result::<bool>(connection).unwrap(), "{text}");
+
+            let query = select(sql::<Timestamptz>(&format!("'{text}'::timestamptz")));
+            assert_eq!(Ok(value), query.get_result(connection), "{text}");
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn max_timestamp_round_trips_truncated_to_microseconds() {
+        let connection = &mut connection();
+        let truncated = jiff::Timestamp::MAX - SignedDuration::from_nanos(999);
+        assert_eq!(999_999_000, truncated.subsec_nanosecond());
+        let query = select(jiff::Timestamp::MAX.into_sql::<Timestamptz>());
+        assert_eq!(Ok(truncated), query.get_result(connection));
+    }
+
+    #[diesel_test_helper::test]
+    fn timestamps_are_independent_of_the_session_time_zone() {
+        let connection = &mut connection();
+        crate::sql_query("SET TIME ZONE 'America/New_York'")
+            .execute(connection)
+            .unwrap();
+        let value = jiff::Timestamp::constant(1_514_808_000, 0);
+        let query = select(value.into_sql::<Timestamptz>().at_time_zone("UTC"));
+        assert_eq!(
+            Ok(datetime(2018, 1, 1, 12, 0, 0, 0)),
+            query.get_result(connection)
+        );
+
+        let query = select(sql::<Timestamptz>("'2018-01-01 12:00:00Z'::timestamptz"));
+        assert_eq!(Ok(value), query.get_result(connection));
+    }
+
+    #[diesel_test_helper::test]
+    fn timestamps_outside_of_jiff_range_fail_to_decode() {
+        let connection = &mut connection();
+        for text in ["10000-01-01 00:00:00Z", "infinity", "-infinity"] {
+            let query = select(sql::<Timestamptz>(&format!("'{text}'::timestamptz")));
+            assert!(
+                matches!(
+                    query.get_result::<jiff::Timestamp>(connection),
+                    Err(DeserializationError(_))
+                ),
+                "{text}"
+            );
+        }
+    }
+
+    #[diesel_test_helper::test]
+    fn timestamps_before_postgres_range_fail_to_encode() {
+        let connection = &mut connection();
+        let query = select(jiff::Timestamp::MIN.into_sql::<Timestamptz>());
+        assert!(matches!(
+            query.get_result::<jiff::Timestamp>(connection),
             Err(DatabaseError(..))
         ));
     }

@@ -81,6 +81,12 @@ mod jiff {
     #[diesel(sql_type = Timestamp)]
     #[cfg_attr(any(feature = "mysql_backend", feature = "mariadb_backend"), diesel(sql_type = crate::sql_types::Datetime))]
     struct DateTimeProxy(civil::DateTime);
+
+    #[cfg(feature = "postgres_backend")]
+    #[derive(AsExpression, FromSqlRow)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = crate::sql_types::Timestamptz)]
+    struct TimestampProxy(jiff::Timestamp);
 }
 
 #[cfg(feature = "time")]
