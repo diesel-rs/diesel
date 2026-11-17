@@ -250,9 +250,10 @@ impl RawConnection {
         let v = ssl_mode as u32;
         let v_ptr: *const u32 = &v;
         let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
-        let v2 = 1 as u32;
-        let v2_ptr: *const u32 = &v;
-        let m = ptr::NonNull::new(v2_ptr as *mut u32).expect("NonNull::new failed");
+        let activated = 1_u32;
+        let activated_ptr: *const u32 = &activated;
+        let activated_ptr =
+            ptr::NonNull::new(activated_ptr as *mut u32).expect("NonNull::new failed");
         #[cfg(not(feature = "mariadb"))]
         unsafe {
             mysqlclient_sys::mysql_options(
@@ -267,7 +268,7 @@ impl RawConnection {
                 mysqlclient_sys::mysql_optionsv(
                     self.0.as_ptr(),
                     mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
-                    m.as_ptr() as *const core::ffi::c_void,
+                    activated_ptr.as_ptr() as *const core::ffi::c_void,
                 );
             },
             SSL_MODE_REQUIRED | SSL_MODE_VERIFY_CA | SSL_MODE_VERIFY_IDENTITY => {
@@ -275,17 +276,16 @@ impl RawConnection {
                     mysqlclient_sys::mysql_optionsv(
                         self.0.as_ptr(),
                         mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_ENFORCE,
-                        m.as_ptr() as *const core::ffi::c_void,
+                        activated_ptr.as_ptr() as *const core::ffi::c_void,
                     );
                 }
                 unsafe {
                     mysqlclient_sys::mysql_optionsv(
                         self.0.as_ptr(),
                         mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
-                        m.as_ptr() as *const core::ffi::c_void,
+                        activated_ptr.as_ptr() as *const core::ffi::c_void,
                     );
                 }
-                ()
             }
             _ => (),
         }
