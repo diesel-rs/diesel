@@ -383,14 +383,14 @@ pub fn load_table_data(
     connection: &mut InferConnection,
     name: TableName,
     config: &PrintSchema,
-    tpe: SupportedQueryRelationStructures,
+    kind: SupportedQueryRelationStructures,
 ) -> Result<TableData, crate::errors::Error> {
-    let primary_key = match tpe {
+    let primary_key = match kind {
         SupportedQueryRelationStructures::Table => get_primary_keys(connection, &name)?,
         SupportedQueryRelationStructures::View => Vec::new(),
     };
     let (table_comment, column_data) =
-        load_column_structure_data(connection, &name, config, Some(&primary_key), tpe)?;
+        load_column_structure_data(connection, &name, config, Some(&primary_key), kind)?;
     let primary_key = primary_key
         .iter()
         .map(|k| rust_name_for_sql_name(k, IdentifierKind::Column, Some(&name)))
