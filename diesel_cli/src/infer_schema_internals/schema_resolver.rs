@@ -93,8 +93,9 @@ impl<'a, 'b> SchemaResolverImpl<'a, 'b> {
                 SupportedQueryRelationStructures::Table => QueryRelationData::Table(
                     load_table_data(self.connection, t.clone(), self.config, kind)?,
                 ),
-                SupportedQueryRelationStructures::View => {
-                    QueryRelationData::View(load_view_data(self, t.clone())?)
+                SupportedQueryRelationStructures::View
+                | SupportedQueryRelationStructures::MaterializedView => {
+                    QueryRelationData::View(load_view_data(self, t.clone(), kind)?)
                 }
             };
             self.cached_results.insert(t.clone(), data);

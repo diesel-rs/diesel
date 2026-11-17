@@ -196,7 +196,8 @@ pub fn generate_sql_based_on_diff_schema(
                     });
                 }
             }
-            SupportedQueryRelationStructures::View => {
+            SupportedQueryRelationStructures::View
+            | SupportedQueryRelationStructures::MaterializedView => {
                 return Err(crate::errors::Error::UnsupportedFeature(
                     "Views are not supported by `--diff-schema`".into(),
                 ));

@@ -14,6 +14,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Added
 
+* `diesel print-schema` now generates `diesel::view!` definitions for PostgreSQL materialized views when `include_views` is enabled
+
 ### Fixed
 
 ### Changed
