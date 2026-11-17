@@ -222,6 +222,8 @@ impl ForeignKeyConstraint {
 pub enum SupportedQueryRelationStructures {
     View,
     Table,
+    #[cfg_attr(not(feature = "postgres"), expect(dead_code))]
+    MaterializedView,
 }
 
 #[derive(Debug, Clone)]
@@ -283,6 +285,7 @@ impl SupportedQueryRelationStructures {
         match self {
             Self::Table => "BASE TABLE",
             Self::View => "VIEW",
+            Self::MaterializedView => "MATERIALIZED VIEW",
         }
     }
 
