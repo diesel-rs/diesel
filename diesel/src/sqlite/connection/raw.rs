@@ -8,6 +8,7 @@ use sqlite_wasm_rs as ffi;
 use super::SqliteConnection;
 use super::authorizer::{AuthorizerContext, AuthorizerDecision};
 use super::collation_needed::{CollationNeededContext, SqliteTextRep};
+use super::error_information::SqliteErrorInformation;
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::limits::SqliteLimit;
 use super::serialized_database::SerializedDatabase;
@@ -428,10 +429,13 @@ impl RawConnection {
         if result == ffi::SQLITE_OK {
             Ok(())
         } else {
-            let error_message = super::error_message(result);
+            let error_information = SqliteErrorInformation {
+                message: super::error_message(result).to_string(),
+                native_code: result,
+            };
             Err(DatabaseError(
                 DatabaseErrorKind::Unknown,
-                Box::new(error_message.to_string()),
+                Box::new(error_information),
             ))
         }
     }

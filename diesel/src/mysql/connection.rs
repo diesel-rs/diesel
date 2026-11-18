@@ -22,6 +22,10 @@ use crate::mysql_like::MysqlLikeConnection;
 /// <https://dev.mysql.com/doc/refman/8.4/en/error-message-elements.html>.
 /// [`sql_state`](crate::mysql_like::sql_state) names the codes.
 ///
+/// Errors also carry the error number in
+/// [`DatabaseErrorInformation::native_code`](crate::result::DatabaseErrorInformation::native_code),
+/// listed at <https://dev.mysql.com/doc/mysql-errors/8.4/en/server-error-reference.html>.
+///
 /// # Supported loading model implementations
 ///
 /// * [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode)

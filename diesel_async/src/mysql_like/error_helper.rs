@@ -79,4 +79,9 @@ impl DatabaseErrorInformation for ServerErrorInformation {
     fn sqlstate(&self) -> Option<SqlState> {
         self.0.state.parse().ok()
     }
+
+    fn native_code(&self) -> Option<i32> {
+        let code = i32::from(self.0.code);
+        (code != 0).then_some(code)
+    }
 }

@@ -10,6 +10,7 @@ mod bind_collector;
 pub(super) mod borrowed_connection;
 mod collation_needed;
 mod db_config;
+pub(in crate::sqlite) mod error_information;
 mod functions;
 mod hooks;
 mod limits;
@@ -76,6 +77,10 @@ use core::num::NonZeroI64;
 ///
 /// SQLite has no SQLSTATE codes, so
 /// [`DatabaseErrorInformation::sqlstate`] always returns `None`.
+///
+/// Errors carry the result code of the failed API call in
+/// [`DatabaseErrorInformation::native_code`], the extended result code where
+/// SQLite reports one, listed at <https://www.sqlite.org/rescode.html>.
 ///
 /// # Supported loading model implementations
 ///

@@ -6,6 +6,7 @@ use crate::result::{DatabaseErrorInformation, SqlState};
 pub(super) struct MysqlLikeErrorInformation {
     pub(super) message: String,
     pub(super) sqlstate: Option<SqlState>,
+    pub(super) native_code: Option<i32>,
 }
 
 /// Reads the result of `mysql_sqlstate` or `mysql_stmt_sqlstate`.
@@ -54,5 +55,9 @@ impl DatabaseErrorInformation for MysqlLikeErrorInformation {
 
     fn sqlstate(&self) -> Option<SqlState> {
         self.sqlstate
+    }
+
+    fn native_code(&self) -> Option<i32> {
+        self.native_code
     }
 }
