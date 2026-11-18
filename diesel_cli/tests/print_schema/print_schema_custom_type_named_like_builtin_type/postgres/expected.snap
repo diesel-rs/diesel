@@ -1,0 +1,134 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_custom_type_named_like_builtin_type"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod sql_types {
+    #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "interval", schema = "custom_schema"))]
+    #[diesel(enum_type)]
+    pub struct Interval;
+
+    #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "money"))]
+    #[diesel(enum_type)]
+    pub struct Money;
+
+    #[derive(Clone, diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "range"))]
+    #[diesel(enum_type)]
+    pub struct Range;
+}
+
+pub mod rust_types {
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
+    #[diesel(sql_type = super::sql_types::Interval)]
+    pub enum Interval {
+        #[diesel(rename = "day")]
+        Day,
+        #[diesel(rename = "week")]
+        Week,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
+    #[diesel(sql_type = super::sql_types::Money)]
+    pub enum Money {
+        #[diesel(rename = "usd")]
+        Usd,
+        #[diesel(rename = "eur")]
+        Eur,
+    }
+
+    #[derive(Clone, Copy, Debug, Eq, PartialEq, diesel::types::Enum)]
+    #[diesel(sql_type = super::sql_types::Range)]
+    pub enum Range {
+        #[diesel(rename = "ideal")]
+        Ideal,
+        #[diesel(rename = "rated")]
+        Rated,
+    }
+}
+
+diesel::table! {
+    builtin_types_1 (id) {
+        id -> Int4,
+        money_col -> Money,
+        money_array_col -> Array<Nullable<Money>>,
+        interval_col -> Interval,
+        citext_col -> Citext,
+        bool_col -> Bool,
+        int2_col -> Int2,
+        int8_col -> Int8,
+        float4_col -> Float4,
+        float8_col -> Float8,
+        numeric_col -> Numeric,
+        text_col -> Text,
+        varchar_col -> Varchar,
+        #[max_length = 3]
+        bpchar_col -> Bpchar,
+        char_col -> Char,
+        bytea_col -> Bytea,
+    }
+}
+
+diesel::table! {
+    builtin_types_2 (id) {
+        id -> Int4,
+        date_col -> Date,
+        time_col -> Time,
+        timestamp_col -> Timestamp,
+        timestamptz_col -> Timestamptz,
+        uuid_col -> Uuid,
+        json_col -> Json,
+        jsonb_col -> Jsonb,
+        inet_col -> Inet,
+        cidr_col -> Cidr,
+        macaddr_col -> Macaddr,
+        macaddr8_col -> Macaddr8,
+        oid_col -> Oid,
+        pg_lsn_col -> PgLsn,
+        #[max_length = 8]
+        bit_col -> Bit,
+    }
+}
+
+diesel::table! {
+    builtin_types_3 (id) {
+        id -> Int4,
+        int4range_col -> Int4range,
+        int8range_col -> Int8range,
+        daterange_col -> Daterange,
+        numrange_col -> Numrange,
+        tsrange_col -> Tsrange,
+        tstzrange_col -> Tstzrange,
+        int4multirange_col -> Int4multirange,
+        int8multirange_col -> Int8multirange,
+        datemultirange_col -> Datemultirange,
+        nummultirange_col -> Nummultirange,
+        tsmultirange_col -> Tsmultirange,
+        tstzmultirange_col -> Tstzmultirange,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Range;
+    use super::sql_types::Money;
+    use super::sql_types::Interval;
+
+    custom_types (id) {
+        id -> Int4,
+        preferred_range -> Range,
+        ranges -> Array<Nullable<Range>>,
+        currency -> Money,
+        period -> Interval,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    builtin_types_1,
+    builtin_types_2,
+    builtin_types_3,
+    custom_types,
+);
